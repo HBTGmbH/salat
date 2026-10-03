@@ -27,6 +27,21 @@ Status: Accepted
 > sind kumulativ, `requiresManager` deckt also `requiresBackoffice`, `requiresPeopleLead`,
 > `requireUnrestricted` und ein schlichtes `@Authorized` ab, `requiresAdmin` deckt `requiresManager`.
 
+> **Nachtrag 2026-10-03 (#1204):** Berechtigte und Objekte einer Regel stehen jetzt als **id**
+> statt als Loginname, Kürzel oder Name. Loginname und Kürzel lassen sich ändern, und die
+> Anonymisierung überschreibt beide. Eine Regel verlor dann ihr Recht oder vererbte es an den, der
+> den alten Wert als Nächstes bekam. Berechtigter ist die id des `SalatUser`. Das Objekt ist je
+> Kategorie die id dessen, was der Aufrufer prüft: der `SalatUser` bei `EMPLOYEE` (die Anmeldung,
+> die übernommen wird), der Mitarbeiter bei `RELEASE_TIMEREPORTS`, `ACCEPT_TIMEREPORTS` und
+> `WORKINGDAY`, die ETL-Definition bei `ETL`, unverändert die Auswertung bei `REPORT_DEFINITION`.
+> `TIMEREPORT` behält seine zwei Achsen, jetzt als `C<id>`/`S<id>` für Kunden- bzw. Unterauftrag,
+> `E<id>:C<id>`, `E<id>:S<id>` und `E<id>:*` (`TimereportRuleObject`). Die Tabellen unten zeigen
+> diese Formen so, wie man sie im Regeleditor **eintippt**; gespeichert wird die id, und der
+> Editor zeigt sie wieder mit dem heutigen Kürzel. Am Prinzip ändert das nichts: `AuthService`
+> vergleicht weiter ganze Werte, und der Aufrufer fragt mit allen Formen. Werte, die die Migration
+> keinem Datensatz eindeutig zuordnen konnte, tragen ein vorangestelltes `?`. Sie greifen nie und
+> sind im Editor markiert.
+
 ## Context and Problem Statement
 
 Die Anwendung verwaltet sensible Daten (Zeitberichte, Verträge, Rechnungen) und muss sicherstellen, dass Benutzer nur auf die für ihre Rolle erlaubten Operationen zugreifen können. Es gibt klar unterscheidbare Rollen mit hierarchischen Rechten. Die Herausforderung: Wie werden diese Rechte zuverlässig durchgesetzt — auch wenn ein Controller-Aufruf umgangen wird oder ein Service direkt aus einem Job oder einem anderen Service aufgerufen wird?

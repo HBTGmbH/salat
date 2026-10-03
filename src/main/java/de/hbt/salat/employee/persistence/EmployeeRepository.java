@@ -1,5 +1,6 @@
 package de.hbt.salat.employee.persistence;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -35,5 +36,9 @@ public interface EmployeeRepository extends PagingAndSortingRepository<Employee,
    */
   @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.salatUser")
   List<Employee> findAllWithSalatUser();
+
+  /** The employees signed in under these logins, by the id of the login (#1204). */
+  @Query("SELECT e FROM Employee e JOIN FETCH e.salatUser u WHERE u.id IN :salatUserIds")
+  List<Employee> findBySalatUserIds(@Param("salatUserIds") Collection<Long> salatUserIds);
 
 }

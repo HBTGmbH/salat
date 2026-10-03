@@ -1,6 +1,11 @@
 package de.hbt.salat.auth.domain;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * What a module contributes about its own authorization category, so that the rule editor can offer it (#1074).
@@ -32,23 +37,41 @@ public interface AuthorizationObjectProvider {
   List<AuthorizationObject> objects();
 
   /**
-   * What the module makes of a typed object id. The provider knows its format and its data; the editor knows neither.
+   * What the module makes of a stored object id. The provider knows its format and its data; the editor knows neither.
    *
    * <p>The wildcard {@code *} never gets here: "applies to every object" is a statement of the auth module, not of the
-   * provider. Composite wildcards such as {@code xx:*} are another matter — only the provider knows them, and its
+   * provider. Composite wildcards such as {@code E12:*} are another matter — only the provider knows them, and its
    * judgement has to let them pass, or exactly the form #1089 introduced the format for stays out of reach.
    *
-   * <p>The default judges by the list: what is in it is valid, anything else is unknown but not malformed. A rule may
-   * precede the thing it is about — an ETL definition that arrives next week — so an unknown value is noted, not
-   * refused.
+   * <p>The default judges by {@link #describe}: what it knows is valid, anything else is unknown but not malformed — the
+   * thing a stored id names may have been deleted since, and the rule stays readable.
    */
   default ObjectJudgement judge(String objectId) {
     if (objects().isEmpty()) {
       return ObjectJudgement.VALID;
     }
-    return objects().stream().anyMatch(object -> object.id().equals(objectId))
-        ? ObjectJudgement.VALID
-        : ObjectJudgement.UNKNOWN;
+    return describe(List.of(objectId)).containsKey(objectId) ? ObjectJudgement.VALID : ObjectJudgement.UNKNOWN;
+  }
+
+  /**
+   * What the editor shows for stored object ids — also for one the list no longer offers, such as a person since
+   * hidden (#1204). An id nothing answers to any more is left out of the answer. The default looks the ids up in the
+   * list; a provider whose list leaves something out answers itself.
+   */
+  default Map<String, AuthorizationObject> describe(Collection<String> objectIds) {
+    return objects().stream()
+        .filter(object -> objectIds.contains(object.id()))
+        .collect(Collectors.toMap(AuthorizationObject::id, Function.identity(), (a, b) -> a));
+  }
+
+  /**
+   * Translates what somebody typed into the object id that is stored (#1204) — asked only for a category that cannot be
+   * enumerated, where the field is free text. People type what they know, a sign or an order sign; the rule stores the
+   * id, so that a renamed record keeps its rules. Empty where nothing answers to the input: an id cannot precede the
+   * record it names.
+   */
+  default Optional<String> objectIdOf(String input) {
+    return Optional.of(input);
   }
 
 }

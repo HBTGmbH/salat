@@ -52,7 +52,8 @@ public class ReportAuthorization {
     var rules = authService.getAuthRules(AUTH_CATEGORY_REPORT_DEFINITION, valueOf(report.getId()));
     return rules.stream()
         .map(r -> new ReportAuthorizationInfo(
-            r.getGranteeId(),
+            // the grantee is stored by id (#1204); the page shows the login name it has today
+            authService.loginnameOf(r.getGranteeId()),
             r.getAccessLevel(),
             r.getValidity()
         ))

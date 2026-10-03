@@ -92,6 +92,16 @@ public class EmployeeService {
   }
 
   /**
+   * The employees signed in under these logins, by the id of the login — hidden ones included, without the read rules
+   * of this module (#1204). For naming the people an authorization rule refers to: whether somebody is hidden or may
+   * be looked at has no bearing on whom a stored rule names, as with {@link #getAllEmployeeSigns()}.
+   */
+  public List<Employee> getEmployeesBySalatUserIds(Collection<Long> salatUserIds) {
+    if (salatUserIds.isEmpty()) return List.of();
+    return employeeRepository.findBySalatUserIds(salatUserIds);
+  }
+
+  /**
    * The employees offered in a select box: everything not hidden, plus the one with the id
    * {@code keepId} even if it is hidden (#956). Hiding an employee is a decluttering aid for
    * exactly these lists — it must not make an existing record uneditable.

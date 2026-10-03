@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 import static de.hbt.salat.auth.domain.AccessLevel.LOGIN;
+import static de.hbt.salat.auth.domain.ObjectJudgement.MALFORMED;
 import static de.hbt.salat.auth.domain.ObjectJudgement.UNKNOWN;
 import static de.hbt.salat.auth.domain.ObjectJudgement.VALID;
 
@@ -46,28 +47,43 @@ class EmployeeAuthorizationObjectProviderTest {
         verify(employeeService, never()).getAllEmployees();
     }
 
+    /** The id of the login, not its name and not the sign: both can change and be given to somebody else (#1204). */
     @Test
-    void theOfferedIdIsTheLoginNameAndNotTheSign() {
-        var somebody = employee("l.muster", "mus");
+    void theOfferedIdIsTheIdOfTheLogin() {
+        var somebody = employee(31L, "l.muster", "mus");
         when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
+        when(employeeService.getEmployeesBySalatUserIds(List.of(31L))).thenReturn(List.of(somebody));
 
-        assertThat(provider.objects()).extracting(AuthorizationObject::id).containsExactly("l.muster");
-        assertThat(provider.judge("l.muster")).isEqualTo(VALID);
-        // the sign looks like an answer and would never match - noted, because it may also be a login not yet created
-        assertThat(provider.judge("mus")).isEqualTo(UNKNOWN);
+        assertThat(provider.objects()).extracting(AuthorizationObject::id).containsExactly("31");
+        assertThat(provider.judge("31")).isEqualTo(VALID);
+        // a login since deleted leaves its id behind - noted, not refused
+        assertThat(provider.judge("32")).isEqualTo(UNKNOWN);
+        // a name is no id
+        assertThat(provider.judge("l.muster")).isEqualTo(MALFORMED);
+    }
+
+    /** A hidden person is no longer offered, but a rule that names them still shows who it is. */
+    @Test
+    void aStoredLoginIsDescribedEvenWhenItsPersonIsHidden() {
+        var hidden = employee(33L, "l.gegangen", "geg");
+        when(hidden.getName()).thenReturn("Gina Gegangen");
+        when(employeeService.getEmployeesBySalatUserIds(List.of(33L))).thenReturn(List.of(hidden));
+
+        assertThat(provider.describe(List.of("33", "?alt"))).containsOnlyKeys("33")
+            .containsEntry("33", new AuthorizationObject("33", "Gina Gegangen | geg", "l.gegangen"));
     }
 
     /**
-     * Named like the person in every other select (#1266) — the stored login name is not what one recognises —, and
-     * once picked by the sign alone.
+     * Named like the person in every other select (#1266) — the stored id is not what one recognises —, and once
+     * picked by the login name.
      */
     @Test
     void theOfferedPersonIsNamedByNameAndSign() {
-        var somebody = employee("l.muster", "mus");
+        var somebody = employee(31L, "l.muster", "mus");
         when(somebody.getName()).thenReturn("Lea Muster");
         when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
 
-        assertThat(provider.objects()).containsExactly(new AuthorizationObject("l.muster", "Lea Muster | mus", "mus"));
+        assertThat(provider.objects()).containsExactly(new AuthorizationObject("31", "Lea Muster | mus", "l.muster"));
     }
 
     /**
@@ -76,7 +92,7 @@ class EmployeeAuthorizationObjectProviderTest {
      */
     @Test
     void theCheckingSiteAsksWithTheSameId() {
-        var somebody = employee("l.muster", "mus");
+        var somebody = employee(31L, "l.muster", "mus");
         when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
         var authorizedUser = mock(AuthorizedUser.class);
         var authService = mock(AuthService.class);
@@ -90,9 +106,10 @@ class EmployeeAuthorizationObjectProviderTest {
             .containsExactlyElementsOf(provider.objects().stream().map(AuthorizationObject::id).toList());
     }
 
-    private Employee employee(String loginname, String sign) {
+    private Employee employee(long salatUserId, String loginname, String sign) {
         var employee = mock(Employee.class);
         var salatUser = mock(SalatUser.class);
+        when(salatUser.getId()).thenReturn(salatUserId);
         when(salatUser.getLoginname()).thenReturn(loginname);
         when(employee.getSalatUser()).thenReturn(salatUser);
         when(employee.getLoginname()).thenReturn(loginname);

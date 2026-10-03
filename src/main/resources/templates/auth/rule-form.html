@@ -64,14 +64,15 @@
                th:text="#{main.auth.rule.field.grantees}">Berechtigte</label>
         <select class="form-select tomselect tomselect-multi" th:field="*{granteeIds}" multiple>
           <option th:value="${anyObject}" th:text="#{main.auth.rule.grantee.any}">alle angemeldeten Benutzer</option>
-          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate.id}" th:data-chip="${candidate.chip}" th:text="${candidate.label}">kr</option>
+          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate.id}" th:data-chip="${candidate.chip}"
+                  th:text="${candidate.unresolved} ? ${candidate.label} + ' – ' + #{main.auth.rule.value.unresolved} : ${candidate.label}">kr</option>
         </select>
         <small class="form-text" th:text="#{main.auth.rule.field.grantees.help}">
-          Anmeldenamen. Mehrere sind erlaubt.
+          Personen. Mehrere sind erlaubt.
         </small>
       </div>
 
-      <div th:replace="~{auth/rule-form :: objectSelect(${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, null)}"></div>
+      <div th:replace="~{auth/rule-form :: objectSelect(${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, ${objectsTyped}, null)}"></div>
 
       <div class="row">
         <div class="col-md-6">
@@ -97,7 +98,7 @@
   <!--/* HTMX OOB update: which objects the chosen category offers, and what the hint says. */-->
   <div th:if="${htmxRequest}">
     <div th:replace="~{auth/rule-form :: objectSelect(
-            ${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, 'true')}"></div>
+            ${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, ${objectsTyped}, 'true')}"></div>
   </div>
 
 </main>
@@ -108,19 +109,20 @@
   than th:field because the out-of-band copy sits outside the form and has no th:object to bind
   against.
 
-  data-allow-create lets a value be typed that the category does not list: a rule may precede the
-  order or the ETL definition it is about. What the module makes of such a value is decided when it
-  is saved — a wrong format is refused, an unknown value is kept and pointed out.
+  data-allow-create lets a value be typed where the category cannot be enumerated (typed): people type
+  a sign or an order sign, and the module translates it into the ids the rule stores (#1204). A value
+  that names nothing is refused when saving. Where the category offers a list, the values are ids and
+  only the list is offered.
 */-->
-<div th:fragment="objectSelect(candidates, selected, hintKey, any, oob)" class="mb-3"
+<div th:fragment="objectSelect(candidates, selected, hintKey, any, typed, oob)" class="mb-3"
      id="authRuleObjectSelect" th:attr="hx-swap-oob=${oob}">
   <label class="form-label" for="objectIds" th:text="#{main.auth.rule.field.objects}">Objekte</label>
   <select class="form-select tomselect tomselect-multi" id="objectIds" name="objectIds" multiple
-          data-allow-create="true">
+          th:data-allow-create="${typed}">
     <option th:value="${any}" th:text="#{main.auth.rule.object.any}"
             th:selected="${selected != null and selected.contains(any)}">alle Objekte</option>
     <option th:each="candidate : ${candidates}" th:value="${candidate.id}" th:data-chip="${candidate.chip}"
-            th:text="${candidate.label}"
+            th:text="${candidate.unresolved} ? ${candidate.label} + ' – ' + #{main.auth.rule.value.unresolved} : ${candidate.label}"
             th:selected="${selected != null and selected.contains(candidate.id)}">ETL-Definition</option>
   </select>
   <small class="form-text" th:if="${hintKey != null}" th:text="#{__${hintKey}__}">

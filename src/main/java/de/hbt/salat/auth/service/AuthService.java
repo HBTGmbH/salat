@@ -49,6 +49,13 @@ public class AuthService {
    */
   public static final String ANY_MATCH = "*";
 
+  /**
+   * Marks a value that could not be assigned to a record when rules moved from login names and signs to ids (#1204).
+   * Kept rather than dropped, so that the editor can show what was meant; it never matches, because an id never
+   * starts with it.
+   */
+  public static final String UNRESOLVED_PREFIX = "?";
+
   private final AuthorizedUser authorizedUser;
   private final AuthorizationRuleRepository authorizationRuleRepository;
   private final SalatUserRepository salatUserRepository;
@@ -60,6 +67,9 @@ public class AuthService {
   // written by request threads on refresh and by clearCache() — the map is always replaced as a whole,
   // so volatile is enough to make the change visible to other threads; no locking needed.
   private volatile Map<String, Set<Rule>> cacheEntries = new HashMap<>();
+  // login name -> ids of its SalatUser, and back; refreshed together with the rules (#1204)
+  private volatile Map<String, Set<String>> userIdsByLoginname = new HashMap<>();
+  private volatile Map<String, String> loginnameByUserId = new HashMap<>();
   private volatile long lastCacheUpdate;
 
   @PostConstruct
@@ -77,7 +87,8 @@ public class AuthService {
   public void switchLogin(String loginname) {
     uiState.clearAll();
     if (!authorizedUser.getLoginSign().equals(loginname)) {
-      if (!isAuthorizedForOwnLogin("EMPLOYEE", today(), LOGIN, loginname)) {
+      // the object of a rule of category EMPLOYEE is the login that may be taken over, by its id (#1204)
+      if (!isAuthorizedForOwnLogin("EMPLOYEE", today(), LOGIN, userIdsOf(loginname).toArray(String[]::new))) {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
       uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN, loginname);
@@ -117,16 +128,17 @@ public class AuthService {
 
   public boolean isAuthorizedAnyObject(String category, LocalDate date, AccessLevel accessLevel) {
     return anyRuleMatches(category, rule -> {
-      if(!matchesGrantee(rule, authorizedUser.getEffectiveLoginSign())) return false;
+      if(!matchesGrantee(rule, userIdsOf(authorizedUser.getEffectiveLoginSign()))) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return true;
     });
   }
 
-  private boolean isAuthorizedAs(String userSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
+  private boolean isAuthorizedAs(String loginname, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
+    var userIds = userIdsOf(loginname);
     return anyRuleMatches(category, rule -> {
-      if(!matchesGrantee(rule, userSign)) return false;
+      if(!matchesGrantee(rule, userIds)) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
@@ -159,9 +171,9 @@ public class AuthService {
    */
   public List<Rule> getRulesForCurrentUser(String category, LocalDateRange period, AccessLevel accessLevel) {
     ensureUpToDateCache();
-    var userSign = authorizedUser.getEffectiveLoginSign();
+    var userIds = userIdsOf(authorizedUser.getEffectiveLoginSign());
     return cacheEntries.getOrDefault(category, Set.of()).stream()
-        .filter(rule -> matchesGrantee(rule, userSign))
+        .filter(rule -> matchesGrantee(rule, userIds))
         .filter(rule -> rule.getAccessLevel().satisfies(accessLevel))
         .filter(rule -> rule.getValidity().overlaps(period))
         .toList();
@@ -171,9 +183,31 @@ public class AuthService {
    * Matches the grantee of a rule against a user. {@value #ANY_MATCH} stands for every authenticated user, the same
    * way it does for the object of a rule — that is how a report is shared with everybody without maintaining a list
    * of signs. A rule without any grantee matches nobody: leaving the grantee out must not grant to all.
+   *
+   * <p>A grantee is the id of a {@link de.hbt.salat.auth.domain.SalatUser}, not a login name (#1204): a login name can
+   * be changed or anonymized, and whoever got the old one next would inherit the rights.
    */
-  private boolean matchesGrantee(Rule rule, String userSign) {
-    return ANY_MATCH.equals(rule.getGranteeId()) || userSign.equals(rule.getGranteeId());
+  private boolean matchesGrantee(Rule rule, Set<String> userIds) {
+    return ANY_MATCH.equals(rule.getGranteeId()) || userIds.contains(rule.getGranteeId());
+  }
+
+  /**
+   * The ids of the {@link de.hbt.salat.auth.domain.SalatUser} signed in under this login name — as of the last refresh
+   * of the cache, so a renamed login is followed within {@code salat.auth-service.cache-expiry}. Usually one; nothing
+   * keeps the login name unique, and where it is not, each of them answers for it, as before.
+   */
+  public Set<String> userIdsOf(String loginname) {
+    ensureUpToDateCache();
+    return loginname == null ? Set.of() : userIdsByLoginname.getOrDefault(loginname, Set.of());
+  }
+
+  /**
+   * The login name to show for the grantee of a rule. The wildcard and a value that could not be assigned are shown as
+   * they are stored.
+   */
+  public String loginnameOf(String granteeId) {
+    ensureUpToDateCache();
+    return loginnameByUserId.getOrDefault(granteeId, granteeId);
   }
 
   private boolean anyRuleMatches(String category, Predicate<Rule> rulePredicate) {
@@ -213,6 +247,15 @@ public class AuthService {
           });
         });
       });
+      var idsByLoginname = new HashMap<String, Set<String>>();
+      var loginnameById = new HashMap<String, String>();
+      salatUserRepository.findAll().forEach(user -> {
+        if (user.getLoginname() == null) return;
+        idsByLoginname.computeIfAbsent(user.getLoginname(), key -> new HashSet<>()).add(String.valueOf(user.getId()));
+        loginnameById.put(String.valueOf(user.getId()), user.getLoginname());
+      });
+      userIdsByLoginname = idsByLoginname;
+      loginnameByUserId = loginnameById;
       cacheEntries = rules.stream().collect(groupingBy(Rule::getCategory, mapping(identity(), toSet())));
       lastCacheUpdate = Clock.systemUTC().millis();
     }

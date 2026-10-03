@@ -21,19 +21,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import de.hbt.salat.auth.domain.AuthorizationRule;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.persistence.AuthorizationRuleRepository;
+import de.hbt.salat.auth.persistence.SalatUserRepository;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employee;
-import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
-import de.hbt.salat.order.domain.Customerorder;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
-import de.hbt.salat.order.service.SuborderService;
 
 /**
  * The booking list does not ask {@link TimereportAuthorization} per row — it turns the same rule into a condition of
@@ -49,6 +47,8 @@ import de.hbt.salat.order.service.SuborderService;
 class TimereportVisibilityConsistencyTest {
 
   private static final String READER = "reader";
+  /** The reader's login by id — what a rule names as its grantee (#1204). */
+  private static final long READER_LOGIN_ID = 5L;
   private static final long READER_EMPLOYEE_ID = 1L;
   private static final String BOOKING_EMPLOYEE_SIGN = "xx";
   private static final long BOOKING_EMPLOYEE_ID = 2L;
@@ -68,13 +68,11 @@ class TimereportVisibilityConsistencyTest {
   @Mock
   private SalatProperties salatProperties;
   @Mock
-  private EmployeeService employeeService;
+  private SalatUserRepository salatUserRepository;
   @Mock
   private EmployeecontractService employeecontractService;
   @Mock
   private CustomerorderService customerorderService;
-  @Mock
-  private SuborderService suborderService;
   @Mock(answer = RETURNS_DEEP_STUBS)
   private Timereport timereport;
 
@@ -92,12 +90,16 @@ class TimereportVisibilityConsistencyTest {
     when(employeecontractService.getTeamEmployeeIdsIncludingExpired(anyLong())).thenReturn(Set.of());
     when(customerorderService.getIdsByResponsibleEmployeeId(anyLong())).thenReturn(List.of());
     when(authorizationRuleRepository.findAll()).thenReturn(List.of());
+    var readerLogin = new SalatUser();
+    setField(readerLogin, "id", READER_LOGIN_ID);
+    readerLogin.setLoginname(READER);
+    when(salatUserRepository.findAll()).thenReturn(List.of(readerLogin));
 
-    var authService = new AuthService(authorizedUser, authorizationRuleRepository, null, salatProperties, null, null);
+    var authService = new AuthService(authorizedUser, authorizationRuleRepository, salatUserRepository, salatProperties, null, null);
     authService.init();
     timereportAuthorization = new TimereportAuthorization(authorizedUser, authService, employeecontractService);
     visibilityService = new TimereportVisibilityService(authorizedUser, authorizedEmployee, authService,
-        employeeService, employeecontractService, customerorderService, suborderService);
+        employeecontractService, customerorderService);
 
     // a booking of somebody else, so nothing but the rules can cover it
     when(timereport.getEmployeecontract().getEmployee().getId()).thenReturn(BOOKING_EMPLOYEE_ID);
@@ -110,18 +112,6 @@ class TimereportVisibilityConsistencyTest {
     when(timereport.getSuborder().getCustomerorder().getSign()).thenReturn(CUSTOMER_ORDER_SIGN);
     when(timereport.getSuborder().getCustomerorder().getResponsibleHbt()).thenReturn(List.of());
     when(timereport.getReferenceday().getRefdate()).thenReturn(BOOKING_DATE);
-
-    var bookingEmployee = new Employee();
-    setField(bookingEmployee, "id", BOOKING_EMPLOYEE_ID);
-    when(employeeService.getEmployeeBySign(BOOKING_EMPLOYEE_SIGN)).thenReturn(bookingEmployee);
-
-    var customerorder = new Customerorder();
-    setField(customerorder, "id", CUSTOMER_ORDER_ID);
-    when(customerorderService.getCustomerorderBySign(CUSTOMER_ORDER_SIGN)).thenReturn(customerorder);
-
-    var suborder = new Suborder();
-    setField(suborder, "id", SUBORDER_ID);
-    when(suborderService.getSuborderByCompleteOrderSign(SUBORDER_SIGN)).thenReturn(suborder);
   }
 
   @Test
@@ -148,7 +138,7 @@ class TimereportVisibilityConsistencyTest {
   void responsibleForTheOrderSeesWhatIsBookedOnIt() {
     var responsible = new Employee();
     setField(responsible, "id", READER_EMPLOYEE_ID);
-    var salatUser = new de.hbt.salat.auth.domain.SalatUser();
+    var salatUser = new SalatUser();
     salatUser.setLoginname(READER);
     responsible.setSalatUser(salatUser);
     when(timereport.getSuborder().getCustomerorder().getResponsibleHbt()).thenReturn(List.of(responsible));
@@ -168,48 +158,42 @@ class TimereportVisibilityConsistencyTest {
 
   @Test
   void ruleOnTheOrderAloneCoversTheBookingsOfEverybody() {
-    givenRule(CUSTOMER_ORDER_SIGN);
+    givenRule("C" + CUSTOMER_ORDER_ID);
 
     assertBothAgree(true);
   }
 
   @Test
   void ruleOnTheSuborderCoversTheBookingsOfEverybodyThere() {
-    givenRule(SUBORDER_SIGN);
+    givenRule("S" + SUBORDER_ID);
 
     assertBothAgree(true);
   }
 
   @Test
   void compositeRuleCoversOnlyTheNamedEmployee() {
-    givenRule(BOOKING_EMPLOYEE_SIGN + ":" + CUSTOMER_ORDER_SIGN);
+    givenRule("E" + BOOKING_EMPLOYEE_ID + ":C" + CUSTOMER_ORDER_ID);
 
     assertBothAgree(true);
   }
 
   @Test
   void compositeRuleForAnotherEmployeeDoesNotCoverThisBooking() {
-    var other = new Employee();
-    setField(other, "id", 42L);
-    when(employeeService.getEmployeeBySign("yy")).thenReturn(other);
-    givenRule("yy:" + CUSTOMER_ORDER_SIGN);
+    givenRule("E42:C" + CUSTOMER_ORDER_ID);
 
     assertBothAgree(false);
   }
 
   @Test
   void compositeRuleWithWildcardCoversTheEmployeeOnEveryOrder() {
-    givenRule(BOOKING_EMPLOYEE_SIGN + ":*");
+    givenRule("E" + BOOKING_EMPLOYEE_ID + ":*");
 
     assertBothAgree(true);
   }
 
   @Test
   void ruleOnAnotherOrderDoesNotCoverThisBooking() {
-    var otherOrder = new Customerorder();
-    setField(otherOrder, "id", 99L);
-    when(customerorderService.getCustomerorderBySign("4711")).thenReturn(otherOrder);
-    givenRule("4711");
+    givenRule("C99");
 
     assertBothAgree(false);
   }
@@ -220,13 +204,23 @@ class TimereportVisibilityConsistencyTest {
    */
   @Test
   void twoRulesStayTwoAlternatives() {
-    var otherOrder = new Customerorder();
-    setField(otherOrder, "id", 99L);
-    when(customerorderService.getCustomerorderBySign("4711")).thenReturn(otherOrder);
-    var otherEmployee = new Employee();
-    setField(otherEmployee, "id", 42L);
-    when(employeeService.getEmployeeBySign("yy")).thenReturn(otherEmployee);
-    givenRules("yy:" + CUSTOMER_ORDER_SIGN, BOOKING_EMPLOYEE_SIGN + ":4711");
+    givenRules("E42:C" + CUSTOMER_ORDER_ID, "E" + BOOKING_EMPLOYEE_ID + ":C99");
+
+    assertBothAgree(false);
+  }
+
+  /** A value the move to ids could not assign (#1204) grants nothing — in neither expression of the rule. */
+  @Test
+  void anUnresolvedValueCoversNothing() {
+    givenRules("?" + BOOKING_EMPLOYEE_SIGN + ":" + CUSTOMER_ORDER_SIGN, "?" + CUSTOMER_ORDER_SIGN);
+
+    assertBothAgree(false);
+  }
+
+  /** The old sign form would match the booking by its signs; after the move it must not grant anything any more. */
+  @Test
+  void theOldSignFormNoLongerCoversTheBooking() {
+    givenRules(CUSTOMER_ORDER_SIGN, SUBORDER_SIGN, BOOKING_EMPLOYEE_SIGN + ":*");
 
     assertBothAgree(false);
   }
@@ -252,7 +246,7 @@ class TimereportVisibilityConsistencyTest {
     var rules = java.util.Arrays.stream(objectIds).map(objectId -> {
       var rule = new AuthorizationRule();
       rule.setCategory("TIMEREPORT");
-      rule.setGranteeId(Set.of(READER));
+      rule.setGranteeId(Set.of(String.valueOf(READER_LOGIN_ID)));
       rule.setObjectId(Set.of(objectId));
       rule.setAccessLevels(Set.of(READ));
       rule.setValidFrom(of(2011, 1, 1));

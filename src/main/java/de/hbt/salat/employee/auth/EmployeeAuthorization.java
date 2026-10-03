@@ -28,7 +28,9 @@ public class EmployeeAuthorization {
   public boolean isAuthorized(Employee employee, AccessLevel accessLevel, Set<Long> supervisedEmployeeIds) {
     if (accessLevel == LOGIN) {
       if (employee.getSalatUser().getLoginname().equals(authorizedUser.getLoginSign())) return true;
-      return authService.isAuthorizedForOwnLogin(AUTH_CATEGORY_EMPLOYEE, today(), LOGIN, employee.getSalatUser().getLoginname());
+      // the object is the login that may be taken over, by its id: a login name changes, the id does not (#1204)
+      return authService.isAuthorizedForOwnLogin(AUTH_CATEGORY_EMPLOYEE, today(), LOGIN,
+          String.valueOf(employee.getSalatUser().getId()));
     }
 
     if (authorizedUser.isManager()) return true;

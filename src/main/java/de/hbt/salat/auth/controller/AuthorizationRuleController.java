@@ -3,8 +3,6 @@ package de.hbt.salat.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.AccessLevel;
-import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.auth.service.AuthorizationRuleService;
@@ -121,26 +118,11 @@ public class AuthorizationRuleController {
     model.addAttribute("isEdit", !form.isNew());
     model.addAttribute("categories", authorizationRuleService.getCategories(form.getCategory()));
     model.addAttribute("accessLevels", AccessLevel.values());
-    model.addAttribute("granteeCandidates", withKept(
-        authorizationRuleService.getGranteeCandidates(), form.getGranteeIds()));
-    model.addAttribute("objectCandidates", withKept(
-        authorizationRuleService.getObjects(form.getCategory()), form.getObjectIds()));
+    // What the editor offers, plus whatever the rule already carries — named by the record it names today (#1204).
+    model.addAttribute("granteeCandidates", authorizationRuleService.getGranteeCandidates(form.getGranteeIds()));
+    model.addAttribute("objectCandidates", authorizationRuleService.getObjects(form.getCategory(), form.getObjectIds()));
+    model.addAttribute("objectsTyped", authorizationRuleService.isTyped(form.getCategory()));
     model.addAttribute("objectHintKey", authorizationRuleService.getObjectHintKey(form.getCategory()));
-  }
-
-  /**
-   * What the editor offers, plus whatever the rule already carries. Without the second part an edit would silently
-   * drop a value the module no longer lists — an order that has expired, a person since hidden — and write back what
-   * the browser happened to preselect instead. A kept value nobody lists any more is shown as it is stored.
-   */
-  private List<AuthorizationObject> withKept(List<AuthorizationObject> offered, List<String> current) {
-    var candidates = new ArrayList<>(offered);
-    Set<String> known = offered.stream().map(AuthorizationObject::id).collect(Collectors.toSet());
-    current.stream()
-        .filter(id -> id != null && !id.isBlank() && !known.contains(id))
-        .distinct()
-        .forEach(id -> candidates.add(new AuthorizationObject(id, id)));
-    return candidates;
   }
 
   private String storedMessage(AuthorizationRuleForm form, List<String> unknownObjects) {

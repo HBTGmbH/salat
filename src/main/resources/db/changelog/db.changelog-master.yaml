@@ -3564,3 +3564,108 @@ databaseChangeLog:
                   name: replication_id
               - column:
                   name: status
+
+  - changeSet:
+      id: 97
+      author: kr
+      comment: Berechtigungsregeln verweisen ueber die id auf Personen und Objekte (#1204)
+      # Loginname, Kuerzel und Name einer ETL-Definition lassen sich aendern, und die Anonymisierung
+      # ueberschreibt Loginname und Kuerzel. Eine Regel, die darauf verwies, verlor dann ihr Recht -
+      # oder vererbte es an den, der den alten Wert als Naechstes bekam. Ab hier steht die id:
+      #
+      #   grantee_id                                  -> salat_user.id (die Anmeldung)
+      #   object_id EMPLOYEE                          -> salat_user.id (die Anmeldung, die uebernommen wird)
+      #   object_id ACCEPT_/RELEASE_TIMEREPORTS,
+      #             WORKINGDAY                        -> employee.id
+      #   object_id ETL                               -> etl_definition.id
+      #   object_id TIMEREPORT  1453 / 1453/01        -> C<customerorder.id> / S<suborder.id>
+      #                         xx:1453 / xx:1453/01  -> E<employee.id>:C<id> / E<employee.id>:S<id>
+      #                         xx:*                  -> E<employee.id>:*
+      #   object_id REPORT_DEFINITION                 -> unveraendert, war schon die id
+      #
+      # Die Spalten sind kommaseparierte Mengen, umgerechnet wird deshalb elementweise: JSON_TABLE
+      # zerlegt die Menge, GROUP_CONCAT setzt sie in derselben Reihenfolge wieder zusammen. Der
+      # Platzhalter "*" bleibt. Ein Wert, der nicht genau einen Datensatz trifft, geht nicht verloren:
+      # er bekommt ein "?" vorangestellt, trifft damit nie eine id und wird im Regeleditor als nicht
+      # zugeordnet markiert.
+      #
+      # Kein zweistufiger Weg wie bei #968: ausserhalb der Anwendung liest niemand authorization_rule,
+      # weder View noch Routine noch ETL-Definition noch Report.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: authorization_rule
+      changes:
+        - sql:
+            sql: |-
+              UPDATE authorization_rule r
+                JOIN (SELECT e.rule_id,
+                             GROUP_CONCAT(e.mapped ORDER BY e.n SEPARATOR ',') AS grantee_ids
+                        FROM (SELECT ar.id AS rule_id, g.n,
+                                     CASE
+                                       WHEN TRIM(g.v) = '*' THEN '*'
+                                       WHEN (SELECT COUNT(*) FROM salat_user su WHERE BINARY su.loginname = BINARY TRIM(g.v)) = 1
+                                         THEN (SELECT CAST(su.id AS CHAR) FROM salat_user su WHERE BINARY su.loginname = BINARY TRIM(g.v))
+                                       ELSE CONCAT('?', TRIM(g.v))
+                                     END AS mapped
+                                FROM authorization_rule ar
+                                JOIN JSON_TABLE(
+                                       CONCAT('["', REPLACE(REPLACE(REPLACE(ar.grantee_id, '\\', '\\\\'), '"', '\\"'), ',', '","'), '"]'),
+                                       '$[*]' COLUMNS (n FOR ORDINALITY, v VARCHAR(255) PATH '$')) g
+                               WHERE TRIM(g.v) <> '') e
+                       GROUP BY e.rule_id) m ON m.rule_id = r.id
+                 SET r.grantee_id = m.grantee_ids;
+              
+              UPDATE authorization_rule r
+                JOIN (SELECT e.rule_id,
+                             GROUP_CONCAT(e.mapped ORDER BY e.n SEPARATOR ',') AS object_ids
+                        FROM (SELECT x.rule_id, x.n,
+                                     CASE
+                                       WHEN x.v = '*' THEN '*'
+                                       WHEN x.category = 'EMPLOYEE' THEN
+                                         CASE WHEN (SELECT COUNT(*) FROM salat_user su WHERE BINARY su.loginname = BINARY x.v) = 1
+                                              THEN (SELECT CAST(su.id AS CHAR) FROM salat_user su WHERE BINARY su.loginname = BINARY x.v)
+                                              ELSE CONCAT('?', x.v) END
+                                       WHEN x.category IN ('ACCEPT_TIMEREPORTS', 'RELEASE_TIMEREPORTS', 'WORKINGDAY') THEN
+                                         CASE WHEN (SELECT COUNT(*) FROM employee em WHERE BINARY em.sign = BINARY x.v) = 1
+                                              THEN (SELECT CAST(em.id AS CHAR) FROM employee em WHERE BINARY em.sign = BINARY x.v)
+                                              ELSE CONCAT('?', x.v) END
+                                       WHEN x.category = 'ETL' THEN
+                                         CASE WHEN (SELECT COUNT(*) FROM etl_definition d WHERE BINARY d.name = BINARY x.v) = 1
+                                              THEN (SELECT CAST(d.id AS CHAR) FROM etl_definition d WHERE BINARY d.name = BINARY x.v)
+                                              ELSE CONCAT('?', x.v) END
+                                       WHEN x.category = 'TIMEREPORT' THEN
+                                         CASE WHEN (x.person IS NOT NULL AND x.person_id IS NULL) OR x.order_token IS NULL
+                                              THEN CONCAT('?', x.v)
+                                              WHEN x.person IS NULL THEN x.order_token
+                                              ELSE CONCAT('E', x.person_id, ':', x.order_token) END
+                                       ELSE x.v
+                                     END AS mapped
+                                FROM (SELECT p.*,
+                                             CASE WHEN p.person IS NULL THEN NULL
+                                                  WHEN (SELECT COUNT(*) FROM employee em WHERE BINARY em.sign = BINARY p.person) = 1
+                                                  THEN (SELECT em.id FROM employee em WHERE BINARY em.sign = BINARY p.person) END AS person_id,
+                                             CASE WHEN p.order_part = '*' AND p.person IS NOT NULL THEN '*'
+                                                  WHEN p.order_part LIKE '%/%' THEN
+                                                    CASE WHEN (SELECT COUNT(*) FROM suborder_fqs f
+                                                                WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(p.order_part, '/')) = 1
+                                                         THEN (SELECT CONCAT('S', f.suborder_id) FROM suborder_fqs f
+                                                                WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(p.order_part, '/')) END
+                                                  WHEN (SELECT COUNT(*) FROM customerorder c WHERE BINARY c.sign = BINARY p.order_part) = 1
+                                                  THEN (SELECT CONCAT('C', c.id) FROM customerorder c WHERE BINARY c.sign = BINARY p.order_part)
+                                             END AS order_token
+                                        FROM (SELECT ar.id AS rule_id, ar.category, o.n, TRIM(o.v) AS v,
+                                                     CASE WHEN LOCATE(':', TRIM(o.v)) > 0
+                                                          THEN SUBSTRING_INDEX(TRIM(o.v), ':', 1) END AS person,
+                                                     CASE WHEN LOCATE(':', TRIM(o.v)) > 0
+                                                          THEN SUBSTRING(TRIM(o.v), LOCATE(':', TRIM(o.v)) + 1)
+                                                          ELSE TRIM(o.v) END AS order_part
+                                                FROM authorization_rule ar
+                                                JOIN JSON_TABLE(
+                                                       CONCAT('["', REPLACE(REPLACE(REPLACE(ar.object_id, '\\', '\\\\'), '"', '\\"'), ',', '","'), '"]'),
+                                                       '$[*]' COLUMNS (n FOR ORDINALITY, v VARCHAR(255) PATH '$')) o
+                                               WHERE ar.category IN ('EMPLOYEE', 'ACCEPT_TIMEREPORTS', 'RELEASE_TIMEREPORTS',
+                                                                     'WORKINGDAY', 'ETL', 'TIMEREPORT')
+                                                 AND TRIM(o.v) <> '') p) x) e
+                       GROUP BY e.rule_id) m ON m.rule_id = r.id
+                 SET r.object_id = m.object_ids;

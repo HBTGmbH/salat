@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
-import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.etl.domain.ETLDefinition;
 
 @Component
@@ -22,7 +21,8 @@ public class ETLAuthorization {
   public boolean isAuthorized(ETLDefinition etlDefinition, AccessLevel accessLevel) {
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isAdmin()) return true;
-    return authService.isAuthorized(AUTH_CATEGORY, today(), accessLevel, etlDefinition.getName());
+    // by id, not by name: a renamed definition keeps its rules (#1204)
+    return authService.isAuthorized(AUTH_CATEGORY, today(), accessLevel, String.valueOf(etlDefinition.getId()));
   }
 
   /**
