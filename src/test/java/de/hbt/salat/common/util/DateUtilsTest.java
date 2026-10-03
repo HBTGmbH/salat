@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.Year;
+import java.util.Locale;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -82,4 +84,24 @@ class DateUtilsTest {
     assertThat(DateUtils.getLastDay(Year.of(2022))).isEqualTo(LocalDate.of(2022, 12, 31));
   }
 
+
+  /**
+   * The short month is part of message keys ({@code main.timereport.select.month.jan}) in the daily view and the
+   * matrix, so it must stay exactly what the constants used to say — English, whatever the locale of the server
+   * (#1245).
+   */
+  @Test
+  void the_short_month_is_the_english_abbreviation_whatever_the_default_locale() {
+    var defaultLocale = Locale.getDefault();
+    try {
+      Locale.setDefault(Locale.GERMANY);
+      var months = IntStream.rangeClosed(1, 12)
+          .mapToObj(month -> DateUtils.formatMonth(LocalDate.of(2026, month, 1)))
+          .toList();
+
+      assertThat(months).containsExactly("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+    } finally {
+      Locale.setDefault(defaultLocale);
+    }
+  }
 }

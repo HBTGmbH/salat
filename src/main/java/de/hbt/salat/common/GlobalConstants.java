@@ -66,48 +66,6 @@ public class GlobalConstants {
 
     public static final String EMPLOYEE_SIGN_ADM = "adm";
 
-    // FIXME use SimpleDateFormat for this
-    public static final String MONTH_SHORTFORM_JANUARY = "Jan";
-    public static final String MONTH_SHORTFORM_FEBRUARY = "Feb";
-    public static final String MONTH_SHORTFORM_MARCH = "Mar";
-    public static final String MONTH_SHORTFORM_APRIL = "Apr";
-    public static final String MONTH_SHORTFORM_MAY = "May";
-    public static final String MONTH_SHORTFORM_JUNE = "Jun";
-    public static final String MONTH_SHORTFORM_JULY = "Jul";
-    public static final String MONTH_SHORTFORM_AUGUST = "Aug";
-    public static final String MONTH_SHORTFORM_SEPTEMBER = "Sep";
-    public static final String MONTH_SHORTFORM_OCTOBER = "Oct";
-    public static final String MONTH_SHORTFORM_NOVEMBER = "Nov";
-    public static final String MONTH_SHORTFORM_DECEMBER = "Dec";
-
-    // FIXME use SimpleDateFormat for this
-    public static final String MONTH_LONGFORM_JANUARY = "January";
-    public static final String MONTH_LONGFORM_FEBRUARY = "February";
-    public static final String MONTH_LONGFORM_MARCH = "March";
-    public static final String MONTH_LONGFORM_APRIL = "April";
-    public static final String MONTH_LONGFORM_MAY = "May";
-    public static final String MONTH_LONGFORM_JUNE = "June";
-    public static final String MONTH_LONGFORM_JULY = "July";
-    public static final String MONTH_LONGFORM_AUGUST = "August";
-    public static final String MONTH_LONGFORM_SEPTEMBER = "September";
-    public static final String MONTH_LONGFORM_OCTOBER = "October";
-    public static final String MONTH_LONGFORM_NOVEMBER = "November";
-    public static final String MONTH_LONGFORM_DECEMBER = "December";
-
-    // FIXME use Calendar for this
-    public static final int MONTH_INTVALUE_JANUARY = 1;
-    public static final int MONTH_INTVALUE_FEBRURAY = 2;
-    public static final int MONTH_INTVALUE_MARCH = 3;
-    public static final int MONTH_INTVALUE_APRIL = 4;
-    public static final int MONTH_INTVALUE_MAY = 5;
-    public static final int MONTH_INTVALUE_JUNE = 6;
-    public static final int MONTH_INTVALUE_JULY = 7;
-    public static final int MONTH_INTVALUE_AUGUST = 8;
-    public static final int MONTH_INTVALUE_SEPTEMBER = 9;
-    public static final int MONTH_INTVALUE_OCTOBER = 10;
-    public static final int MONTH_INTVALUE_NOVEMBER = 11;
-    public static final int MONTH_INTVALUE_DECEMBER = 12;
-
     public static final String ALL_ORDERS = "ALL ORDERS";
     public static final String ALL_EMPLOYEES = "ALL EMPLOYEES";
 
