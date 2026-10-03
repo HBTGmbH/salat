@@ -548,7 +548,6 @@ public class TimereportDAO {
         return TimereportDTO.builder()
             .id(timereport.getId())
             .referenceday(timereport.getReferenceday().getRefdate())
-            .holiday(Optional.ofNullable(timereport.getReferenceday().getHoliday()).orElse(false))
             .duration(timereport.getDuration())
             .durationhours(timereport.getDurationhours())
             .durationminutes(timereport.getDurationminutes())

@@ -120,6 +120,9 @@ public class E2ETestData {
    */
   public static final LocalDate HOLIDAY_ON_WEEKDAY = LocalDate.of(2026, 10, 5);
   public static final LocalDate HOLIDAY_ON_WEEKEND = LocalDate.of(2026, 10, 10);
+  private static final Map<LocalDate, String> HOLIDAY_NAMES = Map.of(
+      HOLIDAY_ON_WEEKDAY, "E2E-Feiertag am Werktag",
+      HOLIDAY_ON_WEEKEND, "E2E-Feiertag am Wochenende");
 
   private static final LocalDate PAST = LocalDate.of(2020, 1, 1);
 
@@ -246,8 +249,7 @@ public class E2ETestData {
       return;
     }
 
-    publicholidayRepository.save(new Publicholiday(HOLIDAY_ON_WEEKDAY, "E2E-Feiertag am Werktag"));
-    publicholidayRepository.save(new Publicholiday(HOLIDAY_ON_WEEKEND, "E2E-Feiertag am Wochenende"));
+    HOLIDAY_NAMES.forEach((day, name) -> publicholidayRepository.save(new Publicholiday(day, name)));
 
     Customer hbt = customer(customerRepository, "HBT GmbH", CUSTOMER_HBT_SHORTNAME);
 
@@ -534,10 +536,7 @@ public class E2ETestData {
       return referencedays.findByRefdate(day).orElseGet(() -> {
         var referenceday = new Referenceday();
         referenceday.setRefdate(day);
-        referenceday.setDow(DateUtils.getDoW(day));
-        referenceday.setHoliday(false);
-        referenceday.setName("");
-        referenceday.setWorkingday(DateUtils.isWeekday(day));
+        referenceday.applyCalendar(HOLIDAY_NAMES.get(day));
         return referencedays.save(referenceday);
       });
     }

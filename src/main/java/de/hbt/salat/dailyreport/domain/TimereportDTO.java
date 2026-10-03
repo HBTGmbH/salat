@@ -62,7 +62,6 @@ public class TimereportDTO implements Serializable {
   private final boolean fitsToContract;
   private final long durationhours;
   private final long durationminutes;
-  private final boolean holiday;
 
   public boolean matches5MinuteSchema() {
     return duration.toMinutesPart() % 5 == 0;

@@ -57,7 +57,6 @@ import static de.hbt.salat.common.util.DateUtils.getYear;
 import static de.hbt.salat.common.util.DateUtils.getYearMonth;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
-import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -423,28 +422,7 @@ public class TimereportService {
   public Referenceday addReferenceday(LocalDate date) {
     Referenceday rd = new Referenceday();
     rd.setRefdate(date);
-
-    // set day of week
-    String dow = DateUtils.getDoW(date);
-    rd.setDow(dow);
-
-    // checks for public holidays
-    Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(date);
-    if (publicHoliday.isPresent()) {
-      rd.setHoliday(Boolean.TRUE);
-      rd.setName(publicHoliday.get().getName());
-    } else {
-      rd.setHoliday(Boolean.FALSE);
-      rd.setName("");
-    }
-
-    // check workingday
-    if ((rd.getHoliday()) || date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-      rd.setWorkingday(Boolean.FALSE);
-    } else {
-      rd.setWorkingday(Boolean.TRUE);
-    }
-
+    rd.applyCalendar(publicholidayDAO.getPublicHoliday(date).map(Publicholiday::getName).orElse(null));
     referencedayRepository.save(rd);
     return rd;
   }

@@ -3,6 +3,7 @@ package de.hbt.salat.dailyreport.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -15,6 +16,7 @@ import de.hbt.salat.common.util.HolidaysUtil;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
 import de.hbt.salat.dailyreport.persistence.PublicholidayDAO;
 import de.hbt.salat.dailyreport.persistence.PublicholidayRepository;
+import de.hbt.salat.dailyreport.persistence.ReferencedayRepository;
 
 @Service
 @AllArgsConstructor
@@ -26,10 +28,14 @@ public class PublicholidayService {
 
   private final PublicholidayRepository publicholidayRepository;
   private final PublicholidayDAO publicholidayDAO;
+  private final ReferencedayRepository referencedayRepository;
 
   /**
    * Sets the German public holidays of current year if not yet done.
    * This method will be carried out once at the first login of an employee in a new year.
+   *
+   * <p>A reference day of such a date may already exist — somebody booked ahead before the year's holidays were
+   * there. It takes the holiday over right away, since its calendar columns follow {@code publicholiday} (#1211).
    */
   @EventListener
   public void checkPublicHolidaysForCurrentYear(AuthorizedUserChangedEvent event) {
@@ -42,11 +48,18 @@ public class PublicholidayService {
 
     for (LocalDate easterSunday : HolidaysUtil.loadEasterSundayDates()) {
       if (maxYear < easterSunday.getYear()) {
-        for (Publicholiday newHoliday : generateHolidays(easterSunday)) {
-          publicholidayRepository.save(newHoliday);
-        }
+        var newHolidays = generateHolidays(easterSunday);
+        publicholidayRepository.saveAll(newHolidays);
+        applyToReferencedays(newHolidays);
       }
     }
+  }
+
+  private void applyToReferencedays(List<Publicholiday> holidays) {
+    Map<LocalDate, String> names = holidays.stream()
+        .collect(Collectors.toMap(Publicholiday::getRefdate, Publicholiday::getName));
+    referencedayRepository.findAllByRefdateIn(names.keySet())
+        .forEach(referenceday -> referenceday.applyCalendar(names.get(referenceday.getRefdate())));
   }
 
   public List<Publicholiday> getPublicHolidaysBetween(LocalDate dateFirst, LocalDate dateLast) {
