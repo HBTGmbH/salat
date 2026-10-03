@@ -65,9 +65,12 @@ public class EmployeeCostAssignment extends AuditedEntity {
         return employeeId == null;
     }
 
-    /** Whether the assignment is specific to a suborder rather than general. */
+    /**
+     * Whether the assignment is specific to a suborder rather than general — also when the
+     * migration could not resolve that suborder (→ {@link BudgetScope#isOrderWide}).
+     */
     public boolean isSuborderSpecific() {
-        return suborderSign != null && !suborderSign.isBlank();
+        return !BudgetScope.isOrderWide(suborderId, suborderSign);
     }
 
     /** Whether the migration could not resolve the suborder (→ {@link #suborderId}). */

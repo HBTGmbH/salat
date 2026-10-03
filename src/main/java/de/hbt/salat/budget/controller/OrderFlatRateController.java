@@ -1,7 +1,5 @@
 package de.hbt.salat.budget.controller;
 
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
 
@@ -106,6 +104,14 @@ public class OrderFlatRateController {
         model.addAttribute("dueTotal", dueAmounts.stream().map(FlatRateDueAmount::amount)
             .reduce(BigDecimal.ZERO, BigDecimal::add));
         model.addAttribute("instalmentForm", new OrderFlatRateInstalmentForm());
+        // The signs order and suborder have today, read by id (#1212) — the flat rate's sign columns
+        // only mirror them for reports. A reference without an id keeps its stored sign, marked.
+        var customerorderId = flatRate.getCustomerorderId();
+        model.addAttribute("customerorderSign", customerorderId == null ? flatRate.getCustomerorderSign()
+            : customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId));
+        var suborderId = flatRate.getSuborderId();
+        model.addAttribute("suborderSign", suborderId == null ? flatRate.getSuborderSign()
+            : suborderService.getCompleteOrderSignsByIds(List.of(suborderId)).get(suborderId));
         return "budget/flat-rate-detail";
     }
 
@@ -271,11 +277,8 @@ public class OrderFlatRateController {
      * labelled like every other order select (→ {@link CustomerorderFilterOption}).
      */
     private List<CustomerorderFilterOption> filterOptions() {
-        var signs = orderFlatRateService.getCustomerorderSignsWithFlatRate();
-        var ordersBySign = customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
-        return signs.stream()
-            .map(sign -> CustomerorderFilterOption.from(sign, ordersBySign.get(sign), customerorderViewHelper))
+        return orderFlatRateService.getCustomerordersWithFlatRate().stream()
+            .map(order -> CustomerorderFilterOption.of(order, customerorderViewHelper))
             .toList();
     }
 

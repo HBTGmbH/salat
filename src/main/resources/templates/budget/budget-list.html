@@ -89,7 +89,7 @@
           <td class="d-none d-md-table-cell">
             <div>
               <span th:text="${suborder != null ? suborder.completeOrderSign : (b.suborderSign ?: '—')}"></span>
-              <span th:if="${b.suborderSign != null and b.suborderId == null}" class="badge bg-warning-lt"
+              <span th:if="${b.suborderId == null and !b.orderWide}" class="badge bg-warning-lt"
                     th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${suborder?.shortdescription}"></div>

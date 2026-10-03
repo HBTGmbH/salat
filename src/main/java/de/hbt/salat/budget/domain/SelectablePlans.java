@@ -1,6 +1,9 @@
 package de.hbt.salat.budget.domain;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -23,10 +26,15 @@ import java.util.stream.Stream;
  * @param notFittingId the id of the entry that does not fit the current entry — inactive, out of
  *                     scope or out of period — or {@code null} where every option fits
  */
-public record SelectablePlans(List<OrderBudget> plans, Long notFittingId) {
+/**
+ * @param scopeSigns the sign each plan's scope has today, by plan id — the complete suborder sign, or
+ *                   the order sign for an order-wide plan (#1212). Read by id rather than off the
+ *                   plans' sign columns, which only mirror order and suborder for reports.
+ */
+public record SelectablePlans(List<OrderBudget> plans, Long notFittingId, Map<Long, String> scopeSigns) {
 
     public static SelectablePlans none() {
-        return new SelectablePlans(List.of(), null);
+        return new SelectablePlans(List.of(), null, Map.of());
     }
 
     /**
@@ -41,16 +49,45 @@ public record SelectablePlans(List<OrderBudget> plans, Long notFittingId) {
     public static SelectablePlans of(List<OrderBudget> fitting, List<OrderBudget> authorized,
                                      Long heldPlanId) {
         if (heldPlanId == null || fitting.stream().anyMatch(plan -> heldPlanId.equals(plan.getId()))) {
-            return new SelectablePlans(fitting, null);
+            return new SelectablePlans(fitting, null, Map.of());
         }
         return authorized.stream()
             .filter(plan -> heldPlanId.equals(plan.getId()))
             .findFirst()
             .map(held -> new SelectablePlans(
-                Stream.concat(fitting.stream(), Stream.of(held)).toList(), held.getId()))
+                Stream.concat(fitting.stream(), Stream.of(held)).toList(), held.getId(), Map.of()))
             // The held plan belongs to another customer order — switching the order drops it, the
             // way it drops the suborder, and no message is needed for a change that plain.
-            .orElse(new SelectablePlans(fitting, null));
+            .orElse(new SelectablePlans(fitting, null, Map.of()));
+    }
+
+    /**
+     * The same options with the sign of each plan's scope: the suborder's where the plan has one,
+     * the order's otherwise. A plan whose suborder the migration could not resolve keeps its stored
+     * sign — there is nothing else to name it by.
+     *
+     * @param orderSign     the sign of the order all these plans belong to
+     * @param suborderSigns the complete signs of their suborders, by suborder id
+     */
+    public SelectablePlans withScopeSigns(String orderSign, Map<Long, String> suborderSigns) {
+        var signs = new HashMap<Long, String>();
+        for (var plan : plans) {
+            String sign;
+            if (plan.getSuborderId() != null) {
+                sign = suborderSigns.get(plan.getSuborderId());
+            } else if (plan.isOrderWide()) {
+                sign = orderSign;
+            } else {
+                sign = plan.getSuborderSign();
+            }
+            signs.put(plan.getId(), sign);
+        }
+        return new SelectablePlans(plans, notFittingId, signs);
+    }
+
+    /** The suborder ids of the offered plans — what {@link #withScopeSigns} needs the signs of. */
+    public List<Long> suborderIds() {
+        return plans.stream().map(OrderBudget::getSuborderId).filter(Objects::nonNull).distinct().toList();
     }
 
     public boolean isEmpty() {

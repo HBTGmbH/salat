@@ -24,7 +24,11 @@ public interface OrderBudgetRepository
 
     long countBySuborderId(Long suborderId);
 
-    List<OrderBudget> findAllByOrderByCustomerorderSignAscValidFromAsc();
+    /**
+     * Every plan, by start of validity. Not by the sign column: that one only mirrors the order for
+     * reports (#1212); a view that lists plans by order sorts by the sign of the order itself.
+     */
+    List<OrderBudget> findAllByOrderByValidFromAscIdAsc();
 
     /**
      * Active budgets with their adjustments already fetched — every caller sums the adjustments,
@@ -33,7 +37,7 @@ public interface OrderBudgetRepository
     @Query("""
         SELECT DISTINCT b FROM OrderBudget b LEFT JOIN FETCH b.adjustments
         WHERE b.active = true
-        ORDER BY b.customerorderSign ASC, b.validFrom ASC
+        ORDER BY b.validFrom ASC, b.id ASC
         """)
     List<OrderBudget> findAllActiveWithAdjustments();
 
@@ -47,7 +51,7 @@ public interface OrderBudgetRepository
     @Query("""
         SELECT DISTINCT b FROM OrderBudget b LEFT JOIN FETCH b.adjustments
         WHERE b.active = true AND b.customerorderId IN :ids
-        ORDER BY b.customerorderSign ASC, b.validFrom ASC
+        ORDER BY b.validFrom ASC, b.id ASC
         """)
     List<OrderBudget> findAllActiveWithAdjustmentsByCustomerorderIds(@Param("ids") Collection<Long> customerorderIds);
 

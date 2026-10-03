@@ -108,6 +108,22 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   List<CustomerorderOption> findAllInvoiceable();
 
   /**
+   * The orders with these ids as a select offers them, hidden and expired ones included — for the
+   * modules that refer to an order by id and only need to name it (#1212).
+   */
+  @Query("""
+      select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,
+          c.description, cu.shortname, cu.name, c.hide)
+      from Customerorder c left join c.customer cu
+      where c.id in :ids
+      order by c.sign
+      """)
+  List<CustomerorderOption> findOptionsByIdIn(Collection<Long> ids);
+
+  @Query("select c.id from Customerorder c where c.sign = :sign")
+  Optional<Long> findIdBySign(String sign);
+
+  /**
    * Candidates for the object search of the command palette (#1157): every order whose sign,
    * descriptions or customer contain each of the words — hidden and ended ones included, because
    * the palette shows them, ranked lower and marked. A missing word is {@code null} and no condition.

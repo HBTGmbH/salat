@@ -118,7 +118,7 @@ public class OrderFlatRate extends AuditedEntity {
 
     /** Whether this flat rate applies to the customer order as a whole. */
     public boolean isOrderWide() {
-        return BudgetScope.isOrderWide(suborderSign);
+        return BudgetScope.isOrderWide(suborderId, suborderSign);
     }
 
     /** Whether the migration could not resolve the order or the suborder (#1205); such an amount counts nowhere. */

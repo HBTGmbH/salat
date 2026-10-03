@@ -36,7 +36,7 @@
     <option th:each="plan : ${selectable.plans()}"
             th:value="${plan.id}"
             th:selected="${selectedId != null and plan.id == selectedId}"
-            th:attr="data-subtext=|${plan.suborderSign ?: plan.customerorderSign} · ${#temporals.format(plan.validFrom, 'dd.MM.yyyy')} – ${#temporals.format(plan.validUntil, 'dd.MM.yyyy')}|"
+            th:attr="data-subtext=|${selectable.scopeSigns()[plan.id]} · ${#temporals.format(plan.validFrom, 'dd.MM.yyyy')} – ${#temporals.format(plan.validUntil, 'dd.MM.yyyy')}|"
             th:with="unfit=${plan.id == selectable.notFittingId()}"
             th:text="${unfit} ? |${plan.name} ${unfitSuffix}| : (${plan.active} ? ${plan.name} : |${plan.name} ${inactiveSuffix}|)"></option>
   </select>

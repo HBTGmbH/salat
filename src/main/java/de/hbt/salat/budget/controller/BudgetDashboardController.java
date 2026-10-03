@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toMap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,7 +19,7 @@ import de.hbt.salat.budget.service.BudgetDashboardService;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.customer.service.CustomerSegmentService;
 import de.hbt.salat.employee.domain.Employee;
-import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 @Controller
@@ -80,12 +81,12 @@ public class BudgetDashboardController {
     }
 
     /**
-     * The orders of the listed plans, by sign — a row names its order by sign, and the customer
-     * hangs off the order. One query for the whole page instead of one per row.
+     * The orders of the listed plans, by id (#1212) — the customer hangs off the order. One query for
+     * the whole page instead of one per row; a plan without an order has no entry.
      */
-    private Map<String, Customerorder> customerordersOf(List<BudgetDashboardRow> rows) {
-        var signs = rows.stream().map(BudgetDashboardRow::customerorderSign).distinct().toList();
-        return customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (a, b) -> a));
+    private Map<Long, CustomerorderOption> customerordersOf(List<BudgetDashboardRow> rows) {
+        var ids = rows.stream().map(BudgetDashboardRow::customerorderId).filter(Objects::nonNull).distinct().toList();
+        return customerorderService.getCustomerorderOptionsByIds(ids).stream()
+            .collect(toMap(CustomerorderOption::id, identity()));
     }
 }

@@ -82,8 +82,9 @@ public class BudgetAuthorization {
 
     public void checkAuthorized(OrderBudget budget) {
         if (!isAuthorized(budget)) {
+            // The order by id: the plan's sign column only mirrors it for reports (#1212).
             throw new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED,
-                budget == null ? null : budget.getCustomerorderSign());
+                budget == null ? null : budget.getCustomerorderId());
         }
     }
 

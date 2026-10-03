@@ -1116,6 +1116,31 @@ public class BudgetControllingServiceTest {
         .allSatisfy(g -> assertThat(g.subtotal().flatRateRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO));
   }
 
+  /**
+   * A flat rate line is labelled with the sign its scope has today, read by id (#1212): the
+   * suborder's complete sign, or the order's for an order-wide one. The fixtures keep a stale sign
+   * in the flat rates' own columns (→ {@link #mirrorOf}).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_label_a_flat_rate_line_with_the_sign_its_scope_has_today() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "500"));
+
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).rows()).filteredOn(BudgetControllingRow::flatRate)
+        .extracting(BudgetControllingRow::sign).containsExactly("co");
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_label_a_suborder_flat_rate_line_with_the_complete_sign_its_suborder_has_today() {
+    givenBudgets(plan("A", "co/01", FROM, UNTIL, "1000"));
+    givenFlatRates(once("milestone", "co/01/D", IN_H1, "500"));
+
+    assertThat(groupOf(sectionOf(SectionKind.SUBORDER_LEVEL), "co/01").rows()).filteredOn(BudgetControllingRow::flatRate)
+        .extracting(BudgetControllingRow::sign).containsExactly("co/01/D");
+  }
+
   /** A flat rate deep below a first level suborder still meets the plan living on that level. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
@@ -1404,14 +1429,26 @@ public class BudgetControllingServiceTest {
         .build();
   }
 
+  /**
+   * The sign columns of plans and flat rates carry a stale value wherever there is an id: what the
+   * evaluation shows is the sign order and suborder have today, read by id (#1212), and every
+   * assertion on a sign checks that. A suborder sign without an id is one the migration could not
+   * resolve and stays as it is.
+   */
+  private static final String STALE = "stale-";
+
+  private static String mirrorOf(String suborderSign) {
+    return suborderSign == null || SUBORDER_IDS.get(suborderSign) == null ? suborderSign : STALE + suborderSign;
+  }
+
   private static OrderBudget plan(String name, String suborderSign, LocalDate from, LocalDate until, String amount) {
     var budget = new OrderBudget();
     setId(budget, nextId++);
     budget.setName(name);
     budget.setCustomerorderId(CUSTOMERORDER_ID);
-    budget.setCustomerorderSign("co");
+    budget.setCustomerorderSign(STALE + "co");
     budget.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    budget.setSuborderSign(suborderSign);
+    budget.setSuborderSign(mirrorOf(suborderSign));
     budget.setActive(true);
     budget.setValidFrom(from);
     budget.setValidUntil(until);
@@ -1597,9 +1634,9 @@ public class BudgetControllingServiceTest {
     var rate = new OrderFlatRate();
     setId(rate, nextId++);
     rate.setCustomerorderId(CUSTOMERORDER_ID);
-    rate.setCustomerorderSign("co");
+    rate.setCustomerorderSign(STALE + "co");
     rate.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    rate.setSuborderSign(suborderSign);
+    rate.setSuborderSign(mirrorOf(suborderSign));
     rate.setDescription(description);
     rate.setRhythm(rhythm);
     rate.setAmount(amount == null ? null : new BigDecimal(amount));

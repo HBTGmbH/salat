@@ -1,6 +1,6 @@
 package de.hbt.salat.budget.viewhelper;
 
-import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.viewhelper.CustomerorderViewHelper;
 
 /**
@@ -8,10 +8,9 @@ import de.hbt.salat.order.viewhelper.CustomerorderViewHelper;
  * every other order select (→ ADR-0017): the sign and the short description on the first line, the
  * customer underneath as {@code data-subtext}.
  *
- * <p>Built from a sign rather than from an order, because that is what these records store: they
- * refer to their order by sign and outlive it. When the order is hidden or expired it is labelled as
- * usual — those are the entries one is looking for when tidying up — and when it is gone
- * altogether, the bare sign stands on its own so the records stay reachable.
+ * <p>Built from the orders the records refer to by id (#1212), not from the records' sign columns,
+ * which only mirror the order for reports. A hidden or expired order is labelled as usual — those
+ * are the entries one is looking for when tidying up.
  *
  * @param customerLabel {@code null} when there is no customer to name; the attribute is then left
  *                      out entirely
@@ -19,13 +18,10 @@ import de.hbt.salat.order.viewhelper.CustomerorderViewHelper;
  */
 public record CustomerorderFilterOption(String sign, String label, String customerLabel, boolean hide) {
 
-  public static CustomerorderFilterOption from(String sign, Customerorder customerorder,
+  public static CustomerorderFilterOption of(CustomerorderOption customerorder,
       CustomerorderViewHelper customerorderViewHelper) {
-    if (customerorder == null) {
-      return new CustomerorderFilterOption(sign, sign, null, false);
-    }
-    return new CustomerorderFilterOption(sign, customerorderViewHelper.label(customerorder),
-        customerorderViewHelper.customerLabel(customerorder), Boolean.TRUE.equals(customerorder.getHide()));
+    return new CustomerorderFilterOption(customerorder.sign(), customerorderViewHelper.label(customerorder),
+        customerorderViewHelper.customerLabel(customerorder), Boolean.TRUE.equals(customerorder.hide()));
   }
 
 }

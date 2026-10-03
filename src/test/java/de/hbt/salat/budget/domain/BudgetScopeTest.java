@@ -122,10 +122,21 @@ public class BudgetScopeTest {
 
   @Test
   public void blank_and_null_both_mean_the_whole_customer_order() {
-    assertThat(BudgetScope.isOrderWide(null)).isTrue();
-    assertThat(BudgetScope.isOrderWide("")).isTrue();
-    assertThat(BudgetScope.isOrderWide("  ")).isTrue();
-    assertThat(BudgetScope.isOrderWide("CO/01")).isFalse();
+    assertThat(BudgetScope.isOrderWide(null, null)).isTrue();
+    assertThat(BudgetScope.isOrderWide(null, "")).isTrue();
+    assertThat(BudgetScope.isOrderWide(null, "  ")).isTrue();
+    assertThat(BudgetScope.isOrderWide(null, "CO/01")).isFalse();
+  }
+
+  /**
+   * A suborder id is a suborder, whatever the sign column says: the column only mirrors it for the
+   * reports (#1212) and is read only where the id is missing.
+   */
+  @Test
+  public void a_suborder_id_names_a_suborder_whatever_the_sign_column_holds() {
+    assertThat(BudgetScope.isOrderWide(11L, null)).isFalse();
+    assertThat(BudgetScope.isOrderWide(11L, "")).isFalse();
+    assertThat(BudgetScope.isOrderWide(11L, "CO/01")).isFalse();
   }
 
   // --- the level, which is a validation rule rather than a coverage rule ------------------------

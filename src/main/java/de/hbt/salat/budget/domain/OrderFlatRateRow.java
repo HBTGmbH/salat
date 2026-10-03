@@ -18,6 +18,7 @@ import de.hbt.salat.order.domain.Customerorder;
 public record OrderFlatRateRow(
     OrderFlatRate flatRate,
     Customerorder customerorder,
+    String suborderCompleteOrderSign,
     List<FlatRateDueAmount> dueAmounts,
     String orderBudgetName) {
 

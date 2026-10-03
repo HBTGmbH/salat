@@ -153,7 +153,7 @@
               </span>
             </td>
             <td>
-              <span th:text="${a.suborderSign} ?: '—'"></span>
+              <span th:text="${row.suborderSign()} ?: '—'"></span>
               <span th:if="${a.suborderUnresolved}" class="badge bg-warning-lt"
                     th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </td>
@@ -174,7 +174,7 @@
               <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
                     data-confirm
                     th:data-confirm-title="#{main.employeecost.assignment.delete.confirm.title}"
-                    th:data-confirm-detail="|${row.employeeSign()} · ${a.suborderSign ?: '—'}|"
+                    th:data-confirm-detail="|${row.employeeSign()} · ${row.suborderSign() ?: '—'}|"
                     th:data-confirm-detail-secondary="|${#temporals.format(a.validFrom, 'dd.MM.yyyy')} – ${a.validUntil.year != 2999 ? #temporals.format(a.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
                     th:data-confirm-label="#{main.general.button.delete.text}"
                     data-confirm-variant="danger">

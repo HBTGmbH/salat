@@ -33,13 +33,14 @@ public final class BudgetScope {
     }
 
     /**
-     * Whether a record names no suborder and therefore applies to the whole customer order. Read from
-     * the stored sign, because that is what tells "no suborder" apart from "a suborder the migration
-     * could not resolve" — the id is {@code null} in both cases. {@code null} and blank both mean
-     * "the whole customer order", as everywhere else.
+     * Whether a record names no suborder and therefore applies to the whole customer order. A record
+     * with a suborder id names one. Without an id the stored sign decides, because that is what tells
+     * "no suborder" apart from "a suborder the migration could not resolve" — the only read of the
+     * sign column left, which otherwise just mirrors the suborder for reports (#1212). {@code null}
+     * and blank both mean "the whole customer order", as everywhere else.
      */
-    public static boolean isOrderWide(String suborderSign) {
-        return suborderSign == null || suborderSign.isBlank();
+    public static boolean isOrderWide(Long suborderId, String suborderSign) {
+        return suborderId == null && (suborderSign == null || suborderSign.isBlank());
     }
 
     /** Whether the plan covers something booked or agreed at that position of the order tree. */

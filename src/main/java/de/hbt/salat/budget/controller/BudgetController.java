@@ -6,9 +6,13 @@ import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOME
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,6 +32,7 @@ import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetEmployeeSign;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustmentData;
+import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderBudgetData;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
 import de.hbt.salat.budget.domain.ProgressMode;
@@ -91,7 +96,8 @@ public class BudgetController {
                 budgets = budgets.stream().filter(b -> Boolean.TRUE.equals(b.getActive())).toList();
             }
         }
-        model.addAttribute("budgets", budgets);
+        var orders = ordersOf(budgets);
+        model.addAttribute("budgets", byOrderSignThenValidFrom(budgets, orders));
         model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
         model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
@@ -99,10 +105,25 @@ public class BudgetController {
         // The rows show their order and suborder by the sign the record has today (#1205);
         // description and customer hang off those. Both maps are built once per page instead of one
         // lookup per row.
-        model.addAttribute("orders", ordersOf(budgets));
+        model.addAttribute("orders", orders);
         model.addAttribute("suborders", subordersOf(budgets));
         model.addAttribute("employeesByBudget", employeeSignsOf(budgets));
         return "budget/budget-list";
+    }
+
+    /**
+     * By the sign the order has today, then by start of validity — the sign of the order, not the
+     * plan's sign column, which only mirrors it for reports (#1212). A plan without an order has
+     * nothing but that column.
+     */
+    static List<OrderBudget> byOrderSignThenValidFrom(List<OrderBudget> budgets, Map<Long, Customerorder> orders) {
+        Function<OrderBudget, String> orderSign = budget -> budget.getCustomerorderId() == null
+            ? budget.getCustomerorderSign()
+            : Optional.ofNullable(orders.get(budget.getCustomerorderId())).map(Customerorder::getSign).orElse(null);
+        return budgets.stream()
+            .sorted(Comparator.comparing(orderSign, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(OrderBudget::getValidFrom, Comparator.nullsLast(Comparator.naturalOrder())))
+            .toList();
     }
 
     /**
@@ -269,9 +290,31 @@ public class BudgetController {
         model.addAttribute("boundPricings", boundPricings);
         // The signs are read off the people, not the rates (#968).
         model.addAttribute("boundPricingSigns", orderPricingService.employeeSignsOf(boundPricings));
-        model.addAttribute("boundFlatRates", orderFlatRateService.getByOrderBudgetId(id));
+        var boundFlatRates = orderFlatRateService.getByOrderBudgetId(id);
+        model.addAttribute("boundFlatRates", boundFlatRates);
+        addSigns(budget, boundFlatRates, model);
         addAssignedTimereports(budget, from, until, model);
         return "budget/budget-detail";
+    }
+
+    /**
+     * The signs order and suborders have today, read by id (#1212) — the plan's and the flat rates'
+     * sign columns only mirror them for reports. A reference without an id keeps its stored sign,
+     * which the page marks as not resolved.
+     */
+    private void addSigns(OrderBudget budget, List<OrderFlatRate> boundFlatRates, Model model) {
+        var customerorderId = budget.getCustomerorderId();
+        model.addAttribute("customerorderSign", customerorderId == null ? budget.getCustomerorderSign()
+            : customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId));
+        var suborderIds = new ArrayList<Long>();
+        if (budget.getSuborderId() != null) {
+            suborderIds.add(budget.getSuborderId());
+        }
+        boundFlatRates.stream().map(OrderFlatRate::getSuborderId).filter(Objects::nonNull).forEach(suborderIds::add);
+        var suborderSigns = suborderService.getCompleteOrderSignsByIds(suborderIds);
+        model.addAttribute("suborderSign", budget.getSuborderId() == null ? budget.getSuborderSign()
+            : suborderSigns.get(budget.getSuborderId()));
+        model.addAttribute("flatRateSuborderSigns", suborderSigns);
     }
 
     /**

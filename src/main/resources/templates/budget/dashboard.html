@@ -57,14 +57,14 @@
         <tr th:if="${#lists.isEmpty(rows)}">
           <td colspan="8" class="text-center text-muted py-3" th:text="#{main.budget.dashboard.empty}">Keine aktiven Budgetpläne vorhanden.</td>
         </tr>
-        <tr th:each="row : ${rows}" th:with="customerorder=${customerorders.get(row.customerorderSign())}">
+        <tr th:each="row : ${rows}" th:with="customerorder=${row.customerorderId() != null ? customerorders.get(row.customerorderId()) : null}">
           <td>
             <div>
               <span class="text-muted small" th:text="${row.customerorderSign()}"></span>
               <span class="ms-1 small" th:text="${row.customerorderName()}"></span>
             </div>
             <!--/* The customer belongs to the order, not to the plan — taken from the order of the row. */-->
-            <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(customerorder)}"></div>
+            <div class="small text-muted" th:text="${customerorder != null ? @customerorderViewHelper.customerLabel(customerorder) : ''}"></div>
           </td>
           <td>
             <a th:href="@{/budget/{id}(id=${row.budgetId()})}" th:text="${row.budgetName()}"></a>
