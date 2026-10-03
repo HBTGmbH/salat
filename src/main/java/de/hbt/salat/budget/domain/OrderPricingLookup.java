@@ -26,7 +26,8 @@ import de.hbt.salat.common.util.SqlLikePattern;
  * its {@code suborder_fqs} view. A pattern ending in a slash therefore covers a suborder and its
  * whole subtree and cannot spill over into a sibling whose sign merely starts with the same
  * characters; {@code %} and {@code _} may be used as wildcards. An empty pattern covers the whole
- * customer order. The person in contrast is matched by id (#968), no person meaning "any
+ * customer order. The order is matched by id (#1212); a rate whose order the migration could not
+ * resolve applies to nothing ({@link OrderPricing#isUnresolved()}). The person is matched by id (#968), no person meaning "any
  * employee" ({@link OrderPricing#isForEveryone()}). While the person was still stored as a sign it
  * was compared for equality — the report prefix-matches it, but stored signs exist that are a
  * prefix of a different employee's sign, so copying that would have attached rates to the wrong
@@ -72,27 +73,30 @@ public final class OrderPricingLookup {
         }
     }
 
-    private record MemoKey(String customerorderSign, String suborderSign, long employeeId,
+    private record MemoKey(long customerorderId, String suborderSign, long employeeId,
                            Long orderBudgetId) {}
 
-    private final Map<String, List<Candidate>> byCustomerorderSign;
+    private final Map<Long, List<Candidate>> byCustomerorderId;
     private final Map<MemoKey, List<OrderPricing>> covering = new HashMap<>();
 
-    private OrderPricingLookup(Map<String, List<Candidate>> byCustomerorderSign) {
-        this.byCustomerorderSign = byCustomerorderSign;
+    private OrderPricingLookup(Map<Long, List<Candidate>> byCustomerorderId) {
+        this.byCustomerorderId = byCustomerorderId;
     }
 
-    /** Builds a lookup over the given pricings. */
+    /** Builds a lookup over the given pricings. A rate without an order is left out — it prices nothing. */
     public static OrderPricingLookup of(Collection<OrderPricing> pricings) {
-        Map<String, List<Candidate>> byCustomerorderSign = new HashMap<>();
+        Map<Long, List<Candidate>> byCustomerorderId = new HashMap<>();
         for (var pricing : pricings) {
-            byCustomerorderSign
-                .computeIfAbsent(pricing.getCustomerorderSign(), k -> new ArrayList<>())
+            if (pricing.isUnresolved()) {
+                continue;
+            }
+            byCustomerorderId
+                .computeIfAbsent(pricing.getCustomerorderId(), k -> new ArrayList<>())
                 .add(new Candidate(pricing, SqlLikePattern.startingWith(pricing.getSuborderSign()),
                     pricing.getOrderBudgetId()));
         }
-        byCustomerorderSign.values().forEach(candidates -> candidates.sort(bySpecificity()));
-        return new OrderPricingLookup(byCustomerorderSign);
+        byCustomerorderId.values().forEach(candidates -> candidates.sort(bySpecificity()));
+        return new OrderPricingLookup(byCustomerorderId);
     }
 
     /**
@@ -115,10 +119,10 @@ public final class OrderPricingLookup {
      *                      derived: deriving it here would resolve a rate against a plan nobody
      *                      picked.
      */
-    public Optional<OrderPricing> findEffectiveRate(String customerorderSign, String suborderSign,
+    public Optional<OrderPricing> findEffectiveRate(long customerorderId, String suborderSign,
                                                     long employeeId, Long orderBudgetId,
                                                     LocalDate date) {
-        return covering(customerorderSign, suborderSign, employeeId, orderBudgetId).stream()
+        return covering(customerorderId, suborderSign, employeeId, orderBudgetId).stream()
             .filter(p -> !p.getValidFrom().isAfter(date) && !p.getValidUntil().isBefore(date))
             .findFirst();
     }
@@ -133,12 +137,12 @@ public final class OrderPricingLookup {
      * report one for every order that is. An open order end has to be met by an open rate end,
      * otherwise the order runs on beyond its last rate — which is a gap like any other.
      */
-    public boolean hasUncoveredPeriod(String customerorderSign, LocalDate from, LocalDate until) {
+    public boolean hasUncoveredPeriod(long customerorderId, LocalDate from, LocalDate until) {
         if (from == null) {
             return false;
         }
         var end = until != null ? until : LocalDateRange.FINIT_UNTIL_BOUNDARY;
-        var orderWide = byCustomerorderSign.getOrDefault(customerorderSign, List.of()).stream()
+        var orderWide = byCustomerorderId.getOrDefault(customerorderId, List.of()).stream()
             .map(Candidate::pricing)
             .filter(OrderPricing::isOrderWide)
             .sorted(Comparator.comparing(OrderPricing::getValidFrom))
@@ -167,12 +171,12 @@ public final class OrderPricingLookup {
      * but not an order of magnitude, since a booking of an order belongs to one of a handful of
      * plans.
      */
-    private List<OrderPricing> covering(String customerorderSign, String suborderSign,
+    private List<OrderPricing> covering(long customerorderId, String suborderSign,
                                         long employeeId, Long orderBudgetId) {
-        var memoKey = new MemoKey(customerorderSign, suborderSign, employeeId, orderBudgetId);
+        var memoKey = new MemoKey(customerorderId, suborderSign, employeeId, orderBudgetId);
         return covering.computeIfAbsent(memoKey, key -> {
             var withSlash = withTrailingSlash(key.suborderSign());
-            return byCustomerorderSign.getOrDefault(key.customerorderSign(), List.of()).stream()
+            return byCustomerorderId.getOrDefault(key.customerorderId(), List.of()).stream()
                 .filter(c -> c.covers(withSlash, key.employeeId(), key.orderBudgetId()))
                 .map(Candidate::pricing)
                 .toList();

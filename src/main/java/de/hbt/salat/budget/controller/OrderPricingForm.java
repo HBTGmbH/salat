@@ -13,7 +13,7 @@ import org.springframework.format.annotation.NumberFormat.Style;
 public class OrderPricingForm {
 
     private Long id;
-    private String customerorderSign;
+    private Long customerorderId;
     private String suborderSign;
     /** Optional: without it the rate applies to everyone on the order. */
     private Long employeeId;

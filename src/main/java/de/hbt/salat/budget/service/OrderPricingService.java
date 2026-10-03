@@ -77,13 +77,13 @@ public class OrderPricingService {
                                          boolean showInactiveOrders) {
         var sign = trimToNull(customerorderSign);
         var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
-        var ordersBySign = ordersOf(pricings);
+        var ordersById = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
         var employeeSigns = employeeSignsOf(pricings);
         var planNames = planNamesOf(pricings);
         return pricings.stream()
             .filter(pricing -> showInactive || pricing.getCurrentlyValid())
-            .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage,
+            .map(pricing -> row(pricing, ordersById.get(pricing.getCustomerorderId()), coverage,
                 employeeSigns, planNames))
             .filter(row -> showInactiveOrders || orderStillValid(row))
             .toList();
@@ -134,15 +134,18 @@ public class OrderPricingService {
             .collect(toMap(OrderBudget::getId, OrderBudget::getName, (first, second) -> first));
     }
 
-    private Map<String, Customerorder> ordersOf(List<OrderPricing> pricings) {
-        var signs = pricings.stream().map(OrderPricing::getCustomerorderSign).distinct().toList();
-        return customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
+    /** The orders of the given rates, by id — one query for the whole list (#1212). */
+    private Map<Long, Customerorder> ordersOf(List<OrderPricing> pricings) {
+        var ids = pricings.stream().map(OrderPricing::getCustomerorderId).filter(Objects::nonNull)
+            .distinct().toList();
+        return customerorderService.getCustomerordersByIds(ids).stream()
+            .collect(toMap(Customerorder::getId, identity()));
     }
 
     /**
-     * A rate whose order no longer exists stays visible: the order is the only way into the rate, so
-     * hiding it would put the rate out of reach of the user interface for good.
+     * A rate without an order — one the migration could not resolve (#1212) — stays visible: the
+     * order is the only way into the rate, so hiding it would put the rate out of reach of the user
+     * interface for good.
      */
     private static boolean orderStillValid(OrderPricingRow row) {
         return row.customerorder() == null || row.customerorder().getCurrentlyValid();
@@ -180,11 +183,11 @@ public class OrderPricingService {
      * resolved by query.
      */
     @Transactional(readOnly = true)
-    public OrderPricingLookup lookupFor(Collection<String> customerorderSigns) {
-        if (customerorderSigns.isEmpty()) {
+    public OrderPricingLookup lookupFor(Collection<Long> customerorderIds) {
+        if (customerorderIds.isEmpty()) {
             return OrderPricingLookup.of(List.of());
         }
-        return OrderPricingLookup.of(orderPricingRepository.findByCustomerorderSignInOrderByIdAsc(customerorderSigns));
+        return OrderPricingLookup.of(orderPricingRepository.findByCustomerorderIdInOrderByIdAsc(customerorderIds));
     }
 
     /**
@@ -209,14 +212,13 @@ public class OrderPricingService {
      *                   or whatever has been picked since; {@code null} on a fresh create form
      */
     @Transactional(readOnly = true)
-    public SelectablePlans getSelectablePlans(String customerorderSign, String suborderPattern,
+    public SelectablePlans getSelectablePlans(Long customerorderId, String suborderPattern,
                                               LocalDate validFrom, LocalDate validUntil,
                                               Long keepPlanId) {
-        var sign = trimToNull(customerorderSign);
-        if (sign == null) {
+        if (customerorderId == null) {
             return SelectablePlans.none();
         }
-        var order = orderOf(sign);
+        var order = orderOf(customerorderId);
         if (order == null) {
             return SelectablePlans.none();
         }
@@ -243,21 +245,21 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
-        checkCustomerorderExists(data.customerorderSign());
+        var customerorder = customerorderOf(data);
         var employee = employeeOf(data);
-        checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
+        checkSuborderPatternMatches(customerorder, data.suborderSign());
         var plan = resolvePlan(data, validUntil);
-        checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeId(),
+        checkNoOverlap(customerorder.getId(), data.suborderSign(), data.employeeId(),
             data.orderBudgetId(), data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
-        apply(pricing, data, employee, plan);
+        apply(pricing, data, customerorder, employee, plan);
         orderPricingRepository.save(pricing);
     }
 
     /**
-     * The customer order is deliberately not checked here: a rate references its order by sign and
-     * outlives it (#957, → {@code CustomerorderFilterOption}). Demanding the order on every edit
-     * would leave a rate whose order is gone only deletable, and editing it is how it gets corrected.
+     * The order is required on an edit as well: it is referenced by id now and cannot go away while
+     * a rate names it (#1212). Editing a rate whose order the migration could not resolve is how it
+     * gets its order.
      *
      * <p>A rate whose person the migration could not resolve (#968) stays unresolved when saved
      * without a person. The form cannot offer that person, so its empty choice would otherwise turn
@@ -268,16 +270,17 @@ public class OrderPricingService {
     public void update(long id, OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
         var pricing = getById(id);
+        var customerorder = customerorderOf(data);
         var employee = employeeOf(data);
         var staysUnresolved = employee == null && pricing.isEmployeeUnresolved();
-        checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
+        checkSuborderPatternMatches(customerorder, data.suborderSign());
         var plan = resolvePlan(data, validUntil);
         if (!staysUnresolved) {
-            checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeId(),
+            checkNoOverlap(customerorder.getId(), data.suborderSign(), data.employeeId(),
                 data.orderBudgetId(), data.validFrom(), validUntil, id);
         }
         var unresolvedSign = pricing.getEmployeeSign();
-        apply(pricing, data, employee, plan);
+        apply(pricing, data, customerorder, employee, plan);
         if (staysUnresolved) {
             pricing.setEmployeeSign(unresolvedSign);
         }
@@ -315,11 +318,15 @@ public class OrderPricingService {
         return employee;
     }
 
-    /** Only on create — see {@link #update} for why an edit must not insist on the order. */
-    private void checkCustomerorderExists(String customerorderSign) {
-        if (customerorderService.getCustomerorderBySign(customerorderSign) == null) {
-            throw new InvalidDataException(ErrorCode.BU_CUSTOMERORDER_SIGN_UNKNOWN, customerorderSign);
+    /** The order the rate names — required, and refused here rather than by the foreign key. */
+    private Customerorder customerorderOf(OrderPricingData data) {
+        var customerorder = data.customerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(data.customerorderId());
+        if (customerorder == null) {
+            throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
         }
+        return customerorder;
     }
 
     /**
@@ -327,8 +334,8 @@ public class OrderPricingService {
      * order. It would then never match during controlling and the rate would silently fall back to
      * the order-wide one, so require that it covers at least one suborder of the chosen order.
      */
-    private void checkSuborderPatternMatches(String customerorderSign, String suborderSign) {
-        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorderSign, suborderSign)) {
+    private void checkSuborderPatternMatches(Customerorder customerorder, String suborderSign) {
+        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorder.getSign(), suborderSign)) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
     }
@@ -338,7 +345,7 @@ public class OrderPricingService {
      * to the plan-less one it narrows is the point of the new level, exactly as a specific pattern
      * over a general one is the point of the old one.
      */
-    private void checkNoOverlap(String co, String so, Long employeeId, Long budgetId,
+    private void checkNoOverlap(long co, String so, Long employeeId, Long budgetId,
                                 LocalDate from, LocalDate until, Long excludeId) {
         var overlapping = orderPricingRepository.findOverlapping(co, so, employeeId, budgetId, from, until, excludeId);
         if (!overlapping.isEmpty()) {
@@ -358,7 +365,7 @@ public class OrderPricingService {
         var plan = orderBudgetRepository.findById(data.orderBudgetId())
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, data.orderBudgetId()));
         budgetAuthorization.checkAuthorized(plan);
-        var order = orderOf(data.customerorderSign());
+        var order = orderOf(data.customerorderId());
         if (order == null || !OrderBudgetBinding.scopeMeetsPattern(plan, order.customerorderId(),
             data.suborderSign(), order.suborders())) {
             throw new BusinessRuleException(ErrorCode.BU_BUDGET_SCOPE_DISJOINT, plan.getName());
@@ -370,14 +377,14 @@ public class OrderPricingService {
     }
 
     /**
-     * The order a rate names by sign, with its suborders — the ground the scope check stands on. The
-     * rate keeps naming its order by sign and its suborders by pattern (#957); the plan is compared by
-     * id (#1205), so every suborder brings both its complete order sign and its position. An order that
-     * is gone, or not stored yet, yields {@code null}; the two cases that need no suborder at all
-     * answer without the list anyway (→ {@link OrderBudgetBinding}).
+     * The order a rate names, with its suborders — the ground the scope check stands on. The rate
+     * names its order by id (#1212) and its suborders by pattern (#957); the plan is compared by id
+     * (#1205), so every suborder brings both its complete order sign and its position. An order that
+     * is not there yields {@code null}; the two cases that need no suborder at all answer without the
+     * list anyway (→ {@link OrderBudgetBinding}).
      */
-    private PricedOrder orderOf(String customerorderSign) {
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+    private PricedOrder orderOf(Long customerorderId) {
+        var customerorder = customerorderId == null ? null : customerorderService.getCustomerorderById(customerorderId);
         if (customerorder == null || customerorder.getId() == null) {
             return null;
         }
@@ -389,8 +396,10 @@ public class OrderPricingService {
 
     private record PricedOrder(long customerorderId, List<PositionedSuborder> suborders) {}
 
-    private void apply(OrderPricing pricing, OrderPricingData data, Employee employee, OrderBudget plan) {
-        pricing.setCustomerorderSign(data.customerorderSign());
+    private void apply(OrderPricing pricing, OrderPricingData data, Customerorder customerorder, Employee employee,
+                       OrderBudget plan) {
+        pricing.setCustomerorderId(customerorder.getId());
+        pricing.setCustomerorderSign(customerorder.getSign());
         pricing.setSuborderSign(data.suborderSign());
         pricing.setEmployeeId(employee == null ? null : employee.getId());
         pricing.setEmployeeSign(employee == null ? null : employee.getSign());

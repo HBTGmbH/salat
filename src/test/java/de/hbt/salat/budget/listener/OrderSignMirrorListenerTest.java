@@ -3,9 +3,7 @@ package de.hbt.salat.budget.listener;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -88,7 +86,7 @@ class OrderSignMirrorListenerTest {
   void a_renamed_order_is_written_into_every_sign_column_of_its_budget_data() {
     order.setSign("NEW");
 
-    listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order, "CO"));
+    listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order));
 
     assertThat(plan.getCustomerorderSign()).isEqualTo("NEW");
     assertThat(plan.getSuborderSign()).isEqualTo("NEW/01");
@@ -97,21 +95,17 @@ class OrderSignMirrorListenerTest {
     assertThat(assignment.getSuborderSign()).isEqualTo("NEW/01/A");
   }
 
-  /** The customer rates still name their order by sign (#957) and follow the rename. */
+  /**
+   * The customer rates refer to their order by id (#1212); their sign column is written from the order
+   * by that id, so a rename needs no previous sign to find them.
+   */
   @Test
   void a_renamed_order_takes_its_customer_rates_along() {
     order.setSign("NEW");
 
-    listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order, "CO"));
+    listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order));
 
-    verify(orderPricingRepository).updateCustomerorderSign("CO", "NEW");
-  }
-
-  @Test
-  void an_update_that_keeps_the_sign_leaves_the_rates_alone() {
-    listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order, "CO"));
-
-    verify(orderPricingRepository, never()).updateCustomerorderSign(anyString(), anyString());
+    verify(orderPricingRepository).updateCustomerorderSign(1L, "NEW");
   }
 
   /** A renamed suborder changes the complete sign of its whole subtree. */

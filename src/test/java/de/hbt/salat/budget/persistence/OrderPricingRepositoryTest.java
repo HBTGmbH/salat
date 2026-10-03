@@ -112,8 +112,23 @@ public class OrderPricingRepositoryTest {
     assertThat(overlapping("co", null)).containsExactly(existing);
   }
 
+  /** The order is compared by id (#1212): its sign column may lag behind, and it decides nothing. */
+  @Test
+  public void a_rate_of_another_order_does_not_overlap_whatever_sign_it_carries() {
+    var other = pricing("co", FROM, UNTIL);
+    other.setCustomerorderId(idOf("co-other"));
+    orderPricingRepository.save(other);
+
+    assertThat(overlapping("co", null)).isEmpty();
+  }
+
   private List<OrderPricing> overlapping(String customerorderSign, Long planId) {
-    return orderPricingRepository.findOverlapping(customerorderSign, null, null, planId, FROM, UNTIL, null);
+    return orderPricingRepository.findOverlapping(idOf(customerorderSign), null, null, planId, FROM, UNTIL, null);
+  }
+
+  /** The tests name the order by its sign; the rates refer to it by id (#1212). */
+  private static long idOf(String customerorderSign) {
+    return customerorderSign.hashCode();
   }
 
   private OrderBudget plan(String name) {
@@ -129,6 +144,7 @@ public class OrderPricingRepositoryTest {
   private OrderPricing boundPricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil,
                                     OrderBudget plan) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(idOf(customerorderSign));
     pricing.setCustomerorderSign(customerorderSign);
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
@@ -139,6 +155,7 @@ public class OrderPricingRepositoryTest {
 
   private OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(idOf(customerorderSign));
     pricing.setCustomerorderSign(customerorderSign);
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);

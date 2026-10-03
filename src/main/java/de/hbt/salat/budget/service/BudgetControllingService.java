@@ -93,7 +93,7 @@ public class BudgetControllingService {
 
         // Rates and costs are resolved once per time report. Loading both tables up front keeps
         // that in memory instead of issuing up to five statements per report.
-        var pricingLookup = orderPricingService.lookupFor(List.of(customerorderSign));
+        var pricingLookup = orderPricingService.lookupFor(List.of(customerorder.getId()));
         var costLookup = includeCosts ? employeeCostService.lookup() : null;
 
         // Which plan a booking counts against is read, not derived (#913). That is what lets a
@@ -128,7 +128,7 @@ public class BudgetControllingService {
 
         // Every report is priced exactly once here. Sections then only filter and add, which matters
         // because the same report is looked at by every section it could fall into.
-        var scored = scoreReports(suborders, timereports, customerorderSign, planOfBooking,
+        var scored = scoreReports(suborders, timereports, customerorder.getId(), planOfBooking,
             pricingLookup, costLookup, from);
 
         // Flat rates over the same span, allocated to a plan by due date and scope (#972). Judged
@@ -177,7 +177,7 @@ public class BudgetControllingService {
      * costs no query of its own.
      */
     private Map<Long, List<ScoredReport>> scoreReports(List<Suborder> suborders, List<TimereportDTO> timereports,
-                                                       String customerorderSign, Map<Long, Long> planOfBooking,
+                                                       long customerorderId, Map<Long, Long> planOfBooking,
                                                        OrderPricingLookup pricingLookup,
                                                        EmployeeCostLookup costLookup, LocalDate windowStart) {
         Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
@@ -191,7 +191,7 @@ public class BudgetControllingService {
                 .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDuration(),
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
                     invoiceable
-                        ? rateOf(r, customerorderSign, soSign, planOfBooking.get(r.getId()), pricingLookup)
+                        ? rateOf(r, customerorderId, soSign, planOfBooking.get(r.getId()), pricingLookup)
                         : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
                     costLookup == null ? BigDecimal.ZERO : costOf(r, suborder.getId(), suborder.getEffectiveOrderType(), costLookup),
@@ -201,17 +201,17 @@ public class BudgetControllingService {
         return scored;
     }
 
-    private static BigDecimal rateOf(TimereportDTO report, String coSign, String soSign, Long planId,
+    private static BigDecimal rateOf(TimereportDTO report, long customerorderId, String soSign, Long planId,
                                      OrderPricingLookup lookup) {
-        return rateOf(report.getDuration(), report.getEmployeeId(), report.getReferenceday(), coSign, soSign,
+        return rateOf(report.getDuration(), report.getEmployeeId(), report.getReferenceday(), customerorderId, soSign,
             planId, lookup);
     }
 
     /** The revenue of one booking — the controlling and the dashboard price it through here alike. */
-    private static BigDecimal rateOf(Duration duration, Long employeeId, LocalDate day, String coSign,
+    private static BigDecimal rateOf(Duration duration, Long employeeId, LocalDate day, long customerorderId,
                                      String soSign, Long planId, OrderPricingLookup lookup) {
         var hours = minutesToHours(duration.toMinutes());
-        return lookup.findEffectiveRate(coSign, soSign, employeeId, planId, day)
+        return lookup.findEffectiveRate(customerorderId, soSign, employeeId, planId, day)
             .map(p -> hours.multiply(new BigDecimal(p.getPriceCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }
@@ -661,8 +661,7 @@ public class BudgetControllingService {
         var resolved = budgets.stream().filter(b -> b.getCustomerorderId() != null).toList();
         var orderIds = resolved.stream().map(OrderBudget::getCustomerorderId).distinct().toList();
         var orders = orderIds.isEmpty() ? List.<Customerorder>of() : customerorderService.getCustomerordersByIds(orderIds);
-        // The rates name their order by sign (#957), so they are looked up with the sign it has today.
-        var pricingLookup = orderPricingService.lookupFor(orders.stream().map(Customerorder::getSign).toList());
+        var pricingLookup = orderPricingService.lookupFor(orderIds);
         var flatRateLookup = orderFlatRateService.lookupFor(orderIds);
         // A description may be missing, so no Collectors.toMap, which rejects null values.
         Map<Long, Customerorder> orderById = new HashMap<>();
@@ -707,7 +706,7 @@ public class BudgetControllingService {
     }
 
     /** A suborder whose work is billed, with its customer order and complete order sign. */
-    private record BillableSuborder(long customerorderId, String customerorderSign, String completeOrderSign) {}
+    private record BillableSuborder(long customerorderId, String completeOrderSign) {}
 
     /**
      * The suborders of the orders that earn anything, by id: invoiceable and not hidden, as the
@@ -719,7 +718,7 @@ public class BudgetControllingService {
         for (var suborder : suborderService.getSubordersByCustomerorderIds(customerorderIds)) {
             if (!suborder.isHide() && suborder.isInvoiceable()) {
                 billable.put(suborder.getId(), new BillableSuborder(suborder.getCustomerorder().getId(),
-                    suborder.getCustomerorder().getSign(), suborder.getCompleteOrderSign()));
+                    suborder.getCompleteOrderSign()));
             }
         }
         return billable;
@@ -782,7 +781,7 @@ public class BudgetControllingService {
             // The booking belongs to this plan, so this plan is what a plan-bound rate is resolved
             // against (#1065).
             revenue = revenue.add(rateOf(booking.duration(), booking.employeeId(), booking.day(),
-                suborder.customerorderSign(), suborder.completeOrderSign(), budget.getId(), pricingLookup));
+                suborder.customerorderId(), suborder.completeOrderSign(), budget.getId(), pricingLookup));
         }
         // The flat rates due by now, allocated through the same rule the sections use — an amount
         // several plans could hold counts against none of them.

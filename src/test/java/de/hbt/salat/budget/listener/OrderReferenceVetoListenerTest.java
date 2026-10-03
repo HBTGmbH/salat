@@ -33,6 +33,7 @@ class OrderReferenceVetoListenerTest {
   private OrderBudgetRepository orderBudgetRepository;
   private OrderFlatRateRepository orderFlatRateRepository;
   private EmployeeCostAssignmentRepository assignmentRepository;
+  private OrderPricingRepository orderPricingRepository;
   private OrderReferenceVetoListener listener;
 
   @BeforeEach
@@ -40,8 +41,9 @@ class OrderReferenceVetoListenerTest {
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     orderFlatRateRepository = mock(OrderFlatRateRepository.class);
     assignmentRepository = mock(EmployeeCostAssignmentRepository.class);
+    orderPricingRepository = mock(OrderPricingRepository.class);
     listener = new OrderReferenceVetoListener(new OrderReferenceService(orderBudgetRepository, orderFlatRateRepository,
-        assignmentRepository, mock(OrderPricingRepository.class), mock(SuborderService.class)));
+        assignmentRepository, orderPricingRepository, mock(SuborderService.class)));
   }
 
   @Test
@@ -60,6 +62,19 @@ class OrderReferenceVetoListenerTest {
 
     assertThatThrownBy(() -> listener.onCustomerorderDelete(new CustomerorderDeleteEvent(1L)))
         .isInstanceOf(VetoedException.class);
+  }
+
+  /** Customer rates refer to their order by id as well (#1212), and the message counts them. */
+  @Test
+  void an_order_with_a_customer_rate_is_not_deleted() {
+    when(orderPricingRepository.countByCustomerorderId(1L)).thenReturn(3L);
+
+    assertThatThrownBy(() -> listener.onCustomerorderDelete(new CustomerorderDeleteEvent(1L)))
+        .isInstanceOfSatisfying(VetoedException.class, e -> assertThat(e.getMessages()).singleElement()
+            .satisfies(message -> {
+              assertThat(message.getErrorCode()).isEqualTo(ErrorCode.BU_ORDER_HAS_BUDGET_REFERENCES);
+              assertThat(message.getArguments()).containsExactly(0L, 0L, 3L);
+            }));
   }
 
   @Test

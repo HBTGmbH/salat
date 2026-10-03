@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.order.domain.Customerorder;
 
 /**
@@ -21,6 +22,7 @@ public class OrderPricingDeviationTest {
   private static final LocalDate JUN = LocalDate.of(2026, 6, 30);
   private static final LocalDate DEC = LocalDate.of(2026, 12, 31);
   private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
+  private static final long ORDER_ID = 1L;
 
   @Test
   public void reports_nothing_for_a_rate_that_stays_within_its_order() {
@@ -112,6 +114,7 @@ public class OrderPricingDeviationTest {
 
   private static OrderPricing pricing(LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(ORDER_ID);
     pricing.setCustomerorderSign("co");
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
@@ -121,6 +124,7 @@ public class OrderPricingDeviationTest {
 
   private static Customerorder order(LocalDate fromDate, LocalDate untilDate) {
     var order = new Customerorder();
+    ReflectionTestUtils.setField(order, "id", ORDER_ID);
     order.setSign("co");
     order.setFromDate(fromDate);
     order.setUntilDate(untilDate);

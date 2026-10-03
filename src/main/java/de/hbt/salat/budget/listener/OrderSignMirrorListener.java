@@ -8,7 +8,7 @@ import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.event.SuborderUpdateEvent;
 
 /**
- * Keeps the sign columns of budget plans, flat rates and cost assignments in step with the order
+ * Keeps the sign columns of budget plans, flat rates, cost assignments and customer rates in step with the order
  * tree (#1205) — the counterpart of {@link EmployeeSignChangedListener} for orders. What is
  * rewritten, and why the columns exist at all, is said at {@link OrderReferenceService#followOrderTree}.
  */
@@ -20,12 +20,12 @@ public class OrderSignMirrorListener {
 
     @EventListener
     public void onCustomerorderUpdate(CustomerorderUpdateEvent event) {
-        orderReferenceService.followOrderTree(event.getDomainObject(), event.getPreviousSign());
+        orderReferenceService.followOrderTree(event.getDomainObject());
     }
 
     @EventListener
     public void onSuborderUpdate(SuborderUpdateEvent event) {
-        orderReferenceService.followOrderTree(event.getDomainObject().getCustomerorder(), null);
+        orderReferenceService.followOrderTree(event.getDomainObject().getCustomerorder());
     }
 
 }

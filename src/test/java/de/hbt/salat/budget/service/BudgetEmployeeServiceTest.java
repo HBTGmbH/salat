@@ -38,7 +38,6 @@ import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
-import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -54,6 +53,7 @@ public class BudgetEmployeeServiceTest {
   private static final LocalDate FROM = LocalDate.of(2026, 1, 1);
   private static final LocalDate UNTIL = LocalDate.of(2026, 12, 31);
   private static final LocalDate JUN = LocalDate.of(2026, 6, 15);
+  private static final long CUSTOMERORDER_ID = 3L;
   private static final LocalDate JUL = LocalDate.of(2026, 7, 15);
 
   private static final long BILLED = 1L;
@@ -83,7 +83,7 @@ public class BudgetEmployeeServiceTest {
     orderPricingService = mock(OrderPricingService.class);
     authorizedUser = mock(AuthorizedUser.class);
     service = new BudgetEmployeeService(assignmentRepository, budgetAuthorization, suborderService,
-        employeeCostService, orderPricingService, mock(CustomerorderService.class), authorizedUser);
+        employeeCostService, orderPricingService, authorizedUser);
 
     plan = plan(42L);
     when(authorizedUser.isManager()).thenReturn(true);
@@ -402,6 +402,7 @@ public class BudgetEmployeeServiceTest {
   private void pricing(String suborderSign, String employeeSign, int centsPerHour,
                        LocalDate from, LocalDate until) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(CUSTOMERORDER_ID);
     pricing.setCustomerorderSign("co");
     pricing.setSuborderSign(suborderSign);
     pricing.setEmployeeId(employeeSign == null ? null : idOf(employeeSign));
@@ -415,6 +416,7 @@ public class BudgetEmployeeServiceTest {
   private static OrderBudget plan(long id) {
     var budget = new OrderBudget();
     budget.setName("plan " + id);
+    budget.setCustomerorderId(CUSTOMERORDER_ID);
     budget.setCustomerorderSign("co");
     budget.setValidFrom(FROM);
     budget.setValidUntil(UNTIL);

@@ -28,6 +28,9 @@ public class OrderPricingLookupTest {
   private static final long PLAN_B = 2L;
   private static final long EMP = 11L;
   private static final long OTHER = 12L;
+  /** The order the rates of this test price, and another one. */
+  private static final long CO = 7L;
+  private static final long OTHER_ORDER = 8L;
   /** A person without a rate of their own. */
   private static final long SOMEBODY = 13L;
 
@@ -64,7 +67,29 @@ public class OrderPricingLookupTest {
   public void should_ignore_rates_of_other_customerorders() {
     var lookup = OrderPricingLookup.of(List.of(pricing("other", null, null, 100)));
 
-    assertThat(lookup.findEffectiveRate("co", "so", EMP, null, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveRate(CO, "so", EMP, null, DATE)).isEmpty();
+  }
+
+  /**
+   * A rate whose order the migration could not resolve (#1212) prices nothing — not even the order
+   * whose sign it still carries.
+   */
+  @Test
+  public void should_apply_a_rate_without_an_order_to_nothing() {
+    var unresolved = pricing("co", null, null, 900);
+    unresolved.setCustomerorderId(null);
+
+    assertThat(rate(OrderPricingLookup.of(List.of(unresolved)), "co", "co/01", SOMEBODY)).isNull();
+    assertThat(OrderPricingLookup.of(List.of(unresolved)).hasUncoveredPeriod(CO, JAN, DEC)).isFalse();
+  }
+
+  /** The order is matched by id: a rename leaves its sign column behind and changes nothing (#1212). */
+  @Test
+  public void should_match_the_order_by_id_whatever_sign_the_rate_carries() {
+    var renamed = pricing("co", null, null, 100);
+    renamed.setCustomerorderSign("old-sign");
+
+    assertThat(rate(OrderPricingLookup.of(List.of(renamed)), "co", "co/01", SOMEBODY)).isEqualTo(100);
   }
 
   @Test
@@ -77,7 +102,7 @@ public class OrderPricingLookupTest {
 
     assertThat(rate(OrderPricingLookup.of(List.of(expired, future, current)), "co", null, SOMEBODY))
         .isEqualTo(300);
-    assertThat(OrderPricingLookup.of(List.of(expired, future)).findEffectiveRate("co", null, SOMEBODY, null, DATE))
+    assertThat(OrderPricingLookup.of(List.of(expired, future)).findEffectiveRate(CO, null, SOMEBODY, null, DATE))
         .isEmpty();
   }
 
@@ -111,7 +136,7 @@ public class OrderPricingLookupTest {
 
   @Test
   public void should_return_empty_for_an_empty_lookup() {
-    assertThat(OrderPricingLookup.of(List.of()).findEffectiveRate("co", "so", EMP, null, DATE)).isEmpty();
+    assertThat(OrderPricingLookup.of(List.of()).findEffectiveRate(CO, "so", EMP, null, DATE)).isEmpty();
   }
 
   /**
@@ -246,7 +271,7 @@ public class OrderPricingLookupTest {
     var lookup = OrderPricingLookup.of(List.of(pricing("co", null, null, 100), unresolved));
 
     assertThat(rate(lookup, "co", "co/01", SOMEBODY)).isEqualTo(100);
-    assertThat(OrderPricingLookup.of(List.of(unresolved)).findEffectiveRate("co", "co/01", SOMEBODY, null, DATE))
+    assertThat(OrderPricingLookup.of(List.of(unresolved)).findEffectiveRate(CO, "co/01", SOMEBODY, null, DATE))
         .isEmpty();
   }
 
@@ -258,7 +283,7 @@ public class OrderPricingLookupTest {
     var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN), unresolved));
 
     assertThat(unresolved.isOrderWide()).isFalse();
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isTrue();
   }
 
   /** An empty sign without an id names nobody either — the reports read it the same way. */
@@ -282,7 +307,7 @@ public class OrderPricingLookupTest {
         rate("co", JAN, JUN),
         rate("co", JUL, DEC)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isFalse();
   }
 
   @Test
@@ -291,21 +316,21 @@ public class OrderPricingLookupTest {
         rate("co", JAN, JUN),
         rate("co", JUL.plusDays(1), DEC)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isTrue();
   }
 
   @Test
   public void should_report_a_gap_before_the_first_rate() {
     var lookup = OrderPricingLookup.of(List.of(rate("co", JUL, DEC)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isTrue();
   }
 
   @Test
   public void should_report_a_gap_after_the_last_rate() {
     var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isTrue();
   }
 
   /** An order that runs on has to be met by a rate that runs on with it. */
@@ -313,14 +338,14 @@ public class OrderPricingLookupTest {
   public void should_report_no_gap_for_an_open_order_end_met_by_an_open_rate_end() {
     var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, OPEN_END)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, null)).isFalse();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, null)).isFalse();
   }
 
   @Test
   public void should_report_a_gap_when_the_order_runs_on_beyond_its_last_rate() {
     var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, DEC)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, null)).isTrue();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, null)).isTrue();
   }
 
   @Test
@@ -332,7 +357,7 @@ public class OrderPricingLookupTest {
 
     var lookup = OrderPricingLookup.of(List.of(suborderRate, employeeRate));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isFalse();
   }
 
   /** A specific rate covers what it covers — it must not close the gap of the order-wide ones. */
@@ -343,7 +368,7 @@ public class OrderPricingLookupTest {
 
     var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN), suborderRate));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isTrue();
   }
 
   @Test
@@ -352,14 +377,14 @@ public class OrderPricingLookupTest {
         rate("co", JAN, DEC),
         rate("co", JUN, JUL)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isFalse();
   }
 
   @Test
   public void should_report_no_gap_for_an_order_without_a_start() {
     var lookup = OrderPricingLookup.of(List.of(rate("co", JUL, DEC)));
 
-    assertThat(lookup.hasUncoveredPeriod("co", null, DEC)).isFalse();
+    assertThat(lookup.hasUncoveredPeriod(CO, null, DEC)).isFalse();
   }
 
   private static OrderPricing rate(String co, LocalDate validFrom, LocalDate validUntil) {
@@ -388,13 +413,19 @@ public class OrderPricingLookupTest {
   }
 
   private static Integer rate(OrderPricingLookup lookup, String co, String so, long employeeId, Long planId) {
-    return lookup.findEffectiveRate(co, so, employeeId, planId, DATE)
+    return lookup.findEffectiveRate(idOf(co), so, employeeId, planId, DATE)
         .map(OrderPricing::getPriceCentsPerHour)
         .orElse(null);
   }
 
+  /** The rates are matched by the id of their order (#1212); the tests name the order by its sign. */
+  private static long idOf(String customerorderSign) {
+    return "co".equals(customerorderSign) ? CO : OTHER_ORDER;
+  }
+
   private static OrderPricing pricing(String co, String so, Long employeeId, int cents) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(idOf(co));
     pricing.setCustomerorderSign(co);
     pricing.setSuborderSign(so);
     pricing.setEmployeeId(employeeId);
@@ -500,7 +531,7 @@ public class OrderPricingLookupTest {
     var planBound = boundTo(pricing("co", null, null, 15000), PLAN_A);
 
     assertThat(planBound.isOrderWide()).isFalse();
-    assertThat(OrderPricingLookup.of(List.of(planBound)).hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+    assertThat(OrderPricingLookup.of(List.of(planBound)).hasUncoveredPeriod(CO, JAN, DEC)).isFalse();
   }
 
   /** …and the warning still appears where only plan-bound rates sit next to an order-wide one. */
@@ -513,7 +544,7 @@ public class OrderPricingLookupTest {
     planBound.setValidFrom(JUL);
     planBound.setValidUntil(DEC);
 
-    assertThat(OrderPricingLookup.of(List.of(orderWide, planBound)).hasUncoveredPeriod("co", JAN, DEC))
+    assertThat(OrderPricingLookup.of(List.of(orderWide, planBound)).hasUncoveredPeriod(CO, JAN, DEC))
         .isTrue();
   }
 

@@ -3205,6 +3205,10 @@ databaseChangeLog:
       #
       # Der Kundenauftrag kommt vom Blatt und wird beim Aufstieg mitgefuehrt, nicht von der Wurzel
       # geholt - so steht vorne derselbe Auftrag, den auch die aufrufende Abfrage am Unterauftrag sieht.
+      #
+      # Der Pfad ist ausdruecklich utf8mb3_bin wie alle Tabellen (#1212). Ein CAST ohne Zeichensatz
+      # nimmt den der Verbindung (utf8mb4_0900_ai_ci); Vergleiche und LIKE gegen die View ignorierten
+      # damit Gross-/Kleinschreibung und Akzente, waehrend die Anwendung exakt vergleicht.
       changes:
         - createView:
             viewName: suborder_fqs
@@ -3213,13 +3217,13 @@ databaseChangeLog:
               WITH RECURSIVE pfad AS (SELECT s.id                                   AS suborder_id,
                                              s.CUSTOMERORDER_ID                     AS customerorder_id,
                                              s.PARENTORDER_ID,
-                                             CAST(CONCAT(s.sign, '/') AS CHAR(1000)) AS teilpfad
+                                             CAST(CONCAT(s.sign, '/') AS CHAR(1000) CHARACTER SET utf8mb3) COLLATE utf8mb3_bin AS teilpfad
                                       FROM suborder s
                                       UNION ALL
                                       SELECT p.suborder_id,
                                              p.customerorder_id,
                                              eltern.PARENTORDER_ID,
-                                             CAST(CONCAT(eltern.sign, '/', p.teilpfad) AS CHAR(1000))
+                                             CAST(CONCAT(eltern.sign, '/', p.teilpfad) AS CHAR(1000) CHARACTER SET utf8mb3) COLLATE utf8mb3_bin
                                       FROM pfad p
                                                JOIN suborder eltern ON p.PARENTORDER_ID = eltern.id)
               SELECT pfad.suborder_id,
@@ -4156,3 +4160,40 @@ databaseChangeLog:
                   r.name = COALESCE(p.name, ''),
                   r.workingday = (p.id IS NULL AND DAYOFWEEK(r.refdate) NOT IN (1, 7)),
                   r.dow = ELT(DAYOFWEEK(r.refdate), 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat')
+
+  - changeSet:
+      id: 116
+      author: kr
+      comment: Kundenstundensatz verweist ueber die id auf den Auftrag (#1212)
+      # Der Weg aus #1205 fuer order_pricing: customerorder_id mit Fremdschluessel neben dem Kuerzel,
+      # das Reports und ETL-Definitionen weiter lesen. Die Anwendung loest ueber die id auf und
+      # schreibt das Kuerzel aus dem Auftrag. suborder_sign ist hier kein Bezug, sondern ein
+      # LIKE-Muster ueber den vollstaendigen Auftragsschluessel; es bleibt, wie getippt.
+      #
+      # Uebernommen wird nur eine eindeutige, binaer verglichene Zuordnung. Bleibt die id leer,
+      # bepreist der Satz nichts und ist in der Liste markiert.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_pricing
+                columnName: customerorder_id
+      changes:
+        - addColumn:
+            tableName: order_pricing
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+        - sql:
+            sql: |-
+              UPDATE order_pricing p
+                 SET p.customerorder_id = (SELECT MIN(c.id) FROM customerorder c
+                                            WHERE BINARY c.sign = BINARY p.customerorder_sign
+                                           HAVING COUNT(*) = 1)
+        - addForeignKeyConstraint:
+            baseTableName: order_pricing
+            baseColumnNames: customerorder_id
+            constraintName: fk_order_pricing_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id

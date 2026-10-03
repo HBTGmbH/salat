@@ -76,6 +76,7 @@ public class EmployeeSignChangedListenerTest {
   private static final LocalDate WORKDAY = LocalDate.of(2026, 6, 25);
   private static final String CATEGORY = "Standard";
   private static final String ORDER_SIGN = "co-one";
+  private static final long ORDER_ID = 4711L;
 
   @Autowired
   private EmployeeService employeeService;
@@ -144,8 +145,8 @@ public class EmployeeSignChangedListenerTest {
 
     whenAnonymized(employee);
 
-    assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, employee.getId(), null, WORKDAY)).isPresent();
+    assertThat(orderPricingService.lookupFor(List.of(ORDER_ID))
+        .findEffectiveRate(ORDER_ID, null, employee.getId(), null, WORKDAY)).isPresent();
   }
 
   /**
@@ -163,8 +164,8 @@ public class EmployeeSignChangedListenerTest {
     var successor = givenEmployee(TESTY_SIGN);
 
     assertThat(employeeCostService.findEffectiveCost(successor.getId(), null, OrderType.STANDARD, WORKDAY)).isEmpty();
-    assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, successor.getId(), null, WORKDAY)).isEmpty();
+    assertThat(orderPricingService.lookupFor(List.of(ORDER_ID))
+        .findEffectiveRate(ORDER_ID, null, successor.getId(), null, WORKDAY)).isEmpty();
   }
 
   /** The sign column follows the person, for the readers outside the application that join on it. */
@@ -276,6 +277,7 @@ public class EmployeeSignChangedListenerTest {
 
   private void givenPricing(Employee employee) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(ORDER_ID);
     pricing.setCustomerorderSign(ORDER_SIGN);
     pricing.setEmployeeId(employee.getId());
     pricing.setEmployeeSign(employee.getSign());

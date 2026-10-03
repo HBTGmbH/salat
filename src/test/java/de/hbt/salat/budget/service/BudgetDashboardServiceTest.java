@@ -362,8 +362,8 @@ public class BudgetDashboardServiceTest {
             .toList();
       });
       when(orderPricingService.lookupFor(any())).thenAnswer(i -> {
-        Collection<String> signs = askAll(i.getArgument(0));
-        return OrderPricingLookup.of(rates.stream().filter(r -> signs.contains(r.getCustomerorderSign())).toList());
+        Collection<Long> ids = askAll(i.getArgument(0));
+        return OrderPricingLookup.of(rates.stream().filter(r -> ids.contains(r.getCustomerorderId())).toList());
       });
       when(orderFlatRateService.lookupFor(any())).thenAnswer(i -> {
         Collection<Long> ids = askAll(i.getArgument(0));
@@ -473,8 +473,9 @@ public class BudgetDashboardServiceTest {
       bookings.add(new Booking(report, plan == null ? null : plan.getId()));
     }
 
-    private static OrderPricing rate(String orderSign, String suborderSign, int centsPerHour) {
+    private OrderPricing rate(String orderSign, String suborderSign, int centsPerHour) {
       var rate = new OrderPricing();
+      rate.setCustomerorderId(orderIdOf(orderSign));
       rate.setCustomerorderSign(orderSign);
       rate.setSuborderSign(suborderSign);
       rate.setPriceCentsPerHour(centsPerHour);

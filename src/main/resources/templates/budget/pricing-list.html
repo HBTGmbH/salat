@@ -81,8 +81,12 @@
             th:with="p=${row.pricing()}, order=${row.customerorder()}, deviation=${row.deviation()}">
           <td>
             <div>
-              <span th:text="${p.customerorderSign}"></span>
+              <!--/* The sign of the referenced order (#1212); the stored one, marked, where the
+                     migration could not resolve it. */-->
+              <span th:text="${order != null ? order.sign : p.customerorderSign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!p.currentlyValid})}"></span>
+              <span th:if="${p.unresolved}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>

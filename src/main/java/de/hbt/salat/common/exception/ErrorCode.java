@@ -181,7 +181,6 @@ public enum ErrorCode {
   // written instead of surfacing as a missing cost or an unused rate months later. BU-0019 did the
   // same for the employee until #968 moved that reference onto employee.id; it is not reused.
   // BU-0020 was BU_SUBORDER_SIGN_UNKNOWN (#958): cost assignments name their suborder by id since #1205
-  BU_CUSTOMERORDER_SIGN_UNKNOWN("BU-0021", "no customer order exists with that sign"),
   BU_EMPLOYEE_COST_NAME_UNKNOWN("BU-0022", "no cost category exists with that name"),
   // #972: flat rates. There is deliberately no overlap code — flat rates add up by design, so two
   // definitions covering the same period are a legitimate case, not a conflict.
@@ -195,7 +194,7 @@ public enum ErrorCode {
   // otherwise earn nothing and look complete while doing so (→ OrderBudgetBinding).
   BU_BUDGET_SCOPE_DISJOINT("BU-0028", "the budget plan belongs to another customer order or its scope does not intersect"),
   BU_BUDGET_PERIOD_DISJOINT("BU-0029", "the validity of the budget plan does not overlap the validity of the record"),
-  BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans or flat rates still refer to the customer order"),
+  BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans, flat rates or customer rates still refer to the customer order"),
   BU_SUBORDER_HAS_BUDGET_REFERENCES("BU-0031", "budget plans, flat rates or employee cost assignments still refer to the suborder"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),

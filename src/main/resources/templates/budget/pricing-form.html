@@ -39,17 +39,23 @@
       <div th:hx-post="@{/budget/pricing/suborders}"
            hx-swap="none"
            hx-include="closest form"
-           hx-trigger="change from:#customerorderSign, change from:#suborderSign, change from:#validFrom, change from:#validUntil">
+           hx-trigger="change from:#customerorderId, change from:#suborderSign, change from:#validFrom, change from:#validUntil">
         <div class="row">
           <div class="col-md-6">
-            <salat:select th:field="*{customerorderSign}" th:label="#{main.pricing.field.customerorderSign}">
+            <salat:select th:field="*{customerorderId}" th:label="#{main.pricing.field.customerorderSign}">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="co : ${customerorders}"
-                      th:value="${co.sign}"
+                      th:value="${co.id}"
                       th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
                       th:attr="data-subtext=${subtext}"
                       th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
             </salat:select>
+            <!--/* The order the migration could not resolve (#1212): named, so that it is known which to pick. */-->
+            <div th:if="${unresolvedCustomerorderSign != null}" class="mb-3">
+              <span class="badge bg-warning-lt"
+                    th:text="${unresolvedCustomerorderSign} + ' – ' + #{main.budget.unresolved.text}">ORDER – nicht zugeordnet</span>
+              <div class="form-text" th:text="#{main.budget.unresolved.customerorder.help}">Bitte den Auftrag wählen.</div>
+            </div>
           </div>
           <div class="col-md-6">
             <div th:replace="~{fragments/suborder-picker :: suborderPicker(${suborders}, null)}"></div>
