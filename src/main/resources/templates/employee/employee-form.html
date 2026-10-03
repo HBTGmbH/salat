@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
       th:with="section='employees',subSection='employees',title=${pageTitle},sectionTitle=${sectionTitle}">
@@ -10,14 +11,10 @@
       <input type="hidden" th:field="*{id}" />
       
         <div>
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='firstname', label=#{main.employee.firstname.text}, required=true, maxlength=255
-          )}"></div>
+          <salat:textInput th:field="*{firstname}" th:label="#{main.employee.firstname.text}" required="true" maxlength="255" />
         </div>
         <div>
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='lastname', label=#{main.employee.lastname.text}, required=true, maxlength=255
-          )}"></div>
+          <salat:textInput th:field="*{lastname}" th:label="#{main.employee.lastname.text}" required="true" maxlength="255" />
         </div>
         <div>
           <div class="mb-3">
@@ -31,15 +28,11 @@
         </div>
       
         <div>
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='sign', label=#{main.employee.sign.text}, required=true, maxlength=5
-          )}"></div>
+          <salat:textInput th:field="*{sign}" th:label="#{main.employee.sign.text}" required="true" maxlength="5" />
         </div>
       
         <div>
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='loginname', label=#{main.employee.loginname.text}, required=true, maxlength=5
-          )}"></div>
+          <salat:textInput th:field="*{loginname}" th:label="#{main.employee.loginname.text}" required="true" maxlength="5" />
         </div>
         <div>
           <div class="mb-3">

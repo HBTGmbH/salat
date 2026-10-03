@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
       th:with="section='orders',subSection='suborders',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
@@ -100,19 +101,13 @@
 
       <div class="row">
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='description', label=#{main.customerorder.description.text}, required=true, maxlength=255
-          )}"></div>
+          <salat:textInput th:field="*{description}" th:label="#{main.customerorder.description.text}" required="true" maxlength="255" />
         </div>
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='shortdescription', label=#{main.customerorder.shortdescription.text}, required=false, maxlength=70
-          )}"></div>
+          <salat:textInput th:field="*{shortdescription}" th:label="#{main.customerorder.shortdescription.text}" required="false" maxlength="70" />
         </div>
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='suborder_customer', label=#{main.suborder.suborder_customer.text}, required=false, maxlength=30
-          )}"></div>
+          <salat:textInput th:field="*{suborder_customer}" th:label="#{main.suborder.suborder_customer.text}" required="false" maxlength="30" />
         </div>
       </div>
 
@@ -160,9 +155,7 @@
 
       <div class="row">
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
-          )}"></div>
+          <salat:textInput th:field="*{debithours}" th:label="#{main.general.debithours.text}" required="false" maxlength="10" />
         </div>
         <div class="col-md-6">
           <div class="mb-3">

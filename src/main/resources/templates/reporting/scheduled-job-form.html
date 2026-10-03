@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:salat="http://hbt.de/salat/thymeleaf"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
       th:with="section='reports',subSection='scheduled-report-jobs',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
@@ -9,25 +10,16 @@
 
         <input type="hidden" th:field="*{id}" />
 
-        <div th:replace="~{fragments/form-fields :: textInput(
-          field='name', label='Job Name', required=true, maxlength=255
-        )}"></div>
+        <salat:textInput th:field="*{name}" th:label="'Job Name'" required="true" maxlength="255" />
 
-        <div th:replace="~{fragments/form-fields :: selectInput(
-          field='reportDefinitionId', label='Report', required=true,
-          placeholder='-- Select Report --', options=${reportDefinitions},
-          optionValue='id', optionLabel='name'
-        )}"></div>
+        <salat:select th:field="*{reportDefinitionId}" th:label="'Report'" required="true">
+          <option value="" th:text="'-- Select Report --'"></option>
+          <option th:each="option : ${reportDefinitions}" th:value="${option.id}" th:text="${option.name}"></option>
+        </salat:select>
 
-        <div th:replace="~{fragments/form-fields :: textareaInputHelp(
-          field='reportParameters', label='Report Parameters (JSON)', required=false,
-          rows=5, helpText=#{reporting.scheduledjob.reportParameters.help}, monospace=true
-        )}"></div>
+        <salat:textarea th:field="*{reportParameters}" th:label="'Report Parameters (JSON)'" required="false" rows="5" monospace="true" th:helpText="#{reporting.scheduledjob.reportParameters.help}" />
 
-        <div th:replace="~{fragments/form-fields :: textareaInputHelp(
-          field='recipientEmails', label='Recipient Emails', required=true,
-          rows=3, helpText='Comma or semicolon separated email addresses', monospace=false
-        )}"></div>
+        <salat:textarea th:field="*{recipientEmails}" th:label="'Recipient Emails'" required="true" rows="3" th:helpText="'Comma or semicolon separated email addresses'" />
 
         <div th:replace="~{fragments/form-fields :: checkboxSwitch(
           field='enabled', label='Enabled'
@@ -37,14 +29,9 @@
           field='suppressEmptyResults', label=#{reporting.scheduledjob.suppressEmptyResults.label}
         )}"></div>
 
-        <div th:replace="~{fragments/form-fields :: textInputHelp(
-          field='cronExpression', label='Cron Expression (optional)', required=false,
-          maxlength=255, helpText='Leave empty for default schedule (Daily at 5:00 AM)'
-        )}"></div>
+        <salat:textInput th:field="*{cronExpression}" th:label="'Cron Expression (optional)'" required="false" maxlength="255" th:helpText="'Leave empty for default schedule (Daily at 5:00 AM)'" />
 
-        <div th:replace="~{fragments/form-fields :: textareaInput(
-          field='description', label='Description', required=false, rows=3, monospace=false
-        )}"></div>
+        <salat:textarea th:field="*{description}" th:label="'Description'" required="false" rows="3" />
 
         <div th:replace="~{fragments/form-fields :: formButtons(
           saveLabel='Save Scheduled Job', cancelHref=@{/reporting/jobs}
