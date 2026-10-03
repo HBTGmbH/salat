@@ -21,6 +21,7 @@ public class SalatProperties {
   private Etl etl = new Etl();
   private Jira jira = new Jira();
   private BookingList bookingList = new BookingList();
+  private Runs runs = new Runs();
 
   @Data
   public static class Auth {
@@ -83,6 +84,16 @@ public class SalatProperties {
     public static class History {
       private int retentionDays = 14;
     }
+  }
+
+  /** The runs that hold a {@code RUNNING} row as their lock: ETL run and JIRA replication (#1300). */
+  @Data
+  public static class Runs {
+    /**
+     * How long a finished run keeps trying to write its outcome while the database is unreachable
+     * ({@code RunFinisher}). The value stands in {@code application.yaml}.
+     */
+    private Duration finishRetryMax;
   }
 
   @Data

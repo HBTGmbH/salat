@@ -22,6 +22,9 @@ import static de.hbt.salat.etl.domain.ETLRunHistory.Status.RUNNING;
 import static de.hbt.salat.etl.domain.ETLRunHistory.Trigger.MANUAL;
 import static de.hbt.salat.etl.domain.ETLRunHistory.Trigger.SCHEDULED;
 
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,10 +44,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.CannotCreateTransactionException;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -52,6 +57,8 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
+import de.hbt.salat.common.scheduling.ManualTaskScheduler;
+import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.etl.auth.ETLAuthorization;
 import de.hbt.salat.etl.domain.ETLDefinition;
 import de.hbt.salat.etl.domain.ETLDefinition.ReferencePeriod;
@@ -96,6 +103,13 @@ public class ETLServiceTest {
 
   @Mock
   private SchemaDiffService schemaDiffService;
+
+  /** Plans the retries of {@link RunFinisher}; the test runs them (#1300). */
+  private final ManualTaskScheduler taskScheduler =
+      new ManualTaskScheduler(Instant.parse("2026-10-03T00:01:00Z"));
+
+  @Spy
+  private RunFinisher runFinisher = taskScheduler.runFinisher(Duration.ofMinutes(60));
 
   @InjectMocks
   private ETLService etlService;
@@ -493,6 +507,38 @@ public class ETLServiceTest {
     assertThat(markedByHand.getMessage())
         .contains("Von Hand als beendet markiert.")
         .contains("kam danach noch zu Ende");
+  }
+
+  /**
+   * #1300: der Datenbankserver startete eine Minute nach Beginn des nächtlichen Laufs neu. Eine
+   * Definition brach ab, und auch das Schreiben des Ausgangs scheiterte am Verbindungsabbruch — die
+   * Zeile blieb auf {@code RUNNING} und sperrte jeden weiteren Lauf, obwohl der Prozess wusste, wie der
+   * Lauf ausgegangen war.
+   */
+  @Test
+  void a_run_whose_end_cannot_be_written_at_first_writes_it_once_the_database_is_back() {
+    givenDefinition("worked-hours");
+    var run = ETLRunHistory.builder()
+        .id(7L)
+        .startedAt(LocalDateTime.of(2026, 10, 3, 2, 0, 0))
+        .status(Status.RUNNING)
+        .triggeredBy(SCHEDULED)
+        .build();
+    when(runHistoryRepo.findById(7L))
+        .thenReturn(Optional.of(run))
+        .thenThrow(new CannotCreateTransactionException("Could not open JPA EntityManager for transaction",
+            new SQLException("Connection is closed")))
+        .thenReturn(Optional.of(run));
+    when(historyRepo.save(any()))
+        .thenThrow(new DataAccessResourceFailureException("Server shutdown in progress"));
+
+    assertThatThrownBy(() -> etlService.continueRun(7L, ONE_MONTH, List.of("worked-hours")))
+        .isInstanceOf(DataAccessResourceFailureException.class);
+    taskScheduler.runAllPlanned();
+
+    assertThat(run.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(run.getFinishedAt()).isNotNull();
+    assertThat(run.getMessage()).contains("Lauf abgebrochen").contains("Server shutdown in progress");
   }
 
   @Test

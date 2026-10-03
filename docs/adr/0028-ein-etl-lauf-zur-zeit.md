@@ -14,6 +14,24 @@ Status: Accepted
 > Warteschlange bleibt bei null. Anlass war ein Versionskonflikt beim Lauf im Request-Thread, die
 > Begründung steht an `JiraReplicationLauncher`.
 
+> **Nachtrag 2026-10-03 (#1300): „Ende nicht schreibbar" ist nicht „Prozess gestorben".** **D**
+> ist für einen Lauf gedacht, dessen Prozess gestorben ist. Niemand kennt dann seinen Ausgang, und
+> die Person am Knopf trifft die Aussage, die die Anwendung nicht treffen kann. Es gibt aber einen
+> zweiten Weg zu einer stehengebliebenen `RUNNING`-Zeile. Der Lauf kommt zu Ende und kennt seinen
+> Ausgang, aber die Datenbank ist genau in diesem Moment nicht erreichbar, etwa bei einem Neustart
+> des Datenbankservers während des nächtlichen Laufs. Diesen Fall löst die Anwendung selbst:
+> `RunFinisher` (`common.scheduling`) schreibt den Ausgang in einer neuen Transaktion. Scheitert
+> das an einem Verbindungsfehler, wiederholt er es mit wachsendem Abstand, höchstens
+> `salat.runs.finish-retry-max` lang (60 Minuten). ETL-Lauf und JIRA-Replikation nutzen denselben
+> Baustein. **Das ist keine Altersschwelle im Sinne von E.** E rät, ob ein Lauf noch läuft. Hier
+> weiß der Prozess, dass er zu Ende ist, und die Schwelle begrenzt nur, wie lange er es zu sagen
+> versucht. Kommt das Schreiben auch dann nicht durch, steht die Id des Laufs mit Fehlerstufe im
+> Log, und die Zeile bleibt für D wie nach einem Absturz. Die Wiederholungen sind einzelne
+> verzögerte Aufgaben auf dem `TaskScheduler`, kein Warten im Thread des Laufs. Der nächtliche Lauf
+> läuft auf dem einzigen Thread des Schedulers, und ein Warten dort hielte jeden anderen geplanten
+> Job an. Der Endzeitpunkt in der Zeile ist der des Laufs, nicht der des späten Schreibens. F
+> bleibt verworfen.
+
 ## Context and Problem Statement
 
 Mit #1071 lässt sich ein ETL-Lauf aus der Oberfläche anstoßen. Damit gibt es drei Wege in einen

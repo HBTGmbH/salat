@@ -31,6 +31,7 @@ import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.etl.auth.ETLAuthorization;
 import de.hbt.salat.etl.domain.ETLDefinition;
@@ -88,6 +89,7 @@ public class ETLService {
   private final JdbcTemplate jdbc;
   private final ETLAuthorization authorization;
   private final SchemaDiffService schemaDiffService;
+  private final RunFinisher runFinisher;
 
   /**
    * Eröffnet einen Lauf: prüft den Zeitraum, weist einen zweiten gleichzeitigen Lauf ab und legt die
@@ -362,20 +364,28 @@ public class ETLService {
    * {@code RUNNING}, bleibt diese Entscheidung stehen — der tatsächliche Ausgang kommt als Zusatz in
    * die Meldung. Beides gehört festgehalten: dass jemand eingegriffen hat, und wie der Lauf
    * ausgegangen ist.
+   *
+   * <p>Geschrieben wird über {@link RunFinisher} (#1300): ist die Datenbank in diesem Moment nicht
+   * erreichbar, kommt das Ende später nach, statt die Zeile als Sperre stehen zu lassen. Deshalb wird
+   * die Zeile in jedem Versuch neu gelesen, und der Endzeitpunkt ist der des Laufs, nicht der des
+   * Schreibens.
    */
   private void finishRun(ETLRunHistory run, Status status, String message) {
-    var current = runHistoryRepo.findById(run.getId()).orElse(run);
-    if (current.getStatus() != RUNNING) {
-      log.warn("ETL run {} was marked finished by hand while it was still running", current.getId());
-      current.setMessage(shortened(
-          "%s\nDer Lauf kam danach noch zu Ende: %s".formatted(current.getMessage(), message)));
+    var finishedAt = DateTimeUtils.now();
+    runFinisher.finish("ETL run " + run.getId(), () -> {
+      var current = runHistoryRepo.findById(run.getId()).orElse(run);
+      if (current.getStatus() != RUNNING) {
+        log.warn("ETL run {} was marked finished by hand while it was still running", current.getId());
+        current.setMessage(shortened(
+            "%s\nDer Lauf kam danach noch zu Ende: %s".formatted(current.getMessage(), message)));
+        runHistoryRepo.save(current);
+        return;
+      }
+      current.setFinishedAt(finishedAt);
+      current.setStatus(status);
+      current.setMessage(shortened(message));
       runHistoryRepo.save(current);
-      return;
-    }
-    current.setFinishedAt(DateTimeUtils.now());
-    current.setStatus(status);
-    current.setMessage(shortened(message));
-    runHistoryRepo.save(current);
+    });
   }
 
   private static String shortened(String message) {
