@@ -89,7 +89,7 @@
                       hx-trigger="change">
                 <option th:each="e : ${employees}" th:value="${e.id()}" th:data-chip="${e.sign()}" th:text="${@employeeLabelViewHelper.label(e.name(), e.sign())}"></option>
               </select>
-              <small class="form-hint" th:text="#{main.bulkassignment.field.employees.hint}">
+              <small class="form-text d-block" th:text="#{main.bulkassignment.field.employees.hint}">
                 Ohne Auswahl gelten alle Mitarbeitenden.
               </small>
             </div>
@@ -184,7 +184,7 @@
                 th:selected="${form.employeeIds != null and #lists.contains(form.employeeIds, e.id())}"
                 th:text="${@employeeLabelViewHelper.label(e.name(), e.sign())}"></option>
       </select>
-      <small class="form-hint" th:text="#{main.bulkassignment.field.employees.hint}">
+      <small class="form-text d-block" th:text="#{main.bulkassignment.field.employees.hint}">
         Ohne Auswahl gelten alle Mitarbeitenden.
       </small>
     </div>

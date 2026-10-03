@@ -6,7 +6,7 @@
 
 <style>
   #bookings tbody tr:hover td {
-    background-color: rgba(var(--tblr-primary-rgb), 0.08);
+    background-color: color-mix(in oklab, var(--tblr-primary) 8%, transparent);
   }
   .booking-task { max-width: 26rem; }
   /* The picker of a tree opens a dialog; it has to read like the select boxes next to it. */
@@ -506,7 +506,7 @@
             </div>
           </div>
         </div>
-        <div class="form-hint mb-3" th:text="#{main.timereportlist.orders.dialog.hint}">
+        <div class="form-text mb-3" th:text="#{main.timereportlist.orders.dialog.hint}">
           Gezeigt wird nur, was zu Suche und Ebene passt.
         </div>
 
@@ -555,7 +555,7 @@
             <div class="d-flex flex-wrap gap-1" id="ticket-type-filter"></div>
           </div>
         </div>
-        <div class="form-hint mb-3" th:text="#{main.timereportlist.tickets.dialog.hint}">
+        <div class="form-text mb-3" th:text="#{main.timereportlist.tickets.dialog.hint}">
           Gezeigt wird nur, was zu Suche und Typ passt.
         </div>
 
@@ -575,7 +575,7 @@
           <button class="btn" type="button" id="ticket-manual-add"
                   th:text="#{main.timereportlist.tickets.dialog.manual.add}">Hinzufügen</button>
         </div>
-        <div class="form-hint" th:text="#{main.timereportlist.tickets.dialog.manual.hint}">
+        <div class="form-text" th:text="#{main.timereportlist.tickets.dialog.manual.hint}">
           Der Ticketbezug einer Buchung ist freier Text.
         </div>
         <div id="ticket-manual-list" class="mt-2"></div>

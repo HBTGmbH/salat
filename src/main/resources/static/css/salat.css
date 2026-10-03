@@ -15,8 +15,9 @@
    Schrift darauf traegt, wird daraus vollends ein Braun.
    Der Ton wird deshalb einmal zentral ersetzt statt an jeder Fundstelle nachgebessert: alles
    Abgeleitete - Fuellung, Hover (-darken), Toenung (-lt, -200) und die ueber das Token gelesene
-   Diagrammfarbe - mischt Tabler aus dem Token und folgt von selbst. Nur die -rgb-Varianten stehen
-   dort als Literal daneben und muessen mitgezogen werden.
+   Diagrammfarbe - mischt Tabler aus dem Token und folgt von selbst. Die -rgb-Varianten, die Tabler
+   1.6 abkuendigt, liest Salat nicht mehr; eigene Toenungen mischen per color-mix aus dem Token
+   (#1296).
    #ffcc00 ist heller und im Farbton weiter weg vom Orange: oklch(0,87 0,18 92) statt
    oklch(0,77 0,16 67). Es ist der einzige eigene Farbton im Projekt - die uebrigen Literale sind
    Mischpartner, Schatten und Druck. Gefuehrt und begruendet in der Ausnahmeliste des Style Guide
@@ -26,8 +27,6 @@
 [data-bs-theme="dark"] {
   --tblr-yellow: #ffcc00;
   --tblr-warning: #ffcc00;
-  --tblr-yellow-rgb: 255, 204, 0;
-  --tblr-warning-rgb: 255, 204, 0;
 }
 
 /* ===== Fokusring in voller Primaerfarbe =====
@@ -278,8 +277,8 @@
    Datumskachel, auf der beide Toenungen uebereinanderliegen. Gemessen: Kachel / Matrixzelle /
    Matrixkopf. */
 :root {
-  --salat-day-hover-bg: rgba(var(--tblr-primary-rgb), 0.18);
-  --salat-day-hover-head-bg: rgba(var(--tblr-primary-rgb), 0.28);
+  --salat-day-hover-bg: color-mix(in oklab, var(--tblr-primary) 18%, transparent);
+  --salat-day-hover-head-bg: color-mix(in oklab, var(--tblr-primary) 28%, transparent);
   --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 70%, #000); /* hell 4,58 / 6,49 / 5,61:1 */
 }
 
