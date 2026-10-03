@@ -75,11 +75,11 @@ public class ETLRunLauncher {
    * @return der eröffnete Lauf — er steht ab sofort mit Status {@code RUNNING} in der Liste
    */
   public ETLRunHistory startManualRun(LocalDateRange dateRange, String etlName) {
-    var etlNames = etlService.resolveManualRun(dateRange, etlName);
+    var etlIds = etlService.resolveManualRun(dateRange, etlName);
     var run = etlService.startRun(dateRange, MANUAL);
 
     try {
-      etlTaskExecutor.execute(() -> runInBackground(run.getId(), dateRange, etlNames));
+      etlTaskExecutor.execute(() -> runInBackground(run.getId(), dateRange, etlIds));
     } catch (TaskRejectedException e) {
       // Der Weg hierher ist schmal, aber vorgesehen (→ ADR-0028): wer einen laufenden Lauf von Hand
       // als beendet markiert, hält ihn damit nicht an — die Zeile gibt die Sperre frei, der Thread
@@ -96,13 +96,13 @@ public class ETLRunLauncher {
     return run;
   }
 
-  private void runInBackground(long runId, LocalDateRange dateRange, List<String> etlNames) {
+  private void runInBackground(long runId, LocalDateRange dateRange, List<Long> etlIds) {
     // Ohne HTTP-Anfrage gibt es keinen Request-Scope; die request-scoped AuthorizedUser-Bohne
     // braucht denselben Vorlauf wie in einem geplanten Job (→ ADR-0006).
     setRequestAttributes(new SchedulerRequestAttributes(), true);
     try {
       authorizedUserProvider.getObject().initForJob();
-      etlService.continueRun(runId, dateRange, etlNames);
+      etlService.continueRun(runId, dateRange, etlIds);
     } catch (Exception e) {
       // Der Lauf hält sein Scheitern in seiner eigenen Zeile fest; hier bliebe die Ausnahme sonst
       // im Thread stecken, ohne dass irgendwo etwas davon stünde.
