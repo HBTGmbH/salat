@@ -12,6 +12,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 
 @Repository
@@ -91,11 +92,20 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       """)
   List<Customerorder> findBySignIn(Collection<String> signs);
 
+  /**
+   * The orders the invoice page offers: every order with at least one invoiceable suborder (#1283).
+   * The {@code exists} keeps it at one row per order; fetching the suborders instead multiplied the
+   * rows by them and made the database deduplicate and sort the wide rows in a temporary table. The
+   * suborders of the chosen order are loaded on their own.
+   */
   @Query("""
-      select distinct c from Customerorder c inner join fetch c.suborders s where s.invoice = 'Y'
+      select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,
+          c.description, cu.shortname, cu.name, c.hide)
+      from Customerorder c left join c.customer cu
+      where exists (select 1 from Suborder s where s.customerorder = c and s.invoice = 'Y')
       order by c.sign
-  """)
-  List<Customerorder> findAllInvoiceable();
+      """)
+  List<CustomerorderOption> findAllInvoiceable();
 
   /**
    * Candidates for the object search of the command palette (#1157): every order whose sign,
