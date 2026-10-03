@@ -30,13 +30,13 @@ public final class AppliedRateLookup {
     /** What the resolution needs of a suborder — read once, not once per booking. */
     private record SuborderRates(String completeOrderSign, boolean invoiceable, OrderType orderType) {}
 
-    private final Long customerorderId;
+    private final long customerorderId;
     private final Long orderBudgetId;
     private final Map<Long, SuborderRates> subordersById;
     private final EmployeeCostLookup costLookup;
     private final OrderPricingLookup pricingLookup;
 
-    private AppliedRateLookup(Long customerorderId, Long orderBudgetId,
+    private AppliedRateLookup(long customerorderId, Long orderBudgetId,
                               Map<Long, SuborderRates> subordersById,
                               EmployeeCostLookup costLookup, OrderPricingLookup pricingLookup) {
         this.customerorderId = customerorderId;
@@ -47,15 +47,14 @@ public final class AppliedRateLookup {
     }
 
     /**
-     * @param customerorderId the order the rates are looked up for (#1212); {@code null} for a plan
-     *                        whose order the migration could not resolve — such a plan earns nothing
+     * @param customerorderId the order the rates are looked up for (#1212)
      * @param orderBudgetId the plan whose page is being rendered — every booking this lookup is
      *                      asked about is assigned to it, so a rate bound to that plan applies and
      *                      one bound to another does not (#1065). {@code null} where the caller
      *                      resolves outside any plan.
      * @param costLookup    {@code null} where costs are not reported — see the class comment
      */
-    public static AppliedRateLookup of(Long customerorderId, Long orderBudgetId,
+    public static AppliedRateLookup of(long customerorderId, Long orderBudgetId,
                                        Collection<Suborder> suborders,
                                        EmployeeCostLookup costLookup, OrderPricingLookup pricingLookup) {
         Map<Long, SuborderRates> subordersById = new HashMap<>();
@@ -88,7 +87,7 @@ public final class AppliedRateLookup {
         var cost = costLookup == null ? null : costLookup
             .findEffectiveCost(employeeId, suborderId, suborder.orderType(), day)
             .orElse(null);
-        var price = customerorderId == null ? null : pricingLookup
+        var price = pricingLookup
             .findEffectiveRate(customerorderId, suborder.completeOrderSign(), employeeId,
                 orderBudgetId, day)
             .orElse(null);

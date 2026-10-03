@@ -105,12 +105,12 @@ public class OrderFlatRateController {
             .reduce(BigDecimal.ZERO, BigDecimal::add));
         model.addAttribute("instalmentForm", new OrderFlatRateInstalmentForm());
         // The signs order and suborder have today, read by id (#1212) — the flat rate's sign columns
-        // only mirror them for reports. A reference without an id keeps its stored sign, marked.
+        // only mirror them for reports.
         var customerorderId = flatRate.getCustomerorderId();
-        model.addAttribute("customerorderSign", customerorderId == null ? flatRate.getCustomerorderSign()
-            : customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId));
+        model.addAttribute("customerorderSign",
+            customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId));
         var suborderId = flatRate.getSuborderId();
-        model.addAttribute("suborderSign", suborderId == null ? flatRate.getSuborderSign()
+        model.addAttribute("suborderSign", suborderId == null ? null
             : suborderService.getCompleteOrderSignsByIds(List.of(suborderId)).get(suborderId));
         return "budget/flat-rate-detail";
     }
@@ -260,9 +260,6 @@ public class OrderFlatRateController {
         form.setId(flatRate.getId());
         form.setCustomerorderId(flatRate.getCustomerorderId());
         form.setSuborderId(flatRate.getSuborderId());
-        if (!flatRate.isOrderWide() && flatRate.getSuborderId() == null) {
-            form.setUnresolvedSuborderSign(flatRate.getSuborderSign());
-        }
         form.setOrderBudgetId(flatRate.getOrderBudgetId());
         form.setDescription(flatRate.getDescription());
         form.setRhythm(flatRate.getRhythm());

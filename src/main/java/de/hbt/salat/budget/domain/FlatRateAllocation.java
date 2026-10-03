@@ -40,8 +40,8 @@ public final class FlatRateAllocation {
      * would make amounts ambiguous that are unambiguous today.
      */
     /**
-     * @param positionOf where a flat rate sits in the order tree (#1205); empty for one the
-     *                   migration could not resolve, which then counts against no derived plan
+     * @param positionOf where a flat rate sits in the order tree (#1205); empty for one whose suborder
+     *                   no longer exists, which then counts against no derived plan
      */
     public static Optional<OrderBudget> uniquePlanFor(FlatRateDueAmount dueAmount,
                                                       Collection<OrderBudget> plans,

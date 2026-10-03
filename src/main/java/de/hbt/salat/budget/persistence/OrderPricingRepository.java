@@ -24,7 +24,7 @@ public interface OrderPricingRepository
      * rows one is looking for when tidying up. By id, not by the sign column: that one only mirrors
      * the order for reports (#1212).
      */
-    @Query("SELECT DISTINCT p.customerorderId FROM OrderPricing p WHERE p.customerorderId IS NOT NULL")
+    @Query("SELECT DISTINCT p.customerorderId FROM OrderPricing p")
     List<Long> findDistinctCustomerorderIds();
 
     List<OrderPricing> findByCustomerorderIdInOrderByIdAsc(Collection<Long> customerorderIds);
@@ -38,8 +38,7 @@ public interface OrderPricingRepository
      * the plan-less one it narrows (#1065). {@code NULL} and the empty string mean the same thing to
      * the matching, so they are folded together here as well; legacy rows hold both.
      *
-     * <p>The order is compared by id (#1212); a rate whose order the migration could not resolve
-     * prices nothing and competes with nothing.
+     * <p>The order is compared by id (#1212).
      *
      * <p>Person and plan need no such folding: both are foreign keys and either set or {@code NULL}.
      * {@code p.orderBudget.id} reads that key without joining the plan. A rate whose person the

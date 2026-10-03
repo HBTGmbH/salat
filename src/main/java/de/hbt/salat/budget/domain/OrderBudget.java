@@ -27,11 +27,10 @@ public class OrderBudget extends AuditedEntity {
     private String name;
 
     /**
-     * The customer order of the plan (#1205). {@code null} only on a row the migration could not
-     * resolve: its sign was carried by no order or by several. Such a plan covers nothing and is
-     * marked in the list until somebody picks the order.
+     * The customer order of the plan (#1205). Required since Changeset 119 (#1212): the migration
+     * could resolve every stored sign.
      */
-    @Column(name = "customerorder_id")
+    @Column(name = "customerorder_id", nullable = false)
     private Long customerorderId;
 
     /**
@@ -44,16 +43,15 @@ public class OrderBudget extends AuditedEntity {
 
     /**
      * The suborder the plan lives on; it covers that suborder and everything below it
-     * (→ {@link BudgetScope}). {@code null} with a {@link #suborderSign} means the migration could
-     * not resolve the suborder — the plan then covers nothing rather than the whole order.
+     * (→ {@link BudgetScope}). {@code null} means the budget applies to the whole customer order.
      */
     @Column(name = "suborder_id")
     private Long suborderId;
 
     /**
      * The complete order sign of {@link #suborderId} ({@code Suborder#getCompleteOrderSign()},
-     * e.g. {@code ORDER/01/02}), kept as a mirror like {@link #customerorderSign}. {@code null}
-     * means the budget applies to the whole customer order.
+     * e.g. {@code ORDER/01/02}), kept as a mirror like {@link #customerorderSign}; the application
+     * never reads it (#1212).
      */
     @Column(name = "suborder_sign")
     private String suborderSign;
@@ -85,17 +83,9 @@ public class OrderBudget extends AuditedEntity {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<OrderBudgetScopeEntry> scopeEntries = new ArrayList<>();
 
-    /** Whether the plan applies to the customer order as a whole (→ {@link BudgetScope#isOrderWide}). */
+    /** Whether the plan applies to the customer order as a whole. */
     public boolean isOrderWide() {
-        return BudgetScope.isOrderWide(suborderId, suborderSign);
-    }
-
-    /**
-     * Whether the migration could not resolve what the plan refers to (#1205): the order, or a
-     * suborder it names. Such a plan covers nothing.
-     */
-    public boolean isUnresolved() {
-        return customerorderId == null || (!isOrderWide() && suborderId == null);
+        return suborderId == null;
     }
 
 }

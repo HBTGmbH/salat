@@ -162,15 +162,6 @@ public class AppliedRateLookupTest {
     assertThat(rate.hasPrice()).isFalse();
   }
 
-  /** A plan whose order the migration could not resolve (#1205) earns nothing, whatever rates exist (#1212). */
-  @Test
-  public void resolves_no_price_for_a_plan_without_an_order() {
-    var rate = AppliedRateLookup.of(null, null, List.of(suborder(true, OrderType.STANDARD)), null, pricingLookup(14000))
-        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
-
-    assertThat(rate.hasPrice()).isFalse();
-  }
-
   private static AppliedRateLookup lookup(Suborder suborder, EmployeeCostLookup costs,
                                           OrderPricingLookup pricings) {
     return AppliedRateLookup.of(CUSTOMERORDER_ID, null, List.of(suborder), costs, pricings);

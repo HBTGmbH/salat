@@ -23,25 +23,20 @@ import de.hbt.salat.order.domain.OrderType;
  * repository queries returned as {@code get(0)}.
  *
  * <p>The person is matched by id (#968), and so is the suborder (#1205), so a sign change — a
- * correction as much as an anonymization or a renamed order — leaves the resolution alone. An assignment the migration could not resolve
- * carries no id and matches no booking, just as its sign matched none before.
+ * correction as much as an anonymization or a renamed order — leaves the resolution alone. An assignment whose person
+ * the migration could not resolve carries no id and matches no booking, just as its sign matched none before.
  */
 public final class EmployeeCostLookup {
 
-    /**
-     * @param suborderId {@code null} for the general assignment of the person
-     * @param specific   whether the assignment names a suborder — a specific one the migration could
-     *                   not resolve keeps {@code true} with a {@code null} id and so never turns into
-     *                   the general one (#1205)
-     */
-    private record AssignmentKey(Long employeeId, Long suborderId, boolean specific) {
+    /** @param suborderId {@code null} for the general assignment of the person */
+    private record AssignmentKey(Long employeeId, Long suborderId) {
 
         static AssignmentKey general(long employeeId) {
-            return new AssignmentKey(employeeId, null, false);
+            return new AssignmentKey(employeeId, null);
         }
 
         static AssignmentKey specific(long employeeId, long suborderId) {
-            return new AssignmentKey(employeeId, suborderId, true);
+            return new AssignmentKey(employeeId, suborderId);
         }
 
     }
@@ -61,8 +56,7 @@ public final class EmployeeCostLookup {
         Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey = new HashMap<>();
         for (var assignment : assignments) {
             assignmentsByKey.computeIfAbsent(
-                new AssignmentKey(assignment.getEmployeeId(), assignment.getSuborderId(),
-                    assignment.isSuborderSpecific()),
+                new AssignmentKey(assignment.getEmployeeId(), assignment.getSuborderId()),
                 k -> new ArrayList<>()).add(assignment);
         }
         Map<String, List<EmployeeCost>> costsByName = new HashMap<>();

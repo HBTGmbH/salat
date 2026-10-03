@@ -93,12 +93,11 @@ public interface OrderBudgetRepository
     /**
      * The customer orders that have at least one active plan — the only orders a backfill run
      * (#910) can assign anything on. Selecting the signs instead of the plans keeps the run from
-     * loading every plan of the installation just to learn which orders to visit. A plan whose order
-     * the migration could not resolve (#1205) has no order to visit.
+     * loading every plan of the installation just to learn which orders to visit.
      */
     @Query("""
         SELECT DISTINCT b.customerorderId FROM OrderBudget b
-        WHERE b.active = true AND b.customerorderId IS NOT NULL
+        WHERE b.active = true
         """)
     List<Long> findActiveCustomerorderIds();
 

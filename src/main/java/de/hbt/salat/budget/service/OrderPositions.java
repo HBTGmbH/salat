@@ -12,8 +12,7 @@ import de.hbt.salat.order.service.SuborderService;
  * Reads where a plan or a flat rate sits in the order tree from the ids it stores (#1205), so that
  * {@code BudgetScope} compares the current tree rather than a sign written when the record was saved.
  *
- * <p>Empty for a record the migration could not resolve, and for a suborder that no longer exists —
- * both cover nothing.
+ * <p>Empty for a suborder that no longer exists — it covers nothing.
  */
 @Component
 @RequiredArgsConstructor
@@ -22,17 +21,11 @@ public class OrderPositions {
     private final SuborderService suborderService;
 
     public Optional<OrderPosition> of(OrderBudget plan) {
-        if (plan.isUnresolved()) {
-            return Optional.empty();
-        }
-        return of(plan.getCustomerorderId(), plan.isOrderWide() ? null : plan.getSuborderId());
+        return of(plan.getCustomerorderId(), plan.getSuborderId());
     }
 
     public Optional<OrderPosition> of(OrderFlatRate flatRate) {
-        if (flatRate.isUnresolved()) {
-            return Optional.empty();
-        }
-        return of(flatRate.getCustomerorderId(), flatRate.isOrderWide() ? null : flatRate.getSuborderId());
+        return of(flatRate.getCustomerorderId(), flatRate.getSuborderId());
     }
 
     /**

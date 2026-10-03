@@ -150,20 +150,6 @@ public class EmployeeCostLookupTest {
     assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.STANDARD, DATE)).isEmpty();
   }
 
-  /**
-   * A suborder-specific assignment the migration could not resolve matches no booking — and it must
-   * not stand in for the general assignment of the person either (#1205).
-   */
-  @Test
-  public void should_not_treat_an_unresolved_specific_assignment_as_the_general_one() {
-    var unresolved = assignment(EMP, "gone", "specific");
-    unresolved.setSuborderId(null);
-    var lookup = EmployeeCostLookup.of(List.of(unresolved), List.of(cost("specific", 200)));
-
-    assertThat(cents(lookup, EMP, "so")).isNull();
-    assertThat(cents(lookup, EMP, null)).isNull();
-  }
-
   private static Integer cents(EmployeeCostLookup lookup, long employeeId, String suborderSign) {
     return cents(lookup, employeeId, suborderSign, OrderType.STANDARD);
   }

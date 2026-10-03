@@ -187,32 +187,6 @@ public class OrderFlatRateServiceTest {
     verify(repository, times(2)).save(any());
   }
 
-  /** Editing is how a flat rate the migration could not resolve gets its order (#1205). */
-  @Test
-  public void resolves_the_order_of_an_unresolved_flat_rate_on_edit() {
-    var existing = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
-    existing.setCustomerorderId(null);
-    when(repository.findById(1L)).thenReturn(Optional.of(existing));
-
-    service.update(1L, data(FlatRateRhythm.ONCE, TOMORROW, null, "2000"));
-
-    assertThat(existing.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
-    assertThat(existing.getValidFrom()).isEqualTo(TOMORROW);
-  }
-
-  /** A suborder the migration could not resolve stays so while the edit names none — not "the whole order". */
-  @Test
-  public void keeps_an_unresolved_suborder_when_the_edit_names_none() {
-    var existing = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
-    existing.setSuborderSign("co/gone");
-    when(repository.findById(1L)).thenReturn(Optional.of(existing));
-
-    service.update(1L, data(FlatRateRhythm.ONCE, TOMORROW, null, "2000"));
-
-    assertThat(existing.getSuborderSign()).isEqualTo("co/gone");
-    assertThat(existing.isUnresolved()).isTrue();
-  }
-
   // --- instalments -----------------------------------------------------------------------------
 
   @Test

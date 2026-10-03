@@ -38,9 +38,8 @@ public class EmployeeCostAssignment extends AuditedEntity {
     private String employeeSign;
 
     /**
-     * The suborder the assignment is specific to (#1205). {@code null} with a {@link #suborderSign}
-     * means the migration could not resolve it: such a row matches no booking — it does not turn into
-     * the general assignment of the person.
+     * The suborder the assignment is specific to (#1205). {@code null} means the assignment applies
+     * regardless of suborder.
      */
     @Column(name = "suborder_id")
     private Long suborderId;
@@ -48,8 +47,7 @@ public class EmployeeCostAssignment extends AuditedEntity {
     /**
      * The complete order sign of {@link #suborderId} ({@code Suborder#getCompleteOrderSign()},
      * e.g. {@code ORDER/01/02}), kept because views, ETL definitions and reports read it, and
-     * written from the suborder ({@code OrderSignMirrorListener}). {@code null} means the assignment
-     * applies regardless of suborder.
+     * written from the suborder ({@code OrderSignMirrorListener}); the application never reads it (#1212).
      */
     @Column(name = "suborder_sign")
     private String suborderSign;
@@ -65,17 +63,9 @@ public class EmployeeCostAssignment extends AuditedEntity {
         return employeeId == null;
     }
 
-    /**
-     * Whether the assignment is specific to a suborder rather than general — also when the
-     * migration could not resolve that suborder (→ {@link BudgetScope#isOrderWide}).
-     */
+    /** Whether the assignment is specific to a suborder rather than general. */
     public boolean isSuborderSpecific() {
-        return !BudgetScope.isOrderWide(suborderId, suborderSign);
-    }
-
-    /** Whether the migration could not resolve the suborder (→ {@link #suborderId}). */
-    public boolean isSuborderUnresolved() {
-        return isSuborderSpecific() && suborderId == null;
+        return suborderId != null;
     }
 
 }

@@ -81,7 +81,7 @@ public final class OrderBudgetBinding {
     }
 
     private static boolean sameOrder(OrderBudget plan, Long customerorderId) {
-        return !plan.isUnresolved() && plan.getCustomerorderId().equals(customerorderId);
+        return plan.getCustomerorderId().equals(customerorderId);
     }
 
     private static boolean isBlank(String value) {

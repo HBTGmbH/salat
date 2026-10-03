@@ -50,12 +50,6 @@
                       th:attr="data-subtext=${subtext}"
                       th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
             </salat:select>
-            <!--/* The order the migration could not resolve (#1212): named, so that it is known which to pick. */-->
-            <div th:if="${unresolvedCustomerorderSign != null}" class="mb-3">
-              <span class="badge bg-warning-lt"
-                    th:text="${unresolvedCustomerorderSign} + ' – ' + #{main.budget.unresolved.text}">ORDER – nicht zugeordnet</span>
-              <div class="form-text" th:text="#{main.budget.unresolved.customerorder.help}">Bitte den Auftrag wählen.</div>
-            </div>
           </div>
           <div class="col-md-6">
             <div th:replace="~{fragments/suborder-picker :: suborderPicker(${suborders}, null)}"></div>

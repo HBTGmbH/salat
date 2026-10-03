@@ -79,21 +79,15 @@
             th:with="f=${row.flatRate()}, order=${row.customerorder()}">
           <td>
             <div>
-              <!--/* The sign of the referenced order (#1205); the stored one, marked, where the
-                     migration could not resolve it. */-->
-              <span th:text="${order != null ? order.sign : f.customerorderSign}"></span>
+              <!--/* The sign of the referenced order (#1205, #1212). */-->
+              <span th:text="${order.sign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!f.currentlyValid})}"></span>
-              <span th:if="${f.customerorderId == null}" class="badge bg-warning-lt"
-                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td>
-            <!--/* The complete sign of the referenced suborder (#1212); the stored one, marked, where the
-                   migration could not resolve it. */-->
-            <span th:text="${row.suborderCompleteOrderSign() ?: (f.suborderSign ?: '-')}"></span>
-            <span th:if="${f.suborderId == null and !f.orderWide}" class="badge bg-warning-lt"
-                  th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            <!--/* The complete sign of the referenced suborder (#1212). */-->
+            <span th:text="${row.suborderCompleteOrderSign() ?: '-'}"></span>
           </td>
           <!--/* Leer heisst: der Plan wird hergeleitet, und bei mehreren passenden keiner (#1065). */-->
           <td th:text="${row.orderBudgetName()} ?: '-'"></td>
@@ -129,7 +123,7 @@
             <form th:action="@{/budget/flat-rate/{id}/delete(id=${f.id})}" method="post"
                   data-confirm
                   th:data-confirm-title="#{main.flatrate.delete.confirm.title}"
-                  th:data-confirm-detail="|${order != null ? order.sign : f.customerorderSign} · ${f.description ?: '-'}|"
+                  th:data-confirm-detail="|${order.sign} · ${f.description ?: '-'}|"
                   th:data-confirm-detail-secondary="|${#messages.msg(f.rhythm.label)} · ${#temporals.format(f.validFrom, 'dd.MM.yyyy')}|"
                   th:data-confirm-label="#{main.general.button.delete.text}"
                   data-confirm-variant="danger">

@@ -26,16 +26,10 @@ public interface EmployeeCostAssignmentRepository
 
     long countBySuborderId(Long suborderId);
 
-    /**
-     * General assignments are those without a suborder id <em>and</em> without a stored sign: the sign
-     * column only mirrors the suborder for reports (#1212), and is read here only to keep an
-     * assignment the migration could not resolve from passing as a general one (→
-     * {@code BudgetScope#isOrderWide}). The same holds for {@link #findEffectiveGeneral}.
-     */
     @Query("""
         SELECT a FROM EmployeeCostAssignment a
         WHERE a.employeeId = :emp
-          AND ((:so IS NULL AND a.suborderId IS NULL AND a.suborderSign IS NULL) OR a.suborderId = :so)
+          AND ((:so IS NULL AND a.suborderId IS NULL) OR a.suborderId = :so)
           AND a.validFrom <= :until AND a.validUntil >= :from
           AND (:excludeId IS NULL OR a.id != :excludeId)
         """)
@@ -55,7 +49,7 @@ public interface EmployeeCostAssignmentRepository
         @Param("date") LocalDate date);
 
     @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
-        + " AND a.suborderId IS NULL AND a.suborderSign IS NULL"
+        + " AND a.suborderId IS NULL"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveGeneral(
         @Param("emp") long employeeId,

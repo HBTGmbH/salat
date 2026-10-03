@@ -28,7 +28,7 @@ public interface OrderFlatRateRepository
      * {@code OrderPricingRepository#findDistinctCustomerorderIds} gives: a flat rate outlives its
      * order's visibility and has to stay reachable when the order is hidden or expired.
      */
-    @Query("SELECT DISTINCT f.customerorderId FROM OrderFlatRate f WHERE f.customerorderId IS NOT NULL")
+    @Query("SELECT DISTINCT f.customerorderId FROM OrderFlatRate f")
     List<Long> findDistinctCustomerorderIds();
 
     /** The flat rates bound to one budget plan — what its detail page lists (#1065). */

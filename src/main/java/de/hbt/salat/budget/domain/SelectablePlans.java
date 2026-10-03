@@ -63,8 +63,7 @@ public record SelectablePlans(List<OrderBudget> plans, Long notFittingId, Map<Lo
 
     /**
      * The same options with the sign of each plan's scope: the suborder's where the plan has one,
-     * the order's otherwise. A plan whose suborder the migration could not resolve keeps its stored
-     * sign — there is nothing else to name it by.
+     * the order's otherwise.
      *
      * @param orderSign     the sign of the order all these plans belong to
      * @param suborderSigns the complete signs of their suborders, by suborder id
@@ -72,15 +71,7 @@ public record SelectablePlans(List<OrderBudget> plans, Long notFittingId, Map<Lo
     public SelectablePlans withScopeSigns(String orderSign, Map<Long, String> suborderSigns) {
         var signs = new HashMap<Long, String>();
         for (var plan : plans) {
-            String sign;
-            if (plan.getSuborderId() != null) {
-                sign = suborderSigns.get(plan.getSuborderId());
-            } else if (plan.isOrderWide()) {
-                sign = orderSign;
-            } else {
-                sign = plan.getSuborderSign();
-            }
-            signs.put(plan.getId(), sign);
+            signs.put(plan.getId(), plan.isOrderWide() ? orderSign : suborderSigns.get(plan.getSuborderId()));
         }
         return new SelectablePlans(plans, notFittingId, signs);
     }

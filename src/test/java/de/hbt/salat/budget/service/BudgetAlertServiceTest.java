@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,22 +73,11 @@ public class BudgetAlertServiceTest {
         anyString(), any(), eq("/budget/controlling?fCustomerOrderSign=co&evaluate=true"), any());
   }
 
-  /** A plan the migration could not resolve has no order to tell, and nobody to tell it to. */
-  @Test
-  public void sends_no_alert_for_a_plan_without_an_order() {
-    givenPlans(plan(null, "co"));
-
-    service.checkAndNotify();
-
-    verify(customerorderService, never()).getCustomerorderBySign(anyString());
-    verify(notificationService, never()).emitNotification(any(), any(), any(), any(), any(), any(), any());
-  }
-
   private void givenPlans(OrderBudget... plans) {
     when(orderBudgetRepository.findByActiveAndAlertThresholdPercentIsNotNull(Boolean.TRUE)).thenReturn(List.of(plans));
   }
 
-  private static OrderBudget plan(Long customerorderId, String customerorderSign) {
+  private static OrderBudget plan(long customerorderId, String customerorderSign) {
     var plan = new OrderBudget();
     ReflectionTestUtils.setField(plan, "id", 1L);
     plan.setName("plan");

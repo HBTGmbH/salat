@@ -336,7 +336,7 @@ public class EmployeeCostController {
             .filter(Objects::nonNull)
             .collect(toSet()));
         Function<EmployeeCostAssignment, String> suborderSignOf = assignment -> assignment.getSuborderId() == null
-            ? assignment.getSuborderSign()
+            ? null
             : suborderSigns.get(assignment.getSuborderId());
         model.addAttribute("categoryName", name);
         model.addAttribute("rates", rates);
@@ -366,7 +366,6 @@ public class EmployeeCostController {
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
         model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
-        model.addAttribute("unresolvedSuborderSign", unresolvedSuborderSignOf(form));
         var kept = form.getSuborderId() == null ? null : suborderService.getSuborderById(form.getSuborderId());
         model.addAttribute("suborders",
             suborderService.getAllSelectableSuborders(kept == null ? null : kept.getCompleteOrderSign()));
@@ -384,19 +383,6 @@ public class EmployeeCostController {
         }
         var assignment = employeeCostService.getAssignmentById(form.getId());
         return assignment.isEmployeeUnresolved() ? assignment.getEmployeeSign() : null;
-    }
-
-    /**
-     * The sign an assignment was stored with when the migration could not resolve its suborder
-     * (#1205), or {@code null} — named in the empty choice of the select. Left empty, the assignment
-     * keeps it rather than turning into the general one of the person.
-     */
-    private String unresolvedSuborderSignOf(EmployeeCostAssignmentForm form) {
-        if (form.isNew() || form.getSuborderId() != null) {
-            return null;
-        }
-        var assignment = employeeCostService.getAssignmentById(form.getId());
-        return assignment.isSuborderUnresolved() ? assignment.getSuborderSign() : null;
     }
 
     private List<String> validateAssignment(EmployeeCostAssignmentForm form) {

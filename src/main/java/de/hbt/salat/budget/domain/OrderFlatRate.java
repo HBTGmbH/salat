@@ -43,10 +43,9 @@ import de.hbt.salat.common.domain.AuditedEntity;
 public class OrderFlatRate extends AuditedEntity {
 
     /**
-     * The customer order of the flat rate (#1205); {@code null} only where the migration could not
-     * resolve it — see {@code OrderBudget#getCustomerorderId()}.
+     * The customer order of the flat rate (#1205); required — see {@code OrderBudget#getCustomerorderId()}.
      */
-    @Column(name = "customerorder_id")
+    @Column(name = "customerorder_id", nullable = false)
     private Long customerorderId;
 
     /** The sign of {@link #customerorderId}, a mirror only — see {@code OrderBudget#getCustomerorderSign()}. */
@@ -54,16 +53,15 @@ public class OrderFlatRate extends AuditedEntity {
     private String customerorderSign;
 
     /**
-     * The suborder the flat rate applies to, with its subtree. {@code null} with a
-     * {@link #suborderSign} means the migration could not resolve it.
+     * The suborder the flat rate applies to, with its subtree. {@code null} means the flat rate
+     * applies to the whole customer order.
      */
     @Column(name = "suborder_id")
     private Long suborderId;
 
     /**
      * The complete order sign of {@link #suborderId} ({@code Suborder#getCompleteOrderSign()}, e.g.
-     * {@code ORDER/01/02}), a mirror only. {@code null} means the flat rate applies to the whole
-     * customer order.
+     * {@code ORDER/01/02}), a mirror only; the application never reads it (#1212).
      */
     @Column(name = "suborder_sign")
     private String suborderSign;
@@ -118,12 +116,7 @@ public class OrderFlatRate extends AuditedEntity {
 
     /** Whether this flat rate applies to the customer order as a whole. */
     public boolean isOrderWide() {
-        return BudgetScope.isOrderWide(suborderId, suborderSign);
-    }
-
-    /** Whether the migration could not resolve the order or the suborder (#1205); such an amount counts nowhere. */
-    public boolean isUnresolved() {
-        return customerorderId == null || (!isOrderWide() && suborderId == null);
+        return suborderId == null;
     }
 
     /** The id of the bound plan without loading it — see {@code OrderPricing#getOrderBudgetId()}. */

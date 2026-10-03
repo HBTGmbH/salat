@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -118,7 +117,6 @@ public class BudgetSegmentControllingService {
         // column the reports read (#1212).
         var planOrderIds = orderBudgetService.getAllActiveVisible().stream()
             .map(OrderBudget::getCustomerorderId)
-            .filter(Objects::nonNull)
             .distinct()
             .toList();
         signs.addAll(customerorderService.getCustomerorderSignsByIds(planOrderIds).values());

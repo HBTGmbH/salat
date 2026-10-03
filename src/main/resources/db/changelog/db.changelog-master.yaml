@@ -4245,3 +4245,41 @@ databaseChangeLog:
                   `execute` = REPLACE(`execute`, 'commited', 'committed'),
                   `cleanup` = REPLACE(`cleanup`, 'commited', 'committed')
               WHERE CONCAT_WS(' ', `init`, `execute`, `cleanup`) LIKE '%commited%'
+  - changeSet:
+      id: 119
+      author: kr
+      comment: Budgetplan, Pauschale, Kundenstundensatz und Kostenzuordnung verweisen sicher auf Auftrag und Unterauftrag (#1212)
+      # Die Changesets 98 und 116 uebernahmen die ids nur bei eindeutiger Zuordnung und liessen den
+      # Rest ohne id stehen, markiert in den Listen. Im Produktionsbestand vor dem Release liess sich
+      # jeder Bezug zuordnen; die Markierung ist deshalb entfallen. Damit das so bleibt, haelt dieser
+      # Changeset an, falls doch ein Satz ohne Auftrag oder mit einem Unterauftragskuerzel ohne id
+      # dasteht, und macht den Auftrag zur Pflicht. Ein Unterauftrag ohne id heisst ab hier: der ganze
+      # Auftrag.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            Budgetplan, Pauschale, Kundenstundensatz oder Kostenzuordnung ohne zugeordneten Auftrag bzw.
+            Unterauftrag; vor dem Start zuordnen (#1212).
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT (SELECT COUNT(*) FROM order_budget
+                       WHERE customerorder_id IS NULL OR (suborder_id IS NULL AND TRIM(COALESCE(suborder_sign, '')) <> ''))
+                   + (SELECT COUNT(*) FROM order_flat_rate
+                       WHERE customerorder_id IS NULL OR (suborder_id IS NULL AND TRIM(COALESCE(suborder_sign, '')) <> ''))
+                   + (SELECT COUNT(*) FROM order_pricing WHERE customerorder_id IS NULL)
+                   + (SELECT COUNT(*) FROM employee_cost_employee
+                       WHERE suborder_id IS NULL AND TRIM(COALESCE(suborder_sign, '')) <> '')
+      changes:
+        - addNotNullConstraint:
+            tableName: order_budget
+            columnName: customerorder_id
+            columnDataType: BIGINT
+        - addNotNullConstraint:
+            tableName: order_flat_rate
+            columnName: customerorder_id
+            columnDataType: BIGINT
+        - addNotNullConstraint:
+            tableName: order_pricing
+            columnName: customerorder_id
+            columnDataType: BIGINT

@@ -26,15 +26,11 @@ public final class OrderFlatRateLookup {
     }
 
     /**
-     * Keyed by the id of the customer order (#1205). A flat rate whose order the migration could not
-     * resolve belongs to no order and falls due nowhere — it is marked in its list instead.
+     * Keyed by the id of the customer order (#1205).
      */
     public static OrderFlatRateLookup of(Collection<OrderFlatRate> flatRates) {
         Map<Long, List<OrderFlatRate>> byCustomerorderId = new HashMap<>();
         for (var flatRate : flatRates) {
-            if (flatRate.getCustomerorderId() == null) {
-                continue;
-            }
             byCustomerorderId
                 .computeIfAbsent(flatRate.getCustomerorderId(), id -> new ArrayList<>())
                 .add(flatRate);

@@ -321,13 +321,8 @@ public class EmployeeCostService {
         var suborder = suborderOf(data);
         checkReferences(data);
         var assignment = getAssignmentById(id);
-        // A suborder the migration could not resolve stays so until one is chosen (#1205): an empty
-        // choice must not turn a specific assignment into the general one of the person. Such an
-        // assignment matches no booking, so it cannot collide with another one either.
-        if (suborder != null || !assignment.isSuborderUnresolved()) {
-            checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
-                endOfValidity(data.validUntil()), id);
-        }
+        checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
+            endOfValidity(data.validUntil()), id);
         applyAssignment(assignment, data, employee, suborder);
         assignmentRepository.save(assignment);
     }
@@ -411,11 +406,9 @@ public class EmployeeCostService {
         assignment.setEmployeeCostName(data.employeeCostName());
         assignment.setEmployeeId(employee.getId());
         assignment.setEmployeeSign(employee.getSign());
-        if (suborder != null || !assignment.isSuborderUnresolved()) {
-            assignment.setSuborderId(suborder == null ? null : suborder.getId());
-            // a mirror for the readers outside the application, written from the suborder (#1205)
-            assignment.setSuborderSign(suborder == null ? null : suborder.getCompleteOrderSign());
-        }
+        assignment.setSuborderId(suborder == null ? null : suborder.getId());
+        // a mirror for the readers outside the application, written from the suborder (#1205)
+        assignment.setSuborderSign(suborder == null ? null : suborder.getCompleteOrderSign());
         assignment.setValidFrom(data.validFrom());
         assignment.setValidUntil(endOfValidity(data.validUntil()));
     }

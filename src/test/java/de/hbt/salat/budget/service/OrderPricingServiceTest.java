@@ -130,7 +130,7 @@ public class OrderPricingServiceTest {
 
   /**
    * By the sign the order has today, read by id (#1212): the rates' sign column only mirrors it for
-   * the reports and is deliberately stale here. A rate without an order goes by the stored sign.
+   * the reports and is deliberately stale here.
    */
   @Test
   public void lists_the_rates_by_the_sign_their_order_has_today() {
@@ -138,10 +138,9 @@ public class OrderPricingServiceTest {
     onOther.setCustomerorderSign("a-stale");
     var onCo = pricing("co", TODAY, OPEN_END);
     onCo.setCustomerorderSign("z-stale");
-    var unresolved = unresolvedOrderPricing("zz-gone");
-    given(onOther, unresolved, onCo);
+    given(onOther, onCo);
 
-    assertThat(pricingsOf(service.getRows(null, true, true))).containsExactly(onCo, onOther, unresolved);
+    assertThat(pricingsOf(service.getRows(null, true, true))).containsExactly(onCo, onOther);
   }
 
   /** Both filters apply at once — picking an order does not bring its expired rates back. */
@@ -198,21 +197,6 @@ public class OrderPricingServiceTest {
     givenOrder("co", TODAY.minusYears(2), YESTERDAY);
 
     assertThat(pricingsOf(service.getRows(null, false, true))).containsExactly(rate);
-  }
-
-  /**
-   * The order is the only way into the rate, so a rate whose order the migration could not resolve
-   * (#1212) has to stay visible — otherwise it could not be reached through the user interface at all.
-   */
-  @Test
-  public void keeps_a_rate_whose_customer_order_is_unresolved() {
-    var unresolved = unresolvedOrderPricing("gone");
-    given(unresolved);
-
-    assertThat(service.getRows(null, false, false)).singleElement().satisfies(row -> {
-      assertThat(row.pricing()).isSameAs(unresolved);
-      assertThat(row.customerorder()).isNull();
-    });
   }
 
   /** The two switches are independent: an expired rate of a valid order needs the other one. */
@@ -300,27 +284,12 @@ public class OrderPricingServiceTest {
     assertThat(saved.getValue().getCustomerorderSign()).isEqualTo("co");
   }
 
-  /** Editing a rate whose order the migration could not resolve is how it gets its order (#1212). */
-  @Test
-  public void should_resolve_a_rate_when_its_order_is_picked() {
-    var unresolved = unresolvedOrderPricing("gone");
-    setId(unresolved, 5L);
-    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(unresolved));
-
-    service.update(5L, data("co", null, null));
-
-    assertThat(unresolved.isUnresolved()).isFalse();
-    assertThat(unresolved.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
-    assertThat(unresolved.getCustomerorderSign()).isEqualTo("co");
-    verify(orderPricingRepository).save(unresolved);
-  }
-
   /** An edit names its order like a new rate does — the form cannot submit a rate without one. */
   @Test
   public void should_reject_an_edit_without_an_order() {
-    var unresolved = unresolvedOrderPricing("gone");
-    setId(unresolved, 5L);
-    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(unresolved));
+    var edited = pricing("co", TODAY.minusYears(1), OPEN_END);
+    setId(edited, 5L);
+    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(edited));
 
     assertThatThrownBy(() -> service.update(5L, new OrderPricingData(null, null, null, null, null, 10000, TODAY, null)))
         .isInstanceOf(InvalidDataException.class)
@@ -471,13 +440,6 @@ public class OrderPricingServiceTest {
     when(customerorderService.getCustomerorderIdBySign(customerorderSign)).thenReturn(customerorderId);
     when(orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId))
         .thenReturn(List.of(pricings));
-  }
-
-  /** A rate whose stored order sign the migration could not resolve (#1212): no id, the sign kept. */
-  private static OrderPricing unresolvedOrderPricing(String customerorderSign) {
-    var pricing = pricing(customerorderSign, TODAY.minusYears(1), OPEN_END);
-    pricing.setCustomerorderId(null);
-    return pricing;
   }
 
   private static OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
