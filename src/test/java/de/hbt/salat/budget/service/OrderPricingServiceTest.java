@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -65,17 +66,15 @@ public class OrderPricingServiceTest {
   public void setUp() {
     orderPricingRepository = mock(OrderPricingRepository.class);
     customerorderService = mock(CustomerorderService.class);
-    // No orders unless a test says so: a rate whose order is gone behaves as before (#957).
-    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of());
-    // The order and the employee of a written rate exist unless a test says otherwise (#958).
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
+    suborderService = mock(SuborderService.class);
+    // The orders of the rates are the ones of the tree, read by id (#1212).
+    TREE.stub(customerorderService, suborderService);
     employeeService = mock(EmployeeService.class);
     when(employeeService.getEmployeeById(EMP)).thenReturn(employee(EMP, "emp"));
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     when(orderBudgetRepository.findByCustomerorderId(any())).thenReturn(List.of());
     budgetAuthorization = mock(BudgetAuthorization.class);
     when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
-    suborderService = mock(SuborderService.class);
     service = new OrderPricingService(orderPricingRepository, orderBudgetRepository, suborderService,
         customerorderService, employeeService, budgetAuthorization);
   }
@@ -188,15 +187,18 @@ public class OrderPricingServiceTest {
   }
 
   /**
-   * The order is the only way into the rate, so a rate whose order is gone has to stay visible —
-   * otherwise it could not be reached through the user interface at all.
+   * The order is the only way into the rate, so a rate whose order the migration could not resolve
+   * (#1212) has to stay visible — otherwise it could not be reached through the user interface at all.
    */
   @Test
-  public void keeps_a_rate_whose_customer_order_no_longer_exists() {
-    var orphan = pricing("gone", TODAY.minusYears(1), OPEN_END);
-    given(orphan);
+  public void keeps_a_rate_whose_customer_order_is_unresolved() {
+    var unresolved = unresolvedOrderPricing("gone");
+    given(unresolved);
 
-    assertThat(pricingsOf(service.getRows(null, false, false))).containsExactly(orphan);
+    assertThat(service.getRows(null, false, false)).singleElement().satisfies(row -> {
+      assertThat(row.pricing()).isSameAs(unresolved);
+      assertThat(row.customerorder()).isNull();
+    });
   }
 
   /** The two switches are independent: an expired rate of a valid order needs the other one. */
@@ -266,28 +268,50 @@ public class OrderPricingServiceTest {
 
   @Test
   public void should_reject_a_new_rate_for_a_customer_order_that_does_not_exist() {
-    when(customerorderService.getCustomerorderBySign("gone")).thenReturn(null);
-
-    assertThatThrownBy(() -> service.save(data("gone", null, null)))
+    assertThatThrownBy(() -> service.save(new OrderPricingData(OrderTree.UNKNOWN_ID, null, null, null, null, 10000,
+        TODAY, null)))
         .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(ErrorCode.BU_CUSTOMERORDER_SIGN_UNKNOWN.getCode());
+        .hasMessageContaining(ErrorCode.CO_NOT_FOUND.getCode());
     verify(orderPricingRepository, never()).save(any());
   }
 
-  /**
-   * A rate outlives its order on purpose (#957). Insisting on the order when editing would leave
-   * such a rate only deletable — while editing it is how it gets corrected.
-   */
+  /** The order is referenced by id; the sign is written next to it for the readers outside (#1212). */
   @Test
-  public void should_keep_a_rate_editable_whose_customer_order_no_longer_exists() {
-    var orphan = pricing("gone", TODAY.minusYears(1), OPEN_END);
-    setId(orphan, 5L);
-    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(orphan));
-    when(customerorderService.getCustomerorderBySign("gone")).thenReturn(null);
+  public void should_store_the_order_by_id_and_its_current_sign_next_to_it() {
+    service.save(data("co", null, null));
 
-    service.update(5L, data("gone", null, null));
+    var saved = ArgumentCaptor.forClass(OrderPricing.class);
+    verify(orderPricingRepository).save(saved.capture());
+    assertThat(saved.getValue().getCustomerorderId()).isEqualTo(TREE.orderId("co"));
+    assertThat(saved.getValue().getCustomerorderSign()).isEqualTo("co");
+  }
 
-    verify(orderPricingRepository).save(orphan);
+  /** Editing a rate whose order the migration could not resolve is how it gets its order (#1212). */
+  @Test
+  public void should_resolve_a_rate_when_its_order_is_picked() {
+    var unresolved = unresolvedOrderPricing("gone");
+    setId(unresolved, 5L);
+    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(unresolved));
+
+    service.update(5L, data("co", null, null));
+
+    assertThat(unresolved.isUnresolved()).isFalse();
+    assertThat(unresolved.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
+    assertThat(unresolved.getCustomerorderSign()).isEqualTo("co");
+    verify(orderPricingRepository).save(unresolved);
+  }
+
+  /** An edit names its order like a new rate does — the form cannot submit a rate without one. */
+  @Test
+  public void should_reject_an_edit_without_an_order() {
+    var unresolved = unresolvedOrderPricing("gone");
+    setId(unresolved, 5L);
+    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(unresolved));
+
+    assertThatThrownBy(() -> service.update(5L, new OrderPricingData(null, null, null, null, null, 10000, TODAY, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.CO_NOT_FOUND.getCode());
+    verify(orderPricingRepository, never()).save(any());
   }
 
   @Test
@@ -357,7 +381,7 @@ public class OrderPricingServiceTest {
 
     assertThat(unresolved.isEmployeeUnresolved()).isTrue();
     assertThat(unresolved.getEmployeeSign()).isEqualTo("ghost");
-    verify(orderPricingRepository, never()).findOverlapping(any(), any(), any(), any(), any(), any(), any());
+    verify(orderPricingRepository, never()).findOverlapping(anyLong(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -393,7 +417,8 @@ public class OrderPricingServiceTest {
   }
 
   private static OrderPricingData data(String customerorderSign, String suborderSign, Long employeeId) {
-    return new OrderPricingData(customerorderSign, suborderSign, employeeId, null, null, 10000, TODAY, null);
+    return new OrderPricingData(TREE.orderId(customerorderSign), suborderSign, employeeId, null, null, 10000, TODAY,
+        null);
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */
@@ -407,12 +432,15 @@ public class OrderPricingServiceTest {
     }
   }
 
+  /** The order of the rates with its validity — a copy, so that the shared tree stays as it is. */
   private void givenOrder(String sign, LocalDate fromDate, LocalDate untilDate) {
     var order = new Customerorder();
+    setId(order, TREE.orderId(sign));
     order.setSign(sign);
     order.setFromDate(fromDate);
     order.setUntilDate(untilDate);
-    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(order));
+    // doReturn: when(...) would call the tree's answer with a null argument first.
+    doReturn(List.of(order)).when(customerorderService).getCustomerordersByIds(any());
   }
 
   private static List<OrderPricing> pricingsOf(List<OrderPricingRow> rows) {
@@ -424,8 +452,16 @@ public class OrderPricingServiceTest {
         .thenReturn(List.of(pricings));
   }
 
+  /** A rate whose stored order sign the migration could not resolve (#1212): no id, the sign kept. */
+  private static OrderPricing unresolvedOrderPricing(String customerorderSign) {
+    var pricing = pricing(customerorderSign, TODAY.minusYears(1), OPEN_END);
+    pricing.setCustomerorderId(null);
+    return pricing;
+  }
+
   private static OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(TREE.orderId(customerorderSign));
     pricing.setCustomerorderSign(customerorderSign);
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
@@ -503,7 +539,7 @@ public class OrderPricingServiceTest {
   public void offers_the_plans_of_the_order_before_a_validity_has_been_entered() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
 
-    assertThat(service.getSelectablePlans("co", null, null, null, null).plans())
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, null, null, null).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
   }
 
@@ -512,7 +548,7 @@ public class OrderPricingServiceTest {
   public void narrows_the_plans_once_the_validity_is_entered() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, null).plans()).isEmpty();
   }
 
   /** Without an order there is nothing to narrow at all — a plan belongs to one. */
@@ -538,7 +574,7 @@ public class OrderPricingServiceTest {
   public void does_not_offer_an_inactive_plan() {
     givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, null).plans()).isEmpty();
   }
 
   /** …but the one the rate already stores stays, or the next save would silently drop it. */
@@ -546,7 +582,7 @@ public class OrderPricingServiceTest {
   public void keeps_the_stored_plan_in_the_list_even_once_it_is_inactive() {
     givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
 
-    var selectable = service.getSelectablePlans("co", null, TODAY, null, 1L);
+    var selectable = service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, 1L);
 
     assertThat(selectable.plans()).extracting(OrderBudget::getId).containsExactly(1L);
     assertThat(selectable.notFittingId()).isEqualTo(1L);
@@ -573,7 +609,7 @@ public class OrderPricingServiceTest {
   public void keeps_the_held_plan_when_the_validity_no_longer_fits_it() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
 
-    var selectable = service.getSelectablePlans("co", null, TODAY, null, 1L);
+    var selectable = service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, 1L);
 
     assertThat(selectable.plans()).extracting(OrderBudget::getId).containsExactly(1L);
     assertThat(selectable.notFittingId()).isEqualTo(1L);
@@ -584,7 +620,7 @@ public class OrderPricingServiceTest {
     givenSuborders("co/01", "co/02");
     givenPlans(plan(1L, "co", "co/02", TODAY, OPEN_END, true));
 
-    var selectable = service.getSelectablePlans("co", "co/01/", TODAY, null, 1L);
+    var selectable = service.getSelectablePlans(TREE.orderId("co"), "co/01/", TODAY, null, 1L);
 
     assertThat(selectable.plans()).extracting(OrderBudget::getId).containsExactly(1L);
     assertThat(selectable.notFittingId()).isEqualTo(1L);
@@ -595,7 +631,7 @@ public class OrderPricingServiceTest {
   public void marks_nothing_where_the_held_plan_still_fits() {
     givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L).notFittingId()).isNull();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, 1L).notFittingId()).isNull();
   }
 
   /** The kept plan is appended, so the ones that can be picked come first. */
@@ -604,7 +640,7 @@ public class OrderPricingServiceTest {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true),
         plan(2L, "co", null, TODAY, OPEN_END, true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L).plans())
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, 1L).plans())
         .extracting(OrderBudget::getId).containsExactly(2L, 1L);
   }
 
@@ -613,7 +649,7 @@ public class OrderPricingServiceTest {
   public void drops_a_held_plan_that_belongs_to_another_order() {
     givenPlans(plan(1L, "other", null, TODAY, OPEN_END, true));
 
-    var selectable = service.getSelectablePlans("co", null, TODAY, null, 1L);
+    var selectable = service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, 1L);
 
     assertThat(selectable.plans()).isEmpty();
     assertThat(selectable.notFittingId()).isNull();
@@ -625,7 +661,7 @@ public class OrderPricingServiceTest {
     givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
     when(budgetAuthorization.isAuthorized(any())).thenReturn(false);
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, 1L).plans()).isEmpty();
   }
 
   @Test
@@ -653,11 +689,11 @@ public class OrderPricingServiceTest {
 
     service.save(dataWithPlan("co", null, 1L));
 
-    verify(orderPricingRepository).findOverlapping("co", null, null, 1L, TODAY, OPEN_END, null);
+    verify(orderPricingRepository).findOverlapping(TREE.orderId("co"), null, null, 1L, TODAY, OPEN_END, null);
   }
 
   private List<OrderBudget> plansFor(String customerorderSign, String suborderPattern) {
-    return service.getSelectablePlans(customerorderSign, suborderPattern, TODAY, null, null).plans();
+    return service.getSelectablePlans(TREE.orderId(customerorderSign), suborderPattern, TODAY, null, null).plans();
   }
 
   /**
@@ -665,9 +701,6 @@ public class OrderPricingServiceTest {
    * stubbing it per sign keeps the test from claiming a reach the repository does not have.
    */
   private void givenPlans(OrderBudget... plans) {
-    // The rate names its order by sign (#957); the plans are read by the id behind it (#1205).
-    when(customerorderService.getCustomerorderBySign("co")).thenReturn(TREE.order("co"));
-    when(customerorderService.getCustomerorderBySign("other")).thenReturn(TREE.order("other"));
     when(orderBudgetRepository.findByCustomerorderId(any())).thenAnswer(invocation ->
         List.of(plans).stream()
             .filter(plan -> plan.getCustomerorderId().equals(invocation.getArgument(0)))
@@ -678,7 +711,6 @@ public class OrderPricingServiceTest {
   }
 
   private void givenSuborders(String... completeOrderSigns) {
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(TREE.order("co"));
     // The pattern check of #958 runs first and is not what these tests are about.
     when(suborderService.existsSuborderMatching(any(), any())).thenReturn(true);
     when(suborderService.getSubordersByCustomerorderId(TREE.orderId("co")))
@@ -704,7 +736,7 @@ public class OrderPricingServiceTest {
   }
 
   private static OrderPricingData dataWithPlan(String customerorderSign, String suborderSign, Long planId) {
-    return new OrderPricingData(customerorderSign, suborderSign, null, planId, null, 10000, TODAY, null);
+    return new OrderPricingData(TREE.orderId(customerorderSign), suborderSign, null, planId, null, 10000, TODAY, null);
   }
 
   private static ErrorCode errorCodeOf(ErrorCodeException ex) {

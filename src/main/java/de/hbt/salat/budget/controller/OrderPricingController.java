@@ -82,18 +82,19 @@ public class OrderPricingController {
      * budget plan links here for a person whose work has no condition at all — order and person are
      * known there, the rate and its validity are not.
      *
-     * <p>That link names the order as {@code customerorderSign}, the form field, not as the filter
+     * <p>That link names the order as {@code customerorderId}, the form field, not as the filter
      * parameter: a button that opens a form must not change the filter of the list behind it
-     * (ADR-0023). Where it brings no order, the one the list is filtered to prefills the form.
+     * (ADR-0023). Where it brings no order, the one the list is filtered to prefills the form — the
+     * filter speaks in signs, the form in ids (#1212).
      */
     @Authorized(requiresManager = true)
     @GetMapping("/create")
-    public String createForm(@RequestParam(required = false) String customerorderSign,
+    public String createForm(@RequestParam(required = false) Long customerorderId,
                              @RequestParam(required = false) String fCustomerOrderSign,
                              @RequestParam(required = false) Long employeeId,
                              Model model) {
         var form = new OrderPricingForm();
-        form.setCustomerorderSign(trimToNull(customerorderSign != null ? customerorderSign : fCustomerOrderSign));
+        form.setCustomerorderId(customerorderId != null ? customerorderId : customerorderIdOf(fCustomerOrderSign));
         form.setEmployeeId(employeeId);
         addFormModel(model, form, false);
         return "budget/pricing-form";
@@ -105,7 +106,7 @@ public class OrderPricingController {
         var pricing = orderPricingService.getById(id);
         var form = new OrderPricingForm();
         form.setId(pricing.getId());
-        form.setCustomerorderSign(pricing.getCustomerorderSign());
+        form.setCustomerorderId(pricing.getCustomerorderId());
         form.setSuborderSign(pricing.getSuborderSign());
         form.setEmployeeId(pricing.getEmployeeId());
         form.setOrderBudgetId(pricing.getOrderBudgetId());
@@ -125,7 +126,7 @@ public class OrderPricingController {
     public String store(@ModelAttribute("pricingForm") OrderPricingForm form,
                         Model model,
                         RedirectAttributes redirectAttributes) {
-        if (form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()) {
+        if (form.getCustomerorderId() == null) {
             model.addAttribute("formErrors", List.of(messages.getMessage("main.pricing.error.order.required")));
             addFormModel(model, form, !form.isNew());
             return "budget/pricing-form";
@@ -147,7 +148,7 @@ public class OrderPricingController {
         }
 
         var data = new OrderPricingData(
-            form.getCustomerorderSign(),
+            form.getCustomerorderId(),
             trimToNull(form.getSuborderSign()),
             form.getEmployeeId(),
             form.getOrderBudgetId(),
@@ -237,18 +238,43 @@ public class OrderPricingController {
         return pricing.isEmployeeUnresolved() ? pricing.getEmployeeSign() : null;
     }
 
+    /**
+     * The sign a rate was stored with when the migration could not resolve its order (#1212), or
+     * {@code null}. The form cannot preselect that order; it names the sign so that the order to pick
+     * is known.
+     */
+    private String unresolvedCustomerorderSignOf(OrderPricingForm form) {
+        if (form.isNew() || form.getCustomerorderId() != null) {
+            return null;
+        }
+        var pricing = orderPricingService.getById(form.getId());
+        return pricing.isUnresolved() ? pricing.getCustomerorderSign() : null;
+    }
+
+    private Long customerorderIdOf(String sign) {
+        if (trimToNull(sign) == null) {
+            return null;
+        }
+        var customerorder = customerorderService.getCustomerorderBySign(sign.trim());
+        return customerorder == null ? null : customerorder.getId();
+    }
+
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {
+        var customerorder = form.getCustomerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(form.getCustomerorderId());
         model.addAttribute("pricingForm", form);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("customerorders",
-            customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
-        model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
+            customerorderService.getSelectableCustomerorders(customerorder == null ? null : customerorder.getSign()));
+        model.addAttribute("unresolvedCustomerorderSign", unresolvedCustomerorderSignOf(form));
+        model.addAttribute("suborders", subordersOf(customerorder));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
         model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
         // The plans that can ever apply to what the form currently says — the same set the saving
         // judges by (#1065). The stored one stays in the list even once it is inactive.
         model.addAttribute("budgetPlans", orderPricingService.getSelectablePlans(
-            form.getCustomerorderSign(), form.getSuborderSign(), form.getValidFrom(),
+            form.getCustomerorderId(), form.getSuborderSign(), form.getValidFrom(),
             form.getValidUntil(), form.getOrderBudgetId()));
     }
 
@@ -257,11 +283,7 @@ public class OrderPricingController {
      * left out without exception: this list only prefills the pattern, which is kept in a text field
      * of its own and therefore cannot be lost.
      */
-    private List<Suborder> subordersOf(String customerorderSign) {
-        if (trimToNull(customerorderSign) == null) {
-            return List.of();
-        }
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+    private List<Suborder> subordersOf(Customerorder customerorder) {
         return customerorder == null ? List.of()
             : suborderService.getSubordersByCustomerorderId(customerorder.getId());
     }

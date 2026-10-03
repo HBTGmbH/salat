@@ -28,7 +28,9 @@ public interface OrderPricingRepository
     @Query("SELECT DISTINCT p.customerorderSign FROM OrderPricing p ORDER BY p.customerorderSign ASC")
     List<String> findDistinctCustomerorderSigns();
 
-    List<OrderPricing> findByCustomerorderSignInOrderByIdAsc(Collection<String> customerorderSigns);
+    List<OrderPricing> findByCustomerorderIdInOrderByIdAsc(Collection<Long> customerorderIds);
+
+    long countByCustomerorderId(long customerorderId);
 
     /**
      * Pricings competing with the given one. Two rows only conflict when they carry the <em>same</em>
@@ -36,6 +38,9 @@ public interface OrderPricingRepository
      * one is the point of the hierarchy and must stay allowed, and so is a plan-bound rate next to
      * the plan-less one it narrows (#1065). {@code NULL} and the empty string mean the same thing to
      * the matching, so they are folded together here as well; legacy rows hold both.
+     *
+     * <p>The order is compared by id (#1212); a rate whose order the migration could not resolve
+     * prices nothing and competes with nothing.
      *
      * <p>Person and plan need no such folding: both are foreign keys and either set or {@code NULL}.
      * {@code p.orderBudget.id} reads that key without joining the plan. A rate whose person the
@@ -45,7 +50,7 @@ public interface OrderPricingRepository
      */
     @Query("""
         SELECT p FROM OrderPricing p
-        WHERE p.customerorderSign = :co
+        WHERE p.customerorderId = :co
           AND COALESCE(p.suborderSign, '') = COALESCE(:so, '')
           AND ((:emp IS NULL AND p.employeeId IS NULL AND COALESCE(p.employeeSign, '') = '')
                OR p.employeeId = :emp)
@@ -54,7 +59,7 @@ public interface OrderPricingRepository
           AND (:excludeId IS NULL OR p.id != :excludeId)
         """)
     List<OrderPricing> findOverlapping(
-        @Param("co") String customerorderSign,
+        @Param("co") long customerorderId,
         @Param("so") String suborderSign,
         @Param("emp") Long employeeId,
         @Param("budgetId") Long orderBudgetId,
@@ -80,12 +85,11 @@ public interface OrderPricingRepository
     int updateEmployeeSign(@Param("employeeId") long employeeId, @Param("sign") String sign);
 
     /**
-     * Follows a renamed customer order (#1205). A rate names its order by sign (#957) — until it gets
-     * the id of its own (#1212), a rename would otherwise leave every rate of the order matching
-     * nothing, and its work would earn 0 EUR in the controlling.
+     * Keeps the sign column in step with the order (#1212) — the application resolves by the id, the
+     * column is there for reports and ETL definitions.
      */
     @Modifying
-    @Query("UPDATE OrderPricing p SET p.customerorderSign = :newSign WHERE p.customerorderSign = :previousSign")
-    int updateCustomerorderSign(@Param("previousSign") String previousSign, @Param("newSign") String newSign);
+    @Query("UPDATE OrderPricing p SET p.customerorderSign = :sign WHERE p.customerorderId = :customerorderId")
+    int updateCustomerorderSign(@Param("customerorderId") long customerorderId, @Param("sign") String sign);
 
 }

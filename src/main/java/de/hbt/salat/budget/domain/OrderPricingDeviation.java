@@ -41,8 +41,8 @@ public record OrderPricingDeviation(
         return new OrderPricingDeviation(
             startsBefore(pricing.getValidFrom(), order.getFromDate()),
             endsAfter(pricing.getValidUntil(), order.getUntilDate()),
-            pricing.isOrderWide()
-                && coverage.hasUncoveredPeriod(pricing.getCustomerorderSign(),
+            pricing.isOrderWide() && order.getId() != null
+                && coverage.hasUncoveredPeriod(order.getId(),
                     order.getFromDate(), order.getUntilDate()));
     }
 

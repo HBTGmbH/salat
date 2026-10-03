@@ -225,8 +225,7 @@ public class BudgetControllingServiceTest {
    * Plans, flat rates and cost assignments refer to their order and suborder by id (#1205). Renaming
    * the order and a suborder — and moving nothing else — leaves the plan's own sign columns behind;
    * the controlling reads the ids and reports exactly what it reported before. The customer rates
-   * still name their order by sign and follow the rename ({@code OrderSignMirrorListener}), which is
-   * what the second lookup stands for.
+   * refer to their order by id as well (#1212): the rate keeps its old sign here, and still applies.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
@@ -238,9 +237,6 @@ public class BudgetControllingServiceTest {
     when(customerorder.getSign()).thenReturn("renamed");
     when(customerorderService.getCustomerorderBySign("renamed")).thenReturn(customerorder);
     suborders.stream().filter(so -> so.getId() == 10L).findFirst().orElseThrow().setSign("X1");
-    var followedRate = orderWideRate();
-    followedRate.setCustomerorderSign("renamed");
-    when(orderPricingService.lookupFor(any())).thenReturn(OrderPricingLookup.of(List.of(followedRate)));
     var after = service.compute("renamed", FROM, UNTIL, false);
 
     assertThat(after.total().revenueEuro()).isEqualByComparingTo(before.total().revenueEuro());
@@ -1614,6 +1610,7 @@ public class BudgetControllingServiceTest {
 
   private static OrderPricing orderWideRate() {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(CUSTOMERORDER_ID);
     pricing.setCustomerorderSign("co");
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));

@@ -93,7 +93,6 @@ public class CustomerorderService {
     co.setUntilDate(dto.untilDate());
     co.setFromDate(dto.fromDate());
 
-    var previousSign = co.getSign();
     co.setSign(dto.sign());
     co.setDescription(dto.description());
     co.setShortdescription(dto.shortdescription());
@@ -127,7 +126,7 @@ public class CustomerorderService {
     co.setOrderType(dto.orderType());
 
     if(!co.isNew()) {
-      var event = new CustomerorderUpdateEvent(co, previousSign);
+      var event = new CustomerorderUpdateEvent(co);
       try {
         eventPublisher.publishEvent(event);
       } catch(VetoedException e) {

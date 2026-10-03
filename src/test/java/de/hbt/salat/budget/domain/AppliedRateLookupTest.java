@@ -29,6 +29,7 @@ public class AppliedRateLookupTest {
 
   private static final long SUBORDER_ID = 7L;
   private static final long EMPLOYEE_ID = 42L;
+  private static final long CUSTOMERORDER_ID = 3L;
 
   @Test
   public void names_the_cost_category_and_the_condition_that_apply() {
@@ -105,7 +106,7 @@ public class AppliedRateLookupTest {
   /** A page that does not report costs must not read as a page on which no cost rate applies. */
   @Test
   public void reports_no_cost_at_all_where_costs_are_not_included() {
-    var lookup = AppliedRateLookup.of("co", null, List.of(suborder(true, OrderType.STANDARD)),
+    var lookup = AppliedRateLookup.of(CUSTOMERORDER_ID, null, List.of(suborder(true, OrderType.STANDARD)),
         null, pricingLookup(14000));
 
     var rate = lookup.resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
@@ -132,7 +133,7 @@ public class AppliedRateLookupTest {
    */
   @Test
   public void resolves_nothing_for_an_unknown_suborder() {
-    var lookup = AppliedRateLookup.of("co", null, List.of(), costLookup("Senior", 9500), pricingLookup(14000));
+    var lookup = AppliedRateLookup.of(CUSTOMERORDER_ID, null, List.of(), costLookup("Senior", 9500), pricingLookup(14000));
 
     var rate = lookup.resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
@@ -147,22 +148,32 @@ public class AppliedRateLookupTest {
   public void resolves_by_the_complete_order_sign_of_the_suborder() {
     var suborder = suborder(true, OrderType.STANDARD);
     var onOtherSign = new OrderPricing();
+    onOtherSign.setCustomerorderId(CUSTOMERORDER_ID);
     onOtherSign.setCustomerorderSign("co");
     onOtherSign.setSuborderSign("co/99");
     onOtherSign.setPriceCentsPerHour(99900);
     onOtherSign.setValidFrom(FROM);
     onOtherSign.setValidUntil(UNTIL);
 
-    var rate = AppliedRateLookup.of("co", null, List.of(suborder), costLookup("Senior", 9500),
+    var rate = AppliedRateLookup.of(CUSTOMERORDER_ID, null, List.of(suborder), costLookup("Senior", 9500),
         OrderPricingLookup.of(List.of(onOtherSign))).resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(suborder.getCompleteOrderSign()).isEqualTo("co/01");
     assertThat(rate.hasPrice()).isFalse();
   }
 
+  /** A plan whose order the migration could not resolve (#1205) earns nothing, whatever rates exist (#1212). */
+  @Test
+  public void resolves_no_price_for_a_plan_without_an_order() {
+    var rate = AppliedRateLookup.of(null, null, List.of(suborder(true, OrderType.STANDARD)), null, pricingLookup(14000))
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
+
+    assertThat(rate.hasPrice()).isFalse();
+  }
+
   private static AppliedRateLookup lookup(Suborder suborder, EmployeeCostLookup costs,
                                           OrderPricingLookup pricings) {
-    return AppliedRateLookup.of("co", null, List.of(suborder), costs, pricings);
+    return AppliedRateLookup.of(CUSTOMERORDER_ID, null, List.of(suborder), costs, pricings);
   }
 
   private static EmployeeCostLookup costLookup(String name, int centsPerHour) {
@@ -184,6 +195,7 @@ public class AppliedRateLookupTest {
 
   private static OrderPricingLookup pricingLookup(int centsPerHour) {
     var pricing = new OrderPricing();
+    pricing.setCustomerorderId(CUSTOMERORDER_ID);
     pricing.setCustomerorderSign("co");
     pricing.setPriceCentsPerHour(centsPerHour);
     pricing.setValidFrom(FROM);
