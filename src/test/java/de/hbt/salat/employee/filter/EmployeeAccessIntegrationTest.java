@@ -68,7 +68,7 @@ class EmployeeAccessIntegrationTest {
 
   @Test
   void an_api_request_ends_in_a_problem_document() throws Exception {
-    var response = get("/api/orders?login-name=" + WITHOUT_CONTRACT);
+    var response = get("/api/employee-orders/list?login-name=" + WITHOUT_CONTRACT);
 
     assertThat(response.statusCode()).isEqualTo(FORBIDDEN.value());
     assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(

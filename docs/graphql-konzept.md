@@ -15,7 +15,7 @@ Empfehlung. Die Entscheidung kommt erst in ein ADR (nächste Nummer: 0034), wenn
 fachliche Änderungen auslösen. Dazu gehört das **Anlegen, Ändern und Löschen aller
 Geschäftsobjekte**, also Buchungen, Arbeitstage, Kunden, Aufträge, Unteraufträge,
 Mitarbeiteraufträge, Personen und Verträge, nicht nur Buchungen. Er soll die verstreuten
-REST-Endpunkte (`/api/orders`, `/api/employeeorders`, `/api/dailyreports`, `/api/workingday`, …)
+REST-Endpunkte (`/api/employee-orders`, `/api/dailyreports`, `/api/workingday`, …)
 mittelfristig ergänzen und eine einheitliche, selbstbeschreibende Schnittstelle bieten.
 
 **Aufrufer** sind potenziell alle (entschieden 01.10.2026): Skripte Einzelner, Werkzeuge, eine
@@ -1011,7 +1011,7 @@ Resolver-Schicht, nicht das Schema und nicht die Services.
 | Stufe | Inhalt | Voraussetzung |
 |---|---|---|
 | 0 Spike | Endpunkt, ein Lesefeld (`me`), Nachweis 6.4 (Request-Scope, Open-in-View, Aspekte), Fehlerabbildung, Grenzwerte, Introspection, Baustein für Idempotenz (6.5) | Konzept als Ganzes bestätigt, ADR-0034 |
-| 1 Eigene Daten lesen | `me`, `bookableSuborders`, eigene Buchungen und Arbeitstage. Deckt ab, was `OrderRestEndpoint` (Entfernung in #1253 vorgesehen), `EmployeeOrderRestEndpoint`, `DailyReportRestEndpoint` und `WorkingDayRestEndpoint` heute bieten | Stufe 0 |
+| 1 Eigene Daten lesen | `me`, `bookableSuborders`, eigene Buchungen und Arbeitstage. Deckt ab, was `EmployeeOrderRestEndpoint` (seit #1253 der einzige für Mitarbeiteraufträge), `DailyReportRestEndpoint` und `WorkingDayRestEndpoint` heute bieten | Stufe 0 |
 | 2 Buchen | Buchung anlegen, ändern und löschen, Arbeitstag, „Nicht gearbeitet" | Stufe 1 |
 | 3a Zuständigkeit (eigenes Vorhaben, ohne GraphQL) | Baustein nach `order`, auflösende Lesemethoden in `*Lookup`-Bohnen, anzeigende Lesemethoden filtern, `ArchitectureTest` gegen `*Lookup` aus Controllern, Oberfläche zieht mit (5.3), Konsistenztests, Messung | — |
 | 3b Prüfungen in die Services (eigenes Vorhaben je Geschäftsobjekt, ohne GraphQL) | fachliche Prüfungen aus den Controllern in die Services (2.6), Berechtigung beim Schreiben mit Guard, anlegende Methoden nehmen Datenobjekte und liefern die id (5.6) | Zuordnung der Prüfungen je Controller (3.5), Feldbezug in `ServiceFeedbackMessage` |
