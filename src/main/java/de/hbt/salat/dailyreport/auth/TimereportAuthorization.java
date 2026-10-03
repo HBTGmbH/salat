@@ -3,7 +3,7 @@ package de.hbt.salat.dailyreport.auth;
 import static de.hbt.salat.auth.domain.AccessLevel.DELETE;
 import static de.hbt.salat.auth.domain.AccessLevel.READ;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
@@ -67,7 +67,7 @@ public class TimereportAuthorization {
       if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus())) {
         return authorizedUser.isAdmin() && !isOwner;
       }
-      if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus())) {
+      if(TIMEREPORT_STATUS_COMMITTED.equals(timereport.getStatus())) {
         return !isOwner && (
           authorizedUser.isManager() || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract()))
         );
@@ -142,12 +142,12 @@ public class TimereportAuthorization {
        (!authorizedUser.isAdmin() || isOwner)) {
       return Optional.of(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
     }
-    if(TIMEREPORT_STATUS_COMMITED.equals(status) &&
+    if(TIMEREPORT_STATUS_COMMITTED.equals(status) &&
        !authorizedUser.isManager() &&
        !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(contract))) {
       return Optional.of(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
     }
-    if(TIMEREPORT_STATUS_COMMITED.equals(status) && isOwner) {
+    if(TIMEREPORT_STATUS_COMMITTED.equals(status) && isOwner) {
       return Optional.of(TR_COMMITTED_TIME_REPORT_NOT_SELF);
     }
     if(TIMEREPORT_STATUS_OPEN.equals(status) &&

@@ -5,7 +5,7 @@ import static java.time.temporal.TemporalAdjusters.previousOrSame;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 
 import java.time.Duration;
@@ -183,7 +183,7 @@ class ContractChangeOvertimeTest {
 
     var moved = timereportRepository.findById(booking).orElseThrow();
     assertThat(moved.getEmployeecontract().getId()).isEqualTo(second);
-    assertThat(moved.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(moved.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
     assertThat(moved.getReleasedby()).isEqualTo(EmployeeTestUtils.TESTY_SIGN);
     assertThat(moved.getAcceptedby()).isNull();
     assertThat(moved.getAccepted()).isNull();

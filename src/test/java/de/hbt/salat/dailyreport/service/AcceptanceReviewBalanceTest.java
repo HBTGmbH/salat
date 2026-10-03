@@ -3,7 +3,7 @@ package de.hbt.salat.dailyreport.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -220,7 +220,7 @@ class AcceptanceReviewBalanceTest {
     var review = releaseService.reviewAcceptance(contract, END);
 
     var listed = review.byOrder().stream().flatMap(group -> group.timereports().stream()).toList();
-    assertThat(listed).extracting(TimereportDTO::getStatus).containsOnly(TIMEREPORT_STATUS_COMMITED);
+    assertThat(listed).extracting(TimereportDTO::getStatus).containsOnly(TIMEREPORT_STATUS_COMMITTED);
     assertThat(TimereportReviewGrouping.sum(listed, TimereportDTO::getWorkingTime)).isEqualTo(review.balance().workingTime());
     assertThat(review.timereportCount()).isEqualTo(4);
     assertThat(review.beforePeriod()).isEmpty();

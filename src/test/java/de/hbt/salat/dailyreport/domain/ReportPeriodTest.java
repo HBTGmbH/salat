@@ -2,7 +2,7 @@ package de.hbt.salat.dailyreport.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 
 import java.time.LocalDate;
@@ -26,8 +26,8 @@ class ReportPeriodTest {
     var contract = contract(MAY.atDay(8), MAY.atDay(15));
 
     assertThat(ReportPeriod.statusOn(contract, MAY.atDay(8))).isEqualTo(TIMEREPORT_STATUS_CLOSED);
-    assertThat(ReportPeriod.statusOn(contract, MAY.atDay(9))).isEqualTo(TIMEREPORT_STATUS_COMMITED);
-    assertThat(ReportPeriod.statusOn(contract, MAY.atDay(15))).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(ReportPeriod.statusOn(contract, MAY.atDay(9))).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
+    assertThat(ReportPeriod.statusOn(contract, MAY.atDay(15))).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
     assertThat(ReportPeriod.statusOn(contract, MAY.atDay(16))).isEqualTo(TIMEREPORT_STATUS_OPEN);
   }
 

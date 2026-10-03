@@ -170,7 +170,7 @@ class MatrixServiceFillNotWorkedTest {
   /** Freigegeben oder abgenommen ist ein Tag erst recht gebucht. */
   @Test
   void a_released_or_accepted_booking_counts_as_well() {
-    book(day(4), GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+    book(day(4), GlobalConstants.TIMEREPORT_STATUS_COMMITTED);
     book(day(5), GlobalConstants.TIMEREPORT_STATUS_CLOSED);
 
     fillNotWorked();

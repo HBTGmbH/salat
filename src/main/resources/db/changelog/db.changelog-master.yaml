@@ -4221,3 +4221,27 @@ databaseChangeLog:
             sql: UPDATE suborder SET trainingFlag = 0 WHERE trainingFlag IS NULL
         - sql:
             sql: ALTER TABLE suborder MODIFY trainingFlag bit(1) NOT NULL DEFAULT b'0'
+  - changeSet:
+      id: 118
+      author: kr
+      comment: Buchungsstatus commited heisst committed (#1249)
+      # Der Statuswert der freigegebenen Buchung war falsch geschrieben. Changeset 94 setzt und liest
+      # noch den alten Wert; er laeuft vorher, die Umbenennung erfasst also auch, was er gesetzt hat.
+      #
+      # Report- und ETL-Definitionen liegen als SQL in der Datenbank und koennten den Wert abfragen.
+      # Sie ziehen per allgemeinem REPLACE mit, nur in Zeilen, die ihn enthalten - so geht alles mit
+      # einem Release raus. Im Bestand bei Einfuehrung enthielt keine Definition und keine View den Wert.
+      changes:
+        - sql:
+            sql: UPDATE timereport SET status = 'committed' WHERE status = 'commited'
+        - sql:
+            sql: >-
+              UPDATE report_definition SET `sql` = REPLACE(`sql`, 'commited', 'committed')
+              WHERE `sql` LIKE '%commited%'
+        - sql:
+            sql: >-
+              UPDATE etl_definition
+              SET `init` = REPLACE(`init`, 'commited', 'committed'),
+                  `execute` = REPLACE(`execute`, 'commited', 'committed'),
+                  `cleanup` = REPLACE(`cleanup`, 'commited', 'committed')
+              WHERE CONCAT_WS(' ', `init`, `execute`, `cleanup`) LIKE '%commited%'

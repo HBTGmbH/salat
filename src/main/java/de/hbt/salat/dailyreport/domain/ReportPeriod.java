@@ -1,7 +1,7 @@
 package de.hbt.salat.dailyreport.domain;
 
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 
 import java.time.LocalDate;
@@ -63,7 +63,7 @@ public final class ReportPeriod {
     }
     LocalDate releasedUntil = contract.getReportReleaseDate();
     if (releasedUntil != null && !releasedUntil.isBefore(day)) {
-      return TIMEREPORT_STATUS_COMMITED;
+      return TIMEREPORT_STATUS_COMMITTED;
     }
     return TIMEREPORT_STATUS_OPEN;
   }

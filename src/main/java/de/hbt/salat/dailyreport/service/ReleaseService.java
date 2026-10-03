@@ -9,7 +9,7 @@ import static java.util.stream.Collectors.toMap;
 import static de.hbt.salat.common.GlobalConstants.DAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static de.hbt.salat.common.GlobalConstants.REST_PERIOD_IN_MINUTES;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static de.hbt.salat.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
@@ -748,7 +748,7 @@ public class ReleaseService {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     timereportService.updateReleaseData(timereportId,
-        TIMEREPORT_STATUS_COMMITED,
+        TIMEREPORT_STATUS_COMMITTED,
         releasedBy,
         now(),
         timereport.getAcceptedby(),

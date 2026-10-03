@@ -444,10 +444,10 @@
                th:title="#{main.timereportlist.filter.billable.no}"></i>
           </td>
           <td class="text-center d-none d-lg-table-cell">
-            <!--/* Die Statuswerte stehen technisch in der Datenbank (open, commited, closed); die Liste
+            <!--/* Die Statuswerte stehen technisch in der Datenbank (open, committed, closed); die Liste
                    zeigt, was die Anwendung darunter versteht. */-->
             <span th:class="'badge ' + (${tr.status == 'closed'} ? 'bg-green-lt'
-                                       : (${tr.status == 'commited'} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
+                                       : (${tr.status == 'committed'} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                   th:text="#{'main.timereportlist.status.' + ${tr.status}}">offen</span>
           </td>
           <!--/* Nur wo das Speichern gelingen wuerde: dieselbe Statusregel wie beim Speichern (#1190).

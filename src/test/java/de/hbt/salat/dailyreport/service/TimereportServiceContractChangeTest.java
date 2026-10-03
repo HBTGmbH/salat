@@ -9,7 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE;
 
 import java.time.LocalDate;
@@ -162,7 +162,7 @@ class TimereportServiceContractChangeTest {
 
     update(NEXT_CONTRACT_ID, NEXT_ORDER_ID, DAY_IN_NEXT_CONTRACT);
 
-    assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
     assertThat(timereport.getAcceptedby()).isNull();
     assertThat(timereport.getAccepted()).isNull();
     assertThat(publishedEvent().getPreviousEmployeecontractIds()).isEqualTo(Map.of(TIMEREPORT_ID, FIRST_CONTRACT_ID));

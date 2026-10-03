@@ -8,8 +8,8 @@
   allein reicht; was es bedeutet, steht im title und fuer Screenreader im visually-hidden-Text.
 */-->
 
-<!--/* status: open, commited oder closed - der Zeitraum des Tages (ReportPeriod.statusOn) */-->
-<span th:fragment="dayStatus(status)" th:if="${status == 'commited' or status == 'closed'}" id="daily-report-status"
+<!--/* status: open, committed oder closed - der Zeitraum des Tages (ReportPeriod.statusOn) */-->
+<span th:fragment="dayStatus(status)" th:if="${status == 'committed' or status == 'closed'}" id="daily-report-status"
       th:with="statusText=${status == 'closed'} ? #{main.daily.period.accepted.text} : #{main.daily.period.released.text}"
       class="badge bg-secondary-lt ms-2 align-middle" th:title="${statusText}"><i class="ti ti-lock m-0" aria-hidden="true"></i><span
       class="visually-hidden" th:text="${statusText}">Freigegeben</span></span>

@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.quality.Strictness.LENIENT;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static de.hbt.salat.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
@@ -78,7 +78,7 @@ class TimereportAuthorizationWriteTest {
      */
     static Stream<Arguments> writeAccess() {
         var cases = new ArrayList<Arguments>();
-        for (var status : List.of(TIMEREPORT_STATUS_OPEN, TIMEREPORT_STATUS_COMMITED, TIMEREPORT_STATUS_CLOSED)) {
+        for (var status : List.of(TIMEREPORT_STATUS_OPEN, TIMEREPORT_STATUS_COMMITTED, TIMEREPORT_STATUS_CLOSED)) {
             for (var owner : List.of(true, false)) {
                 for (var manager : List.of(true, false)) {
                     for (var supervisingPeopleLead : List.of(true, false)) {
@@ -97,7 +97,7 @@ class TimereportAuthorizationWriteTest {
                                             boolean admin) {
         return switch (status) {
             case TIMEREPORT_STATUS_OPEN -> owner || manager ? null : TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
-            case TIMEREPORT_STATUS_COMMITED -> !manager && !supervisingPeopleLead ? TR_COMMITTED_TIME_REPORT_REQ_MANAGER
+            case TIMEREPORT_STATUS_COMMITTED -> !manager && !supervisingPeopleLead ? TR_COMMITTED_TIME_REPORT_REQ_MANAGER
                 : owner ? TR_COMMITTED_TIME_REPORT_NOT_SELF
                 : null;
             case TIMEREPORT_STATUS_CLOSED -> admin && !owner ? null : TR_CLOSED_TIME_REPORT_REQ_ADMIN;
