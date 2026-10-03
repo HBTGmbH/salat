@@ -4132,3 +4132,27 @@ databaseChangeLog:
       changes:
         - sql:
             sql: ALTER TABLE `employeecontract_supervisor` ADD CONSTRAINT `uk_employeecontract_supervisor` UNIQUE (`EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID`)
+  - changeSet:
+      id: 115
+      author: kr
+      comment: Kalenderangaben der Referenztage aus Datum und publicholiday ableiten (#1211)
+      # holiday heisst ab jetzt nur noch "Eintrag in publicholiday". Bis 2024 trugen Wochenenden
+      # holiday gesetzt; einzelne Feiertage waren am Referenztag nicht oder anders vermerkt, weil der
+      # Referenztag vor dem Feiertag angelegt worden war. Danach haelt Referenceday.applyCalendar die
+      # Spalten in derselben Form. Soll und Ueberstunden lesen diese Spalten nicht (sie rechnen mit
+      # dem Datum und publicholiday), abgeschlossene Salden bleiben also, wie sie sind.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            publicholiday enthaelt doppelte Werte in (refdate); vor dem Start bereinigen (#1211).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM publicholiday GROUP BY refdate HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: >-
+              UPDATE referenceday r LEFT JOIN publicholiday p ON p.refdate = r.refdate
+              SET r.holiday = (p.id IS NOT NULL),
+                  r.name = COALESCE(p.name, ''),
+                  r.workingday = (p.id IS NULL AND DAYOFWEEK(r.refdate) NOT IN (1, 7)),
+                  r.dow = ELT(DAYOFWEEK(r.refdate), 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat')

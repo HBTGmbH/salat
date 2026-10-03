@@ -112,7 +112,7 @@ class UniqueKeyTranslationTest {
   private static Referenceday referenceday(LocalDate date) {
     var referenceday = new Referenceday();
     referenceday.setRefdate(date);
-    referenceday.setWorkingday(true);
+    referenceday.applyCalendar(null);
     return referenceday;
   }
 
