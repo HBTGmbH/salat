@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Status;
@@ -53,6 +54,7 @@ public class JiraReplicationRunService {
       DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
   private final JiraReplicationRunRepository runRepository;
+  private final RunFinisher runFinisher;
 
   /**
    * Opens a run and is the lock at the same time: checking and writing form one section, two
@@ -98,22 +100,30 @@ public class JiraReplicationRunService {
    *
    * <p>A row that is gone altogether belongs to a replication deleted during its run — there is
    * nothing left to report to.
+   *
+   * <p>Written through {@link RunFinisher} (#1300), which also brings its own transaction: if the
+   * database is unreachable right now, the end is written later instead of leaving the row as a lock.
+   * That is why this method carries no {@code @Transactional} — a transaction opened around it would
+   * fail on the same broken connection before the write was even reached. The retry runs on the
+   * scheduler's thread, so the write goes straight to the repository, never through a guarded method.
    */
-  @Transactional
   public void finishRun(long runId, Status status, String message) {
-    var run = runRepository.findById(runId).orElse(null);
-    if (run == null) {
-      log.info("JIRA replication run {} no longer exists - its replication was deleted meanwhile", runId);
-      return;
-    }
-    if (run.getStatus() != RUNNING) {
-      log.warn("JIRA replication run {} was marked finished by hand while it was still running", runId);
-      run.setMessage(shortened("%s\nDer Lauf kam danach noch zu Ende: %s".formatted(run.getMessage(), message)));
-      return;
-    }
-    run.setFinishedAt(DateTimeUtils.now());
-    run.setStatus(status);
-    run.setMessage(shortened(message));
+    var finishedAt = DateTimeUtils.now();
+    runFinisher.finish("JIRA replication run " + runId, () -> {
+      var run = runRepository.findById(runId).orElse(null);
+      if (run == null) {
+        log.info("JIRA replication run {} no longer exists - its replication was deleted meanwhile", runId);
+        return;
+      }
+      if (run.getStatus() != RUNNING) {
+        log.warn("JIRA replication run {} was marked finished by hand while it was still running", runId);
+        run.setMessage(shortened("%s\nDer Lauf kam danach noch zu Ende: %s".formatted(run.getMessage(), message)));
+        return;
+      }
+      run.setFinishedAt(finishedAt);
+      run.setStatus(status);
+      run.setMessage(shortened(message));
+    });
   }
 
   /**

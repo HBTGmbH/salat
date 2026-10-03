@@ -49,6 +49,12 @@ salat:
     email:
       enabled: true                  # env: SALAT_REPORTING_EMAIL_ENABLED
       from: noreply@salat.local      # env: SALAT_REPORTING_EMAIL_FROM
+  runs:
+    # env: SALAT_RUNS_FINISH_RETRY_MAX — wie lange ein ETL-Lauf oder eine JIRA-Replikation, die zu
+    # Ende gekommen ist, ihren Ausgang noch zu schreiben versucht, solange die Datenbank nicht
+    # erreichbar ist (#1300). Danach bleibt die Zeile auf RUNNING und wird von Hand als beendet
+    # markiert, wie nach einem Absturz.
+    finish-retry-max: 60m
 server:
   # Kompression textueller Antworten. Bewusst hier und nicht profilspezifisch: sie soll in
   # jeder deployten Umgebung identisch gelten und ist damit versioniert. Aufgeführt sind nur
