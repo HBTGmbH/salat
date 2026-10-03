@@ -3,18 +3,25 @@ package de.hbt.salat.auth.service;
 import static java.time.LocalDate.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 import static de.hbt.salat.auth.domain.AccessLevel.READ;
+import static de.hbt.salat.common.exception.ErrorCode.AR_GRANTEE_UNKNOWN;
 import static de.hbt.salat.common.exception.ErrorCode.AR_NAME_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.AR_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.AR_NAME_TOO_LONG;
+import static de.hbt.salat.common.exception.ErrorCode.AR_OBJECT_UNRESOLVED;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -25,11 +32,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.springframework.test.util.ReflectionTestUtils;
+import de.hbt.salat.auth.domain.AuthorizationGranteeProvider;
 import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.auth.domain.AuthorizationObjectProvider;
 import de.hbt.salat.auth.domain.AuthorizationRule;
 import de.hbt.salat.auth.domain.AuthorizationRuleData;
 import de.hbt.salat.auth.domain.AuthorizationRuleInfo;
+import de.hbt.salat.auth.domain.AuthorizationRuleValue;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.domain.ObjectJudgement;
 import de.hbt.salat.auth.persistence.AuthorizationRuleRepository;
@@ -43,6 +52,15 @@ import de.hbt.salat.common.util.DateUtils;
 class AuthorizationRuleServiceTest {
 
     private static final String CATEGORY = "ETL";
+
+    /** A category whose objects cannot be enumerated: typed as signs, stored as ids (#1204). */
+    private static final String TYPED_CATEGORY = "TIMEREPORT";
+
+    /** The logins the grantee provider knows; {@code hidden} only by describing, as a hidden person would be. */
+    private static final List<AuthorizationObject> GRANTEES = List.of(
+        new AuthorizationObject("kr", "Klara Rot | kr"), new AuthorizationObject("ar", "Anton Rot | ar"),
+        new AuthorizationObject("kr", "Klara Rot | kr"));
+    private static final AuthorizationObject HIDDEN = new AuthorizationObject("hd", "Hanna Dunkel | hd");
 
     @Mock
     private AuthorizationRuleRepository authorizationRuleRepository;
@@ -92,9 +110,62 @@ class AuthorizationRuleServiceTest {
                 return AuthorizationObjectProvider.super.judge(objectId);
             }
         };
+        var typedProvider = new AuthorizationObjectProvider() {
+            @Override
+            public String category() {
+                return TYPED_CATEGORY;
+            }
+
+            @Override
+            public String labelKey() {
+                return "main.auth.rule.category.timereport";
+            }
+
+            @Override
+            public String objectHintKey() {
+                return "main.auth.rule.object.hint.timereport";
+            }
+
+            @Override
+            public List<AuthorizationObject> objects() {
+                return List.of();
+            }
+
+            @Override
+            public Optional<String> objectIdOf(String input) {
+                return "xx:1453".equals(input) ? Optional.of("E12:C42") : Optional.empty();
+            }
+
+            @Override
+            public Map<String, AuthorizationObject> describe(Collection<String> objectIds) {
+                return objectIds.contains("E12:C42")
+                    ? Map.of("E12:C42", new AuthorizationObject("E12:C42", "xx:1453"))
+                    : Map.of();
+            }
+
+            @Override
+            public ObjectJudgement judge(String objectId) {
+                return "E12:C42".equals(objectId) ? ObjectJudgement.VALID : ObjectJudgement.UNKNOWN;
+            }
+        };
+        var granteeProvider = new AuthorizationGranteeProvider() {
+            @Override
+            public List<AuthorizationObject> granteeCandidates() {
+                return GRANTEES;
+            }
+
+            @Override
+            public Map<String, AuthorizationObject> describe(Collection<String> granteeIds) {
+                var described = new HashMap<String, AuthorizationObject>();
+                GRANTEES.stream().filter(g -> granteeIds.contains(g.id())).forEach(g -> described.put(g.id(), g));
+                IntStream.range(0, 100).mapToObj(i -> "sign" + i).filter(granteeIds::contains)
+                    .forEach(id -> described.put(id, new AuthorizationObject(id, id)));
+                if (granteeIds.contains(HIDDEN.id())) described.put(HIDDEN.id(), HIDDEN);
+                return described;
+            }
+        };
         service = new AuthorizationRuleService(
-            authorizationRuleRepository, List.of(provider), List.of(() -> List.of(new AuthorizationObject("kr", "Klara Rot | kr"), new AuthorizationObject("ar", "Anton Rot | ar"),
-                new AuthorizationObject("kr", "Klara Rot | kr"))), authService,
+            authorizationRuleRepository, List.of(provider, typedProvider), List.of(granteeProvider), authService,
             authorizedUser);
     }
 
@@ -173,6 +244,7 @@ class AuthorizationRuleServiceTest {
                 .satisfies(e -> assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_REQUIRED));
         }
         // an old rule gets its name the next time it is saved - it cannot be saved without one either
+        when(authorizationRuleRepository.findById(7L)).thenReturn(Optional.of(storedRule(7L, null)));
         assertThatThrownBy(() -> service.update(7L, named(" ")))
             .satisfies(e -> assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_REQUIRED));
 
@@ -253,9 +325,108 @@ class AuthorizationRuleServiceTest {
     @Test
     void theGranteesOfferedAreTheOnesTheOwningModuleHandsOver() {
         // who is hidden is decided there, not here - auth may not even import the employee module
-        // one entry per login, in the order of the logins, named the way the owning module names them
-        assertThat(service.getGranteeCandidates()).containsExactly(
-            new AuthorizationObject("ar", "Anton Rot | ar"), new AuthorizationObject("kr", "Klara Rot | kr"));
+        // one entry per login, in the order the owning module hands them over, named the way it names them
+        assertThat(service.getGranteeCandidates(List.of())).containsExactly(
+            new AuthorizationRuleValue("kr", "Klara Rot | kr", null, false),
+            new AuthorizationRuleValue("ar", "Anton Rot | ar", null, false));
+    }
+
+    @Test
+    void aGranteeTheRuleKeepsIsOfferedByTheRecordItNamesEvenWhenHiddenOrUnresolved() {
+        assertThat(service.getGranteeCandidates(List.of("kr", "hd", "?alt", "77")))
+            .extracting(AuthorizationRuleValue::id, AuthorizationRuleValue::label, AuthorizationRuleValue::unresolved)
+            .containsExactly(
+                tuple("kr", "Klara Rot | kr", false),
+                tuple("ar", "Anton Rot | ar", false),
+                tuple("hd", "Hanna Dunkel | hd", false),
+                tuple("?alt", "alt", true),
+                tuple("77", "77", true));
+    }
+
+    /** A grantee is a login by id (#1204); a value no login answers to would be a rule that never fires. */
+    @Test
+    void anUnknownGranteeIsRefusedAndNothingIsSaved() {
+        assertThatThrownBy(() -> service.create(data(List.of("kr", "niemand"), List.of("umsatz"))))
+            .isInstanceOfSatisfying(InvalidDataException.class, e -> {
+                assertThat(errorCodeOf(e)).isEqualTo(AR_GRANTEE_UNKNOWN);
+                assertThat(e.getMessages().getFirst().getArguments()).containsExactly("niemand");
+            });
+
+        verify(authorizationRuleRepository, never()).save(any(AuthorizationRule.class));
+    }
+
+    /** Editing a migrated rule must not fail on a value the migration could not assign and nobody touched. */
+    @Test
+    void anUnresolvedGranteeTheRuleCarriesAlreadyIsKeptOnEdit() {
+        var rule = storedRule(7L, "Regel");
+        rule.setGranteeId(new HashSet<>(Set.of("kr", "?alt")));
+        when(authorizationRuleRepository.findById(7L)).thenReturn(Optional.of(rule));
+
+        service.update(7L, data(List.of("kr", "?alt"), List.of("umsatz")));
+
+        assertThat(rule.getGranteeId()).containsExactlyInAnyOrder("kr", "?alt");
+        verify(authorizationRuleRepository).save(rule);
+    }
+
+    @Test
+    void whatWasTypedIntoAFreeTextCategoryIsStoredAsTheIdTheModuleTranslatesItTo() {
+        var saved = new ArrayList<AuthorizationRule>();
+        when(authorizationRuleRepository.save(any(AuthorizationRule.class))).thenAnswer(invocation -> {
+            saved.add(invocation.getArgument(0));
+            return invocation.getArgument(0);
+        });
+
+        service.create(typed(List.of("xx:1453", "*")));
+
+        assertThat(saved).singleElement().extracting(AuthorizationRule::getObjectId)
+            .isEqualTo(Set.of("E12:C42", "*"));
+    }
+
+    @Test
+    void aTypedValueThatNamesNoRecordIsRefused() {
+        assertThatThrownBy(() -> service.create(typed(List.of("yy:9999"))))
+            .isInstanceOfSatisfying(InvalidDataException.class, e -> {
+                assertThat(errorCodeOf(e)).isEqualTo(AR_OBJECT_UNRESOLVED);
+                assertThat(e.getMessages().getFirst().getArguments()).containsExactly("yy:9999");
+            });
+
+        verify(authorizationRuleRepository, never()).save(any(AuthorizationRule.class));
+    }
+
+    /** The form hands stored values back as they are stored; they are not typed input and stay untranslated. */
+    @Test
+    void aStoredValueOfAFreeTextCategoryComesBackFromTheFormUnchanged() {
+        var rule = storedRule(7L, "Regel");
+        rule.setCategory(TYPED_CATEGORY);
+        rule.setObjectId(new HashSet<>(Set.of("E12:C42", "?xx:alt")));
+        when(authorizationRuleRepository.findById(7L)).thenReturn(Optional.of(rule));
+
+        service.update(7L, typed(List.of("E12:C42", "?xx:alt")));
+
+        assertThat(rule.getObjectId()).containsExactlyInAnyOrder("E12:C42", "?xx:alt");
+    }
+
+    @Test
+    void theListShowsTheRecordsTheRuleNamesAndMarksWhatNoRecordAnswersTo() {
+        var rule = storedRule(1L, "Regel");
+        rule.setGranteeId(Set.of("kr", "?alt", "*"));
+        rule.setCategory(TYPED_CATEGORY);
+        rule.setObjectId(Set.of("E12:C42", "E99:*"));
+        when(authorizationRuleRepository.findAll()).thenReturn(List.of(rule));
+
+        var info = service.getAll().getFirst();
+
+        assertThat(info.grantees())
+            .extracting(AuthorizationRuleValue::shown, AuthorizationRuleValue::unresolved)
+            .containsExactly(
+                tuple("*", false),
+                tuple("alt", true),
+                tuple("Klara Rot | kr", false));
+        assertThat(info.objects())
+            .extracting(AuthorizationRuleValue::shown, AuthorizationRuleValue::unresolved)
+            .containsExactly(
+                tuple("E99:*", true),
+                tuple("xx:1453", false));
     }
 
     @Test
@@ -270,6 +441,10 @@ class AuthorizationRuleServiceTest {
 
     private AuthorizationRuleData data(List<String> grantees, List<String> objects) {
         return new AuthorizationRuleData("Regel", CATEGORY, grantees, objects, List.of(READ), of(2026, 1, 1), null);
+    }
+
+    private AuthorizationRuleData typed(List<String> objects) {
+        return new AuthorizationRuleData("Regel", TYPED_CATEGORY, List.of("kr"), objects, List.of(READ), null, null);
     }
 
     private AuthorizationRuleData named(String name) {

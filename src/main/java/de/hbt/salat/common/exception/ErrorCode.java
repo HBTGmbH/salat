@@ -25,6 +25,8 @@ public enum ErrorCode {
   AR_NAME_REQUIRED("AR-0008", "a name is required"),
   AR_NAME_TOO_LONG("AR-0009", "the name is longer than the column holds"),
   AR_NAME_TAKEN("AR-0010", "another authorization rule already has this name"),
+  AR_GRANTEE_UNKNOWN("AR-0011", "the grantee is not a known login"),
+  AR_OBJECT_UNRESOLVED("AR-0012", "the input does not name an existing record"),
 
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),

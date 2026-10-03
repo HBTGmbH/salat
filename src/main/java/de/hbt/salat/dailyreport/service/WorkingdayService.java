@@ -100,11 +100,11 @@ public class WorkingdayService {
 
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
-    String employeeSign = employeecontract.getEmployee().getSign();
+    String employeeId = String.valueOf(employeecontract.getEmployee().getId());
     if(!authorizedUser.isManager() &&
        !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
+       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeId)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
     }
     return workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId).orElse(null);
@@ -299,10 +299,10 @@ public class WorkingdayService {
 
   private Optional<ErrorCode> writeDenial(Employeecontract employeecontract, LocalDate day, ErrorCode openPeriodDenial) {
     if (TIMEREPORT_STATUS_OPEN.equals(ReportPeriod.statusOn(employeecontract, day))) {
-      String employeeSign = employeecontract.getEmployee().getSign();
+      String employeeId = String.valueOf(employeecontract.getEmployee().getId());
       if(!authorizedUser.isManager() &&
          !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-         !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
+         !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeId)) {
         return Optional.of(openPeriodDenial);
       }
       // the one denial of the open period that applies to the working day as well (#1215)
@@ -320,11 +320,11 @@ public class WorkingdayService {
   public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate dateFirst,
       LocalDate dateLast) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
-    String employeeSign = employeecontract.getEmployee().getSign();
+    String employeeId = String.valueOf(employeecontract.getEmployee().getId());
     if(!authorizedUser.isManager() &&
        !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
+       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeId)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
     }
     return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast);

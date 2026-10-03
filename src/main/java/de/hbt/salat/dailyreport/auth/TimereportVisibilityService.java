@@ -12,10 +12,8 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
-import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.service.CustomerorderService;
-import de.hbt.salat.order.service.SuborderService;
 
 /**
  * Builds the {@link TimereportVisibility} of the current user for a period (#1092).
@@ -30,22 +28,19 @@ import de.hbt.salat.order.service.SuborderService;
  * each other for real bookings; whoever changes one of them runs it.
  *
  * <p>Nothing here costs a statement on {@code timereport}: the roles come from the session, the rules from the
- * in-memory cache of {@link AuthService}, and the three lookups go to master data.
+ * in-memory cache of {@link AuthService}, and the lookups of team and responsibility go to master data.
  */
 @Component
 @RequiredArgsConstructor
 public class TimereportVisibilityService {
 
   static final String AUTH_CATEGORY_TIMEREPORT = "TIMEREPORT";
-  private static final String SIGN_SEPARATOR = ":";
 
   private final AuthorizedUser authorizedUser;
   private final AuthorizedEmployee authorizedEmployee;
   private final AuthService authService;
-  private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
   private final CustomerorderService customerorderService;
-  private final SuborderService suborderService;
 
   public TimereportVisibility forPeriod(LocalDateRange period) {
     if (authorizedUser.isManager()) {
@@ -86,43 +81,19 @@ public class TimereportVisibilityService {
   }
 
   /**
-   * Reads one object of a rule back into a clause. The forms are the ones {@code TimereportAuthorization#objectsOf}
-   * writes, and the separator is read at its first occurrence for the same reason it is written there: an order sign
-   * may contain a colon, an employee sign may not.
+   * Reads one object of a rule back into a clause, in the forms {@link TimereportRuleObject} defines.
    *
-   * <p>An object naming something that no longer exists yields no clause rather than an empty one — an empty clause
-   * would restrict nothing and grant everything.
+   * <p>An object that is none of the forms — a value the move to ids (#1204) could not assign — yields no clause rather
+   * than an empty one: an empty clause would restrict nothing and grant everything. An id that no longer exists needs
+   * no lookup: the clause it yields simply matches no booking.
    */
   private Optional<TimereportVisibility.Clause> toClause(String objectId) {
-    var separator = objectId.indexOf(SIGN_SEPARATOR);
-    var employeeSign = separator < 0 ? null : objectId.substring(0, separator);
-    var orderPart = separator < 0 ? objectId : objectId.substring(separator + 1);
+    return TimereportRuleObject.parse(objectId).map(object -> new TimereportVisibility.Clause(
+        idsOf(object.employeeId()), idsOf(object.customerorderId()), idsOf(object.suborderId()), false));
+  }
 
-    Set<Long> employeeIds = Set.of();
-    if (employeeSign != null) {
-      var employee = employeeService.getEmployeeBySign(employeeSign);
-      if (employee == null) return Optional.empty();
-      employeeIds = Set.of(employee.getId());
-    }
-
-    if (ANY_MATCH.equals(orderPart)) {
-      // xx:* — the bookings of one person, on every order
-      return employeeIds.isEmpty()
-          ? Optional.empty()
-          : Optional.of(new TimereportVisibility.Clause(employeeIds, Set.of(), Set.of(), false));
-    }
-
-    if (orderPart.contains("/")) {
-      var suborder = suborderService.getSuborderByCompleteOrderSign(orderPart);
-      if (suborder == null) return Optional.empty();
-      return Optional.of(
-          new TimereportVisibility.Clause(employeeIds, Set.of(), Set.of(suborder.getId()), false));
-    }
-
-    var customerorder = customerorderService.getCustomerorderBySign(orderPart);
-    if (customerorder == null) return Optional.empty();
-    return Optional.of(
-        new TimereportVisibility.Clause(employeeIds, Set.of(customerorder.getId()), Set.of(), false));
+  private static Set<Long> idsOf(Long id) {
+    return id == null ? Set.of() : Set.of(id);
   }
 
   /**

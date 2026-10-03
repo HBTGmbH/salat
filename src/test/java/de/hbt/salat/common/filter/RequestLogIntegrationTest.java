@@ -85,8 +85,9 @@ class RequestLogIntegrationTest {
     if (authorizationRuleRepository.count() == 0) {
       var rule = new AuthorizationRule();
       rule.setCategory("EMPLOYEE");
-      rule.setGranteeId(Set.of(ADMIN));
-      rule.setObjectId(Set.of(OTHER_ADMIN));
+      // grantee and object are logins by id (#1204)
+      rule.setGranteeId(Set.of(loginIdOf(ADMIN)));
+      rule.setObjectId(Set.of(loginIdOf(OTHER_ADMIN)));
       rule.setAccessLevels(Set.of(AccessLevel.LOGIN));
       authorizationRuleRepository.save(rule);
     }
@@ -202,6 +203,10 @@ class RequestLogIntegrationTest {
 
   private static HttpResponse<String> send(HttpRequest.Builder request) throws Exception {
     return HttpClient.newHttpClient().send(request.build(), BodyHandlers.ofString());
+  }
+
+  private String loginIdOf(String loginname) {
+    return String.valueOf(salatUserRepository.findByLoginname(loginname).orElseThrow().getId());
   }
 
   private void employee(String sign, String status) {

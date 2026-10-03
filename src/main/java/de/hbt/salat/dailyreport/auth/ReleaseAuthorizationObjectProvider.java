@@ -5,7 +5,7 @@ import de.hbt.salat.employee.service.EmployeeService;
 
 /** What the rule editor may offer for the category {@code RELEASE_TIMEREPORTS} (#1074). */
 @Component
-public class ReleaseAuthorizationObjectProvider extends EmployeeSignAuthorizationObjectProvider {
+public class ReleaseAuthorizationObjectProvider extends EmployeeIdAuthorizationObjectProvider {
 
   public ReleaseAuthorizationObjectProvider(EmployeeService employeeService) {
     super(employeeService);

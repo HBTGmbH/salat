@@ -18,6 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.AuthorizationRule;
 import de.hbt.salat.auth.persistence.AuthorizationRuleRepository;
+import de.hbt.salat.auth.persistence.SalatUserRepository;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.e2e.E2EBrowser;
 import de.hbt.salat.e2e.E2ETestData;
@@ -40,6 +41,8 @@ class UserMenuE2ETest extends PlaywrightE2ETestBase {
   @Autowired
   private AuthorizationRuleRepository authorizationRuleRepository;
   @Autowired
+  private SalatUserRepository salatUserRepository;
+  @Autowired
   private AuthService authService;
 
   @BeforeAll
@@ -48,8 +51,9 @@ class UserMenuE2ETest extends PlaywrightE2ETestBase {
       var rule = new AuthorizationRule();
       rule.setName(RULE_NAME);
       rule.setCategory("EMPLOYEE");
-      rule.setGranteeId(Set.of(SWITCHER));
-      rule.setObjectId(Set.of(E2ETestData.EMPLOYEE_MA_SIGN));
+      // grantee and object are logins by id (#1204)
+      rule.setGranteeId(Set.of(loginIdOf(SWITCHER)));
+      rule.setObjectId(Set.of(loginIdOf(E2ETestData.EMPLOYEE_MA_SIGN)));
       rule.setAccessLevels(Set.of(AccessLevel.LOGIN));
       rule.setValidFrom(LocalDate.of(2020, 1, 1));
       authorizationRuleRepository.save(rule);
@@ -57,6 +61,10 @@ class UserMenuE2ETest extends PlaywrightE2ETestBase {
     // the rules are cached; clearCache() asks for a manager, which a test thread is not
     Object target = AopTestUtils.getTargetObject(authService);
     ReflectionTestUtils.setField(target, "lastCacheUpdate", 0L);
+  }
+
+  private String loginIdOf(String loginname) {
+    return String.valueOf(salatUserRepository.findByLoginname(loginname).orElseThrow().getId());
   }
 
   @ParameterizedTest(name = "{0}")

@@ -340,9 +340,9 @@ class MatrixServiceFillNotWorkedTest {
   @Test
   void leaves_a_booked_day_alone_for_a_rule_holder_who_cannot_read_the_booking() {
     book(day(3), GlobalConstants.TIMEREPORT_STATUS_OPEN);
-    var ruleHolder = signOf(contract(LocalDate.of(2000, 1, 1), null));
-    grantWorkingdayWrite(ruleHolder, signOf(contract));
-    logInAs(ruleHolder);
+    var ruleHolder = contract(LocalDate.of(2000, 1, 1), null);
+    grantWorkingdayWrite(ruleHolder, contract);
+    logInAs(signOf(ruleHolder));
 
     fillNotWorked();
 
@@ -406,16 +406,16 @@ class MatrixServiceFillNotWorkedTest {
   }
 
   /**
-   * Eine Regel der Kategorie {@code WORKINGDAY}: {@code grantee} darf die Arbeitstage von
-   * {@code employeeSign} schreiben, sonst nichts. Die Regeln liegen in einem Zwischenspeicher, den
+   * Eine Regel der Kategorie {@code WORKINGDAY}: die Person von {@code grantee} darf die Arbeitstage
+   * der Person von {@code target} schreiben, sonst nichts — beide über die id (#1204). Die Regeln liegen in einem Zwischenspeicher, den
    * nur die Geschäftsführung leeren darf — ohne das griffe die neue Regel erst nach dessen Ablauf.
    * Dafür ist danach die Geschäftsführung angemeldet; der Aufrufer meldet sich selbst wieder an.
    */
-  private void grantWorkingdayWrite(String grantee, String employeeSign) {
+  private void grantWorkingdayWrite(Employeecontract grantee, Employeecontract target) {
     var rule = new AuthorizationRule();
     rule.setCategory("WORKINGDAY");
-    rule.setGranteeId(Set.of(grantee));
-    rule.setObjectId(Set.of(employeeSign));
+    rule.setGranteeId(Set.of(String.valueOf(grantee.getEmployee().getSalatUser().getId())));
+    rule.setObjectId(Set.of(String.valueOf(target.getEmployee().getId())));
     rule.setAccessLevels(Set.of(AccessLevel.WRITE));
     rule.setValidFrom(LocalDate.of(2000, 1, 1));
     authorizationRuleRepository.save(rule);

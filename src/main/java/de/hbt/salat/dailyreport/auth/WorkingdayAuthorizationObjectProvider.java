@@ -5,7 +5,7 @@ import de.hbt.salat.employee.service.EmployeeService;
 
 /** What the rule editor may offer for the category {@code WORKINGDAY} (#1074). */
 @Component
-public class WorkingdayAuthorizationObjectProvider extends EmployeeSignAuthorizationObjectProvider {
+public class WorkingdayAuthorizationObjectProvider extends EmployeeIdAuthorizationObjectProvider {
 
   public WorkingdayAuthorizationObjectProvider(EmployeeService employeeService) {
     super(employeeService);
