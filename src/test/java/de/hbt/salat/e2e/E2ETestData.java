@@ -395,9 +395,9 @@ public class E2ETestData {
       Employeeorder acceptedAlpha = employeeorder(employeeorderRepository, acceptedContract, alphaDev);
       Employeeorder acceptedGlobex = employeeorder(employeeorderRepository, acceptedContract, globexConsult);
       bookings.book(acceptedAlpha, LocalDate.of(2026, 3, 30), Duration.ofHours(8), ACCEPTING_EDITED_COMMENT,
-          GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+          GlobalConstants.TIMEREPORT_STATUS_COMMITTED);
       bookings.book(acceptedGlobex, LocalDate.of(2026, 3, 31), Duration.ofHours(6), ACCEPTING_OTHER_COMMENT,
-          GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+          GlobalConstants.TIMEREPORT_STATUS_COMMITTED);
     }
   }
 

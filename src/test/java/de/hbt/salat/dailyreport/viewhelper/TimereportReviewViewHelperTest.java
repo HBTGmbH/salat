@@ -214,7 +214,7 @@ class TimereportReviewViewHelperTest {
 
   private static TimereportDTO booking(long id, LocalDate date) {
     return TimereportDTO.builder().id(id).referenceday(date).suborderId(5L).duration(Duration.ofMinutes(90))
-        .status("commited").build();
+        .status("committed").build();
   }
 
   private static MessageSourceAccessor germanMessages() {

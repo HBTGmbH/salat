@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 
 import java.time.Duration;
@@ -75,11 +75,11 @@ class TimereportListEditableTest {
   void a_row_is_editable_exactly_where_the_status_rule_allows_writing() {
     when(timereportListDAO.findRows(any(), any())).thenReturn(List.of(
         booking(11L, own, TIMEREPORT_STATUS_OPEN),
-        booking(12L, own, TIMEREPORT_STATUS_COMMITED),
+        booking(12L, own, TIMEREPORT_STATUS_COMMITTED),
         booking(13L, other, TIMEREPORT_STATUS_OPEN),
         booking(14L, other, TIMEREPORT_STATUS_CLOSED)));
     when(timereportAuthorization.isWriteAllowed(own, TIMEREPORT_STATUS_OPEN)).thenReturn(true);
-    when(timereportAuthorization.isWriteAllowed(own, TIMEREPORT_STATUS_COMMITED)).thenReturn(false);
+    when(timereportAuthorization.isWriteAllowed(own, TIMEREPORT_STATUS_COMMITTED)).thenReturn(false);
     when(timereportAuthorization.isWriteAllowed(other, TIMEREPORT_STATUS_OPEN)).thenReturn(false);
     when(timereportAuthorization.isWriteAllowed(other, TIMEREPORT_STATUS_CLOSED)).thenReturn(true);
 
@@ -96,7 +96,7 @@ class TimereportListEditableTest {
         booking(12L, own, TIMEREPORT_STATUS_OPEN),
         booking(13L, own, TIMEREPORT_STATUS_OPEN),
         booking(14L, other, TIMEREPORT_STATUS_OPEN),
-        booking(15L, own, TIMEREPORT_STATUS_COMMITED)));
+        booking(15L, own, TIMEREPORT_STATUS_COMMITTED)));
     when(timereportAuthorization.isWriteAllowed(any(), any())).thenReturn(true);
 
     var result = timereportListService.search(filter());
@@ -104,7 +104,7 @@ class TimereportListEditableTest {
     assertThat(result.editableIds()).hasSize(5);
     verify(timereportAuthorization, times(1)).isWriteAllowed(own, TIMEREPORT_STATUS_OPEN);
     verify(timereportAuthorization, times(1)).isWriteAllowed(other, TIMEREPORT_STATUS_OPEN);
-    verify(timereportAuthorization, times(1)).isWriteAllowed(own, TIMEREPORT_STATUS_COMMITED);
+    verify(timereportAuthorization, times(1)).isWriteAllowed(own, TIMEREPORT_STATUS_COMMITTED);
   }
 
   @Test

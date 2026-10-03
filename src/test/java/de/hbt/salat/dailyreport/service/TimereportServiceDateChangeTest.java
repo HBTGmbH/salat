@@ -10,7 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static de.hbt.salat.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
@@ -210,7 +210,7 @@ class TimereportServiceDateChangeTest {
   /** The old state has to be writable too: a released booking cannot be taken back by moving it out. */
   @Test
   void a_person_cannot_move_their_released_booking_into_the_open_period() {
-    givenBooking(RELEASED_DAY, TIMEREPORT_STATUS_COMMITED);
+    givenBooking(RELEASED_DAY, TIMEREPORT_STATUS_COMMITTED);
     actingAsOwner();
 
     assertThatThrownBy(() -> moveTo(OPEN_DAY))
@@ -244,7 +244,7 @@ class TimereportServiceDateChangeTest {
 
     moveTo(RELEASED_DAY);
 
-    assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
     assertThat(timereport.getReleasedby()).isEqualTo(OWNER);
     assertThat(timereport.getReleased()).isEqualTo(RELEASED_AT);
     assertThat(timereport.getAcceptedby()).isNull();
@@ -310,12 +310,12 @@ class TimereportServiceDateChangeTest {
 
   @Test
   void a_manager_moving_a_released_booking_within_the_released_period_keeps_it_released() {
-    var timereport = givenBooking(RELEASED_DAY, TIMEREPORT_STATUS_COMMITED);
+    var timereport = givenBooking(RELEASED_DAY, TIMEREPORT_STATUS_COMMITTED);
     actingAsManager();
 
     moveTo(OTHER_RELEASED_DAY);
 
-    assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
     assertThat(timereport.getReleasedby()).isEqualTo(OWNER);
   }
 

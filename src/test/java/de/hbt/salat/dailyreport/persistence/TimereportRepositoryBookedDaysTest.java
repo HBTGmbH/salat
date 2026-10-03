@@ -67,7 +67,7 @@ public class TimereportRepositoryBookedDaysTest {
   @Test
   public void counts_bookings_of_every_status() {
     book(employeecontract, projectOrder, MONDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN);
-    book(employeecontract, projectOrder, TUESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+    book(employeecontract, projectOrder, TUESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED);
     book(employeecontract, projectOrder, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_CLOSED);
 
     assertThat(bookedDays()).containsExactlyInAnyOrder(MONDAY, TUESDAY, WEDNESDAY);

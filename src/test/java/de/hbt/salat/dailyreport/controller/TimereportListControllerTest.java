@@ -285,7 +285,7 @@ class TimereportListControllerTest {
         .completeOrderSign("ORD-42/01").duration(Duration.ofMinutes(90)).status("open").build();
     var released = TimereportDTO.builder().id(12L)
         .referenceday(LocalDate.of(2026, 9, 2)).employeeName("Berta Beispiel").employeeSign("bb")
-        .completeOrderSign("ORD-42/01").duration(Duration.ofMinutes(60)).status("commited").build();
+        .completeOrderSign("ORD-42/01").duration(Duration.ofMinutes(60)).status("committed").build();
     when(timereportListService.search(any())).thenReturn(new TimereportListResult(
         List.of(editable, released), 2, Duration.ofMinutes(150), Duration.ZERO, 1, 1, Set.of(11L)));
 

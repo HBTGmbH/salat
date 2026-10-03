@@ -12,7 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_ACCEPTED_REQ_ADMIN;
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
@@ -173,7 +173,7 @@ class MoveTimereportsServiceTest {
         @Test
         void the_preview_names_the_accepted_bookings() {
             var accepted = dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_CLOSED);
-            rangeWith(accepted, dto(2L, 10L, "Mustermann", LocalDate.of(2024, 1, 11), TIMEREPORT_STATUS_COMMITED));
+            rangeWith(accepted, dto(2L, 10L, "Mustermann", LocalDate.of(2024, 1, 11), TIMEREPORT_STATUS_COMMITTED));
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
                 .thenReturn(List.of(new Employeeorder()));
 
@@ -198,7 +198,7 @@ class MoveTimereportsServiceTest {
 
         @Test
         void a_manager_still_moves_released_bookings() {
-            rangeWith(dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_COMMITED));
+            rangeWith(dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_COMMITTED));
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
                 .thenReturn(List.of(employeeorderWithId(99L)));
 

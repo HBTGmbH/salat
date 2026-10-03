@@ -5,7 +5,7 @@ import static java.util.function.Predicate.not;
 import static org.springframework.data.jpa.domain.Specification.where;
 import static de.hbt.salat.common.GlobalConstants.PREVIOUS_BOOKINGS_LOOKBACK_DAYS;
 import static de.hbt.salat.common.GlobalConstants.PREVIOUS_BOOKINGS_MAX;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
 
@@ -135,12 +135,12 @@ public class TimereportDAO {
      * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
      * 1) associated to the given employee contract id
      * 2) valid before and at the given date
-     * 3) status is commited
+     * 3) status is committed
      */
     public List<TimereportDTO> getCommitedTimereportsByEmployeeContractIdBeforeDate(long contractId, LocalDate date) {
         return toDaoList(timereportRepository.findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(
             contractId,
-            TIMEREPORT_STATUS_COMMITED,
+            TIMEREPORT_STATUS_COMMITTED,
             date
         ));
     }

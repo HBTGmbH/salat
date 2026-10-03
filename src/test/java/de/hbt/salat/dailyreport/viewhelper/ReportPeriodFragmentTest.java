@@ -26,7 +26,7 @@ class ReportPeriodFragmentTest {
 
   @Test
   void a_released_day_shows_the_lock_with_its_meaning_as_title() {
-    var html = renderDay("commited");
+    var html = renderDay("committed");
 
     assertThat(html).contains("ti-lock").contains("title=\"Freigegeben\"");
     assertThat(html).containsPattern("class=\"visually-hidden\"\\s*>Freigegeben<");

@@ -1376,7 +1376,7 @@ class ReleaseServiceTest {
             final var contract = releasableContract();
             contract.setReportReleaseDate(MONDAY);
             final var tuesday = booking(2, TUESDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(6));
-            final var monday = booking(1, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(1));
+            final var monday = booking(1, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(1));
             givenBookings(TUESDAY, TUESDAY, List.of(tuesday));
             when(timereportService.needsWorkingHoursLawValidation(EMPLOYEE_CONTRACT_ID)).thenReturn(true);
             when(timereportDAO.getTimereportsByDateAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY)).thenReturn(List.of(monday));
@@ -1469,7 +1469,7 @@ class ReleaseServiceTest {
         @Test
         void aDayWithOnlyAReleasedBookingIsWithoutBooking() {
             releasableContract();
-            final var committed = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(8));
+            final var committed = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(8));
             final var open = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
             final var listed = new ArrayList<>(open);
             listed.add(committed);
@@ -1625,7 +1625,7 @@ class ReleaseServiceTest {
         @Test
         void theManagerGetsEditAndCreateLinks() {
             releasableContract();
-            final var committed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(1));
+            final var committed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(1));
             final var listed = new ArrayList<>(week());
             listed.add(committed);
             givenBookings(MONDAY, FRIDAY, week(), listed);
@@ -1640,7 +1640,7 @@ class ReleaseServiceTest {
         @Test
         void theOwnerGetsEditAndCreateLinksForOpenBookings() {
             releasableContract();
-            final var committed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(1));
+            final var committed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(1));
             final var listed = new ArrayList<>(week());
             listed.add(committed);
             givenBookings(MONDAY, FRIDAY, week(), listed);
@@ -1804,7 +1804,7 @@ class ReleaseServiceTest {
             classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, period.begin(), period.end());
 
             assertThat(period).isEqualTo(new ReviewPeriod(FRIDAY, END_OF_MONTH));
-            verify(timereportService).updateReleaseData(eq(TIMEREPORT_ID), eq(GlobalConstants.TIMEREPORT_STATUS_COMMITED),
+            verify(timereportService).updateReleaseData(eq(TIMEREPORT_ID), eq(GlobalConstants.TIMEREPORT_STATUS_COMMITTED),
                 eq(PEOPLE_LEAD), any(LocalDateTime.class), isNull(), isNull());
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, END_OF_MONTH, null);
             verify(mailService).sendEmail(anyString(), anyString(), any(), any());
@@ -2122,7 +2122,7 @@ class ReleaseServiceTest {
         @Test
         void releasedBookingsBeforeThePeriodAreListedApart() {
             acceptableContract();
-            final var stray = booking(9, ACCEPTED_UNTIL.minusDays(1), GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(2));
+            final var stray = booking(9, ACCEPTED_UNTIL.minusDays(1), GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(2));
             final var committed = new ArrayList<>(week());
             committed.add(stray);
             givenBookings(MONDAY, FRIDAY, week(), committed);
@@ -2199,8 +2199,8 @@ class ReleaseServiceTest {
         @Test
         void noDayIsCheckedForWorkingTime() {
             acceptableContract();
-            final var longDay = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(11));
-            final var standby = booking(6, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.BEREITSCHAFT, Duration.ofHours(14));
+            final var longDay = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(11));
+            final var standby = booking(6, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.BEREITSCHAFT, Duration.ofHours(14));
             final var listed = new ArrayList<>(week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList());
             listed.add(longDay);
             listed.add(standby);
@@ -2484,7 +2484,7 @@ class ReleaseServiceTest {
         /** Eight released hours on each weekday, ids 1 to 5. */
         private List<TimereportDTO> week() {
             return List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY).stream()
-                .map(day -> booking(day.getDayOfWeek().getValue(), day, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(8)))
+                .map(day -> booking(day.getDayOfWeek().getValue(), day, GlobalConstants.TIMEREPORT_STATUS_COMMITTED, OrderType.STANDARD, Duration.ofHours(8)))
                 .toList();
         }
 
@@ -2714,7 +2714,7 @@ class ReleaseServiceTest {
             final var booking = TimereportDTO.builder()
                 .id(TIMEREPORT_ID)
                 .referenceday(LocalDate.of(2024, 3, 4))
-                .status(GlobalConstants.TIMEREPORT_STATUS_COMMITED)
+                .status(GlobalConstants.TIMEREPORT_STATUS_COMMITTED)
                 .orderType(OrderType.STANDARD)
                 .duration(Duration.ofHours(8))
                 .build();

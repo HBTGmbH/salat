@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 
 import java.time.Duration;
@@ -155,7 +155,7 @@ class DailyServiceReportPeriodTest {
     loggedInAs(OWNER, false);
 
     assertThat(dailyService.buildDailyView(MAY.atDay(5), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_CLOSED);
-    assertThat(dailyService.buildDailyView(MAY.atDay(12), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(dailyService.buildDailyView(MAY.atDay(12), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITTED);
     assertThat(dailyService.buildDailyView(MAY.atDay(19), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_OPEN);
   }
 
@@ -174,7 +174,7 @@ class DailyServiceReportPeriodTest {
     when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, MAY.atDay(1), MAY.atEndOfMonth()))
         .thenReturn(List.of(
             booking(1L, MAY.atDay(5), TIMEREPORT_STATUS_CLOSED),
-            booking(2L, MAY.atDay(12), TIMEREPORT_STATUS_COMMITED),
+            booking(2L, MAY.atDay(12), TIMEREPORT_STATUS_COMMITTED),
             booking(3L, MAY.atDay(19), TIMEREPORT_STATUS_OPEN)));
     loggedInAs(OWNER, false);
 
