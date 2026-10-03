@@ -127,15 +127,23 @@ public class Customerorder extends AuditedEntity implements Serializable {
     }
 
     public String getShortdescription() {
+        if ((shortdescription == null || shortdescription.isEmpty()) && description == null) {
+            description = "";
+        }
+        return shortdescriptionOf(shortdescription, description);
+    }
+
+    /**
+     * {@link #getShortdescription()} for code that has the two values but not the order
+     * ({@link CustomerorderOption}, #1283): the short description, or else the description, cut to
+     * twenty characters.
+     */
+    public static String shortdescriptionOf(String shortdescription, String description) {
         if (shortdescription == null || shortdescription.isEmpty()) {
             if (description == null) {
-                description = "";
+                return "";
             }
-            if (description.length() > 20) {
-                return description.substring(0, 17) + "...";
-            } else {
-                return description;
-            }
+            return description.length() > 20 ? description.substring(0, 17) + "..." : description;
         }
         return shortdescription;
     }

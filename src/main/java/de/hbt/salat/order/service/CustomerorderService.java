@@ -32,6 +32,7 @@ import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderDTO;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
@@ -180,7 +181,7 @@ public class CustomerorderService {
         .toList();
   }
 
-  public List<Customerorder> getInvoiceableCustomerorders() {
+  public List<CustomerorderOption> getInvoiceableCustomerorders() {
     return customerorderDAO.getInvoiceableCustomerorders();
   }
 

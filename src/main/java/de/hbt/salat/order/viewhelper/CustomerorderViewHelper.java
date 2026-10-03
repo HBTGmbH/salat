@@ -3,6 +3,7 @@ package de.hbt.salat.order.viewhelper;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.customer.viewhelper.CustomerLabelViewHelper;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 
 /**
  * Labels for a customer order in dropdowns (#1266, → ADR-0017).
@@ -23,9 +24,20 @@ public class CustomerorderViewHelper {
         return customerorder == null ? null : of(customerorder.getSign(), customerorder.getShortdescription());
     }
 
+    /** {@link #label(Customerorder)} for an order read as {@link CustomerorderOption} (#1283). */
+    public String label(CustomerorderOption customerorder) {
+        return customerorder == null ? null : of(customerorder.sign(), customerorder.shortdescriptionOrDescription());
+    }
+
     /** {@code null} when there is no customer to name — the attribute is then left out entirely. */
     public String customerLabel(Customerorder customerorder) {
         return customerOf(customerorder);
+    }
+
+    /** {@link #customerLabel(Customerorder)} for an order read as {@link CustomerorderOption} (#1283). */
+    public String customerLabel(CustomerorderOption customerorder) {
+        return customerorder == null ? null
+            : CustomerLabelViewHelper.of(customerorder.customerShortname(), customerorder.customerName());
     }
 
     /** {@link #customerLabel(Customerorder)} for code that has no instance at hand. */

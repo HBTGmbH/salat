@@ -25,6 +25,7 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Employeecontract_;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Customerorder_;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Employeeorder_;
@@ -65,10 +66,10 @@ public class CustomerorderDAO {
     }
 
     /**
-     * Get a list of all Customerorders ordered by their sign.
+     * The orders with at least one invoiceable suborder, ordered by their sign.
      */
-    public List<Customerorder> getInvoiceableCustomerorders() {
-        return Lists.newArrayList(customerorderRepository.findAllInvoiceable());
+    public List<CustomerorderOption> getInvoiceableCustomerorders() {
+        return customerorderRepository.findAllInvoiceable();
     }
 
     /**

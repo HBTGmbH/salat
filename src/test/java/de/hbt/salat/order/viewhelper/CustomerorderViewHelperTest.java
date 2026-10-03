@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 
 /**
  * How every order select names an order and, underneath, its customer (#1266, → ADR-0017).
@@ -59,7 +60,52 @@ public class CustomerorderViewHelperTest {
   @Test
   public void should_report_no_label_without_a_customer() {
     assertThat(viewHelper.customerLabel(new Customerorder())).isNull();
-    assertThat(viewHelper.customerLabel(null)).isNull();
+    assertThat(viewHelper.customerLabel((Customerorder) null)).isNull();
+  }
+
+  // --- an order read as option (#1283) ---------------------------------------------------------
+
+  @Test
+  public void should_name_an_option_like_the_order() {
+    assertThat(viewHelper.label(option(null, null, "BSP", "Beispielkunde"))).isEqualTo("4711");
+    assertThat(viewHelper.label(option("Plattform", "Plattform und Betrieb", "BSP", "Beispielkunde")))
+        .isEqualTo("4711 - Plattform");
+  }
+
+  /** The option carries the stored short name, not the one {@code Customer#getShortname()} makes up. */
+  @Test
+  public void should_name_the_customer_of_an_option_like_that_of_the_order() {
+    assertThat(viewHelper.customerLabel(option(null, null, "BSP", "Beispielkunde"))).isEqualTo("BSP - Beispielkunde");
+    assertThat(viewHelper.customerLabel(option(null, null, null, "A very long customer name")))
+        .isEqualTo("A very long customer name");
+  }
+
+  /** An order without a customer — the query joins the customer optionally. */
+  @Test
+  public void should_report_no_label_for_an_option_without_a_customer() {
+    assertThat(viewHelper.customerLabel(option(null, null, null, null))).isNull();
+    assertThat(viewHelper.customerLabel((CustomerorderOption) null)).isNull();
+  }
+
+  /**
+   * Without a short description the entity answers the description, cut to twenty characters — the
+   * option, read from the bare columns, must show the same (#1283).
+   */
+  @Test
+  public void should_name_an_option_without_short_description_by_its_description_as_the_order_does() {
+    var order = order("BSP", "Beispielkunde");
+    order.setSign("4711");
+    order.setDescription("Betrieb und Weiterentwicklung");
+
+    assertThat(viewHelper.label(option(null, "Betrieb und Weiterentwicklung", "BSP", "Beispielkunde")))
+        .isEqualTo(viewHelper.label(order))
+        .isEqualTo("4711 - Betrieb und Weite...");
+    assertThat(viewHelper.label(option("", "Wartung", "BSP", "Beispielkunde"))).isEqualTo("4711 - Wartung");
+  }
+
+  private static CustomerorderOption option(String shortdescription, String description, String customerShortname,
+      String customerName) {
+    return new CustomerorderOption(1L, "4711", shortdescription, description, customerShortname, customerName, false);
   }
 
   private static Customerorder order(String shortname, String name) {
