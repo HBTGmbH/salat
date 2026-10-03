@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,18 +13,21 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetLevel;
 import de.hbt.salat.budget.domain.BudgetPlanPresence;
-import de.hbt.salat.budget.domain.BudgetScope;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustmentData;
 import de.hbt.salat.budget.domain.OrderBudgetData;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
+import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 @Service
@@ -33,7 +37,9 @@ import de.hbt.salat.order.service.SuborderService;
 public class OrderBudgetService {
 
     private final OrderBudgetRepository orderBudgetRepository;
+    private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
+    private final OrderPositions orderPositions;
     private final BudgetAuthorization budgetAuthorization;
     private final TimereportBudgetAssignmentService assignmentService;
 
@@ -73,8 +79,15 @@ public class OrderBudgetService {
         if (visible.isEmpty()) {
             return Map.of();
         }
-        return orderBudgetRepository.findPlanPresenceBySigns(visible).stream()
-            .collect(Collectors.toMap(BudgetPlanPresence::customerorderSign, BudgetPlanPresence::hasActivePlan));
+        // the palette asks with the signs it shows; the plans are read by the id behind them (#1205)
+        var signById = customerorderIdsBySign(visible).entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+        if (signById.isEmpty()) {
+            return Map.of();
+        }
+        return orderBudgetRepository.findPlanPresenceByCustomerorderIds(signById.keySet()).stream()
+            .collect(Collectors.toMap(presence -> signById.get(presence.customerorderId()),
+                BudgetPlanPresence::hasActivePlan));
     }
 
     /** All plans the current user may see, ordered like {@link #getAll()}. */
@@ -87,9 +100,13 @@ public class OrderBudgetService {
     @Transactional(readOnly = true)
     public List<OrderBudget> getVisibleByCustomerorderSign(String customerorderSign, boolean includeInactive) {
         budgetAuthorization.checkAuthorizedForCustomerorder(customerorderSign);
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        if (customerorder == null) {
+            return List.of();
+        }
         return includeInactive
-            ? getByCustomerorderSign(customerorderSign)
-            : getActiveByCustomerorderSign(customerorderSign);
+            ? orderBudgetRepository.findByCustomerorderId(customerorder.getId())
+            : orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.getId(), Boolean.TRUE);
     }
 
     /** The active plans the current user may see — the basis of the dashboard. */
@@ -107,13 +124,22 @@ public class OrderBudgetService {
     @Transactional(readOnly = true)
     public List<OrderBudget> getAllActiveVisible(Collection<String> restrictToCustomerorderSigns) {
         if (restrictToCustomerorderSigns == null) {
-            return getAllActiveVisible();
+            return filterAuthorized(orderBudgetRepository.findAllActiveWithAdjustments());
         }
-        if (restrictToCustomerorderSigns.isEmpty()) {
+        var ids = customerorderIdsBySign(restrictToCustomerorderSigns).values();
+        if (ids.isEmpty()) {
             return List.of();
         }
-        return filterAuthorized(
-            orderBudgetRepository.findAllActiveWithAdjustmentsBySigns(restrictToCustomerorderSigns));
+        return filterAuthorized(orderBudgetRepository.findAllActiveWithAdjustmentsByCustomerorderIds(ids));
+    }
+
+    /** The ids behind the signs a filter or the palette asks with; a sign nobody carries is left out. */
+    private Map<String, Long> customerorderIdsBySign(Collection<String> customerorderSigns) {
+        if (customerorderSigns.isEmpty()) {
+            return Map.of();
+        }
+        return customerorderService.getCustomerordersBySigns(List.copyOf(customerorderSigns)).stream()
+            .collect(Collectors.toMap(Customerorder::getSign, Customerorder::getId, (a, b) -> a));
     }
 
     private List<OrderBudget> filterAuthorized(List<OrderBudget> budgets) {
@@ -124,22 +150,23 @@ public class OrderBudgetService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderBudget> getByCustomerorderSign(String customerorderSign) {
-        return orderBudgetRepository.findByCustomerorderSign(customerorderSign);
+    public List<OrderBudget> getActiveByCustomerorderId(long customerorderId) {
+        return orderBudgetRepository.findByCustomerorderIdAndActive(customerorderId, Boolean.TRUE);
     }
 
+    /** Where the plan sits in the order tree — empty for one the migration could not resolve (#1205). */
     @Transactional(readOnly = true)
-    public List<OrderBudget> getActiveByCustomerorderSign(String customerorderSign) {
-        return orderBudgetRepository.findByCustomerorderSignAndActive(customerorderSign, Boolean.TRUE);
+    public Optional<OrderPosition> positionOf(OrderBudget budget) {
+        return orderPositions.of(budget);
     }
 
     @Authorized(requiresManager = true)
     public OrderBudget create(OrderBudgetData data) {
+        var scope = scopeOf(data, null);
         // Checked before apply, which does not know the id that has to be excluded from the search.
-        checkLevelNotMixed(data.customerorderSign(), data.suborderSign(),
-            data.validFrom(), data.validUntil(), data.active(), null);
+        checkLevelNotMixed(scope, data.validFrom(), data.validUntil(), data.active(), null);
         var budget = new OrderBudget();
-        apply(budget, data);
+        apply(budget, data, scope);
         return orderBudgetRepository.save(budget);
     }
 
@@ -155,11 +182,11 @@ public class OrderBudgetService {
      */
     @Authorized(requiresManager = true)
     public void update(long id, OrderBudgetData data) {
-        checkLevelNotMixed(data.customerorderSign(), data.suborderSign(),
-            data.validFrom(), data.validUntil(), data.active(), id);
         var budget = getById(id);
+        var scope = scopeOf(data, budget);
+        checkLevelNotMixed(scope, data.validFrom(), data.validUntil(), data.active(), id);
         var coverageBefore = coverageOf(budget);
-        apply(budget, data);
+        apply(budget, data, scope);
         orderBudgetRepository.save(budget);
         if (!coverageOf(budget).equals(coverageBefore)) {
             assignmentService.revalidateAssignmentsOf(id);
@@ -172,10 +199,11 @@ public class OrderBudgetService {
      * reports its bookings under the plan, marked as deactivated (#1217,
      * → {@code BudgetControllingService}).
      */
-    private record Coverage(LocalDate validFrom, LocalDate validUntil, String suborderSign) {}
+    private record Coverage(LocalDate validFrom, LocalDate validUntil, Long customerorderId, Long suborderId) {}
 
     private static Coverage coverageOf(OrderBudget budget) {
-        return new Coverage(budget.getValidFrom(), budget.getValidUntil(), budget.getSuborderSign());
+        return new Coverage(budget.getValidFrom(), budget.getValidUntil(), budget.getCustomerorderId(),
+            budget.getSuborderId());
     }
 
     @Authorized(requiresManager = true)
@@ -183,8 +211,9 @@ public class OrderBudgetService {
         var budget = getById(id);
         // Only active plans conflict, so activating one can create a conflict that saving it did not.
         if (active) {
-            checkLevelNotMixed(budget.getCustomerorderSign(), budget.getSuborderSign(),
-                budget.getValidFrom(), budget.getValidUntil(), true, id);
+            // a plan the migration could not resolve covers nothing and conflicts with nothing
+            orderPositions.of(budget).ifPresent(position -> checkLevelNotMixed(
+                new Scope(position, null, null, false), budget.getValidFrom(), budget.getValidUntil(), true, id));
         }
         budget.setActive(active);
         orderBudgetRepository.save(budget);
@@ -235,32 +264,63 @@ public class OrderBudgetService {
         orderBudgetRepository.save(budget);
     }
 
-    private void apply(OrderBudget budget, OrderBudgetData data) {
-        checkSuborderBelongsToOrder(data.customerorderSign(), data.suborderSign());
+    /**
+     * What the plan is about: the customer order and the suborder, read by id (#1205), and its
+     * position in the tree. The suborder select lists the suborders of all customer orders, so an id
+     * can be submitted that does not lie below the chosen order. Such a plan would cover nothing and
+     * would silently behave as if it did not exist, so it is refused here. Any depth is allowed since
+     * #1004 — which level a plan may sit on is decided by {@link #checkLevelNotMixed}, against the
+     * plans already in force.
+     *
+     * @param edited the plan being edited, or {@code null} on create. A suborder the migration could
+     *               not resolve stays unresolved while the form names none — an empty choice must not
+     *               turn the plan into one on the whole order.
+     */
+    private Scope scopeOf(OrderBudgetData data, OrderBudget edited) {
+        var customerorder = data.customerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(data.customerorderId());
+        if (customerorder == null) {
+            throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
+        }
+        if (data.suborderId() == null) {
+            var keepUnresolved = edited != null && !edited.isOrderWide() && edited.getSuborderId() == null;
+            return new Scope(keepUnresolved ? null : OrderPosition.orderWide(customerorder.getId()), customerorder,
+                null, keepUnresolved);
+        }
+        var suborder = suborderService.getSuborderById(data.suborderId());
+        if (suborder == null) {
+            throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
+        }
+        if (!customerorder.getId().equals(suborder.getCustomerorder().getId())) {
+            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
+        }
+        return new Scope(OrderPosition.of(suborder), customerorder, suborder, false);
+    }
+
+    /**
+     * The scope of a plan being saved: its position, and the records the sign columns are written from.
+     *
+     * @param position       {@code null} while the suborder stays unresolved — the plan covers nothing then
+     * @param keepUnresolved whether the stored suborder sign is kept without an id
+     */
+    private record Scope(OrderPosition position, Customerorder customerorder, Suborder suborder,
+                         boolean keepUnresolved) {}
+
+    private void apply(OrderBudget budget, OrderBudgetData data, Scope scope) {
         budget.setName(data.name());
-        budget.setCustomerorderSign(data.customerorderSign());
-        budget.setSuborderSign(data.suborderSign());
+        budget.setCustomerorderId(scope.customerorder().getId());
+        // mirrors for the reports, written from the records (#1205)
+        budget.setCustomerorderSign(scope.customerorder().getSign());
+        if (!scope.keepUnresolved()) {
+            budget.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
+            budget.setSuborderSign(scope.suborder() == null ? null : scope.suborder().getCompleteOrderSign());
+        }
         budget.setValidFrom(data.validFrom());
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));
         budget.setAlertThresholdPercent(data.alertThresholdPercent());
         budget.setProgressMode(data.progressMode());
-    }
-
-    /**
-     * The suborder dropdown lists the suborders of all customer orders, so a sign can be submitted
-     * that does not exist below the chosen order. Such a budget would never match a suborder during
-     * controlling and would silently behave as if it did not exist, so reject it here. Any depth is
-     * allowed since #1004 — which level a plan may sit on is decided by
-     * {@link #checkLevelNotMixed}, against the plans already in force.
-     */
-    private void checkSuborderBelongsToOrder(String customerorderSign, String suborderSign) {
-        if (suborderSign == null) {
-            return;
-        }
-        if (!suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
-            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
-        }
     }
 
     /**
@@ -283,16 +343,19 @@ public class OrderBudgetService {
      * <p>Only active plans take part; an inactive one may stay on as an archive, and the controlling
      * gives it a section of its own (#1217). Activating one therefore has to check again.
      */
-    private void checkLevelNotMixed(String customerorderSign, String suborderSign,
-                                    LocalDate validFrom, LocalDate validUntil,
+    private void checkLevelNotMixed(Scope scope, LocalDate validFrom, LocalDate validUntil,
                                     boolean active, Long excludeId) {
-        if (!active || validFrom == null || validUntil == null) {
+        if (!active || validFrom == null || validUntil == null || scope.position() == null) {
             return;
         }
-        var level = BudgetScope.levelOf(suborderSign);
+        var level = scope.position().level();
         for (var other : orderBudgetRepository.findActiveOverlapping(
-                customerorderSign, validFrom, validUntil, excludeId)) {
-            var otherLevel = BudgetScope.levelOf(other.getSuborderSign());
+                scope.position().customerorderId(), validFrom, validUntil, excludeId)) {
+            var otherPosition = orderPositions.of(other);
+            if (otherPosition.isEmpty()) {
+                continue; // covers nothing, so it cannot cover anything twice
+            }
+            var otherLevel = otherPosition.get().level();
             if (level != otherLevel) {
                 // Naming the plan that stands in the way is the whole point of the message: the
                 // period to move is the one of that plan, not of the one being saved. Both levels
@@ -309,11 +372,13 @@ public class OrderBudgetService {
      * at all. Well defined because mixing levels is what {@link #checkLevelNotMixed} prevents.
      */
     @Transactional(readOnly = true)
-    public BudgetLevel currentLevel(String customerorderSign) {
+    public BudgetLevel currentLevel(long customerorderId) {
         var today = DateUtils.today();
-        return getActiveByCustomerorderSign(customerorderSign).stream()
+        return orderBudgetRepository.findByCustomerorderIdAndActive(customerorderId, Boolean.TRUE).stream()
             .filter(b -> !today.isBefore(b.getValidFrom()) && !today.isAfter(b.getValidUntil()))
-            .map(b -> BudgetLevel.of(b.getSuborderSign()))
+            .map(orderPositions::of)
+            .flatMap(Optional::stream)
+            .map(BudgetLevel::of)
             .findFirst()
             .orElse(BudgetLevel.NONE);
     }

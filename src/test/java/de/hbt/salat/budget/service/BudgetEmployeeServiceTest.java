@@ -38,6 +38,7 @@ import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -82,7 +83,7 @@ public class BudgetEmployeeServiceTest {
     orderPricingService = mock(OrderPricingService.class);
     authorizedUser = mock(AuthorizedUser.class);
     service = new BudgetEmployeeService(assignmentRepository, budgetAuthorization, suborderService,
-        employeeCostService, orderPricingService, authorizedUser);
+        employeeCostService, orderPricingService, mock(CustomerorderService.class), authorizedUser);
 
     plan = plan(42L);
     when(authorizedUser.isManager()).thenReturn(true);
@@ -381,6 +382,8 @@ public class BudgetEmployeeServiceTest {
     assignment.setEmployeeId(idOf(employeeSign));
     assignment.setEmployeeSign(employeeSign);
     assignment.setSuborderSign(suborderSign);
+    // by id since #1205; the fixture's suborders are co/01 and co/02
+    assignment.setSuborderId(suborderSign == null ? null : "co/01".equals(suborderSign) ? BILLED : NOT_INVOICEABLE);
     assignment.setEmployeeCostName(costName);
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);

@@ -22,13 +22,29 @@ import de.hbt.salat.order.domain.OrderType;
  * date. Should overlaps exist anyway, the row with the lowest id wins — that is what the
  * repository queries returned as {@code get(0)}.
  *
- * <p>The person is matched by id (#968), so a sign change — a correction as much as an
- * anonymization — leaves the resolution alone. An assignment the migration could not resolve
+ * <p>The person is matched by id (#968), and so is the suborder (#1205), so a sign change — a
+ * correction as much as an anonymization or a renamed order — leaves the resolution alone. An assignment the migration could not resolve
  * carries no id and matches no booking, just as its sign matched none before.
  */
 public final class EmployeeCostLookup {
 
-    private record AssignmentKey(Long employeeId, String suborderSign) {}
+    /**
+     * @param suborderId {@code null} for the general assignment of the person
+     * @param specific   whether the assignment names a suborder — a specific one the migration could
+     *                   not resolve keeps {@code true} with a {@code null} id and so never turns into
+     *                   the general one (#1205)
+     */
+    private record AssignmentKey(Long employeeId, Long suborderId, boolean specific) {
+
+        static AssignmentKey general(long employeeId) {
+            return new AssignmentKey(employeeId, null, false);
+        }
+
+        static AssignmentKey specific(long employeeId, long suborderId) {
+            return new AssignmentKey(employeeId, suborderId, true);
+        }
+
+    }
 
     private final Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey;
     private final Map<String, List<EmployeeCost>> costsByName;
@@ -45,7 +61,8 @@ public final class EmployeeCostLookup {
         Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey = new HashMap<>();
         for (var assignment : assignments) {
             assignmentsByKey.computeIfAbsent(
-                new AssignmentKey(assignment.getEmployeeId(), assignment.getSuborderSign()),
+                new AssignmentKey(assignment.getEmployeeId(), assignment.getSuborderId(),
+                    assignment.isSuborderSpecific()),
                 k -> new ArrayList<>()).add(assignment);
         }
         Map<String, List<EmployeeCost>> costsByName = new HashMap<>();
@@ -63,10 +80,10 @@ public final class EmployeeCostLookup {
      * no rate — and no rate means 0 EUR, deliberately, rather than the general rate of the
      * employee, which would be wrong by a wide margin.
      */
-    public Optional<EmployeeCost> findEffectiveCost(long employeeId, String suborderSign,
+    public Optional<EmployeeCost> findEffectiveCost(long employeeId, Long suborderId,
                                                     OrderType orderType, LocalDate date) {
-        if (suborderSign != null) {
-            var assignment = findAssignment(new AssignmentKey(employeeId, suborderSign), date);
+        if (suborderId != null) {
+            var assignment = findAssignment(AssignmentKey.specific(employeeId, suborderId), date);
             if (assignment.isPresent()) {
                 return findCost(assignment.get().getEmployeeCostName(), date);
             }
@@ -74,7 +91,7 @@ public final class EmployeeCostLookup {
         if (orderType == OrderType.BEREITSCHAFT) {
             return Optional.empty();
         }
-        return findAssignment(new AssignmentKey(employeeId, null), date)
+        return findAssignment(AssignmentKey.general(employeeId), date)
             .flatMap(a -> findCost(a.getEmployeeCostName(), date));
     }
 

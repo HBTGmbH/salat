@@ -1,6 +1,7 @@
 package de.hbt.salat.budget.persistence;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,26 +21,31 @@ public interface EmployeeCostAssignmentRepository
 
     long countByEmployeeCostName(String employeeCostName);
 
+    /** The assignments specific to one of these suborders (#1205). Callers must not pass an empty collection. */
+    List<EmployeeCostAssignment> findBySuborderIdIn(Collection<Long> suborderIds);
+
+    long countBySuborderId(Long suborderId);
+
     @Query("""
         SELECT a FROM EmployeeCostAssignment a
         WHERE a.employeeId = :emp
-          AND ((:so IS NULL AND a.suborderSign IS NULL) OR a.suborderSign = :so)
+          AND ((:so IS NULL AND a.suborderSign IS NULL) OR a.suborderId = :so)
           AND a.validFrom <= :until AND a.validUntil >= :from
           AND (:excludeId IS NULL OR a.id != :excludeId)
         """)
     List<EmployeeCostAssignment> findOverlapping(
         @Param("emp") long employeeId,
-        @Param("so") String suborderSign,
+        @Param("so") Long suborderId,
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
         @Param("excludeId") Long excludeId);
 
     @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
-        + " AND a.suborderSign = :so"
+        + " AND a.suborderId = :so"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveSuborderSpecific(
         @Param("emp") long employeeId,
-        @Param("so") String suborderSign,
+        @Param("so") long suborderId,
         @Param("date") LocalDate date);
 
     @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"

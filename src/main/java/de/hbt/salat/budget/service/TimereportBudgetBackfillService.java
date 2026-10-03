@@ -8,8 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
@@ -25,6 +25,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.TimereportService;
+import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
@@ -39,7 +40,6 @@ import de.hbt.salat.order.service.CustomerorderService;
  * the same rule as the automatic assignment, because this run writes its answer into the database
  * once and a wrong scope resolution would stop being a miscalculation and become the data.
  */
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -62,26 +62,24 @@ public class TimereportBudgetBackfillService {
     @Authorized(requiresManager = true)
     public BudgetBackfillResult backfill(String customerorderSign) {
         checkManager();
-        var signs = customerorderSign == null || customerorderSign.isBlank()
-            ? orderBudgetRepository.findActiveCustomerorderSigns()
-            : List.of(customerorderSign);
-        return new BudgetBackfillResult(signs.stream()
+        var customerorders = customerorderSign == null || customerorderSign.isBlank()
+            ? orderBudgetRepository.findActiveCustomerorderIds().stream()
+                .map(customerorderService::getCustomerorderById)
+                .filter(Objects::nonNull)
+                .toList()
+            : Stream.ofNullable(customerorderService.getCustomerorderBySign(customerorderSign)).toList();
+        return new BudgetBackfillResult(customerorders.stream()
             .map(this::backfillOrder)
             .filter(Objects::nonNull)
             .filter(BudgetBackfillOrderResult::hasContent)
             .toList());
     }
 
-    private BudgetBackfillOrderResult backfillOrder(String customerorderSign) {
-        var plans = orderBudgetRepository.findByCustomerorderSignAndActive(customerorderSign, TRUE);
+    private BudgetBackfillOrderResult backfillOrder(Customerorder customerorder) {
+        var plans = orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.getId(), TRUE);
         if (plans.isEmpty()) {
             // Without an active plan nothing can be assigned. Listing the order's whole history as
             // "no plan" would only bury the orders that do need attention.
-            return null;
-        }
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
-        if (customerorder == null) {
-            log.warn("Budget plans reference the unknown customer order {}", customerorderSign);
             return null;
         }
         // Only the span of the active plans is examined — see BudgetBackfillOrderResult.
@@ -89,7 +87,7 @@ public class TimereportBudgetBackfillService {
         var until = plans.stream().map(OrderBudget::getValidUntil).max(naturalOrder()).orElseThrow();
 
         var reports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
-        var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByCustomerorderSign(customerorderSign));
+        var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByCustomerorderId(customerorder.getId()));
         var pending = split(reports, assignedIds);
 
         var assigned = BudgetBookingCounts.NONE;
@@ -115,7 +113,7 @@ public class TimereportBudgetBackfillService {
         // One plain bulk save per order; no batching machinery until it is measurably needed.
         assignmentRepository.saveAll(newAssignments);
 
-        return new BudgetBackfillOrderResult(customerorderSign, customerorder.getShortdescription(),
+        return new BudgetBackfillOrderResult(customerorder.getSign(), customerorder.getShortdescription(),
             from, until, assigned, ambiguous, withoutPlan, pending.alreadyAssigned());
     }
 

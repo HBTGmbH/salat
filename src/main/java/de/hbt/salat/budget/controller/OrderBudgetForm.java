@@ -12,8 +12,15 @@ public class OrderBudgetForm {
 
     private Long id;
     private String name;
-    private String customerorderSign;
-    private String suborderSign;
+    /** The customer order, by id (#1205). */
+    private Long customerorderId;
+    /** The suborder, by id; {@code null} for a plan on the whole customer order. */
+    private Long suborderId;
+    /**
+     * The stored suborder sign of a plan whose suborder the migration could not resolve — shown as a
+     * marker so that the person editing sees what was meant; read-only.
+     */
+    private String unresolvedSuborderSign;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate validFrom;

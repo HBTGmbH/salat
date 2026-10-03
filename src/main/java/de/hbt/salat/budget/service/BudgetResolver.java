@@ -15,6 +15,7 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.budget.domain.BudgetResolution;
 import de.hbt.salat.budget.domain.BudgetScope;
 import de.hbt.salat.budget.domain.OrderBudget;
+import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.order.service.SuborderService;
@@ -54,12 +55,12 @@ public class BudgetResolver {
      * every plan on every evaluation.
      */
     public Map<Long, BudgetResolution> resolveAll(Collection<TimereportDTO> reports) {
-        Map<String, List<OrderBudget>> activePlansByOrder = new HashMap<>();
+        Map<Long, List<OrderBudget>> activePlansByOrder = new HashMap<>();
         Map<Long, BudgetResolution> resolutions = new LinkedHashMap<>();
         for (var report : reports) {
             var plans = activePlansByOrder.computeIfAbsent(
-                report.getCustomerorderSign(),
-                sign -> orderBudgetRepository.findByCustomerorderSignAndActive(sign, TRUE));
+                report.getCustomerorderId(),
+                id -> orderBudgetRepository.findByCustomerorderIdAndActive(id, TRUE));
             resolutions.put(report.getId(), new BudgetResolution(
                 plans.stream().filter(plan -> isAssignable(plan, report)).toList()));
         }
@@ -84,24 +85,24 @@ public class BudgetResolver {
 
     /**
      * The booking lies within the scope of the plan: on the plan's suborder or anywhere below it
-     * (→ {@link BudgetScope}). An order-wide plan needs no suborder at all and therefore does not
-     * look one up; for every other plan it is exactly one lookup per booking.
+     * (→ {@link BudgetScope}), compared by id (#1205). An order-wide plan needs no suborder at all and
+     * therefore does not look one up; for every other plan it is exactly one lookup per booking.
      */
     public boolean coversScope(OrderBudget plan, TimereportDTO report) {
-        var suborderSign = BudgetScope.isOrderWide(plan.getSuborderSign())
-            ? null
-            : suborderSignOf(report);
-        return BudgetScope.covers(plan, report.getCustomerorderSign(), suborderSign);
+        var position = plan.isOrderWide()
+            ? OrderPosition.orderWide(report.getCustomerorderId())
+            : positionOf(report);
+        return BudgetScope.covers(plan, position);
     }
 
     /**
-     * The complete order sign of the booking's own suborder. Read from the suborder rather than from
-     * {@code TimereportDTO.completeOrderSign}: not every path that builds such a DTO fills that
-     * field, and a missing sign would silently leave the booking outside every plan.
+     * Where the booking's own suborder sits in the tree, read from the suborder: its parents decide
+     * the subtree, and a moved suborder takes its bookings along. {@code null} where the suborder
+     * cannot be read — such a booking lies outside every plan that names a suborder.
      */
-    private String suborderSignOf(TimereportDTO report) {
+    private OrderPosition positionOf(TimereportDTO report) {
         var suborder = suborderService.getSuborderById(report.getSuborderId());
-        return suborder == null ? null : suborder.getCompleteOrderSign();
+        return suborder == null ? null : OrderPosition.of(suborder);
     }
 
 }

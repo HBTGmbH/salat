@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -32,6 +33,8 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -53,15 +56,20 @@ public class OrderBudgetServiceTest {
 
   private TimereportBudgetAssignmentService assignmentService;
 
+  /** The order "co" with its suborders, and a suborder of another order; the plans refer to them by id (#1205). */
+  private static final OrderTree TREE = new OrderTree()
+      .with("co/01/A").with("co/01/B").with("co/01/02").with("co/02/B").with("other/01/02");
+
   @BeforeEach
   public void setUp() {
     orderBudgetRepository = mock(OrderBudgetRepository.class);
+    var customerorderService = mock(CustomerorderService.class);
     var suborderService = mock(SuborderService.class);
-    when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
+    TREE.stub(customerorderService, suborderService);
     budgetAuthorization = permissiveAuthorization();
     assignmentService = mock(TimereportBudgetAssignmentService.class);
-    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization,
-        assignmentService);
+    service = new OrderBudgetService(orderBudgetRepository, customerorderService, suborderService,
+        new OrderPositions(suborderService), budgetAuthorization, assignmentService);
   }
 
   /** These tests are about the budget rules, so authorization lets everything through. */
@@ -215,10 +223,6 @@ public class OrderBudgetServiceTest {
   /** A suborder that does not belong to the chosen order is still rejected — at any depth. */
   @Test
   public void should_reject_a_plan_on_a_suborder_of_another_order() {
-    var suborderService = mock(SuborderService.class);
-    when(suborderService.existsByCompleteOrderSign("co", "other/01/02")).thenReturn(false);
-    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization,
-        assignmentService);
     givenExisting();
 
     assertThatThrownBy(() -> service.create(data("other/01/02", JAN, DEC, true)))
@@ -354,32 +358,78 @@ public class OrderBudgetServiceTest {
   @Test
   @FixedClock("2026-03-15T10:00:00")
   public void should_report_the_level_in_force_today() {
-    when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(TREE.orderId("co"), Boolean.TRUE))
         .thenReturn(List.of(plan(null, JAN, DEC)));
 
-    assertThat(service.currentLevel("co")).isEqualTo(new BudgetLevel(BudgetMode.ORDER_WIDE, 0));
+    assertThat(service.currentLevel(TREE.orderId("co"))).isEqualTo(new BudgetLevel(BudgetMode.ORDER_WIDE, 0));
   }
 
   /** The form has to name the level, not merely "per suborder" — that is what a plan must match. */
   @Test
   @FixedClock("2026-03-15T10:00:00")
   public void should_report_the_suborder_level_when_that_is_what_applies() {
-    when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(TREE.orderId("co"), Boolean.TRUE))
         .thenReturn(List.of(plan("co/01/A", JAN, DEC)));
 
-    assertThat(service.currentLevel("co")).isEqualTo(new BudgetLevel(BudgetMode.PER_SUBORDER, 2));
+    assertThat(service.currentLevel(TREE.orderId("co"))).isEqualTo(new BudgetLevel(BudgetMode.PER_SUBORDER, 2));
   }
 
   /** A plan whose period has passed says nothing about today. */
   @Test
   @FixedClock("2026-09-15T10:00:00")
   public void should_report_no_level_when_no_active_plan_covers_today() {
-    when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(TREE.orderId("co"), Boolean.TRUE))
         .thenReturn(List.of(plan(null, JAN, JUN)));
 
-    assertThat(service.currentLevel("co")).isEqualTo(BudgetLevel.NONE);
+    assertThat(service.currentLevel(TREE.orderId("co"))).isEqualTo(BudgetLevel.NONE);
   }
 
+
+  // --- order and suborder by id (#1205) -----------------------------------------------------------
+
+  /** The plan stores the ids, and writes the signs the reports still read from the records. */
+  @Test
+  public void stores_order_and_suborder_by_id_and_writes_their_signs_from_the_records() {
+    givenExisting();
+    when(orderBudgetRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    var stored = service.create(data("co/01/A", JAN, DEC, true));
+
+    assertThat(stored.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
+    assertThat(stored.getSuborderId()).isEqualTo(TREE.suborderId("co/01/A"));
+    assertThat(stored.getCustomerorderSign()).isEqualTo("co");
+    assertThat(stored.getSuborderSign()).isEqualTo("co/01/A");
+  }
+
+  @Test
+  public void rejects_a_suborder_that_does_not_exist() {
+    givenExisting();
+
+    assertThatThrownBy(() -> service.create(new OrderBudgetData("plan", TREE.orderId("co"), OrderTree.UNKNOWN_ID,
+        JAN, DEC, true, null, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.SO_NOT_FOUND.getCode());
+  }
+
+  /**
+   * A plan whose suborder the migration could not resolve stays so while the form names none — an
+   * empty choice must not turn it into a plan on the whole order, which would count every booking of
+   * the order against it.
+   */
+  @Test
+  public void keeps_an_unresolved_suborder_when_the_edit_names_none() {
+    givenExisting();
+    var unresolved = plan(null, JAN, DEC);
+    unresolved.setSuborderSign("co/gone");
+    givenStored(7L, unresolved);
+
+    service.update(7L, data(null, JAN, JUN, true));
+
+    assertThat(unresolved.getSuborderSign()).isEqualTo("co/gone");
+    assertThat(unresolved.getSuborderId()).isNull();
+    assertThat(unresolved.isUnresolved()).isTrue();
+    assertThat(unresolved.getValidUntil()).isEqualTo(JUN);
+  }
 
   // --- assignments follow a changed plan (#974) -------------------------------------------------
 
@@ -440,7 +490,7 @@ public class OrderBudgetServiceTest {
   }
 
   private void givenExisting(OrderBudget... plans) {
-    when(orderBudgetRepository.findActiveOverlapping(anyString(), any(), any(), any()))
+    when(orderBudgetRepository.findActiveOverlapping(any(), any(), any(), any()))
         .thenAnswer(invocation -> {
           LocalDate from = invocation.getArgument(1);
           LocalDate until = invocation.getArgument(2);
@@ -454,7 +504,8 @@ public class OrderBudgetServiceTest {
   }
 
   private static OrderBudgetData data(String suborderSign, LocalDate from, LocalDate until, boolean active) {
-    return new OrderBudgetData("plan", "co", suborderSign, from, until, active, null, null);
+    return new OrderBudgetData("plan", TREE.orderId("co"), TREE.suborderId(suborderSign), from, until, active,
+        null, null);
   }
 
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until) {
@@ -470,7 +521,7 @@ public class OrderBudgetServiceTest {
   public void an_empty_restriction_yields_no_plans_and_no_query() {
     assertThat(service.getAllActiveVisible(List.of())).isEmpty();
 
-    verify(orderBudgetRepository, never()).findAllActiveWithAdjustmentsBySigns(any());
+    verify(orderBudgetRepository, never()).findAllActiveWithAdjustmentsByCustomerorderIds(any());
     verify(orderBudgetRepository, never()).findAllActiveWithAdjustments();
   }
 
@@ -479,20 +530,24 @@ public class OrderBudgetServiceTest {
     service.getAllActiveVisible(null);
 
     verify(orderBudgetRepository).findAllActiveWithAdjustments();
-    verify(orderBudgetRepository, never()).findAllActiveWithAdjustmentsBySigns(any());
+    verify(orderBudgetRepository, never()).findAllActiveWithAdjustmentsByCustomerorderIds(any());
   }
 
   @Test
   public void a_restriction_is_passed_on_to_the_query() {
     service.getAllActiveVisible(List.of("co", "other"));
 
-    verify(orderBudgetRepository).findAllActiveWithAdjustmentsBySigns(List.of("co", "other"));
+    // asked with the signs the dashboard filters by, queried with the ids behind them (#1205)
+    verify(orderBudgetRepository).findAllActiveWithAdjustmentsByCustomerorderIds(
+        argThat(ids -> ids.size() == 2 && ids.containsAll(List.of(TREE.orderId("co"), TREE.orderId("other")))));
     verify(orderBudgetRepository, never()).findAllActiveWithAdjustments();
   }
 
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until, Long id) {
     var budget = new OrderBudget();
+    budget.setCustomerorderId(TREE.orderId("co"));
     budget.setCustomerorderSign("co");
+    budget.setSuborderId(TREE.suborderId(suborderSign));
     budget.setSuborderSign(suborderSign);
     budget.setActive(true);
     budget.setValidFrom(from);

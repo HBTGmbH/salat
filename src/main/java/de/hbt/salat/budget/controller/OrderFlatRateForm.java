@@ -14,8 +14,12 @@ import de.hbt.salat.budget.domain.FlatRateRhythm;
 public class OrderFlatRateForm {
 
     private Long id;
-    private String customerorderSign;
-    private String suborderSign;
+    /** The customer order, by id (#1205). */
+    private Long customerorderId;
+    /** The suborder, by id; {@code null} for the whole customer order. */
+    private Long suborderId;
+    /** The stored suborder sign of a flat rate the migration could not resolve — a marker only. */
+    private String unresolvedSuborderSign;
 
     /** Optional (#1065): without it the plan is derived, as it was before. */
     private Long orderBudgetId;

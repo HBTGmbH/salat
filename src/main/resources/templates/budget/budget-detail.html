@@ -34,9 +34,19 @@
         <div class="col-md-6">
           <dl class="row">
             <dt class="col-sm-5" th:text="#{main.budget.field.customerorderSign}">Auftrag</dt>
-            <dd class="col-sm-7" th:text="${budget.customerorderSign}"></dd>
+            <!--/* The sign columns follow the referenced records (#1205); a reference the migration
+                   could not resolve is marked. */-->
+            <dd class="col-sm-7">
+              <span th:text="${budget.customerorderSign}"></span>
+              <span th:if="${budget.customerorderId == null}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            </dd>
             <dt class="col-sm-5" th:text="#{main.budget.field.suborderSign}">Unterauftrag</dt>
-            <dd class="col-sm-7" th:text="${budget.suborderSign} ?: '-'"></dd>
+            <dd class="col-sm-7">
+              <span th:text="${budget.suborderSign} ?: '-'"></span>
+              <span th:if="${budget.suborderSign != null and budget.suborderId == null}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            </dd>
             <dt class="col-sm-5" th:text="#{main.budget.field.progressMode}">Fortschritt</dt>
             <dd class="col-sm-7"
                 th:text="${budget.progressMode != null} ? #{|main.budget.field.progressMode.${budget.progressMode.name()}|} : #{main.budget.field.progressMode.none}"></dd>

@@ -21,6 +21,8 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetBinding;
+import de.hbt.salat.budget.domain.OrderBudgetBinding.PositionedSuborder;
+import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.OrderPricing;
 import de.hbt.salat.budget.domain.OrderPricingData;
 import de.hbt.salat.budget.domain.OrderPricingDeviation;
@@ -35,7 +37,6 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -215,7 +216,11 @@ public class OrderPricingService {
         if (sign == null) {
             return SelectablePlans.none();
         }
-        var authorized = orderBudgetRepository.findByCustomerorderSign(sign).stream()
+        var order = orderOf(sign);
+        if (order == null) {
+            return SelectablePlans.none();
+        }
+        var authorized = orderBudgetRepository.findByCustomerorderId(order.customerorderId()).stream()
             .filter(budgetAuthorization::isAuthorized)
             .toList();
         if (authorized.isEmpty()) {
@@ -224,12 +229,11 @@ public class OrderPricingService {
         // An empty end is an open one here and needs no field of its own — unlike the start, which
         // is simply not entered yet while the form is being filled in.
         var until = validUntil != null ? validUntil : OPEN_END;
-        var suborderSigns = suborderSignsOf(sign);
         var fitting = authorized.stream()
             .filter(plan -> TRUE.equals(plan.getActive()))
             .filter(plan -> validFrom == null || OrderBudgetBinding.periodsOverlap(plan, validFrom, until))
-            .filter(plan -> OrderBudgetBinding.scopeMeetsPattern(plan, sign, trimToNull(suborderPattern),
-                suborderSigns))
+            .filter(plan -> OrderBudgetBinding.scopeMeetsPattern(plan, order.customerorderId(),
+                trimToNull(suborderPattern), order.suborders()))
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
         return SelectablePlans.of(fitting, authorized, keepPlanId);
@@ -354,8 +358,9 @@ public class OrderPricingService {
         var plan = orderBudgetRepository.findById(data.orderBudgetId())
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, data.orderBudgetId()));
         budgetAuthorization.checkAuthorized(plan);
-        if (!OrderBudgetBinding.scopeMeetsPattern(plan, data.customerorderSign(), data.suborderSign(),
-            suborderSignsOf(data.customerorderSign()))) {
+        var order = orderOf(data.customerorderSign());
+        if (order == null || !OrderBudgetBinding.scopeMeetsPattern(plan, order.customerorderId(),
+            data.suborderSign(), order.suborders())) {
             throw new BusinessRuleException(ErrorCode.BU_BUDGET_SCOPE_DISJOINT, plan.getName());
         }
         if (!OrderBudgetBinding.periodsOverlap(plan, data.validFrom(), validUntil)) {
@@ -365,19 +370,24 @@ public class OrderPricingService {
     }
 
     /**
-     * The complete order signs of the order's suborders — the ground the scope check stands on. An
-     * order that is gone, or not stored yet, has none; the two cases that need no suborder at all
-     * answer without this list anyway (→ {@link OrderBudgetBinding}).
+     * The order a rate names by sign, with its suborders — the ground the scope check stands on. The
+     * rate keeps naming its order by sign and its suborders by pattern (#957); the plan is compared by
+     * id (#1205), so every suborder brings both its complete order sign and its position. An order that
+     * is gone, or not stored yet, yields {@code null}; the two cases that need no suborder at all
+     * answer without the list anyway (→ {@link OrderBudgetBinding}).
      */
-    private List<String> suborderSignsOf(String customerorderSign) {
+    private PricedOrder orderOf(String customerorderSign) {
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         if (customerorder == null || customerorder.getId() == null) {
-            return List.of();
+            return null;
         }
-        return suborderService.getSubordersByCustomerorderId(customerorder.getId()).stream()
-            .map(Suborder::getCompleteOrderSign)
+        var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId()).stream()
+            .map(suborder -> new PositionedSuborder(suborder.getCompleteOrderSign(), OrderPosition.of(suborder)))
             .toList();
+        return new PricedOrder(customerorder.getId(), suborders);
     }
+
+    private record PricedOrder(long customerorderId, List<PositionedSuborder> suborders) {}
 
     private void apply(OrderPricing pricing, OrderPricingData data, Employee employee, OrderBudget plan) {
         pricing.setCustomerorderSign(data.customerorderSign());

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.budget.domain.OrderBudget;
+import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -94,6 +95,29 @@ public class BudgetAuthorizationTest {
 
     assertThat(authorization.isAuthorized(budgetOn(OWN))).isTrue();
     assertThat(authorization.isAuthorized(budgetOn(FOREIGN))).isFalse();
+  }
+
+  /**
+   * A plan answers to the order it refers to by id (#1205), not to whatever carries its sign: two
+   * orders may share a sign, and responsibility for one must not open the plans of the other.
+   */
+  @Test
+  public void a_plan_of_another_order_with_the_same_sign_is_not_authorized() {
+    givenResponsibleFor(OWN);
+    var planOfAnotherOrder = budgetOn(OWN);
+    planOfAnotherOrder.setCustomerorderId(idOf(FOREIGN));
+
+    assertThat(authorization.isAuthorized(planOfAnotherOrder)).isFalse();
+  }
+
+  /** A plan whose order the migration could not resolve is left to whoever sees every order. */
+  @Test
+  public void an_unresolved_plan_is_not_authorized_for_a_responsible() {
+    givenResponsibleFor(OWN);
+    var unresolved = budgetOn(OWN);
+    unresolved.setCustomerorderId(null);
+
+    assertThat(authorization.isAuthorized(unresolved)).isFalse();
   }
 
   @Test
@@ -188,8 +212,24 @@ public class BudgetAuthorizationTest {
 
   private static Customerorder orderWithSign(String sign) {
     var customerorder = new Customerorder();
+    setId(customerorder, idOf(sign));
     customerorder.setSign(sign);
     return customerorder;
+  }
+
+  /** The orders of these tests carry an id derived from their sign; the plans refer to it (#1205). */
+  private static long idOf(String sign) {
+    return Math.abs((long) sign.hashCode()) + 1;
+  }
+
+  private static void setId(AuditedEntity entity, long id) {
+    try {
+      var field = AuditedEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(entity, id);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("cannot assign an id to the test record", e);
+    }
   }
 
   private static Customerorder hiddenOrderWithSign(String sign) {
@@ -200,6 +240,7 @@ public class BudgetAuthorizationTest {
 
   private static OrderBudget budgetOn(String customerorderSign) {
     var budget = new OrderBudget();
+    budget.setCustomerorderId(idOf(customerorderSign));
     budget.setCustomerorderSign(customerorderSign);
     return budget;
   }

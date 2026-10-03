@@ -79,12 +79,20 @@
             th:with="f=${row.flatRate()}, order=${row.customerorder()}">
           <td>
             <div>
-              <span th:text="${f.customerorderSign}"></span>
+              <!--/* The sign of the referenced order (#1205); the stored one, marked, where the
+                     migration could not resolve it. */-->
+              <span th:text="${order != null ? order.sign : f.customerorderSign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!f.currentlyValid})}"></span>
+              <span th:if="${f.customerorderId == null}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
-          <td th:text="${f.suborderSign} ?: '-'"></td>
+          <td>
+            <span th:text="${f.suborderSign} ?: '-'"></span>
+            <span th:if="${f.suborderSign != null and f.suborderId == null}" class="badge bg-warning-lt"
+                  th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+          </td>
           <!--/* Leer heisst: der Plan wird hergeleitet, und bei mehreren passenden keiner (#1065). */-->
           <td th:text="${row.orderBudgetName()} ?: '-'"></td>
           <td>

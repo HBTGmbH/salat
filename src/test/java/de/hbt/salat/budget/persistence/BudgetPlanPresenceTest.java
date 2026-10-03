@@ -32,6 +32,11 @@ class BudgetPlanPresenceTest {
   private static final LocalDate FROM = LocalDate.of(2026, 1, 1);
   private static final LocalDate UNTIL = LocalDate.of(2026, 12, 31);
 
+  /** The orders by id — the query groups by the id of the order since #1205, not by its sign. */
+  private static final long MUSTER_01 = 101L;
+  private static final long MUSTER_02 = 102L;
+  private static final long MUSTER_03 = 103L;
+
   @Autowired
   private OrderBudgetRepository orderBudgetRepository;
 
@@ -46,83 +51,85 @@ class BudgetPlanPresenceTest {
 
   @Test
   void reports_an_order_as_active_when_one_of_its_plans_is() {
-    plan("MUSTER-01", false);
-    plan("MUSTER-01", true);
-    plan("MUSTER-01", false);
+    plan(MUSTER_01, false);
+    plan(MUSTER_01, true);
+    plan(MUSTER_01, false);
 
-    var presence = orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01"));
+    var presence = orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01));
 
-    assertThat(presence).containsExactly(new BudgetPlanPresence("MUSTER-01", 1));
+    assertThat(presence).containsExactly(new BudgetPlanPresence(MUSTER_01, 1));
     assertThat(presence.getFirst().hasActivePlan()).isTrue();
   }
 
   @Test
   void reports_an_order_with_only_inactive_plans_as_inactive() {
-    plan("MUSTER-01", false);
-    plan("MUSTER-01", false);
+    plan(MUSTER_01, false);
+    plan(MUSTER_01, false);
 
-    var presence = orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01"));
+    var presence = orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01));
 
-    assertThat(presence).containsExactly(new BudgetPlanPresence("MUSTER-01", 0));
+    assertThat(presence).containsExactly(new BudgetPlanPresence(MUSTER_01, 0));
     assertThat(presence.getFirst().hasActivePlan()).isFalse();
   }
 
   @Test
   void names_an_order_with_several_active_plans_only_once() {
-    plan("MUSTER-01", true);
-    plan("MUSTER-01", true);
+    plan(MUSTER_01, true);
+    plan(MUSTER_01, true);
 
-    assertThat(orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01")))
-        .containsExactly(new BudgetPlanPresence("MUSTER-01", 1));
+    assertThat(orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01)))
+        .containsExactly(new BudgetPlanPresence(MUSTER_01, 1));
   }
 
   @Test
   void leaves_out_an_order_without_plans() {
-    plan("MUSTER-02", true);
+    plan(MUSTER_02, true);
 
-    assertThat(orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01", "MUSTER-02")))
-        .containsExactly(new BudgetPlanPresence("MUSTER-02", 1));
+    assertThat(orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01, MUSTER_02)))
+        .containsExactly(new BudgetPlanPresence(MUSTER_02, 1));
   }
 
   @Test
   void answers_only_for_the_orders_asked_for() {
-    plan("MUSTER-01", true);
-    plan("MUSTER-02", true);
+    plan(MUSTER_01, true);
+    plan(MUSTER_02, true);
 
-    assertThat(orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01")))
-        .containsExactly(new BudgetPlanPresence("MUSTER-01", 1));
+    assertThat(orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01)))
+        .containsExactly(new BudgetPlanPresence(MUSTER_01, 1));
   }
 
   /** A plan on one of the suborders is a plan of the order: the plan list of the order shows it. */
   @Test
   void counts_a_plan_on_a_suborder_for_its_order() {
-    plan("MUSTER-01", "MUSTER-01/03", false);
+    plan(MUSTER_01, 17L, false);
 
-    assertThat(orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01")))
-        .containsExactly(new BudgetPlanPresence("MUSTER-01", 0));
+    assertThat(orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01)))
+        .containsExactly(new BudgetPlanPresence(MUSTER_01, 0));
   }
 
   @Test
   void groups_the_plans_of_several_orders_by_order() {
-    plan("MUSTER-01", true);
-    plan("MUSTER-01", false);
-    plan("MUSTER-02", false);
+    plan(MUSTER_01, true);
+    plan(MUSTER_01, false);
+    plan(MUSTER_02, false);
 
-    assertThat(orderBudgetRepository.findPlanPresenceBySigns(List.of("MUSTER-01", "MUSTER-02", "MUSTER-03")))
+    assertThat(orderBudgetRepository.findPlanPresenceByCustomerorderIds(List.of(MUSTER_01, MUSTER_02, MUSTER_03)))
         .containsExactlyInAnyOrder(
-            new BudgetPlanPresence("MUSTER-01", 1),
-            new BudgetPlanPresence("MUSTER-02", 0));
+            new BudgetPlanPresence(MUSTER_01, 1),
+            new BudgetPlanPresence(MUSTER_02, 0));
   }
 
-  private void plan(String customerorderSign, boolean active) {
-    plan(customerorderSign, null, active);
+  private void plan(long customerorderId, boolean active) {
+    plan(customerorderId, null, active);
   }
 
-  private void plan(String customerorderSign, String suborderSign, boolean active) {
+  private void plan(long customerorderId, Long suborderId, boolean active) {
     var plan = new OrderBudget();
     plan.setName("Plan");
-    plan.setCustomerorderSign(customerorderSign);
-    plan.setSuborderSign(suborderSign);
+    plan.setCustomerorderId(customerorderId);
+    plan.setCustomerorderSign("MUSTER-" + customerorderId);
+    plan.setSuborderId(suborderId);
+    plan.setSuborderSign(suborderId == null ? null : "MUSTER-" + customerorderId + "/" + suborderId);
     plan.setValidFrom(FROM);
     plan.setValidUntil(UNTIL);
     plan.setActive(active);

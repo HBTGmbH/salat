@@ -3,6 +3,7 @@ package de.hbt.salat.budget.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -328,19 +329,21 @@ public class BudgetDashboardServiceTest {
       var orderFlatRateService = mock(OrderFlatRateService.class);
       var publicholidayService = mock(PublicholidayService.class);
 
-      when(customerorderService.getCustomerordersBySigns(any())).thenAnswer(i -> {
-        Collection<String> signs = askAll(i.getArgument(0));
-        return orders.stream().filter(o -> signs.contains(o.getSign())).toList();
+      when(customerorderService.getCustomerordersByIds(any())).thenAnswer(i -> {
+        Collection<Long> ids = askAll(i.getArgument(0));
+        return orders.stream().filter(o -> ids.contains(o.getId())).toList();
       });
       // Like the real method: hidden suborders included.
-      when(suborderService.getSubordersByCustomerorderSigns(any())).thenAnswer(i -> {
-        Collection<String> signs = askAll(i.getArgument(0));
-        return suborders.stream().filter(so -> signs.contains(so.getCustomerorder().getSign())).toList();
+      when(suborderService.getSubordersByCustomerorderIds(any())).thenAnswer(i -> {
+        Collection<Long> ids = askAll(i.getArgument(0));
+        return suborders.stream().filter(so -> ids.contains(so.getCustomerorder().getId())).toList();
       });
-      when(orderBudgetRepository.findByCustomerorderSignInAndActive(any(), any())).thenAnswer(i -> {
-        Collection<String> signs = askAll(i.getArgument(0));
+      when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
+          suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
+      when(orderBudgetRepository.findByCustomerorderIdInAndActive(any(), any())).thenAnswer(i -> {
+        Collection<Long> ids = askAll(i.getArgument(0));
         return plans.stream()
-            .filter(p -> signs.contains(p.getCustomerorderSign()) && p.getActive().equals(i.getArgument(1)))
+            .filter(p -> ids.contains(p.getCustomerorderId()) && p.getActive().equals(i.getArgument(1)))
             .toList();
       });
       when(orderBudgetRepository.findWithScopeEntriesByIdIn(any())).thenAnswer(i -> {
@@ -363,8 +366,8 @@ public class BudgetDashboardServiceTest {
         return OrderPricingLookup.of(rates.stream().filter(r -> signs.contains(r.getCustomerorderSign())).toList());
       });
       when(orderFlatRateService.lookupFor(any())).thenAnswer(i -> {
-        Collection<String> signs = askAll(i.getArgument(0));
-        return OrderFlatRateLookup.of(flatRates.stream().filter(r -> signs.contains(r.getCustomerorderSign())).toList());
+        Collection<Long> ids = askAll(i.getArgument(0));
+        return OrderFlatRateLookup.of(flatRates.stream().filter(r -> ids.contains(r.getCustomerorderId())).toList());
       });
       when(publicholidayService.getPublicHolidaysBetween(any(), any())).thenAnswer(i -> {
         LocalDate from = i.getArgument(0);
@@ -378,7 +381,8 @@ public class BudgetDashboardServiceTest {
       when(budgetAuthorization.isAuthorizedForCustomerorder(anyString())).thenReturn(true);
       return new BudgetControllingService(customerorderService, suborderService, timereportService,
           orderBudgetRepository, assignmentRepository, orderPricingService, orderFlatRateService,
-          mock(EmployeeCostService.class), publicholidayService, budgetAuthorization);
+          mock(EmployeeCostService.class), publicholidayService, budgetAuthorization,
+          new OrderPositions(suborderService));
     }
 
     private <T> T ask(T value) {
@@ -419,7 +423,11 @@ public class BudgetDashboardServiceTest {
       var plan = new OrderBudget();
       setId(plan, id);
       plan.setName("plan " + id);
+      // by id, as the services store it (#1205); the signs stand next to the ids
+      plan.setCustomerorderId(orderIdOf(orderSign));
       plan.setCustomerorderSign(orderSign);
+      plan.setSuborderId(suborderSign == null ? null : suborders.stream()
+          .filter(so -> so.getCompleteOrderSign().equals(suborderSign)).findFirst().orElseThrow().getId());
       plan.setSuborderSign(suborderSign);
       plan.setActive(true);
       plan.setValidFrom(LocalDate.parse(from));
@@ -427,6 +435,10 @@ public class BudgetDashboardServiceTest {
       plan.setProgressMode(progressMode);
       plans.add(plan);
       return plan;
+    }
+
+    private Long orderIdOf(String orderSign) {
+      return orders.stream().filter(o -> o.getSign().equals(orderSign)).findFirst().orElseThrow().getId();
     }
 
     private static void adjust(OrderBudget plan, String amount, String effective) {
@@ -475,6 +487,7 @@ public class BudgetDashboardServiceTest {
                                    String amount) {
       var rate = new OrderFlatRate();
       setId(rate, nextId++);
+      rate.setCustomerorderId(orderIdOf(orderSign));
       rate.setCustomerorderSign(orderSign);
       rate.setDescription(rhythm + " " + orderSign);
       rate.setRhythm(rhythm);

@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -37,6 +38,7 @@ import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
 import de.hbt.salat.budget.domain.OrderFlatRate;
+import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
 import de.hbt.salat.budget.domain.OrderPricingLookup;
 import de.hbt.salat.budget.domain.PlanBooking;
@@ -53,6 +55,7 @@ import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -72,6 +75,7 @@ public class BudgetControllingService {
     private final EmployeeCostService employeeCostService;
     private final PublicholidayService publicholidayService;
     private final BudgetAuthorization budgetAuthorization;
+    private final OrderPositions orderPositions;
 
     public BudgetControllingResult compute(String customerorderSign, LocalDate from, LocalDate until, boolean includeCosts) {
         budgetAuthorization.checkAuthorizedForCustomerorder(customerorderSign);
@@ -81,9 +85,11 @@ public class BudgetControllingService {
         Set<LocalDate> holidays = publicholidayService.getPublicHolidaysBetween(from, until).stream()
             .map(h -> h.getRefdate()).collect(Collectors.toSet());
 
+        // Asked with the sign the page shows; from here on everything is read by id (#1205), so a
+        // renamed order or suborder changes nothing about what counts where.
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
-        var budgets = orderBudgetRepository.findByCustomerorderSign(customerorderSign);
+        var budgets = orderBudgetRepository.findByCustomerorderId(customerorder.getId());
 
         // Rates and costs are resolved once per time report. Loading both tables up front keeps
         // that in memory instead of issuing up to five statements per report.
@@ -93,7 +99,7 @@ public class BudgetControllingService {
         // Which plan a booking counts against is read, not derived (#913). That is what lets a
         // booking appear in exactly one section without anyone cutting periods against each other,
         // and it is what allows plans to overlap from #914 on.
-        var planOfBooking = planOfBooking(customerorderSign);
+        var planOfBooking = planOfBooking(customerorder.getId());
 
         // A deactivated plan keeps its assignments (#1217), so every plan whose validity touches the
         // window is a candidate at first. Whether a deactivated one takes part depends on what it
@@ -101,9 +107,11 @@ public class BudgetControllingService {
         var candidates = evaluatedPlans(budgets, filter);
         var candidateTimereports = timereportService.getTimereportsByDatesAndCustomerOrderId(
             readFrom(candidates, from), until, customerorder.getId());
-        var flatRateLookup = orderFlatRateService.lookupFor(List.of(customerorderSign));
+        var flatRateLookup = orderFlatRateService.lookupFor(List.of(customerorder.getId()));
+        var positionOfFlatRate = flatRatePositions();
         var plans = withoutIdleDeactivatedPlans(candidates, candidateTimereports, planOfBooking,
-            allocate(flatRateLookup.dueAmounts(customerorderSign, from, until), budgets), from);
+            allocate(flatRateLookup.dueAmounts(customerorder.getId(), from, until), budgets, positionOfFlatRate),
+            from);
         var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
         // One read over the whole span this evaluation talks about: from the earliest plan start to
@@ -127,7 +135,8 @@ public class BudgetControllingService {
         // against every plan of the order rather than against the evaluated ones, so that the
         // allocation of an amount does not depend on the window somebody is looking at. Only a flat
         // rate naming its plan can land on a deactivated one (→ FlatRateAllocation).
-        var flatRatesByPlan = allocate(flatRateLookup.dueAmounts(customerorderSign, readFrom, until), budgets);
+        var flatRatesByPlan = allocate(flatRateLookup.dueAmounts(customerorder.getId(), readFrom, until), budgets,
+            positionOfFlatRate);
 
         var sections = new ArrayList<BudgetControllingSection>();
         for (var group : sectionGroups(plans)) {
@@ -149,8 +158,8 @@ public class BudgetControllingService {
     }
 
     /** The stored assignment of every booking of the customer order, by time report id. */
-    private Map<Long, Long> planOfBooking(String customerorderSign) {
-        return assignmentRepository.findLinksByCustomerorderSign(customerorderSign).stream()
+    private Map<Long, Long> planOfBooking(long customerorderId) {
+        return assignmentRepository.findLinksByCustomerorderId(customerorderId).stream()
             .collect(Collectors.toMap(TimereportBudgetLink::timereportId, TimereportBudgetLink::orderBudgetId));
     }
 
@@ -185,7 +194,7 @@ public class BudgetControllingService {
                         ? rateOf(r, customerorderSign, soSign, planOfBooking.get(r.getId()), pricingLookup)
                         : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
-                    costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, suborder.getEffectiveOrderType(), costLookup),
+                    costLookup == null ? BigDecimal.ZERO : costOf(r, suborder.getId(), suborder.getEffectiveOrderType(), costLookup),
                     r.getReferenceday().isBefore(windowStart)))
                 .toList());
         }
@@ -207,9 +216,9 @@ public class BudgetControllingService {
             .orElse(BigDecimal.ZERO);
     }
 
-    private static BigDecimal costOf(TimereportDTO report, String soSign, OrderType orderType, EmployeeCostLookup lookup) {
+    private static BigDecimal costOf(TimereportDTO report, long suborderId, OrderType orderType, EmployeeCostLookup lookup) {
         var hours = minutesToHours(report.getDuration().toMinutes());
-        return lookup.findEffectiveCost(report.getEmployeeId(), soSign, orderType, report.getReferenceday())
+        return lookup.findEffectiveCost(report.getEmployeeId(), suborderId, orderType, report.getReferenceday())
             .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }
@@ -228,15 +237,25 @@ public class BudgetControllingService {
     }
 
     /** Allocates every amount to the one plan that may hold it (→ {@link FlatRateAllocation}). */
-    private static AllocatedFlatRates allocate(List<FlatRateDueAmount> dueAmounts, List<OrderBudget> plans) {
+    private static AllocatedFlatRates allocate(List<FlatRateDueAmount> dueAmounts, List<OrderBudget> plans,
+                                               Function<OrderFlatRate, Optional<OrderPosition>> positionOf) {
         Map<Long, List<FlatRateDueAmount>> byPlanId = new LinkedHashMap<>();
         var unallocated = new ArrayList<FlatRateDueAmount>();
         for (var dueAmount : dueAmounts) {
-            FlatRateAllocation.uniquePlanFor(dueAmount, plans).ifPresentOrElse(
+            FlatRateAllocation.uniquePlanFor(dueAmount, plans, positionOf).ifPresentOrElse(
                 plan -> byPlanId.computeIfAbsent(plan.getId(), id -> new ArrayList<>()).add(dueAmount),
                 () -> unallocated.add(dueAmount));
         }
         return new AllocatedFlatRates(byPlanId, List.copyOf(unallocated));
+    }
+
+    /**
+     * Where each flat rate sits in the order tree, read once per flat rate however many amounts it
+     * puts on the calendar — a monthly rate would otherwise climb its parent chain every month.
+     */
+    private Function<OrderFlatRate, Optional<OrderPosition>> flatRatePositions() {
+        Map<Long, Optional<OrderPosition>> byId = new HashMap<>();
+        return flatRate -> byId.computeIfAbsent(flatRate.getId(), id -> orderPositions.of(flatRate));
     }
 
     /**
@@ -283,12 +302,13 @@ public class BudgetControllingService {
             .map(FlatRateDueAmount::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    /** One plan with the part of its validity that falls inside the evaluated period. */
-    private record PlanPeriod(OrderBudget plan, LocalDateRange period) {
-        /** 0 for an order-wide plan, otherwise the suborder level it sits on (→ {@link BudgetScope}). */
-        int level() {
-            return BudgetScope.levelOf(plan.getSuborderSign());
-        }
+    /**
+     * One plan with the part of its validity that falls inside the evaluated period.
+     *
+     * @param level 0 for an order-wide plan, otherwise the suborder level it sits on (→ {@link OrderPosition});
+     *              a plan the migration could not resolve counts as 0 — it covers nothing anyway
+     */
+    private record PlanPeriod(OrderBudget plan, LocalDateRange period, int level) {
 
         boolean deactivated() {
             return !TRUE.equals(plan.getActive());
@@ -308,7 +328,8 @@ public class BudgetControllingService {
             // it (#916). The clipped period below is only what the section header shows.
             .filter(b -> new LocalDateRange(b.getValidFrom(), b.getValidUntil()).overlaps(filter))
             .map(b -> new PlanPeriod(b,
-                new LocalDateRange(b.getValidFrom(), b.getValidUntil()).intersection(filter)))
+                new LocalDateRange(b.getValidFrom(), b.getValidUntil()).intersection(filter),
+                orderPositions.of(b).map(OrderPosition::level).orElse(0)))
             .filter(p -> p.period() != null && p.period().isValid())
             .sorted(Comparator
                 .comparing((PlanPeriod p) -> p.period().getFrom())
@@ -386,7 +407,23 @@ public class BudgetControllingService {
      * holds by construction; what decides is the subtree.
      */
     private static boolean covers(OrderBudget plan, Suborder suborder) {
-        return BudgetScope.covers(plan, plan.getCustomerorderSign(), suborder.getCompleteOrderSign());
+        return BudgetScope.covers(plan, OrderPosition.of(suborder));
+    }
+
+    /**
+     * The sign a plan's group is labelled with: the complete order sign its suborder has today, read
+     * from the suborder by id (#1205) like the rows below it — the plan's own sign column is a mirror
+     * for the reports. A plan whose suborder is not among them keeps the stored sign.
+     */
+    private static String signOf(OrderBudget plan, List<Suborder> suborders) {
+        if (plan.getSuborderId() == null) {
+            return plan.getSuborderSign();
+        }
+        return suborders.stream()
+            .filter(suborder -> plan.getSuborderId().equals(suborder.getId()))
+            .findFirst()
+            .map(Suborder::getCompleteOrderSign)
+            .orElse(plan.getSuborderSign());
     }
 
     private BudgetControllingSection plannedSection(List<PlanPeriod> plans, List<Suborder> suborders,
@@ -428,10 +465,10 @@ public class BudgetControllingService {
             var progress = deactivated ? null
                 : computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
             // An order-wide plan is the whole section, so its figures belong on the section total.
+            var sign = signOf(plan, suborders);
             var subtotal = orderWide ? null
-                : aggregate(plan.getSuborderSign(), plan.getName(), rows, budget, includeCosts);
-            collected.add(new CollectedPlan(plan.getId(), plan.getSuborderSign(), plan.getName(),
-                rows, subtotal, progress));
+                : aggregate(sign, plan.getName(), rows, budget, includeCosts);
+            collected.add(new CollectedPlan(plan.getId(), sign, plan.getName(), rows, subtotal, progress));
         }
 
         var allRows = collected.stream().flatMap(c -> c.rows().stream()).toList();
@@ -619,55 +656,69 @@ public class BudgetControllingService {
         if (budgets.isEmpty()) {
             return Map.of();
         }
-        var signs = budgets.stream().map(OrderBudget::getCustomerorderSign).distinct().toList();
-        var pricingLookup = orderPricingService.lookupFor(signs);
-        var flatRateLookup = orderFlatRateService.lookupFor(signs);
+        // Everything by the id of the order (#1205). A plan the migration could not resolve has no
+        // order: it earns nothing here, and the list marks it.
+        var resolved = budgets.stream().filter(b -> b.getCustomerorderId() != null).toList();
+        var orderIds = resolved.stream().map(OrderBudget::getCustomerorderId).distinct().toList();
+        var orders = orderIds.isEmpty() ? List.<Customerorder>of() : customerorderService.getCustomerordersByIds(orderIds);
+        // The rates name their order by sign (#957), so they are looked up with the sign it has today.
+        var pricingLookup = orderPricingService.lookupFor(orders.stream().map(Customerorder::getSign).toList());
+        var flatRateLookup = orderFlatRateService.lookupFor(orderIds);
         // A description may be missing, so no Collectors.toMap, which rejects null values.
-        Map<String, String> descriptionBySign = new HashMap<>();
-        customerorderService.getCustomerordersBySigns(signs)
-            .forEach(order -> descriptionBySign.put(order.getSign(), order.getShortdescription()));
-        var suborders = billableSuborders(signs);
+        Map<Long, Customerorder> orderById = new HashMap<>();
+        orders.forEach(order -> orderById.put(order.getId(), order));
+        var suborders = billableSuborders(orderIds);
         // Every active plan of the orders, not only the ones being asked about: a flat rate amount
         // counts against a plan only if that plan is the single one covering it (#972), and judging
         // that against a filtered set would allocate an ambiguous amount to whichever plan the
         // caller happened to pass.
-        var activePlansBySign = orderBudgetRepository.findByCustomerorderSignInAndActive(signs, TRUE).stream()
-            .collect(Collectors.groupingBy(OrderBudget::getCustomerorderSign));
+        var activePlansByOrder = orderIds.isEmpty()
+            ? Map.<Long, List<OrderBudget>>of()
+            : orderBudgetRepository.findByCustomerorderIdInAndActive(orderIds, TRUE).stream()
+                .collect(Collectors.groupingBy(OrderBudget::getCustomerorderId));
         // The window of an order starts with the earliest of its plans asked about, as it did while
         // the bookings were read per order; every plan cuts its own end below.
-        Map<String, LocalDate> fromBySign = budgets.stream()
-            .collect(Collectors.toMap(OrderBudget::getCustomerorderSign, OrderBudget::getValidFrom,
+        Map<Long, LocalDate> fromByOrder = resolved.stream()
+            .collect(Collectors.toMap(OrderBudget::getCustomerorderId, OrderBudget::getValidFrom,
                 (a, b) -> a.isBefore(b) ? a : b));
         var until = budgets.stream().map(b -> evaluatedUntil(b.getValidUntil())).max(naturalOrder()).orElseThrow();
         var budgetIds = budgets.stream().map(OrderBudget::getId).toList();
         var bookingsByPlan = assignmentRepository.findPlanBookings(budgetIds, until).stream()
             .collect(Collectors.groupingBy(PlanBooking::orderBudgetId));
+        var positionOfFlatRate = flatRatePositions();
 
         Map<Long, BudgetUtilization> result = new LinkedHashMap<>();
         for (var budget : budgets) {
-            var sign = budget.getCustomerorderSign();
+            var orderId = budget.getCustomerorderId();
+            if (orderId == null) {
+                var planUntil = evaluatedUntil(budget.getValidUntil());
+                result.put(budget.getId(), new BudgetUtilization(
+                    new UtilizationInfo(cumulativeBudgetOf(budget, planUntil), BigDecimal.ZERO, planUntil), null));
+                continue;
+            }
+            var order = orderById.get(orderId);
             result.put(budget.getId(), new BudgetUtilization(
                 computeUtilizationInfo(budget, bookingsByPlan.getOrDefault(budget.getId(), List.of()),
-                    fromBySign.get(sign), suborders, activePlansBySign.getOrDefault(sign, List.of()),
-                    pricingLookup, flatRateLookup),
-                descriptionBySign.get(sign)));
+                    fromByOrder.get(orderId), suborders, activePlansByOrder.getOrDefault(orderId, List.of()),
+                    pricingLookup, flatRateLookup, positionOfFlatRate),
+                order == null ? null : order.getShortdescription()));
         }
         return result;
     }
 
     /** A suborder whose work is billed, with its customer order and complete order sign. */
-    private record BillableSuborder(String customerorderSign, String completeOrderSign) {}
+    private record BillableSuborder(long customerorderId, String customerorderSign, String completeOrderSign) {}
 
     /**
      * The suborders of the orders that earn anything, by id: invoiceable and not hidden, as the
      * utilization has always counted them. The complete order sign walks the parent chain, so it is
      * resolved once per suborder here instead of once per booking.
      */
-    private Map<Long, BillableSuborder> billableSuborders(List<String> customerorderSigns) {
+    private Map<Long, BillableSuborder> billableSuborders(List<Long> customerorderIds) {
         Map<Long, BillableSuborder> billable = new HashMap<>();
-        for (var suborder : suborderService.getSubordersByCustomerorderSigns(customerorderSigns)) {
+        for (var suborder : suborderService.getSubordersByCustomerorderIds(customerorderIds)) {
             if (!suborder.isHide() && suborder.isInvoiceable()) {
-                billable.put(suborder.getId(), new BillableSuborder(
+                billable.put(suborder.getId(), new BillableSuborder(suborder.getCustomerorder().getId(),
                     suborder.getCustomerorder().getSign(), suborder.getCompleteOrderSign()));
             }
         }
@@ -708,8 +759,9 @@ public class BudgetControllingService {
                                                    Map<Long, BillableSuborder> suborders,
                                                    List<OrderBudget> activePlansOfOrder,
                                                    OrderPricingLookup pricingLookup,
-                                                   OrderFlatRateLookup flatRateLookup) {
-        var coSign = budget.getCustomerorderSign();
+                                                   OrderFlatRateLookup flatRateLookup,
+                                                   Function<OrderFlatRate, Optional<OrderPosition>> positionOfFlatRate) {
+        long orderId = budget.getCustomerorderId();
         var until = evaluatedUntil(budget.getValidUntil());
 
         var revenue = BigDecimal.ZERO;
@@ -718,7 +770,7 @@ public class BudgetControllingService {
             // Work on a suborder that is not invoiceable is never billed, whatever rate matches, and
             // a hidden suborder never counted here. A booking of another order does not belong to
             // the plan, whatever its assignment says.
-            if (suborder == null || !coSign.equals(suborder.customerorderSign())) {
+            if (suborder == null || suborder.customerorderId() != orderId) {
                 continue;
             }
             // The date is checked here, not in the query: the query reads up to the latest end of
@@ -730,13 +782,13 @@ public class BudgetControllingService {
             // The booking belongs to this plan, so this plan is what a plan-bound rate is resolved
             // against (#1065).
             revenue = revenue.add(rateOf(booking.duration(), booking.employeeId(), booking.day(),
-                coSign, suborder.completeOrderSign(), budget.getId(), pricingLookup));
+                suborder.customerorderSign(), suborder.completeOrderSign(), budget.getId(), pricingLookup));
         }
         // The flat rates due by now, allocated through the same rule the sections use — an amount
         // several plans could hold counts against none of them.
         var flatRates = allocate(
-            flatRateLookup.dueAmounts(coSign, budget.getValidFrom(), until),
-            activePlansOfOrder);
+            flatRateLookup.dueAmounts(orderId, budget.getValidFrom(), until),
+            activePlansOfOrder, positionOfFlatRate);
         for (var dueAmount : flatRates.of(budget.getId())) {
             revenue = revenue.add(dueAmount.amount());
         }

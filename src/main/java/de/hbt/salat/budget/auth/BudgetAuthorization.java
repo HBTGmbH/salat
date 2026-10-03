@@ -43,6 +43,7 @@ public class BudgetAuthorization {
     private final CustomerorderService customerorderService;
 
     private Set<String> responsibleSigns;
+    private Set<Long> responsibleIds;
 
     /** Whether the user may see budget data of every customer order. */
     public boolean seesAllCustomerorders() {
@@ -56,8 +57,15 @@ public class BudgetAuthorization {
         return customerorderSign != null && responsibleCustomerorderSigns().contains(customerorderSign);
     }
 
+    /**
+     * By the id of the plan's order (#1205): two orders may carry the same sign, and a plan answers to
+     * the one it refers to. A plan whose order the migration could not resolve is visible to whoever
+     * sees every order — only they can correct it.
+     */
     public boolean isAuthorized(OrderBudget budget) {
-        return budget != null && isAuthorizedForCustomerorder(budget.getCustomerorderSign());
+        if (budget == null || authorizedUser.isRestricted()) return false;
+        if (seesAllCustomerorders()) return true;
+        return budget.getCustomerorderId() != null && responsibleCustomerorderIds().contains(budget.getCustomerorderId());
     }
 
     /** Whether any budget data is visible at all — drives the visibility of the budget menu. */
@@ -73,7 +81,10 @@ public class BudgetAuthorization {
     }
 
     public void checkAuthorized(OrderBudget budget) {
-        checkAuthorizedForCustomerorder(budget == null ? null : budget.getCustomerorderSign());
+        if (!isAuthorized(budget)) {
+            throw new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED,
+                budget == null ? null : budget.getCustomerorderSign());
+        }
     }
 
     /** The customer orders the user may pick in the budget filters. */
@@ -94,6 +105,16 @@ public class BudgetAuthorization {
                 .collect(Collectors.toUnmodifiableSet());
         }
         return responsibleSigns;
+    }
+
+    /** The ids of the orders the user is responsible for, resolved once per request like the signs. */
+    private Set<Long> responsibleCustomerorderIds() {
+        if (responsibleIds == null) {
+            responsibleIds = responsibleCustomerorders().stream()
+                .map(Customerorder::getId)
+                .collect(Collectors.toUnmodifiableSet());
+        }
+        return responsibleIds;
     }
 
     /**

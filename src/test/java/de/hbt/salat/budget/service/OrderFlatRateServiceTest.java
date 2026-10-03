@@ -3,7 +3,7 @@ package de.hbt.salat.budget.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -34,7 +34,6 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.test.FixedClock;
-import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -62,6 +61,9 @@ public class OrderFlatRateServiceTest {
   private BudgetAuthorization budgetAuthorization;
   private OrderFlatRateService service;
 
+  /** The orders and suborders the flat rates and plans refer to by id (#1205). */
+  private static final OrderTree TREE = new OrderTree().with("co/01/A").with("co/02").with("other/01");
+
   @BeforeEach
   public void setUp() {
     repository = mock(OrderFlatRateRepository.class);
@@ -73,17 +75,14 @@ public class OrderFlatRateServiceTest {
       return saved;
     });
     customerorderService = mock(CustomerorderService.class);
-    // No orders unless a test says so: a definition whose order is gone stays reachable.
-    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of());
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
     suborderService = mock(SuborderService.class);
-    when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
+    TREE.stub(customerorderService, suborderService);
     orderBudgetRepository = mock(OrderBudgetRepository.class);
-    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of());
+    when(orderBudgetRepository.findByCustomerorderId(any())).thenReturn(List.of());
     budgetAuthorization = mock(BudgetAuthorization.class);
     when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
     service = new OrderFlatRateService(repository, orderBudgetRepository, suborderService,
-        customerorderService, budgetAuthorization);
+        customerorderService, budgetAuthorization, new OrderPositions(suborderService));
   }
 
   // --- writing ---------------------------------------------------------------------------------
@@ -129,22 +128,22 @@ public class OrderFlatRateServiceTest {
         .isInstanceOf(BusinessRuleException.class);
   }
 
-  /** An unknown order sign resolves to nothing at all, and it does so silently (#958). */
+  /** The order is referenced by id (#1205); an id nothing answers to would earn nothing at all. */
   @Test
   public void refuses_an_unknown_customer_order() {
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(null);
+    var data = new OrderFlatRateData(OrderTree.UNKNOWN_ID, null, null, "description", FlatRateRhythm.ONCE,
+        new BigDecimal("1000"), TODAY, TODAY);
 
-    assertThatThrownBy(() -> service.save(data(FlatRateRhythm.ONCE, TODAY, null, "1000")))
+    assertThatThrownBy(() -> service.save(data))
         .isInstanceOf(ErrorCodeException.class)
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
-        .isEqualTo(ErrorCode.BU_CUSTOMERORDER_SIGN_UNKNOWN);
+        .isEqualTo(ErrorCode.CO_NOT_FOUND);
   }
 
   @Test
   public void refuses_a_suborder_that_does_not_belong_to_the_order() {
-    when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(false);
-    var data = new OrderFlatRateData("co", "other/01", null, null, FlatRateRhythm.ONCE,
-        new BigDecimal("1000"), TODAY, TODAY);
+    var data = new OrderFlatRateData(TREE.orderId("co"), TREE.suborderId("other/01"), null, null,
+        FlatRateRhythm.ONCE, new BigDecimal("1000"), TODAY, TODAY);
 
     assertThatThrownBy(() -> service.save(data))
         .isInstanceOf(BusinessRuleException.class)
@@ -158,7 +157,20 @@ public class OrderFlatRateServiceTest {
     service.save(data(FlatRateRhythm.ONCE, TODAY, null, "1000"));
 
     assertThat(savedFlatRate().isOrderWide()).isTrue();
-    verify(suborderService, never()).existsByCompleteOrderSign(anyString(), anyString());
+    verify(suborderService, never()).getSuborderById(anyLong());
+  }
+
+  /** Order and suborder are stored by id; the signs are written from the records for the readers outside (#1205). */
+  @Test
+  public void stores_order_and_suborder_by_id_and_writes_their_signs_from_the_records() {
+    service.save(new OrderFlatRateData(TREE.orderId("co"), TREE.suborderId("co/01/A"), null, "description",
+        FlatRateRhythm.ONCE, new BigDecimal("1000"), TODAY, TODAY));
+
+    var stored = savedFlatRate();
+    assertThat(stored.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
+    assertThat(stored.getSuborderId()).isEqualTo(TREE.suborderId("co/01/A"));
+    assertThat(stored.getCustomerorderSign()).isEqualTo("co");
+    assertThat(stored.getSuborderSign()).isEqualTo("co/01/A");
   }
 
   /**
@@ -174,16 +186,30 @@ public class OrderFlatRateServiceTest {
     verify(repository, times(2)).save(any());
   }
 
-  /** Editing does not insist on the order: that is how a record whose order is gone gets corrected. */
+  /** Editing is how a flat rate the migration could not resolve gets its order (#1205). */
   @Test
-  public void updates_a_flat_rate_whose_customer_order_no_longer_exists() {
+  public void resolves_the_order_of_an_unresolved_flat_rate_on_edit() {
     var existing = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
+    existing.setCustomerorderId(null);
     when(repository.findById(1L)).thenReturn(Optional.of(existing));
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(null);
 
     service.update(1L, data(FlatRateRhythm.ONCE, TOMORROW, null, "2000"));
 
+    assertThat(existing.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
     assertThat(existing.getValidFrom()).isEqualTo(TOMORROW);
+  }
+
+  /** A suborder the migration could not resolve stays so while the edit names none — not "the whole order". */
+  @Test
+  public void keeps_an_unresolved_suborder_when_the_edit_names_none() {
+    var existing = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
+    existing.setSuborderSign("co/gone");
+    when(repository.findById(1L)).thenReturn(Optional.of(existing));
+
+    service.update(1L, data(FlatRateRhythm.ONCE, TOMORROW, null, "2000"));
+
+    assertThat(existing.getSuborderSign()).isEqualTo("co/gone");
+    assertThat(existing.isUnresolved()).isTrue();
   }
 
   // --- instalments -----------------------------------------------------------------------------
@@ -300,7 +326,7 @@ public class OrderFlatRateServiceTest {
   }
 
   private static OrderFlatRateData data(FlatRateRhythm rhythm, LocalDate from, LocalDate until, String amount) {
-    return new OrderFlatRateData("co", null, null, "description", rhythm,
+    return new OrderFlatRateData(TREE.orderId("co"), null, null, "description", rhythm,
         amount == null ? null : new BigDecimal(amount), from, until);
   }
 
@@ -314,7 +340,9 @@ public class OrderFlatRateServiceTest {
                                         String amount) {
     var flatRate = new OrderFlatRate();
     setId(flatRate, 1L);
+    flatRate.setCustomerorderId(TREE.orderId(customerorderSign));
     flatRate.setCustomerorderSign(customerorderSign);
+    flatRate.setSuborderId(TREE.suborderId(suborderSign));
     flatRate.setSuborderSign(suborderSign);
     flatRate.setRhythm(rhythm);
     flatRate.setValidFrom(from);
@@ -344,7 +372,7 @@ public class OrderFlatRateServiceTest {
   public void offers_a_plan_that_covers_the_suborder_of_the_flat_rate() {
     givenPlans(plan(1L, "co", "co/01", TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", "co/01/A", TODAY, DEC, null).plans())
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), TREE.suborderId("co/01/A"), TODAY, DEC, null).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
   }
 
@@ -352,7 +380,7 @@ public class OrderFlatRateServiceTest {
   public void refuses_a_plan_whose_scope_does_not_cover_the_suborder() {
     givenPlans(plan(1L, "co", "co/02", TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", "co/01", TODAY, DEC, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), TREE.suborderId("co/01"), TODAY, DEC, null).plans()).isEmpty();
     assertThatThrownBy(() -> service.save(dataWithPlan("co", "co/01", 1L, TODAY, DEC)))
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
         .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
@@ -362,7 +390,7 @@ public class OrderFlatRateServiceTest {
   public void refuses_a_plan_of_another_customer_order() {
     givenPlans(plan(1L, "other", null, TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, DEC, null).plans()).isEmpty();
     assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
         .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
@@ -377,9 +405,9 @@ public class OrderFlatRateServiceTest {
   public void offers_the_plans_of_the_order_before_the_period_is_complete() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
 
-    assertThat(service.getSelectablePlans("co", null, null, null, null).plans())
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, null, null, null).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, null).plans())
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, null, null).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
   }
 
@@ -387,7 +415,7 @@ public class OrderFlatRateServiceTest {
   public void narrows_the_plans_once_the_period_is_complete() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, DEC, null).plans()).isEmpty();
   }
 
   /** The scope still narrows straight away — it hangs on fields entered above the plan. */
@@ -395,14 +423,14 @@ public class OrderFlatRateServiceTest {
   public void narrows_by_the_suborder_even_before_the_period_is_entered() {
     givenPlans(plan(1L, "co", "co/02", TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", "co/01", null, null, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), TREE.suborderId("co/01"), null, null, null).plans()).isEmpty();
   }
 
   @Test
   public void refuses_a_plan_whose_validity_does_not_overlap() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(2), TODAY.minusYears(1), true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, DEC, null).plans()).isEmpty();
     assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
         .isEqualTo(ErrorCode.BU_BUDGET_PERIOD_DISJOINT);
@@ -425,8 +453,8 @@ public class OrderFlatRateServiceTest {
   public void does_not_offer_an_inactive_plan_but_keeps_a_stored_one() {
     givenPlans(plan(1L, "co", null, TODAY, DEC, false));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, 1L).plans())
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, DEC, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans(TREE.orderId("co"), null, TODAY, DEC, 1L).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
   }
 
@@ -444,9 +472,9 @@ public class OrderFlatRateServiceTest {
    * stubbing it per sign keeps the test from claiming a reach the repository does not have.
    */
   private void givenPlans(OrderBudget... plans) {
-    when(orderBudgetRepository.findByCustomerorderSign(any())).thenAnswer(invocation ->
+    when(orderBudgetRepository.findByCustomerorderId(any())).thenAnswer(invocation ->
         List.of(plans).stream()
-            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(plan -> plan.getCustomerorderId().equals(invocation.getArgument(0)))
             .toList());
     for (var plan : plans) {
       when(orderBudgetRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
@@ -458,7 +486,9 @@ public class OrderFlatRateServiceTest {
     var plan = new OrderBudget();
     setId(plan, id);
     plan.setName("plan " + id);
+    plan.setCustomerorderId(TREE.orderId(customerorderSign));
     plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderId(TREE.suborderId(suborderSign));
     plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
@@ -468,7 +498,7 @@ public class OrderFlatRateServiceTest {
 
   private static OrderFlatRateData dataWithPlan(String customerorderSign, String suborderSign,
                                                 Long planId, LocalDate from, LocalDate until) {
-    return new OrderFlatRateData(customerorderSign, suborderSign, planId, "description",
+    return new OrderFlatRateData(TREE.orderId(customerorderSign), TREE.suborderId(suborderSign), planId, "description",
         FlatRateRhythm.ONCE, new BigDecimal("1000"), from, until);
   }
 

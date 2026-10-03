@@ -68,6 +68,13 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
       """)
   List<Suborder> findAllByCustomerorderSigns(Collection<String> customerorderSigns);
 
+  /** Like {@link #findAllByCustomerorderSigns}, by the ids of the orders (#1205). */
+  @Query("""
+      select s from Suborder s join fetch s.customerorder c
+      where c.id in :customerorderIds
+      """)
+  List<Suborder> findAllByCustomerorderIds(Collection<Long> customerorderIds);
+
   /**
    * Candidates for the object search of the command palette (#1157): every suborder whose sign or
    * short description, whose order's sign or short description, or whose customer contains each of

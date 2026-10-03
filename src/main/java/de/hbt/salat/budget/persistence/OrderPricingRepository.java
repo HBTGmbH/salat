@@ -79,4 +79,13 @@ public interface OrderPricingRepository
     @Query("UPDATE OrderPricing p SET p.employeeSign = :sign WHERE p.employeeId = :employeeId")
     int updateEmployeeSign(@Param("employeeId") long employeeId, @Param("sign") String sign);
 
+    /**
+     * Follows a renamed customer order (#1205). A rate names its order by sign (#957) — until it gets
+     * the id of its own (#1212), a rename would otherwise leave every rate of the order matching
+     * nothing, and its work would earn 0 EUR in the controlling.
+     */
+    @Modifying
+    @Query("UPDATE OrderPricing p SET p.customerorderSign = :newSign WHERE p.customerorderSign = :previousSign")
+    int updateCustomerorderSign(@Param("previousSign") String previousSign, @Param("newSign") String newSign);
+
 }

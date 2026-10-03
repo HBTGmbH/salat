@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -38,6 +37,8 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -87,7 +88,8 @@ public class EmployeeCostServiceTest {
       return PEOPLE.entrySet().stream().filter(person -> ids.contains(person.getValue()))
           .collect(toMap(Map.Entry::getValue, Map.Entry::getKey));
     });
-    when(suborderService.existsSuborderWithCompleteOrderSign(any())).thenReturn(true);
+    // The suborders of SUBORDERS exist, nothing else does (#1205: referenced by id).
+    when(suborderService.getSuborderById(anyLong())).thenAnswer(invocation -> suborder(invocation.getArgument(0)));
     stubCostRepository();
     stubAssignmentRepository();
     service = new EmployeeCostService(costRepository, assignmentRepository, employeeService,
@@ -132,6 +134,7 @@ public class EmployeeCostServiceTest {
     givenAssignment("junior", "emp", null, JAN, DEC, 2L);
     // id 2 now holds the general scope, so the edited one has to move out of it
     assignments.get(0).setSuborderSign("co/01");
+    assignments.get(0).setSuborderId(SUBORDERS.get("co/01"));
 
     service.updateAssignment(edited.getId(), assignmentData("senior", "emp", "co/01", JAN, DEC));
 
@@ -225,11 +228,10 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_reject_an_assignment_for_a_suborder_that_does_not_exist() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    when(suborderService.existsSuborderWithCompleteOrderSign("co/nope")).thenReturn(false);
 
     assertThatThrownBy(() -> service.createAssignment(assignmentData("senior", "emp", "co/nope", JAN, DEC)))
         .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(ErrorCode.BU_SUBORDER_SIGN_UNKNOWN.getCode());
+        .hasMessageContaining(ErrorCode.SO_NOT_FOUND.getCode());
     verify(assignmentRepository, never()).save(any());
   }
 
@@ -240,7 +242,38 @@ public class EmployeeCostServiceTest {
 
     service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC));
 
-    verify(suborderService, never()).existsSuborderWithCompleteOrderSign(any());
+    verify(suborderService, never()).getSuborderById(anyLong());
+  }
+
+  /** The suborder is stored by id, its complete order sign written from the suborder (#1205). */
+  @Test
+  public void should_store_the_suborder_by_id_and_write_its_sign_from_the_suborder() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    when(assignmentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    var stored = service.createAssignment(assignmentData("senior", "emp", "co/01", JAN, DEC));
+
+    assertThat(stored.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
+    assertThat(stored.getSuborderSign()).isEqualTo("co/01");
+  }
+
+  /**
+   * An assignment whose suborder the migration could not resolve stays specific while the form names
+   * none — an empty choice must not turn it into the general assignment of the person (#1205).
+   */
+  @Test
+  public void should_keep_an_unresolved_suborder_when_the_edit_names_none() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    var unresolved = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+    unresolved.setSuborderSign("co/gone");
+    givenAssignment("senior", "emp", null, JAN, DEC, 2L);
+
+    service.updateAssignment(unresolved.getId(), assignmentData("senior", "emp", null, JUL, DEC));
+
+    assertThat(unresolved.getSuborderSign()).isEqualTo("co/gone");
+    assertThat(unresolved.getSuborderId()).isNull();
+    assertThat(unresolved.isSuborderUnresolved()).isTrue();
+    assertThat(unresolved.getValidFrom()).isEqualTo(JUL);
   }
 
   @Test
@@ -617,6 +650,7 @@ public class EmployeeCostServiceTest {
     assignment.setEmployeeId(idOf(employeeSign));
     assignment.setEmployeeSign(employeeSign);
     assignment.setSuborderSign(suborderSign);
+    assignment.setSuborderId(suborderSign == null ? null : SUBORDERS.get(suborderSign));
     assignment.setValidFrom(from);
     assignment.setValidUntil(until);
     setId(assignment, id);
@@ -630,7 +664,26 @@ public class EmployeeCostServiceTest {
 
   private static EmployeeCostAssignmentData assignmentData(String costName, String employeeSign,
                                                            String suborderSign, LocalDate from, LocalDate until) {
-    return new EmployeeCostAssignmentData(costName, idOf(employeeSign), suborderSign, from, until);
+    return new EmployeeCostAssignmentData(costName, idOf(employeeSign),
+        suborderSign == null ? null : SUBORDERS.getOrDefault(suborderSign, NO_SUBORDER), from, until);
+  }
+
+  /** The suborders that exist, by complete order sign; an id nothing answers to stands for one that does not. */
+  private static final Map<String, Long> SUBORDERS = Map.of("co/01", 51L);
+  private static final long NO_SUBORDER = 99L;
+
+  private static Suborder suborder(long id) {
+    return SUBORDERS.entrySet().stream().filter(entry -> entry.getValue() == id).findFirst()
+        .map(entry -> {
+          var customerorder = new Customerorder();
+          customerorder.setSign("co");
+          var suborder = new Suborder();
+          suborder.setCustomerorder(customerorder);
+          suborder.setSign(entry.getKey().substring("co/".length()));
+          setId(suborder, id);
+          return suborder;
+        })
+        .orElse(null);
   }
 
   private static long idOf(String employeeSign) {
@@ -727,15 +780,15 @@ public class EmployeeCostServiceTest {
             .count());
     when(assignmentRepository.findOverlapping(anyLong(), any(), any(), any(), any())).thenAnswer(invocation -> {
       long employeeId = invocation.getArgument(0);
-      String suborderSign = invocation.getArgument(1);
+      Long suborderId = invocation.getArgument(1);
       LocalDate from = invocation.getArgument(2);
       LocalDate until = invocation.getArgument(3);
       Long excludeId = invocation.getArgument(4);
       return assignments.stream()
           .filter(a -> a.getEmployeeId() != null && a.getEmployeeId() == employeeId)
-          .filter(a -> suborderSign == null
+          .filter(a -> suborderId == null
               ? a.getSuborderSign() == null
-              : suborderSign.equals(a.getSuborderSign()))
+              : suborderId.equals(a.getSuborderId()))
           .filter(a -> !a.getValidFrom().isAfter(until) && !a.getValidUntil().isBefore(from))
           .filter(a -> excludeId == null || !excludeId.equals(a.getId()))
           .toList();

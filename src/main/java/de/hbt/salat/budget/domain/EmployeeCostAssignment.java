@@ -38,9 +38,18 @@ public class EmployeeCostAssignment extends AuditedEntity {
     private String employeeSign;
 
     /**
-     * The complete order sign of the suborder ({@code Suborder#getCompleteOrderSign()},
-     * e.g. {@code ORDER/01/02}) — not the bare {@code Suborder#getSign()}. {@code null} means the
-     * assignment applies regardless of suborder.
+     * The suborder the assignment is specific to (#1205). {@code null} with a {@link #suborderSign}
+     * means the migration could not resolve it: such a row matches no booking — it does not turn into
+     * the general assignment of the person.
+     */
+    @Column(name = "suborder_id")
+    private Long suborderId;
+
+    /**
+     * The complete order sign of {@link #suborderId} ({@code Suborder#getCompleteOrderSign()},
+     * e.g. {@code ORDER/01/02}), kept because views, ETL definitions and reports read it, and
+     * written from the suborder ({@code OrderSignMirrorListener}). {@code null} means the assignment
+     * applies regardless of suborder.
      */
     @Column(name = "suborder_sign")
     private String suborderSign;
@@ -54,6 +63,16 @@ public class EmployeeCostAssignment extends AuditedEntity {
     /** Whether the person could not be resolved by the migration (→ {@link #employeeId}). */
     public boolean isEmployeeUnresolved() {
         return employeeId == null;
+    }
+
+    /** Whether the assignment is specific to a suborder rather than general. */
+    public boolean isSuborderSpecific() {
+        return suborderSign != null && !suborderSign.isBlank();
+    }
+
+    /** Whether the migration could not resolve the suborder (→ {@link #suborderId}). */
+    public boolean isSuborderUnresolved() {
+        return isSuborderSpecific() && suborderId == null;
     }
 
 }

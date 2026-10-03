@@ -121,8 +121,8 @@ public class OrderFlatRateController {
         }
 
         var data = new OrderFlatRateData(
-            form.getCustomerorderSign(),
-            trimToNull(form.getSuborderSign()),
+            form.getCustomerorderId(),
+            form.getSuborderId(),
             form.getOrderBudgetId(),
             trimToNull(form.getDescription()),
             form.getRhythm(),
@@ -224,7 +224,7 @@ public class OrderFlatRateController {
 
     /** The first message key the form violates, or {@code null} when it is complete. */
     private String validate(OrderFlatRateForm form) {
-        if (form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()) {
+        if (form.getCustomerorderId() == null) {
             return "main.flatrate.error.order.required";
         }
         if (form.getRhythm() == null) {
@@ -252,8 +252,11 @@ public class OrderFlatRateController {
     private OrderFlatRateForm formOf(OrderFlatRate flatRate) {
         var form = new OrderFlatRateForm();
         form.setId(flatRate.getId());
-        form.setCustomerorderSign(flatRate.getCustomerorderSign());
-        form.setSuborderSign(flatRate.getSuborderSign());
+        form.setCustomerorderId(flatRate.getCustomerorderId());
+        form.setSuborderId(flatRate.getSuborderId());
+        if (!flatRate.isOrderWide() && flatRate.getSuborderId() == null) {
+            form.setUnresolvedSuborderSign(flatRate.getSuborderSign());
+        }
         form.setOrderBudgetId(flatRate.getOrderBudgetId());
         form.setDescription(flatRate.getDescription());
         form.setRhythm(flatRate.getRhythm());
@@ -280,13 +283,16 @@ public class OrderFlatRateController {
         model.addAttribute("flatRateForm", form);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("rhythms", FlatRateRhythm.values());
+        var customerorder = form.getCustomerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(form.getCustomerorderId());
         model.addAttribute("customerorders",
-            customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
-        model.addAttribute("suborders", subordersOf(form));
+            customerorderService.getSelectableCustomerorders(customerorder == null ? null : customerorder.getSign()));
+        model.addAttribute("suborders", subordersOf(customerorder, form.getSuborderId()));
         // A single amount is due on one day, so the period the plan is matched against is the one
         // the saving will store, not the one the form shows (#1065).
         model.addAttribute("budgetPlans", orderFlatRateService.getSelectablePlans(
-            form.getCustomerorderSign(), form.getSuborderSign(), form.getValidFrom(),
+            form.getCustomerorderId(), form.getSuborderId(), form.getValidFrom(),
             form.needsValidUntil() ? form.getValidUntil() : form.getValidFrom(),
             form.getOrderBudgetId()));
         var preview = previewOf(form);
@@ -303,15 +309,9 @@ public class OrderFlatRateController {
      * suborders of every order is a list of several thousand entries. The stored one is kept even
      * when it is hidden, or editing a flat rate would silently move it to the order level.
      */
-    private List<Suborder> subordersOf(OrderFlatRateForm form) {
-        var sign = trimToNull(form.getCustomerorderSign());
-        if (sign == null) {
-            return List.of();
-        }
-        var customerorder = customerorderService.getCustomerorderBySign(sign);
+    private List<Suborder> subordersOf(Customerorder customerorder, Long keepSuborderId) {
         return customerorder == null ? List.of()
-            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(),
-                trimToNull(form.getSuborderSign()));
+            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderId);
     }
 
     /**
@@ -330,8 +330,6 @@ public class OrderFlatRateController {
             return List.of();
         }
         var preview = new OrderFlatRate();
-        preview.setCustomerorderSign(trimToNull(form.getCustomerorderSign()));
-        preview.setSuborderSign(trimToNull(form.getSuborderSign()));
         preview.setRhythm(form.getRhythm());
         preview.setAmount(form.getAmountEuro());
         preview.setValidFrom(form.getValidFrom());

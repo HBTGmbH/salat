@@ -29,6 +29,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.SuborderService;
 
 @Service
@@ -158,10 +159,10 @@ public class EmployeeCostService {
      * its own it costs nothing (#463).
      */
     @Transactional(readOnly = true)
-    public Optional<EmployeeCost> findEffectiveCost(long employeeId, String suborderSign,
+    public Optional<EmployeeCost> findEffectiveCost(long employeeId, Long suborderId,
                                                     OrderType orderType, LocalDate date) {
-        if (suborderSign != null) {
-            var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeId, suborderSign, date);
+        if (suborderId != null) {
+            var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeId, suborderId, date);
             if (!assignments.isEmpty()) {
                 return employeeCostRepository.findEffectiveByName(assignments.get(0).getEmployeeCostName(), date);
             }
@@ -305,22 +306,29 @@ public class EmployeeCostService {
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
         var employee = employeeOf(data);
+        var suborder = suborderOf(data);
         checkReferences(data);
-        checkNoAssignmentOverlap(employee.getId(), data.suborderSign(), data.validFrom(),
+        checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
             endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
-        applyAssignment(assignment, data, employee);
+        applyAssignment(assignment, data, employee, suborder);
         return assignmentRepository.save(assignment);
     }
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
         var employee = employeeOf(data);
+        var suborder = suborderOf(data);
         checkReferences(data);
-        checkNoAssignmentOverlap(employee.getId(), data.suborderSign(), data.validFrom(),
-            endOfValidity(data.validUntil()), id);
         var assignment = getAssignmentById(id);
-        applyAssignment(assignment, data, employee);
+        // A suborder the migration could not resolve stays so until one is chosen (#1205): an empty
+        // choice must not turn a specific assignment into the general one of the person. Such an
+        // assignment matches no booking, so it cannot collide with another one either.
+        if (suborder != null || !assignment.isSuborderUnresolved()) {
+            checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
+                endOfValidity(data.validUntil()), id);
+        }
+        applyAssignment(assignment, data, employee, suborder);
         assignmentRepository.save(assignment);
     }
 
@@ -338,23 +346,33 @@ public class EmployeeCostService {
     }
 
     /**
-     * An assignment names its suborder and its cost category by sign, so both can be anything the
-     * request sends (#958). The select of the form is no protection: a post with other values, or
-     * none at all, reaches the same endpoint. An unknown sign makes {@link #findEffectiveCost}
-     * resolve nothing, and that shows up as work costing 0 EUR in controlling rather than as an
-     * error — so it is refused here. The person is referenced by id (#968) and checked by
-     * {@link #employeeOf}.
+     * The suborder of the assignment, by id (#1205) — {@code null} for the general assignment. An id
+     * nothing answers to is refused: the foreign key would do so too, but only as a failed statement.
+     */
+    private Suborder suborderOf(EmployeeCostAssignmentData data) {
+        if (data.suborderId() == null) {
+            return null;
+        }
+        var suborder = suborderService.getSuborderById(data.suborderId());
+        if (suborder == null) {
+            throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
+        }
+        return suborder;
+    }
+
+    /**
+     * An assignment names its cost category by name, so it can be anything the request sends (#958).
+     * The select of the form is no protection: a post with another value, or none at all, reaches the
+     * same endpoint. An unknown name makes {@link #findEffectiveCost} resolve nothing, and that shows
+     * up as work costing 0 EUR in controlling rather than as an error — so it is refused here. Person
+     * and suborder are referenced by id (#968, #1205) and checked by {@link #employeeOf} and
+     * {@link #suborderOf}.
      *
      * <p>The category is checked through {@link #categoryExists}, which counts a name that only
      * assignments still carry. An assignment left behind by a deleted cost rate (#895) therefore
      * stays editable, which is the way to move it onto a rate that exists.
      */
     private void checkReferences(EmployeeCostAssignmentData data) {
-        // No suborder means the assignment applies regardless of suborder — nothing to check.
-        if (data.suborderSign() != null
-            && !suborderService.existsSuborderWithCompleteOrderSign(data.suborderSign())) {
-            throw new InvalidDataException(ErrorCode.BU_SUBORDER_SIGN_UNKNOWN, data.suborderSign());
-        }
         if (!categoryExists(data.employeeCostName())) {
             throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN, data.employeeCostName());
         }
@@ -371,8 +389,8 @@ public class EmployeeCostService {
         }
     }
 
-    private void checkNoAssignmentOverlap(long employeeId, String suborderSign, LocalDate from, LocalDate until, Long excludeId) {
-        if (!assignmentRepository.findOverlapping(employeeId, suborderSign, from, until, excludeId).isEmpty()) {
+    private void checkNoAssignmentOverlap(long employeeId, Long suborderId, LocalDate from, LocalDate until, Long excludeId) {
+        if (!assignmentRepository.findOverlapping(employeeId, suborderId, from, until, excludeId).isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_OVERLAP);
         }
     }
@@ -384,12 +402,20 @@ public class EmployeeCostService {
         cost.setValidUntil(endOfValidity(data.validUntil()));
     }
 
+    /**
+     * @param suborder the chosen suborder, {@code null} for the general assignment — or for an
+     *                 unresolved one being kept, whose sign then stays as it is
+     */
     private void applyAssignment(EmployeeCostAssignment assignment, EmployeeCostAssignmentData data,
-                                 Employee employee) {
+                                 Employee employee, Suborder suborder) {
         assignment.setEmployeeCostName(data.employeeCostName());
         assignment.setEmployeeId(employee.getId());
         assignment.setEmployeeSign(employee.getSign());
-        assignment.setSuborderSign(data.suborderSign());
+        if (suborder != null || !assignment.isSuborderUnresolved()) {
+            assignment.setSuborderId(suborder == null ? null : suborder.getId());
+            // a mirror for the readers outside the application, written from the suborder (#1205)
+            assignment.setSuborderSign(suborder == null ? null : suborder.getCompleteOrderSign());
+        }
         assignment.setValidFrom(data.validFrom());
         assignment.setValidUntil(endOfValidity(data.validUntil()));
     }

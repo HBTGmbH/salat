@@ -10,6 +10,7 @@ import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.InvoicableBudget;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.TimereportBudgetAssignmentRepository;
+import de.hbt.salat.order.service.CustomerorderService;
 
 /**
  * The narrow read port other modules use to reach budget data (#915). Deliberately small: active
@@ -31,6 +32,7 @@ public class BudgetQueryService {
     private final OrderBudgetRepository orderBudgetRepository;
     private final TimereportBudgetAssignmentRepository assignmentRepository;
     private final BudgetAuthorization budgetAuthorization;
+    private final CustomerorderService customerorderService;
 
     /**
      * The active plans of the customer order, empty when the caller may not see its budget data —
@@ -40,7 +42,12 @@ public class BudgetQueryService {
         if (!budgetAuthorization.isAuthorizedForCustomerorder(customerorderSign)) {
             return List.of();
         }
-        return orderBudgetRepository.findByCustomerorderSignAndActive(customerorderSign, Boolean.TRUE)
+        // asked with the sign the caller shows, read by the id behind it (#1205)
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        if (customerorder == null) {
+            return List.of();
+        }
+        return orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.getId(), Boolean.TRUE)
             .stream()
             .map(InvoicableBudget::from)
             .toList();

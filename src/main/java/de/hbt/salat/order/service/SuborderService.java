@@ -370,6 +370,16 @@ public class SuborderService {
         .toList();
   }
 
+  /** Like {@link #getSubordersByCustomerorderSigns}, by the ids of the orders (#1205). */
+  public List<Suborder> getSubordersByCustomerorderIds(Collection<Long> customerorderIds) {
+    if (customerorderIds.isEmpty()) {
+      return List.of();
+    }
+    return suborderRepository.findAllByCustomerorderIds(Set.copyOf(customerorderIds)).stream()
+        .sorted(comparing(Suborder::getCompleteOrderSign))
+        .toList();
+  }
+
   /**
    * The suborders a filter over existing bookings may offer: not hidden, inactive ones included
    * (#1106). Named after what it filters, because that is all it filters — „sichtbar" says the same
@@ -418,16 +428,6 @@ public class SuborderService {
   }
 
   /**
-   * Whether a suborder with the given complete order sign exists below the customer order with the
-   * given sign. Budget and cost records reference their suborder by that sign instead of by id, so
-   * they need this to reject a sign that does not belong to the chosen customer order.
-   */
-  public boolean existsByCompleteOrderSign(String customerorderSign, String completeOrderSign) {
-    return subordersOf(customerorderSign).stream()
-        .anyMatch(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()));
-  }
-
-  /**
    * Whether the given {@code LIKE} pattern covers at least one suborder below the customer order
    * with the given sign. Pricing records select their suborders by such a pattern rather than by an
    * exact sign, so this applies the same rule as {@code OrderPricingLookup} — including the trailing
@@ -435,7 +435,7 @@ public class SuborderService {
    */
   /**
    * Whether a suborder with exactly this complete order sign exists (#958). Records that reference a
-   * suborder by sign rather than by id — the employee cost assignments do — have no customer order
+   * suborder by sign rather than by id — the scope of a JIRA replication does — have no customer order
    * to narrow the search by, so the sign is matched against all suborders. That is a full read, but
    * it happens on a manager's write, and the forms of those records load the same list anyway.
    */

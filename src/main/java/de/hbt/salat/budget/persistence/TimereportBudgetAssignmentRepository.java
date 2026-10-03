@@ -220,9 +220,9 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT a.timereportId FROM TimereportBudgetAssignment a
-        WHERE a.orderBudget.customerorderSign = :customerorderSign
+        WHERE a.orderBudget.customerorderId = :customerorderId
         """)
-    List<Long> findTimereportIdsByCustomerorderSign(@Param("customerorderSign") String customerorderSign);
+    List<Long> findTimereportIdsByCustomerorderId(@Param("customerorderId") long customerorderId);
 
     /**
      * The complete booking-to-plan mapping of a customer order (#913). The controlling asks for it
@@ -233,9 +233,9 @@ public interface TimereportBudgetAssignmentRepository
     @Query("""
         SELECT new de.hbt.salat.budget.domain.TimereportBudgetLink(a.timereportId, a.orderBudget.id)
         FROM TimereportBudgetAssignment a
-        WHERE a.orderBudget.customerorderSign = :customerorderSign
+        WHERE a.orderBudget.customerorderId = :customerorderId
         """)
-    List<TimereportBudgetLink> findLinksByCustomerorderSign(@Param("customerorderSign") String customerorderSign);
+    List<TimereportBudgetLink> findLinksByCustomerorderId(@Param("customerorderId") long customerorderId);
 
     /**
      * The assignments of the given bookings, so the bulk assignment (#911) learns in one statement

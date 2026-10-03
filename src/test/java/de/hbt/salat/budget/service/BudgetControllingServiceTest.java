@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -80,6 +81,14 @@ public class BudgetControllingServiceTest {
 
   private static final long EMPLOYEE_ID = 5L;
 
+  /**
+   * The ids behind the complete order signs the plans and flat rates of these tests name. The signs
+   * keep the cases readable; plans and flat rates refer to their scope by id (#1205).
+   */
+  private static final long CUSTOMERORDER_ID = 1L;
+  private static final Map<String, Long> SUBORDER_IDS = Map.of(
+      "co/01", 10L, "co/01/D", 11L, "co/02", 20L, "co/01/A", 30L, "co/01/B", 32L);
+
   private final List<OrderBudget> plans = new ArrayList<>();
   private final List<OrderFlatRate> flatRates = new ArrayList<>();
   private final List<TimereportDTO> reports = new ArrayList<>();
@@ -94,10 +103,11 @@ public class BudgetControllingServiceTest {
   private EmployeeCostService employeeCostService;
   private BudgetControllingService service;
   private Customerorder customerorder;
+  private CustomerorderService customerorderService;
 
   @BeforeEach
   public void setUp() {
-    var customerorderService = mock(CustomerorderService.class);
+    customerorderService = mock(CustomerorderService.class);
     suborderService = mock(SuborderService.class);
     timereportService = mock(TimereportService.class);
     orderBudgetRepository = mock(OrderBudgetRepository.class);
@@ -122,10 +132,10 @@ public class BudgetControllingServiceTest {
 
     // Plans, bookings and assignments all come out of the mutable fixture lists, so a test can set
     // them up in any order and the last word wins.
-    when(orderBudgetRepository.findByCustomerorderSign("co")).thenAnswer(i -> List.copyOf(plans));
-    when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(i ->
+    when(orderBudgetRepository.findByCustomerorderId(CUSTOMERORDER_ID)).thenAnswer(i -> List.copyOf(plans));
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(any(), any())).thenAnswer(i ->
         plans.stream().filter(p -> p.getActive().equals(i.getArgument(1))).toList());
-    when(assignmentRepository.findLinksByCustomerorderSign("co")).thenAnswer(i -> List.copyOf(links));
+    when(assignmentRepository.findLinksByCustomerorderId(CUSTOMERORDER_ID)).thenAnswer(i -> List.copyOf(links));
     // Narrowed by the requested period, as the real query does — #916 reads before the window.
     when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
         .thenAnswer(i -> {
@@ -138,9 +148,9 @@ public class BudgetControllingServiceTest {
         });
     when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> List.copyOf(suborders));
     // The utilization reads the same fixture in bulk, over every order and plan asked about (#1222).
-    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(customerorder));
-    when(suborderService.getSubordersByCustomerorderSigns(any())).thenAnswer(i -> List.copyOf(suborders));
-    when(orderBudgetRepository.findByCustomerorderSignInAndActive(any(), any())).thenAnswer(i ->
+    when(customerorderService.getCustomerordersByIds(any())).thenReturn(List.of(customerorder));
+    when(suborderService.getSubordersByCustomerorderIds(any())).thenAnswer(i -> List.copyOf(suborders));
+    when(orderBudgetRepository.findByCustomerorderIdInAndActive(any(), any())).thenAnswer(i ->
         plans.stream().filter(p -> p.getActive().equals(i.getArgument(1))).toList());
     when(assignmentRepository.findPlanBookings(any(), any())).thenAnswer(i -> {
       Collection<Long> planIds = i.getArgument(0);
@@ -169,7 +179,7 @@ public class BudgetControllingServiceTest {
 
     service = new BudgetControllingService(customerorderService, suborderService, timereportService,
         orderBudgetRepository, assignmentRepository, orderPricingService, orderFlatRateService,
-        employeeCostService, publicholidayService, budgetAuthorization);
+        employeeCostService, publicholidayService, budgetAuthorization, new OrderPositions(suborderService));
   }
 
   /**
@@ -209,6 +219,40 @@ public class BudgetControllingServiceTest {
     assertThat(before.costEuro()).isEqualByComparingTo("960.00");
     assertThat(after.revenueEuro()).isEqualByComparingTo(before.revenueEuro());
     assertThat(after.costEuro()).isEqualByComparingTo(before.costEuro());
+  }
+
+  /**
+   * Plans, flat rates and cost assignments refer to their order and suborder by id (#1205). Renaming
+   * the order and a suborder — and moving nothing else — leaves the plan's own sign columns behind;
+   * the controlling reads the ids and reports exactly what it reported before. The customer rates
+   * still name their order by sign and follow the rename ({@code OrderSignMirrorListener}), which is
+   * what the second lookup stands for.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_the_same_figures_after_the_order_and_a_suborder_were_renamed() {
+    givenBudgets(plan("H1", null, FROM, JUN, "1000"), plan("H2 co/01", "co/01", JUL, UNTIL, "500"));
+    givenFlatRates(flatRate("retainer", "co/01", FlatRateRhythm.ONCE, IN_H2, IN_H2, "300"));
+    var before = compute();
+
+    when(customerorder.getSign()).thenReturn("renamed");
+    when(customerorderService.getCustomerorderBySign("renamed")).thenReturn(customerorder);
+    suborders.stream().filter(so -> so.getId() == 10L).findFirst().orElseThrow().setSign("X1");
+    var followedRate = orderWideRate();
+    followedRate.setCustomerorderSign("renamed");
+    when(orderPricingService.lookupFor(any())).thenReturn(OrderPricingLookup.of(List.of(followedRate)));
+    var after = service.compute("renamed", FROM, UNTIL, false);
+
+    assertThat(after.total().revenueEuro()).isEqualByComparingTo(before.total().revenueEuro());
+    assertThat(after.total().flatRateRevenueEuro()).isEqualByComparingTo(before.total().flatRateRevenueEuro());
+    assertThat(after.total().bookedHours()).isEqualTo(before.total().bookedHours());
+    assertThat(after.sections()).extracting(BudgetControllingSection::kind)
+        .containsExactlyElementsOf(before.sections().stream().map(BudgetControllingSection::kind).toList());
+    assertThat(after.sections()).extracting(section -> section.groups().size())
+        .containsExactlyElementsOf(before.sections().stream().map(section -> section.groups().size()).toList());
+    // the plan's group shows the sign its suborder has today, not the one stored with the plan
+    assertThat(sectionOf(after, SectionKind.SUBORDER_LEVEL).groups()).extracting(BudgetControllingGroup::sign)
+        .containsExactly("renamed/X1");
   }
 
   /**
@@ -1354,6 +1398,7 @@ public class BudgetControllingServiceTest {
     return TimereportDTO.builder()
         .id(nextId++)
         .customerorderSign("co")
+        .customerorderId(CUSTOMERORDER_ID)
         .completeOrderSign(suborder.map(Suborder::getCompleteOrderSign).orElse("co/?"))
         .suborderId(suborderId)
         .employeeId(EMPLOYEE_ID)
@@ -1367,7 +1412,9 @@ public class BudgetControllingServiceTest {
     var budget = new OrderBudget();
     setId(budget, nextId++);
     budget.setName(name);
+    budget.setCustomerorderId(CUSTOMERORDER_ID);
     budget.setCustomerorderSign("co");
+    budget.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     budget.setSuborderSign(suborderSign);
     budget.setActive(true);
     budget.setValidFrom(from);
@@ -1553,7 +1600,9 @@ public class BudgetControllingServiceTest {
                                         LocalDate from, LocalDate until, String amount) {
     var rate = new OrderFlatRate();
     setId(rate, nextId++);
+    rate.setCustomerorderId(CUSTOMERORDER_ID);
     rate.setCustomerorderSign("co");
+    rate.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     rate.setSuborderSign(suborderSign);
     rate.setDescription(description);
     rate.setRhythm(rhythm);
