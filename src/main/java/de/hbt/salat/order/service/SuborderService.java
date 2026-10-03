@@ -344,6 +344,17 @@ public class SuborderService {
     return suborderDAO.getSubordersByIds(suborderIds);
   }
 
+  /**
+   * The complete order signs ({@code ORDER/01/02}) of the suborders with these ids, by id — what
+   * another module needs to name suborders it refers to by id (#1212, ADR-0021). An id without a
+   * suborder is missing.
+   */
+  @Transactional(readOnly = true)
+  public Map<Long, String> getCompleteOrderSignsByIds(Collection<Long> suborderIds) {
+    return getSubordersByIds(suborderIds).stream()
+        .collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign));
+  }
+
   public List<Suborder> getSubordersByEmployeeContractId(long employeeContractId) {
     return suborderDAO.getSubordersByEmployeeContractId(employeeContractId);
   }

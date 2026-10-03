@@ -87,7 +87,7 @@ public class OrderBudget extends AuditedEntity {
 
     /** Whether the plan applies to the customer order as a whole (→ {@link BudgetScope#isOrderWide}). */
     public boolean isOrderWide() {
-        return BudgetScope.isOrderWide(suborderSign);
+        return BudgetScope.isOrderWide(suborderId, suborderSign);
     }
 
     /**

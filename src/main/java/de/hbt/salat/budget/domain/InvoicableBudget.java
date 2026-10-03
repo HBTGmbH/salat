@@ -12,13 +12,11 @@ import java.time.LocalDate;
 public record InvoicableBudget(
     long id,
     String name,
-    String customerorderSign,
     LocalDate validFrom,
     LocalDate validUntil) {
 
     public static InvoicableBudget from(OrderBudget budget) {
-        return new InvoicableBudget(budget.getId(), budget.getName(), budget.getCustomerorderSign(),
-            budget.getValidFrom(), budget.getValidUntil());
+        return new InvoicableBudget(budget.getId(), budget.getName(), budget.getValidFrom(), budget.getValidUntil());
     }
 
 }

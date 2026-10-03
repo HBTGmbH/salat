@@ -8,6 +8,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -54,6 +56,17 @@ import de.hbt.salat.order.service.SuborderService;
 @Authorized
 public class OrderFlatRateService {
 
+    /**
+     * By the sign the order has today, then by start of validity. The sign comes from the order, not
+     * from the flat rate's sign column, which only mirrors it for reports (#1212); a flat rate without
+     * an order has nothing but that column.
+     */
+    private static final Comparator<OrderFlatRateRow> BY_ORDER_SIGN_THEN_VALID_FROM = Comparator
+        .comparing((OrderFlatRateRow row) -> row.customerorder() != null
+            ? row.customerorder().getSign() : row.flatRate().getCustomerorderSign(),
+            Comparator.nullsLast(Comparator.naturalOrder()))
+        .thenComparing(row -> row.flatRate().getValidFrom(), Comparator.nullsLast(Comparator.naturalOrder()));
+
     private final OrderFlatRateRepository orderFlatRateRepository;
     private final OrderBudgetRepository orderBudgetRepository;
     private final SuborderService suborderService;
@@ -63,7 +76,7 @@ public class OrderFlatRateService {
 
     @Transactional(readOnly = true)
     public List<OrderFlatRate> getAll() {
-        return orderFlatRateRepository.findAllByOrderByCustomerorderSignAscValidFromAsc();
+        return StreamSupport.stream(orderFlatRateRepository.findAll().spliterator(), false).toList();
     }
 
     /**
@@ -82,16 +95,29 @@ public class OrderFlatRateService {
         var sign = trimToNull(customerorderSign);
         var flatRates = sign == null ? getAll() : byCustomerorderSign(sign);
         var ordersById = ordersOf(flatRates);
+        var suborderSigns = suborderSignsOf(flatRates);
         var planNames = planNamesOf(flatRates);
         return flatRates.stream()
             .filter(flatRate -> showInactive || flatRate.getCurrentlyValid())
             // Most flat rates name no plan at all, and an immutable map refuses a null key outright.
             .map(flatRate -> new OrderFlatRateRow(flatRate,
                 flatRate.getCustomerorderId() == null ? null : ordersById.get(flatRate.getCustomerorderId()),
+                flatRate.getSuborderId() == null ? null : suborderSigns.get(flatRate.getSuborderId()),
                 flatRate.dueAmountsWithin(flatRate.getValidFrom(), flatRate.getValidUntil()),
                 flatRate.getOrderBudgetId() == null ? null : planNames.get(flatRate.getOrderBudgetId())))
             .filter(row -> showInactiveOrders || orderStillValid(row))
+            .sorted(BY_ORDER_SIGN_THEN_VALID_FROM)
             .toList();
+    }
+
+    /**
+     * The complete signs of the suborders of the given flat rates, by id — the list names them as
+     * they are called today, not as the mirror column has them (#1212).
+     */
+    private Map<Long, String> suborderSignsOf(List<OrderFlatRate> flatRates) {
+        var ids = flatRates.stream().map(OrderFlatRate::getSuborderId).filter(Objects::nonNull)
+            .distinct().toList();
+        return suborderService.getCompleteOrderSignsByIds(ids);
     }
 
     /** The names of the plans the given flat rates are booked against, by id — one query for all. */
@@ -139,7 +165,10 @@ public class OrderFlatRateService {
             .filter(plan -> !periodKnown || OrderBudgetBinding.periodsOverlap(plan, validFrom, validUntil))
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
-        return SelectablePlans.of(fitting, authorized, keepPlanId);
+        var selectable = SelectablePlans.of(fitting, authorized, keepPlanId);
+        return selectable.withScopeSigns(
+            customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId),
+            suborderService.getCompleteOrderSignsByIds(selectable.suborderIds()));
     }
 
     private Map<Long, Customerorder> ordersOf(List<OrderFlatRate> flatRates) {
@@ -161,10 +190,10 @@ public class OrderFlatRateService {
         return row.customerorder() == null || row.customerorder().getCurrentlyValid();
     }
 
-    /** The customer orders that have at least one flat rate — the filter options of the list view. */
+    /** The customer orders that have at least one flat rate, by sign — the filter options of the list view. */
     @Transactional(readOnly = true)
-    public List<String> getCustomerorderSignsWithFlatRate() {
-        return orderFlatRateRepository.findDistinctCustomerorderSigns();
+    public List<CustomerorderOption> getCustomerordersWithFlatRate() {
+        return customerorderService.getCustomerorderOptionsByIds(orderFlatRateRepository.findDistinctCustomerorderIds());
     }
 
     @Transactional(readOnly = true)
@@ -175,10 +204,10 @@ public class OrderFlatRateService {
 
     /** The flat rates of the order the filter names, read by the id behind the sign (#1205). */
     private List<OrderFlatRate> byCustomerorderSign(String customerorderSign) {
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
-        return customerorder == null
+        var customerorderId = customerorderService.getCustomerorderIdBySign(customerorderSign);
+        return customerorderId == null
             ? List.of()
-            : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorder.getId());
+            : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
     }
 
     /** Where the flat rate sits in the order tree — empty for one the migration could not resolve. */

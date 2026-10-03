@@ -7,6 +7,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.Objects;
 
 /**
  * In-memory view of the flat rates of a set of customer orders (#972), for the same reason
@@ -37,6 +40,14 @@ public final class OrderFlatRateLookup {
                 .add(flatRate);
         }
         return new OrderFlatRateLookup(byCustomerorderId);
+    }
+
+    /** The suborders the flat rates of that customer order name, by id. */
+    public Set<Long> suborderIds(long customerorderId) {
+        return byCustomerorderId.getOrDefault(customerorderId, List.of()).stream()
+            .map(OrderFlatRate::getSuborderId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     }
 
     /**

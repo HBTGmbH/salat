@@ -310,6 +310,22 @@ public class BudgetDashboardServiceTest {
       assertThat(asked).isNotEmpty().doesNotContain("C", 3L, 105L);
     }
 
+    /**
+     * A row names its order by the sign the order has today, read by id (#1212). The plans' sign
+     * column only mirrors it for the reports; a stale mirror must not reach the page, and the rows
+     * stay sorted by the order's sign.
+     */
+    @Test
+    public void a_row_names_its_order_by_the_sign_the_order_has_today() {
+      plans.stream().filter(plan -> "A".equals(plan.getCustomerorderSign()))
+          .forEach(plan -> plan.setCustomerorderSign("Z-stale"));
+
+      var rows = figures.computeDashboard(null, null);
+
+      assertThat(rows).extracting(BudgetDashboardRow::budgetId, BudgetDashboardRow::customerorderSign)
+          .containsExactly(tuple(101L, "A"), tuple(102L, "A"), tuple(103L, "B"), tuple(104L, "B"));
+    }
+
     /** The dashboard asks {@code OrderBudgetService} for the visible plans; C is not among them. */
     private OrderBudgetService visiblePlans() {
       var orderBudgetService = mock(OrderBudgetService.class);

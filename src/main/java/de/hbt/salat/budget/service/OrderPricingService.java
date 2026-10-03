@@ -10,6 +10,7 @@ import static java.lang.Boolean.TRUE;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +38,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -49,6 +51,17 @@ public class OrderPricingService {
     /** An open rate end, stored as a sentinel rather than as {@code null}. */
     private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
 
+    /**
+     * By the sign the order has today, then by start of validity. The sign comes from the order, not
+     * from the rate's sign column, which only mirrors it for reports (#1212); a rate without an order
+     * has nothing but that column.
+     */
+    private static final Comparator<OrderPricingRow> BY_ORDER_SIGN_THEN_VALID_FROM = Comparator
+        .comparing((OrderPricingRow row) -> row.customerorder() != null
+            ? row.customerorder().getSign() : row.pricing().getCustomerorderSign(),
+            Comparator.nullsLast(Comparator.naturalOrder()))
+        .thenComparing(row -> row.pricing().getValidFrom(), Comparator.nullsLast(Comparator.naturalOrder()));
+
     private final OrderPricingRepository orderPricingRepository;
     private final OrderBudgetRepository orderBudgetRepository;
     private final SuborderService suborderService;
@@ -58,7 +71,7 @@ public class OrderPricingService {
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
-        return orderPricingRepository.findAllByOrderByCustomerorderSignAscValidFromAsc();
+        return StreamSupport.stream(orderPricingRepository.findAll().spliterator(), false).toList();
     }
 
     /**
@@ -76,7 +89,7 @@ public class OrderPricingService {
     public List<OrderPricingRow> getRows(String customerorderSign, boolean showInactive,
                                          boolean showInactiveOrders) {
         var sign = trimToNull(customerorderSign);
-        var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
+        var pricings = sign == null ? getAll() : byCustomerorderSign(sign);
         var ordersById = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
         var employeeSigns = employeeSignsOf(pricings);
@@ -86,7 +99,16 @@ public class OrderPricingService {
             .map(pricing -> row(pricing, ordersById.get(pricing.getCustomerorderId()), coverage,
                 employeeSigns, planNames))
             .filter(row -> showInactiveOrders || orderStillValid(row))
+            .sorted(BY_ORDER_SIGN_THEN_VALID_FROM)
             .toList();
+    }
+
+    /** The rates of the order the filter names, read by the id behind the sign (#1212). */
+    private List<OrderPricing> byCustomerorderSign(String customerorderSign) {
+        var customerorderId = customerorderService.getCustomerorderIdBySign(customerorderSign);
+        return customerorderId == null
+            ? List.of()
+            : orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
     }
 
     private static OrderPricingRow row(OrderPricing pricing, Customerorder order,
@@ -151,21 +173,16 @@ public class OrderPricingService {
         return row.customerorder() == null || row.customerorder().getCurrentlyValid();
     }
 
-    /** The customer orders that have at least one pricing — the filter options of the list view. */
+    /** The customer orders that have at least one pricing, by sign — the filter options of the list view. */
     @Transactional(readOnly = true)
-    public List<String> getCustomerorderSignsWithPricing() {
-        return orderPricingRepository.findDistinctCustomerorderSigns();
+    public List<CustomerorderOption> getCustomerordersWithPricing() {
+        return customerorderService.getCustomerorderOptionsByIds(orderPricingRepository.findDistinctCustomerorderIds());
     }
 
     @Transactional(readOnly = true)
     public OrderPricing getById(long id) {
         return orderPricingRepository.findById(id)
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_PRICING_NOT_FOUND, id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<OrderPricing> getByCustomerorderSign(String customerorderSign) {
-        return orderPricingRepository.findByCustomerorderSignOrderByValidFromAsc(customerorderSign);
     }
 
     /**
@@ -238,7 +255,10 @@ public class OrderPricingService {
                 trimToNull(suborderPattern), order.suborders()))
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
-        return SelectablePlans.of(fitting, authorized, keepPlanId);
+        var selectable = SelectablePlans.of(fitting, authorized, keepPlanId);
+        return selectable.withScopeSigns(
+            customerorderService.getCustomerorderSignsByIds(List.of(order.customerorderId())).get(order.customerorderId()),
+            suborderService.getCompleteOrderSignsByIds(selectable.suborderIds()));
     }
 
 

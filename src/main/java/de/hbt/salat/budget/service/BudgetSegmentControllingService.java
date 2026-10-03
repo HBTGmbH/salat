@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.domain.CustomerSegment;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
@@ -112,10 +114,17 @@ public class BudgetSegmentControllingService {
     private List<String> candidateSigns(LocalDate from, LocalDate until) {
         var signs = new LinkedHashSet<String>();
         signs.addAll(timereportService.getCustomerorderSignsWithReportsBetween(from, until));
-        orderBudgetService.getAllActiveVisible().stream()
-            .map(OrderBudget::getCustomerorderSign)
+        // Plans and flat rates name their order by id; the sign is the order's own, not the mirror
+        // column the reports read (#1212).
+        var planOrderIds = orderBudgetService.getAllActiveVisible().stream()
+            .map(OrderBudget::getCustomerorderId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+        signs.addAll(customerorderService.getCustomerorderSignsByIds(planOrderIds).values());
+        orderFlatRateService.getCustomerordersWithFlatRate().stream()
+            .map(CustomerorderOption::sign)
             .forEach(signs::add);
-        signs.addAll(orderFlatRateService.getCustomerorderSignsWithFlatRate());
         return signs.stream().sorted().toList();
     }
 

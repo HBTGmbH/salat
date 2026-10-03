@@ -13,8 +13,6 @@ import de.hbt.salat.budget.domain.OrderFlatRate;
 public interface OrderFlatRateRepository
     extends CrudRepository<OrderFlatRate, Long>, PagingAndSortingRepository<OrderFlatRate, Long> {
 
-    List<OrderFlatRate> findAllByOrderByCustomerorderSignAscValidFromAsc();
-
     /** The flat rates of a customer order, by its id (#1205) — the sign column is a mirror only. */
     List<OrderFlatRate> findByCustomerorderIdOrderByValidFromAsc(Long customerorderId);
 
@@ -27,11 +25,11 @@ public interface OrderFlatRateRepository
     /**
      * The customer orders the list view offers for filtering. Taken from the flat rates themselves
      * rather than from the selectable orders, for the reason
-     * {@code OrderPricingRepository#findDistinctCustomerorderSigns} gives: a flat rate outlives its
-     * order and has to stay reachable when the order is gone or hidden.
+     * {@code OrderPricingRepository#findDistinctCustomerorderIds} gives: a flat rate outlives its
+     * order's visibility and has to stay reachable when the order is hidden or expired.
      */
-    @Query("SELECT DISTINCT f.customerorderSign FROM OrderFlatRate f ORDER BY f.customerorderSign ASC")
-    List<String> findDistinctCustomerorderSigns();
+    @Query("SELECT DISTINCT f.customerorderId FROM OrderFlatRate f WHERE f.customerorderId IS NOT NULL")
+    List<Long> findDistinctCustomerorderIds();
 
     /** The flat rates bound to one budget plan — what its detail page lists (#1065). */
     @Query("""

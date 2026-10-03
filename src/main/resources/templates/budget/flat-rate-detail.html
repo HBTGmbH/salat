@@ -27,9 +27,18 @@
         <div class="col-md-6">
           <dl class="row">
             <dt class="col-sm-5" th:text="#{main.flatrate.field.customerorderSign}">Auftrag</dt>
-            <dd class="col-sm-7" th:text="${flatRate.customerorderSign}"></dd>
+            <!--/* Read by id (#1212); a reference the migration could not resolve is marked. */-->
+            <dd class="col-sm-7">
+              <span th:text="${customerorderSign}"></span>
+              <span th:if="${flatRate.customerorderId == null}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            </dd>
             <dt class="col-sm-5" th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</dt>
-            <dd class="col-sm-7" th:text="${flatRate.suborderSign} ?: #{main.flatrate.field.suborderSign.wholeorder}"></dd>
+            <dd class="col-sm-7">
+              <span th:text="${suborderSign} ?: #{main.flatrate.field.suborderSign.wholeorder}"></span>
+              <span th:if="${flatRate.suborderId == null and !flatRate.orderWide}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            </dd>
             <dt class="col-sm-5" th:text="#{main.flatrate.field.rhythm}">Abrechnung</dt>
             <dd class="col-sm-7" th:text="#{${flatRate.rhythm.label}}"></dd>
           </dl>

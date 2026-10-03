@@ -12,7 +12,11 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -31,6 +35,7 @@ import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.domain.CustomerSegment;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
@@ -54,6 +59,8 @@ public class BudgetSegmentControllingServiceTest {
 
   private static long nextId = 1;
 
+  private static final Map<Long, String> SIGNS_BY_ID = new HashMap<>();
+
   @BeforeEach
   public void setUp() {
     orderBudgetService = mock(OrderBudgetService.class);
@@ -65,7 +72,12 @@ public class BudgetSegmentControllingServiceTest {
         budgetControllingService, customerorderService, timereportService);
 
     when(orderBudgetService.getAllActiveVisible()).thenReturn(List.of());
-    when(orderFlatRateService.getCustomerorderSignsWithFlatRate()).thenReturn(List.of());
+    when(orderFlatRateService.getCustomerordersWithFlatRate()).thenReturn(List.of());
+    // The plans name their order by id; the order service answers with the sign it has today.
+    when(customerorderService.getCustomerorderSignsByIds(any())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return ids.stream().collect(Collectors.toMap(id -> id, SIGNS_BY_ID::get));
+    });
     when(timereportService.getCustomerorderSignsWithReportsBetween(any(), any())).thenReturn(List.of());
   }
 
@@ -188,7 +200,7 @@ public class BudgetSegmentControllingServiceTest {
     givenOrders(order("A", segment("Industrie")));
     when(orderBudgetService.getAllActiveVisible())
         .thenReturn(List.of(plan("A"), plan("A"), plan("A")));
-    when(orderFlatRateService.getCustomerorderSignsWithFlatRate()).thenReturn(List.of("A"));
+    when(orderFlatRateService.getCustomerordersWithFlatRate()).thenReturn(List.of(option("A")));
     givenEvaluations(revenue("A", "100"));
 
     var segments = service.compute(FROM, UNTIL).segments();
@@ -232,7 +244,7 @@ public class BudgetSegmentControllingServiceTest {
   @Test
   public void should_list_an_order_that_is_named_only_by_its_flat_rate() {
     var order = order("A", segment("Industrie"));
-    when(orderFlatRateService.getCustomerorderSignsWithFlatRate()).thenReturn(List.of("A"));
+    when(orderFlatRateService.getCustomerordersWithFlatRate()).thenReturn(List.of(option("A")));
     when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(order));
     givenEvaluations(revenue("A", "100"));
 
@@ -327,12 +339,23 @@ public class BudgetSegmentControllingServiceTest {
     return segment;
   }
 
+  /**
+   * The sign column is deliberately stale: the page names the order by the sign it has today, read by
+   * id (#1212), and must not fall back on the mirror the reports read.
+   */
   private static OrderBudget plan(String customerorderSign) {
     var plan = new OrderBudget();
     setId(plan, nextId++);
-    plan.setCustomerorderSign(customerorderSign);
+    var customerorderId = (long) customerorderSign.hashCode();
+    SIGNS_BY_ID.put(customerorderId, customerorderSign);
+    plan.setCustomerorderId(customerorderId);
+    plan.setCustomerorderSign("stale-" + customerorderSign);
     plan.setActive(true);
     return plan;
+  }
+
+  private static CustomerorderOption option(String sign) {
+    return new CustomerorderOption(sign.hashCode(), sign, null, null, null, null, false);
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */

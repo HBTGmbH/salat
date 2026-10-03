@@ -330,10 +330,19 @@ public class EmployeeCostController {
         Function<EmployeeCostAssignment, String> signOf = assignment -> assignment.isEmployeeUnresolved()
             ? assignment.getEmployeeSign()
             : signs.get(assignment.getEmployeeId());
+        // The suborders by id as well (#1212): the assignment's sign column only mirrors them for reports.
+        var suborderSigns = suborderService.getCompleteOrderSignsByIds(assignments.stream()
+            .map(EmployeeCostAssignment::getSuborderId)
+            .filter(Objects::nonNull)
+            .collect(toSet()));
+        Function<EmployeeCostAssignment, String> suborderSignOf = assignment -> assignment.getSuborderId() == null
+            ? assignment.getSuborderSign()
+            : suborderSigns.get(assignment.getSuborderId());
         model.addAttribute("categoryName", name);
         model.addAttribute("rates", rates);
         model.addAttribute("assignments", assignments.stream()
-            .map(assignment -> new EmployeeCostAssignmentViewHelper(assignment, signOf.apply(assignment)))
+            .map(assignment -> new EmployeeCostAssignmentViewHelper(assignment, signOf.apply(assignment),
+                suborderSignOf.apply(assignment)))
             .sorted(Comparator.comparing(EmployeeCostAssignmentViewHelper::employeeSign,
                     Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(row -> row.assignment().getValidFrom()))

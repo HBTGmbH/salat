@@ -10,6 +10,7 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.service.MailService;
@@ -50,7 +51,7 @@ public class BudgetAlertService {
 
                 if (utilization >= threshold) {
                     if (budget.getAlertSentAt() == null) {
-                        sendAlert(budget.getId(), budget.getName(), budget.getCustomerorderSign(),
+                        sendAlert(budget.getId(), budget.getName(), customerorderSignOf(budget),
                             utilization, threshold, today);
                         orderBudgetService.updateAlertSentAt(budget.getId(), today);
                         log.info("Budget alert sent for budget {} ({}): {}% >= {}%",
@@ -69,8 +70,23 @@ public class BudgetAlertService {
         }
     }
 
+    /**
+     * The sign the plan's order has today, read by the plan's id — not the plan's sign column, which
+     * only mirrors the order for reports (#1212). {@code null} for a plan the migration could not
+     * resolve: it has no order to tell.
+     */
+    private String customerorderSignOf(OrderBudget budget) {
+        var customerorderId = budget.getCustomerorderId();
+        return customerorderId == null ? null
+            : customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId);
+    }
+
     private void sendAlert(long budgetId, String budgetName, String coSign,
                            double utilization, int threshold, LocalDate today) {
+        if (coSign == null) {
+            log.warn("Budget {} has no resolved customerorder — skipping alert", budgetId);
+            return;
+        }
         var co = customerorderService.getCustomerorderBySign(coSign);
         var responsibleEmployees = co.getResponsibleHbt();
         if (responsibleEmployees == null || responsibleEmployees.isEmpty()) {

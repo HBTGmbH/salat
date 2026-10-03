@@ -15,18 +15,17 @@ import de.hbt.salat.budget.domain.OrderPricing;
 public interface OrderPricingRepository
     extends CrudRepository<OrderPricing, Long>, PagingAndSortingRepository<OrderPricing, Long> {
 
-    List<OrderPricing> findAllByOrderByCustomerorderSignAscValidFromAsc();
-
-    List<OrderPricing> findByCustomerorderSignOrderByValidFromAsc(String customerorderSign);
+    List<OrderPricing> findByCustomerorderIdOrderByValidFromAsc(long customerorderId);
 
     /**
      * The customer orders the list view offers for filtering (#949). Taken from the pricings
-     * themselves rather than from the selectable orders: a pricing refers to its order by sign and
-     * outlives it, so an order that has been hidden or has expired still needs to be reachable —
-     * those are the rows one is looking for when tidying up.
+     * themselves rather than from the selectable orders: a pricing outlives its order's visibility,
+     * so an order that has been hidden or has expired still needs to be reachable — those are the
+     * rows one is looking for when tidying up. By id, not by the sign column: that one only mirrors
+     * the order for reports (#1212).
      */
-    @Query("SELECT DISTINCT p.customerorderSign FROM OrderPricing p ORDER BY p.customerorderSign ASC")
-    List<String> findDistinctCustomerorderSigns();
+    @Query("SELECT DISTINCT p.customerorderId FROM OrderPricing p WHERE p.customerorderId IS NOT NULL")
+    List<Long> findDistinctCustomerorderIds();
 
     List<OrderPricing> findByCustomerorderIdInOrderByIdAsc(Collection<Long> customerorderIds);
 

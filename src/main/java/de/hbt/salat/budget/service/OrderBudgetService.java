@@ -57,7 +57,7 @@ public class OrderBudgetService {
 
     @Transactional(readOnly = true)
     public List<OrderBudget> getAll() {
-        return orderBudgetRepository.findAllByOrderByCustomerorderSignAscValidFromAsc();
+        return orderBudgetRepository.findAllByOrderByValidFromAscIdAsc();
     }
 
     @Transactional(readOnly = true)

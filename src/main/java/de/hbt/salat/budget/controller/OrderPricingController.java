@@ -1,7 +1,5 @@
 package de.hbt.salat.budget.controller;
 
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
 
@@ -212,15 +210,11 @@ public class OrderPricingController {
 
     /**
      * The customer orders offered in the list filter — those that actually carry a rate, labelled
-     * like every other order select. The signs come from the pricings, the labels from the orders
-     * behind them; a sign without an order keeps its own entry (→ {@link CustomerorderFilterOption}).
+     * like every other order select. Read by the id of the rates, not by their sign column (#1212).
      */
     private List<CustomerorderFilterOption> filterOptions() {
-        var signs = orderPricingService.getCustomerorderSignsWithPricing();
-        var ordersBySign = customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
-        return signs.stream()
-            .map(sign -> CustomerorderFilterOption.from(sign, ordersBySign.get(sign), customerorderViewHelper))
+        return orderPricingService.getCustomerordersWithPricing().stream()
+            .map(order -> CustomerorderFilterOption.of(order, customerorderViewHelper))
             .toList();
     }
 

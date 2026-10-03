@@ -52,25 +52,33 @@ public class OrderPricingRepositoryTest {
     pricing("co-one", FROM, UNTIL);
     pricing("co-one", UNTIL.plusDays(1), UNTIL.plusYears(1));
 
-    assertThat(orderPricingRepository.findDistinctCustomerorderSigns()).containsExactly("co-one");
+    assertThat(orderPricingRepository.findDistinctCustomerorderIds()).containsExactly(idOf("co-one"));
   }
 
+  /**
+   * The select offers orders, and a rate the migration could not resolve has none (#1212). It stays
+   * in the unfiltered list, marked.
+   */
   @Test
-  public void offers_the_orders_in_alphabetical_order() {
-    pricing("co-b", FROM, UNTIL);
-    pricing("co-a", FROM, UNTIL);
+  public void offers_no_entry_for_a_rate_without_an_order() {
+    pricing("co-one", FROM, UNTIL);
+    var unresolved = pricing("co-gone", FROM, UNTIL);
+    unresolved.setCustomerorderId(null);
+    orderPricingRepository.save(unresolved);
 
-    assertThat(orderPricingRepository.findDistinctCustomerorderSigns())
-        .containsExactly("co-a", "co-b");
+    assertThat(orderPricingRepository.findDistinctCustomerorderIds()).containsExactly(idOf("co-one"));
   }
 
+  /** By id, not by the sign column (#1212): a rate whose sign column is stale is found all the same. */
   @Test
-  public void reads_the_rates_of_one_order_oldest_first() {
+  public void reads_the_rates_of_one_order_by_its_id_oldest_first() {
     var later = pricing("co-one", UNTIL.plusDays(1), UNTIL.plusYears(1));
     var earlier = pricing("co-one", FROM, UNTIL);
+    earlier.setCustomerorderSign("co-renamed-elsewhere");
+    orderPricingRepository.save(earlier);
     pricing("co-other", FROM, UNTIL);
 
-    assertThat(orderPricingRepository.findByCustomerorderSignOrderByValidFromAsc("co-one"))
+    assertThat(orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(idOf("co-one")))
         .containsExactly(earlier, later);
   }
 

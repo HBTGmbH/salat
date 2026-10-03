@@ -1,6 +1,7 @@
 package de.hbt.salat.budget.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -309,10 +310,37 @@ public class OrderFlatRateServiceTest {
         .extracting(OrderFlatRateRow::isEmptySchedule).containsExactly(true);
   }
 
+  /**
+   * The list names order and suborder as they are called today, read by id (#1212), and sorts by the
+   * order's sign: the flat rates' sign columns only mirror them for the reports and are stale here.
+   */
+  @Test
+  public void lists_the_flat_rates_by_the_signs_their_order_and_suborder_have_today() {
+    var onOther = flatRate("other", null, FlatRateRhythm.ONCE, TODAY, TODAY);
+    onOther.setCustomerorderSign("a-stale");
+    var onCo = flatRate("co", "co/01/A", FlatRateRhythm.ONCE, TODAY, TODAY);
+    onCo.setCustomerorderSign("z-stale");
+    onCo.setSuborderSign("co/stale");
+    given(onOther, onCo);
+
+    assertThat(service.getRows(null, false, true))
+        .extracting(row -> row.customerorder().getSign(), OrderFlatRateRow::suborderCompleteOrderSign)
+        .containsExactly(tuple("co", "co/01/A"), tuple("other", null));
+  }
+
+  /** The filter names the order by sign; the flat rates are read by the id behind it. */
+  @Test
+  public void narrows_the_list_to_the_order_behind_the_chosen_sign() {
+    var chosen = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
+    when(repository.findByCustomerorderIdOrderByValidFromAsc(TREE.orderId("co"))).thenReturn(List.of(chosen));
+
+    assertThat(service.getRows("co", false, true)).extracting(OrderFlatRateRow::flatRate).containsExactly(chosen);
+  }
+
   // --- helpers ---------------------------------------------------------------------------------
 
   private void given(OrderFlatRate... flatRates) {
-    when(repository.findAllByOrderByCustomerorderSignAscValidFromAsc()).thenReturn(List.of(flatRates));
+    when(repository.findAll()).thenReturn(List.of(flatRates));
   }
 
   private OrderFlatRate savedFlatRate() {

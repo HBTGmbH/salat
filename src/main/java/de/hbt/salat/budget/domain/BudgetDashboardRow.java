@@ -6,6 +6,9 @@ import java.time.LocalDate;
 public record BudgetDashboardRow(
     long budgetId,
     String budgetName,
+    /** {@code null} for a plan the migration could not resolve (#1212). */
+    Long customerorderId,
+    /** The sign the order has today; the stored one only for a plan without an order (#1212). */
     String customerorderSign,
     String customerorderName,
     LocalDate validFrom,

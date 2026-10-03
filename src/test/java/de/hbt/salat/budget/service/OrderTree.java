@@ -6,10 +6,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -72,6 +75,28 @@ class OrderTree {
     when(customerorderService.getCustomerordersByIds(any())).thenAnswer(i -> {
       Collection<Long> ids = i.getArgument(0);
       return orders.values().stream().filter(order -> ids.contains(order.getId())).toList();
+    });
+    when(customerorderService.getCustomerorderIdBySign(anyString())).thenAnswer(i -> {
+      var order = orders.get(i.<String>getArgument(0));
+      return order == null ? null : order.getId();
+    });
+    when(customerorderService.getCustomerorderOptionsByIds(any())).thenAnswer(i -> {
+      Collection<Long> ids = i.getArgument(0);
+      return orders.values().stream().filter(order -> ids.contains(order.getId()))
+          .sorted(Comparator.comparing(Customerorder::getSign))
+          .map(order -> new CustomerorderOption(order.getId(), order.getSign(), order.getShortdescription(),
+              order.getDescription(), null, null, order.getHide()))
+          .toList();
+    });
+    when(customerorderService.getCustomerorderSignsByIds(any())).thenAnswer(i -> {
+      Collection<Long> ids = i.getArgument(0);
+      return orders.values().stream().filter(order -> ids.contains(order.getId()))
+          .collect(Collectors.toMap(Customerorder::getId, Customerorder::getSign));
+    });
+    when(suborderService.getCompleteOrderSignsByIds(any())).thenAnswer(i -> {
+      Collection<Long> ids = i.getArgument(0);
+      return suborders.values().stream().filter(suborder -> ids.contains(suborder.getId()))
+          .collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign));
     });
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i -> suborders.values().stream()
         .filter(suborder -> suborder.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));

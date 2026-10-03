@@ -9,7 +9,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -158,6 +160,31 @@ public class CustomerorderService {
 
   public List<Customerorder> getCustomerordersByEmployeeContractId(long employeeContractId) {
     return customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
+  }
+
+  /**
+   * The id of the order with this sign, or {@code null} — for a module that keeps the id and gets a
+   * sign from the user, e.g. as a filter value (#1212).
+   */
+  @Transactional(readOnly = true)
+  public Long getCustomerorderIdBySign(String sign) {
+    return sign == null ? null : customerorderRepository.findIdBySign(sign).orElse(null);
+  }
+
+  /**
+   * The orders with these ids as a select offers them, ordered by sign, hidden and expired ones
+   * included — what another module needs to name orders it refers to by id (#1212, ADR-0021).
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerorderOption> getCustomerorderOptionsByIds(Collection<Long> ids) {
+    return ids.isEmpty() ? List.of() : customerorderRepository.findOptionsByIdIn(ids);
+  }
+
+  /** The signs of the orders with these ids, by id — an id without an order is missing (#1212). */
+  @Transactional(readOnly = true)
+  public Map<Long, String> getCustomerorderSignsByIds(Collection<Long> ids) {
+    return getCustomerorderOptionsByIds(ids).stream()
+        .collect(Collectors.toMap(CustomerorderOption::id, CustomerorderOption::sign));
   }
 
   /** The orders with these ids, in one statement — for a caller that resolved the ids elsewhere (#1092). */

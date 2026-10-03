@@ -1,6 +1,7 @@
 package de.hbt.salat.budget.service;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +46,10 @@ public class BudgetDashboardService {
                 return new BudgetDashboardRow(
                     b.getId(),
                     b.getName(),
-                    b.getCustomerorderSign(),
+                    b.getCustomerorderId(),
+                    // The order's own sign; the plan's sign column mirrors it for reports only
+                    // (#1212) and is all a plan without an order has.
+                    b.getCustomerorderId() == null ? b.getCustomerorderSign() : utilization.customerorderSign(),
                     utilization.customerorderDescription(),
                     b.getValidFrom(),
                     b.getValidUntil(),
@@ -61,6 +65,11 @@ public class BudgetDashboardService {
                         hasBudget(info) ? info.percent() : null)
                 );
             })
+            // By order sign, then by start of validity — sorted here, because the plans come by
+            // validity only: the sign is the order's, not a column of the plan (#1212).
+            .sorted(Comparator.comparing(BudgetDashboardRow::customerorderSign,
+                    Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(BudgetDashboardRow::validFrom, Comparator.nullsLast(Comparator.naturalOrder())))
             .toList();
     }
 

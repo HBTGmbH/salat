@@ -123,10 +123,25 @@ public class OrderPricingServiceTest {
   @Test
   public void narrows_the_list_to_the_chosen_customer_order() {
     var chosen = pricing("co-one", TODAY, OPEN_END);
-    when(orderPricingRepository.findByCustomerorderSignOrderByValidFromAsc("co-one"))
-        .thenReturn(List.of(chosen));
+    givenChosen("co-one", chosen);
 
     assertThat(pricingsOf(service.getRows("co-one", false, true))).containsExactly(chosen);
+  }
+
+  /**
+   * By the sign the order has today, read by id (#1212): the rates' sign column only mirrors it for
+   * the reports and is deliberately stale here. A rate without an order goes by the stored sign.
+   */
+  @Test
+  public void lists_the_rates_by_the_sign_their_order_has_today() {
+    var onOther = pricing("other", TODAY, OPEN_END);
+    onOther.setCustomerorderSign("a-stale");
+    var onCo = pricing("co", TODAY, OPEN_END);
+    onCo.setCustomerorderSign("z-stale");
+    var unresolved = unresolvedOrderPricing("zz-gone");
+    given(onOther, unresolved, onCo);
+
+    assertThat(pricingsOf(service.getRows(null, true, true))).containsExactly(onCo, onOther, unresolved);
   }
 
   /** Both filters apply at once — picking an order does not bring its expired rates back. */
@@ -134,8 +149,7 @@ public class OrderPricingServiceTest {
   public void leaves_out_the_expired_rates_of_the_chosen_customer_order() {
     var expired = pricing("co-one", TODAY.minusYears(1), YESTERDAY);
     var current = pricing("co-one", TODAY, OPEN_END);
-    when(orderPricingRepository.findByCustomerorderSignOrderByValidFromAsc("co-one"))
-        .thenReturn(List.of(expired, current));
+    givenChosen("co-one", expired, current);
 
     assertThat(pricingsOf(service.getRows("co-one", false, true))).containsExactly(current);
   }
@@ -448,7 +462,14 @@ public class OrderPricingServiceTest {
   }
 
   private void given(OrderPricing... pricings) {
-    when(orderPricingRepository.findAllByOrderByCustomerorderSignAscValidFromAsc())
+    when(orderPricingRepository.findAll()).thenReturn(List.of(pricings));
+  }
+
+  /** The filter names the order by sign; the rates are read by the id behind it (#1212). */
+  private void givenChosen(String customerorderSign, OrderPricing... pricings) {
+    var customerorderId = TREE.orderId(customerorderSign);
+    when(customerorderService.getCustomerorderIdBySign(customerorderSign)).thenReturn(customerorderId);
+    when(orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId))
         .thenReturn(List.of(pricings));
   }
 
