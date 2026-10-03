@@ -35,10 +35,19 @@
         <i class="ti ti-info-circle me-2 text-muted"></i>
         <span th:text="#{error.page.technical.details}">Technische Details</span>
       </h3>
-      <button class="btn btn-sm btn-outline-secondary" id="copyBtn" onclick="copyErrorDetails()">
-        <i class="ti ti-clipboard me-1"></i>
-        <span id="copyBtnLabel" th:text="#{error.page.copy.button}">Fehlerdetails kopieren</span>
-      </button>
+      <!--/* Tabler Clipboard (#1295): copies the text of #error-details-text and swaps label and
+             feedback for a moment. A failed copy (no clipboard outside a secure context, or refused)
+             fires error.bs.clipboard and shows the hint below. */-->
+      <div class="text-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="copyBtn"
+                data-bs-toggle="clipboard" data-bs-target="#error-details-text">
+          <i class="ti ti-clipboard me-1"></i>
+          <span class="clipboard-label" th:text="#{error.page.copy.button}">Fehlerdetails kopieren</span>
+          <span class="clipboard-feedback" th:text="#{error.page.copy.success}">Kopiert!</span>
+        </button>
+        <div id="copyFailed" class="small text-danger mt-1" role="alert" hidden
+             th:text="#{error.page.copy.failed}">Kopieren nicht möglich.</div>
+      </div>
     </div>
     <div class="card-body p-0">
 
@@ -177,18 +186,13 @@
   <pre id="error-details-text" style="display:none" th:text="${errorDetailsText}"></pre>
 
   <th:block layout:fragment="scripts">
-    <script th:inline="javascript">
-      const copySuccessLabel = /*[[#{error.page.copy.success}]]*/ 'Kopiert!';
-      const copyDefaultLabel = /*[[#{error.page.copy.button}]]*/ 'Fehlerdetails kopieren';
-
-      function copyErrorDetails() {
-        const text = document.getElementById('error-details-text').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-          const btn = document.getElementById('copyBtnLabel');
-          btn.textContent = copySuccessLabel;
-          setTimeout(() => { btn.textContent = copyDefaultLabel; }, 2000);
-        });
-      }
+    <script>
+      document.getElementById('copyBtn').addEventListener('error.bs.clipboard', function () {
+        document.getElementById('copyFailed').hidden = false;
+      });
+      document.getElementById('copyBtn').addEventListener('copied.bs.clipboard', function () {
+        document.getElementById('copyFailed').hidden = true;
+      });
     </script>
   </th:block>
 

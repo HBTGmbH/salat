@@ -1062,12 +1062,9 @@
     display.classList.add('d-none');
     inlineEditFieldOf(input).classList.remove('d-none');
     if (input.tagName === 'TEXTAREA') {
-      input.style.height = 'auto';
-      input.style.height = input.scrollHeight + 'px';
-      input.addEventListener('input', function onResize() {
-        input.style.height = 'auto';
-        input.style.height = input.scrollHeight + 'px';
-      });
+      // Tabler Autosize (#1295): one instance per field, made on the first opening, so opening it
+      // again adds no listener. The field was hidden until now, so it is measured once more.
+      tabler.Autosize.getOrCreateInstance(input).update();
     }
     input.focus();
     if (input.tagName === 'TEXTAREA') {
