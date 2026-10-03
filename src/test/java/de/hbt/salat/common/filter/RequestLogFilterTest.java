@@ -68,7 +68,7 @@ class RequestLogFilterTest {
   void writes_the_line_without_user_when_nobody_is_signed_in() throws Exception {
     var response = new MockHttpServletResponse();
 
-    filter.doFilter(request("/api/orders"), response, (req, res) -> response.setStatus(401));
+    filter.doFilter(request("/api/employee-orders/list"), response, (req, res) -> response.setStatus(401));
 
     assertThat(appender.list).singleElement().satisfies(event -> assertThat(event.getMDCPropertyMap())
         .containsEntry("response-status", "401")
