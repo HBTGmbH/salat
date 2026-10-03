@@ -3855,3 +3855,280 @@ databaseChangeLog:
               ALTER TABLE etl_definition RENAME COLUMN dependencies TO unresolved_dependencies;
               ALTER TABLE etl_definition MODIFY name VARCHAR(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL;
               ALTER TABLE etl_definition ADD CONSTRAINT uk_etl_definition_name UNIQUE (name)
+  - changeSet:
+      id: 101
+      author: kr
+      comment: Doppelte Zeilen in year_month entfernen (#1208)
+      # year_month traegt seit jeher manche Monate doppelt; vor dem Primaerschluessel muessen sie weg.
+      # Laeuft nur, wenn es Duplikate gibt; sonst haelt MARK_RAN den Changeset fuer erledigt, und der
+      # Schluessel im naechsten Changeset sorgt dafuer, dass keine neuen entstehen.
+      # Die Hilfstabelle hat einen Primaerschluessel, damit sie auch unter sql_require_primary_key
+      # angelegt werden kann.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: year_month
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) > 0 FROM (SELECT 1 FROM `year_month` GROUP BY `year`, `month` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: CREATE TABLE `year_month_distinct` (`year` int NOT NULL, `month` int NOT NULL, PRIMARY KEY (`year`, `month`))
+        - sql:
+            sql: INSERT INTO `year_month_distinct` (`year`, `month`) SELECT DISTINCT `year`, `month` FROM `year_month`
+        - sql:
+            sql: DELETE FROM `year_month`
+        - sql:
+            sql: INSERT INTO `year_month` (`year`, `month`) SELECT `year`, `month` FROM `year_month_distinct`
+        - sql:
+            sql: DROP TABLE `year_month_distinct`
+
+  - changeSet:
+      id: 102
+      author: kr
+      comment: year_month erhaelt den Primaerschluessel (year, month) (#1208)
+      # Der Tabellenname ist in MySQL ein reserviertes Wort (Intervall YEAR_MONTH), deshalb eigenes SQL
+      # mit Backticks statt addPrimaryKey.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            year_month enthaelt doppelte Monate; Changeset 101 haette sie entfernen muessen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `year_month` GROUP BY `year`, `month` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `year_month` ADD PRIMARY KEY (`year`, `month`)
+
+  - changeSet:
+      id: 103
+      author: kr
+      comment: employee.sign ist Pflicht und eindeutig (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            employee enthaelt doppelte oder fehlende Werte in (sign); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM `employee` WHERE `sign` IS NULL
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `employee` GROUP BY `sign` HAVING COUNT(*) > 1) d
+      # Eigenes SQL statt addNotNullConstraint: MODIFY ueber Liquibase verliert die Kollation der
+      # Spalte, und utf8mb3_bin ist die Bedingung dafuer, dass der Unique-Schluessel Gross- und
+      # Kleinschreibung unterscheidet wie die Anwendung.
+      changes:
+        - sql:
+            sql: ALTER TABLE `employee` MODIFY `sign` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL, ADD CONSTRAINT `uk_employee_sign` UNIQUE (`sign`)
+
+  - changeSet:
+      id: 104
+      author: kr
+      comment: customerorder.sign ist Pflicht und eindeutig (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            customerorder enthaelt doppelte oder fehlende Werte in (sign); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM `customerorder` WHERE `sign` IS NULL
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `customerorder` GROUP BY `sign` HAVING COUNT(*) > 1) d
+      # Eigenes SQL statt addNotNullConstraint: MODIFY ueber Liquibase verliert die Kollation der
+      # Spalte, und utf8mb3_bin ist die Bedingung dafuer, dass der Unique-Schluessel Gross- und
+      # Kleinschreibung unterscheidet wie die Anwendung.
+      changes:
+        - sql:
+            sql: ALTER TABLE `customerorder` MODIFY `sign` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL, ADD CONSTRAINT `uk_customerorder_sign` UNIQUE (`sign`)
+
+  - changeSet:
+      id: 105
+      author: kr
+      comment: Ein Referenztag je Datum (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            referenceday enthaelt doppelte Werte in (refdate); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `referenceday` GROUP BY `refdate` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `referenceday` ADD CONSTRAINT `uk_referenceday_refdate` UNIQUE (`refdate`)
+
+  - changeSet:
+      id: 106
+      author: kr
+      comment: Gewoehnlichen Index auf referenceday.refdate ablegen, den uk_referenceday_refdate ersetzt (#1208)
+      preConditions:
+        - onFail: MARK_RAN
+        - indexExists:
+            tableName: referenceday
+            indexName: referenceday_idx1
+        - indexExists:
+            tableName: referenceday
+            indexName: uk_referenceday_refdate
+      changes:
+        - dropIndex:
+            tableName: referenceday
+            indexName: referenceday_idx1
+
+  - changeSet:
+      id: 107
+      author: kr
+      comment: Ein Feiertag je Datum (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            publicholiday enthaelt doppelte Werte in (refdate); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `publicholiday` GROUP BY `refdate` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `publicholiday` ADD CONSTRAINT `uk_publicholiday_refdate` UNIQUE (`refdate`)
+
+  - changeSet:
+      id: 108
+      author: kr
+      comment: Eine Zeitscheibe je Kostenkategorie und Beginn (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            employee_cost enthaelt doppelte Werte in (name, valid_from); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `employee_cost` GROUP BY `name`, `valid_from` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `employee_cost` ADD CONSTRAINT `uk_employee_cost_name_valid_from` UNIQUE (`name`, `valid_from`)
+
+  - changeSet:
+      id: 109
+      author: kr
+      comment: Doppelte Zeilen in customerorder_responsible_hbt entfernen (#1208)
+      # Eine doppelte Zuordnung sagt nichts, was die einfache nicht sagt; sie kann ohne Rueckfrage weg.
+      # Laeuft nur, wenn es Duplikate gibt; sonst haelt MARK_RAN den Changeset fuer erledigt, und der
+      # Schluessel im naechsten Changeset sorgt dafuer, dass keine neuen entstehen.
+      # Die Hilfstabelle hat einen Primaerschluessel, damit sie auch unter sql_require_primary_key
+      # angelegt werden kann.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: customerorder_responsible_hbt
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) > 0 FROM (SELECT 1 FROM `customerorder_responsible_hbt` GROUP BY `CUSTOMERORDER_ID`, `EMPLOYEE_ID` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: CREATE TABLE `customerorder_responsible_hbt_distinct` (`CUSTOMERORDER_ID` bigint NOT NULL, `EMPLOYEE_ID` bigint NOT NULL, PRIMARY KEY (`CUSTOMERORDER_ID`, `EMPLOYEE_ID`))
+        - sql:
+            sql: INSERT INTO `customerorder_responsible_hbt_distinct` (`CUSTOMERORDER_ID`, `EMPLOYEE_ID`) SELECT DISTINCT `CUSTOMERORDER_ID`, `EMPLOYEE_ID` FROM `customerorder_responsible_hbt`
+        - sql:
+            sql: DELETE FROM `customerorder_responsible_hbt`
+        - sql:
+            sql: INSERT INTO `customerorder_responsible_hbt` (`CUSTOMERORDER_ID`, `EMPLOYEE_ID`) SELECT `CUSTOMERORDER_ID`, `EMPLOYEE_ID` FROM `customerorder_responsible_hbt_distinct`
+        - sql:
+            sql: DROP TABLE `customerorder_responsible_hbt_distinct`
+
+  - changeSet:
+      id: 110
+      author: kr
+      comment: Jede Zuordnung in customerorder_responsible_hbt nur einmal (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            customerorder_responsible_hbt enthaelt doppelte Werte in (CUSTOMERORDER_ID, EMPLOYEE_ID); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `customerorder_responsible_hbt` GROUP BY `CUSTOMERORDER_ID`, `EMPLOYEE_ID` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `customerorder_responsible_hbt` ADD CONSTRAINT `uk_customerorder_responsible_hbt` UNIQUE (`CUSTOMERORDER_ID`, `EMPLOYEE_ID`)
+
+  - changeSet:
+      id: 111
+      author: kr
+      comment: Doppelte Zeilen in employee_salat_user entfernen (#1208)
+      # Eine doppelte Zuordnung sagt nichts, was die einfache nicht sagt; sie kann ohne Rueckfrage weg.
+      # Laeuft nur, wenn es Duplikate gibt; sonst haelt MARK_RAN den Changeset fuer erledigt, und der
+      # Schluessel im naechsten Changeset sorgt dafuer, dass keine neuen entstehen.
+      # Die Hilfstabelle hat einen Primaerschluessel, damit sie auch unter sql_require_primary_key
+      # angelegt werden kann.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: employee_salat_user
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) > 0 FROM (SELECT 1 FROM `employee_salat_user` GROUP BY `employee_id`, `salat_user_id` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: CREATE TABLE `employee_salat_user_distinct` (`employee_id` bigint NOT NULL, `salat_user_id` bigint NOT NULL, PRIMARY KEY (`employee_id`, `salat_user_id`))
+        - sql:
+            sql: INSERT INTO `employee_salat_user_distinct` (`employee_id`, `salat_user_id`) SELECT DISTINCT `employee_id`, `salat_user_id` FROM `employee_salat_user`
+        - sql:
+            sql: DELETE FROM `employee_salat_user`
+        - sql:
+            sql: INSERT INTO `employee_salat_user` (`employee_id`, `salat_user_id`) SELECT `employee_id`, `salat_user_id` FROM `employee_salat_user_distinct`
+        - sql:
+            sql: DROP TABLE `employee_salat_user_distinct`
+
+  - changeSet:
+      id: 112
+      author: kr
+      comment: Jede Zuordnung in employee_salat_user nur einmal (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            employee_salat_user enthaelt doppelte Werte in (employee_id, salat_user_id); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `employee_salat_user` GROUP BY `employee_id`, `salat_user_id` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `employee_salat_user` ADD CONSTRAINT `uk_employee_salat_user` UNIQUE (`employee_id`, `salat_user_id`)
+
+  - changeSet:
+      id: 113
+      author: kr
+      comment: Doppelte Zeilen in employeecontract_supervisor entfernen (#1208)
+      # Eine doppelte Zuordnung sagt nichts, was die einfache nicht sagt; sie kann ohne Rueckfrage weg.
+      # Laeuft nur, wenn es Duplikate gibt; sonst haelt MARK_RAN den Changeset fuer erledigt, und der
+      # Schluessel im naechsten Changeset sorgt dafuer, dass keine neuen entstehen.
+      # Die Hilfstabelle hat einen Primaerschluessel, damit sie auch unter sql_require_primary_key
+      # angelegt werden kann.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: employeecontract_supervisor
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) > 0 FROM (SELECT 1 FROM `employeecontract_supervisor` GROUP BY `EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: CREATE TABLE `employeecontract_supervisor_distinct` (`EMPLOYEECONTRACT_ID` bigint NOT NULL, `SUPERVISOR_ID` bigint NOT NULL, PRIMARY KEY (`EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID`))
+        - sql:
+            sql: INSERT INTO `employeecontract_supervisor_distinct` (`EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID`) SELECT DISTINCT `EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID` FROM `employeecontract_supervisor`
+        - sql:
+            sql: DELETE FROM `employeecontract_supervisor`
+        - sql:
+            sql: INSERT INTO `employeecontract_supervisor` (`EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID`) SELECT `EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID` FROM `employeecontract_supervisor_distinct`
+        - sql:
+            sql: DROP TABLE `employeecontract_supervisor_distinct`
+
+  - changeSet:
+      id: 114
+      author: kr
+      comment: Jede Zuordnung in employeecontract_supervisor nur einmal (#1208)
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            employeecontract_supervisor enthaelt doppelte Werte in (EMPLOYEECONTRACT_ID, SUPERVISOR_ID); vor dem Start bereinigen (#1208).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `employeecontract_supervisor` GROUP BY `EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `employeecontract_supervisor` ADD CONSTRAINT `uk_employeecontract_supervisor` UNIQUE (`EMPLOYEECONTRACT_ID`, `SUPERVISOR_ID`)

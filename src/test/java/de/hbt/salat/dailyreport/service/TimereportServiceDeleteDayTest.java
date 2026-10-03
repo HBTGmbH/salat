@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.testutils.ReferencedayTestUtils.referenceday;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -26,7 +27,6 @@ import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
-import de.hbt.salat.dailyreport.domain.Referenceday;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.persistence.PublicholidayDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
@@ -122,9 +122,7 @@ class TimereportServiceDeleteDayTest {
   }
 
   private Timereport book(Employeeorder onEmployeeorder, LocalDate date) {
-    var referenceday = new Referenceday();
-    referenceday.setRefdate(date);
-    entityManager.persist(referenceday);
+    var referenceday = referenceday(entityManager, date);
 
     var timereport = new Timereport();
     timereport.setEmployeecontract(employeecontract);

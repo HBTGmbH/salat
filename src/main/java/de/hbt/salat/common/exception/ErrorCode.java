@@ -33,6 +33,7 @@ public enum ErrorCode {
   CO_RESPONSIBLE_HBT_REQUIRED("CO-0003", "responsible HBT employee is required"),
   CO_RESP_CONTRACT_EMPLOYEE_REQUIRED("CO-0004", "responsible HBT contract employee is required"),
   CO_NOT_FOUND("CO-0005", "customer order was not found"),
+  CO_SIGN_TAKEN("CO-0006", "another customer order already has this sign"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
@@ -54,6 +55,7 @@ public enum ErrorCode {
   EM_ANONYMIZE_WRONG_SIGN("EM-0002", "confirm sign does not match the employee sign"),
   EM_NOT_FOUND("EM-0003", "employee was not found"),
   EM_NO_LOGIN_EMPLOYEE("EM-0004", "no employee matches the current login"),
+  EM_SIGN_TAKEN("EM-0005", "another employee already has this sign"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),
@@ -224,6 +226,7 @@ public enum ErrorCode {
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   XX_CONCURRENT_MODIFICATION("XX-0003", "the data was changed concurrently"),
+  XX_DUPLICATE_KEY("XX-0004", "a record with the same key already exists"),
   ;
 
   private final String code;

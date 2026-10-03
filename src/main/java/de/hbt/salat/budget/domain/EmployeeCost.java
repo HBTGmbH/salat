@@ -3,6 +3,7 @@ package de.hbt.salat.budget.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +12,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import de.hbt.salat.common.domain.AuditedEntity;
 
 @Entity
-@Table(name = "employee_cost")
+@Table(name = "employee_cost", uniqueConstraints = @UniqueConstraint(name = "uk_employee_cost_name_valid_from",
+    columnNames = {"name", "valid_from"}))
 @Getter
 @Setter
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)

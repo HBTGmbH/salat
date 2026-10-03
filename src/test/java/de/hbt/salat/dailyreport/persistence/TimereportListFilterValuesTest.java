@@ -2,6 +2,7 @@ package de.hbt.salat.dailyreport.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.testutils.ReferencedayTestUtils.referenceday;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -22,7 +23,6 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility.Clause;
-import de.hbt.salat.dailyreport.domain.Referenceday;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
@@ -204,9 +204,7 @@ class TimereportListFilterValuesTest {
   }
 
   private Timereport book(Employeecontract contract, Suborder suborder) {
-    var referenceday = new Referenceday();
-    referenceday.setRefdate(DAY);
-    entityManager.persist(referenceday);
+    var referenceday = referenceday(entityManager, DAY);
 
     var timereport = new Timereport();
     timereport.setEmployeecontract(contract);

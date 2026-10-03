@@ -213,6 +213,15 @@ public class EmployeeController {
         } else if (form.getSign().length() > GlobalConstants.EMPLOYEE_SIGN_MAX_LENGTH) {
             bindingResult.rejectValue("sign", "error.sign",
                     messages.getMessage("form.employee.error.sign.toolong", "Sign is too long"));
+        } else {
+            // Asked without the read rules and compared exactly, as the unique key of the column does
+            // (#1208): a hidden holder keeps the sign as well, and the stock already holds signs that
+            // differ only in case.
+            Employee holder = employeeService.getEmployeeBySign(form.getSign());
+            if (holder != null && !holder.getId().equals(form.getId())) {
+                bindingResult.rejectValue("sign", "error.sign",
+                        messages.getMessage("form.employee.error.sign.alreadyexists", "Sign already exists"));
+            }
         }
 
         if (form.getLoginname() == null || form.getLoginname().isEmpty()) {

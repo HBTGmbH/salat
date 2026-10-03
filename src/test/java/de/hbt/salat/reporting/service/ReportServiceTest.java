@@ -131,11 +131,13 @@ public class ReportServiceTest {
     loginAsManager("test");
 
     Employee employee = new Employee();
+    employee.setSign("kr");
     employee.setFirstname("Klaus");
     employee.setLastname("Richarz");
     employee.setGender(GlobalConstants.GENDER_MALE);
     employeeRepository.save(employee);
     employee = new Employee();
+    employee.setSign("ar");
     employee.setFirstname("Antje");
     employee.setLastname("Richarz");
     employee.setGender(GlobalConstants.GENDER_FEMALE);
@@ -160,11 +162,13 @@ public class ReportServiceTest {
     loginAsManager("test");
 
     Employee employee = new Employee();
+    employee.setSign("kr");
     employee.setFirstname("Klaus");
     employee.setLastname("Richarz");
     employee.setGender(GlobalConstants.GENDER_MALE);
     employeeRepository.save(employee);
     employee = new Employee();
+    employee.setSign("ar");
     employee.setFirstname("Antje");
     employee.setLastname("Richarz");
     employee.setGender(GlobalConstants.GENDER_FEMALE);

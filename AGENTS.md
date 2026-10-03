@@ -239,6 +239,9 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   in eine `BusinessRuleException` `XX-0003`. Der Aspekt liegt außen um die Transaktion, weil der
   Konflikt meist erst beim Commit entsteht, also nach dem Methodenrumpf. Ein `catch` im Service
   sähe ihn nicht.
+  Ebenso übersetzt er die Verletzung eines Unique-Schlüssels, `XX-0004` oder den eigenen Befund
+  des Schlüssels (#1208). Ein neuer Unique-Schlüssel heißt in Changeset und Entität gleich
+  (`uk_<tabelle>_<spalten>`). Braucht er eine eigene Meldung, kommt er in die Tabelle des Aspekts.
 - **Ein Formular, dessen Antwort spürbar dauert und dessen zweites Absenden kollidiert oder etwas
   doppelt anlegt, trägt `data-submit-once`** (heute die Prüfseiten von Freigabe und Abnahme, das
   Öffnen auf der Seite der Abnahme und das Buchungsformular). Einzelheiten in

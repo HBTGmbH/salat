@@ -15,6 +15,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -42,6 +44,7 @@ import de.hbt.salat.order.domain.comparator.SubOrderComparator;
 @Getter
 @Setter
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_customerorder_sign", columnNames = "sign"))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Customerorder extends AuditedEntity implements Serializable {
 
@@ -71,7 +74,9 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "customerorder_responsible_hbt",
         joinColumns = @JoinColumn(name = "CUSTOMERORDER_ID"),
-        inverseJoinColumns = @JoinColumn(name = "EMPLOYEE_ID"))
+        inverseJoinColumns = @JoinColumn(name = "EMPLOYEE_ID"),
+        uniqueConstraints = @UniqueConstraint(name = "uk_customerorder_responsible_hbt",
+            columnNames = {"CUSTOMERORDER_ID", "EMPLOYEE_ID"}))
     @Fetch(FetchMode.SELECT)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Employee> responsibleHbt = new ArrayList<>();
@@ -90,6 +95,8 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String order_customer;
     private LocalDate fromDate;
     private LocalDate untilDate;
+    /** Required and unique (#1208); the database says so as well. */
+    @Column(nullable = false)
     private String sign;
     private String description;
     private String shortdescription;

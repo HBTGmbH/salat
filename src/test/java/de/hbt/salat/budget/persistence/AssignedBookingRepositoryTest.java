@@ -3,6 +3,7 @@ package de.hbt.salat.budget.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.testutils.ReferencedayTestUtils.referenceday;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -24,7 +25,6 @@ import de.hbt.salat.budget.domain.PlanBooking;
 import de.hbt.salat.budget.domain.TimereportBudgetAssignment;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
-import de.hbt.salat.dailyreport.domain.Referenceday;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
@@ -242,7 +242,7 @@ public class AssignedBookingRepositoryTest {
     timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
     timereport.setSuborder(suborder);
-    timereport.setReferenceday(referenceday(day));
+    timereport.setReferenceday(referenceday(entityManager, day));
     timereport.setDurationhours(hours);
     timereport.setDurationminutes(minutes);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
@@ -256,20 +256,6 @@ public class AssignedBookingRepositoryTest {
     entityManager.persist(assignment);
     entityManager.flush();
     return timereport.getId();
-  }
-
-  /** One row per date, as in production — the reference day is shared by every booking of that day. */
-  private Referenceday referenceday(LocalDate day) {
-    var existing = entityManager.getEntityManager()
-        .createQuery("select r from Referenceday r where r.refdate = :day", Referenceday.class)
-        .setParameter("day", day)
-        .getResultList();
-    if (!existing.isEmpty()) {
-      return existing.getFirst();
-    }
-    var referenceday = new Referenceday();
-    referenceday.setRefdate(day);
-    return entityManager.persist(referenceday);
   }
 
   private OrderBudget plan(String name) {
@@ -313,7 +299,15 @@ public class AssignedBookingRepositoryTest {
     return entityManager.persist(order);
   }
 
+  /** One person per sign, as the unique key demands (#1208) — the bookings of one sign share the contract. */
   private Employeecontract employeecontract(String sign) {
+    var existing = entityManager.getEntityManager()
+        .createQuery("select c from Employeecontract c where c.employee.sign = :sign", Employeecontract.class)
+        .setParameter("sign", sign)
+        .getResultList();
+    if (!existing.isEmpty()) {
+      return existing.getFirst();
+    }
     var employee = new Employee();
     employee.setSign(sign);
     employee.setFirstname(sign);

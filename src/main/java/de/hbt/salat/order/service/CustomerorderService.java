@@ -108,7 +108,8 @@ public class CustomerorderService {
     if (dto.respEmpHbtContractId() == null) {
       throw new InvalidDataException(ErrorCode.CO_RESP_CONTRACT_EMPLOYEE_REQUIRED);
     }
-    co.setResponsibleHbt(dto.responsibleHbtIds().stream().map(employeeDAO::getEmployeeById).toList());
+    // each person once - the table refuses a second row for the same pair (#1208)
+    co.setResponsibleHbt(dto.responsibleHbtIds().stream().distinct().map(employeeDAO::getEmployeeById).toList());
     co.setRespEmpHbtContract(employeeDAO.getEmployeeById(dto.respEmpHbtContractId()));
 
     if (dto.debithours() == null
