@@ -49,7 +49,6 @@
               <exclude>^net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
               <exclude>^org\.apache\.catalina\..*Chain\.</exclude>
               <exclude>^org\.apache\.catalina\..*Dispatcher\.</exclude>
-              <exclude>^org\.apache\.jasper</exclude>
               <exclude>^org\.apache\.tomcat\.websocket\.server\.WsFilter</exclude>
               <exclude>^org\.springframework\..*Adapter\.</exclude>
               <exclude>^org\.springframework\..*Decorator\.</exclude>

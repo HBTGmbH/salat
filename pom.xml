@@ -94,11 +94,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.tomcat.embed</groupId>
-      <artifactId>tomcat-embed-jasper</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
@@ -328,6 +323,26 @@
               Prüfen lässt sich der Wert an der Startzeile "Calculated JVM Memory Configuration".
               -->
               <BPE_DEFAULT_BPL_JVM_CLASS_ADJUSTMENT>160%</BPE_DEFAULT_BPL_JVM_CLASS_ADJUSTMENT>
+              <!--
+              AOT-Cache (#1278, JEP 483/514/515). Beim Image-Build startet der Buildpack die
+              Anwendung einmal bis zum Ende des Context-Refresh und legt die dabei geladenen und
+              gelinkten Klassen im Image ab; der Start im Betrieb liest sie von dort statt aus den
+              JARs. Lokal gemessen: 7,8 s mit java -jar, 3,65 s entpackt mit Cache.
+
+              Beim Build gibt es keine Datenbank. TRAINING_RUN_JAVA_TOOL_OPTIONS gilt nur für diesen
+              Trainingslauf: Liquibase aus, keine Schemavalidierung, kein Lesen der JDBC-Metadaten,
+              der Dialekt deshalb fest. Hikari öffnet die erste Verbindung erst bei Bedarf, die nicht
+              erreichbare Datenbank-URL stört also nicht. Im Betrieb laufen Liquibase und die
+              Schemavalidierung weiter wie bisher. Dass ihre Klassen im Cache fehlen, kostet rund
+              0,3 s gegenüber einem Trainingslauf mit Datenbank.
+
+              Code, der beim Start auf die Datenbank zugreift, darf das nicht vor dem Ende des
+              Context-Refresh tun, sonst bricht der Trainingslauf und mit ihm der Image-Build ab.
+              Passt der Cache nicht zur JVM oder zum Klassenpfad, startet die JVM mit einer Warnung
+              ohne ihn.
+              -->
+              <BP_JVM_AOTCACHE_ENABLED>true</BP_JVM_AOTCACHE_ENABLED>
+              <TRAINING_RUN_JAVA_TOOL_OPTIONS>-Dspring.liquibase.enabled=false -Dspring.jpa.hibernate.ddl-auto=none -Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false -Dspring.jpa.database-platform=org.hibernate.dialect.MySQLDialect</TRAINING_RUN_JAVA_TOOL_OPTIONS>
             </env>
           </image>
         </configuration>
