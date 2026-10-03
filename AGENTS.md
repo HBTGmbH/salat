@@ -39,8 +39,12 @@ See also README.md
 
   Authorization is then the reading service's responsibility; where a per-row filter of the owning
   module no longer applies, say at the call site why it is moot or covered otherwise, and name the
-  premises that argument rests on. Nothing enforces any of this automatically — `ArchitectureTest`
-  sees class dependencies, and the contents of a `@Query` are a string.
+  premises that argument rests on. `ArchitectureTest` enforces the Java side of it
+  (`noEntityCrossesAModuleBoundaryThroughAService`, #1244): no call from another module into a
+  non-private `@Service` method with a JPA entity in its signature. The violations that existed when
+  the rule came in are frozen in `src/test/resources/archunit_store`; a new one fails the build —
+  return a record instead of adding it to the store. The contents of a `@Query` are a string, and
+  remain a matter of review.
 
 ## Controller and View Guidelines (target stack)
 - Controllers:
