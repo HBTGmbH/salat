@@ -189,7 +189,10 @@
               <label id="commentLabel"
                      th:class="${'form-label' + (commentNecessary == true ? ' required' : '')}"
                      th:text="#{main.timereport.form.comment.label}">Kommentar</label>
+              <!--/* Tabler Autosize (#1295): starts at three rows and grows with the text; the
+                     prefills (ticket, recent comments) fire input, so they resize it as well. */-->
               <textarea id="commentField" class="form-control" th:field="*{comment}" rows="3"
+                        data-bs-toggle="autosize"
                         th:attr="required=${commentNecessary == true ? 'required' : null},
                                  data-entry-focus=${entryFocus != null and entryFocus.name() == 'COMMENT'} ? 'true' : null"
                         th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>

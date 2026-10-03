@@ -59,9 +59,9 @@ class EmployeeAccessIntegrationTest {
     var response = get("/dailyreport/dashboard?login-name=" + WITHOUT_CONTRACT);
 
     assertThat(response.statusCode()).isEqualTo(FORBIDDEN.value());
-    // copyErrorDetails steht nur in error/error.html - das unterscheidet die Fehlerseite der
+    // error-details-text steht nur in error/error.html - das unterscheidet die Fehlerseite der
     // Anwendung von der des Servlet-Containers, und zwar unabhaengig von der Sprache.
-    assertThat(response.body()).contains("copyErrorDetails");
+    assertThat(response.body()).contains("error-details-text");
     // Der Grund steht auf der Seite: die Meldung beider Sprachbuendel nennt das Kuerzel.
     assertThat(response.body()).contains(WITHOUT_CONTRACT);
   }

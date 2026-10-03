@@ -189,9 +189,9 @@ class ControllerAuthorizationIntegrationTest {
   @ParameterizedTest(name = "{1} -> {0}")
   @MethodSource("oneDenialPerLevel")
   void a_denial_ends_on_the_error_page_of_the_application(String path, String login) throws Exception {
-    // copyErrorDetails steht nur in error/error.html und unterscheidet die Fehlerseite der
+    // error-details-text steht nur in error/error.html und unterscheidet die Fehlerseite der
     // Anwendung von der des Servlet-Containers, unabhängig von der Sprache.
-    assertThat(get(path, login).body()).contains("copyErrorDetails");
+    assertThat(get(path, login).body()).contains("error-details-text");
   }
 
   @ParameterizedTest(name = "{0} -> POST " + ETL_RUN_ACTION)
