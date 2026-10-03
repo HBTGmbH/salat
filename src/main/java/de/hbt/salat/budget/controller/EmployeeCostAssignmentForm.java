@@ -12,7 +12,8 @@ public class EmployeeCostAssignmentForm {
     private Long id;
     private String employeeCostName;
     private Long employeeId;
-    private String suborderSign;
+    /** The suborder, by id (#1205); {@code null} for the general assignment of the person. */
+    private Long suborderId;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate validFrom;

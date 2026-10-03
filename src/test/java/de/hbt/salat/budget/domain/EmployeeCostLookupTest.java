@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,9 @@ public class EmployeeCostLookupTest {
   private static final LocalDate DATE = LocalDate.of(2026, 6, 15);
   private static final long EMP = 1L;
   private static final long OTHER = 2L;
+
+  /** The suborders by sign — the assignments refer to them by id (#1205). */
+  private static final Map<String, Long> SUBORDER_IDS = Map.of("so", 100L, "other", 101L);
 
   @Test
   public void should_prefer_the_suborder_specific_assignment_over_the_general_one() {
@@ -53,7 +57,7 @@ public class EmployeeCostLookupTest {
         List.of(assignment(OTHER, null, "general")),
         List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost(EMP, "so", OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.STANDARD, DATE)).isEmpty();
   }
 
   @Test
@@ -112,7 +116,7 @@ public class EmployeeCostLookupTest {
     var lookup = EmployeeCostLookup.of(
         List.of(assignment(EMP, null, "general")), List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost(EMP, "so", OrderType.BEREITSCHAFT, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.BEREITSCHAFT, DATE)).isEmpty();
     // the very same constellation on a standard order does fall back
     assertThat(cents(lookup, EMP, "so")).isEqualTo(100);
   }
@@ -143,7 +147,21 @@ public class EmployeeCostLookupTest {
 
   @Test
   public void should_return_empty_for_an_empty_lookup() {
-    assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost(EMP, "so", OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.STANDARD, DATE)).isEmpty();
+  }
+
+  /**
+   * A suborder-specific assignment the migration could not resolve matches no booking — and it must
+   * not stand in for the general assignment of the person either (#1205).
+   */
+  @Test
+  public void should_not_treat_an_unresolved_specific_assignment_as_the_general_one() {
+    var unresolved = assignment(EMP, "gone", "specific");
+    unresolved.setSuborderId(null);
+    var lookup = EmployeeCostLookup.of(List.of(unresolved), List.of(cost("specific", 200)));
+
+    assertThat(cents(lookup, EMP, "so")).isNull();
+    assertThat(cents(lookup, EMP, null)).isNull();
   }
 
   private static Integer cents(EmployeeCostLookup lookup, long employeeId, String suborderSign) {
@@ -151,7 +169,8 @@ public class EmployeeCostLookupTest {
   }
 
   private static Integer cents(EmployeeCostLookup lookup, long employeeId, String suborderSign, OrderType orderType) {
-    return lookup.findEffectiveCost(employeeId, suborderSign, orderType, DATE)
+    return lookup.findEffectiveCost(employeeId, suborderSign == null ? null : SUBORDER_IDS.get(suborderSign),
+        orderType, DATE)
         .map(EmployeeCost::getCostCentsPerHour)
         .orElse(null);
   }
@@ -161,6 +180,7 @@ public class EmployeeCostLookupTest {
     assignment.setEmployeeId(employeeId);
     assignment.setEmployeeSign("sign-" + employeeId);
     assignment.setSuborderSign(suborderSign);
+    assignment.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     assignment.setEmployeeCostName(costName);
     assignment.setValidFrom(LocalDate.of(2026, 1, 1));
     assignment.setValidUntil(LocalDate.of(2026, 12, 31));

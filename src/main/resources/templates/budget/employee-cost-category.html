@@ -152,7 +152,11 @@
                 <i class="icon ti ti-user-off m-0"></i>
               </span>
             </td>
-            <td th:text="${a.suborderSign} ?: '—'"></td>
+            <td>
+              <span th:text="${a.suborderSign} ?: '—'"></span>
+              <span th:if="${a.suborderUnresolved}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            </td>
             <td class="small text-muted">
               <span th:text="${#temporals.format(a.validFrom, 'dd.MM.yyyy')}"></span>
               –

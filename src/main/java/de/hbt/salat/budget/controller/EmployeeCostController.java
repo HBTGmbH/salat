@@ -253,7 +253,7 @@ public class EmployeeCostController {
         form.setId(assignment.getId());
         form.setEmployeeCostName(assignment.getEmployeeCostName());
         form.setEmployeeId(assignment.getEmployeeId());
-        form.setSuborderSign(assignment.getSuborderSign());
+        form.setSuborderId(assignment.getSuborderId());
         form.setValidFrom(assignment.getValidFrom());
         form.setValidUntil(openEnd(assignment.getValidUntil()));
         addAssignmentFormModel(model, form);
@@ -357,7 +357,10 @@ public class EmployeeCostController {
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
         model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
-        model.addAttribute("suborders", suborderService.getAllSelectableSuborders(form.getSuborderSign()));
+        model.addAttribute("unresolvedSuborderSign", unresolvedSuborderSignOf(form));
+        var kept = form.getSuborderId() == null ? null : suborderService.getSuborderById(form.getSuborderId());
+        model.addAttribute("suborders",
+            suborderService.getAllSelectableSuborders(kept == null ? null : kept.getCompleteOrderSign()));
         model.addAttribute("isEdit", !form.isNew());
     }
 
@@ -372,6 +375,19 @@ public class EmployeeCostController {
         }
         var assignment = employeeCostService.getAssignmentById(form.getId());
         return assignment.isEmployeeUnresolved() ? assignment.getEmployeeSign() : null;
+    }
+
+    /**
+     * The sign an assignment was stored with when the migration could not resolve its suborder
+     * (#1205), or {@code null} — named in the empty choice of the select. Left empty, the assignment
+     * keeps it rather than turning into the general one of the person.
+     */
+    private String unresolvedSuborderSignOf(EmployeeCostAssignmentForm form) {
+        if (form.isNew() || form.getSuborderId() != null) {
+            return null;
+        }
+        var assignment = employeeCostService.getAssignmentById(form.getId());
+        return assignment.isSuborderUnresolved() ? assignment.getSuborderSign() : null;
     }
 
     private List<String> validateAssignment(EmployeeCostAssignmentForm form) {
@@ -394,7 +410,7 @@ public class EmployeeCostController {
         return new EmployeeCostAssignmentData(
             trimToNull(form.getEmployeeCostName()),
             form.getEmployeeId(),
-            trimToNull(form.getSuborderSign()),
+            form.getSuborderId(),
             form.getValidFrom(),
             form.getValidUntil()
         );

@@ -41,29 +41,35 @@ public final class OrderBudgetBinding {
      * no suborders yet, and would also let the hidden ones — which this list leaves out, as every
      * other suborder list does — decide a commercial condition.
      *
-     * @param suborderSigns the complete order signs of the order's suborders
+     * <p>The rate names its order by sign and its suborders by a pattern on the complete order sign
+     * — that stays so (#957). The plan is compared by id (#1205): each suborder brings its current
+     * complete order sign for the pattern and its position for the plan.
+     *
+     * @param customerorderId the customer order of the rate, {@code null} where its sign names none
+     * @param suborders       the order's suborders, each with its complete order sign and position
      */
-    public static boolean scopeMeetsPattern(OrderBudget plan, String customerorderSign,
-                                            String suborderPattern, Collection<String> suborderSigns) {
-        if (!sameOrder(plan, customerorderSign)) {
+    public static boolean scopeMeetsPattern(OrderBudget plan, Long customerorderId,
+                                            String suborderPattern, Collection<PositionedSuborder> suborders) {
+        if (!sameOrder(plan, customerorderId)) {
             return false;
         }
-        if (isBlank(suborderPattern) || BudgetScope.isOrderWide(plan.getSuborderSign())) {
+        if (isBlank(suborderPattern) || plan.isOrderWide()) {
             return true;
         }
         var pattern = SqlLikePattern.startingWith(suborderPattern);
-        return suborderSigns.stream().anyMatch(sign ->
-            pattern.matches(sign + "/") && BudgetScope.covers(plan, customerorderSign, sign));
+        return suborders.stream().anyMatch(suborder ->
+            pattern.matches(suborder.completeOrderSign() + "/") && BudgetScope.covers(plan, suborder.position()));
     }
+
+    /** A suborder as {@link #scopeMeetsPattern} needs it: the sign the pattern reads, the position the plan reads. */
+    public record PositionedSuborder(String completeOrderSign, OrderPosition position) {}
 
     /**
      * Whether the plan can meet a record naming one concrete suborder — a flat rate, which spreads
      * over nothing and therefore needs no pattern (→ {@link OrderFlatRate}).
      */
-    public static boolean scopeMeetsSuborder(OrderBudget plan, String customerorderSign,
-                                             String suborderSign) {
-        return sameOrder(plan, customerorderSign)
-            && BudgetScope.covers(plan, customerorderSign, suborderSign);
+    public static boolean scopeMeetsSuborder(OrderBudget plan, OrderPosition position) {
+        return BudgetScope.covers(plan, position);
     }
 
     /**
@@ -74,8 +80,8 @@ public final class OrderBudgetBinding {
         return !plan.getValidFrom().isAfter(until) && !plan.getValidUntil().isBefore(from);
     }
 
-    private static boolean sameOrder(OrderBudget plan, String customerorderSign) {
-        return plan.getCustomerorderSign().equals(customerorderSign);
+    private static boolean sameOrder(OrderBudget plan, Long customerorderId) {
+        return !plan.isUnresolved() && plan.getCustomerorderId().equals(customerorderId);
     }
 
     private static boolean isBlank(String value) {

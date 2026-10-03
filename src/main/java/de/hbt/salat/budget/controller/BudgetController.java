@@ -2,13 +2,13 @@ package de.hbt.salat.budget.controller;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -96,8 +96,9 @@ public class BudgetController {
         model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
-        // The rows name their order and suborder by sign; description and customer hang off those.
-        // Both maps are built once per page instead of one lookup per row.
+        // The rows show their order and suborder by the sign the record has today (#1205);
+        // description and customer hang off those. Both maps are built once per page instead of one
+        // lookup per row.
         model.addAttribute("orders", ordersOf(budgets));
         model.addAttribute("suborders", subordersOf(budgets));
         model.addAttribute("employeesByBudget", employeeSignsOf(budgets));
@@ -129,26 +130,22 @@ public class BudgetController {
             (first, second) -> first));
     }
 
-    private Map<String, Customerorder> ordersOf(List<OrderBudget> budgets) {
-        var signs = budgets.stream().map(OrderBudget::getCustomerorderSign).distinct().toList();
-        return customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (a, b) -> a));
+    private Map<Long, Customerorder> ordersOf(List<OrderBudget> budgets) {
+        var ids = budgets.stream().map(OrderBudget::getCustomerorderId).filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return customerorderService.getCustomerordersByIds(ids).stream()
+            .collect(toMap(Customerorder::getId, identity(), (a, b) -> a));
     }
 
-    private Map<String, Suborder> subordersOf(List<OrderBudget> budgets) {
-        var signs = budgets.stream()
-            .map(OrderBudget::getSuborderSign)
-            .filter(sign -> sign != null && !sign.isBlank())
-            .distinct()
-            .toList();
-        var orderSigns = budgets.stream()
-            .filter(b -> b.getSuborderSign() != null && !b.getSuborderSign().isBlank())
-            .map(OrderBudget::getCustomerorderSign)
-            .distinct()
-            .toList();
-        return suborderService.getSubordersByCustomerorderSigns(orderSigns).stream()
-            .filter(suborder -> signs.contains(suborder.getCompleteOrderSign()))
-            .collect(toMap(Suborder::getCompleteOrderSign, identity(), (a, b) -> a));
+    private Map<Long, Suborder> subordersOf(List<OrderBudget> budgets) {
+        var ids = budgets.stream().map(OrderBudget::getSuborderId).filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return suborderService.getSubordersByIds(ids).stream()
+            .collect(toMap(Suborder::getId, identity(), (a, b) -> a));
     }
 
     @Authorized(requiresManager = true)
@@ -166,8 +163,11 @@ public class BudgetController {
         var form = new OrderBudgetForm();
         form.setId(budget.getId());
         form.setName(budget.getName());
-        form.setCustomerorderSign(budget.getCustomerorderSign());
-        form.setSuborderSign(budget.getSuborderSign());
+        form.setCustomerorderId(budget.getCustomerorderId());
+        form.setSuborderId(budget.getSuborderId());
+        if (!budget.isOrderWide() && budget.getSuborderId() == null) {
+            form.setUnresolvedSuborderSign(budget.getSuborderSign());
+        }
         form.setValidFrom(budget.getValidFrom());
         form.setValidUntil(budget.getValidUntil());
         form.setActive(budget.getActive());
@@ -187,7 +187,7 @@ public class BudgetController {
             addFormModel(model, form, !form.isNew());
             return "budget/budget-form";
         }
-        if (form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()) {
+        if (form.getCustomerorderId() == null) {
             model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.order.required")));
             addFormModel(model, form, !form.isNew());
             return "budget/budget-form";
@@ -205,8 +205,8 @@ public class BudgetController {
 
         var data = new OrderBudgetData(
             form.getName(),
-            form.getCustomerorderSign(),
-            trimToNull(form.getSuborderSign()),
+            form.getCustomerorderId(),
+            form.getSuborderId(),
             form.getValidFrom(),
             form.getValidUntil(),
             Boolean.TRUE.equals(form.getActive()),
@@ -307,8 +307,9 @@ public class BudgetController {
         model.addAttribute("assignedTruncated", assigned.truncated());
         // Only the other active plans of the same order are possible targets: an inactive plan
         // cannot hold bookings, and a plan of another order can never cover them.
-        model.addAttribute("moveTargets",
-            orderBudgetService.getActiveByCustomerorderSign(budget.getCustomerorderSign()).stream()
+        model.addAttribute("moveTargets", budget.getCustomerorderId() == null
+            ? List.of()
+            : orderBudgetService.getActiveByCustomerorderId(budget.getCustomerorderId()).stream()
                 .filter(other -> !other.getId().equals(budget.getId()))
                 .toList());
     }
@@ -418,7 +419,7 @@ public class BudgetController {
     @PostMapping("/suborders")
     public String suborders(@ModelAttribute("budgetForm") OrderBudgetForm form, Model model,
                             HttpServletRequest request) {
-        form.setSuborderSign(null); // the previous pick belongs to the order that was just replaced
+        form.setSuborderId(null); // the previous pick belongs to the order that was just replaced
         addFormModel(model, form, !form.isNew());
         model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
         model.addAttribute("subordersChanged", true);
@@ -428,18 +429,18 @@ public class BudgetController {
     private void addFormModel(Model model, OrderBudgetForm form, boolean isEdit) {
         model.addAttribute("budgetForm", form);
         model.addAttribute("isEdit", isEdit);
+        var customerorder = form.getCustomerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(form.getCustomerorderId());
         model.addAttribute("customerorders",
-            customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
-        model.addAttribute("suborders",
-            subordersOf(form.getCustomerorderSign(), form.getSuborderSign()));
+            customerorderService.getSelectableCustomerorders(customerorder == null ? null : customerorder.getSign()));
+        model.addAttribute("suborders", subordersOf(customerorder, form.getSuborderId()));
         model.addAttribute("progressModes", ProgressMode.values());
         // The level in force for the selected order: overlaps within a level are fine, mixing two
         // levels is what gets rejected (#914, #1004). Since the list offers the whole suborder tree,
         // this is the only place the person sees which level the next plan has to match.
         model.addAttribute("currentLevel",
-            form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()
-                ? null
-                : orderBudgetService.currentLevel(form.getCustomerorderSign()));
+            customerorder == null ? null : orderBudgetService.currentLevel(customerorder.getId()));
     }
 
     /**
@@ -447,13 +448,9 @@ public class BudgetController {
      * selected. The suborder the budget already references stays in the list even once it is hidden,
      * so that editing does not drop it.
      */
-    private List<Suborder> subordersOf(String customerorderSign, String keepSuborderSign) {
-        if (trimToNull(customerorderSign) == null) {
-            return List.of();
-        }
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+    private List<Suborder> subordersOf(Customerorder customerorder, Long keepSuborderId) {
         return customerorder == null ? List.of()
-            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
+            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderId);
     }
 
 }

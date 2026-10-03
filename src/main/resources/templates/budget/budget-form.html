@@ -39,16 +39,16 @@
         <div class="col-md-6">
           <!--/* Plain select rather than salat:select, which does not forward the hx-* attributes. */-->
           <div class="mb-3">
-            <label class="form-label" for="customerorderSign"
+            <label class="form-label" for="customerorderId"
                    th:text="#{main.budget.field.customerorderSign}">Auftrag</label>
-            <select class="form-select tomselect" th:field="*{customerorderSign}"
+            <select class="form-select tomselect" th:field="*{customerorderId}"
                     th:hx-post="@{/budget/suborders}"
                     hx-swap="none"
                     hx-include="closest form"
                     hx-trigger="change">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="co : ${customerorders}"
-                      th:value="${co.sign}"
+                      th:value="${co.id}"
                       th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
                       th:attr="data-subtext=${subtext}"
                       th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
@@ -56,7 +56,15 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, *{suborderSign}, null)}"></div>
+          <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, *{suborderId}, null)}"></div>
+          <!--/* A suborder the migration could not resolve (#1205): the plan covers nothing until one
+                 is chosen, and keeps the stored sign while none is. */-->
+          <div th:if="*{unresolvedSuborderSign != null}" class="mb-3">
+            <input type="hidden" th:field="*{unresolvedSuborderSign}" />
+            <span class="badge bg-warning-lt"
+                  th:text="*{unresolvedSuborderSign} + ' – ' + #{main.budget.unresolved.text}">ORDER/01 – nicht zugeordnet</span>
+            <div class="form-text" th:text="#{main.budget.unresolved.suborder.help}">Bitte den Unterauftrag wählen.</div>
+          </div>
         </div>
       </div>
       <div class="row">
@@ -83,7 +91,7 @@
 
   <!-- HTMX OOB updates -->
   <div th:if="${htmxRequest}">
-    <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, ${budgetForm.suborderSign}, ${subordersChanged})}"></div>
+    <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, ${budgetForm.suborderId}, ${subordersChanged})}"></div>
   </div>
 
 </main>

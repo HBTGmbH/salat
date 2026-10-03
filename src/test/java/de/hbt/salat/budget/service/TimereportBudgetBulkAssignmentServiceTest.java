@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -52,6 +53,10 @@ public class TimereportBudgetBulkAssignmentServiceTest {
   private static final Duration HOUR = Duration.ofHours(1);
 
   private final List<OrderBudget> plans = new ArrayList<>();
+
+  /** The orders and suborders by sign — plans and bookings refer to them by id (#1205). */
+  private static final Map<String, Long> ORDER_IDS = Map.of("CO", 1L);
+  private static final Map<String, Long> SUBORDER_IDS = Map.of("CO/01", 1L, "CO/01/02", 2L, "CO/02", 3L);
   private final List<TimereportBudgetAssignment> stored = new ArrayList<>();
   private final List<TimereportDTO> reports = new ArrayList<>();
 
@@ -71,9 +76,9 @@ public class TimereportBudgetBulkAssignmentServiceTest {
     authorizedUser = mock(AuthorizedUser.class);
     when(authorizedUser.isManager()).thenReturn(true);
 
-    when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(invocation ->
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(any(), any())).thenAnswer(invocation ->
         plans.stream()
-            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(plan -> plan.getCustomerorderId().equals(invocation.getArgument(0)))
             .filter(plan -> plan.getActive().equals(invocation.getArgument(1)))
             .toList());
 
@@ -102,8 +107,9 @@ public class TimereportBudgetBulkAssignmentServiceTest {
         });
 
     // CO/01 with CO/01/02 below it, plus the sibling CO/02.
-    when(suborderService.getSuborderById(1L)).thenReturn(firstLevel("CO", "01"));
-    when(suborderService.getSuborderById(2L)).thenReturn(below(firstLevel("CO", "01"), "02"));
+    var co01 = firstLevel("CO", "01");
+    when(suborderService.getSuborderById(1L)).thenReturn(co01);
+    when(suborderService.getSuborderById(2L)).thenReturn(below(co01, "02"));
     when(suborderService.getSuborderById(3L)).thenReturn(firstLevel("CO", "02"));
 
     // The real resolver: scope and validity must be judged by the production rule.
@@ -452,7 +458,9 @@ public class TimereportBudgetBulkAssignmentServiceTest {
                          LocalDate validFrom, LocalDate validUntil, boolean active) {
     var plan = new OrderBudget();
     plan.setName("plan-" + id);
+    plan.setCustomerorderId(ORDER_IDS.get(customerorderSign));
     plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
@@ -471,6 +479,7 @@ public class TimereportBudgetBulkAssignmentServiceTest {
                            long suborderId, LocalDate day, Duration duration, long employeeId) {
     reports.add(TimereportDTO.builder()
         .id(id)
+        .customerorderId(ORDER_IDS.get(customerorderSign))
         .customerorderSign(customerorderSign)
         .completeOrderSign(completeOrderSign)
         .suborderId(suborderId)
@@ -501,10 +510,12 @@ public class TimereportBudgetBulkAssignmentServiceTest {
 
   private static Suborder firstLevel(String orderSign, String sign) {
     var order = new Customerorder();
+    setId(order, ORDER_IDS.get(orderSign));
     order.setSign(orderSign);
     var suborder = new Suborder();
     suborder.setSign(sign);
     suborder.setCustomerorder(order);
+    setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
 
@@ -513,6 +524,7 @@ public class TimereportBudgetBulkAssignmentServiceTest {
     suborder.setSign(sign);
     suborder.setCustomerorder(parent.getCustomerorder());
     suborder.setParentorder(parent);
+    setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
 

@@ -45,34 +45,6 @@ public class SuborderServiceTest {
         customerorderService);
   }
 
-  @Test
-  public void should_accept_the_complete_order_sign_of_a_nested_suborder() {
-    givenOrderWithNestedSuborder();
-
-    assertThat(suborderService.existsByCompleteOrderSign("co", "co/01/02")).isTrue();
-  }
-
-  @Test
-  public void should_reject_the_bare_suborder_sign() {
-    givenOrderWithNestedSuborder();
-
-    assertThat(suborderService.existsByCompleteOrderSign("co", "02")).isFalse();
-  }
-
-  @Test
-  public void should_reject_a_sign_that_belongs_to_another_customer_order() {
-    givenOrderWithNestedSuborder();
-
-    assertThat(suborderService.existsByCompleteOrderSign("co", "other/01/02")).isFalse();
-  }
-
-  @Test
-  public void should_reject_when_the_customer_order_does_not_exist() {
-    when(customerorderService.getCustomerorderBySign("co")).thenReturn(null);
-
-    assertThat(suborderService.existsByCompleteOrderSign("co", "co/01/02")).isFalse();
-  }
-
   /**
    * Pricing patterns are matched, not compared (#891), so the check that a value refers to a real
    * suborder has to apply the same rule — including the trailing slash it binds against.

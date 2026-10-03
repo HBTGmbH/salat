@@ -13,9 +13,9 @@ public record BudgetLevel(BudgetMode mode, int level) {
     /** No active plan is in force — the order is not budgeted at this point in time. */
     public static final BudgetLevel NONE = new BudgetLevel(BudgetMode.NONE, 0);
 
-    /** The level a plan with this scope puts the order on. */
-    public static BudgetLevel of(String suborderSign) {
-        var level = BudgetScope.levelOf(suborderSign);
+    /** The level a plan sitting at this position puts the order on. */
+    public static BudgetLevel of(OrderPosition position) {
+        var level = position.level();
         return new BudgetLevel(level == 0 ? BudgetMode.ORDER_WIDE : BudgetMode.PER_SUBORDER, level);
     }
 

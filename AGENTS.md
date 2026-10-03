@@ -759,6 +759,13 @@ Entities are divided into two categories (→ ADR-0011):
   correction, an anonymization — and nothing makes it unique. Where a sign column still stands next
   to the id because views, ETL definitions or reports join on it, the application writes it from
   the person and never reads it to resolve anything.
+- **The same holds for customer orders and suborders** (#1205): a record refers to them by
+  `customerorder_id` / `suborder_id` with a foreign key, never by sign — signs are renamed, and a
+  suborder can be moved to another parent. Where the sign column stays as a mirror for readers outside
+  the application, `OrderSignMirrorListener` keeps it in step. A subtree is decided by the path of
+  suborder ids (`OrderPosition`), not by a sign prefix. The exception is a `LIKE` pattern over
+  complete order signs (`OrderPricing.suborderSign`, → `OrderPricingLookup`): that is a pattern,
+  not a reference.
 
 ### Criteria-Abfragen über den EntityManager (#1092)
 

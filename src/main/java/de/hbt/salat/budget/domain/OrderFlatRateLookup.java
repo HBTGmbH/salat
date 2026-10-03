@@ -16,31 +16,38 @@ import java.util.Map;
  */
 public final class OrderFlatRateLookup {
 
-    private final Map<String, List<OrderFlatRate>> byCustomerorderSign;
+    private final Map<Long, List<OrderFlatRate>> byCustomerorderId;
 
-    private OrderFlatRateLookup(Map<String, List<OrderFlatRate>> byCustomerorderSign) {
-        this.byCustomerorderSign = byCustomerorderSign;
+    private OrderFlatRateLookup(Map<Long, List<OrderFlatRate>> byCustomerorderId) {
+        this.byCustomerorderId = byCustomerorderId;
     }
 
+    /**
+     * Keyed by the id of the customer order (#1205). A flat rate whose order the migration could not
+     * resolve belongs to no order and falls due nowhere — it is marked in its list instead.
+     */
     public static OrderFlatRateLookup of(Collection<OrderFlatRate> flatRates) {
-        Map<String, List<OrderFlatRate>> byCustomerorderSign = new HashMap<>();
+        Map<Long, List<OrderFlatRate>> byCustomerorderId = new HashMap<>();
         for (var flatRate : flatRates) {
-            byCustomerorderSign
-                .computeIfAbsent(flatRate.getCustomerorderSign(), sign -> new ArrayList<>())
+            if (flatRate.getCustomerorderId() == null) {
+                continue;
+            }
+            byCustomerorderId
+                .computeIfAbsent(flatRate.getCustomerorderId(), id -> new ArrayList<>())
                 .add(flatRate);
         }
-        return new OrderFlatRateLookup(byCustomerorderSign);
+        return new OrderFlatRateLookup(byCustomerorderId);
     }
 
     /**
      * The amounts of that customer order falling due between the two days, both boundaries
      * included, in due date order.
      */
-    public List<FlatRateDueAmount> dueAmounts(String customerorderSign, LocalDate from, LocalDate until) {
+    public List<FlatRateDueAmount> dueAmounts(long customerorderId, LocalDate from, LocalDate until) {
         if (from.isAfter(until)) {
             return List.of();
         }
-        return byCustomerorderSign.getOrDefault(customerorderSign, List.of()).stream()
+        return byCustomerorderId.getOrDefault(customerorderId, List.of()).stream()
             .flatMap(flatRate -> flatRate.dueAmountsWithin(from, until).stream())
             .sorted(Comparator.comparing(FlatRateDueAmount::due))
             .toList();

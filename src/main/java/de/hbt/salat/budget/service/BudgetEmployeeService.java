@@ -36,6 +36,7 @@ import de.hbt.salat.budget.domain.CostCategoryRate;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.persistence.TimereportBudgetAssignmentRepository;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -68,6 +69,7 @@ public class BudgetEmployeeService {
     private final SuborderService suborderService;
     private final EmployeeCostService employeeCostService;
     private final OrderPricingService orderPricingService;
+    private final CustomerorderService customerorderService;
     private final AuthorizedUser authorizedUser;
 
     /**
@@ -98,10 +100,16 @@ public class BudgetEmployeeService {
 
         // Every booking this resolves is assigned to this plan — the query reads them by plan id —
         // so the plan is what decides whether a plan-bound rate applies (#1065).
-        var lookup = AppliedRateLookup.of(budget.getCustomerorderSign(), budget.getId(),
+        // The rates name their order by sign (#957), so they are matched with the sign the plan's
+        // order has today — read from the order by id (#1205), not from the plan's sign column.
+        var customerorder = budget.getCustomerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(budget.getCustomerorderId());
+        var customerorderSign = customerorder == null ? budget.getCustomerorderSign() : customerorder.getSign();
+        var lookup = AppliedRateLookup.of(customerorderSign, budget.getId(),
             subordersOf(days, rendered),
             includeCosts ? employeeCostService.lookup() : null,
-            orderPricingService.lookupFor(List.of(budget.getCustomerorderSign())));
+            orderPricingService.lookupFor(List.of(customerorderSign)));
 
         return new AppliedRates(
             BudgetEmployees.of(rowsOf(days, lookup), includeCosts),

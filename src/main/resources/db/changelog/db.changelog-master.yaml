@@ -3669,3 +3669,117 @@ databaseChangeLog:
                                                  AND TRIM(o.v) <> '') p) x) e
                        GROUP BY e.rule_id) m ON m.rule_id = r.id
                  SET r.object_id = m.object_ids;
+  - changeSet:
+      id: 98
+      author: kr
+      comment: Budgetplan, Pauschale und Kostenzuordnung verweisen ueber die id auf Auftrag und Unterauftrag (#1205)
+      # Auftrags- und Unterauftragskuerzel lassen sich aendern, und ein Unterauftrag laesst sich
+      # umhaengen. Ein Plan, eine Pauschale oder eine Kostenzuordnung, die ueber das Kuerzel verwies,
+      # zeigte danach ins Leere: der Plan verschwand aus dem Controlling, die Kostenzuordnung griff
+      # nicht mehr. Ab hier stehen customerorder_id und suborder_id mit Fremdschluessel daneben.
+      #
+      # Neben den Kuerzeln, nicht an ihrer Stelle (der Weg aus #968): Reports lesen order_budget,
+      # Views, ETL-Definitionen und Reports employee_cost_employee. Die Anwendung loest ab hier ueber
+      # die id auf und schreibt die Kuerzel als Spiegel des referenzierten Datensatzes; sie folgen
+      # einer Umbenennung (OrderSignMirrorListener).
+      #
+      # Uebernommen wird nur eine eindeutige Zuordnung, verglichen wird binaer: die View suborder_fqs
+      # traegt eine Kollation ohne Gross-/Kleinschreibung (#1212). Bleibt die id leer, obwohl ein
+      # Kuerzel dasteht, deckt der Datensatz nichts ab und ist in seiner Liste markiert. Ein
+      # unaufgeloester Unterauftrag wird dabei ausdruecklich nicht auftragsweit.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_budget
+                columnName: customerorder_id
+      changes:
+        - addColumn:
+            tableName: order_budget
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+              - column:
+                  name: suborder_id
+                  type: bigint
+        - addColumn:
+            tableName: order_flat_rate
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+              - column:
+                  name: suborder_id
+                  type: bigint
+        - addColumn:
+            tableName: employee_cost_employee
+            columns:
+              - column:
+                  name: suborder_id
+                  type: bigint
+        - sql:
+            sql: |-
+              UPDATE order_budget b
+                 SET b.customerorder_id = (SELECT MIN(c.id) FROM customerorder c
+                                            WHERE BINARY c.sign = BINARY b.customerorder_sign
+                                           HAVING COUNT(*) = 1);
+              UPDATE order_flat_rate b
+                 SET b.customerorder_id = (SELECT MIN(c.id) FROM customerorder c
+                                            WHERE BINARY c.sign = BINARY b.customerorder_sign
+                                           HAVING COUNT(*) = 1);
+              UPDATE order_budget b
+                 SET b.suborder_id = (SELECT MIN(f.suborder_id) FROM suborder_fqs f
+                                       WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(b.suborder_sign, '/')
+                                      HAVING COUNT(*) = 1)
+               WHERE b.suborder_sign IS NOT NULL AND b.suborder_sign <> '';
+              UPDATE order_flat_rate b
+                 SET b.suborder_id = (SELECT MIN(f.suborder_id) FROM suborder_fqs f
+                                       WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(b.suborder_sign, '/')
+                                      HAVING COUNT(*) = 1)
+               WHERE b.suborder_sign IS NOT NULL AND b.suborder_sign <> '';
+              UPDATE employee_cost_employee a
+                 SET a.suborder_id = (SELECT MIN(f.suborder_id) FROM suborder_fqs f
+                                       WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(a.suborder_sign, '/')
+                                      HAVING COUNT(*) = 1)
+               WHERE a.suborder_sign IS NOT NULL AND a.suborder_sign <> '';
+              UPDATE order_budget b
+                 SET b.suborder_id = NULL
+               WHERE b.suborder_id IS NOT NULL
+                 AND NOT EXISTS (SELECT 1 FROM suborder s
+                                  WHERE s.id = b.suborder_id AND s.customerorder_id = b.customerorder_id);
+              UPDATE order_flat_rate b
+                 SET b.suborder_id = NULL
+               WHERE b.suborder_id IS NOT NULL
+                 AND NOT EXISTS (SELECT 1 FROM suborder s
+                                  WHERE s.id = b.suborder_id AND s.customerorder_id = b.customerorder_id)
+        - addForeignKeyConstraint:
+            baseTableName: order_budget
+            baseColumnNames: customerorder_id
+            constraintName: fk_order_budget_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: order_budget
+            baseColumnNames: suborder_id
+            constraintName: fk_order_budget_suborder
+            referencedTableName: suborder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: order_flat_rate
+            baseColumnNames: customerorder_id
+            constraintName: fk_order_flat_rate_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: order_flat_rate
+            baseColumnNames: suborder_id
+            constraintName: fk_order_flat_rate_suborder
+            referencedTableName: suborder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: employee_cost_employee
+            baseColumnNames: suborder_id
+            constraintName: fk_employee_cost_employee_suborder
+            referencedTableName: suborder
+            referencedColumnNames: id

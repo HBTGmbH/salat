@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -50,6 +51,11 @@ public class TimereportBudgetBackfillServiceTest {
   private static final Duration HOUR = Duration.ofHours(1);
 
   private final List<OrderBudget> plans = new ArrayList<>();
+
+  /** The orders and suborders by sign — plans and bookings refer to them by id (#1205). */
+  private static final Map<String, Long> ORDER_IDS = Map.of("CO", 1L, "OTHER", 2L);
+  private static final Map<String, Long> SUBORDER_IDS = Map.of(
+      "CO/01", 1L, "CO/01/02", 2L, "CO/02", 3L, "CO/01/02/03", 4L, "OTHER/01", 5L);
   private final List<TimereportBudgetAssignment> stored = new ArrayList<>();
   private final List<TimereportDTO> reports = new ArrayList<>();
 
@@ -67,18 +73,18 @@ public class TimereportBudgetBackfillServiceTest {
     authorizedUser = mock(AuthorizedUser.class);
     when(authorizedUser.isManager()).thenReturn(true);
 
-    when(orderBudgetRepository.findActiveCustomerorderSigns()).thenAnswer(invocation ->
+    when(orderBudgetRepository.findActiveCustomerorderIds()).thenAnswer(invocation ->
         plans.stream().filter(OrderBudget::getActive)
-            .map(OrderBudget::getCustomerorderSign).distinct().sorted().toList());
-    when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(invocation ->
+            .map(OrderBudget::getCustomerorderId).distinct().sorted().toList());
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(any(), any())).thenAnswer(invocation ->
         plans.stream()
-            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(plan -> plan.getCustomerorderId().equals(invocation.getArgument(0)))
             .filter(plan -> plan.getActive().equals(invocation.getArgument(1)))
             .toList());
 
-    when(assignmentRepository.findTimereportIdsByCustomerorderSign(any())).thenAnswer(invocation ->
+    when(assignmentRepository.findTimereportIdsByCustomerorderId(anyLong())).thenAnswer(invocation ->
         stored.stream()
-            .filter(a -> a.getOrderBudget().getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(a -> a.getOrderBudget().getCustomerorderId().equals(invocation.getArgument(0)))
             .map(TimereportBudgetAssignment::getTimereportId)
             .toList());
     when(assignmentRepository.saveAll(any())).thenAnswer(invocation -> {
@@ -88,8 +94,12 @@ public class TimereportBudgetBackfillServiceTest {
     });
 
     // Both known orders; the sign carries the id, so the report fixture can stay simple.
-    when(customerorderService.getCustomerorderBySign("CO")).thenReturn(customerorder("CO", 1L));
-    when(customerorderService.getCustomerorderBySign("OTHER")).thenReturn(customerorder("OTHER", 2L));
+    var co = customerorder("CO", 1L);
+    var other = customerorder("OTHER", 2L);
+    when(customerorderService.getCustomerorderBySign("CO")).thenReturn(co);
+    when(customerorderService.getCustomerorderBySign("OTHER")).thenReturn(other);
+    when(customerorderService.getCustomerorderById(1L)).thenReturn(co);
+    when(customerorderService.getCustomerorderById(2L)).thenReturn(other);
     when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
         .thenAnswer(invocation -> {
           LocalDate from = invocation.getArgument(0);
@@ -103,10 +113,12 @@ public class TimereportBudgetBackfillServiceTest {
         });
 
     // CO/01 with CO/01/02 and CO/01/02/03 below it, plus the sibling CO/02.
-    when(suborderService.getSuborderById(1L)).thenReturn(firstLevel("CO", "01"));
-    when(suborderService.getSuborderById(2L)).thenReturn(below(firstLevel("CO", "01"), "02"));
+    var co01 = firstLevel("CO", "01");
+    var co0102 = below(co01, "02");
+    when(suborderService.getSuborderById(1L)).thenReturn(co01);
+    when(suborderService.getSuborderById(2L)).thenReturn(co0102);
     when(suborderService.getSuborderById(3L)).thenReturn(firstLevel("CO", "02"));
-    when(suborderService.getSuborderById(4L)).thenReturn(below(below(firstLevel("CO", "01"), "02"), "03"));
+    when(suborderService.getSuborderById(4L)).thenReturn(below(co0102, "03"));
     when(suborderService.getSuborderById(5L)).thenReturn(firstLevel("OTHER", "01"));
 
     // The real resolver: the rule that decides the scope must be the production one (#931).
@@ -314,7 +326,9 @@ public class TimereportBudgetBackfillServiceTest {
                          LocalDate validFrom, LocalDate validUntil, boolean active) {
     var plan = new OrderBudget();
     plan.setName("plan-" + id);
+    plan.setCustomerorderId(ORDER_IDS.get(customerorderSign));
     plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
@@ -327,6 +341,7 @@ public class TimereportBudgetBackfillServiceTest {
                            LocalDate day, Duration duration) {
     reports.add(TimereportDTO.builder()
         .id(id)
+        .customerorderId(ORDER_IDS.get(customerorderSign))
         .customerorderSign(customerorderSign)
         .suborderId(suborderId)
         .completeOrderSign(customerorderSign + "/xx")
@@ -345,10 +360,12 @@ public class TimereportBudgetBackfillServiceTest {
 
   private static Suborder firstLevel(String orderSign, String sign) {
     var order = new Customerorder();
+    setId(order, ORDER_IDS.get(orderSign));
     order.setSign(orderSign);
     var suborder = new Suborder();
     suborder.setSign(sign);
     suborder.setCustomerorder(order);
+    setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
 
@@ -357,6 +374,7 @@ public class TimereportBudgetBackfillServiceTest {
     suborder.setSign(sign);
     suborder.setCustomerorder(parent.getCustomerorder());
     suborder.setParentorder(parent);
+    setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
 

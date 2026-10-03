@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import de.hbt.salat.budget.domain.OrderFlatRateInstalment;
 import de.hbt.salat.budget.domain.OrderFlatRateInstalmentData;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
 import de.hbt.salat.budget.domain.OrderFlatRateRow;
+import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.SelectablePlans;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.OrderFlatRateRepository;
@@ -33,6 +35,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -42,8 +45,8 @@ import de.hbt.salat.order.service.SuborderService;
  *
  * <p>There is no overlap rule, unlike {@link OrderPricingService}: several definitions on one order
  * add up on purpose, so a monthly retainer and the instalments of the same order are meant to sit on
- * top of each other. What is checked is that the record can resolve at all — an unknown order or
- * suborder sign would silently earn nothing (#958).
+ * top of each other. What is checked is that the record can resolve at all — order and suborder
+ * are referenced by id (#1205), and a suborder outside the order would silently earn nothing.
  */
 @Service
 @Transactional
@@ -56,6 +59,7 @@ public class OrderFlatRateService {
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
     private final BudgetAuthorization budgetAuthorization;
+    private final OrderPositions orderPositions;
 
     @Transactional(readOnly = true)
     public List<OrderFlatRate> getAll() {
@@ -76,13 +80,14 @@ public class OrderFlatRateService {
     public List<OrderFlatRateRow> getRows(String customerorderSign, boolean showInactive,
                                           boolean showInactiveOrders) {
         var sign = trimToNull(customerorderSign);
-        var flatRates = sign == null ? getAll() : getByCustomerorderSign(sign);
-        var ordersBySign = ordersOf(flatRates);
+        var flatRates = sign == null ? getAll() : byCustomerorderSign(sign);
+        var ordersById = ordersOf(flatRates);
         var planNames = planNamesOf(flatRates);
         return flatRates.stream()
             .filter(flatRate -> showInactive || flatRate.getCurrentlyValid())
             // Most flat rates name no plan at all, and an immutable map refuses a null key outright.
-            .map(flatRate -> new OrderFlatRateRow(flatRate, ordersBySign.get(flatRate.getCustomerorderSign()),
+            .map(flatRate -> new OrderFlatRateRow(flatRate,
+                flatRate.getCustomerorderId() == null ? null : ordersById.get(flatRate.getCustomerorderId()),
                 flatRate.dueAmountsWithin(flatRate.getValidFrom(), flatRate.getValidUntil()),
                 flatRate.getOrderBudgetId() == null ? null : planNames.get(flatRate.getOrderBudgetId())))
             .filter(row -> showInactiveOrders || orderStillValid(row))
@@ -117,30 +122,34 @@ public class OrderFlatRateService {
      * @param keepPlanId what the form currently holds, or {@code null} on a fresh create form
      */
     @Transactional(readOnly = true)
-    public SelectablePlans getSelectablePlans(String customerorderSign, String suborderSign,
+    public SelectablePlans getSelectablePlans(Long customerorderId, Long suborderId,
                                               LocalDate validFrom, LocalDate validUntil,
                                               Long keepPlanId) {
-        var sign = trimToNull(customerorderSign);
-        if (sign == null) {
+        if (customerorderId == null) {
             return SelectablePlans.none();
         }
-        var authorized = orderBudgetRepository.findByCustomerorderSign(sign).stream()
+        var authorized = orderBudgetRepository.findByCustomerorderId(customerorderId).stream()
             .filter(budgetAuthorization::isAuthorized)
             .toList();
+        var position = orderPositions.of(customerorderId, suborderId).orElse(null);
         var periodKnown = validFrom != null && validUntil != null;
         var fitting = authorized.stream()
             .filter(plan -> TRUE.equals(plan.getActive()))
-            .filter(plan -> OrderBudgetBinding.scopeMeetsSuborder(plan, sign, trimToNull(suborderSign)))
+            .filter(plan -> OrderBudgetBinding.scopeMeetsSuborder(plan, position))
             .filter(plan -> !periodKnown || OrderBudgetBinding.periodsOverlap(plan, validFrom, validUntil))
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
         return SelectablePlans.of(fitting, authorized, keepPlanId);
     }
 
-    private Map<String, Customerorder> ordersOf(List<OrderFlatRate> flatRates) {
-        var signs = flatRates.stream().map(OrderFlatRate::getCustomerorderSign).distinct().toList();
-        return customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
+    private Map<Long, Customerorder> ordersOf(List<OrderFlatRate> flatRates) {
+        var ids = flatRates.stream().map(OrderFlatRate::getCustomerorderId).filter(Objects::nonNull)
+            .distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return customerorderService.getCustomerordersByIds(ids).stream()
+            .collect(toMap(Customerorder::getId, identity(), (first, second) -> first));
     }
 
     /**
@@ -164,9 +173,18 @@ public class OrderFlatRateService {
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_FLAT_RATE_NOT_FOUND, id));
     }
 
+    /** The flat rates of the order the filter names, read by the id behind the sign (#1205). */
+    private List<OrderFlatRate> byCustomerorderSign(String customerorderSign) {
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        return customerorder == null
+            ? List.of()
+            : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorder.getId());
+    }
+
+    /** Where the flat rate sits in the order tree — empty for one the migration could not resolve. */
     @Transactional(readOnly = true)
-    public List<OrderFlatRate> getByCustomerorderSign(String customerorderSign) {
-        return orderFlatRateRepository.findByCustomerorderSignOrderByValidFromAsc(customerorderSign);
+    public Optional<OrderPosition> positionOf(OrderFlatRate flatRate) {
+        return orderPositions.of(flatRate);
     }
 
     /** The flat rates booked against one budget plan (#1065) — what the plan's detail page lists. */
@@ -180,37 +198,36 @@ public class OrderFlatRateService {
      * expands the schedules once per evaluation, so they must not be resolved by query.
      */
     @Transactional(readOnly = true)
-    public OrderFlatRateLookup lookupFor(Collection<String> customerorderSigns) {
-        if (customerorderSigns.isEmpty()) {
+    public OrderFlatRateLookup lookupFor(Collection<Long> customerorderIds) {
+        if (customerorderIds.isEmpty()) {
             return OrderFlatRateLookup.of(List.of());
         }
         return OrderFlatRateLookup.of(
-            orderFlatRateRepository.findByCustomerorderSignInOrderByIdAsc(customerorderSigns));
+            orderFlatRateRepository.findByCustomerorderIdInOrderByIdAsc(customerorderIds));
     }
 
     @Authorized(requiresManager = true)
     public long save(OrderFlatRateData data) {
-        checkCustomerorderExists(data.customerorderSign());
-        checkSuborderExists(data.customerorderSign(), data.suborderSign());
+        var scope = scopeOf(data, null);
         checkAmountPresent(data);
-        var plan = resolvePlan(data);
+        var plan = resolvePlan(data, scope);
         var flatRate = new OrderFlatRate();
-        apply(flatRate, data, plan);
+        apply(flatRate, data, scope, plan);
         return orderFlatRateRepository.save(flatRate).getId();
     }
 
     /**
-     * The customer order is deliberately not checked here, for the reason
-     * {@code OrderPricingService#update} gives: a flat rate references its order by sign and outlives
-     * it, and editing is how such a record gets corrected.
+     * Editing is how a flat rate the migration could not resolve gets corrected (#1205): the form
+     * names the order, and a suborder that stays unresolved is kept rather than read as "the whole
+     * order" — see {@link #scopeOf}.
      */
     @Authorized(requiresManager = true)
     public void update(long id, OrderFlatRateData data) {
-        checkSuborderExists(data.customerorderSign(), data.suborderSign());
-        checkAmountPresent(data);
-        var plan = resolvePlan(data);
         var flatRate = getById(id);
-        apply(flatRate, data, plan);
+        var scope = scopeOf(data, flatRate);
+        checkAmountPresent(data);
+        var plan = resolvePlan(data, scope);
+        apply(flatRate, data, scope, plan);
         orderFlatRateRepository.save(flatRate);
     }
 
@@ -253,24 +270,44 @@ public class OrderFlatRateService {
         orderFlatRateRepository.save(flatRate);
     }
 
-    /** Only on create — see {@link #update} for why an edit must not insist on the order. */
-    private void checkCustomerorderExists(String customerorderSign) {
-        if (customerorderService.getCustomerorderBySign(customerorderSign) == null) {
-            throw new InvalidDataException(ErrorCode.BU_CUSTOMERORDER_SIGN_UNKNOWN, customerorderSign);
+    /**
+     * What the flat rate is about: the customer order and the suborder, by id (#1205). The suborder is
+     * a concrete one, not a pattern as an hourly rate names it: a flat rate is a single agreed amount
+     * and has nothing to spread over several matches. A suborder outside the order would never be
+     * allocated to a plan, so it is refused.
+     *
+     * @param edited the flat rate being edited, or {@code null} on create. A suborder the migration
+     *               could not resolve stays unresolved while the form names none — an empty choice
+     *               must not turn it into a rate on the whole order.
+     */
+    private FlatRateScope scopeOf(OrderFlatRateData data, OrderFlatRate edited) {
+        var customerorder = data.customerorderId() == null
+            ? null
+            : customerorderService.getCustomerorderById(data.customerorderId());
+        if (customerorder == null) {
+            throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
         }
+        if (data.suborderId() == null) {
+            var keepUnresolved = edited != null && !edited.isOrderWide() && edited.getSuborderId() == null;
+            return new FlatRateScope(customerorder, null, keepUnresolved ? null : OrderPosition.orderWide(customerorder.getId()),
+                keepUnresolved);
+        }
+        var suborder = suborderService.getSuborderById(data.suborderId());
+        if (suborder == null) {
+            throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
+        }
+        if (!customerorder.getId().equals(suborder.getCustomerorder().getId())) {
+            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
+        }
+        return new FlatRateScope(customerorder, suborder, OrderPosition.of(suborder), false);
     }
 
     /**
-     * The suborder is named by complete order sign, not by a pattern as an hourly rate names it: a
-     * flat rate is a single agreed amount and has nothing to spread over several matches. A sign
-     * that names no suborder of the order would never be allocated to a plan, so it is refused.
+     * @param position        where the flat rate sits — {@code null} while the suborder stays unresolved
+     * @param keepUnresolved  whether the stored suborder sign is kept without an id
      */
-    private void checkSuborderExists(String customerorderSign, String suborderSign) {
-        if (suborderSign != null
-            && !suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
-            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
-        }
-    }
+    private record FlatRateScope(Customerorder customerorder, Suborder suborder, OrderPosition position,
+                                 boolean keepUnresolved) {}
 
     /** Instalments carry their own amounts; the other two rhythms repeat the one of the definition. */
     private void checkAmountPresent(OrderFlatRateData data) {
@@ -284,14 +321,14 @@ public class OrderFlatRateService {
      * here and not only in the select, because this is what lets {@code FlatRateAllocation} take a
      * named plan without weighing period and scope again.
      */
-    private OrderBudget resolvePlan(OrderFlatRateData data) {
+    private OrderBudget resolvePlan(OrderFlatRateData data, FlatRateScope scope) {
         if (data.orderBudgetId() == null) {
             return null;
         }
         var plan = orderBudgetRepository.findById(data.orderBudgetId())
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, data.orderBudgetId()));
         budgetAuthorization.checkAuthorized(plan);
-        if (!OrderBudgetBinding.scopeMeetsSuborder(plan, data.customerorderSign(), data.suborderSign())) {
+        if (!OrderBudgetBinding.scopeMeetsSuborder(plan, scope.position())) {
             throw new BusinessRuleException(ErrorCode.BU_BUDGET_SCOPE_DISJOINT, plan.getName());
         }
         if (!OrderBudgetBinding.periodsOverlap(plan, data.validFrom(), effectiveValidUntil(data))) {
@@ -305,9 +342,14 @@ public class OrderFlatRateService {
         return data.rhythm() == FlatRateRhythm.ONCE ? data.validFrom() : data.validUntil();
     }
 
-    private void apply(OrderFlatRate flatRate, OrderFlatRateData data, OrderBudget plan) {
-        flatRate.setCustomerorderSign(data.customerorderSign());
-        flatRate.setSuborderSign(data.suborderSign());
+    private void apply(OrderFlatRate flatRate, OrderFlatRateData data, FlatRateScope scope, OrderBudget plan) {
+        flatRate.setCustomerorderId(scope.customerorder().getId());
+        // mirrors for readers outside the application, written from the records (#1205)
+        flatRate.setCustomerorderSign(scope.customerorder().getSign());
+        if (!scope.keepUnresolved()) {
+            flatRate.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
+            flatRate.setSuborderSign(scope.suborder() == null ? null : scope.suborder().getCompleteOrderSign());
+        }
         flatRate.setOrderBudget(plan);
         flatRate.setDescription(data.description());
         flatRate.setRhythm(data.rhythm());

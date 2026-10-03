@@ -34,7 +34,6 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -73,7 +72,7 @@ public class OrderPricingServiceTest {
     employeeService = mock(EmployeeService.class);
     when(employeeService.getEmployeeById(EMP)).thenReturn(employee(EMP, "emp"));
     orderBudgetRepository = mock(OrderBudgetRepository.class);
-    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of());
+    when(orderBudgetRepository.findByCustomerorderId(any())).thenReturn(List.of());
     budgetAuthorization = mock(BudgetAuthorization.class);
     when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
     suborderService = mock(SuborderService.class);
@@ -666,9 +665,12 @@ public class OrderPricingServiceTest {
    * stubbing it per sign keeps the test from claiming a reach the repository does not have.
    */
   private void givenPlans(OrderBudget... plans) {
-    when(orderBudgetRepository.findByCustomerorderSign(any())).thenAnswer(invocation ->
+    // The rate names its order by sign (#957); the plans are read by the id behind it (#1205).
+    when(customerorderService.getCustomerorderBySign("co")).thenReturn(TREE.order("co"));
+    when(customerorderService.getCustomerorderBySign("other")).thenReturn(TREE.order("other"));
+    when(orderBudgetRepository.findByCustomerorderId(any())).thenAnswer(invocation ->
         List.of(plans).stream()
-            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(plan -> plan.getCustomerorderId().equals(invocation.getArgument(0)))
             .toList());
     for (var plan : plans) {
       when(orderBudgetRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
@@ -676,37 +678,24 @@ public class OrderPricingServiceTest {
   }
 
   private void givenSuborders(String... completeOrderSigns) {
-    var order = new Customerorder();
-    setId(order, 1L);
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(order);
+    when(customerorderService.getCustomerorderBySign(any())).thenReturn(TREE.order("co"));
     // The pattern check of #958 runs first and is not what these tests are about.
     when(suborderService.existsSuborderMatching(any(), any())).thenReturn(true);
-    when(suborderService.getSubordersByCustomerorderId(1L))
-        .thenReturn(List.of(completeOrderSigns).stream().map(OrderPricingServiceTest::suborder).toList());
+    when(suborderService.getSubordersByCustomerorderId(TREE.orderId("co")))
+        .thenReturn(List.of(completeOrderSigns).stream().map(TREE::suborder).toList());
   }
 
-  /** {@code getCompleteOrderSign()} walks the parent chain, so the sign is built from real records. */
-  private static Suborder suborder(String completeOrderSign) {
-    var parts = completeOrderSign.split("/");
-    var customerorder = new Customerorder();
-    customerorder.setSign(parts[0]);
-    Suborder suborder = null;
-    for (int i = 1; i < parts.length; i++) {
-      var next = new Suborder();
-      next.setCustomerorder(customerorder);
-      next.setParentorder(suborder);
-      next.setSign(parts[i]);
-      suborder = next;
-    }
-    return suborder;
-  }
+  /** The order of the rates and its suborders, with the ids the plans refer to (#1205). */
+  private static final OrderTree TREE = new OrderTree().with("co/01/A").with("co/02").with("other/01");
 
   private static OrderBudget plan(long id, String customerorderSign, String suborderSign,
                                   LocalDate validFrom, LocalDate validUntil, boolean active) {
     var plan = new OrderBudget();
     setId(plan, id);
     plan.setName("plan " + id);
+    plan.setCustomerorderId(TREE.orderId(customerorderSign));
     plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderId(TREE.suborderId(suborderSign));
     plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);

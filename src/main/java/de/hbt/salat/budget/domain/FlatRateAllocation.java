@@ -4,6 +4,7 @@ import static java.lang.Boolean.TRUE;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Which budget plan a flat rate amount counts against (#972).
@@ -38,22 +39,27 @@ public final class FlatRateAllocation {
      * <p>The derivation itself only ever picks an active plan. Letting a deactivated one qualify
      * would make amounts ambiguous that are unambiguous today.
      */
+    /**
+     * @param positionOf where a flat rate sits in the order tree (#1205); empty for one the
+     *                   migration could not resolve, which then counts against no derived plan
+     */
     public static Optional<OrderBudget> uniquePlanFor(FlatRateDueAmount dueAmount,
-                                                      Collection<OrderBudget> plans) {
+                                                      Collection<OrderBudget> plans,
+                                                      Function<OrderFlatRate, Optional<OrderPosition>> positionOf) {
         var named = dueAmount.flatRate().getOrderBudgetId();
         if (named != null) {
             return plans.stream().filter(plan -> named.equals(plan.getId())).findFirst();
         }
-        var covering = plans.stream().filter(plan -> covers(plan, dueAmount)).toList();
+        var position = positionOf.apply(dueAmount.flatRate()).orElse(null);
+        var covering = plans.stream().filter(plan -> covers(plan, dueAmount, position)).toList();
         return covering.size() == 1 ? Optional.of(covering.get(0)) : Optional.empty();
     }
 
-    private static boolean covers(OrderBudget plan, FlatRateDueAmount dueAmount) {
-        var flatRate = dueAmount.flatRate();
+    private static boolean covers(OrderBudget plan, FlatRateDueAmount dueAmount, OrderPosition position) {
         return TRUE.equals(plan.getActive())
             && !dueAmount.due().isBefore(plan.getValidFrom())
             && !dueAmount.due().isAfter(plan.getValidUntil())
-            && BudgetScope.covers(plan, flatRate.getCustomerorderSign(), flatRate.getSuborderSign());
+            && BudgetScope.covers(plan, position);
     }
 
 }

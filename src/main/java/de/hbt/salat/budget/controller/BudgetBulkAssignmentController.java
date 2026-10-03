@@ -135,7 +135,9 @@ public class BudgetBulkAssignmentController {
             : suborderService.getSubordersByCustomerorderId(customerorder.getId()));
         // Only active plans can hold bookings, so offering the inactive ones would only produce a
         // preview in which everything is unassignable.
-        model.addAttribute("budgets", orderBudgetService.getActiveByCustomerorderSign(sign));
+        model.addAttribute("budgets", customerorder == null
+            ? List.of()
+            : orderBudgetService.getActiveByCustomerorderId(customerorder.getId()));
         // Only people who actually booked in the current selection (#953) — the list is derived from
         // the bookings themselves, so no choice can come up empty.
         var employees = bulkAssignmentService.selectableEmployees(form.toData());

@@ -71,19 +71,27 @@
           <td th:colspan="${isManager} ? 8 : 6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
         <tr th:each="b : ${budgets}"
-            th:with="order=${orders.get(b.customerorderSign)},suborder=${suborders.get(b.suborderSign)},employees=${employeesByBudget.get(b.id)}">
+            th:with="order=${b.customerorderId != null ? orders.get(b.customerorderId) : null},suborder=${b.suborderId != null ? suborders.get(b.suborderId) : null},employees=${employeesByBudget.get(b.id)}">
           <td>
             <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a><span th:replace="~{fragments/inactive-badge :: badge(${b.active != true})}"></span>
           </td>
           <td class="d-none d-md-table-cell">
+            <!--/* The sign of the record the plan refers to by id (#1205); the stored one only where the
+                   migration could not resolve it, and then marked. */-->
             <div>
-              <span th:text="${b.customerorderSign}"></span>
+              <span th:text="${order != null ? order.sign : b.customerorderSign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span>
+              <span th:if="${b.customerorderId == null}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td class="d-none d-md-table-cell">
-            <div th:text="${b.suborderSign} ?: '—'"></div>
+            <div>
+              <span th:text="${suborder != null ? suborder.completeOrderSign : (b.suborderSign ?: '—')}"></span>
+              <span th:if="${b.suborderSign != null and b.suborderId == null}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+            </div>
             <div class="small text-muted" th:text="${suborder?.shortdescription}"></div>
           </td>
           <!--/* 31.12.2999 is how an open end is expressed throughout the module (→ OrderPricing);

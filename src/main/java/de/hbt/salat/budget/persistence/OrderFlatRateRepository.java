@@ -15,9 +15,14 @@ public interface OrderFlatRateRepository
 
     List<OrderFlatRate> findAllByOrderByCustomerorderSignAscValidFromAsc();
 
-    List<OrderFlatRate> findByCustomerorderSignOrderByValidFromAsc(String customerorderSign);
+    /** The flat rates of a customer order, by its id (#1205) — the sign column is a mirror only. */
+    List<OrderFlatRate> findByCustomerorderIdOrderByValidFromAsc(Long customerorderId);
 
-    List<OrderFlatRate> findByCustomerorderSignInOrderByIdAsc(Collection<String> customerorderSigns);
+    List<OrderFlatRate> findByCustomerorderIdInOrderByIdAsc(Collection<Long> customerorderIds);
+
+    long countByCustomerorderId(Long customerorderId);
+
+    long countBySuborderId(Long suborderId);
 
     /**
      * The customer orders the list view offers for filtering. Taken from the flat rates themselves

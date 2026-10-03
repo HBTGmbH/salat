@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -37,6 +38,11 @@ public class BudgetResolverTest {
 
   private final List<OrderBudget> plans = new ArrayList<>();
 
+  /** The orders and suborders by sign — the plans and bookings refer to them by id (#1205). */
+  private static final Map<String, Long> ORDER_IDS = Map.of("CO", 1000L, "OTHER", 2000L);
+  private static final Map<String, Long> SUBORDER_IDS = Map.of(
+      "CO/01", 1L, "CO/01/02", 2L, "CO/02", 3L, "CO/01/02/03", 4L, "CO/01/04", 5L);
+
   private OrderBudgetRepository orderBudgetRepository;
   private BudgetResolver resolver;
 
@@ -46,17 +52,19 @@ public class BudgetResolverTest {
     var suborderService = mock(SuborderService.class);
 
     // Deliberately returns inactive plans too: the resolver must not rely on the query alone.
-    when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(invocation ->
+    when(orderBudgetRepository.findByCustomerorderIdAndActive(any(), any())).thenAnswer(invocation ->
         plans.stream()
-            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(plan -> plan.getCustomerorderId().equals(invocation.getArgument(0)))
             .toList());
 
     // CO/01 with CO/01/02 and CO/01/02/03 below it, plus the siblings CO/02 and CO/01/04.
-    when(suborderService.getSuborderById(1L)).thenReturn(firstLevel("CO", "01"));
-    when(suborderService.getSuborderById(2L)).thenReturn(below(firstLevel("CO", "01"), "02"));
+    var co01 = firstLevel("CO", "01");
+    var co0102 = below(co01, "02");
+    when(suborderService.getSuborderById(1L)).thenReturn(co01);
+    when(suborderService.getSuborderById(2L)).thenReturn(co0102);
     when(suborderService.getSuborderById(3L)).thenReturn(firstLevel("CO", "02"));
-    when(suborderService.getSuborderById(4L)).thenReturn(below(below(firstLevel("CO", "01"), "02"), "03"));
-    when(suborderService.getSuborderById(5L)).thenReturn(below(firstLevel("CO", "01"), "04"));
+    when(suborderService.getSuborderById(4L)).thenReturn(below(co0102, "03"));
+    when(suborderService.getSuborderById(5L)).thenReturn(below(co01, "04"));
 
     resolver = new BudgetResolver(orderBudgetRepository, suborderService);
   }
@@ -222,7 +230,7 @@ public class BudgetResolverTest {
         report(101L, "CO", 1L, MAR),
         report(102L, "CO", 2L, DEC)));
 
-    verify(orderBudgetRepository, times(1)).findByCustomerorderSignAndActive(any(), any());
+    verify(orderBudgetRepository, times(1)).findByCustomerorderIdAndActive(any(), any());
   }
 
   // --- test fixture ---------------------------------------------------------------------------
@@ -231,7 +239,9 @@ public class BudgetResolverTest {
                          LocalDate validFrom, LocalDate validUntil, boolean active) {
     var plan = new OrderBudget();
     plan.setName("plan-" + id);
+    plan.setCustomerorderId(ORDER_IDS.get(customerorderSign));
     plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
@@ -243,6 +253,7 @@ public class BudgetResolverTest {
   private static TimereportDTO report(long id, String customerorderSign, long suborderId, LocalDate day) {
     return TimereportDTO.builder()
         .id(id)
+        .customerorderId(ORDER_IDS.get(customerorderSign))
         .customerorderSign(customerorderSign)
         .suborderId(suborderId)
         .completeOrderSign(customerorderSign + "/xx")
@@ -252,10 +263,12 @@ public class BudgetResolverTest {
 
   private static Suborder firstLevel(String orderSign, String sign) {
     var order = new Customerorder();
+    setId(order, ORDER_IDS.get(orderSign));
     order.setSign(orderSign);
     var suborder = new Suborder();
     suborder.setSign(sign);
     suborder.setCustomerorder(order);
+    setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
 
@@ -264,6 +277,7 @@ public class BudgetResolverTest {
     suborder.setSign(sign);
     suborder.setCustomerorder(parent.getCustomerorder());
     suborder.setParentorder(parent);
+    setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
 

@@ -18,8 +18,8 @@ import de.hbt.salat.order.domain.Suborder;
  * <p>Each suborder is flattened into plain values <em>here</em>, once. {@code getCompleteOrderSign()}
  * climbs the chain of parent suborders and {@code getEffectiveOrderType()} reaches for the customer
  * order, and doing either per booking is the pattern {@code docs/performance-tips.md} exists to
- * prevent. Both rate lookups take the same complete order sign and only treat it differently —
- * {@link EmployeeCostLookup} compares it for equality, {@link OrderPricingLookup} as a LIKE pattern.
+ * prevent. {@link EmployeeCostLookup} takes the suborder by id (#1205), {@link OrderPricingLookup}
+ * its complete order sign as a LIKE pattern.
  *
  * <p>A {@code null} cost lookup means costs are not reported at all: they are managers-only, and
  * {@code EmployeeCostService.lookup()} must not even be called for anybody else. That is why the
@@ -84,7 +84,7 @@ public final class AppliedRateLookup {
             return AppliedRate.none(includesCosts());
         }
         var cost = costLookup == null ? null : costLookup
-            .findEffectiveCost(employeeId, suborder.completeOrderSign(), suborder.orderType(), day)
+            .findEffectiveCost(employeeId, suborderId, suborder.orderType(), day)
             .orElse(null);
         var price = pricingLookup
             .findEffectiveRate(customerorderSign, suborder.completeOrderSign(), employeeId,
