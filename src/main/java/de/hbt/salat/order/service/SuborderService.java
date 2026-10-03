@@ -119,7 +119,7 @@ public class SuborderService {
             s.getCompleteOrderSign(),
             s.getShortdescription(),
             Boolean.TRUE.equals(s.getCommentnecessary()),
-            Boolean.TRUE.equals(s.getTrainingFlag())))
+            s.isTrainingFlag()))
         .toList();
   }
 
@@ -290,7 +290,7 @@ public class SuborderService {
         so.getStandard(),
         so.getCommentnecessary(),
         so.getFixedPrice(),
-        so.getTrainingFlag(),
+        so.isTrainingFlag(),
         so.getOrderType(),
         DateUtils.format(newFrom),
         validUntil,
@@ -533,7 +533,7 @@ public class SuborderService {
     copy.setSign(suborder.getSign());
     copy.setSuborder_customer(suborder.getSuborder_customer());
     copy.setFixedPrice(suborder.getFixedPrice());
-    copy.setTrainingFlag(suborder.getTrainingFlag());
+    copy.setTrainingFlag(suborder.isTrainingFlag());
     copy.setOrderType(suborder.getOrderType());
 
     if (copyroot) {

@@ -96,9 +96,10 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Boolean hide;
 
     /**
-     * Default-Flag for projectbased Training
+     * Default-Flag for projectbased Training; {@code NOT NULL DEFAULT false} since #1246
      */
-    private Boolean trainingFlag;
+    @Column(nullable = false)
+    private boolean trainingFlag;
 
     /**
      * Flag for fixed price proposal

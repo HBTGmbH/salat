@@ -64,7 +64,9 @@ public class Timereport extends AuditedEntity implements Serializable {
      */
     @Column(name = "ticket_reference")
     private String ticketReference;
-    private Boolean training; // TODO switch to boolean
+    /** Training on the job (#836); a column with {@code NOT NULL DEFAULT false} since #1246. */
+    @Column(nullable = false)
+    private boolean training;
     private int sequencenumber;
     /**
      * Sign of the releasing person

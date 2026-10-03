@@ -19,7 +19,7 @@ public class SuborderForm {
   private Boolean standard;
   private Boolean commentnecessary;
   private Boolean fixedPrice;
-  private Boolean trainingFlag;
+  private boolean trainingFlag;
   private String validFrom;
   private String validUntil;
   private String debithours;

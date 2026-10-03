@@ -164,7 +164,7 @@ public class SuborderController {
             form.getStandard(),
             form.getCommentnecessary(),
             form.getFixedPrice(),
-            form.getTrainingFlag(),
+            form.isTrainingFlag(),
             form.getOrderType(),
             form.getValidFrom(),
             form.getValidUntil(),
@@ -539,7 +539,7 @@ public class SuborderController {
     form.setStandard(so.getStandard());
     form.setCommentnecessary(so.getCommentnecessary());
     form.setFixedPrice(so.getFixedPrice());
-    form.setTrainingFlag(so.getTrainingFlag());
+    form.setTrainingFlag(so.isTrainingFlag());
     form.setHide(so.isHide());
     form.setOrderType(so.getOrderType());
     form.setValidFrom(format(so.getFromDate()));
