@@ -24,7 +24,6 @@ import java.time.temporal.ChronoField;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import de.hbt.salat.common.GlobalConstants;
 
 @Slf4j
 @UtilityClass
@@ -159,74 +158,6 @@ public class DateUtils {
         return originalDate.plusMonths(amount);
     }
 
-    /**
-     * Transforms a {@link LocalDate} into 3 {@link String}s, e.g. "09", "Feb", "2011".
-     *
-     * @return Returns an array of strings with the day at index 0, month at index 1 and year at index 2.
-     */
-    public static String[] getDateAsStringArray(LocalDate date) {
-        String day = formatDayOfMonth(date);
-        String year = formatYear(date);
-        String month = formatMonth(date);
-
-        String[] dateArray = new String[3];
-        dateArray[0] = day;
-        dateArray[1] = month;
-        dateArray[2] = year;
-
-        return dateArray;
-    }
-
-    /**
-     * Parses the Stings to create a {@link java.time.LocalDate}. The day- and year-String are expected to represent integers.
-     * The month-String must be of the sort 'Jan', 'Feb', 'Mar', ...
-     *
-     * @return Returns the date associated to the given Strings.
-     */
-    public static LocalDate getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) {
-        try {
-            int day = Integer.parseInt(dayString);
-            int year = Integer.parseInt(yearString);
-            int month;
-
-            if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_JANUARY;
-            } else if (GlobalConstants.MONTH_SHORTFORM_FEBRUARY.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
-            } else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_MARCH;
-            } else if (GlobalConstants.MONTH_SHORTFORM_APRIL.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_APRIL;
-            } else if (GlobalConstants.MONTH_SHORTFORM_MAY.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_MAY;
-            } else if (GlobalConstants.MONTH_SHORTFORM_JUNE.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_JUNE;
-            } else if (GlobalConstants.MONTH_SHORTFORM_JULY.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_JULY;
-            } else if (GlobalConstants.MONTH_SHORTFORM_AUGUST.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_AUGUST;
-            } else if (GlobalConstants.MONTH_SHORTFORM_SEPTEMBER.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_SEPTEMBER;
-            } else if (GlobalConstants.MONTH_SHORTFORM_OCTOBER.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_OCTOBER;
-            } else if (GlobalConstants.MONTH_SHORTFORM_NOVEMBER.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
-            } else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
-                month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
-            } else {
-                month = Integer.parseInt(monthString);
-            }
-
-            return LocalDate.of(year, month, day);
-        } catch (NumberFormatException e) {
-            // any of the parseInt methods did throw this, handle
-            if(useCurrentDateForFailure) {
-                return today();
-            }
-            throw e;
-        }
-    }
-
     public static LocalDate today() {
         return ClockProvider.today();
     }
@@ -281,35 +212,12 @@ public class DateUtils {
         return dayOfMonthFormatter.format(date);
     }
 
+    /**
+     * The English abbreviation of the month — {@code Jan} … {@code Dec} — whatever the locale of the
+     * server: it is part of message keys such as {@code main.timereport.select.month.jan} (#1245).
+     */
     public static String formatMonth(LocalDate date) {
-        String month = null;
-        int monthValue = date.getMonthValue();
-        if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY) {
-            month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
-            month = GlobalConstants.MONTH_SHORTFORM_FEBRUARY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MARCH) {
-            month = GlobalConstants.MONTH_SHORTFORM_MARCH;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_APRIL) {
-            month = GlobalConstants.MONTH_SHORTFORM_APRIL;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MAY) {
-            month = GlobalConstants.MONTH_SHORTFORM_MAY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JUNE) {
-            month = GlobalConstants.MONTH_SHORTFORM_JUNE;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JULY) {
-            month = GlobalConstants.MONTH_SHORTFORM_JULY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_AUGUST) {
-            month = GlobalConstants.MONTH_SHORTFORM_AUGUST;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_SEPTEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_SEPTEMBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_OCTOBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_OCTOBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_NOVEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_NOVEMBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_DECEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_DECEMBER;
-        }
-        return month;
+        return date.getMonth().getDisplayName(SHORT, ENGLISH);
     }
 
     public static String formatYear(LocalDate date) {
