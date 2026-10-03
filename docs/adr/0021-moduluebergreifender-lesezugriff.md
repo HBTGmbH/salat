@@ -96,6 +96,20 @@ Zeilen — und hat sie dort zu benennen.
 
 ### Durchsetzung
 
+> **Nachtrag 2026-10-03 (#1244):** Punkt 2 prüft jetzt `ArchitectureTest`, soweit er auf Java-Ebene
+> sichtbar ist. `noEntityCrossesAModuleBoundaryThroughAService` lässt keinen Aufruf aus einem anderen
+> Modul auf eine nicht-private `@Service`-Methode zu, die eine JPA-Entity in der Signatur trägt
+> (Parameter, Rückgabe oder Typargument). Innerhalb eines Moduls bleibt das erlaubt. Der Bestand bei
+> Einführung (219 Aufrufe auf 56 Methoden, dazu 39 aus den parallel fertiggestellten Umbauten #1204,
+> #1205 und #1212; 24 alte sind dabei entfallen, zusammen 234) ist mit `FreezingArchRule` eingefroren; ein neuer
+> Verstoß lässt den Build rot werden. Die beiden stillgelegten Regeln sind gelöscht: Die eine prüfte
+> die ältere Konvention „Entities nur im Service“ (1152 Verstöße), die andere jede Service-Methode
+> ohne Rücksicht auf den Aufrufer (179 Methoden).
+>
+> Weiter am Review hängen der Inhalt eines `@Query` — ein Join in ein Modul, das nicht importiert
+> werden darf, und `nativeQuery` —, Entities als Komponente eines Records oder in Events sowie
+> Interface-Projektionen, die im Aufrufer nachnavigieren.
+
 Die Regel wird von keinem Test durchgesetzt. `ArchitectureTest` prüft Klassenabhängigkeiten; der
 Inhalt eines `@Query` ist eine Zeichenkette und taucht dort nicht auf. Ein Join in ein Modul, das
 nicht importiert werden darf, fiele durch kein Netz — auch `beFreeOfCycles` nicht, denn der Zyklus
@@ -113,7 +127,8 @@ griffen ohnehin nur auf Java-Ebene. Diese Entscheidung hängt am Review.
   Schnittstelle; Bedeutungsänderungen dort wirken stumm hierher
 * Bad: der zeilenweise Autorisierungsfilter des besitzenden Moduls greift nicht mehr automatisch —
   deshalb Punkt 5
-* Bad: nichts erzwingt die Regel automatisch, sie hängt am Review
+* Bad: nichts erzwingt die Regel automatisch, sie hängt am Review (seit #1244 teilweise geprüft,
+  siehe Nachtrag unter „Durchsetzung“)
 * Neutral: sie setzt eine gemeinsame Persistence Unit voraus und gilt, solange der Monolith eine
   ist; für ein herausgelöstes Modul tritt die Replikation an ihre Stelle
 * Neutral: bestehende Lesepfade werden nicht umgestellt; die Regel gilt ab jetzt und ist kein
