@@ -4,11 +4,12 @@ import static com.tngtech.archunit.lang.Priority.HIGH;
 import static com.tngtech.archunit.lang.Priority.MEDIUM;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.priority;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
+import static com.tngtech.archunit.library.freeze.FreezingArchRule.freeze;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeGradleTestFixtures;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeJars;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
@@ -304,31 +305,57 @@ public class ArchitectureTest {
         .that().areNotAnnotatedWith(Service.class).and().haveSimpleNameNotEndingWith("DAO")
         .should().accessClassesThat().areAnnotatedWith(Repository.class);
 
-  // TODO @ArchTest
-  static final ArchRule accessEntitiesOnlyInServicesOrDAOs = priority(HIGH).noClasses()
-        .that().areNotAnnotatedWith(Entity.class)
-        .and().areNotAnnotatedWith(Repository.class)
-        .and().areNotAnnotatedWith(Service.class)
-        .and().haveSimpleNameNotEndingWith("DAO")
-        .should().accessClassesThat().areAnnotatedWith(Entity.class);
-
-  // TODO @ArchTest
-  static final ArchRule noEntityInPublicInterfaceOfService = priority(HIGH).methods()
-      .that().areDeclaredInClassesThat().areAnnotatedWith(Service.class).and().areNotPrivate()
-      .should(new ArchCondition<JavaMethod>("not have JPA entities in their signature") {
+  /**
+   * Eine JPA-Entity überquert keine Modulgrenze über die Schnittstelle eines Services (ADR-0021, #1244).
+   * Wer aus einem anderen Modul eine nicht-private Methode eines {@code @Service} aufruft, bekommt und
+   * übergibt Records oder DTOs aus Werten und Ids, keine Entity — weder als Parameter noch als
+   * Rückgabe, auch nicht als Typargument einer Liste oder eines {@code Optional}. Innerhalb des Moduls
+   * darf die Entity bleiben, wo sie ist: dass ein Service sie an den eigenen Controller gibt, verbietet
+   * ADR-0021 nicht.
+   *
+   * <p>Der Bestand bei Einführung der Regel ist eingefroren ({@code src/test/resources/archunit_store}):
+   * 219 Aufrufe auf 56 Methoden, die meisten aus {@code dailyreport} in {@code employee} und
+   * {@code order}. Dazu kamen 39 Aufrufe aus den Umbauten #1204, #1205 und #1212, die parallel zur
+   * Regel fertig wurden; 24 alte sind dabei entfallen, zusammen 234. ADR-0021 verlangt keinen Umbau bestehender Lesepfade. Ein neuer Aufruf dieser Art
+   * lässt den Build rot werden; ein behobener verschwindet von selbst aus der Liste.
+   *
+   * <p>Was die Regel nicht sieht: den Inhalt eines {@code @Query}. Ein Join in ein Modul, das nicht
+   * importiert werden darf, bleibt Sache des Reviews.
+   */
+  @ArchTest
+  static final ArchRule noEntityCrossesAModuleBoundaryThroughAService = freeze(priority(HIGH).classes()
+      .should(new ArchCondition<JavaClass>("call no @Service method of another module that has a JPA entity in its signature") {
         @Override
-        public void check(JavaMethod item, ConditionEvents events) {
-          var location = item.getSourceCodeLocation();
-          String sourceFileName = location.getSourceFileName();
-          int lineNumber = location.getLineNumber() - 1;
-          var sourceLink = String.format(" (%s:%d)", sourceFileName, lineNumber);
-          item.getAllInvolvedRawTypes().forEach(cls -> {
-            if(cls.isAnnotatedWith(Entity.class) || cls.isAssignableFrom(Persistable.class)) {
-              events.add(new SimpleConditionEvent(item, false, "Entity " + cls.getFullName() + " in public interface of @Service method " +item.getFullName()  + " > " + sourceLink));
+        public void check(JavaClass caller, ConditionEvents events) {
+          for (JavaMethodCall call : caller.getMethodCallsFromSelf()) {
+            var owner = call.getTargetOwner();
+            if (!owner.isAnnotatedWith(Service.class) || moduleOf(owner).equals(moduleOf(caller))) {
+              continue;
             }
-          });
+            call.getTarget().resolveMember()
+                .filter(method -> !method.getModifiers().contains(JavaModifier.PRIVATE))
+                .ifPresent(method -> method.getAllInvolvedRawTypes().stream()
+                    .filter(ArchitectureTest::isEntity)
+                    .map(JavaClass::getName)
+                    .distinct()
+                    .forEach(entity -> events.add(SimpleConditionEvent.violated(call,
+                        "%s calls %s, which carries entity %s from module %s into module %s %s".formatted(
+                            call.getOrigin().getFullName(), method.getFullName(), entity, moduleOf(owner),
+                            moduleOf(caller), call.getSourceCodeLocation())))));
+          }
         }
-      });
+      }));
+
+  /** The module of a class: the first package below {@code de.hbt.salat}. */
+  private static String moduleOf(JavaClass javaClass) {
+    var below = javaClass.getPackageName().replaceFirst("^de\\.hbt\\.salat\\.?", "");
+    var dot = below.indexOf('.');
+    return dot < 0 ? below : below.substring(0, dot);
+  }
+
+  private static boolean isEntity(JavaClass javaClass) {
+    return javaClass.isAnnotatedWith(Entity.class) || javaClass.isAssignableTo(Persistable.class);
+  }
 
   /**
    * Eine Berechtigung wird als {@code @Authorized(requires…)} verlangt, nicht als
