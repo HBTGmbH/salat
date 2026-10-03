@@ -334,7 +334,7 @@ public class ReleaseService {
       return buildReview(contract, period, findings, List.of(), List.of(), List.of(), false, false);
     }
     var committedBeforePeriod = timereportDAO
-        .getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, period.end())
+        .getCommittedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, period.end())
         .stream()
         .filter(timereport -> timereport.getReferenceday().isBefore(period.begin()))
         .toList();
@@ -440,7 +440,7 @@ public class ReleaseService {
     }
 
     // set status in timereports
-    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, reviewedEnd);
+    var timereports = timereportDAO.getCommittedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, reviewedEnd);
     for (var timereport : timereports) {
       acceptTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
