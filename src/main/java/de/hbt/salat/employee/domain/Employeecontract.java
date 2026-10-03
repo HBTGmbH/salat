@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -48,7 +49,9 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "employeecontract_supervisor",
         joinColumns = @JoinColumn(name = "EMPLOYEECONTRACT_ID"),
-        inverseJoinColumns = @JoinColumn(name = "SUPERVISOR_ID"))
+        inverseJoinColumns = @JoinColumn(name = "SUPERVISOR_ID"),
+        uniqueConstraints = @UniqueConstraint(name = "uk_employeecontract_supervisor",
+            columnNames = {"EMPLOYEECONTRACT_ID", "SUPERVISOR_ID"}))
     @Fetch(FetchMode.SELECT)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Employee> supervisors = new ArrayList<>();

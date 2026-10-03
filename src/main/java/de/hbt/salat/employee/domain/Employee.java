@@ -1,10 +1,13 @@
 package de.hbt.salat.employee.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -22,6 +25,7 @@ import static de.hbt.salat.common.GlobalConstants.GENDER_MALE;
 @Getter
 @Setter
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_employee_sign", columnNames = "sign"))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Employee extends AuditedEntity implements Serializable {
 
@@ -36,8 +40,9 @@ public class Employee extends AuditedEntity implements Serializable {
      */
     private String lastname;
     /**
-     * sign of the employee (2 or 3 letters)
+     * sign of the employee (2 or 3 letters) — required and unique (#1208); the database says so as well
      */
+    @Column(nullable = false)
     private String sign;
     /**
      * gender of the employee
@@ -54,7 +59,8 @@ public class Employee extends AuditedEntity implements Serializable {
     @JoinTable(
         name = "employee_salat_user",
         joinColumns = @JoinColumn(name = "employee_id", nullable = false),
-        inverseJoinColumns = @JoinColumn(name = "salat_user_id", nullable = false)
+        inverseJoinColumns = @JoinColumn(name = "salat_user_id", nullable = false),
+        uniqueConstraints = @UniqueConstraint(name = "uk_employee_salat_user", columnNames = {"employee_id", "salat_user_id"})
     )
     private SalatUser salatUser;
 

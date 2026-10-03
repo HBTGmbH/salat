@@ -176,7 +176,9 @@ public class EmployeecontractService {
     employeecontract.setValidFrom(validFrom);
     employeecontract.setValidUntil(validUntil);
 
+    // each supervisor once - the table refuses a second row for the same pair (#1208)
     var resolvedSupervisors = supervisorIds.stream()
+        .distinct()
         .map(id -> employeeDAO.getEmployeeById(id))
         .toList();
     employeecontract.setSupervisors(resolvedSupervisors);

@@ -200,10 +200,10 @@ public class CustomerorderController {
     } else if (form.getSign().length() > GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH) {
       bindingResult.rejectValue("sign", "error.sign",
           messages.getMessage("form.customerorder.error.sign.toolong", "Sign is too long"));
-    } else if (form.getId() == null) {
-      // Check sign uniqueness only on create
+    } else {
+      // on create as on update: renaming onto another order's sign is refused as well (#1208)
       boolean signExists = customerorderService.getAllCustomerorders().stream()
-          .anyMatch(co -> co.getSign().equalsIgnoreCase(form.getSign()));
+          .anyMatch(co -> !co.getId().equals(form.getId()) && co.getSign().equalsIgnoreCase(form.getSign()));
       if (signExists) {
         bindingResult.rejectValue("sign", "error.sign",
             messages.getMessage("form.customerorder.error.sign.alreadyexists", "Sign already exists"));

@@ -3,6 +3,13 @@
 Date: 2026-10-01
 Status: Accepted
 
+> **Nachtrag 2026-10-03 (#1208):** Fachliche Schlüssel haben jetzt einen Unique-Schlüssel in der
+> Datenbank. Dessen Verletzung kommt wie der Versionskonflikt erst beim Flush, deshalb übersetzt
+> derselbe Aspekt auch sie: Kürzel des Mitarbeiters `EM-0005`, Auftragsnummer `CO-0006`,
+> Zeitscheibe einer Kostenkategorie `BU-0007` (Überschneidung), jeder andere Unique-Schlüssel
+> `XX-0004`. Andere Integritätsverletzungen bleiben unverändert. Wer einen Zusammenstoß auflösen
+> kann, fängt ihn weiter selbst (#1111).
+
 ## Context and Problem Statement
 
 Jede Entität trägt eine Versionsnummer (`@Version updatecounter` in `AuditedEntity`). Lesen zwei
