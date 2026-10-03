@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +64,7 @@ import de.hbt.salat.etl.auth.ETLAuthorization;
 import de.hbt.salat.etl.domain.ETLDefinition;
 import de.hbt.salat.etl.domain.ETLDefinition.ReferencePeriod;
 import de.hbt.salat.etl.domain.ETLDefinitionOption;
+import de.hbt.salat.etl.domain.ETLExecutionHistory;
 import de.hbt.salat.etl.domain.ETLRunHistory;
 import de.hbt.salat.etl.domain.ETLRunHistory.Status;
 import de.hbt.salat.etl.domain.ETLRunHistory.Trigger;
@@ -212,9 +214,7 @@ public class ETLServiceTest {
 
   @Test
   void a_run_that_cannot_even_determine_its_order_is_recorded_as_failed() {
-    var cyclic = new ETLDefinition();
-    cyclic.setName("a");
-    cyclic.setDependencies(Set.of("a"));
+    var cyclic = definition("a", "a");
     when(definitionRepo.findAll()).thenReturn(List.of(cyclic));
 
     assertThatThrownBy(() -> etlService.executeAll(ONE_MONTH, SCHEDULED))
@@ -372,7 +372,7 @@ public class ETLServiceTest {
     when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
     givenExecutable("report");
 
-    var order = etlService.resolveManualRun(ONE_MONTH, "report");
+    var order = namesOf(etlService.resolveManualRun(ONE_MONTH, "report"));
 
     assertThat(order).containsExactlyInAnyOrder("base", "hours", "costs", "report");
     assertThat(order).doesNotHaveDuplicates();
@@ -391,7 +391,7 @@ public class ETLServiceTest {
     when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
     givenExecutable("report");
 
-    var order = etlService.resolveManualRun(ONE_MONTH, "report");
+    var order = namesOf(etlService.resolveManualRun(ONE_MONTH, "report"));
 
     assertThat(order).contains("report", "base");
     verify(authorization, never()).isAuthorized(argThat(named("base")), any());
@@ -424,7 +424,7 @@ public class ETLServiceTest {
     when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
     givenExecutable("hours");
 
-    var order = etlService.resolveManualRun(ONE_MONTH, null);
+    var order = namesOf(etlService.resolveManualRun(ONE_MONTH, null));
 
     // costs und report bleiben draußen; base kommt trotzdem mit, weil hours es braucht.
     assertThat(order).containsExactly("base", "hours");
@@ -500,7 +500,7 @@ public class ETLServiceTest {
         .build();
     when(runHistoryRepo.findById(7L)).thenReturn(Optional.of(markedByHand));
 
-    etlService.continueRun(7L, ONE_MONTH, List.of("worked-hours"));
+    etlService.continueRun(7L, ONE_MONTH, List.of(42L));
 
     assertThat(markedByHand.getStatus()).isEqualTo(Status.FAILED);
     assertThat(markedByHand.getFinishedAt()).isEqualTo(LocalDateTime.of(2026, 9, 24, 10, 5, 0));
@@ -532,7 +532,7 @@ public class ETLServiceTest {
     when(historyRepo.save(any()))
         .thenThrow(new DataAccessResourceFailureException("Server shutdown in progress"));
 
-    assertThatThrownBy(() -> etlService.continueRun(7L, ONE_MONTH, List.of("worked-hours")))
+    assertThatThrownBy(() -> etlService.continueRun(7L, ONE_MONTH, List.of(42L)))
         .isInstanceOf(DataAccessResourceFailureException.class);
     taskScheduler.runAllPlanned();
 
@@ -549,6 +549,63 @@ public class ETLServiceTest {
     assertThat(etlService.getExecutableDefinitions())
         .extracting(ETLDefinitionOption::name)
         .containsExactly("base", "hours");
+  }
+
+  // --- Abhängigkeiten über die id (#1207) -----------------------------------------------------
+
+  /**
+   * Die Abhängigkeiten nennen die Definition über ihre id. Wer eine Definition umbenennt, ändert
+   * weder die Reihenfolge noch, ob der Lauf durchgeht — vorher scheiterte „alle Definitionen" an der
+   * ersten Abhängigkeit, die noch den alten Namen nannte.
+   */
+  @Test
+  void a_renamed_definition_leaves_the_run_of_all_definitions_in_the_same_order() {
+    givenGraph();
+    when(authorization.isAuthorized(any(), any())).thenReturn(true);
+    var executed = new ArrayList<Long>();
+    when(historyRepo.save(any())).thenAnswer(i -> {
+      executed.add(i.<ETLExecutionHistory>getArgument(0).getEtlId());
+      return i.getArgument(0);
+    });
+    givenRunnable();
+
+    etlService.executeAll(ONE_MONTH, SCHEDULED);
+    var before = List.copyOf(executed);
+    executed.clear();
+    definitionRepo.findAll().forEach(def -> def.setName(def.getName() + "-neu"));
+    etlService.executeAll(ONE_MONTH, SCHEDULED);
+
+    assertThat(executed).isEqualTo(before);
+    assertThat(savedRuns.getLast().status()).isEqualTo(Status.SUCCEEDED);
+    assertThat(savedRuns.getLast().message()).contains("base-neu", "report-neu");
+  }
+
+  /**
+   * Ein Name, den die Umstellung keiner Definition zuordnen konnte, lässt den Lauf nicht scheitern.
+   * Er steht in der Meldung — dort, wo jemand nachsieht, warum eine Definition ohne ihre Vorgänger lief.
+   */
+  @Test
+  void an_unresolved_dependency_is_named_in_the_run_and_does_not_let_it_fail() {
+    givenGraph();
+    when(authorization.isAuthorized(any(), any())).thenReturn(true);
+    givenRunnable();
+    definitionRepo.findAll().stream().filter(def -> def.getName().equals("report")).findFirst().orElseThrow()
+        .setUnresolvedDependencies(Set.of("umbenannt"));
+
+    etlService.executeAll(ONE_MONTH, SCHEDULED);
+
+    assertThat(savedRuns.getLast().status()).isEqualTo(Status.SUCCEEDED);
+    assertThat(savedRuns.getLast().message()).contains("Abhängigkeiten ohne Definition: umbenannt (bei report)");
+  }
+
+  /** Jede Definition des Graphen bekommt einen Abschnitt und eine Anweisung, damit sie laufen kann. */
+  private void givenRunnable() {
+    definitionRepo.findAll().forEach(def -> {
+      def.setReferencePeriod(ReferencePeriod.MONTH);
+      def.setInit(new SqlStatements(List.of()));
+      def.setExecute(new SqlStatements(List.of("insert into target select 1")));
+      def.setCleanup(new SqlStatements(List.of()));
+    });
   }
 
   // --- Hilfsmittel ---------------------------------------------------------------------------
@@ -570,6 +627,16 @@ public class ETLServiceTest {
         .toList();
   }
 
+  /** Die ids der Definitionen dieser Tests — Abhängigkeiten nennen sie über die id (#1207). */
+  private static final Map<String, Long> IDS = Map.of(
+      "base", 1L, "hours", 2L, "costs", 3L, "report", 4L, "a", 11L, "b", 12L);
+
+  private static List<String> namesOf(List<Long> ids) {
+    return ids.stream()
+        .map(id -> IDS.entrySet().stream().filter(e -> e.getValue().equals(id)).findFirst().orElseThrow().getKey())
+        .toList();
+  }
+
   /**
    * Ein Graph, in dem zwei Definitionen dieselbe Abhängigkeit nennen:
    * {@code report → {hours, costs} → base}.
@@ -587,9 +654,10 @@ public class ETLServiceTest {
 
   private static ETLDefinition definition(String name, String... dependencies) {
     var definition = new ETLDefinition();
+    ReflectionTestUtils.setField(definition, "id", IDS.get(name));
     definition.setName(name);
     definition.setDescription(name + " description");
-    definition.setDependencies(Set.of(dependencies));
+    definition.setDependencyIds(Set.copyOf(Arrays.stream(dependencies).map(IDS::get).toList()));
     return definition;
   }
 
@@ -601,7 +669,8 @@ public class ETLServiceTest {
     definition.setInit(new SqlStatements(List.of()));
     definition.setExecute(new SqlStatements(List.of("insert into target select 1")));
     definition.setCleanup(new SqlStatements(List.of()));
-    when(definitionRepo.findByName(name)).thenReturn(Optional.of(definition));
+    lenient().when(definitionRepo.findByName(name)).thenReturn(Optional.of(definition));
+    lenient().when(definitionRepo.findAll()).thenReturn(List.of(definition));
     // Seit #1071 prüft jeder öffentliche Einstieg die Berechtigung selbst — executeETL tut es
     // nicht mehr. Vorher übersprang scheduled=true die Prüfung, und die Tests kamen ohne aus.
     lenient().when(authorization.isAuthorized(any(), any())).thenReturn(true);
@@ -615,54 +684,54 @@ public class ETLServiceTest {
   @Test
   void testCalculateExecutionOrder_ValidGraph() {
     // Arrange
-    Map<String, Set<String>> graph = new HashMap<>();
-    graph.put("TaskA", Set.of("TaskB", "TaskC"));
-    graph.put("TaskB", Set.of("TaskC"));
-    graph.put("TaskC", Collections.emptySet());
-    graph.put("TaskD", Set.of("TaskE"));
-    graph.put("TaskE", Set.of("TaskB", "TaskC", "TaskA"));
+    Map<Long, Set<Long>> graph = new HashMap<>();
+    graph.put(1L, Set.of(2L, 3L));
+    graph.put(2L, Set.of(3L));
+    graph.put(3L, Collections.emptySet());
+    graph.put(4L, Set.of(5L));
+    graph.put(5L, Set.of(2L, 3L, 1L));
 
     // Act
-    List<String> executionOrder = etlService.calculateExecutionOrder(graph);
+    List<Long> executionOrder = etlService.calculateExecutionOrder(graph);
 
     // Assert
-    assertEquals(List.of("TaskC", "TaskB", "TaskA", "TaskE", "TaskD"), executionOrder);
+    assertEquals(List.of(3L, 2L, 1L, 5L, 4L), executionOrder);
   }
 
   @Test
   void testCalculateExecutionOrder_SingleNode() {
     // Arrange
-    Map<String, Set<String>> graph = new HashMap<>();
-    graph.put("TaskA", Collections.emptySet());
+    Map<Long, Set<Long>> graph = new HashMap<>();
+    graph.put(1L, Collections.emptySet());
 
     // Act
-    List<String> executionOrder = etlService.calculateExecutionOrder(graph);
+    List<Long> executionOrder = etlService.calculateExecutionOrder(graph);
 
     // Assert
-    assertEquals(List.of("TaskA"), executionOrder);
+    assertEquals(List.of(1L), executionOrder);
   }
 
   @Test
   void testCalculateExecutionOrder_DisconnectedGraph() {
     // Arrange
-    Map<String, Set<String>> graph = new HashMap<>();
-    graph.put("TaskA", Collections.emptySet());
-    graph.put("TaskB", Collections.emptySet());
-    graph.put("TaskC", Collections.emptySet());
+    Map<Long, Set<Long>> graph = new HashMap<>();
+    graph.put(1L, Collections.emptySet());
+    graph.put(2L, Collections.emptySet());
+    graph.put(3L, Collections.emptySet());
 
     // Act
-    List<String> executionOrder = etlService.calculateExecutionOrder(graph);
+    List<Long> executionOrder = etlService.calculateExecutionOrder(graph);
 
     // Assert
-    assertTrue(executionOrder.containsAll(List.of("TaskA", "TaskB", "TaskC")));
+    assertTrue(executionOrder.containsAll(List.of(1L, 2L, 3L)));
   }
 
   @Test
   void testCalculateExecutionOrder_CyclicDependency() {
     // Arrange
-    Map<String, Set<String>> graph = new HashMap<>();
-    graph.put("TaskA", Set.of("TaskB"));
-    graph.put("TaskB", Set.of("TaskA"));
+    Map<Long, Set<Long>> graph = new HashMap<>();
+    graph.put(1L, Set.of(2L));
+    graph.put(2L, Set.of(1L));
 
     // Act & Assert
     assertThrows(IllegalStateException.class, () -> etlService.calculateExecutionOrder(graph));
@@ -671,10 +740,10 @@ public class ETLServiceTest {
   @Test
   void testCalculateExecutionOrder_EmptyGraph() {
     // Arrange
-    Map<String, Set<String>> graph = new HashMap<>();
+    Map<Long, Set<Long>> graph = new HashMap<>();
 
     // Act
-    List<String> executionOrder = etlService.calculateExecutionOrder(graph);
+    List<Long> executionOrder = etlService.calculateExecutionOrder(graph);
 
     // Assert
     assertTrue(executionOrder.isEmpty());

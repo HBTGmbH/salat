@@ -18,10 +18,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
@@ -156,31 +158,45 @@ public class ETLService {
   public void executeAll(LocalDateRange dateRange, Trigger trigger) {
     checkAuthorizedForAnyETL();
     runWithHistory(startRun(dateRange, trigger), dateRange, () -> {
-      var names = getAllETLNames();
-      names.forEach(this::checkExecutable);
-      return names;
+      var definitions = definitionsById();
+      var order = definitionsInOrder(calculateExecutionOrder(dependencyGraph(definitions.values())), definitions);
+      order.forEach(this::checkExecutable);
+      return order;
     });
   }
 
-  private List<String> getAllETLNames() {
-    return calculateExecutionOrder(dependencyGraph());
+  /** Alle Definitionen nach id — sortiert, damit eine Reihenfolge nicht vom Zufall einer Hash-Map abhängt. */
+  private Map<Long, ETLDefinition> definitionsById() {
+    var byId = new TreeMap<Long, ETLDefinition>();
+    definitionRepo.findAll().forEach(definition -> byId.put(definition.getId(), definition));
+    return byId;
   }
 
-  private Map<String, Set<String>> dependencyGraph() {
-    Map<String, Set<String>> etlDependencyGraph = new HashMap<>();
-    for (ETLDefinition def : definitionRepo.findAll()) {
-      etlDependencyGraph.put(def.getName(), def.getDependencies());
+  /**
+   * Der Graph der Abhängigkeiten über die ids (#1207). Ein Name taucht darin nicht mehr auf: wer eine
+   * Definition umbenennt, ändert weder die Reihenfolge noch, ob ein Lauf durchgeht.
+   */
+  private static Map<Long, Set<Long>> dependencyGraph(Collection<ETLDefinition> definitions) {
+    Map<Long, Set<Long>> graph = new TreeMap<>();
+    for (ETLDefinition definition : definitions) {
+      graph.put(definition.getId(), definition.getDependencyIds());
     }
-    return etlDependencyGraph;
+    return graph;
   }
 
+  /**
+   * Die Ausführungsreihenfolge: jede Definition nach denen, von denen sie abhängt. Die Knoten werden
+   * in aufsteigender id besucht, damit dieselben Definitionen immer in derselben Reihenfolge laufen.
+   *
+   * @throws IllegalStateException bei einem Zyklus
+   */
   @VisibleForTesting
-  public List<String> calculateExecutionOrder (Map <String, Set<String>> graph) {
-    List<String> executionOrder = new ArrayList<>();
-    Set<String> visited = new HashSet<>();
-    Set<String> temp = new HashSet<>();
+  public List<Long> calculateExecutionOrder(Map<Long, Set<Long>> graph) {
+    List<Long> executionOrder = new ArrayList<>();
+    Set<Long> visited = new HashSet<>();
+    Set<Long> temp = new HashSet<>();
 
-    for (String node : graph.keySet()) {
+    for (Long node : new TreeMap<>(graph).keySet()) {
       if (!visited.contains(node)) {
         topologicalSort(node, graph, temp, visited, executionOrder);
       }
@@ -189,14 +205,13 @@ public class ETLService {
     return executionOrder;
   }
 
-  private void topologicalSort(String node, Map<String, Set<String>> graph, Set<String> temp, Set <String> visited, List <String> executionOrder) {
+  private void topologicalSort(Long node, Map<Long, Set<Long>> graph, Set<Long> temp, Set<Long> visited, List<Long> executionOrder) {
     if (temp.contains(node)) {
       throw new IllegalStateException("Cyclic dependency detected");
     }
     if (!visited.contains(node)) {
       temp.add(node);
-      Set<String> dependencies = graph.getOrDefault(node, Set.of());
-      for (String dependency : dependencies) {
+      for (Long dependency : new TreeSet<>(graph.getOrDefault(node, Set.of()))) {
         topologicalSort(dependency, graph, temp, visited, executionOrder);
       }
       temp.remove(node);
@@ -205,12 +220,16 @@ public class ETLService {
     }
   }
 
+  /** Die Definitionen zu den ids, in deren Reihenfolge; eine id ohne Definition fällt weg. */
+  private static List<ETLDefinition> definitionsInOrder(List<Long> ids, Map<Long, ETLDefinition> definitions) {
+    return ids.stream().map(definitions::get).filter(Objects::nonNull).toList();
+  }
+
   public void execute(LocalDateRange dateRange, List<String> etlNames, Trigger trigger) {
     checkAuthorizedForAnyETL();
-    runWithHistory(startRun(dateRange, trigger), dateRange, () -> {
-      etlNames.forEach(this::checkExecutable);
-      return etlNames;
-    });
+    runWithHistory(startRun(dateRange, trigger), dateRange, () -> etlNames.stream()
+        .map(this::checkExecutable)
+        .toList());
   }
 
   /**
@@ -257,10 +276,10 @@ public class ETLService {
    * eine und wäre keine.
    *
    * @param etlName die gewählte Definition, oder {@code null} für „alle, die ich ausführen darf"
-   * @return die Namen in der Reihenfolge, in der sie laufen — bei einer einzelnen Definition samt
+   * @return die ids in der Reihenfolge, in der die Definitionen laufen — bei einer einzelnen samt
    *     ihrer Abhängigkeiten
    */
-  public List<String> resolveManualRun(LocalDateRange dateRange, String etlName) {
+  public List<Long> resolveManualRun(LocalDateRange dateRange, String etlName) {
     // Die Berechtigung zuerst, die Eingabe danach: wer gar nicht anstoßen darf, soll das erfahren
     // und nicht erst eine Rückmeldung zu seiner Eingabe bekommen. Nebenbei ist das die Reihenfolge,
     // die ein Test überhaupt auseinanderhalten kann — läge die Eingabeprüfung vorn, verdeckte eine
@@ -270,12 +289,14 @@ public class ETLService {
       throw new InvalidDataException(ETL_INVALID_DATE_RANGE);
     }
 
-    List<String> entryPoints;
+    List<Long> entryPoints;
     if (etlName != null && !etlName.isBlank()) {
-      checkExecutable(etlName);
-      entryPoints = List.of(etlName);
+      entryPoints = List.of(checkExecutable(etlName).getId());
     } else {
-      entryPoints = getExecutableDefinitions().stream().map(ETLDefinitionOption::name).toList();
+      entryPoints = definitionRepo.findAll().stream()
+          .filter(def -> authorization.isAuthorized(def, AccessLevel.EXECUTE))
+          .map(ETLDefinition::getId)
+          .toList();
       if (entryPoints.isEmpty()) {
         throw new BusinessRuleException(ETL_NO_EXECUTABLE_DEFINITION);
       }
@@ -285,7 +306,7 @@ public class ETLService {
     // mitzieht, laufen ohne eigene Prüfung. Eine Regel für X ohne das, was X braucht, wäre sonst
     // wertlos — der Lauf bräche an der ersten Abhängigkeit ab (#1071).
     try {
-      return executionOrderFor(entryPoints);
+      return executionOrderFor(entryPoints).stream().map(ETLDefinition::getId).toList();
     } catch (IllegalStateException e) {
       // Auf allen anderen Wegen wird die Reihenfolge erst im Lauf ermittelt, und ein Zyklus landet
       // deshalb als Meldung in dessen Zeile. Hier wird sie vorher gebraucht — es gibt noch keine
@@ -312,10 +333,10 @@ public class ETLService {
    * Lauf mit beliebigen Definitionen fortsetzen könnte, kommt an ihr nicht vorbei — das prüft der
    * Compiler, nicht eine Laufzeitprüfung, die immer durchginge.
    */
-  void continueRun(long runId, LocalDateRange dateRange, List<String> etlNames) {
+  void continueRun(long runId, LocalDateRange dateRange, List<Long> etlIds) {
     var run = runHistoryRepo.findById(runId)
         .orElseThrow(() -> new InvalidDataException(ETL_RUN_NOT_FOUND));
-    runWithHistory(run, dateRange, () -> etlNames);
+    runWithHistory(run, dateRange, () -> definitionsInOrder(etlIds, definitionsById()));
   }
 
   /**
@@ -329,15 +350,17 @@ public class ETLService {
    * im Abhängigkeitsgraphen oder eine fehlende Berechtigung bricht den Lauf ab, bevor eine einzige
    * Definition lief, und auch das gehört in die Zeile.
    */
-  private void runWithHistory(ETLRunHistory run, LocalDateRange dateRange, Supplier<List<String>> etlNames) {
+  private void runWithHistory(ETLRunHistory run, LocalDateRange dateRange, Supplier<List<ETLDefinition>> definitions) {
     var executed = new ArrayList<String>();
     var failed = new ArrayList<String>();
+    var unresolved = new ArrayList<String>();
     try {
-      for (String etlName : etlNames.get()) {
-        if (!executeETL(etlName, dateRange)) {
-          failed.add(etlName);
+      for (ETLDefinition definition : definitions.get()) {
+        if (!executeETL(definition, dateRange)) {
+          failed.add(definition.getName());
         }
-        executed.add(etlName);
+        executed.add(definition.getName());
+        unresolved.addAll(unresolvedDependenciesOf(definition));
       }
     } catch (RuntimeException e) {
       log.error("ETL run aborted after {} definition(s)", executed.size(), e);
@@ -345,13 +368,28 @@ public class ETLService {
       throw e;
     }
 
+    var note = unresolved.isEmpty() ? "" : " — Abhängigkeiten ohne Definition: " + String.join(", ", unresolved);
     if (failed.isEmpty()) {
-      finishRun(run, SUCCEEDED, "%d Definition(en) ausgeführt: %s"
-          .formatted(executed.size(), String.join(", ", executed)));
+      finishRun(run, SUCCEEDED, "%d Definition(en) ausgeführt: %s%s"
+          .formatted(executed.size(), String.join(", ", executed), note));
     } else {
-      finishRun(run, FAILED, "%d Definition(en) ausgeführt: %s — fehlgeschlagen: %s"
-          .formatted(executed.size(), String.join(", ", executed), String.join(", ", failed)));
+      finishRun(run, FAILED, "%d Definition(en) ausgeführt: %s — fehlgeschlagen: %s%s"
+          .formatted(executed.size(), String.join(", ", executed), String.join(", ", failed), note));
     }
+  }
+
+  /**
+   * Die Namen, die die Umstellung auf ids (#1207) keiner Definition eindeutig zuordnen konnte. Sie
+   * lassen den Lauf nicht scheitern, sondern stehen in seiner Meldung und im Log — dort, wo jemand
+   * nachsieht, warum eine Definition ohne ihre Vorgänger lief.
+   */
+  private List<String> unresolvedDependenciesOf(ETLDefinition definition) {
+    var unresolved = definition.getUnresolvedDependencies();
+    if (unresolved == null || unresolved.isEmpty()) {
+      return List.of();
+    }
+    log.warn("ETL definition {} names dependencies no definition answers to: {}", definition.getName(), unresolved);
+    return unresolved.stream().sorted().map(name -> name + " (bei " + definition.getName() + ")").toList();
   }
 
   /**
@@ -399,29 +437,38 @@ public class ETLService {
    * <p>Jede Definition kommt genau einmal vor, auch wenn mehrere sie brauchen: {@code visited} ist
    * über alle Einstiegspunkte hinweg dasselbe.
    */
-  private List<String> executionOrderFor(Collection<String> entryPoints) {
-    var graph = dependencyGraph();
-    List<String> executionOrder = new ArrayList<>();
-    Set<String> visited = new HashSet<>();
-    Set<String> temp = new HashSet<>();
-    for (String entryPoint : entryPoints) {
+  private List<ETLDefinition> executionOrderFor(Collection<Long> entryPoints) {
+    var definitions = definitionsById();
+    var graph = dependencyGraph(definitions.values());
+    List<Long> executionOrder = new ArrayList<>();
+    Set<Long> visited = new HashSet<>();
+    Set<Long> temp = new HashSet<>();
+    for (Long entryPoint : entryPoints) {
       topologicalSort(entryPoint, graph, temp, visited, executionOrder);
     }
-    return executionOrder;
+    return definitionsInOrder(executionOrder, definitions);
   }
 
   /**
-   * Ob die anfragende Person diese Definition ausführen darf.
+   * Ob die anfragende Person diese Definition ausführen darf — angesprochen über ihren Namen, wie es
+   * die REST-Schnittstelle und das Formular tun.
    *
+   * @return die Definition
    * @throws InvalidDataException wenn es die Definition nicht gibt
    * @throws AuthorizationException wenn die Berechtigung fehlt
    */
-  private void checkExecutable(String etlName) {
+  private ETLDefinition checkExecutable(String etlName) {
     var definition = definitionRepo.findByName(etlName)
         .orElseThrow(() -> new InvalidDataException(ETL_DEFINITION_NOT_FOUND, etlName));
+    return checkExecutable(definition);
+  }
+
+  /** @throws AuthorizationException wenn die Berechtigung fehlt */
+  private ETLDefinition checkExecutable(ETLDefinition definition) {
     if (!authorization.isAuthorized(definition, AccessLevel.EXECUTE)) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
     }
+    return definition;
   }
 
   /**
@@ -434,9 +481,8 @@ public class ETLService {
    *
    * @return {@code true}, wenn jede Referenzperiode dieser Definition durchlief
    */
-  private boolean executeETL(String etlName, LocalDateRange dateRange) {
-    ETLDefinition def = definitionRepo.findByName(etlName)
-        .orElseThrow(() -> new IllegalArgumentException("ETL not found: " + etlName));
+  private boolean executeETL(ETLDefinition def, LocalDateRange dateRange) {
+    var etlName = def.getName();
 
     var refPeriods = generateReferencePeriodRanges(dateRange, def.getReferencePeriod());
     boolean allPeriodsSucceeded = true;

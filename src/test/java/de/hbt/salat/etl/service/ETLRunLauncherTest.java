@@ -72,7 +72,7 @@ class ETLRunLauncherTest {
 
   @Test
   void the_permission_and_the_order_are_settled_before_the_run_is_even_opened() {
-    when(etlService.resolveManualRun(ONE_MONTH, "report")).thenReturn(List.of("base", "report"));
+    when(etlService.resolveManualRun(ONE_MONTH, "report")).thenReturn(List.of(1L, 4L));
     when(etlService.startRun(ONE_MONTH, MANUAL)).thenReturn(openedRun());
 
     var run = etlRunLauncher.startManualRun(ONE_MONTH, "report");
@@ -101,7 +101,7 @@ class ETLRunLauncherTest {
   @Test
   void the_background_thread_works_as_the_system_and_continues_the_opened_run() {
     var run = openedRun();
-    when(etlService.resolveManualRun(ONE_MONTH, null)).thenReturn(List.of("base", "report"));
+    when(etlService.resolveManualRun(ONE_MONTH, null)).thenReturn(List.of(1L, 4L));
     when(etlService.startRun(ONE_MONTH, MANUAL)).thenReturn(run);
     when(authorizedUserProvider.getObject()).thenReturn(authorizedUser);
     runSubmittedTaskImmediately();
@@ -115,13 +115,13 @@ class ETLRunLauncherTest {
     // Hand beendete Zeile zu ueberschreiben, leistet allerdings erst das erneute Lesen in
     // ETLService.finishRun — hier wird nur festgehalten, dass der Hintergrundlauf die Zeile selbst
     // holt, statt einen Abzug ueber die ganze Laufzeit mitzuschleppen.
-    verify(etlService).continueRun(eq(run.getId()), eq(ONE_MONTH), eq(List.of("base", "report")));
+    verify(etlService).continueRun(eq(run.getId()), eq(ONE_MONTH), eq(List.of(1L, 4L)));
   }
 
   @Test
   void a_run_that_never_reached_the_executor_does_not_look_like_one_that_is_still_going() {
     var run = openedRun();
-    when(etlService.resolveManualRun(ONE_MONTH, null)).thenReturn(List.of("base"));
+    when(etlService.resolveManualRun(ONE_MONTH, null)).thenReturn(List.of(1L));
     when(etlService.startRun(ONE_MONTH, MANUAL)).thenReturn(run);
     doThrow(new TaskRejectedException("no free thread")).when(etlTaskExecutor).execute(any());
 

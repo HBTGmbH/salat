@@ -36,7 +36,7 @@ class ETLServiceProxyTest {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     var range = new LocalDateRange(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
 
-    assertThatThrownBy(() -> etlService.continueRun(-1L, range, List.of("unknown")))
+    assertThatThrownBy(() -> etlService.continueRun(-1L, range, List.of(999L)))
         .isInstanceOf(InvalidDataException.class);
   }
 

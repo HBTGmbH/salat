@@ -3783,3 +3783,75 @@ databaseChangeLog:
             constraintName: fk_employee_cost_employee_suborder
             referencedTableName: suborder
             referencedColumnNames: id
+  - changeSet:
+      id: 99
+      author: kr
+      comment: Namen der ETL-Definitionen vor der Umstellung auf Eindeutigkeit pruefen (#1207)
+      # Die Definitionen werden von Hand in der Datenbank gepflegt; nichts hat ihre Namen bisher
+      # eindeutig oder gefuellt gehalten. Changeset 100 macht den Namen eindeutig und Pflicht. Bevor
+      # das scheitert, nennt dieser Check die Definitionen, die das verhindern, und aendert nichts.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: etl_definition_dependency
+      changes:
+        - customChange:
+            class: de.hbt.salat.etl.persistence.ETLDefinitionNamesCheck
+
+  - changeSet:
+      id: 100
+      author: kr
+      comment: Abhaengigkeiten zwischen ETL-Definitionen ueber die id (#1207)
+      # Eine Abhaengigkeit nannte die andere Definition ueber ihren Namen (etl_definition.dependencies,
+      # kommasepariert). Wer eine Definition umbenannte, musste jede Abhaengigkeit von Hand nachziehen;
+      # vergass er eine, scheiterte der ganze Lauf "alle Definitionen", auch der naechtliche. Ab hier
+      # steht jede Abhaengigkeit als Zeile in etl_definition_dependency, mit zwei Fremdschluesseln.
+      #
+      # Uebernommen wird jeder Name, der genau eine Definition trifft - nach Changeset 99 heisst das:
+      # jeder, den es gibt -, binaer verglichen. Ein Name ohne Definition geht nicht verloren: er
+      # bleibt in der umbenannten Spalte unresolved_dependencies, steht in der Meldung jedes Laufs
+      # dieser Definition und laesst den Lauf nicht scheitern.
+      #
+      # Danach ist der Name Pflicht und eindeutig. Wer Definitionen per SQL pflegt, traegt
+      # Abhaengigkeiten kuenftig als ids ein - siehe docs/etl-definitionen.md.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: etl_definition_dependency
+      changes:
+        - sql:
+            sql: |-
+              CREATE TABLE etl_definition_dependency (
+                etl_definition_id BIGINT NOT NULL,
+                depends_on_id BIGINT NOT NULL,
+                PRIMARY KEY (etl_definition_id, depends_on_id),
+                CONSTRAINT fk_etl_definition_dependency_definition FOREIGN KEY (etl_definition_id) REFERENCES etl_definition (id) ON DELETE CASCADE,
+                CONSTRAINT fk_etl_definition_dependency_depends_on FOREIGN KEY (depends_on_id) REFERENCES etl_definition (id)
+              );
+              INSERT INTO etl_definition_dependency (etl_definition_id, depends_on_id)
+              SELECT DISTINCT d.id, o.id
+                FROM etl_definition d
+                JOIN JSON_TABLE(
+                       CONCAT('["', REPLACE(REPLACE(REPLACE(d.dependencies, '\\', '\\\\'), '"', '\\"'), ',', '","'), '"]'),
+                       '$[*]' COLUMNS (v VARCHAR(255) PATH '$')) j
+                JOIN etl_definition o ON BINARY o.name = BINARY TRIM(j.v)
+               WHERE TRIM(j.v) <> '';
+              UPDATE etl_definition d
+                LEFT JOIN (SELECT d2.id, GROUP_CONCAT(TRIM(j.v) ORDER BY j.n SEPARATOR ',') AS names
+                             FROM etl_definition d2
+                             JOIN JSON_TABLE(
+                                    CONCAT('["', REPLACE(REPLACE(REPLACE(d2.dependencies, '\\', '\\\\'), '"', '\\"'), ',', '","'), '"]'),
+                                    '$[*]' COLUMNS (n FOR ORDINALITY, v VARCHAR(255) PATH '$')) j
+                            WHERE TRIM(j.v) <> ''
+                              AND NOT EXISTS (SELECT 1 FROM etl_definition o WHERE BINARY o.name = BINARY TRIM(j.v))
+                            GROUP BY d2.id) u ON u.id = d.id
+                 SET d.dependencies = u.names;
+        # Als SQL statt renameColumn/addNotNullConstraint: deren MODIFY in MySQL liesse die Kollation
+        # utf8mb3_bin fallen, und der eindeutige Name ignorierte dann Gross-/Kleinschreibung.
+        - sql:
+            sql: |-
+              ALTER TABLE etl_definition RENAME COLUMN dependencies TO unresolved_dependencies;
+              ALTER TABLE etl_definition MODIFY name VARCHAR(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL;
+              ALTER TABLE etl_definition ADD CONSTRAINT uk_etl_definition_name UNIQUE (name)
