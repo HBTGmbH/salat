@@ -13,7 +13,7 @@ public record SuborderDTO(
     Boolean standard,
     Boolean commentnecessary,
     Boolean fixedPrice,
-    Boolean trainingFlag,
+    boolean trainingFlag,
     OrderType orderType,
     String validFrom,
     String validUntil,

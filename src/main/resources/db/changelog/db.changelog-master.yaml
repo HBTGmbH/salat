@@ -4197,3 +4197,27 @@ databaseChangeLog:
             constraintName: fk_order_pricing_customerorder
             referencedTableName: customerorder
             referencedColumnNames: id
+  - changeSet:
+      id: 117
+      author: kr
+      comment: Fortbildungskennzeichen von Buchung und Unterauftrag sind NOT NULL mit Default false (#1246)
+      # Ein fehlender Wert hiess schon immer "keine Fortbildung"; die Anwendung fing NULL an jeder
+      # Lesestelle selbst ab. Ab hier sagt es die Spalte. Eigenes SQL statt addNotNullConstraint und
+      # addDefaultValue: ein MODIFY statt zweier, timereport ist gross.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: timereport
+            columnName: training
+        - columnExists:
+            tableName: suborder
+            columnName: trainingFlag
+      changes:
+        - sql:
+            sql: UPDATE timereport SET training = 0 WHERE training IS NULL
+        - sql:
+            sql: ALTER TABLE timereport MODIFY training bit(1) NOT NULL DEFAULT b'0'
+        - sql:
+            sql: UPDATE suborder SET trainingFlag = 0 WHERE trainingFlag IS NULL
+        - sql:
+            sql: ALTER TABLE suborder MODIFY trainingFlag bit(1) NOT NULL DEFAULT b'0'

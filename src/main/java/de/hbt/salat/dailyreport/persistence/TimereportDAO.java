@@ -554,7 +554,7 @@ public class TimereportDAO {
             .taskdescription(timereport.getTaskdescription())
             .ticketReference(timereport.getTicketReference())
             .sequencenumber(timereport.getSequencenumber())
-            .training(Optional.ofNullable(timereport.getTraining()).orElse(false))
+            .training(timereport.isTraining())
             .status(timereport.getStatus())
             .billable(timereport.getSuborder().getInvoice() == YESNO_YES)
             .employeeorderId(timereport.getEmployeeorder().getId())

@@ -30,7 +30,7 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
@@ -172,7 +172,29 @@ class SuborderControllerTest {
     assertThat(data.getValue().parentId()).isNull();
   }
 
-  private static RequestBuilder store(String parentId, String validFrom) {
+  /**
+   * The training switch is a checkbox: unticked, the browser sends nothing at all. That arrives as
+   * {@code false}, not as {@code null} — the column is {@code NOT NULL} since #1246.
+   */
+  @Test
+  void a_suborder_stored_without_the_training_switch_is_no_training() throws Exception {
+    mockMvc.perform(store("", "2026-02-01"));
+
+    var data = ArgumentCaptor.forClass(SuborderDTO.class);
+    verify(suborderService).create(data.capture(), eq(ORDER_ID));
+    assertThat(data.getValue().trainingFlag()).isFalse();
+  }
+
+  @Test
+  void a_ticked_training_switch_is_stored() throws Exception {
+    mockMvc.perform(store("", "2026-02-01").param("trainingFlag", "true"));
+
+    var data = ArgumentCaptor.forClass(SuborderDTO.class);
+    verify(suborderService).create(data.capture(), eq(ORDER_ID));
+    assertThat(data.getValue().trainingFlag()).isTrue();
+  }
+
+  private static MockHttpServletRequestBuilder store(String parentId, String validFrom) {
     return post("/orders/suborders/store")
         .param("customerId", "3")
         .param("customerorderId", "7")

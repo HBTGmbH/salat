@@ -310,7 +310,7 @@ public class TimereportService {
         timereport.getEmployeeorder().getId(),
         shiftedDate,
         timereport.getTaskdescription(),
-        TRUE.equals(timereport.getTraining()),
+        timereport.isTraining(),
         timereport.getDurationhours(),
         timereport.getDurationminutes());
   }
