@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
       th:with="section='employees',subSection='contracts',title=${pageTitle},sectionTitle=${sectionTitle}">
@@ -46,9 +47,7 @@
         <div class="invalid-feedback" th:if="${#fields.hasErrors('supervisorIds')}" th:errors="*{supervisorIds}"></div>
       </div>
 
-      <div th:replace="~{fragments/form-fields :: textareaInput(
-        field='taskdescription', label=#{main.employeecontract.taskdescription.text}, required=false, rows=4, monospace=false
-      )}"></div>
+      <salat:textarea th:field="*{taskdescription}" th:label="#{main.employeecontract.taskdescription.text}" required="false" rows="4" />
 
       <div class="row">
         <div class="col-md-6">
@@ -63,16 +62,12 @@
         </div>
       </div>
 
-      <div th:replace="~{fragments/form-fields :: textInput(
-        field='dailyWorkingTime', label=#{main.employeecontract.dailyworkingtime.text}, required=true, maxlength=10
-      )}"></div>
-      <div th:replace="~{fragments/form-fields :: textInput(
-        field='yearlyVacation', label=#{main.employeecontract.yearlyvacation.text}, required=true, maxlength=5
-      )}"></div>
+      <salat:textInput th:field="*{dailyWorkingTime}" th:label="#{main.employeecontract.dailyworkingtime.text}" required="true" maxlength="10" />
+      <salat:textInput th:field="*{yearlyVacation}" th:label="#{main.employeecontract.yearlyvacation.text}" required="true" maxlength="5" />
 
-      <div th:if="${!isEdit}" th:replace="~{fragments/form-fields :: textInput(
-        field='initialOvertime', label=#{main.employeecontract.initialovertime.text}, required=false, maxlength=10
-      )}"></div>
+      <th:block th:if="${!isEdit}">
+        <salat:textInput th:field="*{initialOvertime}" th:label="#{main.employeecontract.initialovertime.text}" required="false" maxlength="10" />
+      </th:block>
 
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(
         field='freelancer', label=#{main.employeecontract.freelancer.text}

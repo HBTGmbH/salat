@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:salat="http://hbt.de/salat/thymeleaf"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
       th:with="section='reports',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
@@ -7,13 +8,9 @@
     <div class="card-body">
         <input type="hidden" th:field="*{id}" />
 
-        <div th:replace="~{fragments/form-fields :: textInput(
-          field='name', label='Report Name', required=true, maxlength=255
-        )}"></div>
+        <salat:textInput th:field="*{name}" th:label="'Report Name'" required="true" maxlength="255" />
 
-        <div th:replace="~{fragments/form-fields :: textareaInputHelp(
-          field='sql', label='SQL', required=true, rows=15, helpText=${'Use named parameters like :startDate, :endDate'}, monospace=true
-        )}"></div>
+        <salat:textarea th:field="*{sql}" th:label="'SQL'" required="true" rows="15" monospace="true" th:helpText="${'Use named parameters like :startDate, :endDate'}" />
     </div>
 
     <div class="card-footer">

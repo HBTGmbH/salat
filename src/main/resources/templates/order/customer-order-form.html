@@ -29,9 +29,7 @@
           </div>
         </div>
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='sign', label=#{main.customerorder.sign.text}, required=true, maxlength=30
-          )}"></div>
+          <salat:textInput th:field="*{sign}" th:label="#{main.customerorder.sign.text}" required="true" maxlength="30" />
         </div>
         <div class="col-md-4">
           <div class="mb-3">
@@ -47,19 +45,13 @@
 
       <div class="row">
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='description', label=#{main.customerorder.description.text}, required=true, maxlength=255
-          )}"></div>
+          <salat:textInput th:field="*{description}" th:label="#{main.customerorder.description.text}" required="true" maxlength="255" />
         </div>
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='shortdescription', label=#{main.customerorder.shortdescription.text}, required=false, maxlength=70
-          )}"></div>
+          <salat:textInput th:field="*{shortdescription}" th:label="#{main.customerorder.shortdescription.text}" required="false" maxlength="70" />
         </div>
         <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='orderCustomer', label=#{main.customerorder.ordercustomer.text}, required=false, maxlength=30
-          )}"></div>
+          <salat:textInput th:field="*{orderCustomer}" th:label="#{main.customerorder.ordercustomer.text}" required="false" maxlength="30" />
         </div>
       </div>
 
@@ -93,22 +85,16 @@
 
       <div class="row">
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='responsibleCustomerTechnical', label=#{main.customerorder.responsiblecustomer.tech.text}, required=true, maxlength=30
-          )}"></div>
+          <salat:textInput th:field="*{responsibleCustomerTechnical}" th:label="#{main.customerorder.responsiblecustomer.tech.text}" required="true" maxlength="30" />
         </div>
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='responsibleCustomerContractually', label=#{main.customerorder.responsiblecustomer.contract.text}, required=true, maxlength=30
-          )}"></div>
+          <salat:textInput th:field="*{responsibleCustomerContractually}" th:label="#{main.customerorder.responsiblecustomer.contract.text}" required="true" maxlength="30" />
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
-          )}"></div>
+          <salat:textInput th:field="*{debithours}" th:label="#{main.general.debithours.text}" required="false" maxlength="10" />
         </div>
         <div class="col-md-6">
           <div class="mb-3">
