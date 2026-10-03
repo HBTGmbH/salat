@@ -137,7 +137,7 @@ public class TimereportDAO {
      * 2) valid before and at the given date
      * 3) status is committed
      */
-    public List<TimereportDTO> getCommitedTimereportsByEmployeeContractIdBeforeDate(long contractId, LocalDate date) {
+    public List<TimereportDTO> getCommittedTimereportsByEmployeeContractIdBeforeDate(long contractId, LocalDate date) {
         return toDaoList(timereportRepository.findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(
             contractId,
             TIMEREPORT_STATUS_COMMITTED,

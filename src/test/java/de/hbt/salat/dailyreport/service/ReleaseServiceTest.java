@@ -144,7 +144,7 @@ class ReleaseServiceTest {
 
             // then the contract end is what gets shown, accepted and stored
             assertThat(period).isEqualTo(new ReviewPeriod(CONTRACT_START, CONTRACT_END));
-            verify(timereportDAO).getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
+            verify(timereportDAO).getCommittedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, CONTRACT_END, CONTRACT_END);
             verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
         }
@@ -2181,7 +2181,7 @@ class ReleaseServiceTest {
             acceptableContract();
             final var readable = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
             when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(readable);
-            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, FRIDAY)).thenReturn(readable);
+            when(timereportDAO.getCommittedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, FRIDAY)).thenReturn(readable);
             givenBookedDays(MONDAY, FRIDAY, List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY));
 
             final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
@@ -2425,7 +2425,7 @@ class ReleaseServiceTest {
 
         private void givenBookings(LocalDate begin, LocalDate end, List<TimereportDTO> listed, List<TimereportDTO> committed) {
             when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin, end)).thenReturn(listed);
-            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, end)).thenReturn(committed);
+            when(timereportDAO.getCommittedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, end)).thenReturn(committed);
             givenBookedDays(begin, end, listed.stream().map(TimereportDTO::getReferenceday).toList());
         }
 
@@ -2707,7 +2707,7 @@ class ReleaseServiceTest {
 
         private void assertThatNothingWasAccepted() {
             verifyNoInteractions(timereportService, timereportRepository, employeecontractService, overtimeService);
-            verify(timereportDAO, never()).getCommitedTimereportsByEmployeeContractIdBeforeDate(anyLong(), any());
+            verify(timereportDAO, never()).getCommittedTimereportsByEmployeeContractIdBeforeDate(anyLong(), any());
         }
 
         private void givenAReleasedBookingInMarch() {
@@ -2718,7 +2718,7 @@ class ReleaseServiceTest {
                 .orderType(OrderType.STANDARD)
                 .duration(Duration.ofHours(8))
                 .build();
-            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, END_OF_MONTH)).thenReturn(List.of(booking));
+            when(timereportDAO.getCommittedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, END_OF_MONTH)).thenReturn(List.of(booking));
             when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(new Timereport()));
         }
 
