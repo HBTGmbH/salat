@@ -110,16 +110,6 @@ public class BudgetAuthorizationTest {
     assertThat(authorization.isAuthorized(planOfAnotherOrder)).isFalse();
   }
 
-  /** A plan whose order the migration could not resolve is left to whoever sees every order. */
-  @Test
-  public void an_unresolved_plan_is_not_authorized_for_a_responsible() {
-    givenResponsibleFor(OWN);
-    var unresolved = budgetOn(OWN);
-    unresolved.setCustomerorderId(null);
-
-    assertThat(authorization.isAuthorized(unresolved)).isFalse();
-  }
-
   @Test
   public void a_user_without_any_responsibility_gets_no_budget_menu() {
     givenResponsibleFor();

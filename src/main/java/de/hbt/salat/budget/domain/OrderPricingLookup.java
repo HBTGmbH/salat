@@ -26,8 +26,7 @@ import de.hbt.salat.common.util.SqlLikePattern;
  * its {@code suborder_fqs} view. A pattern ending in a slash therefore covers a suborder and its
  * whole subtree and cannot spill over into a sibling whose sign merely starts with the same
  * characters; {@code %} and {@code _} may be used as wildcards. An empty pattern covers the whole
- * customer order. The order is matched by id (#1212); a rate whose order the migration could not
- * resolve applies to nothing ({@link OrderPricing#isUnresolved()}). The person is matched by id (#968), no person meaning "any
+ * customer order. The order is matched by id (#1212). The person is matched by id (#968), no person meaning "any
  * employee" ({@link OrderPricing#isForEveryone()}). While the person was still stored as a sign it
  * was compared for equality — the report prefix-matches it, but stored signs exist that are a
  * prefix of a different employee's sign, so copying that would have attached rates to the wrong
@@ -83,13 +82,10 @@ public final class OrderPricingLookup {
         this.byCustomerorderId = byCustomerorderId;
     }
 
-    /** Builds a lookup over the given pricings. A rate without an order is left out — it prices nothing. */
+    /** Builds a lookup over the given pricings. */
     public static OrderPricingLookup of(Collection<OrderPricing> pricings) {
         Map<Long, List<Candidate>> byCustomerorderId = new HashMap<>();
         for (var pricing : pricings) {
-            if (pricing.isUnresolved()) {
-                continue;
-            }
             byCustomerorderId
                 .computeIfAbsent(pricing.getCustomerorderId(), k -> new ArrayList<>())
                 .add(new Candidate(pricing, SqlLikePattern.startingWith(pricing.getSuborderSign()),

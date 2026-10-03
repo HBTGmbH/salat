@@ -21,12 +21,12 @@ public class SelectablePlansTest {
   public void names_each_plan_by_the_sign_its_scope_has_today() {
     var orderWide = plan(1L, null, null);
     var onSuborder = plan(2L, 10L, "stale/01");
-    var unresolved = plan(3L, null, "co/gone");
+    var staleOrderWide = plan(3L, null, "co/stale");
 
-    var selectable = SelectablePlans.of(List.of(orderWide, onSuborder, unresolved), List.of(), null)
+    var selectable = SelectablePlans.of(List.of(orderWide, onSuborder, staleOrderWide), List.of(), null)
         .withScopeSigns("co", Map.of(10L, "co/01"));
 
-    assertThat(selectable.scopeSigns()).containsOnly(entry(1L, "co"), entry(2L, "co/01"), entry(3L, "co/gone"));
+    assertThat(selectable.scopeSigns()).containsOnly(entry(1L, "co"), entry(2L, "co/01"), entry(3L, "co"));
   }
 
   @Test

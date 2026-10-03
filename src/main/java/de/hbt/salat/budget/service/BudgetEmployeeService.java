@@ -103,7 +103,7 @@ public class BudgetEmployeeService {
         var lookup = AppliedRateLookup.of(customerorderId, budget.getId(),
             subordersOf(days, rendered),
             includeCosts ? employeeCostService.lookup() : null,
-            orderPricingService.lookupFor(customerorderId == null ? List.of() : List.of(customerorderId)));
+            orderPricingService.lookupFor(List.of(customerorderId)));
 
         return new AppliedRates(
             BudgetEmployees.of(rowsOf(days, lookup), includeCosts),

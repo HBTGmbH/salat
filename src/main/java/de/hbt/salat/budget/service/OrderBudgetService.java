@@ -154,7 +154,7 @@ public class OrderBudgetService {
         return orderBudgetRepository.findByCustomerorderIdAndActive(customerorderId, Boolean.TRUE);
     }
 
-    /** Where the plan sits in the order tree — empty for one the migration could not resolve (#1205). */
+    /** Where the plan sits in the order tree — empty for a suborder that no longer exists (#1205). */
     @Transactional(readOnly = true)
     public Optional<OrderPosition> positionOf(OrderBudget budget) {
         return orderPositions.of(budget);
@@ -162,7 +162,7 @@ public class OrderBudgetService {
 
     @Authorized(requiresManager = true)
     public OrderBudget create(OrderBudgetData data) {
-        var scope = scopeOf(data, null);
+        var scope = scopeOf(data);
         // Checked before apply, which does not know the id that has to be excluded from the search.
         checkLevelNotMixed(scope, data.validFrom(), data.validUntil(), data.active(), null);
         var budget = new OrderBudget();
@@ -183,7 +183,7 @@ public class OrderBudgetService {
     @Authorized(requiresManager = true)
     public void update(long id, OrderBudgetData data) {
         var budget = getById(id);
-        var scope = scopeOf(data, budget);
+        var scope = scopeOf(data);
         checkLevelNotMixed(scope, data.validFrom(), data.validUntil(), data.active(), id);
         var coverageBefore = coverageOf(budget);
         apply(budget, data, scope);
@@ -211,9 +211,9 @@ public class OrderBudgetService {
         var budget = getById(id);
         // Only active plans conflict, so activating one can create a conflict that saving it did not.
         if (active) {
-            // a plan the migration could not resolve covers nothing and conflicts with nothing
+            // a plan whose suborder no longer exists covers nothing and conflicts with nothing
             orderPositions.of(budget).ifPresent(position -> checkLevelNotMixed(
-                new Scope(position, null, null, false), budget.getValidFrom(), budget.getValidUntil(), true, id));
+                new Scope(position, null, null), budget.getValidFrom(), budget.getValidUntil(), true, id));
         }
         budget.setActive(active);
         orderBudgetRepository.save(budget);
@@ -271,12 +271,8 @@ public class OrderBudgetService {
      * would silently behave as if it did not exist, so it is refused here. Any depth is allowed since
      * #1004 — which level a plan may sit on is decided by {@link #checkLevelNotMixed}, against the
      * plans already in force.
-     *
-     * @param edited the plan being edited, or {@code null} on create. A suborder the migration could
-     *               not resolve stays unresolved while the form names none — an empty choice must not
-     *               turn the plan into one on the whole order.
      */
-    private Scope scopeOf(OrderBudgetData data, OrderBudget edited) {
+    private Scope scopeOf(OrderBudgetData data) {
         var customerorder = data.customerorderId() == null
             ? null
             : customerorderService.getCustomerorderById(data.customerorderId());
@@ -284,9 +280,7 @@ public class OrderBudgetService {
             throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
         }
         if (data.suborderId() == null) {
-            var keepUnresolved = edited != null && !edited.isOrderWide() && edited.getSuborderId() == null;
-            return new Scope(keepUnresolved ? null : OrderPosition.orderWide(customerorder.getId()), customerorder,
-                null, keepUnresolved);
+            return new Scope(OrderPosition.orderWide(customerorder.getId()), customerorder, null);
         }
         var suborder = suborderService.getSuborderById(data.suborderId());
         if (suborder == null) {
@@ -295,27 +289,19 @@ public class OrderBudgetService {
         if (!customerorder.getId().equals(suborder.getCustomerorder().getId())) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
-        return new Scope(OrderPosition.of(suborder), customerorder, suborder, false);
+        return new Scope(OrderPosition.of(suborder), customerorder, suborder);
     }
 
-    /**
-     * The scope of a plan being saved: its position, and the records the sign columns are written from.
-     *
-     * @param position       {@code null} while the suborder stays unresolved — the plan covers nothing then
-     * @param keepUnresolved whether the stored suborder sign is kept without an id
-     */
-    private record Scope(OrderPosition position, Customerorder customerorder, Suborder suborder,
-                         boolean keepUnresolved) {}
+    /** The scope of a plan being saved: its position, and the records the sign columns are written from. */
+    private record Scope(OrderPosition position, Customerorder customerorder, Suborder suborder) {}
 
     private void apply(OrderBudget budget, OrderBudgetData data, Scope scope) {
         budget.setName(data.name());
         budget.setCustomerorderId(scope.customerorder().getId());
         // mirrors for the reports, written from the records (#1205)
         budget.setCustomerorderSign(scope.customerorder().getSign());
-        if (!scope.keepUnresolved()) {
-            budget.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
-            budget.setSuborderSign(scope.suborder() == null ? null : scope.suborder().getCompleteOrderSign());
-        }
+        budget.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
+        budget.setSuborderSign(scope.suborder() == null ? null : scope.suborder().getCompleteOrderSign());
         budget.setValidFrom(data.validFrom());
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));
@@ -345,7 +331,7 @@ public class OrderBudgetService {
      */
     private void checkLevelNotMixed(Scope scope, LocalDate validFrom, LocalDate validUntil,
                                     boolean active, Long excludeId) {
-        if (!active || validFrom == null || validUntil == null || scope.position() == null) {
+        if (!active || validFrom == null || validUntil == null ) {
             return;
         }
         var level = scope.position().level();

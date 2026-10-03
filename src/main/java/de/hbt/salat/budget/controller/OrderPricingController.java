@@ -232,19 +232,6 @@ public class OrderPricingController {
         return pricing.isEmployeeUnresolved() ? pricing.getEmployeeSign() : null;
     }
 
-    /**
-     * The sign a rate was stored with when the migration could not resolve its order (#1212), or
-     * {@code null}. The form cannot preselect that order; it names the sign so that the order to pick
-     * is known.
-     */
-    private String unresolvedCustomerorderSignOf(OrderPricingForm form) {
-        if (form.isNew() || form.getCustomerorderId() != null) {
-            return null;
-        }
-        var pricing = orderPricingService.getById(form.getId());
-        return pricing.isUnresolved() ? pricing.getCustomerorderSign() : null;
-    }
-
     private Long customerorderIdOf(String sign) {
         if (trimToNull(sign) == null) {
             return null;
@@ -261,7 +248,6 @@ public class OrderPricingController {
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("customerorders",
             customerorderService.getSelectableCustomerorders(customerorder == null ? null : customerorder.getSign()));
-        model.addAttribute("unresolvedCustomerorderSign", unresolvedCustomerorderSignOf(form));
         model.addAttribute("suborders", subordersOf(customerorder));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
         model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));

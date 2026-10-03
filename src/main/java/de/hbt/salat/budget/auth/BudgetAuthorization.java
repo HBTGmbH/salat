@@ -59,13 +59,12 @@ public class BudgetAuthorization {
 
     /**
      * By the id of the plan's order (#1205): two orders may carry the same sign, and a plan answers to
-     * the one it refers to. A plan whose order the migration could not resolve is visible to whoever
-     * sees every order — only they can correct it.
+     * the one it refers to.
      */
     public boolean isAuthorized(OrderBudget budget) {
         if (budget == null || authorizedUser.isRestricted()) return false;
         if (seesAllCustomerorders()) return true;
-        return budget.getCustomerorderId() != null && responsibleCustomerorderIds().contains(budget.getCustomerorderId());
+        return responsibleCustomerorderIds().contains(budget.getCustomerorderId());
     }
 
     /** Whether any budget data is visible at all — drives the visibility of the budget menu. */

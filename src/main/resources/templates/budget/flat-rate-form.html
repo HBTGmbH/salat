@@ -39,13 +39,6 @@
         </div>
         <div class="col-md-6">
           <div th:replace="~{budget/flat-rate-form :: suborderSelect(${suborders}, ${flatRateForm.suborderId}, null)}"></div>
-          <!--/* A suborder the migration could not resolve (#1205): kept, and marked, until one is chosen. */-->
-          <div th:if="*{unresolvedSuborderSign != null}" class="mb-3">
-            <input type="hidden" th:field="*{unresolvedSuborderSign}" />
-            <span class="badge bg-warning-lt"
-                  th:text="*{unresolvedSuborderSign} + ' – ' + #{main.budget.unresolved.text}">ORDER/01 – nicht zugeordnet</span>
-            <div class="form-text" th:text="#{main.budget.unresolved.suborder.help}">Bitte den Unterauftrag wählen.</div>
-          </div>
         </div>
       </div>
       <div class="row">

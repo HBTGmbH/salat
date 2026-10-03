@@ -22,10 +22,9 @@ import de.hbt.salat.common.domain.AuditedEntity;
 public class OrderPricing extends AuditedEntity {
 
     /**
-     * The customer order the rate prices (#1212). {@code null} only where the migration could not
-     * resolve the stored sign — see {@link #isUnresolved()}.
+     * The customer order the rate prices (#1212); required since Changeset 119.
      */
-    @Column(name = "customerorder_id")
+    @Column(name = "customerorder_id", nullable = false)
     private Long customerorderId;
 
     /**
@@ -118,14 +117,6 @@ public class OrderPricing extends AuditedEntity {
      */
     public boolean isOrderWide() {
         return isBlank(suborderSign) && isForEveryone() && orderBudget == null;
-    }
-
-    /**
-     * Whether the migration could not resolve the order the rate was stored with (#1212): a sign
-     * carried by no order or by several. Such a rate prices nothing until an order is picked.
-     */
-    public boolean isUnresolved() {
-        return customerorderId == null;
     }
 
     /** Whether the rate applies to every person on the order — it names no person at all. */

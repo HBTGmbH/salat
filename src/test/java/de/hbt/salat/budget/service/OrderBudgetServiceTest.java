@@ -411,26 +411,6 @@ public class OrderBudgetServiceTest {
         .hasMessageContaining(ErrorCode.SO_NOT_FOUND.getCode());
   }
 
-  /**
-   * A plan whose suborder the migration could not resolve stays so while the form names none — an
-   * empty choice must not turn it into a plan on the whole order, which would count every booking of
-   * the order against it.
-   */
-  @Test
-  public void keeps_an_unresolved_suborder_when_the_edit_names_none() {
-    givenExisting();
-    var unresolved = plan(null, JAN, DEC);
-    unresolved.setSuborderSign("co/gone");
-    givenStored(7L, unresolved);
-
-    service.update(7L, data(null, JAN, JUN, true));
-
-    assertThat(unresolved.getSuborderSign()).isEqualTo("co/gone");
-    assertThat(unresolved.getSuborderId()).isNull();
-    assertThat(unresolved.isUnresolved()).isTrue();
-    assertThat(unresolved.getValidUntil()).isEqualTo(JUN);
-  }
-
   // --- assignments follow a changed plan (#974) -------------------------------------------------
 
   /**

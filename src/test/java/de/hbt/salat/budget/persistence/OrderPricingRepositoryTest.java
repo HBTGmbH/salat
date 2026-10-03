@@ -55,20 +55,6 @@ public class OrderPricingRepositoryTest {
     assertThat(orderPricingRepository.findDistinctCustomerorderIds()).containsExactly(idOf("co-one"));
   }
 
-  /**
-   * The select offers orders, and a rate the migration could not resolve has none (#1212). It stays
-   * in the unfiltered list, marked.
-   */
-  @Test
-  public void offers_no_entry_for_a_rate_without_an_order() {
-    pricing("co-one", FROM, UNTIL);
-    var unresolved = pricing("co-gone", FROM, UNTIL);
-    unresolved.setCustomerorderId(null);
-    orderPricingRepository.save(unresolved);
-
-    assertThat(orderPricingRepository.findDistinctCustomerorderIds()).containsExactly(idOf("co-one"));
-  }
-
   /** By id, not by the sign column (#1212): a rate whose sign column is stale is found all the same. */
   @Test
   public void reads_the_rates_of_one_order_by_its_id_oldest_first() {
@@ -142,6 +128,7 @@ public class OrderPricingRepositoryTest {
   private OrderBudget plan(String name) {
     var plan = new OrderBudget();
     plan.setName(name);
+    plan.setCustomerorderId(idOf("co"));
     plan.setCustomerorderSign("co");
     plan.setValidFrom(FROM);
     plan.setValidUntil(UNTIL);

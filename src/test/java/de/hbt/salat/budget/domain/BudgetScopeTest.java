@@ -98,45 +98,18 @@ public class BudgetScopeTest {
   }
 
   /**
-   * A plan whose suborder the migration could not resolve covers nothing — and in particular not the
-   * whole order, which would count the bookings of every other suborder against it.
+   * The suborder id decides, not the sign column: the column only mirrors the suborder for the
+   * reports (#1212), and since Changeset 119 no record names a suborder without its id.
    */
   @Test
-  public void a_plan_with_an_unresolved_suborder_covers_nothing() {
-    var plan = plan(CO, null);
-    plan.setSuborderSign("CO/01");
+  public void the_suborder_id_decides_whether_a_plan_is_order_wide_not_the_sign_column() {
+    var stale = plan(CO, null);
+    stale.setSuborderSign("CO/01");
+    var onSuborder = plan(CO, 11L);
+    onSuborder.setSuborderSign(null);
 
-    assertThat(plan.isOrderWide()).isFalse();
-    assertThat(plan.isUnresolved()).isTrue();
-    assertThat(BudgetScope.covers(plan, at(CO, 11L))).isFalse();
-    assertThat(BudgetScope.covers(plan, OrderPosition.orderWide(CO))).isFalse();
-  }
-
-  @Test
-  public void a_plan_with_an_unresolved_order_covers_nothing() {
-    var plan = plan(null, null);
-
-    assertThat(plan.isUnresolved()).isTrue();
-    assertThat(BudgetScope.covers(plan, OrderPosition.orderWide(CO))).isFalse();
-  }
-
-  @Test
-  public void blank_and_null_both_mean_the_whole_customer_order() {
-    assertThat(BudgetScope.isOrderWide(null, null)).isTrue();
-    assertThat(BudgetScope.isOrderWide(null, "")).isTrue();
-    assertThat(BudgetScope.isOrderWide(null, "  ")).isTrue();
-    assertThat(BudgetScope.isOrderWide(null, "CO/01")).isFalse();
-  }
-
-  /**
-   * A suborder id is a suborder, whatever the sign column says: the column only mirrors it for the
-   * reports (#1212) and is read only where the id is missing.
-   */
-  @Test
-  public void a_suborder_id_names_a_suborder_whatever_the_sign_column_holds() {
-    assertThat(BudgetScope.isOrderWide(11L, null)).isFalse();
-    assertThat(BudgetScope.isOrderWide(11L, "")).isFalse();
-    assertThat(BudgetScope.isOrderWide(11L, "CO/01")).isFalse();
+    assertThat(stale.isOrderWide()).isTrue();
+    assertThat(onSuborder.isOrderWide()).isFalse();
   }
 
   // --- the level, which is a validation rule rather than a coverage rule ------------------------

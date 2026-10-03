@@ -277,21 +277,17 @@ public class BudgetControllingService {
 
     /**
      * What plans and flat rates are labelled with: the complete sign of their suborder, the order's
-     * sign for an order-wide flat rate. A suborder the migration could not resolve keeps its stored
-     * sign — there is nothing else to name it by.
+     * sign for an order-wide flat rate. An order-wide plan has no label of its own — it is the
+     * section.
      */
     private record ScopeSigns(String orderSign, Map<Long, String> suborderSigns) {
 
         String ofPlan(OrderBudget plan) {
-            return plan.getSuborderId() == null ? plan.getSuborderSign() : suborderSigns.get(plan.getSuborderId());
+            return plan.isOrderWide() ? null : suborderSigns.get(plan.getSuborderId());
         }
 
         String ofFlatRate(OrderFlatRate flatRate) {
-            if (flatRate.isOrderWide()) {
-                return orderSign;
-            }
-            return flatRate.getSuborderId() == null ? flatRate.getSuborderSign()
-                : suborderSigns.get(flatRate.getSuborderId());
+            return flatRate.isOrderWide() ? orderSign : suborderSigns.get(flatRate.getSuborderId());
         }
     }
 
@@ -342,8 +338,7 @@ public class BudgetControllingService {
     /**
      * One plan with the part of its validity that falls inside the evaluated period.
      *
-     * @param level 0 for an order-wide plan, otherwise the suborder level it sits on (→ {@link OrderPosition});
-     *              a plan the migration could not resolve counts as 0 — it covers nothing anyway
+     * @param level 0 for an order-wide plan, otherwise the suborder level it sits on (→ {@link OrderPosition})
      */
     private record PlanPeriod(OrderBudget plan, LocalDateRange period, int level) {
 
@@ -652,7 +647,7 @@ public class BudgetControllingService {
 
     /**
      * Utilization of a budget plus the sign and short description of its customer order, both read
-     * from the order by id (#1212); {@code null} for a plan the migration could not resolve.
+     * from the order by id (#1212).
      */
     public record BudgetUtilization(UtilizationInfo info, String customerorderSign, String customerorderDescription) {}
 
@@ -683,10 +678,8 @@ public class BudgetControllingService {
         if (budgets.isEmpty()) {
             return Map.of();
         }
-        // Everything by the id of the order (#1205). A plan the migration could not resolve has no
-        // order: it earns nothing here, and the list marks it.
-        var resolved = budgets.stream().filter(b -> b.getCustomerorderId() != null).toList();
-        var orderIds = resolved.stream().map(OrderBudget::getCustomerorderId).distinct().toList();
+        // Everything by the id of the order (#1205).
+        var orderIds = budgets.stream().map(OrderBudget::getCustomerorderId).distinct().toList();
         var orders = orderIds.isEmpty() ? List.<Customerorder>of() : customerorderService.getCustomerordersByIds(orderIds);
         var pricingLookup = orderPricingService.lookupFor(orderIds);
         var flatRateLookup = orderFlatRateService.lookupFor(orderIds);
@@ -704,7 +697,7 @@ public class BudgetControllingService {
                 .collect(Collectors.groupingBy(OrderBudget::getCustomerorderId));
         // The window of an order starts with the earliest of its plans asked about, as it did while
         // the bookings were read per order; every plan cuts its own end below.
-        Map<Long, LocalDate> fromByOrder = resolved.stream()
+        Map<Long, LocalDate> fromByOrder = budgets.stream()
             .collect(Collectors.toMap(OrderBudget::getCustomerorderId, OrderBudget::getValidFrom,
                 (a, b) -> a.isBefore(b) ? a : b));
         var until = budgets.stream().map(b -> evaluatedUntil(b.getValidUntil())).max(naturalOrder()).orElseThrow();
@@ -716,12 +709,6 @@ public class BudgetControllingService {
         Map<Long, BudgetUtilization> result = new LinkedHashMap<>();
         for (var budget : budgets) {
             var orderId = budget.getCustomerorderId();
-            if (orderId == null) {
-                var planUntil = evaluatedUntil(budget.getValidUntil());
-                result.put(budget.getId(), new BudgetUtilization(
-                    new UtilizationInfo(cumulativeBudgetOf(budget, planUntil), BigDecimal.ZERO, planUntil), null, null));
-                continue;
-            }
             var order = orderById.get(orderId);
             result.put(budget.getId(), new BudgetUtilization(
                 computeUtilizationInfo(budget, bookingsByPlan.getOrDefault(budget.getId(), List.of()),

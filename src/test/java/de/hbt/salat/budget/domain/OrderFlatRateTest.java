@@ -118,6 +118,7 @@ public class OrderFlatRateTest {
   @Test
   public void a_flat_rate_on_a_suborder_keeps_its_own_sign() {
     var rate = flatRate(FlatRateRhythm.ONCE, JAN, JAN, "100");
+    rate.setSuborderId(11L);
     rate.setSuborderSign("co/01/D");
 
     assertThat(rate.isOrderWide()).isFalse();

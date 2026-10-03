@@ -81,12 +81,9 @@
             th:with="p=${row.pricing()}, order=${row.customerorder()}, deviation=${row.deviation()}">
           <td>
             <div>
-              <!--/* The sign of the referenced order (#1212); the stored one, marked, where the
-                     migration could not resolve it. */-->
-              <span th:text="${order != null ? order.sign : p.customerorderSign}"></span>
+              <!--/* The sign of the referenced order (#1212). */-->
+              <span th:text="${order.sign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!p.currentlyValid})}"></span>
-              <span th:if="${p.unresolved}" class="badge bg-warning-lt"
-                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
@@ -136,7 +133,7 @@
             <form th:action="@{/budget/pricing/{id}/delete(id=${p.id})}" method="post"
                   data-confirm
                   th:data-confirm-title="#{main.pricing.delete.confirm.title}"
-                  th:data-confirm-detail="|${order != null ? order.sign : p.customerorderSign} · ${p.suborderSign ?: '-'} · ${row.employeeSign() ?: '-'}|"
+                  th:data-confirm-detail="|${order.sign} · ${p.suborderSign ?: '-'} · ${row.employeeSign() ?: '-'}|"
                   th:data-confirm-detail-secondary="|${#messages.msg('main.budget.format.amount', p.priceCentsPerHour / 100.0)} · ${#temporals.format(p.validFrom, 'dd.MM.yyyy')} – ${p.validUntil.year != 2999 ? #temporals.format(p.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
                   th:data-confirm-label="#{main.general.button.delete.text}"
                   data-confirm-variant="danger">

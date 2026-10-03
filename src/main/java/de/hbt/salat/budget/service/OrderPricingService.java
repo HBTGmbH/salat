@@ -53,13 +53,10 @@ public class OrderPricingService {
 
     /**
      * By the sign the order has today, then by start of validity. The sign comes from the order, not
-     * from the rate's sign column, which only mirrors it for reports (#1212); a rate without an order
-     * has nothing but that column.
+     * from the record's sign column, which only mirrors it for reports (#1212).
      */
     private static final Comparator<OrderPricingRow> BY_ORDER_SIGN_THEN_VALID_FROM = Comparator
-        .comparing((OrderPricingRow row) -> row.customerorder() != null
-            ? row.customerorder().getSign() : row.pricing().getCustomerorderSign(),
-            Comparator.nullsLast(Comparator.naturalOrder()))
+        .comparing((OrderPricingRow row) -> row.customerorder().getSign())
         .thenComparing(row -> row.pricing().getValidFrom(), Comparator.nullsLast(Comparator.naturalOrder()));
 
     private final OrderPricingRepository orderPricingRepository;
@@ -158,19 +155,13 @@ public class OrderPricingService {
 
     /** The orders of the given rates, by id — one query for the whole list (#1212). */
     private Map<Long, Customerorder> ordersOf(List<OrderPricing> pricings) {
-        var ids = pricings.stream().map(OrderPricing::getCustomerorderId).filter(Objects::nonNull)
-            .distinct().toList();
+        var ids = pricings.stream().map(OrderPricing::getCustomerorderId).distinct().toList();
         return customerorderService.getCustomerordersByIds(ids).stream()
             .collect(toMap(Customerorder::getId, identity()));
     }
 
-    /**
-     * A rate without an order — one the migration could not resolve (#1212) — stays visible: the
-     * order is the only way into the rate, so hiding it would put the rate out of reach of the user
-     * interface for good.
-     */
     private static boolean orderStillValid(OrderPricingRow row) {
-        return row.customerorder() == null || row.customerorder().getCurrentlyValid();
+        return row.customerorder().getCurrentlyValid();
     }
 
     /** The customer orders that have at least one pricing, by sign — the filter options of the list view. */
@@ -278,8 +269,7 @@ public class OrderPricingService {
 
     /**
      * The order is required on an edit as well: it is referenced by id now and cannot go away while
-     * a rate names it (#1212). Editing a rate whose order the migration could not resolve is how it
-     * gets its order.
+     * a rate names it (#1212).
      *
      * <p>A rate whose person the migration could not resolve (#968) stays unresolved when saved
      * without a person. The form cannot offer that person, so its empty choice would otherwise turn

@@ -76,21 +76,16 @@
             <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a><span th:replace="~{fragments/inactive-badge :: badge(${b.active != true})}"></span>
           </td>
           <td class="d-none d-md-table-cell">
-            <!--/* The sign of the record the plan refers to by id (#1205); the stored one only where the
-                   migration could not resolve it, and then marked. */-->
+            <!--/* The sign of the record the plan refers to by id (#1205, #1212). */-->
             <div>
-              <span th:text="${order != null ? order.sign : b.customerorderSign}"></span>
+              <span th:text="${order.sign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span>
-              <span th:if="${b.customerorderId == null}" class="badge bg-warning-lt"
-                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td class="d-none d-md-table-cell">
             <div>
-              <span th:text="${suborder != null ? suborder.completeOrderSign : (b.suborderSign ?: '—')}"></span>
-              <span th:if="${b.suborderId == null and !b.orderWide}" class="badge bg-warning-lt"
-                    th:title="#{main.budget.unresolved.help}" th:text="#{main.budget.unresolved.text}">nicht zugeordnet</span>
+              <span th:text="${suborder != null ? suborder.completeOrderSign : '—'}"></span>
             </div>
             <div class="small text-muted" th:text="${suborder?.shortdescription}"></div>
           </td>

@@ -257,25 +257,6 @@ public class EmployeeCostServiceTest {
     assertThat(stored.getSuborderSign()).isEqualTo("co/01");
   }
 
-  /**
-   * An assignment whose suborder the migration could not resolve stays specific while the form names
-   * none — an empty choice must not turn it into the general assignment of the person (#1205).
-   */
-  @Test
-  public void should_keep_an_unresolved_suborder_when_the_edit_names_none() {
-    givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    var unresolved = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
-    unresolved.setSuborderSign("co/gone");
-    givenAssignment("senior", "emp", null, JAN, DEC, 2L);
-
-    service.updateAssignment(unresolved.getId(), assignmentData("senior", "emp", null, JUL, DEC));
-
-    assertThat(unresolved.getSuborderSign()).isEqualTo("co/gone");
-    assertThat(unresolved.getSuborderId()).isNull();
-    assertThat(unresolved.isSuborderUnresolved()).isTrue();
-    assertThat(unresolved.getValidFrom()).isEqualTo(JUL);
-  }
-
   @Test
   public void should_reject_an_assignment_for_a_cost_category_that_does_not_exist() {
     assertThatThrownBy(() -> service.createAssignment(assignmentData("nonexistent", "emp", null, JAN, DEC)))

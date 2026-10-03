@@ -15,10 +15,6 @@ package de.hbt.salat.budget.domain;
  * ({@code BudgetControllingService}) and the flat rates ({@link FlatRateAllocation}) all resolve
  * coverage through this class. Spelling it out a second time somewhere is what produced #931.
  *
- * <p>A plan the migration could not resolve ({@code OrderBudget#isUnresolved()}) covers nothing. In
- * particular a plan whose suborder did not resolve does not cover the whole order — that would count
- * the bookings of every other suborder against it.
- *
  * <p><strong>The level is a validation rule, not a coverage rule.</strong> All active plans of a
  * customer order that are valid at the same time have to sit on the same level (→
  * {@code OrderBudgetService}); {@link OrderPosition#level()} is what that check reads. What double
@@ -32,20 +28,9 @@ public final class BudgetScope {
     private BudgetScope() {
     }
 
-    /**
-     * Whether a record names no suborder and therefore applies to the whole customer order. A record
-     * with a suborder id names one. Without an id the stored sign decides, because that is what tells
-     * "no suborder" apart from "a suborder the migration could not resolve" — the only read of the
-     * sign column left, which otherwise just mirrors the suborder for reports (#1212). {@code null}
-     * and blank both mean "the whole customer order", as everywhere else.
-     */
-    public static boolean isOrderWide(Long suborderId, String suborderSign) {
-        return suborderId == null && (suborderSign == null || suborderSign.isBlank());
-    }
-
     /** Whether the plan covers something booked or agreed at that position of the order tree. */
     public static boolean covers(OrderBudget plan, OrderPosition position) {
-        if (plan.isUnresolved() || position == null) {
+        if (position == null) {
             return false;
         }
         if (plan.getCustomerorderId() != position.customerorderId()) {

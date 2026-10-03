@@ -35,11 +35,9 @@
                 th:text="${@employeeLabelViewHelper.label(emp)} + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
       </salat:select>
       <!--/* A hidden suborder only appears when the assignment already references it; say so. */-->
-      <!--/* A suborder the migration could not resolve (#1205) is named in the empty choice; left empty,
-             the assignment keeps it rather than becoming the general one. */-->
       <salat:select th:field="*{suborderId}" th:label="#{main.employeecost.assignment.field.suborderSign}">
         <option value=""
-                th:text="${unresolvedSuborderSign} != null ? #{main.budget.suborder.unresolved.option(${unresolvedSuborderSign})} : #{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
+                th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
         <option th:each="so : ${suborders}"
                 th:value="${so.id}"
                 th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
