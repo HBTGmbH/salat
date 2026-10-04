@@ -302,26 +302,47 @@ public class EmployeeCostServiceTest {
     verify(assignmentRepository, never()).save(any());
   }
 
-  /** Suborder and order exclude each other: an assignment to the order covers its suborders already. */
+  /**
+   * The order in the form only narrows the suborders: where both are named, the suborder applies and the
+   * assignment is one to the suborder, not to the whole order.
+   */
   @Test
-  public void should_reject_an_assignment_for_both_an_order_and_a_suborder() {
+  public void should_store_an_assignment_to_the_suborder_where_order_and_suborder_are_named() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    when(assignmentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-    assertThatThrownBy(() -> service.createAssignment(new EmployeeCostAssignmentData("senior",
-        PEOPLE.get("emp"), CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC)))
-        .isInstanceOf(BusinessRuleException.class)
-        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_SCOPE_AMBIGUOUS.getCode());
-    verify(assignmentRepository, never()).save(any());
+    var stored = service.createAssignment(new EmployeeCostAssignmentData("senior", PEOPLE.get("emp"),
+        CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC));
+
+    assertThat(stored.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
+    assertThat(stored.getSuborderSign()).isEqualTo("co/01");
+    assertThat(stored.getCustomerorderId()).isNull();
+    assertThat(stored.getCustomerorderSign()).isNull();
   }
 
+  /** The overlap check follows: it is the step of the suborder that has to be free, not the one of the order. */
   @Test
-  public void should_reject_an_edit_naming_both_an_order_and_a_suborder() {
-    var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+  public void should_check_overlaps_against_the_suborder_where_order_and_suborder_are_named() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setCustomerorderId(CUSTOMERORDER);
 
-    assertThatThrownBy(() -> service.updateAssignment(edited.getId(), new EmployeeCostAssignmentData("senior",
-        PEOPLE.get("emp"), CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC)))
-        .isInstanceOf(BusinessRuleException.class)
-        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_SCOPE_AMBIGUOUS.getCode());
+    assertThatCode(() -> service.createAssignment(new EmployeeCostAssignmentData("senior", PEOPLE.get("emp"),
+        CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC))).doesNotThrowAnyException();
+  }
+
+  /** Editing an assignment to the order down to one of its suborders leaves an assignment to the suborder. */
+  @Test
+  public void should_narrow_an_assignment_from_the_whole_order_down_to_a_suborder() {
+    var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+    edited.setCustomerorderId(CUSTOMERORDER);
+    edited.setCustomerorderSign("co");
+
+    service.updateAssignment(edited.getId(), new EmployeeCostAssignmentData("senior", PEOPLE.get("emp"),
+        CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC));
+
+    assertThat(edited.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
+    assertThat(edited.getCustomerorderId()).isNull();
+    assertThat(edited.getCustomerorderSign()).isNull();
   }
 
   /** Moving an assignment from a suborder to the whole order clears the suborder and its mirror. */

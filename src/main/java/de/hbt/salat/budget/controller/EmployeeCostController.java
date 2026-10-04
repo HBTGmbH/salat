@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -293,6 +294,22 @@ public class EmployeeCostController {
         return redirectToCategory(form.getEmployeeCostName(), redirectAttributes);
     }
 
+    /**
+     * The suborder select after the order changed (#1343): narrowed to the suborders of the chosen order,
+     * all of them again once the order is cleared. The previous pick belongs to the order that was just
+     * replaced, so it goes.
+     */
+    @Authorized(requiresManager = true)
+    @PostMapping("/assignments/suborders")
+    public String assignmentSuborders(@ModelAttribute("assignmentForm") EmployeeCostAssignmentForm form, Model model,
+                                      HttpServletRequest request) {
+        form.setSuborderId(null);
+        addAssignmentFormModel(model, form);
+        model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
+        model.addAttribute("subordersChanged", true);
+        return "budget/employee-cost-assignment-form";
+    }
+
     @Authorized(requiresManager = true)
     @PostMapping("/assignments/{id}/delete")
     public String deleteAssignment(@PathVariable long id, RedirectAttributes redirectAttributes) {
@@ -369,17 +386,26 @@ public class EmployeeCostController {
      * The stored category, order and suborder stay in their select even when no cost record carries the
      * name any more, or the order or suborder has meanwhile been hidden — otherwise editing an assignment
      * would silently drop the reference (#895).
+     *
+     * <p>A chosen order narrows the suborders to its own (#1343). An assignment to a suborder shows the
+     * order of the suborder as well, so that editing it starts from the narrowed list.
      */
     private void addAssignmentFormModel(Model model, EmployeeCostAssignmentForm form) {
         model.addAttribute("assignmentForm", form);
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
         model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
-        model.addAttribute("customerorders",
-            customerorderService.getSelectableCustomerorderOptions(form.getCustomerorderId()));
         var kept = form.getSuborderId() == null ? null : suborderService.getSuborderById(form.getSuborderId());
+        if (kept != null && form.getCustomerorderId() == null) {
+            form.setCustomerorderId(kept.getCustomerorder().getId());
+        }
+        var customerorderId = form.getCustomerorderId();
         model.addAttribute("suborders",
-            suborderService.getAllSelectableSuborders(kept == null ? null : kept.getCompleteOrderSign()));
+            suborderService.getAllSelectableSuborders(kept == null ? null : kept.getCompleteOrderSign()).stream()
+                .filter(suborder -> customerorderId == null
+                    || customerorderId.equals(suborder.getCustomerorder().getId()))
+                .toList());
+        model.addAttribute("customerorders", customerorderService.getSelectableCustomerorderOptions(customerorderId));
         model.addAttribute("isEdit", !form.isNew());
     }
 

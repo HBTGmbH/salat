@@ -153,10 +153,6 @@
               </span>
             </td>
             <td>
-              <span th:if="${row.forCustomerorder()}" class="text-muted small"
-                    th:text="#{main.employeecost.assignment.scope.customerorder}">Auftrag</span>
-              <span th:if="${row.forSuborder()}" class="text-muted small"
-                    th:text="#{main.employeecost.assignment.scope.suborder}">Unterauftrag</span>
               <span th:text="${row.scopeSign()} ?: '—'"></span>
             </td>
             <td class="small text-muted">
