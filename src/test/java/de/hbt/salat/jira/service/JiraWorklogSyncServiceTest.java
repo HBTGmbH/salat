@@ -3,8 +3,9 @@ package de.hbt.salat.jira.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -76,7 +77,8 @@ class JiraWorklogSyncServiceTest {
   void setUp() {
     when(worklogClients.forFlavor(SERVER)).thenReturn(worklogClient);
     when(scopes.suborderIdsOf(CUSTOMERORDER_ID, null)).thenReturn(List.of(1L, 2L));
-    when(syncRepository.findByScopeSignAndWorkDateGreaterThanEqual(anyString(), any()))
+    when(scopes.signOf(CUSTOMERORDER_ID, null)).thenReturn(SCOPE);
+    when(syncRepository.findInScopeFrom(anyLong(), any(), any()))
         .thenReturn(List.of());
   }
 
@@ -129,6 +131,10 @@ class JiraWorklogSyncServiceTest {
     assertThat(saved.getWorkDate()).isEqualTo(DAY);
     assertThat(saved.getWorklogId()).isEqualTo("10101");
     assertThat(saved.getMinutes()).isEqualTo(90);
+    // the scope by id, the sign as a mirror of it (#1323)
+    assertThat(saved.getCustomerorderId()).isEqualTo(CUSTOMERORDER_ID);
+    assertThat(saved.getSuborderId()).isNull();
+    assertThat(saved.getScopeSign()).isEqualTo(SCOPE);
   }
 
   @Test
@@ -314,7 +320,7 @@ class JiraWorklogSyncServiceTest {
 
     classUnderTest.sync(config());
 
-    verify(syncRepository).findByScopeSignAndWorkDateGreaterThanEqual(SCOPE, SYNC_FROM);
+    verify(syncRepository).findInScopeFrom(CUSTOMERORDER_ID, null, SYNC_FROM);
   }
 
   @Test
@@ -479,7 +485,7 @@ class JiraWorklogSyncServiceTest {
       ticket.setKey(key);
       tickets.add(ticket);
     }
-    when(ticketRepository.findByScopeSignAndKeyIn(eq(SCOPE), anyList())).thenReturn(tickets);
+    when(ticketRepository.findInScopeByKeyIn(eq(CUSTOMERORDER_ID), isNull(), anyList())).thenReturn(tickets);
   }
 
   private JiraWorklogSync givenStoredWorklog(String issueKey, LocalDate workDate, String worklogId,
@@ -490,7 +496,7 @@ class JiraWorklogSyncServiceTest {
     row.setWorkDate(workDate);
     row.setWorklogId(worklogId);
     row.setMinutes(minutes);
-    when(syncRepository.findByScopeSignAndWorkDateGreaterThanEqual(SCOPE, SYNC_FROM))
+    when(syncRepository.findInScopeFrom(CUSTOMERORDER_ID, null, SYNC_FROM))
         .thenReturn(List.of(row));
     return row;
   }

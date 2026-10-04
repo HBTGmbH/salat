@@ -46,6 +46,7 @@ public class JiraReplicationService {
   private final JiraTicketRepository ticketRepo;
   private final JiraWorklogSyncService worklogSyncService;
   private final JiraReplicationRunService runService;
+  private final JiraScopes scopes;
 
   public List<JiraReplicationConfig> getEnabledReplications() {
     return configRepo.findByEnabledTrue();
@@ -99,10 +100,13 @@ public class JiraReplicationService {
 
     int pageSize = cfg.getPageSize() != null && cfg.getPageSize() > 0 ? cfg.getPageSize() : 100;
     var fieldConfig = JiraFieldConfig.from(cfg);
+    // The scope as the order tree names it now (#1323): written as the sign of every ticket, read
+    // for nothing but that and the log.
+    var scopeSign = scopes.signOf(cfg.getCustomerorderId(), cfg.getSuborderId());
 
     log.info("Starting JIRA replication: id={}, name={}, scopeSign={}, apiFlavor={}, "
             + "pageSize={}, additionalFields={}, inheritedFields={}",
-        cfg.getId(), cfg.getName(), cfg.getScopeSign(), cfg.getApiFlavor(), pageSize,
+        cfg.getId(), cfg.getName(), scopeSign, cfg.getApiFlavor(), pageSize,
         fieldConfig.fieldPaths(), fieldConfig.inheritedFieldPaths());
 
     // Note: We do not modify JQL per requirement. We filter during upsert by updated timestamp.
@@ -147,7 +151,7 @@ public class JiraReplicationService {
         if (issue.getFields() != null) answeredFields.addAll(issue.getFields().keySet());
         long jiraId = Long.parseLong(issue.getId());
         if (seenJiraIds != null) seenJiraIds.add(jiraId);
-        var changed = upsertIfChanged(cfg, fieldConfig, jiraId, issue);
+        var changed = upsertIfChanged(cfg, scopeSign, fieldConfig, jiraId, issue);
         if (changed) {
           processed++;
         }
@@ -170,10 +174,10 @@ public class JiraReplicationService {
 
     // Loaded once for both steps. The removal comes first, so that a removed parent no longer
     // passes values on in this very run.
-    var tickets = new ArrayList<>(ticketRepo.findByScopeSign(cfg.getScopeSign()));
-    if (seenJiraIds != null) removeUnseenTickets(cfg, tickets, seenJiraIds, failed);
+    var tickets = new ArrayList<>(ticketRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
+    if (seenJiraIds != null) removeUnseenTickets(cfg, scopeSign, tickets, seenJiraIds, failed);
 
-    resolveParentChains(cfg, fieldConfig, tickets);
+    resolveParentChains(scopeSign, fieldConfig, tickets);
 
     // Update last_max_updated if progressed - but never past an issue this run failed to store
     newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
@@ -217,12 +221,12 @@ public class JiraReplicationService {
    * up here first. Bookings are not affected: their ticket reference is free text, not a foreign key
    * (#982). Nor are the worklogs written on these tickets — see {@link JiraWorklogSyncService}.
    */
-  private void removeUnseenTickets(JiraReplicationConfig cfg, List<JiraTicket> tickets,
+  private void removeUnseenTickets(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets,
                                    Set<Long> seenJiraIds, int failed) {
     if (failed > 0) {
       log.warn("Replication {} fetched everything the JQL matches, but {} issues could not be "
           + "processed - tickets of scope {} no longer matched are not removed in this run",
-          cfg.getName(), failed, cfg.getScopeSign());
+          cfg.getName(), failed, scopeSign);
       return;
     }
     var unseen = tickets.stream()
@@ -233,7 +237,7 @@ public class JiraReplicationService {
       tickets.removeAll(unseen);
     }
     log.info("Removed {} tickets of scope {} no longer matched by the JQL of replication {}",
-        unseen.size(), cfg.getScopeSign(), cfg.getName());
+        unseen.size(), scopeSign, cfg.getName());
   }
 
   /**
@@ -247,9 +251,7 @@ public class JiraReplicationService {
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
    */
-  private void resolveParentChains(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig,
-                                   List<JiraTicket> tickets) {
-    var scopeSign = cfg.getScopeSign();
+  private void resolveParentChains(String scopeSign, JiraFieldConfig fieldConfig, List<JiraTicket> tickets) {
     var ticketsByKey = tickets.stream()
         .collect(Collectors.toMap(JiraTicket::getKey, identity()));
     var updatedChildren = new LinkedList<JiraTicket>();
@@ -403,9 +405,10 @@ public class JiraReplicationService {
     return fields;
   }
 
-  private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
-                                  JiraIssue issue) {
-    var existing = ticketRepo.findByScopeSignAndJiraId(cfg.getScopeSign(), jiraId).orElse(null);
+  private boolean upsertIfChanged(JiraReplicationConfig cfg, String scopeSign, JiraFieldConfig fieldConfig,
+                                  long jiraId, JiraIssue issue) {
+    var existing = ticketRepo.findInScopeByJiraId(cfg.getCustomerorderId(), cfg.getSuborderId(), jiraId)
+        .orElse(null);
     var fields = issue.getFields();
     var updatedTs = toDateTime(getString(fields, "updated"));
 
@@ -421,7 +424,9 @@ public class JiraReplicationService {
     }
 
     var t = existing != null ? existing : new JiraTicket();
-    t.setScopeSign(cfg.getScopeSign());
+    t.setCustomerorderId(cfg.getCustomerorderId());
+    t.setSuborderId(cfg.getSuborderId());
+    t.setScopeSign(scopeSign);
     t.setJiraId(jiraId);
     t.setKey(issue.getKey());
     t.setSummary(safe(getString(fields, "summary"), 1024));

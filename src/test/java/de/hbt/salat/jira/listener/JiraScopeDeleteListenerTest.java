@@ -3,7 +3,10 @@ package de.hbt.salat.jira.listener;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,18 +23,18 @@ import de.hbt.salat.order.event.SuborderDeleteEvent;
 /**
  * A replication refers to its order and suborder by id with a foreign key (#1322). Deleting what it
  * refers to is refused with a message that says so, before the key would refuse it as a failed
- * statement.
+ * statement. Tickets and worklog rows go with the scope instead (#1323).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
-class JiraScopeReferenceVetoListenerTest {
+class JiraScopeDeleteListenerTest {
 
   private JiraScopeReferenceService jiraScopeReferenceService;
-  private JiraScopeReferenceVetoListener listener;
+  private JiraScopeDeleteListener listener;
 
   @BeforeEach
   void setUp() {
     jiraScopeReferenceService = mock(JiraScopeReferenceService.class);
-    listener = new JiraScopeReferenceVetoListener(jiraScopeReferenceService);
+    listener = new JiraScopeDeleteListener(jiraScopeReferenceService);
   }
 
   @Test
@@ -43,6 +46,7 @@ class JiraScopeReferenceVetoListenerTest {
         .satisfies(ex -> assertThat(((VetoedException) ex).getMessages())
             .extracting(ServiceFeedbackMessage::getErrorCode)
             .containsExactly(ErrorCode.JI_ORDER_HAS_REPLICATIONS));
+    verify(jiraScopeReferenceService, never()).deleteScopeDataOfCustomerorder(anyLong());
   }
 
   @Test
@@ -54,11 +58,15 @@ class JiraScopeReferenceVetoListenerTest {
         .satisfies(ex -> assertThat(((VetoedException) ex).getMessages())
             .extracting(ServiceFeedbackMessage::getErrorCode)
             .containsExactly(ErrorCode.JI_SUBORDER_HAS_REPLICATIONS));
+    verify(jiraScopeReferenceService, never()).deleteScopeDataOfSuborder(anyLong());
   }
 
   @Test
-  void an_order_without_a_replication_may_go() {
+  void an_order_without_a_replication_may_go_and_takes_its_tickets_and_worklogs_along() {
     assertThatCode(() -> listener.onCustomerorderDelete(new CustomerorderDeleteEvent(1L))).doesNotThrowAnyException();
     assertThatCode(() -> listener.onSuborderDelete(new SuborderDeleteEvent(11L))).doesNotThrowAnyException();
+
+    verify(jiraScopeReferenceService).deleteScopeDataOfCustomerorder(1L);
+    verify(jiraScopeReferenceService).deleteScopeDataOfSuborder(11L);
   }
 }

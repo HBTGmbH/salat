@@ -79,23 +79,25 @@ public class JiraWorklogSyncService {
       return;
     }
 
+    // The scope as the order tree names it now (#1323): the sign of the rows written, and the log.
+    var scopeSign = scopes.signOf(cfg.getCustomerorderId(), cfg.getSuborderId());
     var suborderIds = scopes.suborderIdsOf(cfg.getCustomerorderId(), cfg.getSuborderId());
     if (suborderIds.isEmpty()) {
       log.warn("Worklog sync of JIRA replication {} found no suborder under scope {} - skipped",
-          cfg.getName(), cfg.getScopeSign());
+          cfg.getName(), scopeSign);
       return;
     }
 
     var invoiceableOnly = TRUE.equals(cfg.getWorklogSyncInvoiceableOnly());
-    var wanted = wantedWorklogs(cfg, bookedMinutes(suborderIds, from, until, invoiceableOnly));
+    var wanted = wantedWorklogs(cfg, scopeSign, bookedMinutes(suborderIds, from, until, invoiceableOnly));
     var stored = storedWorklogs(cfg, from);
 
     log.info("Starting JIRA worklog sync: name={}, scopeSign={}, from={}, until={}, "
             + "wanted={}, stored={}",
-        cfg.getName(), cfg.getScopeSign(), from, until, wanted.size(), stored.size());
+        cfg.getName(), scopeSign, from, until, wanted.size(), stored.size());
 
     var outcome = new Outcome();
-    wanted.forEach((key, minutes) -> writeOne(cfg, key, minutes, stored.get(key), outcome));
+    wanted.forEach((key, minutes) -> writeOne(cfg, scopeSign, key, minutes, stored.get(key), outcome));
     var unwanted = new LinkedHashMap<>(stored);
     unwanted.keySet().removeAll(wanted.keySet());
     var replicated = replicatedKeys(cfg, unwanted.keySet());
@@ -125,7 +127,7 @@ public class JiraWorklogSyncService {
       return Set.of();
     }
     var issueKeys = worklogs.stream().map(WorklogKey::issueKey).distinct().toList();
-    return ticketRepository.findByScopeSignAndKeyIn(cfg.getScopeSign(), issueKeys).stream()
+    return ticketRepository.findInScopeByKeyIn(cfg.getCustomerorderId(), cfg.getSuborderId(), issueKeys).stream()
         .map(ticket -> normalized(ticket.getKey()))
         .collect(Collectors.toSet());
   }
@@ -162,7 +164,8 @@ public class JiraWorklogSyncService {
    * <p>A sum of zero is left out, so a day that only carries zero-length bookings is treated like
    * one without bookings — JIRA rejects a worklog of no time at all.
    */
-  private Map<WorklogKey, Long> wantedWorklogs(JiraReplicationConfig cfg, List<TicketDaySum> sums) {
+  private Map<WorklogKey, Long> wantedWorklogs(JiraReplicationConfig cfg, String scopeSign,
+                                               List<TicketDaySum> sums) {
     var ticketKeys = ticketKeysByReference(cfg, sums);
     var wanted = new TreeMap<WorklogKey, Long>(
         comparing(WorklogKey::issueKey).thenComparing(WorklogKey::workDate));
@@ -179,7 +182,7 @@ public class JiraWorklogSyncService {
     if (!unknown.isEmpty()) {
       log.info("Worklog sync of JIRA replication {} skipped {} ticket reference(s) without a "
               + "replicated ticket in scope {}: {}",
-          cfg.getName(), unknown.size(), cfg.getScopeSign(),
+          cfg.getName(), unknown.size(), scopeSign,
           unknown.stream().limit(LOGGED_UNKNOWN_REFERENCES).toList());
     }
     return wanted;
@@ -192,7 +195,8 @@ public class JiraWorklogSyncService {
       return Map.of();
     }
     var byNormalizedKey = new LinkedHashMap<String, String>();
-    for (JiraTicket ticket : ticketRepository.findByScopeSignAndKeyIn(cfg.getScopeSign(), references)) {
+    for (JiraTicket ticket : ticketRepository.findInScopeByKeyIn(cfg.getCustomerorderId(), cfg.getSuborderId(),
+        references)) {
       byNormalizedKey.putIfAbsent(normalized(ticket.getKey()), ticket.getKey());
     }
     return byNormalizedKey;
@@ -200,7 +204,7 @@ public class JiraWorklogSyncService {
 
   private Map<WorklogKey, JiraWorklogSync> storedWorklogs(JiraReplicationConfig cfg, LocalDate from) {
     var stored = new LinkedHashMap<WorklogKey, JiraWorklogSync>();
-    syncRepository.findByScopeSignAndWorkDateGreaterThanEqual(cfg.getScopeSign(), from)
+    syncRepository.findInScopeFrom(cfg.getCustomerorderId(), cfg.getSuborderId(), from)
         .forEach(row -> stored.put(new WorklogKey(row.getIssueKey(), row.getWorkDate()), row));
     return stored;
   }
@@ -210,7 +214,7 @@ public class JiraWorklogSyncService {
    * failure is logged and the run carries on with the next one — the remembered row stays as it
    * was, so the next run tries again.
    */
-  private void writeOne(JiraReplicationConfig cfg, WorklogKey key, long minutes,
+  private void writeOne(JiraReplicationConfig cfg, String scopeSign, WorklogKey key, long minutes,
                         JiraWorklogSync stored, Outcome outcome) {
     if (stored != null && stored.getMinutes() == minutes) {
       outcome.unchanged++;
@@ -221,7 +225,7 @@ public class JiraWorklogSyncService {
     var entry = new JiraWorklogEntry(key.workDate(), Math.toIntExact(minutes));
     try {
       if (stored == null) {
-        remember(cfg, key, client.create(target, entry), minutes);
+        remember(cfg, scopeSign, key, client.create(target, entry), minutes);
         outcome.created++;
         return;
       }
@@ -270,9 +274,12 @@ public class JiraWorklogSyncService {
     }
   }
 
-  private void remember(JiraReplicationConfig cfg, WorklogKey key, String worklogId, long minutes) {
+  private void remember(JiraReplicationConfig cfg, String scopeSign, WorklogKey key, String worklogId,
+                        long minutes) {
     var row = new JiraWorklogSync();
-    row.setScopeSign(cfg.getScopeSign());
+    row.setCustomerorderId(cfg.getCustomerorderId());
+    row.setSuborderId(cfg.getSuborderId());
+    row.setScopeSign(scopeSign);
     row.setIssueKey(key.issueKey());
     row.setWorkDate(key.workDate());
     row.setWorklogId(worklogId);

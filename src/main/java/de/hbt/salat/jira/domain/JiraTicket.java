@@ -19,7 +19,29 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @NoArgsConstructor
 public class JiraTicket extends AuditedEntity {
 
-  /** The scope of the replication that fetched this ticket — see {@code JiraReplicationConfig}. */
+  /**
+   * The customer order of the scope this ticket was fetched under (#1323) — taken from the
+   * replication, see {@code JiraReplicationConfig}. Required: the migration deleted every ticket
+   * whose scope it could not resolve.
+   *
+   * <p>The ticket outlives the replication that fetched it (#1025): deleting the config leaves the
+   * ticket here, and a new replication on the same order and suborder finds it again. That is why it
+   * refers to order and suborder rather than to the config — and why by id, not by sign: a rename or
+   * a move in the order tree changes nothing about which scope it belongs to.
+   */
+  @Column(name = "customerorder_id", nullable = false)
+  private Long customerorderId;
+
+  /** The suborder of the scope, {@code null} when the replication covers the whole order (#1323). */
+  @Column(name = "suborder_id")
+  private Long suborderId;
+
+  /**
+   * The scope as a sign, kept as a mirror because reports and ETL definitions still read it (#1323):
+   * the order sign, or the complete order sign of the suborder. The application never resolves
+   * anything through it; it is written on save and follows a rename or a move
+   * ({@code JiraScopeSignMirrorListener}).
+   */
   @Column(name = "scope_sign", nullable = false)
   private String scopeSign;
 
