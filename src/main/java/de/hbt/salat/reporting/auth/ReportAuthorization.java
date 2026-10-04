@@ -6,6 +6,7 @@ import static de.hbt.salat.common.util.DateUtils.today;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.stereotype.Component;
@@ -32,8 +33,8 @@ public class ReportAuthorization {
       if (accessLevel == AccessLevel.EXECUTE) {
         return true;
       }
-      // WRITE / DELETE: only if the people lead created it
-      return authorizedUser.getEffectiveLoginSign().equals(report.getCreatedby());
+      // WRITE / DELETE: only if the people lead owns it
+      return isOwnedByCurrentUser(report.getOwnerUserId());
     }
     return authService.isAuthorized(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel, valueOf(report.getId()));
   }
@@ -46,6 +47,33 @@ public class ReportAuthorization {
       return true; // can execute all; can create/edit/delete their own
     }
     return authService.isAuthorizedAnyObject(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel);
+  }
+
+  /**
+   * Whether the login the caller acts as — the impersonated one, if any — owns the record (#1330).
+   * Decided by the id of the login, never by its name; a record without an owner belongs to nobody.
+   */
+  public boolean isOwnedByCurrentUser(Long ownerUserId) {
+    return ownerUserId != null && currentUserIds().contains(ownerUserId);
+  }
+
+  /**
+   * The ids of the {@code SalatUser} the caller acts as, read from the database rather than from
+   * the cache of the rules. Usually one; nothing keeps a login name unique, and where it is not,
+   * each of them counts as the caller, as for the rules (#1204).
+   */
+  public Set<Long> currentUserIds() {
+    return authService.findUserIds(authorizedUser.getEffectiveLoginSign());
+  }
+
+  /**
+   * The owner to record on a new report definition or scheduled job: the login the caller acts as.
+   * {@code null} where that is not exactly one login — then the record is left to the management
+   * rather than handed to one of several people of the same name.
+   */
+  public Long ownerForNewRecord() {
+    var ids = currentUserIds();
+    return ids.size() == 1 ? ids.iterator().next() : null;
   }
 
   public List<ReportAuthorizationInfo> getAuthorizations(ReportDefinition report) {

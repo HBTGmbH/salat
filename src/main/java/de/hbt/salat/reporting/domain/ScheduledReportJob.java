@@ -45,6 +45,18 @@ public class ScheduledReportJob extends AuditedEntity implements Serializable {
   @Column(length = 1000)
   private String description;
 
+  /**
+   * The login that owns the scheduled job (#1330): the id of a {@code SalatUser}, set from the login it was
+   * created under. Whoever is not a manager sees, changes and deletes only the jobs they own.
+   *
+   * <p>Not {@code createdby}: that is the login name, and a login name can be changed or
+   * anonymized — the owner would lose the record, and whoever got the name next would inherit it
+   * (the reason of #1204). {@code createdby} stays as the audit field it is. {@code null} when no
+   * login could be assigned; then only a manager may change it.
+   */
+  @Column(name = "owner_user_id")
+  private Long ownerUserId;
+
   public ScheduledReportJob(long id) {
     super(id);
   }

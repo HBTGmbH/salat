@@ -1,5 +1,6 @@
 package de.hbt.salat.reporting.persistence;
 
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -10,6 +11,6 @@ public interface ScheduledReportJobRepository extends CrudRepository<ScheduledRe
 
   List<ScheduledReportJob> findByEnabledTrue();
 
-  List<ScheduledReportJob> findByCreatedby(String createdby);
+  List<ScheduledReportJob> findByOwnerUserIdIn(Collection<Long> ownerUserIds);
 
 }
