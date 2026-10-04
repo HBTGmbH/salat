@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.viewhelper.NoticeViewHelper;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
@@ -78,7 +79,7 @@ class SuborderControllerTest {
     messageSource.setFallbackToSystemLocale(false);
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new SuborderController(suborderService, customerorderService, customerService, messages,
-        new ErrorCodeViewHelper(messages), mock(FilterHintViewHelper.class));
+        new ErrorCodeViewHelper(messages), mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     var customer = new Customer();

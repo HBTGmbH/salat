@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.AccessLevel;
@@ -37,6 +38,8 @@ import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.etl.auth.ETLAuthorization;
 import de.hbt.salat.etl.domain.ETLDefinition;
+import de.hbt.salat.etl.domain.SqlStatements;
+import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.etl.domain.ETLDefinition.ReferencePeriod;
 import de.hbt.salat.etl.domain.ETLDefinitionOption;
 import de.hbt.salat.etl.domain.ETLExecutionHistory;
@@ -257,6 +260,26 @@ public class ETLService {
    * Zahl von Definitionen ist das die richtige Antwort — sie läuft gegen den Zwischenspeicher der
    * Regeln, nicht gegen die Datenbank.
    */
+  /**
+   * Die Namen der ETL-Definitionen, deren SQL das alte Kürzel eines umbenannten Auftrags oder
+   * Unterauftrags als Literal nennt (#1206), sortiert. Umgeschrieben wird hier nichts: freies SQL
+   * automatisch anzupassen ist riskanter, als die Stellen zu nennen.
+   */
+  @Transactional(readOnly = true)
+  @Authorized(requiresManager = true)
+  public List<String> getNamesOfDefinitionsMentioning(SignsRenamedEvent renamed) {
+    return definitionRepo.findAll().stream()
+        .filter(def -> Stream.of(def.getInit(), def.getExecute(), def.getCleanup())
+            .filter(Objects::nonNull)
+            .map(SqlStatements::getStatements)
+            .filter(Objects::nonNull)
+            .flatMap(List::stream)
+            .anyMatch(renamed::isMentionedIn))
+        .map(ETLDefinition::getName)
+        .sorted()
+        .toList();
+  }
+
   @Transactional(readOnly = true)
   public List<ETLDefinitionOption> getExecutableDefinitions() {
     return definitionRepo.findAll().stream()
