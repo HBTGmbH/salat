@@ -45,6 +45,14 @@ See also README.md
   the rule came in are frozen in `src/test/resources/archunit_store`; a new one fails the build —
   return a record instead of adding it to the store. The contents of a `@Query` are a string, and
   remain a matter of review.
+- **Read model of the owning module** (→ ADR-0021, Nachtrag #1338): where a value is logic of the
+  entity rather than a column — the complete order sign, the path in the order tree, the effective
+  order type — the join would have to rebuild that rule. Instead the owning module offers a record
+  through its service, computed with its own rules (`SuborderReadModel`, `CustomerorderOption`,
+  `PublicholidayService.getPublicHolidayDatesBetween`). The entity does not change for it: no new
+  field, `@Formula` or fetch strategy for another module's needs. The join stays the right choice
+  where the reading module needs columns only and bounds the set in its own query (#997); a read
+  model must not load per row.
 
 ## Controller and View Guidelines (target stack)
 - Controllers:

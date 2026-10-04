@@ -116,6 +116,28 @@ nicht importiert werden darf, fiele durch kein Netz — auch `beFreeOfCycles` ni
 entstünde allein im SQL. Die beiden Regeln, die der Sache am nächsten kommen, sind stillgelegt und
 griffen ohnehin nur auf Java-Ebene. Diese Entscheidung hängt am Review.
 
+> **Nachtrag 2026-10-04 (#1338): Lesemodell des besitzenden Moduls.** Der Join nach Punkt 1 reicht
+> nicht, sobald ein Wert aus der Logik einer Entity kommt statt aus einer Spalte — das vollständige
+> Kürzel eines Unterauftrags (`Suborder#getCompleteOrderSign()` läuft die Elternkette ab), sein Pfad
+> im Auftragsbaum oder der wirksame Auftragstyp. Eine Abfrage im lesenden Modul müsste diese Regeln
+> nachbauen, und die Kopie liefe auseinander, sobald das besitzende Modul seine Regel ändert. Für
+> diesen Fall bietet **das besitzende Modul über seinen Service ein Lesemodell an**: einen Record aus
+> reinen Werten und Ids, berechnet mit seinen eigenen Regeln (`SuborderReadModel`,
+> `SuborderService.getSuborderReadModelsByCustomerorderId`; ebenso `CustomerorderOption` und
+> `PublicholidayService.getPublicHolidayDatesBetween`). Die Hoheit über die Entity bleibt beim
+> besitzenden Modul; das lesende Modul bekommt eine kontrollierte Kopie und weiß nichts über den
+> Assoziationsgraphen. Die Entity selbst ändert sich für das Lesemodell nicht — keine neuen Felder,
+> kein `@Formula`, keine anderen Fetch-Strategien für den Bedarf eines anderen Moduls, denn das wirkte
+> auf jeden, der sie lädt.
+>
+> **Wann welcher Weg:** Der Join im lesenden Modul bleibt richtig, wo es nur Spalten braucht und die
+> Menge in seiner eigenen Abfrage begrenzen will — Filter, Sortierung und Limit dort, wo sie
+> ausgeführt werden (#997). Das Lesemodell ist zu wählen, wo ein Wert eine Regel des besitzenden
+> Moduls ist, oder wo das lesende Modul ohnehin dessen ganze Menge braucht, etwa alle Unteraufträge
+> eines Auftrags. Ein Lesemodell darf dabei nicht je Zeile nachladen: `SuborderReadModel` baut Pfad
+> und Kürzel aus den Unteraufträgen, die mit einer Abfrage gelesen sind, nicht über die Elternkette
+> jeder Entity.
+
 ### Consequences
 
 * Good: Lesepfade laden, was sie zeigen — Filter, Sortierung und Limit liegen dort, wo sie

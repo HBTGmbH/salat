@@ -72,8 +72,8 @@ public class BudgetSegmentControllingService {
                 // in a segment either, so it is left out rather than grouped under "no segment".
                 continue;
             }
-            var evaluation = budgetControllingService.compute(sign, from, until, true);
-            if (evaluation.isEmpty()) {
+            var evaluation = budgetControllingService.compute(customerorder.getId(), from, until, true).orElse(null);
+            if (evaluation == null || evaluation.isEmpty()) {
                 // Nothing booked, nothing due, nothing planned in the window — the order has no line.
                 continue;
             }

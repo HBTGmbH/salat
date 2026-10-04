@@ -1,7 +1,6 @@
 package de.hbt.salat.budget.controller;
 
 import java.time.LocalDate;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,7 +12,6 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.service.BudgetControllingService;
-import de.hbt.salat.order.service.CustomerorderService;
 
 @Controller
 @RequestMapping("/budget/controlling")
@@ -24,13 +22,12 @@ public class BudgetControllingController {
     private final BudgetControllingService budgetControllingService;
     private final BudgetAuthorization budgetAuthorization;
     private final AuthorizedUser authorizedUser;
-    private final CustomerorderService customerorderService;
 
     /**
      * The chosen order arrives as {@code fBudgetCustomerOrderId} through the registered UiState
      * mapping, the same way the plan list and the rate list get theirs (#1009) — they share one
-     * remembered value (#952). The filter carries the id because a sign can be changed (#1334); the
-     * evaluation is still asked by the sign the order has today, which is unique.
+     * remembered value (#952). The filter carries the id because a sign can be changed (#1334), and the
+     * evaluation is asked by that id (#1338).
      *
      * <p>A remembered order is only preselected, never evaluated. Without a period an evaluation
      * spans 2000 to 2999 — the most expensive one the module has — and merely navigating to the page
@@ -54,17 +51,13 @@ public class BudgetControllingController {
             // Deliberately outside the try below: a missing privilege must not degrade into a hint
             // next to an empty evaluation.
             budgetAuthorization.checkAuthorizedForCustomerorderId(fBudgetCustomerOrderId);
-            var sign = customerorderService.getCustomerorderSignsByIds(List.of(fBudgetCustomerOrderId))
-                .get(fBudgetCustomerOrderId);
-            if (sign == null) {
-                // The order no longer exists: there is nothing to evaluate, the filter offers no entry.
-                return "budget/controlling";
-            }
             var from = filter.getFrom() != null ? filter.getFrom() : LocalDate.of(2000, 1, 1);
             var until = filter.getUntil() != null ? filter.getUntil() : LocalDate.of(2999, 12, 31);
             try {
-                var result = budgetControllingService.compute(sign, from, until, authorizedUser.isManager());
-                model.addAttribute("result", result);
+                // Empty when the order no longer exists: there is nothing to evaluate, and the filter
+                // offers no entry for it.
+                budgetControllingService.compute(fBudgetCustomerOrderId, from, until, authorizedUser.isManager())
+                    .ifPresent(result -> model.addAttribute("result", result));
             } catch (Exception ex) {
                 model.addAttribute("controllingError", ex.getMessage());
             }
