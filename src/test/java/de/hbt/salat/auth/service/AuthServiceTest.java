@@ -8,11 +8,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
+import static de.hbt.salat.auth.domain.AccessLevel.LOGIN;
 import static de.hbt.salat.auth.domain.AccessLevel.READ;
 import static de.hbt.salat.auth.domain.AccessLevel.WRITE;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,13 +23,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
+import de.hbt.salat.auth.domain.AuthUiStateKeyContributor;
 import de.hbt.salat.auth.domain.AuthorizationRule;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.persistence.AuthorizationRuleRepository;
 import de.hbt.salat.auth.persistence.SalatUserRepository;
 import de.hbt.salat.common.SalatProperties;
+import de.hbt.salat.common.web.UiState;
 
 @ExtendWith({MockitoExtension.class})
 @MockitoSettings(strictness = LENIENT)
@@ -47,6 +52,12 @@ class AuthServiceTest {
 
     @Mock
     private SalatProperties salatProperties;
+
+    @Mock
+    private UiState uiState;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private AuthService authService;
@@ -213,6 +224,24 @@ class AuthServiceTest {
         assertEquals("auth-new", authService.loginnameOf("1"));
         assertEquals(ANY_MATCH, authService.loginnameOf(ANY_MATCH));
         assertEquals("?alt", authService.loginnameOf("?alt"));
+    }
+
+    @Test
+    void aSwitchOfLoginRecordsTheIdOfTheImpersonatedLogin() {
+        // what AuthorizedUser#getEffectiveUserId answers while impersonating (#1330)
+        var rule = ruleFor(Set.of("1"), Set.of("3"));
+        rule.setCategory("EMPLOYEE");
+        rule.setAccessLevels(Set.of(LOGIN));
+        givenRules(rule);
+        var impersonated = login(3L, "impersonated-sign");
+        impersonated.setStatus("ma");
+        when(salatUserRepository.findByLoginname("impersonated-sign")).thenReturn(Optional.of(impersonated));
+
+        authService.switchLogin("impersonated-sign");
+
+        verify(uiState).setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN, "impersonated-sign");
+        verify(uiState).setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS, "ma");
+        verify(uiState).setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_ID, "3");
     }
 
     private void givenLogins(SalatUser... logins) {

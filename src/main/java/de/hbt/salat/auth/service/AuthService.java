@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import lombok.Data;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.AuthUiStateKeyContributor;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.event.AuthorizedUserChangedEvent;
 import de.hbt.salat.auth.persistence.AuthorizationRuleRepository;
@@ -91,8 +93,10 @@ public class AuthService {
       if (!isAuthorizedForOwnLogin("EMPLOYEE", today(), LOGIN, userIdsOf(loginname).toArray(String[]::new))) {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
+      var login = findLogin(loginname).orElse(null);
       uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN, loginname);
-      uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS, getStatusByLoginname(loginname));
+      uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS, login == null ? null : login.getStatus());
+      uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_ID, login == null ? null : String.valueOf(login.getId()));
     }
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
@@ -107,10 +111,12 @@ public class AuthService {
     log.info("Authorization rule cache cleared by {}", authorizedUser.getLoginSign());
   }
 
-  public String getStatusByLoginname(String loginname) {
-    return salatUserRepository.findByLoginname(loginname)
-        .map(salatUser -> salatUser.getStatus())
-        .orElse(null);
+  /**
+   * The login with this name — what an authentication turns into roles and the login id (#1330), and what a switch of
+   * login records. Read from the database every time, not from the cache of the rules.
+   */
+  public Optional<SalatUser> findLogin(String loginname) {
+    return salatUserRepository.findByLoginname(loginname);
   }
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
@@ -199,15 +205,6 @@ public class AuthService {
   public Set<String> userIdsOf(String loginname) {
     ensureUpToDateCache();
     return loginname == null ? Set.of() : userIdsByLoginname.getOrDefault(loginname, Set.of());
-  }
-
-  /**
-   * The ids of the {@link de.hbt.salat.auth.domain.SalatUser} signed in under this login name, read from the database
-   * rather than from the cache of {@link #userIdsOf} (#1330). For deciding who owns a record: within the cache expiry
-   * a login name given to somebody new could otherwise still answer with the id of the person who had it before.
-   */
-  public Set<Long> findUserIds(String loginname) {
-    return loginname == null ? Set.of() : Set.copyOf(salatUserRepository.findIdsByLoginname(loginname));
   }
 
   /**

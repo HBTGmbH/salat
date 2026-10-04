@@ -51,7 +51,8 @@ public class ScheduledReportJobService {
     if (authorizedUser.isManager()) {
       return (List<ScheduledReportJob>) scheduledReportJobRepository.findAll();
     }
-    return scheduledReportJobRepository.findByOwnerUserIdIn(reportAuthorization.currentUserIds());
+    var userId = authorizedUser.getEffectiveUserId();
+    return userId == null ? List.of() : scheduledReportJobRepository.findByOwnerUserId(userId);
   }
 
   public ScheduledReportJob getJob(Long id) {
@@ -61,7 +62,7 @@ public class ScheduledReportJobService {
   }
 
   public ScheduledReportJob createJob(ScheduledReportJob job) {
-    job.setOwnerUserId(reportAuthorization.ownerForNewRecord());
+    job.setOwnerUserId(authorizedUser.getEffectiveUserId());
     ScheduledReportJob saved = scheduledReportJobRepository.save(job);
     applicationEventPublisher.publishEvent(new ReportScheduledEvent(this, saved));
     return saved;

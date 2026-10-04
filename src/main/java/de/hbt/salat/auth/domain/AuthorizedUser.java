@@ -72,6 +72,30 @@ public class AuthorizedUser implements LoginSignProvider {
         return impersonate != null ? impersonate : getLoginSign();
     }
 
+    /**
+     * The id of the {@link SalatUser} the caller acts as — the impersonated login, if any (#1330).
+     * What a record stores to name a person as its owner, and what it is compared with: never the
+     * login name, which can be changed or anonymized and given to somebody else (#1204).
+     *
+     * <p>Taken where the roles come from: the authentication carries the id of the signed-in login
+     * ({@link LoginIdAuthority}), a switch of login records the id of the impersonated one next to
+     * its status. Neither is a lookup by name, so a login name given out again never answers with
+     * the id of the person before. {@code null} in job mode — the system has no login.
+     */
+    public Long getEffectiveUserId() {
+        if (jobMode) return null;
+        if (getImpersonateLoginSign() != null) {
+            return uiState.getLongValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_ID);
+        }
+        var auth = getAuth();
+        if (auth == null) return null;
+        return auth.getAuthorities().stream()
+            .filter(LoginIdAuthority.class::isInstance)
+            .map(authority -> ((LoginIdAuthority) authority).userId())
+            .findFirst()
+            .orElse(null);
+    }
+
     public String getLoginStatus() {
         if (jobMode) return jobLoginStatus;
         String impersonateStatus = getImpersonateLoginStatus();
