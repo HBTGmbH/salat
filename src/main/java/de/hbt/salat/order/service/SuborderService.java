@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.command.CommandPublisher;
+import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
@@ -126,12 +127,18 @@ public class SuborderService {
 
   @Authorized(requiresManager = true)
   public void create(SuborderDTO suborderData, Long customerorder) {
-    createOrUpdate(null, suborderData, customerorder);
+    createOrUpdate(null, suborderData, customerorder, new ArrayList<>());
   }
 
+  /**
+   * @return what could not follow a renamed or moved suborder by itself (#1206) and needs a look by
+   *     hand — usually nothing
+   */
   @Authorized(requiresManager = true)
-  public void update(long suborderId, SuborderDTO suborderData, Long customerorderId) {
-    createOrUpdate(suborderId, suborderData, customerorderId);
+  public List<ServiceFeedbackMessage> update(long suborderId, SuborderDTO suborderData, Long customerorderId) {
+    var notices = new ArrayList<ServiceFeedbackMessage>();
+    createOrUpdate(suborderId, suborderData, customerorderId, notices);
+    return notices;
   }
 
   public List<Suborder> getStandardSuborders() {
@@ -146,7 +153,8 @@ public class SuborderService {
     return suborderRepository.save(so);
   }
 
-  private void createOrUpdate(Long soId, SuborderDTO data, Long customerorderId) {
+  private void createOrUpdate(Long soId, SuborderDTO data, Long customerorderId,
+                              List<ServiceFeedbackMessage> notices) {
     var customerorder = customerorderService.getCustomerorderById(customerorderId);
     Suborder so;
     if (soId != null) {
@@ -156,6 +164,10 @@ public class SuborderService {
       // new suborder
       so = new Suborder();
     }
+    // where the suborder sat before the edit — a new sign, parent or order changes the complete sign
+    // of its whole branch, and what names it by sign follows (#1206)
+    var oldSign = so.isNew() ? null : so.getCompleteOrderSign();
+    var oldCustomerorderId = so.isNew() ? null : so.getCustomerorder().getId();
     so.acceptVisitor(suborder -> suborder.setCustomerorder(customerorder));
     so.setSign(data.sign());
     so.setSuborder_customer(data.suborder_customer());
@@ -227,6 +239,12 @@ public class SuborderService {
     }
 
     suborderRepository.save(so);
+    var newSign = so.getCompleteOrderSign();
+    if (oldSign != null && !oldSign.equals(newSign)) {
+      var renamed = new SignsRenamedEvent(oldSign, newSign, oldCustomerorderId, so.getCustomerorder().getId());
+      eventPublisher.publishEvent(renamed);
+      notices.addAll(renamed.getNotices());
+    }
   }
 
   @EventListener
@@ -271,7 +289,7 @@ public class SuborderService {
     var newFrom = resultingValidity.getFrom();
     var newUntil = resultingValidity.getUntil();
     SuborderDTO data = createSuborderDTO(suborder, newFrom, newUntil);
-    createOrUpdate(suborderId, data, suborder.getCustomerorder().getId());
+    createOrUpdate(suborderId, data, suborder.getCustomerorder().getId(), new ArrayList<>());
   }
 
   private SuborderDTO createSuborderDTO(Suborder so, LocalDate newFrom, LocalDate newUntil) {

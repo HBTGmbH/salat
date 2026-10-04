@@ -19,6 +19,7 @@ import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IteratorUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Sort;
@@ -27,6 +28,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
@@ -139,6 +141,21 @@ public class ReportService {
       throw new BusinessRuleException(RP_REPORT_EXECUTION_FAILED, reportDefinition.getName());
     }
     return result;
+  }
+
+  /**
+   * The names of the report definitions whose SQL names the old sign of a renamed order or suborder
+   * as a literal (#1206), sorted — every definition, not only those the caller may run, because the
+   * caller is the one who renamed. Nothing is rewritten: free SQL is safer named than edited.
+   */
+  @Transactional(readOnly = true)
+  @Authorized(requiresManager = true)
+  public List<String> getNamesOfDefinitionsMentioning(SignsRenamedEvent renamed) {
+    return IteratorUtils.toList(reportDefinitionRepository.findAll().iterator()).stream()
+        .filter(definition -> renamed.isMentionedIn(definition.getSql()))
+        .map(ReportDefinition::getName)
+        .sorted()
+        .toList();
   }
 
   public ReportDefinition create(String name, String sql) {

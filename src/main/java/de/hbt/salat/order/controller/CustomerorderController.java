@@ -30,7 +30,9 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.viewhelper.NoticeViewHelper;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -55,6 +57,7 @@ public class CustomerorderController {
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final AuthorizedEmployee authorizedEmployee;
   private final FilterHintViewHelper filterHintViewHelper;
+  private final NoticeViewHelper noticeViewHelper;
 
   @GetMapping
   public String list(
@@ -124,6 +127,7 @@ public class CustomerorderController {
 
     boolean hasErrors = bindingResult.hasErrors();
     Long newId = null;
+    List<ServiceFeedbackMessage> notices = List.of();
     if (!hasErrors) {
       try {
         LocalDate fromDate = DateUtils.parseOrNull(form.getValidFrom());
@@ -138,7 +142,7 @@ public class CustomerorderController {
         if (form.getId() == null) {
           newId = customerorderService.create(dto).getId();
         } else {
-          customerorderService.update(form.getId(), dto);
+          notices = customerorderService.update(form.getId(), dto);
         }
       } catch (ErrorCodeException ex) {
         model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
@@ -156,6 +160,7 @@ public class CustomerorderController {
     filterHintViewHelper.addSuccess(redirectAttributes,
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"),
         CUSTOMER_ORDER_FILTER, CUSTOMER_ID);
+    noticeViewHelper.addNotices(redirectAttributes, notices);
     if (newId != null) {
       redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + newId);
       redirectAttributes.addFlashAttribute("toastActionLabel",

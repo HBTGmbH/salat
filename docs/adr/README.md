@@ -47,3 +47,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0031](0031-objektsuche-der-befehlspalette-anbieter-je-modul.md) | Objektsuche der Befehlspalette: ein Anbieter je Modul, Ziele auch aus fremden Modulen | Accepted | 2026-09-27 |
 | [0032](0032-befehle-mit-parametern-in-der-befehlspalette.md) | Befehle mit Parametern: die Sidebar bietet sie an, der Browser liest, die Seite vervollständigt | Accepted | 2026-09-28 |
 | [0033](0033-gleichzeitige-aenderung-wird-zum-fachlichen-befund.md) | Eine gleichzeitige Änderung wird am Service zum fachlichen Befund | Accepted | 2026-10-01 |
+| [0034](0034-auftragskuerzel-bleiben-aenderbar-verweise-ziehen-nach.md) | Auftrags- und Unterauftragskürzel bleiben änderbar, was sie nennt, zieht nach | Accepted | 2026-10-04 |

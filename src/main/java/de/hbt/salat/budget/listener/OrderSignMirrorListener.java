@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.budget.service.OrderReferenceService;
+import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.event.SuborderUpdateEvent;
 
@@ -26,6 +27,12 @@ public class OrderSignMirrorListener {
     @EventListener
     public void onSuborderUpdate(SuborderUpdateEvent event) {
         orderReferenceService.followOrderTree(event.getDomainObject().getCustomerorder());
+    }
+
+    /** The suborder patterns of the customer rates, which name the order tree by sign (#1206). */
+    @EventListener
+    public void onSignsRenamed(SignsRenamedEvent event) {
+        orderReferenceService.followRename(event);
     }
 
 }

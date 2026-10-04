@@ -773,6 +773,11 @@ Entities are divided into two categories (→ ADR-0011):
   suborder ids (`OrderPosition`), not by a sign prefix. The exception is a `LIKE` pattern over
   complete order signs (`OrderPricing.suborderSign`, → `OrderPricingLookup`): that is a pattern,
   not a reference.
+- **Signs stay changeable** (#1206, → ADR-0034). Saving a renamed order, or a renamed or moved
+  suborder, publishes `SignsRenamedEvent` with the old and the new complete sign. Whatever still
+  names the order tree by sign listens to it and follows — or adds a notice that the success
+  message shows (`NoticeViewHelper`). A new place that stores an order or suborder sign as more than
+  a mirror has to do the same.
 
 ### Criteria-Abfragen über den EntityManager (#1092)
 

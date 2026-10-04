@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.command.CommandPublisher;
+import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
@@ -71,15 +72,21 @@ public class CustomerorderService {
 
   @Authorized(requiresManager = true)
   public Customerorder create(CustomerorderDTO dto) {
-    return createOrUpdate(null, dto);
+    return createOrUpdate(null, dto, new ArrayList<>());
   }
 
+  /**
+   * @return what could not follow a renamed order by itself (#1206) and needs a look by hand —
+   *     usually nothing
+   */
   @Authorized(requiresManager = true)
-  public void update(long customerorderId, CustomerorderDTO dto) {
-    createOrUpdate(customerorderId, dto);
+  public List<ServiceFeedbackMessage> update(long customerorderId, CustomerorderDTO dto) {
+    var notices = new ArrayList<ServiceFeedbackMessage>();
+    createOrUpdate(customerorderId, dto, notices);
+    return notices;
   }
 
-  private Customerorder createOrUpdate(Long coId, CustomerorderDTO dto) {
+  private Customerorder createOrUpdate(Long coId, CustomerorderDTO dto, List<ServiceFeedbackMessage> notices) {
 
     Customerorder co;
     if (coId != null) {
@@ -88,6 +95,8 @@ public class CustomerorderService {
       // new customer order
       co = new Customerorder();
     }
+    // the sign before the edit — signs stay changeable, and what names the order by sign follows (#1206)
+    var oldSign = co.isNew() ? null : co.getSign();
 
     /* set attributes */
     co.setCustomer(customerDAO.getCustomerById(dto.customerId()));
@@ -142,7 +151,13 @@ public class CustomerorderService {
         event.veto(allMessages);
       }
     }
-    return customerorderRepository.save(co);
+    var saved = customerorderRepository.save(co);
+    if (oldSign != null && !oldSign.equals(saved.getSign())) {
+      var renamed = new SignsRenamedEvent(oldSign, saved.getSign(), saved.getId(), saved.getId());
+      eventPublisher.publishEvent(renamed);
+      notices.addAll(renamed.getNotices());
+    }
+    return saved;
   }
 
   public Customerorder getCustomerorderBySign(String selectedOrder) {

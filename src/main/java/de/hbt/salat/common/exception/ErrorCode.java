@@ -148,6 +148,7 @@ public enum ErrorCode {
   ETL_DEFINITION_NOT_FOUND("ETL-0006", "etl definition not found"),
   ETL_RUN_EXECUTOR_BUSY("ETL-0007", "the etl execution thread is still occupied by an earlier run"),
   ETL_CYCLIC_DEPENDENCY("ETL-0008", "the etl definitions depend on each other in a cycle"),
+  ETL_DEFINITIONS_NAME_OLD_SIGN("ETL-0009", "etl definitions name the old sign of a renamed order or suborder"),
 
   SE_USER_NOT_FOUND("SE-0001", "salat user not found for current login"),
 
@@ -196,6 +197,7 @@ public enum ErrorCode {
   BU_BUDGET_PERIOD_DISJOINT("BU-0029", "the validity of the budget plan does not overlap the validity of the record"),
   BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans, flat rates or customer rates still refer to the customer order"),
   BU_SUBORDER_HAS_BUDGET_REFERENCES("BU-0031", "budget plans, flat rates or employee cost assignments still refer to the suborder"),
+  BU_PRICING_PATTERN_NOT_FOLLOWED("BU-0032", "the suborder pattern of a customer rate could not follow a renamed order or suborder"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
   JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),
@@ -223,6 +225,7 @@ public enum ErrorCode {
   RP_REPORT_ID_NOT_FOUND("RP-0006", "there is no report with this id"),
   RP_REPORT_ID_INVALID("RP-0007", "the report id is not a number"),
   RP_REPORT_NOT_SPECIFIED("RP-0008", "the report must be given by reportId or by report (its name)"),
+  RP_DEFINITIONS_NAME_OLD_SIGN("RP-0009", "report definitions name the old sign of a renamed order or suborder"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

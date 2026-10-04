@@ -34,7 +34,9 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.viewhelper.NoticeViewHelper;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
@@ -56,6 +58,7 @@ public class SuborderController {
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final FilterHintViewHelper filterHintViewHelper;
+  private final NoticeViewHelper noticeViewHelper;
 
   @GetMapping
   public String list(
@@ -150,6 +153,7 @@ public class SuborderController {
 
     boolean hasErrors = bindingResult.hasErrors();
     boolean isCreate = form.getId() == null;
+    List<ServiceFeedbackMessage> notices = List.of();
     Long customerorderId = form.getCustomerorderId();
     if (!hasErrors) {
       try {
@@ -176,7 +180,7 @@ public class SuborderController {
         if (isCreate) {
           suborderService.create(data, form.getCustomerorderId());
         } else {
-          suborderService.update(form.getId(), data, form.getCustomerorderId());
+          notices = suborderService.update(form.getId(), data, form.getCustomerorderId());
         }
       } catch (ErrorCodeException ex) {
         model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
@@ -194,6 +198,7 @@ public class SuborderController {
     filterHintViewHelper.addSuccess(redirectAttributes,
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
         SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
+    noticeViewHelper.addNotices(redirectAttributes, notices);
     if (isCreate && customerorderId != null) {
       redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + customerorderId);
       redirectAttributes.addFlashAttribute("toastActionLabel",
