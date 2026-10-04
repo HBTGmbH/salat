@@ -857,8 +857,8 @@ Repository und `Specification`.
     manager is never restricted — but it is not a general licence to weaken.
 - Filter persistence goes through `UiState` (→ ADR-0022), not through the session and not through a
   `containsKey` check on the request: the filter remembers a registered `f…` parameter and supplies
-  it again as a fallback, so a controller only declares `@RequestParam(required = false) String
-  fCustomerOrderSign`. Where a submit must be told apart from a mere page call — because it triggers
+  it again as a fallback, so a controller only declares `@RequestParam(required = false) Long
+  fBudgetCustomerOrderId`. Where a submit must be told apart from a mere page call — because it triggers
   something expensive — that hangs on a hidden field of the form (`evaluate`), never on whether the
   filter parameter is present: the fallback makes it present on every request (#1009)
 - Redirect-After-Post: successful writes return `”redirect:/...”` with `redirectAttributes.addFlashAttribute(“toastSuccess”, ...)`

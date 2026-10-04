@@ -19,12 +19,19 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey DASHBOARD_RESPONSIBLE_ID = new UiStateKey("budgetDashboard.ResponsibleId");
 
     /**
-     * The customer order of the plan list, of the rate list and of the controlling filter —
-     * deliberately one key for all three (#952, #1009). Whoever picks an order in one of them finds
-     * it preselected in the others, the same way {@code orderId} and {@code customerOrderId} share a
-     * key in the order module.
+     * The customer order of the plan list, of the rate list, of the flat-rate list and of the
+     * controlling filter — deliberately one key for all of them (#952, #1009). Whoever picks an order
+     * in one of them finds it preselected in the others.
+     *
+     * <p>By id, not by sign: a sign can be changed (ADR-0034), and a remembered or linked sign would
+     * then select nothing (#1334). The parameter is not the order module's {@code fCustomerOrderId}:
+     * the mapping is global, and the budget filter would otherwise travel into the suborder and
+     * employee order lists, where an empty selection means "all" instead of "none". The cookie key is
+     * new as well — a value remembered under the old {@code budget.CustomerorderSign} is a sign, and
+     * the filter drops a key it does not know instead of reading it as an id. Links that still carry
+     * {@code fCustomerOrderSign} are translated by {@link LegacyBudgetFilterController}.
      */
-    public static final UiStateKey CUSTOMER_ORDER_SIGN = new UiStateKey("budget.CustomerorderSign");
+    public static final UiStateKey CUSTOMER_ORDER_ID = new UiStateKey("budget.CustomerorderId");
 
     /**
      * The three "show inactive" switches stay apart: in the plan list the switch means inactive
@@ -49,7 +56,7 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
         var map = new HashMap<String, UiStateKey>();
         map.put("fBudgetSegmentId", DASHBOARD_SEGMENT_ID);
         map.put("fBudgetResponsibleId", DASHBOARD_RESPONSIBLE_ID);
-        map.put("fCustomerOrderSign", CUSTOMER_ORDER_SIGN);
+        map.put("fBudgetCustomerOrderId", CUSTOMER_ORDER_ID);
         map.put("fBudgetShowInactive", BUDGET_SHOW_INACTIVE);
         map.put("fPricingShowInactive", PRICING_SHOW_INACTIVE);
         map.put("fPricingShowInactiveOrders", PRICING_SHOW_INACTIVE_ORDERS);

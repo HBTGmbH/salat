@@ -302,13 +302,13 @@ public class OrderFlatRateServiceTest {
         .containsExactly(tuple("co", "co/01/A"), tuple("other", null));
   }
 
-  /** The filter names the order by sign; the flat rates are read by the id behind it. */
+  /** The filter names the order by id (#1334). */
   @Test
-  public void narrows_the_list_to_the_order_behind_the_chosen_sign() {
+  public void narrows_the_list_to_the_chosen_order() {
     var chosen = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
     when(repository.findByCustomerorderIdOrderByValidFromAsc(TREE.orderId("co"))).thenReturn(List.of(chosen));
 
-    assertThat(service.getRows("co", false, true)).extracting(OrderFlatRateRow::flatRate).containsExactly(chosen);
+    assertThat(service.getRows(TREE.orderId("co"), false, true)).extracting(OrderFlatRateRow::flatRate).containsExactly(chosen);
   }
 
   // --- helpers ---------------------------------------------------------------------------------

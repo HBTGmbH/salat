@@ -34,6 +34,10 @@ import de.hbt.salat.order.service.CustomerorderService;
  * The controlling page itself opens for everyone, but evaluating a foreign order answers 403 — so
  * the target is offered per order, never for the page as such.
  *
+ * <p>The links name the order by id (#1334): the hits come with the sign the order module shows,
+ * the budget filter carries the id behind it, because a sign can be changed and a remembered link
+ * would then lead nowhere. The same goes for the order {@code controlling} suggests.
+ *
  * <p>The controlling link has no period: from 2000 to 2999, as the budget alert's link has it. The
  * plans are only a target where an order has any; where none of them is active, the list is opened
  * with the inactive ones shown, otherwise it would say "nothing found".
@@ -57,15 +61,20 @@ public class BudgetPaletteProvider implements PaletteProvider {
     if (signs.isEmpty()) {
       return Map.of();
     }
+    var ids = customerorderService.getCustomerorderIdsBySigns(signs);
     var plans = orderBudgetService.getPlanPresence(signs);
     var targets = new HashMap<String, List<PaletteTarget>>();
     for (var sign : signs) {
+      var id = ids.get(sign);
+      if (id == null) {
+        continue;
+      }
       var controlling = new PaletteTarget(PaletteText.of("main.palette.target.customerorder.controlling"),
-          PaletteLink.to("/budget/controlling").param("fCustomerOrderSign", sign).param("evaluate", true).build(), 2);
+          PaletteLink.to("/budget/controlling").param("fBudgetCustomerOrderId", id).param("evaluate", true).build(), 2);
       var hasActivePlan = plans.get(sign);
       targets.put(sign, hasActivePlan == null ? List.of(controlling) : List.of(controlling,
           new PaletteTarget(PaletteText.of("main.palette.target.customerorder.budget"),
-              PaletteLink.to("/budget").param("fCustomerOrderSign", sign)
+              PaletteLink.to("/budget").param("fBudgetCustomerOrderId", id)
                   .paramIf(!hasActivePlan, "fBudgetShowInactive", true).build(), 3)));
     }
     return targets;
@@ -88,7 +97,7 @@ public class BudgetPaletteProvider implements PaletteProvider {
             .thenComparing(row -> Validity.isInactive(row.untilDate()))
             .thenComparing(Comparator.comparingInt((CustomerorderSearchRow row) -> query.match(row.sign(),
                 row.shortdescription(), row.description(), row.customerShortname())).reversed()))
-        .map(row -> new PaletteSuggestion(row.sign(), row.sign(),
+        .map(row -> new PaletteSuggestion(String.valueOf(row.id()), row.sign(),
             row.shortdescription() != null && !row.shortdescription().isBlank() ? row.shortdescription() : row.description(),
             null, false, false, query.isKey(row.sign())))
         .toList();

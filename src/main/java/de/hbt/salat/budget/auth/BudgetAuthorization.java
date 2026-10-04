@@ -73,9 +73,26 @@ public class BudgetAuthorization {
         return seesAllCustomerorders() || !responsibleCustomerorderSigns().isEmpty();
     }
 
+    /** Like {@link #isAuthorizedForCustomerorder(String)}, by the id the budget filter carries (#1334). */
+    public boolean isAuthorizedForCustomerorderId(Long customerorderId) {
+        if (authorizedUser.isRestricted()) return false;
+        if (seesAllCustomerorders()) return true;
+        return customerorderId != null && responsibleCustomerorderIds().contains(customerorderId);
+    }
+
     public void checkAuthorizedForCustomerorder(String customerorderSign) {
         if (!isAuthorizedForCustomerorder(customerorderSign)) {
             throw new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED, customerorderSign);
+        }
+    }
+
+    /** The message names the order by its sign where it still exists, by the id otherwise. */
+    public void checkAuthorizedForCustomerorderId(Long customerorderId) {
+        if (!isAuthorizedForCustomerorderId(customerorderId)) {
+            var sign = customerorderId == null ? null
+                : customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId);
+            throw new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED,
+                sign != null ? sign : customerorderId);
         }
     }
 

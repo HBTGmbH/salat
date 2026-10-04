@@ -7,8 +7,8 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 
 /**
- * The hrefs of the palette's targets (#1157). A sign is free text: a slash, a space or an ampersand
- * in it has to arrive as part of the value, not end the path segment or start the next parameter.
+ * The hrefs of the palette's targets (#1157). A filter text is free text: a slash, a space or an
+ * ampersand in it has to arrive as part of the value, not end the path segment or start the next parameter.
  *
  * <p>{@code null} goes out as the empty value rather than being left out, because a filter a link
  * names overwrites what the list remembers (ADR-0022) — {@code fCustomerId=} is "no customer", a
@@ -25,10 +25,10 @@ class PaletteLinkTest {
   @Test
   void starts_the_query_with_a_question_mark_and_joins_the_parameters_with_ampersands() {
     assertThat(PaletteLink.to("/budget/controlling")
-        .param("fCustomerOrderSign", "MUSTER-01")
+        .param("fBudgetCustomerOrderId", 42L)
         .param("evaluate", true)
         .build())
-        .isEqualTo("/budget/controlling?fCustomerOrderSign=MUSTER-01&evaluate=true");
+        .isEqualTo("/budget/controlling?fBudgetCustomerOrderId=42&evaluate=true");
   }
 
   @Test
@@ -38,31 +38,31 @@ class PaletteLinkTest {
   }
 
   @Test
-  void encodes_a_slash_in_a_sign() {
-    assertThat(PaletteLink.to("/budget").param("fCustomerOrderSign", "MUSTER/01").build())
-        .isEqualTo("/budget?fCustomerOrderSign=MUSTER%2F01");
+  void encodes_a_slash_in_a_value() {
+    assertThat(PaletteLink.to("/customers").param("fCustomerFilter", "MUSTER/01").build())
+        .isEqualTo("/customers?fCustomerFilter=MUSTER%2F01");
   }
 
   /** Form encoding, which the servlet container reads back as a space. */
   @Test
-  void encodes_a_space_in_a_sign() {
-    assertThat(PaletteLink.to("/budget").param("fCustomerOrderSign", "MUSTER 01").build())
-        .isEqualTo("/budget?fCustomerOrderSign=MUSTER+01");
+  void encodes_a_space_in_a_value() {
+    assertThat(PaletteLink.to("/customers").param("fCustomerFilter", "MUSTER 01").build())
+        .isEqualTo("/customers?fCustomerFilter=MUSTER+01");
   }
 
   @Test
   void encodes_an_ampersand_so_that_it_does_not_start_another_parameter() {
-    assertThat(PaletteLink.to("/budget/controlling")
-        .param("fCustomerOrderSign", "MUSTER&01")
-        .param("evaluate", true)
+    assertThat(PaletteLink.to("/customers")
+        .param("fCustomerFilter", "MUSTER&01")
+        .param("fCustomerId", 7L)
         .build())
-        .isEqualTo("/budget/controlling?fCustomerOrderSign=MUSTER%2601&evaluate=true");
+        .isEqualTo("/customers?fCustomerFilter=MUSTER%2601&fCustomerId=7");
   }
 
   @Test
   void encodes_every_character_that_would_change_the_meaning_of_the_query() {
-    assertThat(PaletteLink.to("/budget").param("fCustomerOrderSign", "1+1=2?#50%").build())
-        .isEqualTo("/budget?fCustomerOrderSign=1%2B1%3D2%3F%2350%25");
+    assertThat(PaletteLink.to("/customers").param("fCustomerFilter", "1+1=2?#50%").build())
+        .isEqualTo("/customers?fCustomerFilter=1%2B1%3D2%3F%2350%25");
   }
 
   @Test

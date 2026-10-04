@@ -1,7 +1,7 @@
 package de.hbt.salat.budget.controller;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
+import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -64,15 +64,15 @@ public class OrderFlatRateController {
      * value (#952).
      */
     @GetMapping
-    public String list(@RequestParam(required = false) String fCustomerOrderSign,
+    public String list(@RequestParam(required = false) Long fBudgetCustomerOrderId,
                        @RequestParam(required = false) Boolean fFlatRateShowInactive,
                        @RequestParam(required = false) Boolean fFlatRateShowInactiveOrders,
                        Model model) {
         var inactive = Boolean.TRUE.equals(fFlatRateShowInactive);
         var inactiveOrders = Boolean.TRUE.equals(fFlatRateShowInactiveOrders);
-        model.addAttribute("rows", orderFlatRateService.getRows(fCustomerOrderSign, inactive, inactiveOrders));
+        model.addAttribute("rows", orderFlatRateService.getRows(fBudgetCustomerOrderId, inactive, inactiveOrders));
         model.addAttribute("customerorderOptions", filterOptions());
-        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
+        model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
         model.addAttribute("showInactive", inactive);
         model.addAttribute("showInactiveOrders", inactiveOrders);
         return "budget/flat-rate-list";
@@ -149,11 +149,11 @@ public class OrderFlatRateController {
                     return "redirect:/budget/flat-rate/" + id;
                 }
                 filterHintViewHelper.addSuccess(redirectAttributes,
-                    messages.getMessage("main.flatrate.message.created"), CUSTOMER_ORDER_SIGN);
+                    messages.getMessage("main.flatrate.message.created"), CUSTOMER_ORDER_ID);
             } else {
                 orderFlatRateService.update(form.getId(), data);
                 filterHintViewHelper.addSuccess(redirectAttributes,
-                    messages.getMessage("main.flatrate.message.updated"), CUSTOMER_ORDER_SIGN);
+                    messages.getMessage("main.flatrate.message.updated"), CUSTOMER_ORDER_ID);
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

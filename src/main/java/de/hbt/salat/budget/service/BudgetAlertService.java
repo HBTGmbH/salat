@@ -94,8 +94,9 @@ public class BudgetAlertService {
             .toList();
 
         // evaluate=true because the link is meant to show the evaluation, not just to preselect the
-        // order — merely opening the page computes nothing (#1009).
-        var controllingUrl = "/budget/controlling?fCustomerOrderSign=" + coSign + "&evaluate=true";
+        // order — merely opening the page computes nothing (#1009). By id: the mail outlives a rename
+        // of the order, the sign in its text is a snapshot (#1334).
+        var controllingUrl = "/budget/controlling?fBudgetCustomerOrderId=" + co.getId() + "&evaluate=true";
         var utilizationStr = String.format("%.1f", utilization);
         var thresholdStr = String.valueOf(threshold);
 

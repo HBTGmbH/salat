@@ -87,10 +87,11 @@ public class OrderFlatRateService {
      * of only the amount of a single due date.
      */
     @Transactional(readOnly = true)
-    public List<OrderFlatRateRow> getRows(String customerorderSign, boolean showInactive,
+    public List<OrderFlatRateRow> getRows(Long customerorderId, boolean showInactive,
                                           boolean showInactiveOrders) {
-        var sign = trimToNull(customerorderSign);
-        var flatRates = sign == null ? getAll() : byCustomerorderSign(sign);
+        var flatRates = customerorderId == null
+            ? getAll()
+            : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
         var ordersById = ordersOf(flatRates);
         var suborderSigns = suborderSignsOf(flatRates);
         var planNames = planNamesOf(flatRates);
@@ -191,14 +192,6 @@ public class OrderFlatRateService {
     public OrderFlatRate getById(long id) {
         return orderFlatRateRepository.findById(id)
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_FLAT_RATE_NOT_FOUND, id));
-    }
-
-    /** The flat rates of the order the filter names, read by the id behind the sign (#1205). */
-    private List<OrderFlatRate> byCustomerorderSign(String customerorderSign) {
-        var customerorderId = customerorderService.getCustomerorderIdBySign(customerorderSign);
-        return customerorderId == null
-            ? List.of()
-            : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
     }
 
     /** Where the flat rate sits in the order tree — empty for a suborder that no longer exists. */

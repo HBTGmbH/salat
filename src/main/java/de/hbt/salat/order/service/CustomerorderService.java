@@ -202,6 +202,16 @@ public class CustomerorderService {
         .collect(Collectors.toMap(CustomerorderOption::id, CustomerorderOption::sign));
   }
 
+  /**
+   * The ids of the orders with these signs, by sign — a sign without an order is missing. For a
+   * module that is handed signs and links by id, e.g. the targets of the command palette (#1334).
+   */
+  @Transactional(readOnly = true)
+  public Map<String, Long> getCustomerorderIdsBySigns(Collection<String> signs) {
+    return signs.isEmpty() ? Map.of() : customerorderRepository.findOptionsBySignIn(signs).stream()
+        .collect(Collectors.toMap(CustomerorderOption::sign, CustomerorderOption::id));
+  }
+
   /** The orders with these ids, in one statement — for a caller that resolved the ids elsewhere (#1092). */
   public List<Customerorder> getCustomerordersByIds(Collection<Long> ids) {
     if (ids.isEmpty()) return List.of();
