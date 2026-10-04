@@ -42,7 +42,8 @@ public class SuborderServiceTest {
         mock(CommandPublisher.class),
         suborderDAO,
         mock(SuborderRepository.class),
-        customerorderService);
+        customerorderService,
+        mock(SpecialOrders.class));
   }
 
   /**

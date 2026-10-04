@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
@@ -155,11 +156,14 @@ public class EmployeeorderController {
         HttpServletRequest request) {
         addFormModel(model, form, form.getId() != null);
         prefillValidity(form);
+        // the entitlement of a yearly vacation suborder depends on the contract (#1341)
+        prefillVacationEntitlement(form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
         model.addAttribute("ordersChanged", true);
         model.addAttribute("subordersChanged", true);
         model.addAttribute("datesChanged", true);
+        model.addAttribute("debitChanged", true);
         return "order/employee-order-form";
     }
 
@@ -204,6 +208,7 @@ public class EmployeeorderController {
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
         model.addAttribute("datesChanged", true);
+        model.addAttribute("debitChanged", true);
         return "order/employee-order-form";
     }
 
@@ -440,6 +445,9 @@ public class EmployeeorderController {
     private void addFormModel(Model model, EmployeeorderForm form, boolean isEdit, boolean initialize) {
         model.addAttribute("employeeorderForm", form);
         model.addAttribute("isEdit", isEdit);
+        // the hint that the next contract change recalculates the debit (#1341)
+        model.addAttribute("calculatedVacationEntitlement",
+            form.getSuborderId() != null && employeeorderService.hasCalculatedVacationEntitlement(form.getSuborderId()));
         model.addAttribute("section", "orders");
         model.addAttribute("subSection", "employeeorders");
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
@@ -555,6 +563,22 @@ public class EmployeeorderController {
                 form.setDebithoursunit(suborder.getDebithoursunit());
             }
         }
+        prefillVacationEntitlement(form);
+    }
+
+    /**
+     * On a yearly vacation suborder the debit is the calculated entitlement of the contract (#1341):
+     * the form proposes it, and a manager may overwrite it.
+     */
+    private void prefillVacationEntitlement(EmployeeorderForm form) {
+        if (form.getEmployeeContractId() == null || form.getSuborderId() == null) {
+            return;
+        }
+        employeeorderService.getCalculatedVacationEntitlement(form.getEmployeeContractId(), form.getSuborderId())
+            .ifPresent(entitlement -> {
+                form.setDebithours(DurationUtils.format(entitlement));
+                form.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
+            });
     }
 
     private EmployeeorderForm toForm(Employeeorder eo) {

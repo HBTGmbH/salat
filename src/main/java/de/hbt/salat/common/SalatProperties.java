@@ -1,6 +1,8 @@
 package de.hbt.salat.common;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +24,8 @@ public class SalatProperties {
   private Jira jira = new Jira();
   private BookingList bookingList = new BookingList();
   private Runs runs = new Runs();
+  private Vacation vacation = new Vacation();
+  private Training training = new Training();
 
   @Data
   public static class Auth {
@@ -94,6 +98,24 @@ public class SalatProperties {
      * ({@code RunFinisher}). The value stands in {@code application.yaml}.
      */
     private Duration finishRetryMax;
+  }
+
+  /**
+   * The vacation order and its suborders without a calculated entitlement (#1341, → {@code SpecialOrders}).
+   * Named by sign in {@code application.yaml}; empty means the role is off.
+   */
+  @Data
+  public static class Vacation {
+    private String customerorderSign;
+    /** Complete order signs ({@code URLAUB/Sonderurlaub}) of suborders of the vacation order. */
+    private List<String> doNotCalculateSigns = new ArrayList<>();
+  }
+
+  /** The suborders of the regular training (#1341, → {@code SpecialOrders}). */
+  @Data
+  public static class Training {
+    /** Complete order signs ({@code i976/FORTBILDUNG}). */
+    private List<String> regularSuborderSigns = new ArrayList<>();
   }
 
   @Data

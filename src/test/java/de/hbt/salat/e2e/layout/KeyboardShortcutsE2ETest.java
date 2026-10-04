@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.e2e.E2EBrowser;
 import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
@@ -150,7 +149,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
   void ctrl_enter_saves_the_booking_from_the_comment(E2EBrowser browser) {
     String comment = "Tastenkuerzel Speichern aus dem Kommentar " + browser;
     runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + DAY, page -> {
-      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
       page.fill("#durationTime", "00:30");
       page.locator("#commentField").fill(comment);
       assertThat(page.locator("#commentField")).isFocused();
@@ -167,7 +166,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void ctrl_enter_takes_along_a_ticket_still_being_typed(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + OTHER_DAY, page -> {
-      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
       page.fill("#durationTime", "00:45");
       page.locator("#commentField").fill("Tastenkuerzel Ticket im Gange " + browser);
       page.locator("#ticketReference ~ .ts-wrapper .ts-control").click();
@@ -185,7 +184,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void ctrl_enter_takes_along_a_duration_still_being_typed(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + OTHER_DAY, page -> {
-      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
       page.locator("#commentField").fill("Tastenkuerzel Dauer im Gange " + browser);
       page.fill("#durationTime", "1,5");
       assertThat(page.locator("#durationTime")).isFocused();
@@ -203,7 +202,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
   void ctrl_enter_saves_with_the_focus_outside_the_form(E2EBrowser browser) {
     String comment = "Tastenkuerzel Speichern ohne Fokus im Formular " + browser;
     runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + THIRD_DAY, page -> {
-      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
       page.fill("#durationTime", "00:15");
       page.locator("#commentField").fill(comment);
       leaveFields(page);
@@ -258,7 +257,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
       assertEquals(List.of(false, true), page.evaluate(press, true));
       // the form is invalid here, so a real submit stops at the validation — the submit event of
       // requestSubmit comes only for a valid form; the handler reaching it is what counts
-      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
       page.fill("#durationTime", "00:15");
       page.locator("#commentField").fill("Tastenkuerzel gehalten " + browser);
       assertEquals(List.of(true, true), page.evaluate(press, false));

@@ -55,6 +55,25 @@ salat:
     # erreichbar ist (#1300). Danach bleibt die Zeile auf RUNNING und wird von Hand als beendet
     # markiert, wie nach einem Absturz.
     finish-retry-max: 60m
+  # Aufträge mit eigener Rolle, über ihr Kürzel benannt (#1341, ADR-0035). Welche das sind,
+  # entscheidet der Betrieb. Die Anwendung löst die Kürzel beim Start in ids auf und hält an,
+  # wenn eines keinen Auftrag nennt. Die Kürzel der genannten Aufträge sind in der Anwendung
+  # gesperrt; umbenannt wird in Datenbank und Konfiguration im selben Deployment. Ohne Eintrag ist
+  # die Rolle aus. Listen als Umgebungsvariable kommagetrennt.
+  training:
+    # env: SALAT_TRAINING_REGULAR_SUBORDER_SIGNS — vollständige Schlüssel der Unteraufträge, deren
+    # Buchungen das Fortbildungskonto als reguläre Fortbildung zählt; jede andere Buchung mit
+    # Fortbildungskennzeichen ist projektbezogene Fortbildung.
+    regular-suborder-signs:
+      - i976/FORTBILDUNG
+  vacation:
+    # env: SALAT_VACATION_CUSTOMERORDER_SIGN — der Urlaubsauftrag. Seine Unteraufträge sind die
+    # Jahres-Unteraufträge mit berechnetem Urlaubsanspruch, außer denen der Liste darunter.
+    customerorder-sign: URLAUB
+    # env: SALAT_VACATION_DO_NOT_CALCULATE_SIGNS — vollständige Schlüssel der Unteraufträge des
+    # Urlaubsauftrags ohne berechneten Anspruch; das Urlaubskonto fasst sie in einer Zeile zusammen.
+    do-not-calculate-signs:
+      - URLAUB/Sonderurlaub
 server:
   # Kompression textueller Antworten. Bewusst hier und nicht profilspezifisch: sie soll in
   # jeder deployten Umgebung identisch gelten und ist damit versioniert. Aufgeführt sind nur

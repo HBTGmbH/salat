@@ -30,6 +30,7 @@ import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 
 /**
  * Das Formular lehnt eine Auftragsnummer ab, die ein anderer Auftrag trägt (#1208) — bis dahin nur beim Anlegen,
@@ -58,7 +59,7 @@ class CustomerorderControllerSignTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new CustomerorderController(customerorderService, customerService, employeeService, messages,
         new ErrorCodeViewHelper(messages), mock(AuthorizedEmployee.class), mock(FilterHintViewHelper.class),
-        mock(NoticeViewHelper.class));
+        mock(NoticeViewHelper.class), mock(SpecialOrders.class));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     var holder = new Customerorder();

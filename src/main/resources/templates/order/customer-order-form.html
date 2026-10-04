@@ -29,7 +29,9 @@
           </div>
         </div>
         <div class="col-md-4">
-          <salat:textInput th:field="*{sign}" th:label="#{main.customerorder.sign.text}" required="true" maxlength="30" />
+          <salat:textInput th:field="*{sign}" th:label="#{main.customerorder.sign.text}" required="true" maxlength="30"
+                           th:readonly="${signLocked}"
+                           th:helpText="${signLocked} ? #{main.order.sign.locked.help} : ''" />
         </div>
         <div class="col-md-4">
           <div class="mb-3">

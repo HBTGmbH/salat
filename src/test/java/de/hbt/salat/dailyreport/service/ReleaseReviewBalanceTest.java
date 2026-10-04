@@ -73,6 +73,7 @@ import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
@@ -94,7 +95,7 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
     EmployeeService.class, EmployeeDAO.class, EmployeeAuthorization.class,
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
     EmployeeorderService.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
-    SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class,
+    SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class, SpecialOrders.class,
     CustomerDAO.class, CommandPublisher.class,
     TimereportService.class, TimereportDAO.class, TimereportAuthorization.class, PublicholidayDAO.class,
     WorkingdayDAO.class, OvertimeService.class, ReleaseService.class, ReleaseAuthorization.class})

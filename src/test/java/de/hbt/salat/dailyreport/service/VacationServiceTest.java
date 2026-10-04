@@ -24,6 +24,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 
 /**
  * Welche Urlaubsauftraege Dashboard und Kontenuebersicht zeigen (#1175): die heute gueltigen, und
@@ -40,6 +41,8 @@ class VacationServiceTest {
   private EmployeeorderService employeeorderService;
   @Mock
   private TimereportService timereportService;
+  @Mock
+  private SpecialOrders specialOrders;
 
   @InjectMocks
   private VacationService vacationService;
@@ -99,7 +102,8 @@ class VacationServiceTest {
 
     var vacations = vacationService.getVacations(contract);
 
-    assertThat(vacations).extracting(VacationInfo::suborderSign).containsExactly("2026", "Sonderurlaub");
+    // the line of special leave carries no sign; the view labels it from the message bundle (#1341)
+    assertThat(vacations).extracting(VacationInfo::suborderSign).containsExactly("2026", null);
     var special = vacations.get(1);
     assertThat(special.special()).isTrue();
     assertThat(special.usedVacationMinutes()).isEqualTo(16 * 60);
@@ -138,6 +142,8 @@ class VacationServiceTest {
     setField(suborder, "id", suborderId);
     suborder.setSign(sign);
     suborder.setCustomerorder(new Customerorder());
+    // special leave is the configured suborder without an entitlement, by id (#1341)
+    when(specialOrders.isVacationDoNotCalculate(suborderId)).thenReturn("Sonderurlaub".equals(sign));
     var order = new Employeeorder();
     setField(order, "id", id);
     order.setSuborder(suborder);

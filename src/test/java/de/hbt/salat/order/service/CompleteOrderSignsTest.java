@@ -6,6 +6,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -58,7 +59,7 @@ class CompleteOrderSignsTest {
   @BeforeEach
   void setUp() {
     suborderService = new SuborderService(eventPublisher, commandPublisher, suborderDAO, suborderRepository,
-        customerorderService);
+        customerorderService, mock(SpecialOrders.class));
   }
 
   @Test

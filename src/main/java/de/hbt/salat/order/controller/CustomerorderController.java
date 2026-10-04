@@ -42,6 +42,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.viewhelper.CustomerOrderViewDecorator;
 
 @Controller
@@ -58,6 +59,7 @@ public class CustomerorderController {
   private final AuthorizedEmployee authorizedEmployee;
   private final FilterHintViewHelper filterHintViewHelper;
   private final NoticeViewHelper noticeViewHelper;
+  private final SpecialOrders specialOrders;
 
   @GetMapping
   public String list(
@@ -308,6 +310,8 @@ public class CustomerorderController {
 
     model.addAttribute("orderTypes", OrderType.values());
     model.addAttribute("isEdit", isEdit);
+    // a special order keeps its sign (#1341); the service refuses a change, the form shows why
+    model.addAttribute("signLocked", isEdit && form.getId() != null && specialOrders.isLockedCustomerorder(form.getId()));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));

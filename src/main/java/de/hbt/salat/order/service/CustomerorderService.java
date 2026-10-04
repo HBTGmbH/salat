@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.command.CommandPublisher;
 import de.hbt.salat.common.event.SignsRenamedEvent;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
@@ -54,6 +55,7 @@ public class CustomerorderService {
   private final CustomerDAO customerDAO;
   private final EmployeeDAO employeeDAO;
   private final CustomerorderRepository customerorderRepository;
+  private final SpecialOrders specialOrders;
 
   /**
    * The orders the command palette considers for a query (#1157), hidden and ended ones last. There
@@ -97,6 +99,11 @@ public class CustomerorderService {
     }
     // the sign before the edit — signs stay changeable, and what names the order by sign follows (#1206)
     var oldSign = co.isNew() ? null : co.getSign();
+    // except for a special order: the configuration names it by sign (#1341, ADR-0035)
+    var signChanges = oldSign != null && !oldSign.equals(dto.sign());
+    if (signChanges && specialOrders.isLockedCustomerorder(co.getId())) {
+      throw new BusinessRuleException(ErrorCode.CO_SPECIAL_ORDER_LOCKED, oldSign);
+    }
 
     /* set attributes */
     co.setCustomer(customerDAO.getCustomerById(dto.customerId()));
@@ -311,6 +318,9 @@ public class CustomerorderService {
   public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);
     var customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
+    if (specialOrders.isLockedCustomerorder(customerOrderId)) {
+      throw new BusinessRuleException(ErrorCode.CO_SPECIAL_ORDER_LOCKED, customerorder.getSign());
+    }
     try {
       eventPublisher.publishEvent(event);
     } catch(VetoedException e) {

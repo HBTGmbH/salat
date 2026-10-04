@@ -32,7 +32,7 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
 
   List<Employeeorder> findAllByEmployeecontractIdAndSuborderId(long employeeContractId, long suborderId);
 
-  List<Employeeorder> findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(long employeecontractId, List<String> customerOrderSigns);
+  List<Employeeorder> findAllByEmployeecontractIdAndSuborderCustomerorderId(long employeecontractId, long customerorderId);
 
   @Query("select eo from Employeeorder eo where eo.suborder.customerorder.id = :customerorderId and eo.employeecontract.id = :employeecontractId")
   List<Employeeorder> findAllByCustomerorderIdAndEmployeecontractId(long customerorderId, long employeecontractId);

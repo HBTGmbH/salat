@@ -1,7 +1,6 @@
 package de.hbt.salat.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static de.hbt.salat.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -37,6 +36,7 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 
 /**
  * Das Urlaubskonto rechnet den Rest eines abgelaufenen Urlaubsauftrags auf die tatsaechlich
@@ -67,6 +67,8 @@ class MyAccountsControllerTest {
   private EmployeecontractService employeecontractService;
   @Mock
   private EmployeeService employeeService;
+  @Mock
+  private SpecialOrders specialOrders;
 
   @InjectMocks
   private MyAccountsController myAccountsController;
@@ -195,7 +197,9 @@ class MyAccountsControllerTest {
     var nextYearOrder = new Employeeorder();
     setField(nextYearOrder, "id", 200L);
     var nextYearSuborder = new Suborder();
+    setField(nextYearSuborder, "id", 2000L);
     nextYearSuborder.setSign("2027");
+    nextYearSuborder.setFromDate(LocalDate.of(2027, 1, 1));
     nextYearOrder.setSuborder(nextYearSuborder);
     // im laufenden Jahr gilt hier kein Urlaubsauftrag, im Folgejahr der neue
     when(employeeorderService.getVacationEmployeeOrders(eq(CONTRACT_ID), any())).thenReturn(List.of());
@@ -296,9 +300,11 @@ class MyAccountsControllerTest {
   void separates_regular_from_order_training_in_the_chart() {
     when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
         .thenReturn(List.of(
-            training("2026-02-10", COMPLETE_ORDER_SIGN_TRAINING, 4),
-            training("2026-02-12", "4711/01", 2),
-            training("2026-05-05", "4711/01", 3)));
+            training("2026-02-10", REGULAR_TRAINING_SUBORDER_ID, 4),
+            training("2026-02-12", ORDER_TRAINING_SUBORDER_ID, 2),
+            training("2026-05-05", ORDER_TRAINING_SUBORDER_ID, 3)));
+    // which suborders are regular training is configuration, by id (#1341)
+    lenient().when(specialOrders.isRegularTraining(REGULAR_TRAINING_SUBORDER_ID)).thenReturn(true);
 
     var model = new ExtendedModelMap();
     myAccountsController.show(CONTRACT_ID, null, model);
@@ -307,16 +313,24 @@ class MyAccountsControllerTest {
     assertThat((List<Double>) model.getAttribute("trainingChartOrderHours")).containsExactly(0.0, 2.0, 0.0, 0.0, 3.0, 0.0);
   }
 
-  private static TimereportDTO training(String day, String orderSign, long hours) {
-    return TimereportDTO.builder().referenceday(LocalDate.parse(day)).completeOrderSign(orderSign).training(true)
+  private static final long REGULAR_TRAINING_SUBORDER_ID = 500L;
+  private static final long ORDER_TRAINING_SUBORDER_ID = 501L;
+
+  private static TimereportDTO training(String day, long suborderId, long hours) {
+    return TimereportDTO.builder().referenceday(LocalDate.parse(day)).suborderId(suborderId).training(true)
         .duration(Duration.ofHours(hours)).build();
   }
 
   private static final long SPECIAL_ORDER_ID = 300L;
 
+  private static final long SPECIAL_SUBORDER_ID = 3000L;
+
   private void specialOrderBesidesVacation() {
     var suborder = new Suborder();
+    setField(suborder, "id", SPECIAL_SUBORDER_ID);
     suborder.setSign("Sonderurlaub");
+    // special leave is configured by id, not recognized by its sign (#1341)
+    lenient().when(specialOrders.isVacationDoNotCalculate(SPECIAL_SUBORDER_ID)).thenReturn(true);
     var special = new Employeeorder();
     setField(special, "id", SPECIAL_ORDER_ID);
     special.setSuborder(suborder);
@@ -365,11 +379,14 @@ class MyAccountsControllerTest {
     return contract;
   }
 
-  /* Regulaerer Jahres-Unterauftrag: sein Zeichen ist das laufende Jahr, damit das Soll als
-     Jahresanspruch und nicht als Rest aus dem Vorjahr zaehlt. */
+  /* Regulaerer Jahres-Unterauftrag: er beginnt im laufenden Jahr, damit das Soll als Jahresanspruch
+     und nicht als Rest aus dem Vorjahr zaehlt - das Jahr kommt aus dem Beginn, nicht aus dem
+     Kuerzel (#1341). */
   private static Employeeorder vacationOrder(LocalDate untilDate) {
     var suborder = new Suborder();
+    setField(suborder, "id", 1000L);
     suborder.setSign(String.valueOf(TODAY.getYear()));
+    suborder.setFromDate(LocalDate.of(TODAY.getYear(), 1, 1));
 
     var employeeorder = new Employeeorder();
     setField(employeeorder, "id", ORDER_ID);

@@ -171,7 +171,9 @@
                 <div class="card-body">
                   <div th:each="v : ${vacations}" class="mb-3">
                     <div class="d-flex justify-content-between align-items-baseline mb-1">
-                      <span class="fw-semibold small" th:text="${v.suborderSign}"></span>
+                      <!--/* Sonderurlaub steht für alle Unteraufträge ohne Anspruch und trägt kein Kürzel (#1341) */-->
+                      <span class="fw-semibold small"
+                            th:text="${v.special} ? #{main.my.accounts.vacation.special} : ${v.suborderSign}"></span>
                       <span class="small"
                             th:classappend="${v.vacationBudgetExceeded} ? 'text-danger fw-bold' : 'text-muted'"
                             th:text="${v.special} ? ${v.usedVacationString} : ${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>

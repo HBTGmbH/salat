@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.e2e.E2EBrowser;
 import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
@@ -94,7 +93,7 @@ class SaveAndNewE2ETest extends PlaywrightE2ETestBase {
    * entitlement the manager would first have to be granted.
    */
   private void fillBooking(Page page, String duration, String comment) {
-    selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+    selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
     page.fill("#durationTime", duration);
     page.fill("#commentField", comment);
   }

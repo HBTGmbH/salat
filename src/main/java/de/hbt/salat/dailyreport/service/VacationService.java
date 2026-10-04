@@ -1,6 +1,5 @@
 package de.hbt.salat.dailyreport.service;
 
-import static de.hbt.salat.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
 import static de.hbt.salat.common.util.DateUtils.today;
 
 import java.time.Duration;
@@ -18,6 +17,7 @@ import de.hbt.salat.dailyreport.domain.VacationInfo;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +30,7 @@ public class VacationService {
 
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
+    private final SpecialOrders specialOrders;
 
     /**
      * Die Urlaubsauftraege des Vertrags, die heute gelten, und dazu die, die erst in der Zukunft
@@ -79,17 +80,20 @@ public class VacationService {
         long used = 0;
         long planned = 0;
         var suborderIds = new ArrayList<Long>();
-        for (var order : fromThisYear.stream().filter(VacationService::isSpecial).toList()) {
+        for (var order : fromThisYear.stream().filter(this::isSpecial).toList()) {
             used += timereportService.getTotalDurationMinutesForEmployeeOrder(order.getId(), yearStart, horizon);
             planned += timereportService.getTotalDurationMinutesForEmployeeOrder(order.getId(), today.plusDays(1), horizon);
             if (!suborderIds.contains(order.getSuborder().getId())) suborderIds.add(order.getSuborder().getId());
         }
         if (used == 0) return Optional.empty();
-        return Optional.of(new VacationInfo(SUBRORDER_SIGN_VACATION_SPECIAL, Duration.ZERO, used, planned,
+        // no sign of its own: the line stands for every suborder without an entitlement, and the view
+        // labels it from the message bundle (#1341)
+        return Optional.of(new VacationInfo(null, Duration.ZERO, used, planned,
             suborderIds, yearStart, horizon, true));
     }
 
-    private static boolean isSpecial(Employeeorder order) {
-        return SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
+    /** Special leave: a suborder of the vacation order without a calculated entitlement (#1341). */
+    private boolean isSpecial(Employeeorder order) {
+        return specialOrders.isVacationDoNotCalculate(order.getSuborder().getId());
     }
 }
