@@ -87,6 +87,7 @@ class JiraReplicationManualRunTest {
 
     var config = new JiraReplicationConfig();
     config.setName("Manueller Lauf");
+    config.setCustomerorderId(1L);
     config.setScopeSign(SCOPE);
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);

@@ -49,6 +49,7 @@ class JiraWorklogSyncServiceTest {
   private static final LocalDate SYNC_FROM = LocalDate.of(2026, 6, 1);
   private static final LocalDate DAY = LocalDate.of(2026, 6, 10);
   private static final String SCOPE = "ALPHA";
+  private static final long CUSTOMERORDER_ID = 7L;
 
   @InjectMocks
   private JiraWorklogSyncService classUnderTest;
@@ -57,7 +58,7 @@ class JiraWorklogSyncServiceTest {
   private CommandPublisher commandPublisher;
 
   @Mock
-  private JiraScopeSuborders scopeSuborders;
+  private JiraScopes scopes;
 
   @Mock
   private JiraTicketRepository ticketRepository;
@@ -74,7 +75,7 @@ class JiraWorklogSyncServiceTest {
   @BeforeEach
   void setUp() {
     when(worklogClients.forFlavor(SERVER)).thenReturn(worklogClient);
-    when(scopeSuborders.idsOf(SCOPE)).thenReturn(List.of(1L, 2L));
+    when(scopes.suborderIdsOf(CUSTOMERORDER_ID, null)).thenReturn(List.of(1L, 2L));
     when(syncRepository.findByScopeSignAndWorkDateGreaterThanEqual(anyString(), any()))
         .thenReturn(List.of());
   }
@@ -418,7 +419,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_scope_that_matches_no_suborder_writes_nothing() {
-    when(scopeSuborders.idsOf(SCOPE)).thenReturn(List.of());
+    when(scopes.suborderIdsOf(CUSTOMERORDER_ID, null)).thenReturn(List.of());
 
     classUnderTest.sync(config());
 
@@ -428,6 +429,7 @@ class JiraWorklogSyncServiceTest {
   private JiraReplicationConfig config() {
     var config = new JiraReplicationConfig();
     config.setName("Alpha");
+    config.setCustomerorderId(CUSTOMERORDER_ID);
     config.setScopeSign(SCOPE);
     config.setBaseUrl("https://jira.example.com");
     config.setApiFlavor(SERVER);

@@ -22,14 +22,34 @@ import de.hbt.salat.common.domain.AuditedEntity;
 public class JiraReplicationConfig extends AuditedEntity {
 
   /**
-   * Where this replication applies (#1025): either a customer order sign for the whole order, or
-   * the fully qualified sign of one suborder at any depth, {@code AUFTRAG/01/02}, as
-   * {@code Suborder.getCompleteOrderSign()} builds it. A row written before #1025 carries an order
-   * sign and therefore means "the whole order" without anything to migrate.
+   * The customer order this replication applies to (#1322) — on its own the whole order, or the
+   * order of {@link #suborderId}. Required: the migration deleted every config whose scope it could
+   * not resolve.
+   */
+  @Column(name = "customerorder_id", nullable = false)
+  private Long customerorderId;
+
+  /**
+   * The suborder the replication is narrowed to, at any depth; it covers that suborder and the
+   * branch below it (#1025). {@code null} means the whole customer order.
    *
-   * <p>Deliberately a sign rather than a foreign key: the tickets outlive the config (see
-   * {@code JiraReplicationConfigService.delete}) and the suborder sign alone would not be unique —
-   * {@code AUFTRAG/A/01} and {@code AUFTRAG/B/01} may both exist.
+   * <p>A rename of the order or the suborder, or moving the suborder to another parent, changes
+   * nothing about what is covered (#1322): order and suborder are archived, not deleted (ADR-0012),
+   * and the id stays.
+   */
+  @Column(name = "suborder_id")
+  private Long suborderId;
+
+  /**
+   * The scope as a sign, kept as a mirror because reports and ETL definitions still read it
+   * (#1322, the way of #968): the customer order sign for the whole order, or the complete order
+   * sign of the suborder, {@code AUFTRAG/01/02}. The application never resolves anything through
+   * it; it is written on save and follows a rename or a move ({@code JiraScopeSignMirrorListener}).
+   *
+   * <p>#1025 chose the sign because the tickets outlive the config (see
+   * {@code JiraReplicationConfigService.delete}). That argues against a reference to the
+   * <em>config</em>, not against one to order and suborder — what this column was, it is now only for
+   * readers outside the application.
    */
   @Column(name = "scope_sign", nullable = false)
   private String scopeSign;

@@ -35,6 +35,7 @@ import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.util.SqlLikePattern;
 import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.SuborderDTO;
+import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
 import de.hbt.salat.order.domain.SuborderSignRow;
@@ -353,6 +354,33 @@ public class SuborderService {
   public Map<Long, String> getCompleteOrderSignsByIds(Collection<Long> suborderIds) {
     return getSubordersByIds(suborderIds).stream()
         .collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign));
+  }
+
+  /**
+   * Where the suborders with these ids sit in the order tree, by id — for a module that refers to a
+   * suborder by id and has to tell which order and which branch it belongs to (#1322, ADR-0021). An
+   * id without a suborder is missing.
+   */
+  @Transactional(readOnly = true)
+  public Map<Long, SuborderLocation> getSuborderLocationsByIds(Collection<Long> suborderIds) {
+    return getSubordersByIds(suborderIds).stream()
+        .collect(Collectors.toMap(Suborder::getId, SuborderLocation::of));
+  }
+
+  /**
+   * The ids of the suborder and of every suborder below it, hidden and expired ones included (#1322)
+   * — empty when there is no such suborder.
+   */
+  @Transactional(readOnly = true)
+  public List<Long> getSubtreeIds(long suborderId) {
+    var suborder = suborderDAO.getSuborderById(suborderId);
+    return suborder == null ? List.of() : suborder.getAllChildren().stream().map(Suborder::getId).toList();
+  }
+
+  /** The ids of every suborder of the order at any depth, hidden and expired ones included (#1322). */
+  @Transactional(readOnly = true)
+  public List<Long> getSuborderIdsByCustomerorderId(long customerorderId) {
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream().map(Suborder::getId).toList();
   }
 
   public List<Suborder> getSubordersByEmployeeContractId(long employeeContractId) {

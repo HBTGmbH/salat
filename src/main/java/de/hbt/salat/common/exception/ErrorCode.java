@@ -212,6 +212,8 @@ public enum ErrorCode {
   JI_REPLICATION_RUN_NOT_FOUND("JI-0013", "jira replication run not found"),
   JI_REPLICATION_RUN_NOT_RUNNING("JI-0014", "jira replication run is not running"),
   JI_REPLICATION_RUN_EXECUTOR_BUSY("JI-0015", "every thread for manually started jira replications is occupied"),
+  JI_ORDER_HAS_REPLICATIONS("JI-0016", "jira replications still refer to the customer order"),
+  JI_SUBORDER_HAS_REPLICATIONS("JI-0017", "jira replications still refer to the suborder"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),
