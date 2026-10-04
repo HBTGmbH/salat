@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * A suborder as plain values, computed by this module's own rules (#1338): what another module
  * evaluates a customer order with, without the entity leaving this module (→ ADR-0021, Nachtrag
- * #1338). The complete order sign and the effective order type are logic of the entity, not columns;
- * they are computed here so that no reader rebuilds them.
+ * #1338). The complete order sign and the path are logic of the entity, not columns; they are
+ * computed here so that no reader rebuilds them.
  *
  * @param id                 the suborder
  * @param customerorderId    the customer order it belongs to
@@ -21,11 +21,9 @@ import java.util.Map;
  * @param debithours         the planned hours, {@code null} where none are set
  * @param invoiceable        {@link Suborder#isInvoiceable()}
  * @param hide               {@link Suborder#isHide()}
- * @param effectiveOrderType {@link Suborder#getEffectiveOrderType()}
  */
 public record SuborderReadModel(long id, long customerorderId, List<Long> path, String completeOrderSign,
-    String shortdescription, Duration debithours, boolean invoiceable, boolean hide,
-    OrderType effectiveOrderType) {
+    String shortdescription, Duration debithours, boolean invoiceable, boolean hide) {
 
   public SuborderReadModel {
     path = List.copyOf(path);
@@ -53,8 +51,7 @@ public record SuborderReadModel(long id, long customerorderId, List<Long> path, 
     Collections.reverse(signs);
     var completeOrderSign = suborder.getCustomerorder().getSign() + "/" + String.join("/", signs);
     return new SuborderReadModel(suborder.getId(), suborder.getCustomerorder().getId(), path, completeOrderSign,
-        suborder.getShortdescription(), suborder.getDebithours(), suborder.isInvoiceable(), suborder.isHide(),
-        suborder.getEffectiveOrderType());
+        suborder.getShortdescription(), suborder.getDebithours(), suborder.isInvoiceable(), suborder.isHide());
   }
 
   private static Suborder parentOf(Suborder suborder, Map<Long, Suborder> orderSuborders) {

@@ -129,7 +129,7 @@
         <thead>
           <tr>
             <th th:text="#{main.employeecost.assignment.field.employeeSign}">Mitarbeiter</th>
-            <th th:text="#{main.employeecost.assignment.field.suborderSign}">Unterauftrag</th>
+            <th th:text="#{main.employeecost.assignment.field.scope}">Gilt für</th>
             <th th:text="#{main.employeecost.field.valid}">Gültig</th>
             <th class="w-1"></th>
             <th class="w-1"></th>
@@ -153,7 +153,11 @@
               </span>
             </td>
             <td>
-              <span th:text="${row.suborderSign()} ?: '—'"></span>
+              <span th:if="${row.forCustomerorder()}" class="text-muted small"
+                    th:text="#{main.employeecost.assignment.scope.customerorder}">Auftrag</span>
+              <span th:if="${row.forSuborder()}" class="text-muted small"
+                    th:text="#{main.employeecost.assignment.scope.suborder}">Unterauftrag</span>
+              <span th:text="${row.scopeSign()} ?: '—'"></span>
             </td>
             <td class="small text-muted">
               <span th:text="${#temporals.format(a.validFrom, 'dd.MM.yyyy')}"></span>
@@ -172,7 +176,7 @@
               <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
                     data-confirm
                     th:data-confirm-title="#{main.employeecost.assignment.delete.confirm.title}"
-                    th:data-confirm-detail="|${row.employeeSign()} · ${row.suborderSign() ?: '—'}|"
+                    th:data-confirm-detail="|${row.employeeSign()} · ${row.scopeSign() ?: '—'}|"
                     th:data-confirm-detail-secondary="|${#temporals.format(a.validFrom, 'dd.MM.yyyy')} – ${a.validUntil.year != 2999 ? #temporals.format(a.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
                     th:data-confirm-label="#{main.general.button.delete.text}"
                     data-confirm-variant="danger">

@@ -20,7 +20,6 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignmentData;
 import de.hbt.salat.budget.domain.EmployeeCostCategory;
 import de.hbt.salat.budget.domain.EmployeeCostData;
 import de.hbt.salat.budget.domain.EmployeeCostLookup;
-import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.budget.persistence.CostCategoryRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
@@ -31,7 +30,9 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 @Service
@@ -45,6 +46,7 @@ public class EmployeeCostService {
     private final CostCategoryRepository categoryRepository;
     private final EmployeeService employeeService;
     private final SuborderService suborderService;
+    private final CustomerorderService customerorderService;
 
     @Transactional(readOnly = true)
     public EmployeeCost getById(long id) {
@@ -162,30 +164,31 @@ public class EmployeeCostService {
     }
 
     /**
-     * Fallback hierarchy: suborder-specific assignment → general assignment.
-     * Returns the matching EmployeeCost active on the given date.
+     * Fallback hierarchy: suborder-specific assignment → order-specific assignment → general assignment
+     * (#1343), the same as {@link EmployeeCostLookup#findEffectiveCost}. Returns the matching
+     * EmployeeCost active on the given date. The order type plays no part: a standby order costs what
+     * the assignments say, like any other.
      *
-     * <p>A standby suborder ({@link OrderType#BEREITSCHAFT}) takes no general assignment: standby
-     * is paid differently from the work the general rate stands for, so without an assignment of
-     * its own it costs nothing (#463).
+     * @param customerorderId the order of the suborder; {@code null} skips the order step
+     * @param suborderId      {@code null} skips the suborder step
      */
     @Transactional(readOnly = true)
-    public Optional<EmployeeCost> findEffectiveCost(long employeeId, Long suborderId,
-                                                    OrderType orderType, LocalDate date) {
+    public Optional<EmployeeCost> findEffectiveCost(long employeeId, Long customerorderId, Long suborderId,
+                                                    LocalDate date) {
+        var assignments = List.<EmployeeCostAssignment>of();
         if (suborderId != null) {
-            var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeId, suborderId, date);
-            if (!assignments.isEmpty()) {
-                return employeeCostRepository.findEffectiveByCategoryId(assignments.get(0).getCategory().getId(), date);
-            }
+            assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeId, suborderId, date);
         }
-        if (orderType == OrderType.BEREITSCHAFT) {
+        if (assignments.isEmpty() && customerorderId != null) {
+            assignments = assignmentRepository.findEffectiveCustomerorderSpecific(employeeId, customerorderId, date);
+        }
+        if (assignments.isEmpty()) {
+            assignments = assignmentRepository.findEffectiveGeneral(employeeId, date);
+        }
+        if (assignments.isEmpty()) {
             return Optional.empty();
         }
-        var assignments = assignmentRepository.findEffectiveGeneral(employeeId, date);
-        if (!assignments.isEmpty()) {
-            return employeeCostRepository.findEffectiveByCategoryId(assignments.get(0).getCategory().getId(), date);
-        }
-        return Optional.empty();
+        return employeeCostRepository.findEffectiveByCategoryId(assignments.get(0).getCategory().getId(), date);
     }
 
     /**
@@ -351,26 +354,30 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
+        checkSingleScope(data);
         var employee = employeeOf(data);
+        var customerorder = customerorderOf(data);
         var suborder = suborderOf(data);
         var category = categoryOf(data);
-        checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
+        checkNoAssignmentOverlap(employee.getId(), data.customerorderId(), data.suborderId(), data.validFrom(),
             endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
-        applyAssignment(assignment, data, category, employee, suborder);
+        applyAssignment(assignment, data, category, employee, customerorder, suborder);
         return assignmentRepository.save(assignment);
     }
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
+        checkSingleScope(data);
         var employee = employeeOf(data);
+        var customerorder = customerorderOf(data);
         var suborder = suborderOf(data);
         var category = categoryOf(data);
         var assignment = getAssignmentById(id);
         var previous = assignment.getCategory();
-        checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
+        checkNoAssignmentOverlap(employee.getId(), data.customerorderId(), data.suborderId(), data.validFrom(),
             endOfValidity(data.validUntil()), id);
-        applyAssignment(assignment, data, category, employee, suborder);
+        applyAssignment(assignment, data, category, employee, customerorder, suborder);
         assignmentRepository.save(assignment);
         if (!previous.equals(category)) {
             dropIfUnused(previous);
@@ -391,7 +398,31 @@ public class EmployeeCostService {
     }
 
     /**
-     * The suborder of the assignment, by id (#1205) — {@code null} for the general assignment. An id
+     * An assignment is for a suborder, for a whole customer order, or general (#1343). An assignment to
+     * the order covers all its suborders already, so one naming both would leave it open which step of
+     * the resolution it belongs to.
+     */
+    private static void checkSingleScope(EmployeeCostAssignmentData data) {
+        if (data.customerorderId() != null && data.suborderId() != null) {
+            throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_SCOPE_AMBIGUOUS);
+        }
+    }
+
+    /**
+     * The customer order of the assignment, by id (#1343) — {@code null} unless the assignment is for a
+     * whole order. An id nothing answers to is refused, as for the suborder.
+     */
+    private CustomerorderOption customerorderOf(EmployeeCostAssignmentData data) {
+        if (data.customerorderId() == null) {
+            return null;
+        }
+        return customerorderService.getCustomerorderOptionsByIds(List.of(data.customerorderId())).stream()
+            .findFirst()
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId()));
+    }
+
+    /**
+     * The suborder of the assignment, by id (#1205) — {@code null} unless the assignment is for a suborder. An id
      * nothing answers to is refused: the foreign key would do so too, but only as a failed statement.
      */
     private Suborder suborderOf(EmployeeCostAssignmentData data) {
@@ -409,8 +440,8 @@ public class EmployeeCostService {
      * The form names the cost category by its unique name, so it can be anything the request sends
      * (#958). The select of the form is no protection: a post with another value, or none at all,
      * reaches the same endpoint. An unknown name is refused here; the assignment itself then refers to
-     * the category by id (#1209). Person and suborder are referenced by id (#968, #1205) and checked by
-     * {@link #employeeOf} and {@link #suborderOf}.
+     * the category by id (#1209). Person, order and suborder are referenced by id (#968, #1343, #1205)
+     * and checked by {@link #employeeOf}, {@link #customerorderOf} and {@link #suborderOf}.
      *
      * <p>A category without rate periods still counts. An assignment left behind by a deleted cost
      * rate (#895) therefore stays editable, which is the way to move it onto a rate that exists.
@@ -434,8 +465,11 @@ public class EmployeeCostService {
         }
     }
 
-    private void checkNoAssignmentOverlap(long employeeId, Long suborderId, LocalDate from, LocalDate until, Long excludeId) {
-        if (!assignmentRepository.findOverlapping(employeeId, suborderId, from, until, excludeId).isEmpty()) {
+    /** Overlaps count within one step of the resolution only: the same suborder, the same order, or general (#1343). */
+    private void checkNoAssignmentOverlap(long employeeId, Long customerorderId, Long suborderId, LocalDate from,
+                                          LocalDate until, Long excludeId) {
+        if (!assignmentRepository.findOverlapping(employeeId, customerorderId, suborderId, from, until, excludeId)
+            .isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_OVERLAP);
         }
     }
@@ -448,14 +482,18 @@ public class EmployeeCostService {
     }
 
     /**
-     * @param suborder the chosen suborder, {@code null} for the general assignment — or for an
-     *                 unresolved one being kept, whose sign then stays as it is
+     * @param customerorder the chosen customer order, {@code null} unless the assignment is for a whole order
+     * @param suborder      the chosen suborder, {@code null} unless the assignment is for a suborder
      */
     private void applyAssignment(EmployeeCostAssignment assignment, EmployeeCostAssignmentData data,
-                                 CostCategory category, Employee employee, Suborder suborder) {
+                                 CostCategory category, Employee employee, CustomerorderOption customerorder,
+                                 Suborder suborder) {
         assignment.setCategory(category);
         assignment.setEmployeeId(employee.getId());
         assignment.setEmployeeSign(employee.getSign());
+        assignment.setCustomerorderId(customerorder == null ? null : customerorder.id());
+        // a mirror for the readers outside the application, written from the order (#1343)
+        assignment.setCustomerorderSign(customerorder == null ? null : customerorder.sign());
         assignment.setSuborderId(suborder == null ? null : suborder.getId());
         // a mirror for the readers outside the application, written from the suborder (#1205)
         assignment.setSuborderSign(suborder == null ? null : suborder.getCompleteOrderSign());

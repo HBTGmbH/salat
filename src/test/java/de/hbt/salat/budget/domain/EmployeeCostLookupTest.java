@@ -8,7 +8,6 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
@@ -24,6 +23,10 @@ public class EmployeeCostLookupTest {
 
   /** The suborders by sign — the assignments refer to them by id (#1205). */
   private static final Map<String, Long> SUBORDER_IDS = Map.of("so", 100L, "other", 101L);
+
+  /** The order of {@code so} and {@code other}, and one besides — referred to by id as well (#1343). */
+  private static final long ORDER = 10L;
+  private static final long OTHER_ORDER = 11L;
 
   @Test
   public void should_prefer_the_suborder_specific_assignment_over_the_general_one() {
@@ -58,7 +61,7 @@ public class EmployeeCostLookupTest {
         List.of(assignment(OTHER, null, "general")),
         List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost(EMP, ORDER, SUBORDER_IDS.get("so"), DATE)).isEmpty();
   }
 
   @Test
@@ -68,7 +71,7 @@ public class EmployeeCostLookupTest {
 
     var lookup = EmployeeCostLookup.of(List.of(expired), List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost(EMP, null, OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost(EMP, null, null, DATE)).isEmpty();
   }
 
   @Test
@@ -87,7 +90,7 @@ public class EmployeeCostLookupTest {
     var lookup = EmployeeCostLookup.of(
         List.of(assignment(EMP, null, "missing")), List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost(EMP, null, OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost(EMP, null, null, DATE)).isEmpty();
   }
 
   @Test
@@ -103,23 +106,98 @@ public class EmployeeCostLookupTest {
         .isEqualTo(100);
   }
 
-  @Test
-  public void should_use_the_suborder_specific_assignment_of_a_standby_order() {
-    var lookup = EmployeeCostLookup.of(
-        List.of(assignment(EMP, null, "general"), assignment(EMP, "so", "standby")),
-        List.of(cost("general", 100), cost("standby", 20)));
+  // --- the order step (#1343) -------------------------------------------------------------------
 
-    assertThat(cents(lookup, EMP, "so", OrderType.BEREITSCHAFT)).isEqualTo(20);
+  @Test
+  public void should_prefer_the_suborder_specific_assignment_over_the_order_specific_one() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(toOrder(EMP, ORDER, "order"), assignment(EMP, "so", "specific"), assignment(EMP, null, "general")),
+        List.of(cost("order", 300), cost("specific", 200), cost("general", 100)));
+
+    assertThat(cents(lookup, EMP, "so")).isEqualTo(200);
   }
 
   @Test
-  public void should_not_fall_back_to_the_general_assignment_for_a_standby_order() {
+  public void should_prefer_the_order_specific_assignment_over_the_general_one() {
     var lookup = EmployeeCostLookup.of(
-        List.of(assignment(EMP, null, "general")), List.of(cost("general", 100)));
+        List.of(assignment(EMP, null, "general"), toOrder(EMP, ORDER, "order")),
+        List.of(cost("general", 100), cost("order", 300)));
 
-    assertThat(lookup.findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.BEREITSCHAFT, DATE)).isEmpty();
-    // the very same constellation on a standard order does fall back
+    assertThat(cents(lookup, EMP, "so")).isEqualTo(300);
+  }
+
+  /** The assignment to the order covers every suborder of it, also one nobody named. */
+  @Test
+  public void should_apply_the_order_specific_assignment_to_every_suborder_of_the_order() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(toOrder(EMP, ORDER, "order"), assignment(EMP, "other", "specific")),
+        List.of(cost("order", 300), cost("specific", 200)));
+
+    assertThat(cents(lookup, EMP, "so")).isEqualTo(300);
+    assertThat(cents(lookup, EMP, "other")).isEqualTo(200);
+  }
+
+  @Test
+  public void should_not_apply_the_assignment_to_another_order() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(toOrder(EMP, OTHER_ORDER, "order"), assignment(EMP, null, "general")),
+        List.of(cost("order", 300), cost("general", 100)));
+
     assertThat(cents(lookup, EMP, "so")).isEqualTo(100);
+  }
+
+  @Test
+  public void should_resolve_nothing_without_any_assignment_even_where_another_order_has_one() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(toOrder(EMP, OTHER_ORDER, "order")), List.of(cost("order", 300)));
+
+    assertThat(lookup.findEffectiveCost(EMP, ORDER, SUBORDER_IDS.get("so"), DATE)).isEmpty();
+  }
+
+  @Test
+  public void should_not_apply_the_assignment_to_an_order_of_another_person() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(toOrder(OTHER, ORDER, "order"), assignment(EMP, null, "general")),
+        List.of(cost("order", 300), cost("general", 100)));
+
+    assertThat(cents(lookup, EMP, "so")).isEqualTo(100);
+  }
+
+  /** The order-specific assignment is no general one: without an order it does not apply. */
+  @Test
+  public void should_skip_the_order_step_when_no_order_is_given() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(toOrder(EMP, ORDER, "order"), assignment(EMP, null, "general")),
+        List.of(cost("order", 300), cost("general", 100)));
+
+    assertThat(lookup.findEffectiveCost(EMP, null, null, DATE))
+        .map(EmployeeCost::getCostCentsPerHour).contains(100);
+  }
+
+  @Test
+  public void should_only_match_an_order_specific_assignment_valid_on_the_given_date() {
+    var expired = toOrder(EMP, ORDER, "order");
+    expired.setValidUntil(DATE.minusDays(1));
+    var lookup = EmployeeCostLookup.of(List.of(expired, assignment(EMP, null, "general")),
+        List.of(cost("order", 300), cost("general", 100)));
+
+    assertThat(cents(lookup, EMP, "so")).isEqualTo(100);
+  }
+
+  // --- standby is no exception any more (#1343) ---------------------------------------------------
+
+  /**
+   * The lookup does not know the order type at all: a standby booking without an assignment of its own
+   * takes the general rate of the person — 7.50 EUR stays 7.50 EUR, 0 EUR stays 0 EUR.
+   */
+  @Test
+  public void should_take_the_general_assignment_for_a_standby_booking_too() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(assignment(EMP, null, "general"), assignment(OTHER, null, "nothing")),
+        List.of(cost("general", 750), cost("nothing", 0)));
+
+    assertThat(cents(lookup, EMP, "so")).isEqualTo(750);
+    assertThat(cents(lookup, OTHER, "so")).isZero();
   }
 
   /**
@@ -166,21 +244,18 @@ public class EmployeeCostLookupTest {
 
     var lookup = EmployeeCostLookup.of(List.of(unresolved), List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost(EMP, null, OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost(EMP, null, null, DATE)).isEmpty();
   }
 
   @Test
   public void should_return_empty_for_an_empty_lookup() {
-    assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost(EMP, SUBORDER_IDS.get("so"), OrderType.STANDARD, DATE)).isEmpty();
+    assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost(EMP, ORDER, SUBORDER_IDS.get("so"), DATE)).isEmpty();
   }
 
+  /** The cost of a booking on that suborder of {@link #ORDER}; {@code null} for none at all. */
   private static Integer cents(EmployeeCostLookup lookup, long employeeId, String suborderSign) {
-    return cents(lookup, employeeId, suborderSign, OrderType.STANDARD);
-  }
-
-  private static Integer cents(EmployeeCostLookup lookup, long employeeId, String suborderSign, OrderType orderType) {
-    return lookup.findEffectiveCost(employeeId, suborderSign == null ? null : SUBORDER_IDS.get(suborderSign),
-        orderType, DATE)
+    return lookup.findEffectiveCost(employeeId, suborderSign == null ? null : ORDER,
+            suborderSign == null ? null : SUBORDER_IDS.get(suborderSign), DATE)
         .map(EmployeeCost::getCostCentsPerHour)
         .orElse(null);
   }
@@ -194,6 +269,14 @@ public class EmployeeCostLookupTest {
     assignment.setCategory(CostCategoryTestUtils.named(costName));
     assignment.setValidFrom(LocalDate.of(2026, 1, 1));
     assignment.setValidUntil(LocalDate.of(2026, 12, 31));
+    return assignment;
+  }
+
+  /** An assignment to the whole order (#1343). */
+  private static EmployeeCostAssignment toOrder(long employeeId, long customerorderId, String costName) {
+    var assignment = assignment(employeeId, null, costName);
+    assignment.setCustomerorderId(customerorderId);
+    assignment.setCustomerorderSign("order-" + customerorderId);
     return assignment;
   }
 

@@ -73,7 +73,20 @@ class OrderReferenceVetoListenerTest {
         .isInstanceOfSatisfying(VetoedException.class, e -> assertThat(e.getMessages()).singleElement()
             .satisfies(message -> {
               assertThat(message.getErrorCode()).isEqualTo(ErrorCode.BU_ORDER_HAS_BUDGET_REFERENCES);
-              assertThat(message.getArguments()).containsExactly(0L, 0L, 3L);
+              assertThat(message.getArguments()).containsExactly(0L, 0L, 3L, 0L);
+            }));
+  }
+
+  /** A cost assignment may refer to the whole order (#1343), and the message counts it. */
+  @Test
+  void an_order_a_cost_assignment_refers_to_is_not_deleted() {
+    when(assignmentRepository.countByCustomerorderId(1L)).thenReturn(2L);
+
+    assertThatThrownBy(() -> listener.onCustomerorderDelete(new CustomerorderDeleteEvent(1L)))
+        .isInstanceOfSatisfying(VetoedException.class, e -> assertThat(e.getMessages()).singleElement()
+            .satisfies(message -> {
+              assertThat(message.getErrorCode()).isEqualTo(ErrorCode.BU_ORDER_HAS_BUDGET_REFERENCES);
+              assertThat(message.getArguments()).containsExactly(0L, 0L, 0L, 2L);
             }));
   }
 

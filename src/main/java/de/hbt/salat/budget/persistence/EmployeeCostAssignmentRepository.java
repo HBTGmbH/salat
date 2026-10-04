@@ -27,15 +27,27 @@ public interface EmployeeCostAssignmentRepository
 
     long countBySuborderId(Long suborderId);
 
+    /** The assignments to the whole customer order (#1343). */
+    List<EmployeeCostAssignment> findByCustomerorderId(long customerorderId);
+
+    long countByCustomerorderId(long customerorderId);
+
+    /**
+     * The assignments of the person in the same step of the resolution that overlap the period: the same
+     * suborder, the same customer order, or — with neither given — the general ones (#1343).
+     */
     @Query("""
         SELECT a FROM EmployeeCostAssignment a
         WHERE a.employeeId = :emp
-          AND ((:so IS NULL AND a.suborderId IS NULL) OR a.suborderId = :so)
+          AND ((:co IS NULL AND :so IS NULL AND a.customerorderId IS NULL AND a.suborderId IS NULL)
+               OR a.customerorderId = :co
+               OR a.suborderId = :so)
           AND a.validFrom <= :until AND a.validUntil >= :from
           AND (:excludeId IS NULL OR a.id != :excludeId)
         """)
     List<EmployeeCostAssignment> findOverlapping(
         @Param("emp") long employeeId,
+        @Param("co") Long customerorderId,
         @Param("so") Long suborderId,
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
@@ -50,7 +62,15 @@ public interface EmployeeCostAssignmentRepository
         @Param("date") LocalDate date);
 
     @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
-        + " AND a.suborderId IS NULL"
+        + " AND a.customerorderId = :co"
+        + " AND a.validFrom <= :date AND a.validUntil >= :date")
+    List<EmployeeCostAssignment> findEffectiveCustomerorderSpecific(
+        @Param("emp") long employeeId,
+        @Param("co") long customerorderId,
+        @Param("date") LocalDate date);
+
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
+        + " AND a.customerorderId IS NULL AND a.suborderId IS NULL"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveGeneral(
         @Param("emp") long employeeId,

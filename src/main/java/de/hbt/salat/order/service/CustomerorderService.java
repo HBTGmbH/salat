@@ -241,6 +241,15 @@ public class CustomerorderService {
         .toList();
   }
 
+  /**
+   * {@link #getSelectableCustomerorders} as options, for a module that refers to the order by id
+   * (#1343, ADR-0021): everything not hidden, plus the order {@code keepId} even if it is hidden.
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerorderOption> getSelectableCustomerorderOptions(Long keepId) {
+    return customerorderRepository.findSelectableOptions(keepId);
+  }
+
   public List<CustomerorderOption> getInvoiceableCustomerorders() {
     return customerorderDAO.getInvoiceableCustomerorders();
   }

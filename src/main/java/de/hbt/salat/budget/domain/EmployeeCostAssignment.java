@@ -14,6 +14,16 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import de.hbt.salat.common.domain.AuditedEntity;
 
+/**
+ * The cost category that applies to the work of a person — for one suborder, for a whole customer order,
+ * or in general (#1343). The resolution takes the narrowest assignment valid on the day: suborder, then
+ * customer order, then the general one ({@link EmployeeCostLookup}). A standby order is no exception; it
+ * costs what the assignments say, and a separate pay for standby is an assignment to its suborder or
+ * order.
+ *
+ * <p>Suborder and customer order exclude each other: an assignment to an order already covers all its
+ * suborders.
+ */
 @Entity
 @Table(name = "employee_cost_employee")
 @Getter
@@ -56,8 +66,22 @@ public class EmployeeCostAssignment extends AuditedEntity {
     private String employeeSign;
 
     /**
-     * The suborder the assignment is specific to (#1205). {@code null} means the assignment applies
-     * regardless of suborder.
+     * The customer order the assignment is specific to (#1343): it covers every suborder of the order,
+     * also one created later. {@code null} for an assignment to a suborder and for a general one.
+     */
+    @Column(name = "customerorder_id")
+    private Long customerorderId;
+
+    /**
+     * The sign of {@link #customerorderId}, kept because views, ETL definitions and reports read it, and
+     * written from the order ({@code OrderSignMirrorListener}); the application never reads it (#1343).
+     */
+    @Column(name = "customerorder_sign")
+    private String customerorderSign;
+
+    /**
+     * The suborder the assignment is specific to (#1205). {@code null} for an assignment to a customer
+     * order and for a general one.
      */
     @Column(name = "suborder_id")
     private Long suborderId;
@@ -96,9 +120,14 @@ public class EmployeeCostAssignment extends AuditedEntity {
         return employeeId == null;
     }
 
-    /** Whether the assignment is specific to a suborder rather than general. */
+    /** Whether the assignment is specific to a suborder. */
     public boolean isSuborderSpecific() {
         return suborderId != null;
+    }
+
+    /** Whether the assignment is specific to a whole customer order (#1343). */
+    public boolean isCustomerorderSpecific() {
+        return customerorderId != null;
     }
 
 }

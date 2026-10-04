@@ -44,6 +44,7 @@ class OrderSignMirrorListenerTest {
   private final OrderBudget plan = new OrderBudget();
   private final OrderFlatRate flatRate = new OrderFlatRate();
   private final EmployeeCostAssignment assignment = new EmployeeCostAssignment();
+  private final EmployeeCostAssignment orderAssignment = new EmployeeCostAssignment();
 
   private OrderPricingRepository orderPricingRepository;
   private OrderSignMirrorListener listener;
@@ -70,6 +71,8 @@ class OrderSignMirrorListenerTest {
     flatRate.setSuborderSign("CO/01/A");
     assignment.setSuborderId(12L);
     assignment.setSuborderSign("CO/01/A");
+    orderAssignment.setCustomerorderId(1L);
+    orderAssignment.setCustomerorderSign("CO");
 
     var orderBudgetRepository = mock(OrderBudgetRepository.class);
     when(orderBudgetRepository.findByCustomerorderId(1L)).thenReturn(List.of(plan));
@@ -77,6 +80,7 @@ class OrderSignMirrorListenerTest {
     when(orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(1L)).thenReturn(List.of(flatRate));
     var assignmentRepository = mock(EmployeeCostAssignmentRepository.class);
     when(assignmentRepository.findBySuborderIdIn(any())).thenReturn(List.of(assignment));
+    when(assignmentRepository.findByCustomerorderId(1L)).thenReturn(List.of(orderAssignment));
     var suborderService = mock(SuborderService.class);
     when(suborderService.getSubordersByCustomerorderId(1L)).thenReturn(List.of(first, below));
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i -> i.<Long>getArgument(0) == 11L ? first : below);
@@ -96,6 +100,16 @@ class OrderSignMirrorListenerTest {
     assertThat(flatRate.getCustomerorderSign()).isEqualTo("NEW");
     assertThat(flatRate.getSuborderSign()).isEqualTo("NEW/01/A");
     assertThat(assignment.getSuborderSign()).isEqualTo("NEW/01/A");
+  }
+
+  /** A cost assignment to the whole order mirrors the order sign and follows a rename (#1343). */
+  @Test
+  void a_renamed_order_takes_its_cost_assignments_to_the_whole_order_along() {
+    order.setSign("NEW");
+
+    listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order));
+
+    assertThat(orderAssignment.getCustomerorderSign()).isEqualTo("NEW");
   }
 
   /**

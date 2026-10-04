@@ -199,9 +199,10 @@ public enum ErrorCode {
   // otherwise earn nothing and look complete while doing so (→ OrderBudgetBinding).
   BU_BUDGET_SCOPE_DISJOINT("BU-0028", "the budget plan belongs to another customer order or its scope does not intersect"),
   BU_BUDGET_PERIOD_DISJOINT("BU-0029", "the validity of the budget plan does not overlap the validity of the record"),
-  BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans, flat rates or customer rates still refer to the customer order"),
+  BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans, flat rates, customer rates or employee cost assignments still refer to the customer order"),
   BU_SUBORDER_HAS_BUDGET_REFERENCES("BU-0031", "budget plans, flat rates or employee cost assignments still refer to the suborder"),
   BU_PRICING_PATTERN_NOT_FOLLOWED("BU-0032", "the suborder pattern of a customer rate could not follow a renamed order or suborder"),
+  BU_EMPLOYEE_COST_ASSIGNMENT_SCOPE_AMBIGUOUS("BU-0033", "an employee cost assignment is either for a suborder or for a customer order, not for both"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
   JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),
