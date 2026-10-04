@@ -59,6 +59,7 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
  * The controlling counts a booking against the plan it is <em>assigned</em> to (#913) — nothing is
@@ -207,11 +208,11 @@ public class BudgetControllingServiceTest {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(EMPLOYEE_ID);
     assignment.setEmployeeSign("emp");
-    assignment.setEmployeeCostName("senior");
+    assignment.setCategory(CostCategoryTestUtils.named("senior"));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
     var cost = new EmployeeCost();
-    cost.setName("senior");
+    cost.setCategory(CostCategoryTestUtils.named("senior"));
     cost.setCostCentsPerHour(6000);
     cost.setValidFrom(FROM);
     cost.setValidUntil(UNTIL);

@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,11 +24,13 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import de.hbt.salat.budget.domain.CostCategory;
 import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.EmployeeCostAssignmentData;
 import de.hbt.salat.budget.domain.EmployeeCostCategory;
 import de.hbt.salat.budget.domain.EmployeeCostData;
+import de.hbt.salat.budget.persistence.CostCategoryRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -42,10 +45,11 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
- * Assignments bind their cost rate by name, and several cost records share one name to model a rate
- * that changed over time. Everything that moves a name — renaming, deleting, editing an assignment
- * — has to keep that binding intact, because a broken one is silent: {@code findEffectiveCost}
- * simply resolves nothing and the bookings fall back to 0 EUR in controlling (#922).
+ * Assignments and rate periods refer to their cost category by id (#1209); several rate periods
+ * share one category to model a rate that changed over time. Everything that moves a category —
+ * renaming, merging, deleting, editing an assignment — has to keep that binding intact, because a
+ * broken one is silent: {@code findEffectiveCost} simply resolves nothing and the bookings fall back
+ * to 0 EUR in controlling (#922).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @FixedClock
@@ -68,9 +72,11 @@ public class EmployeeCostServiceTest {
 
   private final List<EmployeeCost> costs = new ArrayList<>();
   private final List<EmployeeCostAssignment> assignments = new ArrayList<>();
+  private final List<CostCategory> categories = new ArrayList<>();
 
   private EmployeeCostRepository costRepository;
   private EmployeeCostAssignmentRepository assignmentRepository;
+  private CostCategoryRepository categoryRepository;
   private EmployeeService employeeService;
   private SuborderService suborderService;
   private EmployeeCostService service;
@@ -79,6 +85,7 @@ public class EmployeeCostServiceTest {
   public void setUp() {
     costRepository = mock(EmployeeCostRepository.class);
     assignmentRepository = mock(EmployeeCostAssignmentRepository.class);
+    categoryRepository = mock(CostCategoryRepository.class);
     employeeService = mock(EmployeeService.class);
     suborderService = mock(SuborderService.class);
     // The people of PEOPLE exist, nobody else does.
@@ -92,7 +99,8 @@ public class EmployeeCostServiceTest {
     when(suborderService.getSuborderById(anyLong())).thenAnswer(invocation -> suborder(invocation.getArgument(0)));
     stubCostRepository();
     stubAssignmentRepository();
-    service = new EmployeeCostService(costRepository, assignmentRepository, employeeService,
+    stubCategoryRepository();
+    service = new EmployeeCostService(costRepository, assignmentRepository, categoryRepository, employeeService,
         suborderService);
   }
 
@@ -611,11 +619,101 @@ public class EmployeeCostServiceTest {
     assertThat(orphaned.getEmployeeCostName()).isEqualTo("senior");
   }
 
+  // --- the category as its own record (#1209) --------------------------------------------------
+
+  /**
+   * A rename is the category's own row: rate periods and assignments keep pointing at the same id.
+   * Their name columns follow only as mirrors for the views, ETL definitions and reports joining on
+   * them.
+   */
+  @Test
+  public void should_rename_the_category_row_and_let_the_mirrors_follow() {
+    var cost = givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    var assignment = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+    var category = cost.getCategory();
+
+    service.renameCategory("senior", "senior consultant");
+
+    assertThat(categories).containsExactly(category);
+    assertThat(category.getName()).isEqualTo("senior consultant");
+    assertThat(cost.getCategory()).isSameAs(category);
+    assertThat(assignment.getCategory()).isSameAs(category);
+    assertThat(mirror(cost, "name")).isEqualTo("senior consultant");
+    assertThat(mirror(assignment, "employeeCostName")).isEqualTo("senior consultant");
+  }
+
+  /** Renaming onto an existing name merges: everything moves over, and one category is left. */
+  @Test
+  public void should_merge_into_the_category_that_carries_the_new_name() {
+    var senior = givenCost("senior", 8000, JAN, JUN, 1L);
+    var junior = givenCost("junior", 6000, JUL, OPEN_END, 2L);
+    var assignment = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+
+    service.renameCategory("senior", "junior");
+
+    assertThat(categories).containsExactly(junior.getCategory());
+    assertThat(senior.getCategory()).isSameAs(junior.getCategory());
+    assertThat(assignment.getCategory()).isSameAs(junior.getCategory());
+    assertThat(mirror(assignment, "employeeCostName")).isEqualTo("junior");
+  }
+
+  /** A rate period goes into a category that exists; a mistyped name no longer makes a new one. */
+  @Test
+  public void should_refuse_a_rate_period_for_a_name_no_category_carries() {
+    givenCost("senior", 8000, JAN, JUN, 1L);
+
+    assertThatThrownBy(() -> service.create(costData("senoir", 9000, JUL, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN.getCode());
+    assertThat(categories).extracting(CostCategory::getName).containsExactly("senior");
+  }
+
+  /** As while a category was only a name: it is listed as long as a rate period or an assignment carries it. */
+  @Test
+  public void should_drop_a_category_with_its_last_rate_period() {
+    var cost = givenCost("senior", 8000, JAN, OPEN_END, 1L);
+
+    service.delete(cost.getId());
+
+    assertThat(categories).isEmpty();
+    assertThat(service.getCategories()).isEmpty();
+  }
+
+  @Test
+  public void should_drop_a_category_without_rate_periods_with_its_last_assignment() {
+    var orphaned = givenAssignment("orphaned", "emp", null, JAN, DEC, 1L);
+
+    service.deleteAssignment(orphaned.getId());
+
+    assertThat(categories).isEmpty();
+  }
+
+  @Test
+  public void should_keep_a_category_that_still_has_rate_periods_when_its_last_assignment_goes() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    var assignment = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+
+    service.deleteAssignment(assignment.getId());
+
+    assertThat(categories).extracting(CostCategory::getName).containsExactly("senior");
+  }
+
   // --- test fixture ---------------------------------------------------------------------------
+
+  /** The mirror column of an entity, which the application writes but never reads (#1209). */
+  private static Object mirror(Object entity, String field) {
+    try {
+      var declared = entity.getClass().getDeclaredField(field);
+      declared.setAccessible(true);
+      return declared.get(entity);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException(e);
+    }
+  }
 
   private EmployeeCost givenCost(String name, int cents, LocalDate from, LocalDate until, long id) {
     var cost = new EmployeeCost();
-    cost.setName(name);
+    cost.setCategory(category(name));
     cost.setCostCentsPerHour(cents);
     cost.setValidFrom(from);
     cost.setValidUntil(until);
@@ -627,7 +725,7 @@ public class EmployeeCostServiceTest {
   private EmployeeCostAssignment givenAssignment(String costName, String employeeSign, String suborderSign,
                                                  LocalDate from, LocalDate until, long id) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeCostName(costName);
+    assignment.setCategory(category(costName));
     assignment.setEmployeeId(idOf(employeeSign));
     assignment.setEmployeeSign(employeeSign);
     assignment.setSuborderSign(suborderSign);
@@ -637,6 +735,16 @@ public class EmployeeCostServiceTest {
     setId(assignment, id);
     assignments.add(assignment);
     return assignment;
+  }
+
+  /** The stored category of the name, created on first use like the migration does for every name. */
+  private CostCategory category(String name) {
+    return categories.stream().filter(c -> c.getName().equals(name)).findFirst().orElseGet(() -> {
+      var category = new CostCategory(name);
+      setId(category, 1000L + categories.size());
+      categories.add(category);
+      return category;
+    });
   }
 
   private static EmployeeCostData costData(String name, int cents, LocalDate from, LocalDate until) {
@@ -690,13 +798,17 @@ public class EmployeeCostServiceTest {
   private void stubCostRepository() {
     when(costRepository.findById(anyLong())).thenAnswer(invocation ->
         costs.stream().filter(c -> c.getId().equals(invocation.getArgument(0))).findFirst());
-    when(costRepository.findByNameOrderByValidFromAsc(any())).thenAnswer(invocation ->
+    when(costRepository.findByCategoryIdOrderByValidFromAsc(anyLong())).thenAnswer(invocation ->
         costs.stream()
-            .filter(c -> c.getName().equals(invocation.<String>getArgument(0)))
+            .filter(c -> c.getCategory().getId().equals(invocation.<Long>getArgument(0)))
             .sorted((a, b) -> a.getValidFrom().compareTo(b.getValidFrom()))
             .toList());
+    when(costRepository.countByCategoryId(anyLong())).thenAnswer(invocation ->
+        costs.stream().filter(c -> c.getCategory().getId().equals(invocation.<Long>getArgument(0))).count());
     when(costRepository.findDistinctNames()).thenAnswer(invocation ->
         costs.stream().map(EmployeeCost::getName).distinct().sorted().toList());
+    doAnswer(invocation -> costs.removeIf(c -> c.getId().equals(invocation.<Long>getArgument(0))))
+        .when(costRepository).deleteById(anyLong());
     when(costRepository.save(any())).thenAnswer(invocation -> {
       EmployeeCost saved = invocation.getArgument(0);
       if (costs.stream().noneMatch(c -> c == saved)) {
@@ -705,13 +817,13 @@ public class EmployeeCostServiceTest {
       }
       return saved;
     });
-    when(costRepository.findOverlapping(any(), any(), any(), any())).thenAnswer(invocation -> {
-      String name = invocation.getArgument(0);
+    when(costRepository.findOverlapping(anyLong(), any(), any(), any())).thenAnswer(invocation -> {
+      long categoryId = invocation.getArgument(0);
       LocalDate from = invocation.getArgument(1);
       LocalDate until = invocation.getArgument(2);
       Long excludeId = invocation.getArgument(3);
       return costs.stream()
-          .filter(c -> c.getName().equals(name))
+          .filter(c -> c.getCategory().getId() == categoryId)
           .filter(c -> !c.getValidFrom().isAfter(until) && !c.getValidUntil().isBefore(from))
           .filter(c -> excludeId == null || !excludeId.equals(c.getId()))
           .toList();
@@ -746,19 +858,21 @@ public class EmployeeCostServiceTest {
   private void stubAssignmentRepository() {
     when(assignmentRepository.findById(anyLong())).thenAnswer(invocation ->
         assignments.stream().filter(a -> a.getId().equals(invocation.getArgument(0))).findFirst());
-    when(assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc()).thenAnswer(invocation ->
+    when(assignmentRepository.findAllByOrderByCategoryNameAscIdAsc()).thenAnswer(invocation ->
         assignments.stream()
             .sorted(Comparator.comparing(EmployeeCostAssignment::getEmployeeCostName)
                 .thenComparing(EmployeeCostAssignment::getId))
             .toList());
-    when(assignmentRepository.findByEmployeeCostName(any())).thenAnswer(invocation ->
+    when(assignmentRepository.findByCategoryId(anyLong())).thenAnswer(invocation ->
         assignments.stream()
-            .filter(a -> a.getEmployeeCostName().equals(invocation.<String>getArgument(0)))
+            .filter(a -> a.getCategory().getId().equals(invocation.<Long>getArgument(0)))
             .toList());
-    when(assignmentRepository.countByEmployeeCostName(any())).thenAnswer(invocation ->
+    when(assignmentRepository.countByCategoryId(anyLong())).thenAnswer(invocation ->
         assignments.stream()
-            .filter(a -> a.getEmployeeCostName().equals(invocation.<String>getArgument(0)))
+            .filter(a -> a.getCategory().getId().equals(invocation.<Long>getArgument(0)))
             .count());
+    doAnswer(invocation -> assignments.removeIf(a -> a.getId().equals(invocation.<Long>getArgument(0))))
+        .when(assignmentRepository).deleteById(anyLong());
     when(assignmentRepository.findOverlapping(anyLong(), any(), any(), any(), any())).thenAnswer(invocation -> {
       long employeeId = invocation.getArgument(0);
       Long suborderId = invocation.getArgument(1);
@@ -774,6 +888,25 @@ public class EmployeeCostServiceTest {
           .filter(a -> excludeId == null || !excludeId.equals(a.getId()))
           .toList();
     });
+  }
+
+  private void stubCategoryRepository() {
+    when(categoryRepository.findByName(any())).thenAnswer(invocation ->
+        categories.stream().filter(c -> c.getName().equals(invocation.<String>getArgument(0))).findFirst());
+    when(categoryRepository.existsByName(any())).thenAnswer(invocation ->
+        categories.stream().anyMatch(c -> c.getName().equals(invocation.<String>getArgument(0))));
+    when(categoryRepository.findAllByOrderByNameAsc()).thenAnswer(invocation ->
+        categories.stream().sorted(Comparator.comparing(CostCategory::getName)).toList());
+    when(categoryRepository.save(any())).thenAnswer(invocation -> {
+      CostCategory saved = invocation.getArgument(0);
+      if (categories.stream().noneMatch(c -> c == saved)) {
+        setId(saved, 1000L + categories.size());
+        categories.add(saved);
+      }
+      return saved;
+    });
+    doAnswer(invocation -> categories.remove(invocation.<CostCategory>getArgument(0)))
+        .when(categoryRepository).delete(any());
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */

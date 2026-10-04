@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
  * The lookup replaces the assignment and cost repository queries, so these tests pin the fallback
@@ -134,6 +135,29 @@ public class EmployeeCostLookupTest {
         .isEqualTo(100);
   }
 
+  /**
+   * Assignment and rate period meet over the id of their category (#1209). The same category read
+   * twice and renamed in between — what a rename between two reads amounts to — resolves unchanged;
+   * the name decides nothing.
+   */
+  @Test
+  public void should_match_the_category_by_id_whatever_name_it_carries() {
+    var assignment = assignment(EMP, null, "general");
+    var cost = cost("general", 100);
+    cost.getCategory().setName("renamed");
+
+    assertThat(cents(EmployeeCostLookup.of(List.of(assignment), List.of(cost)), EMP, null)).isEqualTo(100);
+  }
+
+  /** Two categories with names that differ only in case are two categories, as the names were before. */
+  @Test
+  public void should_tell_categories_apart_by_id_even_where_the_names_differ_only_in_case() {
+    var lookup = EmployeeCostLookup.of(List.of(assignment(EMP, null, "Senior")),
+        List.of(cost("senior", 100), cost("Senior", 200)));
+
+    assertThat(cents(lookup, EMP, null)).isEqualTo(200);
+  }
+
   /** An assignment the migration could not resolve names nobody and costs nobody's work (#968). */
   @Test
   public void should_not_match_an_assignment_whose_person_is_unresolved() {
@@ -167,7 +191,7 @@ public class EmployeeCostLookupTest {
     assignment.setEmployeeSign("sign-" + employeeId);
     assignment.setSuborderSign(suborderSign);
     assignment.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    assignment.setEmployeeCostName(costName);
+    assignment.setCategory(CostCategoryTestUtils.named(costName));
     assignment.setValidFrom(LocalDate.of(2026, 1, 1));
     assignment.setValidUntil(LocalDate.of(2026, 12, 31));
     return assignment;
@@ -175,7 +199,7 @@ public class EmployeeCostLookupTest {
 
   private static EmployeeCost cost(String name, int cents) {
     var cost = new EmployeeCost();
-    cost.setName(name);
+    cost.setCategory(CostCategoryTestUtils.named(name));
     cost.setCostCentsPerHour(cents);
     cost.setValidFrom(LocalDate.of(2026, 1, 1));
     cost.setValidUntil(LocalDate.of(2026, 12, 31));

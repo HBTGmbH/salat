@@ -3,6 +3,7 @@ package de.hbt.salat.common.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_NAME_EXISTS;
 import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_OVERLAP;
 import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
 import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
+import de.hbt.salat.budget.domain.CostCategory;
 import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -77,10 +79,20 @@ class UniqueKeyTranslationTest {
 
   @Test
   void a_second_time_slice_of_a_cost_category_on_the_same_day_is_an_overlap() {
-    store.persist(cost("Senior", LocalDate.of(2026, 1, 1)));
+    var senior = new CostCategory("Senior");
+    store.persist(senior);
+    store.persist(cost(senior, LocalDate.of(2026, 1, 1)));
 
-    assertThat(findingOf(() -> store.persist(cost("Senior", LocalDate.of(2026, 1, 1)))))
+    assertThat(findingOf(() -> store.persist(cost(senior, LocalDate.of(2026, 1, 1)))))
         .isEqualTo(BU_EMPLOYEE_COST_OVERLAP);
+  }
+
+  /** Eine Kostenkategorie ist eine Zeile mit eindeutigem Namen (#1209). */
+  @Test
+  void a_second_cost_category_with_the_same_name_is_refused_with_its_own_finding() {
+    store.persist(new CostCategory("Senior"));
+
+    assertThat(findingOf(() -> store.persist(new CostCategory("Senior")))).isEqualTo(BU_EMPLOYEE_COST_NAME_EXISTS);
   }
 
   /** Die Anmeldung sucht genau ein Login je Namen (#1333). */
@@ -150,9 +162,9 @@ class UniqueKeyTranslationTest {
     return report;
   }
 
-  private static EmployeeCost cost(String name, LocalDate validFrom) {
+  private static EmployeeCost cost(CostCategory category, LocalDate validFrom) {
     var cost = new EmployeeCost();
-    cost.setName(name);
+    cost.setCategory(category);
     cost.setCostCentsPerHour(10_000);
     cost.setValidFrom(validFrom);
     cost.setValidUntil(LocalDate.of(9999, 12, 31));

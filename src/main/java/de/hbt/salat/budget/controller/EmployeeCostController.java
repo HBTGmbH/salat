@@ -36,11 +36,11 @@ import de.hbt.salat.order.service.SuborderService;
 /**
  * The cost categories and their assignments (#954).
  *
- * <p>A category is a name, not a record: several {@link EmployeeCost} rows share one name to model a
- * rate that changed over time, and an assignment binds to the category by that name. The views
- * follow that structure — the overview lists categories, everything else happens on the page of one
- * category. The name is therefore the key of that page and travels as a request parameter; as a path
- * variable a {@code /} in the name would break the path.
+ * <p>A category is a record of its own (#1209): several {@link EmployeeCost} rows share it to model a
+ * rate that changed over time, and rate periods and assignments refer to it by id. The views follow
+ * that structure — the overview lists categories, everything else happens on the page of one
+ * category. The page is addressed by the category's name, which is unique, and the name travels as a
+ * request parameter; as a path variable a {@code /} in the name would break the path.
  */
 @Controller
 @RequestMapping("/budget/employee-cost")

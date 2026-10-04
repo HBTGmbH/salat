@@ -13,6 +13,7 @@ import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
  * The one resolution behind the "Mitarbeitende" card and the rate columns of the booking list
@@ -171,12 +172,12 @@ public class AppliedRateLookupTest {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(EMPLOYEE_ID);
     assignment.setEmployeeSign("abc");
-    assignment.setEmployeeCostName(name);
+    assignment.setCategory(CostCategoryTestUtils.named(name));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
 
     var cost = new EmployeeCost();
-    cost.setName(name);
+    cost.setCategory(CostCategoryTestUtils.named(name));
     cost.setCostCentsPerHour(centsPerHour);
     cost.setValidFrom(FROM);
     cost.setValidUntil(UNTIL);

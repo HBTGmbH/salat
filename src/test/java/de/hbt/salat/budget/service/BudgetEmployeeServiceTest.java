@@ -39,6 +39,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
  * The "Mitarbeitende" card of a budget plan (#964).
@@ -384,7 +385,7 @@ public class BudgetEmployeeServiceTest {
     assignment.setSuborderSign(suborderSign);
     // by id since #1205; the fixture's suborders are co/01 and co/02
     assignment.setSuborderId(suborderSign == null ? null : "co/01".equals(suborderSign) ? BILLED : NOT_INVOICEABLE);
-    assignment.setEmployeeCostName(costName);
+    assignment.setCategory(CostCategoryTestUtils.named(costName));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
     costAssignments.add(assignment);
@@ -392,7 +393,7 @@ public class BudgetEmployeeServiceTest {
 
   private void cost(String name, int centsPerHour, LocalDate from, LocalDate until) {
     var cost = new EmployeeCost();
-    cost.setName(name);
+    cost.setCategory(CostCategoryTestUtils.named(name));
     cost.setCostCentsPerHour(centsPerHour);
     cost.setValidFrom(from);
     cost.setValidUntil(until);
