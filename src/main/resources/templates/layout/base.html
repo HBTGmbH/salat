@@ -664,8 +664,10 @@
       </div>
     </header>
     <div class="page-body" id="page-content" tabindex="-1">
+      <!--/* d-flex at each message: Tabler gave .alert display: flex up to 1.5 and dropped it with 1.6,
+             the text then slipped under the icon (#1355) */-->
       <div class="container-fluid my-4" th:if="${not #strings.isEmpty(toastSuccess)}">
-        <div class="alert alert-success alert-dismissible align-items-start gap-3" role="alert">
+        <div class="alert alert-success alert-dismissible d-flex align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-check"></i>
           </div>
@@ -696,7 +698,7 @@
         </div>
       </div>
       <div class="container-fluid my-4" th:if="${not #strings.isEmpty(toastError)}">
-        <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
+        <div class="alert alert-danger alert-dismissible d-flex align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
           </div>
@@ -712,7 +714,7 @@
         </div>
       </div>
       <div class="container-fluid my-4" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
-        <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
+        <div class="alert alert-danger alert-dismissible d-flex align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
           </div>
@@ -736,7 +738,7 @@
         </div>
       </div>
       <div class="container-fluid my-4" th:if="${errors != null && !errors.isEmpty()}">
-        <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
+        <div class="alert alert-danger alert-dismissible d-flex align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
           </div>
