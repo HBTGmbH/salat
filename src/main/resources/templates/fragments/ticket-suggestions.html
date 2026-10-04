@@ -30,14 +30,16 @@
       <span class="form-check-label font-monospace" th:text="${key}">ABC-120</span>
     </label>
   </div>
+  <!--/* text-wrap and mw-100: a button keeps its text on one line and would run out of the narrow card
+         of the month list; this way it wraps its text inside the box instead */-->
   <div class="d-flex flex-wrap gap-2">
-    <button type="submit" class="btn btn-primary" th:classappend="${small} ? 'btn-sm' : ''"
+    <button type="submit" class="btn btn-primary text-wrap mw-100" th:classappend="${small} ? 'btn-sm' : ''"
             name="ticketSuggestionChoice" value="adopt" data-adopt-button disabled
             th:attr="data-label-none=#{main.ticketreferences.suggestions.adopt.none},
                      data-label-one=#{main.ticketreferences.suggestions.adopt.one},
                      data-label-many=#{main.ticketreferences.suggestions.adopt.many}"
             th:text="#{main.ticketreferences.suggestions.adopt.none}">Ticket übernehmen und speichern</button>
-    <button type="submit" class="btn btn-outline-secondary" th:classappend="${small} ? 'btn-sm' : ''"
+    <button type="submit" class="btn btn-outline-secondary text-wrap mw-100" th:classappend="${small} ? 'btn-sm' : ''"
             name="ticketSuggestionChoice" value="skip"
             th:text="#{main.ticketreferences.suggestions.skip}">Ohne Übernahme speichern</button>
     <!--/* alert-link, not btn-link: the colour of the alert's own links holds 4.5:1 on its tint, the
