@@ -59,6 +59,10 @@ class JiraReplicationManualRunTest {
   @MockitoSpyBean
   private JiraWorklogSyncService worklogSyncService;
 
+  /** The order 1L of the config is not in the test database; the sign is all the run reads. */
+  @MockitoBean
+  private JiraScopes scopes;
+
   private final JiraSearchClient searchClient = mock(JiraSearchClient.class);
 
   @Autowired
@@ -84,6 +88,7 @@ class JiraReplicationManualRunTest {
     when(authorizedUser.getLoginSign()).thenReturn("mgr");
     when(authorizedUser.isManager()).thenReturn(true);
     when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
+    when(scopes.signOf(1L, null)).thenReturn(SCOPE);
 
     var config = new JiraReplicationConfig();
     config.setName("Manueller Lauf");
@@ -101,7 +106,7 @@ class JiraReplicationManualRunTest {
   @AfterEach
   void tearDown() {
     runRepo.deleteByReplicationId(configId);
-    ticketRepo.deleteAll(ticketRepo.findByScopeSign(SCOPE));
+    ticketRepo.deleteAll(ticketRepo.findInScope(1L, null));
     configRepo.deleteById(configId);
   }
 
@@ -173,7 +178,7 @@ class JiraReplicationManualRunTest {
   }
 
   private JiraTicket ticket(String key) {
-    return ticketRepo.findByScopeSign(SCOPE).stream()
+    return ticketRepo.findInScope(1L, null).stream()
         .filter(ticket -> ticket.getKey().equals(key))
         .findFirst().orElseThrow();
   }

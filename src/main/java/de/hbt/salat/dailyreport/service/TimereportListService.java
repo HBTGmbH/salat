@@ -313,10 +313,10 @@ public class TimereportListService {
     var visibility = visibilityService.anyTime();
     if (visibility.isEmpty()) return new TicketSearchResult(List.of(), List.of(), 0);
 
-    var scopes = scopeSignsOf(selectedCustomerIds, selectedOrderIds, selectedSuborderIds);
+    var scopes = ticketScopesOf(selectedCustomerIds, selectedOrderIds, selectedSuborderIds);
     var search = term == null ? "" : term.trim().toLowerCase(java.util.Locale.ROOT);
     var byKey = new LinkedHashMap<String, TicketOption>();
-    for (var ticket : jiraTicketService.getTickets(scopes)) {
+    for (var ticket : jiraTicketService.getTickets(scopes.customerorderIds(), scopes.suborderIds())) {
       if (!matches(search, ticket.key(), ticket.summary())) continue;
       byKey.putIfAbsent(ticket.key(),
           new TicketOption(ticket.key(), ticket.summary(), ticket.issueType(), ticket.parentKey(), List.of()));
@@ -430,11 +430,16 @@ public class TimereportListService {
     var suborderIds = expandSuborders(filter.suborderIds());
     var ticketKeys = filter.ticketKeys().isEmpty() || !filter.ticketDescendants()
         ? filter.ticketKeys()
-        : List.copyOf(jiraTicketService.expandWithDescendants(filter.ticketKeys(),
-            scopeSignsOf(filter.customerIds(), filter.customerOrderIds(), filter.suborderIds())));
+        : expandTickets(filter);
     return new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
         suborderIds, ticketKeys, filter.ticketDescendants(), filter.from(), filter.until(), filter.billable(),
         filter.sort(), filter.descending(), filter.maxResults());
+  }
+
+  private List<String> expandTickets(TimereportListFilter filter) {
+    var scopes = ticketScopesOf(filter.customerIds(), filter.customerOrderIds(), filter.suborderIds());
+    return List.copyOf(jiraTicketService.expandWithDescendants(filter.ticketKeys(), scopes.customerorderIds(),
+        scopes.suborderIds()));
   }
 
   private List<Long> expandSuborders(List<Long> suborderIds) {
@@ -449,36 +454,40 @@ public class TimereportListService {
    * The replication scopes the ticket search runs over: those of the orders the filter names, of the suborders it
    * names, and of every order belonging to a customer it names. A ticket the rest of the filter could never hit does
    * not belong in the dialog. Without any of the three, those of every order the user may see bookings on.
+   *
+   * <p>By id (#1323): an order stands for its order-wide tickets, a suborder for the tickets replicated on exactly that
+   * suborder. A renamed order or a moved suborder keeps its tickets.
    */
-  private List<String> scopeSignsOf(List<Long> customerIds, List<Long> customerOrderIds, List<Long> suborderIds) {
-    var orders = new ArrayList<Customerorder>();
-    var suborders = new ArrayList<Suborder>();
+  private TicketScopes ticketScopesOf(List<Long> customerIds, List<Long> customerOrderIds, List<Long> suborderIds) {
+    var orders = new LinkedHashSet<Long>();
+    var suborders = new LinkedHashSet<Long>();
     if (customerIds.isEmpty() && customerOrderIds.isEmpty() && suborderIds.isEmpty()) {
       var visibility = visibilityService.anyTime();
       if (visibility.unrestricted()) {
-        orders.addAll(customerorderService.getNotHiddenCustomerorders());
-        suborders.addAll(suborderService.getNotHiddenSuborders());
+        customerorderService.getNotHiddenCustomerorders().forEach(order -> orders.add(order.getId()));
+        suborderService.getNotHiddenSuborders().forEach(suborder -> suborders.add(suborder.getId()));
       } else {
         var values = timereportListDAO.findFilterValues(visibility);
-        orders.addAll(customerorderService.getCustomerordersByIds(values.customerOrderIds()));
-        suborders.addAll(suborderService.getSubordersByIds(values.suborderIds()));
+        orders.addAll(values.customerOrderIds());
+        suborders.addAll(values.suborderIds());
       }
     } else {
-      orders.addAll(customerorderService.getCustomerordersByIds(customerOrderIds));
-      suborders.addAll(suborderService.getSubordersByIds(suborderIds));
-      suborders.forEach(suborder -> orders.add(suborder.getCustomerorder()));
+      orders.addAll(customerOrderIds);
+      suborders.addAll(suborderIds);
+      suborderService.getSuborderLocationsByIds(suborderIds).values()
+          .forEach(location -> orders.add(location.customerorderId()));
       if (!customerIds.isEmpty()) {
         var customers = new HashSet<>(customerIds);
         customerorderService.getNotHiddenCustomerorders().stream()
             .filter(order -> customers.contains(order.getCustomer().getId()))
-            .forEach(orders::add);
+            .forEach(order -> orders.add(order.getId()));
       }
     }
-    var scopes = new LinkedHashSet<String>();
-    orders.forEach(order -> scopes.add(order.getSign()));
-    suborders.forEach(suborder -> scopes.add(suborder.getCompleteOrderSign()));
-    return List.copyOf(scopes);
+    return new TicketScopes(List.copyOf(orders), List.copyOf(suborders));
   }
+
+  /** Whose tickets the search covers: the order-wide ones of these orders, and those of these suborders. */
+  private record TicketScopes(List<Long> customerorderIds, List<Long> suborderIds) {}
 
   private static int levelOf(Suborder suborder) {
     int level = 0;

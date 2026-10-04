@@ -8,6 +8,5 @@ package de.hbt.salat.jira.domain;
  * @param summary   the title
  * @param issueType Epic, Story, Subtask …; what a type is called comes from JIRA, this module invents none
  * @param parentKey the key of the ticket above it, {@code null} at the top
- * @param scopeSign the replication this ticket was fetched by — the same key may exist under several
  */
-public record JiraTicketInfo(String key, String summary, String issueType, String parentKey, String scopeSign) {}
+public record JiraTicketInfo(String key, String summary, String issueType, String parentKey) {}

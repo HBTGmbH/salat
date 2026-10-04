@@ -21,9 +21,10 @@ import de.hbt.salat.common.domain.AuditedEntity;
  * — and noticing that a day/ticket pair has no bookings left at all, which is what has to delete
  * its worklog.
  *
- * <p>Keyed by the scope of the replication rather than by its id, like {@link JiraTicket}: a row
- * outlives the configuration that wrote it, and what was written to JIRA stays written whether or
- * not the config is still there.
+ * <p>Keyed by the scope of the replication — order and suborder by id (#1323) — rather than by the
+ * id of the replication, like {@link JiraTicket}: a row outlives the configuration that wrote it,
+ * and what was written to JIRA stays written whether or not the config is still there. A new
+ * replication on the same scope recognises the row as its own.
  */
 @Entity
 @Table(name = "jira_worklog_sync")
@@ -33,6 +34,18 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class JiraWorklogSync extends AuditedEntity {
 
+  /** The customer order of the scope that wrote the worklog (#1323). */
+  @Column(name = "customerorder_id", nullable = false)
+  private Long customerorderId;
+
+  /** The suborder of that scope, {@code null} for the whole order (#1323). */
+  @Column(name = "suborder_id")
+  private Long suborderId;
+
+  /**
+   * The scope as a sign, a mirror for reports and ETL definitions like
+   * {@code JiraTicket#scopeSign}; the application never reads it (#1323).
+   */
   @Column(name = "scope_sign", nullable = false)
   private String scopeSign;
 

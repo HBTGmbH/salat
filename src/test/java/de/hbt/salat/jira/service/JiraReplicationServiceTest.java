@@ -56,6 +56,10 @@ import de.hbt.salat.jira.persistence.JiraTicketRepository;
 @SpringBootTest
 class JiraReplicationServiceTest {
 
+  /** The order of the mock replication, and a suborder below it (#1323). */
+  private static final long ORDER = 1L;
+  private static final long SUBORDER_A_01 = 12L;
+
   @MockitoBean
   private JiraSearchClients searchClients;
 
@@ -74,6 +78,9 @@ class JiraReplicationServiceTest {
   @MockitoBean
   private AuthorizedUser authorizedUser;
 
+  @MockitoBean
+  private JiraScopes scopes;
+
   @Autowired
   private JiraReplicationService jiraReplicationService;
 
@@ -82,6 +89,8 @@ class JiraReplicationServiceTest {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.isManager()).thenReturn(true);
     when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
+    when(scopes.signOf(ORDER, null)).thenReturn("MOCK_ORDER");
+    when(scopes.signOf(ORDER, SUBORDER_A_01)).thenReturn("MOCK_ORDER/A/01");
   }
 
   @Test
@@ -309,20 +318,22 @@ class JiraReplicationServiceTest {
 
   @Test
   void testARunReadsAndWritesOnlyTicketsOfItsOwnScope() {
-    // Two replications on the same order but with different scopes are independent (#1025). The
-    // separation costs the run nothing: every ticket access already keys on exactly one sign, and
-    // that sign is now the scope rather than the order.
+    // Two replications on the same order but with different scopes are independent (#1025). Every
+    // ticket access keys on exactly one scope - the pair of order and suborder ids (#1323) - and the
+    // sign is written as a mirror of it.
     JiraReplicationConfig config = createMockReplicationConfig();
-    config.setScopeSign("MOCK_ORDER/A/01");
+    config.setSuborderId(SUBORDER_A_01);
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
 
     jiraReplicationService.runReplication(config.getId());
 
     assertEquals("MOCK_ORDER/A/01", savedTicket().getScopeSign());
-    verify(ticketRepo).findByScopeSignAndJiraId("MOCK_ORDER/A/01", 1001L);
-    verify(ticketRepo).findByScopeSign("MOCK_ORDER/A/01");
-    verify(ticketRepo, never()).findByScopeSign("MOCK_ORDER");
+    assertEquals(ORDER, savedTicket().getCustomerorderId());
+    assertEquals(SUBORDER_A_01, savedTicket().getSuborderId());
+    verify(ticketRepo).findInScopeByJiraId(ORDER, SUBORDER_A_01, 1001L);
+    verify(ticketRepo).findInScope(ORDER, SUBORDER_A_01);
+    verify(ticketRepo, never()).findInScope(ORDER, null);
   }
 
   @Test
@@ -330,15 +341,15 @@ class JiraReplicationServiceTest {
     // The chain is walked over the tickets of this scope alone, so a parent replicated by another
     // replication of the same order is not reached and no field is inherited across the boundary.
     JiraReplicationConfig config = createIncrementalReplicationConfig();
-    config.setScopeSign("MOCK_ORDER/A/01");
+    config.setSuborderId(SUBORDER_A_01);
     config.setAdditionalFieldNames("customfield_10123");
     config.setInheritedFieldNames("customfield_10123");
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues());
     var child = ticket("MOCK-2", "MOCK-1");
-    child.setScopeSign("MOCK_ORDER/A/01");
+    child.setSuborderId(SUBORDER_A_01);
     // the parent lives in the order-wide scope and is therefore invisible to this run
-    when(ticketRepo.findByScopeSign("MOCK_ORDER/A/01")).thenReturn(List.of(child));
+    when(ticketRepo.findInScope(ORDER, SUBORDER_A_01)).thenReturn(List.of(child));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -353,7 +364,7 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues());
     var parent = ticket("MOCK-1", null);
     var child = ticket("MOCK-2", "MOCK-1");
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(parent, child));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(parent, child));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -422,7 +433,7 @@ class JiraReplicationServiceTest {
     var epic = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     var story = ticket("MOCK-2", "MOCK-1", Map.of());
     var task = ticket("MOCK-3", "MOCK-2", Map.of());
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(epic, story, task));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(epic, story, task));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -441,7 +452,7 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues());
     var epic = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     var task = ticket("MOCK-2", "MOCK-1", Map.of("customfield_10123", "Migration"));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(epic, task));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -457,7 +468,7 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues());
     var epic = ticket("MOCK-1", null, Map.of());
     var task = ticket("MOCK-2", "MOCK-1", Map.of());
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(epic, task));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -475,7 +486,7 @@ class JiraReplicationServiceTest {
     // is a shape the foreign system can hand over
     var one = ticket("MOCK-1", "MOCK-2", Map.of("customfield_10123", "Wartung"));
     var two = ticket("MOCK-2", "MOCK-1", Map.of());
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(one, two));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(one, two));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -491,7 +502,7 @@ class JiraReplicationServiceTest {
     var stored = ticket("MOCK-1", null, Map.of());
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash("the hash of an earlier field list");
-    when(ticketRepo.findByScopeSignAndJiraId("MOCK_ORDER", 1001L))
+    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
         .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
@@ -512,7 +523,7 @@ class JiraReplicationServiceTest {
     var stored = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash(JiraFieldConfig.from(config).hash());
-    when(ticketRepo.findByScopeSignAndJiraId("MOCK_ORDER", 1001L))
+    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
         .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
@@ -551,7 +562,7 @@ class JiraReplicationServiceTest {
     var seen = stored(1001L, "MOCK-1");
     var gone = stored(1002L, "MOCK-2");
     var seenToo = stored(1003L, "MOCK-3");
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(seen, gone, seenToo));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(seen, gone, seenToo));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -565,7 +576,7 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues());
     var one = stored(1001L, "MOCK-1");
     var two = stored(1002L, "MOCK-2");
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(one, two));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(one, two));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -577,7 +588,7 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(stored(1001L, "MOCK-1")));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(stored(1001L, "MOCK-1")));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -591,7 +602,7 @@ class JiraReplicationServiceTest {
     config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER"))
+    when(ticketRepo.findInScope(ORDER, null))
         .thenReturn(List.of(stored(1001L, "MOCK-1"), stored(1002L, "MOCK-2")));
 
     jiraReplicationService.runReplication(config.getId());
@@ -606,7 +617,7 @@ class JiraReplicationServiceTest {
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(
         failingIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0)), mockIssue()));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER"))
+    when(ticketRepo.findInScope(ORDER, null))
         .thenReturn(List.of(stored(1001L, "MOCK-1"), stored(1002L, "MOCK-2")));
     var logged = captureWarnings();
 
@@ -623,7 +634,7 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(failingAfter(mockIssue()));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(stored(1002L, "MOCK-2")));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(stored(1002L, "MOCK-2")));
 
     assertThrows(RestClientException.class, () -> jiraReplicationService.runReplication(config.getId()));
 
@@ -634,18 +645,18 @@ class JiraReplicationServiceTest {
   void theRemovalLeavesOtherScopesAloneEvenWithTheSameKeyAndId() {
     // two JIRA instances can hand out the same key and the same id, the scope tells them apart
     JiraReplicationConfig config = createMockReplicationConfig();
-    config.setScopeSign("MOCK_ORDER/A/01");
+    config.setSuborderId(SUBORDER_A_01);
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues());
     var own = stored(1002L, "MOCK-2");
-    own.setScopeSign("MOCK_ORDER/A/01");
-    when(ticketRepo.findByScopeSign("MOCK_ORDER/A/01")).thenReturn(List.of(own));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(stored(1002L, "MOCK-2")));
+    own.setSuborderId(SUBORDER_A_01);
+    when(ticketRepo.findInScope(ORDER, SUBORDER_A_01)).thenReturn(List.of(own));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(stored(1002L, "MOCK-2")));
 
     jiraReplicationService.runReplication(config.getId());
 
     assertThat(removedTickets()).containsExactly(own);
-    verify(ticketRepo, never()).findByScopeSign("MOCK_ORDER");
+    verify(ticketRepo, never()).findInScope(ORDER, null);
   }
 
   @Test
@@ -659,7 +670,7 @@ class JiraReplicationServiceTest {
     parent.setJiraId(1009L);
     var child = ticket("MOCK-1", "MOCK-9", Map.of());
     child.setJiraId(1001L);
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(parent, child));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(parent, child));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -674,7 +685,7 @@ class JiraReplicationServiceTest {
     config.setName("Mock replication");
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
-    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(
         stored(1001L, "MOCK-1"), stored(1002L, "MOCK-2"), stored(1003L, "MOCK-3")));
     var logged = captureWarnings();
 
@@ -726,6 +737,7 @@ class JiraReplicationServiceTest {
 
   private static JiraTicket ticket(String key, String parentKey) {
     var ticket = new JiraTicket();
+    ticket.setCustomerorderId(ORDER);
     ticket.setScopeSign("MOCK_ORDER");
     ticket.setKey(key);
     ticket.setParentKey(parentKey);
@@ -764,7 +776,7 @@ class JiraReplicationServiceTest {
     config.setPassword("mockPassword");
     config.setJql("project = MOCK");
     config.setPageSize(50);
-    config.setScopeSign("MOCK_ORDER");
+    config.setCustomerorderId(ORDER);
     return config;
   }
 

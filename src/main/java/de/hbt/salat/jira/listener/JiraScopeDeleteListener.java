@@ -12,15 +12,19 @@ import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.SuborderDeleteEvent;
 
 /**
- * Refuses to delete an order or a suborder that a JIRA replication still applies to (#1322).
+ * What deleting an order or a suborder means for the JIRA module (#1322, #1323).
  *
- * <p>The replication refers to both by id, with a foreign key. Without this veto the deletion would
- * fail at that key as a failed statement; with it the person deleting reads what is in the way — and
- * deletes the replication first or moves it to another scope.
+ * <p>A replication that still applies to it refuses the deletion. The replication refers to both by
+ * id, with a foreign key; without this veto the deletion would fail at that key as a failed
+ * statement. With it the person deleting reads what is in the way — and deletes the replication
+ * first or moves it to another scope.
+ *
+ * <p>Tickets and worklog rows, by contrast, go with the scope: they outlive a replication so that a
+ * new one on the same scope finds them again, and once the scope itself is gone none ever can.
  */
 @Component
 @RequiredArgsConstructor
-public class JiraScopeReferenceVetoListener {
+public class JiraScopeDeleteListener {
 
   private final JiraScopeReferenceService jiraScopeReferenceService;
 
@@ -30,6 +34,7 @@ public class JiraScopeReferenceVetoListener {
     if (replications > 0) {
       event.veto(List.of(error(ErrorCode.JI_ORDER_HAS_REPLICATIONS, replications)));
     }
+    jiraScopeReferenceService.deleteScopeDataOfCustomerorder(event.getId());
   }
 
   @EventListener
@@ -38,6 +43,7 @@ public class JiraScopeReferenceVetoListener {
     if (replications > 0) {
       event.veto(List.of(error(ErrorCode.JI_SUBORDER_HAS_REPLICATIONS, replications)));
     }
+    jiraScopeReferenceService.deleteScopeDataOfSuborder(event.getId());
   }
 
 }

@@ -14,6 +14,7 @@ import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
+import de.hbt.salat.order.persistence.CustomerorderRepository;
 
 /**
  * The optional ticket reference on a booking (#982): free text, with the tickets replicated for the
@@ -42,17 +43,22 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
   @Autowired
   private JiraTicketRepository jiraTicketRepository;
 
+  @Autowired
+  private CustomerorderRepository customerorderRepository;
+
   @BeforeAll
   void seedReplicatedTickets() {
-    if (!jiraTicketRepository.findByScopeSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN).isEmpty()) {
+    var contosoId = customerorderRepository.findIdBySign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN).orElseThrow();
+    if (!jiraTicketRepository.findInScope(contosoId, null).isEmpty()) {
       return;
     }
-    saveTicket(4711L, TICKET_KEY, TICKET_SUMMARY);
-    saveTicket(4712L, OTHER_TICKET_KEY, OTHER_TICKET_SUMMARY);
+    saveTicket(contosoId, 4711L, TICKET_KEY, TICKET_SUMMARY);
+    saveTicket(contosoId, 4712L, OTHER_TICKET_KEY, OTHER_TICKET_SUMMARY);
   }
 
-  private void saveTicket(long jiraId, String key, String summary) {
+  private void saveTicket(long customerorderId, long jiraId, String key, String summary) {
     var ticket = new JiraTicket();
+    ticket.setCustomerorderId(customerorderId);
     ticket.setScopeSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
     ticket.setJiraId(jiraId);
     ticket.setKey(key);

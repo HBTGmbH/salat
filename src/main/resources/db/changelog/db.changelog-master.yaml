@@ -4352,3 +4352,124 @@ databaseChangeLog:
             constraintName: fk_jira_replication_config_suborder
             referencedTableName: suborder
             referencedColumnNames: id
+  - changeSet:
+      id: 121
+      author: kr
+      comment: JIRA-Tickets und Worklogs verweisen ueber die id auf Auftrag und Unterauftrag (#1323)
+      # Der Weg aus Changeset 120 fuer jira_ticket und jira_worklog_sync: customerorder_id und
+      # suborder_id mit Fremdschluessel neben scope_sign, das Reports und ETL-Definitionen weiter
+      # lesen. Die Anwendung loest ueber die ids auf und schreibt scope_sign aus Auftrag bzw.
+      # Unterauftrag; die Spalte folgt einer Umbenennung (JiraScopeSignMirrorListener).
+      #
+      # Uebernommen wird nur eine eindeutige, binaer verglichene Zuordnung, nach derselben Regel wie
+      # fuer die Konfigurationen: ein Auftragskuerzel geht einem gleichlautenden Unterauftragspfad
+      # vor. Aufgeloest werden die verschiedenen Kuerzel, nicht jede Zeile - die View suborder_fqs
+      # ist rekursiv. Tickets und Worklogs, deren Geltungsbereich sich nicht eindeutig aufloesen
+      # laesst, werden geloescht. Die eindeutigen Schluessel auf scope_sign bleiben unveraendert.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_ticket
+                columnName: customerorder_id
+      changes:
+        - addColumn:
+            tableName: jira_ticket
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+              - column:
+                  name: suborder_id
+                  type: bigint
+        - addColumn:
+            tableName: jira_worklog_sync
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+              - column:
+                  name: suborder_id
+                  type: bigint
+        - sql:
+            sql: |-
+              UPDATE jira_ticket t
+                JOIN (SELECT x.scope_sign,
+                             (SELECT MIN(o.id) FROM customerorder o
+                               WHERE BINARY o.sign = BINARY x.scope_sign
+                              HAVING COUNT(*) = 1) AS customerorder_id
+                        FROM (SELECT DISTINCT scope_sign FROM jira_ticket) x) m
+                  ON BINARY m.scope_sign = BINARY t.scope_sign
+                 SET t.customerorder_id = m.customerorder_id;
+              UPDATE jira_ticket t
+                JOIN (SELECT x.scope_sign,
+                             (SELECT MIN(f.suborder_id) FROM suborder_fqs f
+                               WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(x.scope_sign, '/')
+                              HAVING COUNT(*) = 1) AS suborder_id
+                        FROM (SELECT DISTINCT scope_sign FROM jira_ticket WHERE customerorder_id IS NULL) x
+                       WHERE NOT EXISTS (SELECT 1 FROM customerorder o
+                                          WHERE BINARY o.sign = BINARY x.scope_sign)) m
+                  ON BINARY m.scope_sign = BINARY t.scope_sign
+                 SET t.suborder_id = m.suborder_id
+               WHERE t.customerorder_id IS NULL;
+              UPDATE jira_ticket t
+                JOIN suborder s ON s.id = t.suborder_id
+                 SET t.customerorder_id = s.customerorder_id
+               WHERE t.customerorder_id IS NULL;
+              DELETE FROM jira_ticket WHERE customerorder_id IS NULL;
+              UPDATE jira_worklog_sync t
+                JOIN (SELECT x.scope_sign,
+                             (SELECT MIN(o.id) FROM customerorder o
+                               WHERE BINARY o.sign = BINARY x.scope_sign
+                              HAVING COUNT(*) = 1) AS customerorder_id
+                        FROM (SELECT DISTINCT scope_sign FROM jira_worklog_sync) x) m
+                  ON BINARY m.scope_sign = BINARY t.scope_sign
+                 SET t.customerorder_id = m.customerorder_id;
+              UPDATE jira_worklog_sync t
+                JOIN (SELECT x.scope_sign,
+                             (SELECT MIN(f.suborder_id) FROM suborder_fqs f
+                               WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(x.scope_sign, '/')
+                              HAVING COUNT(*) = 1) AS suborder_id
+                        FROM (SELECT DISTINCT scope_sign FROM jira_worklog_sync WHERE customerorder_id IS NULL) x
+                       WHERE NOT EXISTS (SELECT 1 FROM customerorder o
+                                          WHERE BINARY o.sign = BINARY x.scope_sign)) m
+                  ON BINARY m.scope_sign = BINARY t.scope_sign
+                 SET t.suborder_id = m.suborder_id
+               WHERE t.customerorder_id IS NULL;
+              UPDATE jira_worklog_sync t
+                JOIN suborder s ON s.id = t.suborder_id
+                 SET t.customerorder_id = s.customerorder_id
+               WHERE t.customerorder_id IS NULL;
+              DELETE FROM jira_worklog_sync WHERE customerorder_id IS NULL
+        - addNotNullConstraint:
+            tableName: jira_ticket
+            columnName: customerorder_id
+            columnDataType: BIGINT
+        - addNotNullConstraint:
+            tableName: jira_worklog_sync
+            columnName: customerorder_id
+            columnDataType: BIGINT
+        - addForeignKeyConstraint:
+            baseTableName: jira_ticket
+            baseColumnNames: customerorder_id
+            constraintName: fk_jira_ticket_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: jira_ticket
+            baseColumnNames: suborder_id
+            constraintName: fk_jira_ticket_suborder
+            referencedTableName: suborder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: jira_worklog_sync
+            baseColumnNames: customerorder_id
+            constraintName: fk_jira_worklog_sync_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: jira_worklog_sync
+            baseColumnNames: suborder_id
+            constraintName: fk_jira_worklog_sync_suborder
+            referencedTableName: suborder
+            referencedColumnNames: id

@@ -1,6 +1,5 @@
 package de.hbt.salat.jira.service;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +10,6 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraTicketSuggestion;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -45,27 +43,18 @@ public class JiraTicketSuggestionService {
     // and need the suggestions while doing so, so there is deliberately no requireUnrestricted here
     // and none needed there. Reading a suborder by id discloses nothing beyond its sign, and the
     // suborder the booking form offered is one the person may book on anyway.
-    var suborder = suborderService.getSuborderById(suborderId);
-    if (suborder == null) {
+    var location = suborderService.getSuborderLocationsByIds(List.of(suborderId)).get(suborderId);
+    if (location == null) {
       return List.of();
     }
+    // Every scope the branch can carry tickets under (#1323): the customer order for an order-wide
+    // replication, and every suborder on the path from the top level down to the one being booked
+    // on. The order within the path carries no meaning — it becomes an in clause, and what the
+    // suggestions are sorted by is the update timestamp.
     String term = searchTerm == null ? "" : searchTerm.trim();
-    var tickets = jiraTicketRepository
-        .search(scopesOf(suborder), term, PageRequest.of(0, MAX_SUGGESTIONS));
+    var tickets = jiraTicketRepository.search(location.customerorderId(), location.path(), term,
+        PageRequest.of(0, MAX_SUGGESTIONS));
     return deduplicated(tickets);
-  }
-
-  /**
-   * Every scope the branch of this suborder can carry tickets under: the customer order itself for
-   * an order-wide replication, and the fully qualified sign of every suborder on the path up to it,
-   * the one being booked on included. The order within the list carries no meaning — it becomes an
-   * {@code in} clause, and what the suggestions are sorted by is the update timestamp.
-   */
-  private static List<String> scopesOf(Suborder suborder) {
-    var scopes = new ArrayList<String>();
-    scopes.add(suborder.getCustomerorder().getSign());
-    suborder.withParents().forEach(level -> scopes.add(level.getCompleteOrderSign()));
-    return scopes;
   }
 
   /**
