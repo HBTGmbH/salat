@@ -29,4 +29,11 @@ public class EmployeeStatusAuthorities {
         if (isBackoffice) authorities.add(new SimpleGrantedAuthority("ROLE_BACKOFFICE"));
         return authorities;
     }
+
+    /** The roles of the status plus the id of the login they belong to (#1330, {@link LoginIdAuthority}). */
+    public static Collection<GrantedAuthority> from(String status, long userId) {
+        var authorities = new HashSet<>(from(status));
+        authorities.add(new LoginIdAuthority(userId));
+        return authorities;
+    }
 }

@@ -6,7 +6,6 @@ import static de.hbt.salat.auth.domain.AccessLevel.DELETE;
 import static de.hbt.salat.auth.domain.AccessLevel.EXECUTE;
 import static de.hbt.salat.auth.domain.AccessLevel.WRITE;
 
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -88,22 +87,9 @@ class ReportAuthorizationTest {
     assertThat(reportAuthorization.isAuthorized(report(null, "pl"), WRITE)).isTrue();
   }
 
-  @Test
-  void the_owner_of_a_new_record_is_the_login_the_caller_acts_as() {
-    actingAs("pl", OWNER);
-    assertThat(reportAuthorization.ownerForNewRecord()).isEqualTo(OWNER);
-
-    // two logins of the same name: none of them is handed the record
-    when(authService.findUserIds("pl")).thenReturn(Set.of(OWNER, 9L));
-    assertThat(reportAuthorization.ownerForNewRecord()).isNull();
-
-    when(authService.findUserIds("pl")).thenReturn(Set.of());
-    assertThat(reportAuthorization.ownerForNewRecord()).isNull();
-  }
-
   private void actingAs(String loginname, long userId) {
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(loginname);
-    when(authService.findUserIds(loginname)).thenReturn(Set.of(userId));
+    when(authorizedUser.getEffectiveUserId()).thenReturn(userId);
   }
 
   private static ReportDefinition report(Long ownerUserId, String createdby) {

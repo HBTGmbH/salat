@@ -182,11 +182,9 @@ public class LocalDevSecurityConfiguration {
         if (sign == null || sign.isBlank()) {
           throw new UsernameNotFoundException("Missing login-name");
         }
-        String status = authService.getStatusByLoginname(sign);
-        if (status == null) {
-          throw new UsernameNotFoundException("No salat user found for sign: " + sign);
-        }
-        return new User(sign, "N/A", EmployeeStatusAuthorities.from(status));
+        var login = authService.findLogin(sign).filter(user -> user.getStatus() != null)
+            .orElseThrow(() -> new UsernameNotFoundException("No salat user found for sign: " + sign));
+        return new User(sign, "N/A", EmployeeStatusAuthorities.from(login.getStatus(), login.getId()));
     });
     return provider;
   }

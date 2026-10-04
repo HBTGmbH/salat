@@ -148,7 +148,7 @@ public class ReportService {
     var reportDefinition = new ReportDefinition();
     reportDefinition.setName(name);
     reportDefinition.setSql(sql);
-    reportDefinition.setOwnerUserId(reportAuthorization.ownerForNewRecord());
+    reportDefinition.setOwnerUserId(authorizedUser.getEffectiveUserId());
     reportDefinitionRepository.save(reportDefinition);
     return reportDefinition;
   }

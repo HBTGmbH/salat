@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -57,16 +56,23 @@ class ScheduledReportJobServiceTest {
 
   @Test
   void a_people_lead_sees_the_jobs_of_their_login() {
-    when(reportAuthorization.currentUserIds()).thenReturn(Set.of(OWNER));
+    when(authorizedUser.getEffectiveUserId()).thenReturn(OWNER);
     var own = job(1L, OWNER);
-    when(scheduledReportJobRepository.findByOwnerUserIdIn(Set.of(OWNER))).thenReturn(List.of(own));
+    when(scheduledReportJobRepository.findByOwnerUserId(OWNER)).thenReturn(List.of(own));
 
     assertThat(scheduledReportJobService.getAllJobs()).containsExactly(own);
   }
 
   @Test
+  void without_a_login_there_are_no_own_jobs() {
+    when(authorizedUser.getEffectiveUserId()).thenReturn(null);
+
+    assertThat(scheduledReportJobService.getAllJobs()).isEmpty();
+  }
+
+  @Test
   void a_new_job_belongs_to_the_login_it_is_created_under() {
-    when(reportAuthorization.ownerForNewRecord()).thenReturn(OWNER);
+    when(authorizedUser.getEffectiveUserId()).thenReturn(OWNER);
     when(scheduledReportJobRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     var saved = scheduledReportJobService.createJob(new ScheduledReportJob());
