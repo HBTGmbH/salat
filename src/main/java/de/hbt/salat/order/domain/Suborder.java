@@ -121,6 +121,22 @@ public class Suborder extends AuditedEntity implements Serializable {
     @Column(name = "orderType", columnDefinition = "varchar(255)")
     private OrderType orderType;
 
+    /**
+     * Overrides how many ticket references a booking may carry (#1326); {@code null} inherits from the
+     * next suborder above that has a setting, and in the end from the order. Read and written as
+     * {@link #getTicketReferencePolicy()}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ticket_reference_mode", columnDefinition = "varchar(16)")
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private TicketReferenceMode ticketReferenceMode;
+
+    @Column(name = "ticket_reference_limit")
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Integer ticketReferenceLimit;
+
     public void addSuborder(Suborder child) {
         if (suborders == null) {
             suborders = new LinkedList<>();
@@ -360,6 +376,26 @@ public class Suborder extends AuditedEntity implements Serializable {
             }
         }, VisitorDirection.PARENT);
         return result.toString();
+    }
+
+    /** The setting of this suborder itself, {@code null} where it inherits (#1326). */
+    public TicketReferencePolicy getTicketReferencePolicy() {
+        return ticketReferenceMode == null ? null : new TicketReferencePolicy(ticketReferenceMode, ticketReferenceLimit);
+    }
+
+    /** {@code null} lets the suborder inherit again. */
+    public void setTicketReferencePolicy(TicketReferencePolicy policy) {
+        this.ticketReferenceMode = policy != null ? policy.mode() : null;
+        this.ticketReferenceLimit = policy != null ? policy.limit() : null;
+    }
+
+    /**
+     * How many ticket references a booking on this suborder may carry (#1326): its own setting, else
+     * that of the next suborder above with one, else that of the order.
+     */
+    public TicketReferencePolicy getEffectiveTicketReferencePolicy() {
+        var own = getTicketReferencePolicy();
+        return own != null ? own : TicketReferencePolicySource.inheritedBy(customerorder, parentorder).policy();
     }
 
     public OrderType getEffectiveOrderType() {

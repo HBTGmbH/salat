@@ -426,11 +426,14 @@
             <span class="text-secondary small" th:text="${tr.suborderDescription}">Bezeichnung</span>
           </td>
           <td class="booking-task text-truncate" th:title="${tr.taskdescription}" th:text="${tr.taskdescription}">Tätigkeit</td>
-          <td class="d-none d-xl-table-cell text-nowrap">
-            <span th:if="${#strings.isEmpty(tr.ticketReference)}" class="text-secondary">–</span>
-            <span th:unless="${#strings.isEmpty(tr.ticketReference)}"
-                  class="badge bg-secondary-lt d-inline-block text-truncate" style="max-width: 10rem"
-                  th:title="${tr.ticketReference}" th:text="${tr.ticketReference}">TICKET-1</span>
+          <td class="d-none d-xl-table-cell">
+            <span th:if="${#lists.isEmpty(tr.ticketReferences)}" class="text-secondary">–</span>
+            <!--/* several references wrap inside the cell (#1326), each badge still truncated on its own */-->
+            <div th:unless="${#lists.isEmpty(tr.ticketReferences)}" class="d-flex flex-wrap gap-1">
+              <span th:each="reference : ${tr.ticketReferences}"
+                    class="badge bg-secondary-lt d-inline-block text-truncate" style="max-width: 10rem"
+                    th:title="${reference}" th:text="${reference}">TICKET-1</span>
+            </div>
           </td>
           <!--/* Dauer und Ticketnummer tragen in der Anwendung eine Badge — blau die Zeit, grau der
                  Ticketbezug, wie in der Einzeluebersicht. */-->

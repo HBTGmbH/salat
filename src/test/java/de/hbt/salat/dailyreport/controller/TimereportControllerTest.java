@@ -8,6 +8,7 @@ import static de.hbt.salat.dailyreport.controller.TimereportController.trainingD
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 
 /**
  * The decisions the booking form controller makes without touching a service: the default state of
@@ -17,9 +18,9 @@ import org.junit.jupiter.api.Test;
 class TimereportControllerTest {
 
   private static final SuborderOption TRAINING =
-      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false, false);
+      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false, false, TicketReferencePolicy.DEFAULT);
   private static final SuborderOption PROJECT =
-      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false, false);
+      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false, false, TicketReferencePolicy.DEFAULT);
   private static final LocalDate DATE = LocalDate.parse("2026-06-18");
 
   @Test

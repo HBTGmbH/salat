@@ -101,6 +101,12 @@
       </div>
 
       <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{order/ticket-reference-policy :: policyInput(inheritable=true)}"></div>
+        </div>
+      </div>
+
+      <div class="row">
         <div class="col-md-4">
           <salat:textInput th:field="*{description}" th:label="#{main.customerorder.description.text}" required="true" maxlength="255" />
         </div>
@@ -232,6 +238,9 @@
           </option>
         </select>
       </div>
+
+      <small th:if="${inheritedTicketReferenceChanged}"
+             th:replace="~{order/ticket-reference-policy :: inheritedHint(oob=true)}"></small>
 
       <div class="row" id="suborder-dates" th:hx-swap-oob="${datesChanged}">
         <div class="col-md-6">

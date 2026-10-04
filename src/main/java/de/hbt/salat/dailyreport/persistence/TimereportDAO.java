@@ -455,8 +455,8 @@ public class TimereportDAO {
 
     /**
      * The last bookings on this suborder, reduced to what a new booking can take over: comment and
-     * ticket reference (#1029). Distinct over the pair, so the same comment booked against two
-     * tickets is offered twice - the reference is what tells the two apart.
+     * ticket references (#1029, #1326). Distinct over the pair, so the same comment booked against two
+     * tickets is offered twice - the references are what tell the two apart.
      */
     public List<RecentBooking> getRecentBookingsByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
         return timereportRepository.findAll(
@@ -466,7 +466,7 @@ public class TimereportDAO {
                 .and(orderedByCreatedDesc())
         ).stream()
             .filter(tr -> tr.getTaskdescription() != null && !tr.getTaskdescription().isBlank())
-            .map(tr -> new RecentBooking(tr.getTaskdescription().strip(), tr.getTicketReference()))
+            .map(tr -> new RecentBooking(tr.getTaskdescription().strip(), tr.getTicketReferences()))
             .distinct()
             .limit(5)
             .collect(Collectors.toList());
@@ -477,8 +477,8 @@ public class TimereportDAO {
      * (#1017) — across all suborders, so the list can name the order instead of presupposing it.
      *
      * <p>The given day itself stays out: what is booked on it already stands in the list below the
-     * offer. Entries are reduced to the first occurrence of an employee order, a comment and a
-     * ticket reference; since the query hands them over the most recent day first, the duration
+     * offer. Entries are reduced to the first occurrence of an employee order, a comment and the
+     * ticket references; since the query hands them over the most recent day first, the duration
      * that survives is the one last booked.
      */
     public List<PreviousBooking> getPreviousBookingsByEmployeeContractId(long employeecontractId, LocalDate date) {
@@ -502,15 +502,15 @@ public class TimereportDAO {
         return new PreviousBooking(
             timereport.getEmployeeorder().getId(),
             comment == null ? "" : comment.strip(),
-            timereport.getTicketReference(),
+            timereport.getTicketReferences(),
             timereport.getDuration());
     }
 
     /** what makes two offers of {@link #getPreviousBookingsByEmployeeContractId} the same one */
-    private record PreviousBookingKey(long employeeorderId, String comment, String ticketReference) {
+    private record PreviousBookingKey(long employeeorderId, String comment, List<String> ticketReferences) {
 
         static PreviousBookingKey of(PreviousBooking booking) {
-            return new PreviousBookingKey(booking.employeeorderId(), booking.comment(), booking.ticketReference());
+            return new PreviousBookingKey(booking.employeeorderId(), booking.comment(), booking.ticketReferences());
         }
     }
 
@@ -552,7 +552,7 @@ public class TimereportDAO {
             .durationhours(timereport.getDurationhours())
             .durationminutes(timereport.getDurationminutes())
             .taskdescription(timereport.getTaskdescription())
-            .ticketReference(timereport.getTicketReference())
+            .ticketReferences(timereport.getTicketReferences())
             .sequencenumber(timereport.getSequencenumber())
             .training(timereport.isTraining())
             .status(timereport.getStatus())

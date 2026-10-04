@@ -4,6 +4,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +33,17 @@ public class FavoriteDTO implements Serializable {
   @Schema(description = "Kommentar zur Zeitbuchung", example = "API-4511 Entwicklung neuer Features", maxLength = 255)
   private String comment;
 
-  @Schema(description = "Referenz auf ein externes Ticket, optional", example = "PROJ-123", maxLength = 64)
+  /**
+   * The first reference, kept for clients from before #1326. Read: the first of {@link #ticketReferences},
+   * {@code null} without one. Written: the only reference, where {@link #ticketReferences} is missing.
+   */
+  @Schema(description = "Erste Ticket-Referenz, für Clients, die nur eine kennen. Beim Lesen die erste aus "
+      + "ticketReferences oder null; beim Schreiben die einzige Referenz, wenn ticketReferences fehlt.",
+      example = "PROJ-123", maxLength = 64, nullable = true)
   private String ticketReference;
+
+  @Schema(description = "Ticket-Referenzen in ihrer Reihenfolge, je höchstens 64 Zeichen. Ein Ticket-Schlüssel "
+      + "wird in Großbuchstaben gespeichert. Wie viele erlaubt sind, legt der Unterauftrag fest; geprüft wird beim "
+      + "Anwenden des Favoriten.", example = "[\"PROJ-123\", \"PROJ-130\"]", nullable = true)
+  private List<String> ticketReferences;
 }

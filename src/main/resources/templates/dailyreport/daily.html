@@ -430,7 +430,27 @@
                   </div>
                   <!--/* task description: editable or read-only. It carries the weight of the row
                          unless it is empty - then the order is all there is to read (#834). */-->
-                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap">
+                  <!--/* held (#1326): the edited comment names tickets that are no reference yet; the row
+                         keeps the text as typed and offers them, and only the two buttons save */-->
+                  <form th:if="${inlineTicketSuggestion != null and inlineTicketSuggestion.timereportId() == tr.id}"
+                        th:action="@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}" method="post"
+                        th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
+                        hx-target="#daily-bookings-area"
+                        hx-swap="outerHTML">
+                    <textarea class="form-control form-control-sm mb-2" rows="2" style="font-size:1rem; resize:none"
+                              name="taskdescription" th:attr="aria-label=#{main.daily.column.taskdescription}"
+                              th:text="${inlineTicketSuggestion.taskdescription()}"></textarea>
+                    <div th:replace="~{fragments/ticket-suggestions :: suggestionBox(
+                           keys=${inlineTicketSuggestion.keys()},
+                           remaining=${inlineTicketSuggestion.remaining()},
+                           limited=${inlineTicketSuggestion.limited()},
+                           policyText=${inlineTicketSuggestion.policyText()},
+                           small=true,
+                           discardHref=@{/dailyreport/daily(mode='daily',date=${date})})}"></div>
+                  </form>
+                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)
+                               and (inlineTicketSuggestion == null or inlineTicketSuggestion.timereportId() != tr.id)}"
+                       class="inline-edit-wrap">
                     <div class="inline-edit-display"
                          style="white-space:pre-wrap; min-height:1.4em"
                          th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
@@ -1116,11 +1136,11 @@
     <span class="text-truncate"
           th:classappend="${hasComment} ? 'text-muted small' : 'fw-medium'"
           th:title="${fav.label}" th:text="${fav.label}"></span>
-    <span th:if="${not #strings.isEmpty(fav.ticketReference)}"
+    <span th:each="reference : ${fav.ticketReferences}"
           class="badge bg-secondary-lt flex-shrink-0 d-inline-block text-truncate"
           style="max-width:120px"
           th:title="#{main.daily.timereport.ticketreference.title}"
-          th:text="${fav.ticketReference}"></span>
+          th:text="${reference}"></span>
   </div>
 </div>
 
@@ -1136,7 +1156,7 @@
       hx-swap="outerHTML">
   <input type="hidden" name="employeeorderId" th:value="${pb.employeeorderId}"/>
   <input type="hidden" name="comment" th:value="${pb.comment}"/>
-  <input type="hidden" name="ticketReference" th:value="${pb.ticketReference}"/>
+  <input type="hidden" name="ticketReferences" th:each="reference : ${pb.ticketReferences}" th:value="${reference}"/>
   <input type="hidden" name="durationMinutes" th:value="${pb.duration.toMinutes()}"/>
   <input type="hidden" name="date" th:value="${date}"/>
   <button type="submit" data-bs-dismiss="dropdown"
@@ -1162,11 +1182,11 @@
     <span class="text-truncate"
           th:classappend="${hasComment} ? 'text-muted small' : 'fw-medium'"
           th:title="${pb.label}" th:text="${pb.label}"></span>
-    <span th:if="${not #strings.isEmpty(pb.ticketReference)}"
+    <span th:each="reference : ${pb.ticketReferences}"
           class="badge bg-secondary-lt flex-shrink-0 d-inline-block text-truncate"
           style="max-width:120px"
           th:title="#{main.daily.timereport.ticketreference.title}"
-          th:text="${pb.ticketReference}"></span>
+          th:text="${reference}"></span>
   </div>
 </div>
 
@@ -1174,7 +1194,7 @@
   Deleting a favourite (#835). Since #1032 the form posts directly and describes the shared
   confirmation dialog over data-confirm-*; there is no dialog of its own on this page any more.
   The dialog repeats the hierarchy of the list: comment first, order and suborder as the secondary
-  line under it, with the ticket appended — two favourites can differ in it alone (#1029). Why the
+  line under it, with the tickets appended — two favourites can differ in them alone (#1029). Why the
   comment is shortened: FavoriteView.shortComment.
   The form posts through HTMX as the button did before, so the bookings area and the favourites
   panel are swapped in place.
@@ -1187,7 +1207,7 @@
         data-confirm
         th:data-confirm-title="#{main.daily.favourites.delete.modal.title}"
         th:data-confirm-detail="${fav.shortComment}"
-        th:data-confirm-detail-secondary="|${fav.label}${#strings.isEmpty(fav.ticketReference) ? '' : ' · ' + fav.ticketReference}|"
+        th:data-confirm-detail-secondary="|${fav.label}${#lists.isEmpty(fav.ticketReferences) ? '' : ' · ' + fav.ticketReferencesText}|"
         th:data-confirm-label="#{main.daily.delete.modal.confirm}"
         data-confirm-variant="danger">
     <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
@@ -1208,12 +1228,13 @@
 <th:block th:fragment="timereportOrderLines(tr)">
   <div class="text-muted small text-truncate"
        th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
-  <div class="small text-truncate">
-    <span th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></span>
-    <span th:if="${not #strings.isEmpty(tr.ticketReference)}"
-          class="badge bg-secondary-lt ms-1"
+  <div class="small text-truncate" th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
+  <!--/* a line of their own, wrapping (#1326): in the truncated line above a second reference would be cut off */-->
+  <div class="d-flex flex-wrap gap-1 mt-1" th:unless="${#lists.isEmpty(tr.ticketReferences)}">
+    <span th:each="reference : ${tr.ticketReferences}"
+          class="badge bg-secondary-lt"
           th:title="#{main.daily.timereport.ticketreference.title}"
-          th:text="${tr.ticketReference}"></span>
+          th:text="${reference}"></span>
   </div>
 </th:block>
 

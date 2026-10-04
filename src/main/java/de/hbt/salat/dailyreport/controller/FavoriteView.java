@@ -1,14 +1,20 @@
 package de.hbt.salat.dailyreport.controller;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
- * A favourite as the list offers it. {@code ticketReference} is the reference the booking behind it
- * carried (#1029) — two favourites on the same suborder with the same comment differ only in it, so
- * the list has to show it.
+ * A favourite as the list offers it. {@code ticketReferences} are the references the booking behind
+ * it carried (#1029, #1326) — two favourites on the same suborder with the same comment differ only
+ * in them, so the list has to show them.
  */
-record FavoriteView(Long id, String label, String comment, String ticketReference,
+record FavoriteView(Long id, String label, String comment, List<String> ticketReferences,
     Duration duration) {
+
+  /** The references in one line, for the delete confirmation. */
+  public String ticketReferencesText() {
+    return String.join(", ", ticketReferences);
+  }
 
   private static final int SHORT_COMMENT_MAX_LENGTH = 60;
 

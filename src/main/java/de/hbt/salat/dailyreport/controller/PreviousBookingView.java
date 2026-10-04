@@ -1,6 +1,7 @@
 package de.hbt.salat.dailyreport.controller;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * A booking of an earlier day as the dropdown "Vorherige übernehmen" offers it (#1017). It carries
@@ -13,6 +14,6 @@ import java.time.Duration;
  * is being booked.
  */
 record PreviousBookingView(long employeeorderId, String label, String comment,
-    String ticketReference, Duration duration) {
+    List<String> ticketReferences, Duration duration) {
 
 }

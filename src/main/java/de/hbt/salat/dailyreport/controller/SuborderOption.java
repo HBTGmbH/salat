@@ -3,6 +3,7 @@ package de.hbt.salat.dailyreport.controller;
 import java.time.LocalDate;
 import java.util.List;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.order.viewhelper.SuborderLabelViewHelper;
@@ -17,10 +18,11 @@ import de.hbt.salat.order.viewhelper.SuborderLabelViewHelper;
  *                books with what is left of the target of the day (#1214)
  * @param standby whether its order is standby, which is no working time and therefore does not move
  *                the end of the day the form shows for the duration entered (#1263)
+ * @param ticketReferencePolicy how many ticket references a booking on it may carry (#1326)
  */
 public record SuborderOption(Long id, String sign, String description, String label, String subtext,
                              boolean commentNecessary, boolean trainingFlag, boolean absence,
-                             boolean standby) {
+                             boolean standby, TicketReferencePolicy ticketReferencePolicy) {
 
     /**
      * What the contract can book on the day: the suborders of its employee orders valid then. The
@@ -37,7 +39,8 @@ public record SuborderOption(Long id, String sign, String description, String la
                     SuborderLabelViewHelper.of(s.completeOrderSign(), s.shortdescription()),
                     SuborderLabelViewHelper.subtextOfOrder(order), s.commentNecessary(), s.trainingFlag(),
                     order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND,
-                    order.getOrderType() == OrderType.BEREITSCHAFT)))
+                    order.getOrderType() == OrderType.BEREITSCHAFT,
+                    s.ticketReferencePolicy())))
             .toList();
     }
 }

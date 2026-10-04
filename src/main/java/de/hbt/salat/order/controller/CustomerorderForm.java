@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.TicketReferenceMode;
 
 @Getter
 @Setter
@@ -29,5 +30,7 @@ public class CustomerorderForm {
   /** Employee ID as stored in the DB when the edit form was opened; never mutated by the form lifecycle. */
   private Long storedRespContrEmployeeId;
   private OrderType orderType;
+  private TicketReferenceMode ticketReferenceMode;
+  private Integer ticketReferenceLimit;
 
 }

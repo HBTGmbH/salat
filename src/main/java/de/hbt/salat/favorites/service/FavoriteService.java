@@ -1,5 +1,6 @@
 package de.hbt.salat.favorites.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.favorites.domain.Favorite;
 import de.hbt.salat.favorites.persistence.FavoriteRepository;
@@ -30,8 +32,10 @@ public class FavoriteService {
     return favoriteRepository.findById(favoriteId);
   }
 
+  /** Stores the ticket references under the rule a booking stores them under (#1326). */
   public Favorite addFavorite(Favorite favorite) {
     favorite.setEmployeeId(authorizedEmployee.getEmployeeId());
+    favorite.setTicketReferences(new ArrayList<>(TicketReferences.normalize(favorite.getTicketReferences())));
     try {
       return favoriteRepository.save(favorite);
     } catch (DataIntegrityViolationException e) {

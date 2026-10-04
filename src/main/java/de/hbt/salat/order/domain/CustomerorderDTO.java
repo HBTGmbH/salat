@@ -21,5 +21,9 @@ public record CustomerorderDTO(
     String debithours,
     Byte debithoursunit,
     Boolean hide,
-    OrderType orderType
+    OrderType orderType,
+    /** never {@code null} for an order (#1326) */
+    TicketReferenceMode ticketReferenceMode,
+    /** the bound for {@link TicketReferenceMode#LIMITED}, ignored otherwise */
+    Integer ticketReferenceLimit
 ) {}

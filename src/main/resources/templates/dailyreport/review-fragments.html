@@ -337,8 +337,8 @@
 <!--/* Der Kommentar steht ungekuerzt und behaelt seine Zeilenumbrueche: an ihm erkennt man den
        falschen Auftrag (#760). Ein leerer Kommentar ist selbst ein Hinweis und wird benannt. */-->
 <td th:fragment="commentCell(tr)" class="text-break">
-  <span th:unless="${#strings.isEmpty(tr.ticketReference)}" class="badge bg-secondary-lt me-1"
-        th:title="#{main.daily.timereport.ticketreference.title}" th:text="${tr.ticketReference}">PROJ-1</span>
+  <span th:each="reference : ${tr.ticketReferences}" class="badge bg-secondary-lt me-1"
+        th:title="#{main.daily.timereport.ticketreference.title}" th:text="${reference}">PROJ-1</span>
   <span th:if="${tr.training}" class="badge bg-purple-lt me-1" th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
   <span th:if="${tr.standby}" class="badge bg-orange-lt me-1" th:title="#{main.daily.standby.hint}">
     <i class="ti ti-bell me-1" aria-hidden="true"></i><span th:text="#{main.release.review.standby.text}">Bereitschaft</span>

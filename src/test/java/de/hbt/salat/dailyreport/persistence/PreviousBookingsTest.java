@@ -74,7 +74,7 @@ public class PreviousBookingsTest {
     book(employeeorder, DAY.minusDays(1), "Refactoring", "PROJ-123", 1, 30);
 
     assertThat(previousBookings()).containsExactly(new PreviousBooking(
-        employeeorder.getId(), "Refactoring", "PROJ-123", Duration.ofMinutes(90)));
+        employeeorder.getId(), "Refactoring", List.of("PROJ-123"), Duration.ofMinutes(90)));
   }
 
   /** what is booked on the day itself already stands in the list below the offer */
@@ -113,7 +113,7 @@ public class PreviousBookingsTest {
     book(employeeorder, DAY.minusDays(1), "Refactoring", "PROJ-123", 1, 30);
 
     assertThat(previousBookings()).containsExactly(new PreviousBooking(
-        employeeorder.getId(), "Refactoring", "PROJ-123", Duration.ofMinutes(90)));
+        employeeorder.getId(), "Refactoring", List.of("PROJ-123"), Duration.ofMinutes(90)));
   }
 
   @Test
@@ -121,8 +121,8 @@ public class PreviousBookingsTest {
     book(employeeorder, DAY.minusDays(1), "Daily", "PROJ-123", 0, 15);
     book(employeeorder, DAY.minusDays(2), "Daily", "PROJ-456", 0, 15);
 
-    assertThat(previousBookings()).extracting(PreviousBooking::ticketReference)
-        .containsExactly("PROJ-123", "PROJ-456");
+    assertThat(previousBookings()).extracting(PreviousBooking::ticketReferences)
+        .containsExactly(List.of("PROJ-123"), List.of("PROJ-456"));
   }
 
   @Test
@@ -140,7 +140,7 @@ public class PreviousBookingsTest {
     book(employeeorder, DAY.minusDays(1), "", null, 2, 0);
 
     assertThat(previousBookings()).containsExactly(new PreviousBooking(
-        employeeorder.getId(), "", null, Duration.ofHours(2)));
+        employeeorder.getId(), "", List.of(), Duration.ofHours(2)));
   }
 
   @Test
@@ -192,7 +192,7 @@ public class PreviousBookingsTest {
     timereport.setDurationminutes(minutes);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription(comment);
-    timereport.setTicketReference(ticketReference);
+    timereport.setTicketReferences(ticketReference == null ? List.of() : List.of(ticketReference));
     timereport.setTraining(false);
     entityManager.persist(timereport);
     entityManager.flush();

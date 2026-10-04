@@ -20,5 +20,9 @@ public record SuborderDTO(
     String debithours,
     Byte debithoursunit,
     Boolean hide,
-    Long parentId
+    Long parentId,
+    /** {@code null} inherits from above (#1326) */
+    TicketReferenceMode ticketReferenceMode,
+    /** the bound for {@link TicketReferenceMode#LIMITED}, ignored otherwise */
+    Integer ticketReferenceLimit
 ) {}

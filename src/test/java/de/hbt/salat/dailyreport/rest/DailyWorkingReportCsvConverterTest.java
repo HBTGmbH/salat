@@ -14,6 +14,7 @@ import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.D
 import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_EMPLOYEE_ORDER;
 import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_START_BREAK_TIME;
 import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_WITH_TICKET_REFERENCE;
+import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_WITH_TWO_TICKET_REFERENCES;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -338,6 +339,37 @@ class DailyWorkingReportCsvConverterTest {
                 }));
     }
 
+    /* Several references share the column, separated by semicolons (#1326); a blank in a reference stays. */
+    @Test
+    void reads_several_references_separated_by_semicolons() throws IOException {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ERP-1;erp-2; ;otp dev meeting
+            """;
+
+        var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)).reports();
+
+        assertThat(result).singleElement().satisfies(day ->
+            assertThat(day.getDailyReports()).singleElement().satisfies(booking -> {
+                assertThat(booking.getTicketReferences()).containsExactly("ERP-1", "erp-2", "otp dev meeting");
+                assertThat(booking.givenTicketReferences()).containsExactly("ERP-1", "erp-2", "otp dev meeting");
+            }));
+    }
+
+    /* Each reference has to fit the column, not the cell as a whole (#1326). */
+    @Test
+    void checks_the_length_of_each_reference_in_the_cell() {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s;%s
+            """.formatted("A".repeat(60), "X".repeat(65));
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message ->
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_TOO_LONG)));
+    }
+
     /* The length that counts is the one stored: surrounding blanks are trimmed away first. */
     @Test
     void accepts_a_reference_that_only_exceeds_the_length_by_surrounding_blanks() throws IOException {
@@ -433,6 +465,15 @@ class DailyWorkingReportCsvConverterTest {
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,true,
                 """,
                 false
+            ),
+            Arguments.of(
+                List.of(TWO_BOOKINGS_WITH_TWO_TICKET_REFERENCES),
+                """
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign
+                2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1;ERP-2,false,
+                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,
+                """,
+                false
             )
         );
     }
@@ -510,8 +551,18 @@ class DailyWorkingReportCsvConverterTest {
           .startTime(TWO_BOOKINGS.getStartTime())
           .breakDuration(TWO_BOOKINGS.getBreakDuration())
           .dailyReports(List.of(
-              TWO_BOOKINGS.getDailyReports().get(0).withTicketReference("ERP-1"),
-              TWO_BOOKINGS.getDailyReports().get(1).toBuilder().ticketReference("").training(true).build()))
+              TWO_BOOKINGS.getDailyReports().get(0).withTicketReferences(List.of("ERP-1")),
+              TWO_BOOKINGS.getDailyReports().get(1).toBuilder().training(true).build().withTicketReferences(List.of())))
+          .build();
+      /* several references are written into one cell, separated by semicolons (#1326) */
+      static DailyWorkingReportData TWO_BOOKINGS_WITH_TWO_TICKET_REFERENCES = DailyWorkingReportData.builder()
+          .type(TWO_BOOKINGS.getType())
+          .date(TWO_BOOKINGS.getDate())
+          .startTime(TWO_BOOKINGS.getStartTime())
+          .breakDuration(TWO_BOOKINGS.getBreakDuration())
+          .dailyReports(List.of(
+              TWO_BOOKINGS.getDailyReports().get(0).withTicketReferences(List.of("ERP-1", "ERP-2")),
+              TWO_BOOKINGS.getDailyReports().get(1)))
           .build();
         static DailyWorkingReportData TWO_BOOKINGS_NO_START_BREAK_TIME = DailyWorkingReportData.builder()
             .type(Workingday.WorkingDayType.WORKED)

@@ -4,6 +4,7 @@ import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.AbstractQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
@@ -62,7 +63,7 @@ public class TimereportListDAO {
     root.fetch(Timereport_.employeecontract).fetch(Employeecontract_.employee);
     root.fetch(Timereport_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
     root.fetch(Timereport_.employeeorder);
-    query.where(conditions(filter, visibility, root, builder));
+    query.where(conditions(filter, visibility, query, root, builder));
     query.orderBy(orderBy(filter, root, builder));
 
     var typed = entityManager.createQuery(query);
@@ -127,7 +128,7 @@ public class TimereportListDAO {
         builder.sum(billableMinutes),
         builder.countDistinct(root.join(Timereport_.employeecontract).join(Employeecontract_.employee)),
         builder.countDistinct(suborder.join(Suborder_.customerorder)));
-    query.where(conditions(filter, visibility, root, builder));
+    query.where(conditions(filter, visibility, query, root, builder));
 
     var row = entityManager.createQuery(query).getSingleResult();
     return new Totals(
@@ -196,7 +197,7 @@ public class TimereportListDAO {
   }
 
   private Predicate conditions(TimereportListFilter filter, TimereportVisibility visibility,
-      Root<Timereport> root, CriteriaBuilder builder) {
+      AbstractQuery<?> query, Root<Timereport> root, CriteriaBuilder builder) {
 
     var predicates = new ArrayList<Predicate>();
     predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
@@ -231,8 +232,13 @@ public class TimereportListDAO {
       }
       predicates.add(builder.or(alternatives.toArray(Predicate[]::new)));
     }
+    // a booking is found through any of its references (#1326); exists rather than a join, so a booking
+    // with two of the sought tickets is still one hit
     if (!filter.ticketKeys().isEmpty()) {
-      predicates.add(builder.upper(root.get(Timereport_.ticketReference)).in(filter.ticketKeys()));
+      var references = query.subquery(Integer.class);
+      var reference = references.correlate(root).join(Timereport_.ticketReferences);
+      references.select(builder.literal(1)).where(builder.upper(reference).in(filter.ticketKeys()));
+      predicates.add(builder.exists(references));
     }
     switch (filter.billable()) {
       case BILLABLE -> predicates.add(builder.equal(dimensions.invoice(), YESNO_YES));

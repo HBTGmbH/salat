@@ -25,7 +25,9 @@
           <input type="hidden" th:if="${timereportForm.id == null and timereportForm.employeecontractId != null}"
                  th:field="*{employeecontractId}"/>
           <input type="hidden" th:field="*{durationMode}" id="durationModeField"/>
-          <input type="hidden" id="saveAsFavField" name="saveAsFavorite" value="false"/>
+          <!--/* th:value: a save held for the ticket proposals (#1326) renders the form again and must
+                 not forget that it was meant to save a favourite as well */-->
+          <input type="hidden" id="saveAsFavField" name="saveAsFavorite" th:value="${timereportForm.saveAsFavorite}"/>
           <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
 
           <div class="card-body">
@@ -154,33 +156,50 @@
                       hx-swap="outerHTML"
                       hx-trigger="change">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
+                <!--/* th:with: th:attr reaches no bean (AGENTS.md, "Globally Accessible Objects") */-->
                 <option th:each="s : ${suborders}"
+                        th:with="ticketPolicyText=${@ticketReferencePolicyViewHelper.label(s.ticketReferencePolicy)}"
                         th:value="${s.id}"
                         th:text="${s.label}"
-                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby}"
+                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby},
+                                 data-ticket-mode=${s.ticketReferencePolicy.mode().name()},data-ticket-limit=${s.ticketReferencePolicy.limit()},
+                                 data-ticket-policy-text=${ticketPolicyText}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
             </div>
 
-            <!--/* Ticket reference (#982): free text, with suggestions from the tickets replicated for
-                   the branch of the selected suborder (#1025) — the suborder itself, its parents and
-                   the order-wide replication. Stored is the number alone. Sits above the comment:
-                   picking a ticket writes its title into an untouched comment, so it is read before
-                   it. The select itself is the context: the endpoint takes the id and resolves the
-                   branch on the server, so no sign travels through the browser. */-->
-            <div class="mb-3">
-              <label class="form-label" for="ticketReference"
-                     th:text="#{main.timereport.form.ticketreference.label}">Ticket</label>
-              <input type="text" class="form-control tomselect" id="ticketReference"
-                     th:field="*{ticketReference}" maxlength="64"
-                     data-remote-url="/jira/tickets/suggestions"
-                     data-remote-context-field="#suborderId"
-                     data-remote-context-param="suborderId"
-                     data-fill-target="#commentField"
-                     th:attr="data-create-label=#{main.timereport.form.ticketreference.create},
-                              placeholder=#{main.timereport.form.ticketreference.placeholder}"/>
-              <small class="form-text text-muted mt-1"
+            <!--/* Ticket references (#982, #1326): free text, with suggestions from the tickets replicated
+                   for the branch of the selected suborder (#1025) — the suborder itself, its parents and
+                   the order-wide replication. Stored is the number alone, and a chip shows only that.
+                   How many the field takes is the suborder's setting: no field at all for "none", a
+                   bound for "at most" — the options of the suborder select carry it, and
+                   setTicketReferenceLimit() follows a change. Sits above the comment: picking a ticket
+                   writes its title into an untouched comment, so it is read before it. The select itself
+                   is the context: the endpoint takes the id and resolves the branch on the server, so no
+                   sign travels through the browser. */-->
+            <div class="mb-3" id="ticketReferencesBlock"
+                 th:with="policy=${ticketReferencePolicy}"
+                 th:classappend="${policy != null and !policy.allowsAny() and #lists.isEmpty(timereportForm.ticketReferences)} ? 'd-none' : ''">
+              <label class="form-label" for="ticketReferences">
+                <span th:text="#{main.timereport.form.ticketreference.label}">Ticket</span>
+                <span class="text-secondary fw-normal" id="ticketReferencesLimit"
+                      th:text="${policy != null and policy.allowsAny()} ? '(' + ${@ticketReferencePolicyViewHelper.label(policy)} + ')' : ''"></span>
+              </label>
+              <select class="form-select tomselect tomselect-multi" id="ticketReferences" name="ticketReferences" multiple
+                      data-remote-url="/jira/tickets/suggestions"
+                      data-remote-context-field="#suborderId"
+                      data-remote-context-param="suborderId"
+                      data-fill-target="#commentField"
+                      th:attr="data-create-label=#{main.timereport.form.ticketreference.create},
+                               data-max-items=${policy != null and policy.mode().name() == 'LIMITED'} ? ${policy.limit()} : null,
+                               placeholder=#{main.timereport.form.ticketreference.placeholder}">
+                <option th:each="reference : ${timereportForm.ticketReferences}"
+                        th:value="${reference}" th:text="${reference}" selected></option>
+              </select>
+              <small class="form-text text-muted mt-1" id="ticketReferencesHelp"
+                     th:attr="data-help=#{main.timereport.form.ticketreference.help},
+                              data-over-limit=#{main.timereport.form.ticketreference.overlimit}"
                      th:text="#{main.timereport.form.ticketreference.help}"></small>
             </div>
 
@@ -197,6 +216,29 @@
                                  data-entry-focus=${entryFocus != null and entryFocus.name() == 'COMMENT'} ? 'true' : null"
                         th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>
             </div>
+
+            <!--/* Saving held (#1326): the comment names ticket keys that are no reference yet. The
+                   answer submits the form again with everything it held before - "Speichern und neu"
+                   and the colleagues to share with come along as hidden fields, because they are
+                   request parameters and not part of the form object. */-->
+            <!--/* th:with: the parameters of a fragment reach no bean, like th:attr */-->
+            <th:block th:if="${ticketSuggestions != null}"
+                      th:with="suggestionPolicyText=${@ticketReferencePolicyViewHelper.label(ticketReferencePolicy)},
+                               suggestionRemaining=${ticketReferencePolicy.remaining(#lists.size(timereportForm.ticketReferences))},
+                               suggestionLimited=${!ticketReferencePolicy.isUnlimited()}">
+              <div th:replace="~{fragments/ticket-suggestions :: suggestionBox(
+                     keys=${ticketSuggestions},
+                     remaining=${suggestionRemaining},
+                     limited=${suggestionLimited},
+                     policyText=${suggestionPolicyText},
+                     small=false, discardHref=null)}"></div>
+              <input type="hidden" name="saveAndNew" value="true" th:if="${pendingSaveAndNew}"/>
+              <th:block th:unless="${#lists.isEmpty(pendingShareRecipientIds)}">
+                <input type="hidden" name="shareWithColleagues" value="true"/>
+                <input type="hidden" name="recipientUserIds" th:each="recipientId : ${pendingShareRecipientIds}"
+                       th:value="${recipientId}"/>
+              </th:block>
+            </th:block>
 
             <!-- Training -->
             <div class="mb-3">
@@ -249,7 +291,9 @@
           <div class="card-footer d-flex flex-wrap gap-2">
             <!--/* data-submit-shortcut: Ctrl+Enter bzw. ⌘Enter speichert von jedem Feld des
                    Formulars aus, auch aus dem Kommentar (#1016) */-->
+            <!--/* while the ticket proposals are open, only their two buttons save (#1326) */-->
             <button type="submit" class="btn btn-primary" data-submit-shortcut
+                    th:disabled="${ticketSuggestions != null}"
                     th:attr="data-entry-focus=${entryFocus != null and entryFocus.name() == 'SAVE'} ? 'true' : null">
               <i class="ti ti-device-floppy me-1"></i>
               <span th:text="#{main.timereport.form.save}">Speichern</span>
@@ -257,12 +301,13 @@
             <!--/* #843: a named submit button, so the server can tell the two save actions apart
                    without a hidden field. Enter still triggers plain "Speichern" (the first one). */-->
             <button type="submit" class="btn btn-outline-primary" th:unless="${isEdit}"
-                    name="saveAndNew" value="true"
+                    name="saveAndNew" value="true" th:disabled="${ticketSuggestions != null}"
                     th:title="#{main.timereport.form.saveandnew.tooltip}">
               <i class="ti ti-clock-plus me-1"></i>
               <span th:text="#{main.timereport.form.saveandnew}">Speichern und neu</span>
             </button>
-            <button type="button" class="btn btn-outline-secondary" onclick="toggleSaveAsFav()">
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleSaveAsFav()"
+                    th:disabled="${ticketSuggestions != null}">
               <i class="ti ti-star me-1"></i>
               <span th:text="#{main.timereport.form.savefav.button}">Als Favorit speichern</span>
             </button>
@@ -345,11 +390,12 @@
           </div>
         </div>
 
-        <!--/* Recent comments. Each entry brings the ticket reference of the booking its comment
-               comes from (#1029) - on the same suborder that is as a rule exactly the fitting one.
-               The reference is the subtext, the same shape the ticket field gives its suggestions:
-               with the pair, the same comment can appear twice and only the reference tells the two
-               entries apart. */-->
+        <!--/* Recent comments. Each entry brings the ticket references of the booking its comment
+               comes from (#1029, #1326) - on the same suborder that is as a rule exactly the fitting
+               ones. They are the subtext, the same shape the ticket field gives its suggestions: with
+               the pair, the same comment can appear twice and only the references tell the two
+               entries apart. Each reference rides along as a data-ticket element of its own, so that
+               no separator has to be agreed on. */-->
         <div class="card" th:if="${timereportForm.suborderId != null and not #lists.isEmpty(recentBookings)}">
           <div class="card-header">
             <h3 class="card-title" th:text="#{main.timereport.sidebar.recentcomments.title}">Letzte Kommentare</h3>
@@ -358,12 +404,13 @@
             <button type="button"
                     class="list-group-item list-group-item-action text-start py-2 px-3"
                     th:each="rb : ${recentBookings}"
-                    th:attr="data-comment=${rb.comment},data-ticket=${rb.ticketReference}"
+                    th:attr="data-comment=${rb.comment}"
                     onclick="applyRecentBooking(this)">
               <span style="white-space: pre-wrap" th:text="${rb.comment}"></span>
-              <small th:if="${not #strings.isEmpty(rb.ticketReference)}"
+              <small th:unless="${#lists.isEmpty(rb.ticketReferences)}"
                      class="d-block text-muted text-truncate mt-1"
-                     th:text="${rb.ticketReference}"></small>
+                     th:text="${#strings.listJoin(rb.ticketReferences, ', ')}"></small>
+              <span hidden th:each="reference : ${rb.ticketReferences}" data-ticket th:text="${reference}"></span>
             </button>
           </div>
           <div class="card-footer text-muted small" th:text="#{main.timereport.sidebar.recentcomments.hint}"></div>
@@ -407,10 +454,11 @@
       e.preventDefault();
       document.getElementById('serialSection').classList.toggle('d-none');
     }
-    // #1029: an entry of the recent comments card carries the ticket reference of the booking its
+    // #1029: an entry of the recent comments card carries the ticket references of the booking its
     // comment comes from and fills both fields. The comment is overwritten unconditionally, as it
-    // always was. An entry without a reference leaves the ticket field alone - emptying it would
-    // discard a ticket just chosen without being asked to.
+    // always was. An entry with references replaces those in the field (#1326) - comment and
+    // references belong together, like the comment they replace; an entry without one leaves the
+    // field alone - emptying it would discard a ticket just chosen without being asked to.
     function applyRecentBooking(btn) {
       var ta = document.querySelector('textarea[name="comment"]');
       if (ta) {
@@ -420,18 +468,49 @@
         delete ta.salatAutoFilled;
         ta.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      var ticket = btn.dataset.ticket;
-      if (!ticket) return;
-      var field = document.getElementById('ticketReference');
-      if (!field) return;
-      // TomSelect ignores a value that is not one of its options, so the reference is added as one
-      // before it is selected; writing field.value alone would leave the widget empty
-      if (field.tomselect) {
+      var field = document.getElementById('ticketReferences');
+      var tickets = btn.querySelectorAll('[data-ticket]');
+      if (!field || !field.tomselect || tickets.length === 0) return;
+      field.tomselect.clear(true);
+      // TomSelect ignores a value that is not one of its options, so each reference is added as one
+      // before it is selected
+      tickets.forEach(function (el) {
+        var ticket = el.textContent;
         field.tomselect.addOption({ value: ticket });
         field.tomselect.addItem(ticket, true);
-      } else {
-        field.value = ticket;
-      }
+      });
+      updateTicketReferenceHelp();
+    }
+    // #1326: how many references the field takes is the setting of the selected suborder, which its
+    // option carries. "None" hides the field - unless the booking still has references, which then
+    // have to be removed before it saves. A field holding more than the bound says so; saving would
+    // refuse it with the same number.
+    function setTicketReferenceLimit() {
+      var sel = document.getElementById('suborderId');
+      var block = document.getElementById('ticketReferencesBlock');
+      var field = document.getElementById('ticketReferences');
+      if (!sel || !block || !field || !field.tomselect) return;
+      var opt = sel.options[sel.selectedIndex];
+      var mode = opt ? opt.dataset.ticketMode : null;
+      var ts = field.tomselect;
+      ts.settings.maxItems = mode === 'LIMITED' ? Number(opt.dataset.ticketLimit) : null;
+      block.classList.toggle('d-none', mode === 'NONE' && ts.items.length === 0);
+      document.getElementById('ticketReferencesLimit').textContent =
+        mode && mode !== 'NONE' ? '(' + opt.dataset.ticketPolicyText + ')' : '';
+      ts.refreshState();
+      updateTicketReferenceHelp();
+    }
+    function updateTicketReferenceHelp() {
+      var help = document.getElementById('ticketReferencesHelp');
+      var field = document.getElementById('ticketReferences');
+      if (!help || !field || !field.tomselect) return;
+      var max = field.tomselect.settings.maxItems;
+      var mode = document.getElementById('suborderId')?.selectedOptions[0]?.dataset.ticketMode;
+      var allowed = mode === 'NONE' ? 0 : max;
+      var over = allowed !== null && allowed !== undefined && field.tomselect.items.length > allowed;
+      help.classList.toggle('text-danger', over);
+      help.classList.toggle('text-muted', !over);
+      help.textContent = over ? help.dataset.overLimit : help.dataset.help;
     }
     function updateCommentRequired() {
       var sel = document.getElementById('suborderId');
@@ -497,7 +576,7 @@
     // only the loaded list to throw away. The entered reference is deliberately left alone: it is
     // free text and may well fit the new suborder.
     function clearTicketSuggestions() {
-      document.getElementById('ticketReference')?.tomselect?.clearOptions();
+      document.getElementById('ticketReferences')?.tomselect?.clearOptions();
     }
     document.addEventListener('DOMContentLoaded', function() {
       var sel = document.getElementById('suborderId');
@@ -507,7 +586,10 @@
         sel.addEventListener('change', rememberChosenSuborder);
         sel.addEventListener('change', applyAbsenceDuration);
         sel.addEventListener('change', clearTicketSuggestions);
+        sel.addEventListener('change', setTicketReferenceLimit);
       }
+      document.getElementById('ticketReferences')?.tomselect?.on('change', updateTicketReferenceHelp);
+      updateTicketReferenceHelp();
       if (sel && sel.dataset.preselectedByDefault !== 'true') chosenSuborderId = sel.value;
       document.getElementById('beginTimeInput').addEventListener('change', applyAbsenceDuration);
       updateCommentRequired();
@@ -522,9 +604,12 @@
         sel.addEventListener('change', rememberChosenSuborder);
         sel.addEventListener('change', applyAbsenceDuration);
         sel.addEventListener('change', clearTicketSuggestions);
+        sel.addEventListener('change', setTicketReferenceLimit);
       }
       updateCommentRequired();
       applyAbsenceDuration();
+      // the swapped select may have fallen back to another suborder with another setting
+      setTicketReferenceLimit();
     });
     function updateDurationBadge() {
       // parseTimeValue (salat.js) also understands the half-typed values a text field produces

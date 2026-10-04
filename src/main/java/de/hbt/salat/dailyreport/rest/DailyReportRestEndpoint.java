@@ -199,7 +199,7 @@ public class DailyReportRestEndpoint {
     @PutMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
     @ResponseStatus(CREATED)
     @Operation(summary = "Aktualisiert mehrere Zeitbuchungen", 
-              description = "Aktualisiert mehrere Zeitbuchungen, gruppiert nach Datum und Mitarbeiterauftrag. Bestehende Buchungen für die gleiche Kombination aus Datum und Mitarbeiterauftrag werden gelöscht und durch die neuen ersetzt. Eine Buchung ohne ticketReference übernimmt die Referenz einer bestehenden Buchung, der sie bis auf die Referenz gleicht. Der Benutzer muss authentifiziert sein und Zugriffsrechte für die zugehörigen Mitarbeiteraufträge haben.",
+              description = "Aktualisiert mehrere Zeitbuchungen, gruppiert nach Datum und Mitarbeiterauftrag. Bestehende Buchungen für die gleiche Kombination aus Datum und Mitarbeiterauftrag werden gelöscht und durch die neuen ersetzt. Eine Buchung ohne ticketReferences und ticketReference übernimmt die Referenzen einer bestehenden Buchung, der sie bis auf die Referenzen gleicht. Der Benutzer muss authentifiziert sein und Zugriffsrechte für die zugehörigen Mitarbeiteraufträge haben.",
               responses = {
                   @ApiResponse(responseCode = "201", description = "Zeitbuchungen erfolgreich aktualisiert"),
                   @ApiResponse(responseCode = "400", description = "Ungültige Daten oder Geschäftsregel verletzt"),
@@ -255,7 +255,7 @@ public class DailyReportRestEndpoint {
                 employeeorder.getId(),
                 DateUtils.parse(booking.getDate()),
                 booking.getComment(),
-                booking.getTicketReference(),
+                booking.givenTicketReferences(),
                 booking.isTraining(),
                 booking.getHours(),
                 booking.getMinutes(),

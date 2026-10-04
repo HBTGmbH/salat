@@ -146,6 +146,14 @@ const removeButtonOptions = () => ({
   },
 });
 
+/* Wie die Anwendung eine Ticket-Referenz speichert (#1326, TicketReferences): ohne umgebende
+ * Leerzeichen, ein Ticket-Schluessel in Grossbuchstaben, alles andere wie getippt. */
+const TICKET_KEY = /^[A-Za-z][A-Za-z0-9_]+-[0-9]+$/;
+function normalizeTicketReference(value) {
+  const trimmed = (value || '').trim();
+  return TICKET_KEY.test(trimmed) ? trimmed.toUpperCase() : trimmed;
+}
+
 const tomSelectConfig = (el) => {
   // a remote field is an <input>, which has no options at all
   const hasSubtext = Array.from(el.options || []).some(opt => opt.dataset.subtext);
@@ -176,7 +184,9 @@ const tomSelectConfig = (el) => {
   };
 
   // Free text field with suggestions fetched while typing (#982). The typed text always wins: the
-  // list is a convenience, and a value that matches nothing on the server is kept as entered.
+  // list is a convenience, and a value that matches nothing on the server is kept as entered. As a
+  // <select multiple> it takes several values (#1326), each submitted on its own; data-max-items
+  // bounds them, and the form changes the bound with the suborder (setTicketReferenceLimit).
   if (remoteUrl) {
     const contextField = el.dataset.remoteContextField || null;
     const contextParam = el.dataset.remoteContextParam || null;
@@ -185,16 +195,20 @@ const tomSelectConfig = (el) => {
     const context = () => (contextField ? (document.querySelector(contextField)?.value || '') : '');
 
     Object.assign(config, {
-      create: true,
+      // a typed ticket key is stored in capitals (#1326) - shown that way right away
+      create: input => {
+        const value = normalizeTicketReference(input);
+        return { value, text: value };
+      },
       createOnBlur: true,
       persist: false,
-      maxItems: 1,
+      maxItems: multi ? (el.dataset.maxItems ? Number(el.dataset.maxItems) : null) : 1,
       valueField: 'value',
       labelField: 'value',
       searchField: ['value', 'subtext'],
       // the dropdown_input plugin would put the typing into a second field above the list; here the
       // control itself is the text field
-      plugins: [],
+      plugins: multi ? { remove_button: removeButtonOptions() } : [],
       // without a context there is nothing to search in — an order without replicated tickets stays
       // a plain text field
       shouldLoad: () => !!context(),
@@ -209,8 +223,10 @@ const tomSelectConfig = (el) => {
           .catch(() => callback([]));
       },
       onInitialize() {
-        // an existing booking opens with its stored reference; only the number is stored, so there
-        // is no title to show for it yet
+        // an existing booking opens with its stored references, which a <select> brings as its
+        // selected options; an <input> carries its one reference as value. Only the number is
+        // stored, so there is no title to show for it yet
+        if (el.tagName === 'SELECT') return;
         const initial = el.getAttribute('value') || '';
         if (initial) {
           this.addOption({ value: initial });
@@ -2845,4 +2861,49 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-submit-shortcut]').forEach(function (button) {
     button.setAttribute('aria-keyshortcuts', IS_MAC ? 'Meta+Enter' : 'Control+Enter');
   });
+});
+
+/* Wie viele Ticket-Referenzen eine Buchung tragen darf (#1326): das Zahlenfeld gilt nur fuer
+ * "hoechstens" und steht nur dann da. Ein leeres Feld beginnt bei 1, damit "hoechstens" nicht ohne
+ * Zahl abgeschickt wird. */
+document.addEventListener('change', function (event) {
+  const select = event.target.closest && event.target.closest('select[data-ticket-limit-toggle]');
+  if (!select) return;
+  const field = document.querySelector(select.dataset.ticketLimitToggle);
+  if (!field) return;
+  const limited = select.value === 'LIMITED';
+  field.classList.toggle('d-none', !limited);
+  const input = field.querySelector('input');
+  if (limited && input && !input.value) input.value = '1';
+});
+
+/* Ticket-Schluessel aus dem Kommentar, die beim Speichern als Referenz angeboten werden (#1326),
+ * im Buchungsformular wie in der Inline-Bearbeitung der Tagesansicht. Angehakt werden darf, was der
+ * Unterauftrag noch zulaesst (data-remaining); die uebrigen Kaestchen sperren sich, sobald das
+ * erreicht ist. Der Knopf zum Uebernehmen nennt die Anzahl und bleibt ohne Haken gesperrt. */
+function syncTicketSuggestions(box) {
+  const remaining = box.dataset.remaining ? Number(box.dataset.remaining) : Infinity;
+  const boxes = Array.from(box.querySelectorAll('input[type="checkbox"]'));
+  const checked = boxes.filter(b => b.checked).length;
+  boxes.forEach(b => {
+    b.disabled = !b.checked && checked >= remaining;
+    b.closest('label').title = b.disabled ? (box.dataset.limitReachedTitle || '') : '';
+  });
+  const adopt = box.querySelector('[data-adopt-button]');
+  if (!adopt) return;
+  adopt.disabled = checked === 0;
+  adopt.textContent = checked === 0 ? adopt.dataset.labelNone
+    : checked === 1 ? adopt.dataset.labelOne
+    : adopt.dataset.labelMany.replace('{0}', checked);
+}
+
+document.addEventListener('change', function (event) {
+  const box = event.target.closest && event.target.closest('[data-ticket-suggestions]');
+  if (box) syncTicketSuggestions(box);
+});
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-ticket-suggestions]').forEach(syncTicketSuggestions);
+});
+document.addEventListener('htmx:after:swap', function () {
+  document.querySelectorAll('[data-ticket-suggestions]').forEach(syncTicketSuggestions);
 });

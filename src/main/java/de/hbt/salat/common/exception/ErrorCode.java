@@ -35,6 +35,7 @@ public enum ErrorCode {
   CO_NOT_FOUND("CO-0005", "customer order was not found"),
   CO_SIGN_TAKEN("CO-0006", "another customer order already has this sign"),
   CO_SPECIAL_ORDER_LOCKED("CO-0007", "the configuration names this customer order as a special order; its sign is locked"),
+  CO_TICKET_REFERENCE_LIMIT_INVALID("CO-0008", "an upper limit of ticket references per booking must be at least 1"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
@@ -70,6 +71,7 @@ public enum ErrorCode {
   SO_PARENTORDER_INVALID("SO-0005", "parent suborder does not exist or belongs to another customer order"),
   SO_SIGN_TAKEN("SO-0006", "a sibling suborder already has this sign"),
   SO_SPECIAL_ORDER_LOCKED("SO-0007", "the configuration names this suborder, or one below it, as a special order; its complete sign is locked"),
+  SO_TICKET_REFERENCE_LIMIT_INVALID("SO-0008", "an upper limit of ticket references per booking must be at least 1"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
@@ -114,6 +116,9 @@ public enum ErrorCode {
   TR_CSV_LINE_REJECTED("TR-0045", "a line of the uploaded CSV file names a booking that cannot be assigned"),
   TR_MOVE_ACCEPTED_REQ_ADMIN("TR-0046", "the range contains accepted time reports, which only admins may move"),
   TR_SUCCEEDED_CONTRACT_NOT_SELF("TR-0047", "own time reports of an ended contract cannot be changed once a later contract has been released"),
+  TR_TICKET_REFERENCE_DUPLICATE("TR-0048", "a ticket reference occurs more than once on the booking"),
+  TR_TICKET_REFERENCES_NOT_ALLOWED("TR-0049", "the suborder of the booking allows no ticket references"),
+  TR_TICKET_REFERENCES_EXCEED_LIMIT("TR-0050", "the booking has more ticket references than its suborder allows"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

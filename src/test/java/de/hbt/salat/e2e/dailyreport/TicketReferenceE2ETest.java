@@ -17,7 +17,7 @@ import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
 
 /**
- * The optional ticket reference on a booking (#982): free text, with the tickets replicated for the
+ * The optional ticket references on a booking (#982, #1326): free text, with the tickets replicated for the
  * branch of the selected suborder offered while typing (#1025). Picking one stores its number and
  * writes number and title into an untouched comment - a comment somebody typed themselves stays as
  * it is.
@@ -31,6 +31,7 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
 
   private static final LocalDate DAY = LocalDate.parse("2026-06-30");
   private static final LocalDate OTHER_DAY = LocalDate.parse("2026-07-01");
+  private static final LocalDate PROPOSAL_DAY = LocalDate.parse("2026-07-02");
   private static final String TICKET_KEY = "ALPHA-4711";
   private static final String TICKET_SUMMARY = "Anmeldung schlägt bei langen Namen fehl";
   private static final String OTHER_TICKET_KEY = "ALPHA-4712";
@@ -122,7 +123,7 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
       selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
 
       ticketReferenceControl(page).click();
-      page.locator("#ticketReference-ts-control").pressSequentially("EXTERN-99");
+      page.locator("#ticketReferences-ts-control").pressSequentially("EXTERN-99");
       // leaving the field is what turns the typed text into the value
       page.locator("#commentField").click();
 
@@ -132,18 +133,49 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * #1326: a booking takes several references, and keys named in the comment are offered when saving.
+   * Nothing is ticked in advance; the ticked one is added behind the picked reference.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void keys_in_the_comment_are_offered_on_saving_and_the_ticked_ones_adopted(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(PROPOSAL_DAY), page -> {
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+      pickTicketSuggestion(page, TICKET_KEY);
+      page.fill("#commentField", "Vorschlag " + browser + ": Folgefehler in beta-17 und GAMMA-3");
+      page.fill("#durationTime", "00:30");
+      page.click("#timereportMainForm button[data-submit-shortcut]");
+
+      var proposal = page.locator("[data-ticket-suggestions]");
+      assertThat(proposal).isVisible();
+      assertThat(proposal.locator("input[type=checkbox]")).hasCount(2);
+      assertThat(proposal.locator("input[value='BETA-17']")).not().isChecked();
+      assertThat(page.locator("#timereportMainForm button[data-submit-shortcut]")).isDisabled();
+
+      proposal.locator("input[value='BETA-17']").check();
+      proposal.locator("[data-adopt-button]").click();
+
+      var row = page.locator("#daily-bookings-area tbody tr").filter(new Locator.FilterOptions()
+          .setHasText("Vorschlag " + browser));
+      assertThat(row.locator(".badge").filter(new Locator.FilterOptions().setHasText(TICKET_KEY)).first()).isVisible();
+      assertThat(row.locator(".badge").filter(new Locator.FilterOptions().setHasText("BETA-17")).first()).isVisible();
+      assertThat(row.locator(".badge").filter(new Locator.FilterOptions().setHasText("GAMMA-3"))).hasCount(0);
+    });
+  }
+
   private String bookingFormPath(LocalDate day) {
     return "/dailyreport/timereports/new?date=" + day;
   }
 
   private Locator ticketReferenceControl(Page page) {
-    return page.locator("#ticketReference ~ .ts-wrapper .ts-control");
+    return page.locator("#ticketReferences ~ .ts-wrapper .ts-control");
   }
 
   private void pickTicketSuggestion(Page page, String key) {
     ticketReferenceControl(page).click();
-    page.locator("#ticketReference-ts-control").pressSequentially(key);
-    page.locator("#ticketReference ~ .ts-wrapper .ts-dropdown .option")
+    page.locator("#ticketReferences-ts-control").pressSequentially(key);
+    page.locator("#ticketReferences ~ .ts-wrapper .ts-dropdown .option")
         .filter(new Locator.FilterOptions().setHasText(key))
         .first()
         .click();

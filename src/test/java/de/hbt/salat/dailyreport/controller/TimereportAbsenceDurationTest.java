@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.customer.domain.Customer;
@@ -114,11 +115,11 @@ class TimereportAbsenceDurationTest {
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(eq(CONTRACT_ID), any()))
         .thenReturn(List.of(sick, project, standby));
     when(suborderService.getSuborderSummaries(eq(CONTRACT_ID), eq(SICK_ORDER_ID), any()))
-        .thenReturn(List.of(new SuborderSummary(SICK_SUBORDER_ID, "KRANK/Krankheit", "Krankheit", false, false)));
+        .thenReturn(List.of(new SuborderSummary(SICK_SUBORDER_ID, "KRANK/Krankheit", "Krankheit", false, false, TicketReferencePolicy.DEFAULT)));
     when(suborderService.getSuborderSummaries(eq(CONTRACT_ID), eq(PROJECT_ORDER_ID), any()))
-        .thenReturn(List.of(new SuborderSummary(PROJECT_SUBORDER_ID, "ALPHA-DEV", "Entwicklung", false, false)));
+        .thenReturn(List.of(new SuborderSummary(PROJECT_SUBORDER_ID, "ALPHA-DEV", "Entwicklung", false, false, TicketReferencePolicy.DEFAULT)));
     when(suborderService.getSuborderSummaries(eq(CONTRACT_ID), eq(STANDBY_ORDER_ID), any()))
-        .thenReturn(List.of(new SuborderSummary(STANDBY_SUBORDER_ID, "RUF-01", "Rufbereitschaft", false, false)));
+        .thenReturn(List.of(new SuborderSummary(STANDBY_SUBORDER_ID, "RUF-01", "Rufbereitschaft", false, false, TicketReferencePolicy.DEFAULT)));
 
     when(dailyService.getRemainingDayTarget(DATE, CONTRACT_ID)).thenReturn(Duration.ofMinutes(5 * 60 + 15));
     when(dailyService.getRemainingDayTarget(OTHER_DATE, CONTRACT_ID)).thenReturn(Duration.ofHours(8));

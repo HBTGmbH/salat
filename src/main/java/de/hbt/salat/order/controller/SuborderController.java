@@ -39,6 +39,7 @@ import de.hbt.salat.common.viewhelper.NoticeViewHelper;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SpecialOrders;
@@ -176,7 +177,9 @@ public class SuborderController {
             form.getDebithours(),
             form.getDebithoursunit(),
             form.getHide(),
-            form.getParentId()
+            form.getParentId(),
+            form.getTicketReferenceMode(),
+            form.getTicketReferenceLimit()
         );
         if (isCreate) {
           suborderService.create(data, form.getCustomerorderId());
@@ -285,6 +288,7 @@ public class SuborderController {
     model.addAttribute("customerordersChanged", true);
     model.addAttribute("parentSubordersChanged", true);
     model.addAttribute("datesChanged", true);
+    model.addAttribute("inheritedTicketReferenceChanged", true);
     return "order/sub-order-form";
   }
 
@@ -299,6 +303,7 @@ public class SuborderController {
     model.addAttribute("htmxRequest", htmxRequest);
     model.addAttribute("parentSubordersChanged", true);
     model.addAttribute("datesChanged", true);
+    model.addAttribute("inheritedTicketReferenceChanged", true);
     return "order/sub-order-form";
   }
 
@@ -311,6 +316,7 @@ public class SuborderController {
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
     model.addAttribute("datesChanged", true);
+    model.addAttribute("inheritedTicketReferenceChanged", true);
     return "order/sub-order-form";
   }
 
@@ -455,6 +461,7 @@ public class SuborderController {
   private void addFormModel(Model model, SuborderForm form, boolean isEdit, boolean initialize) {
     model.addAttribute("suborderForm", form);
     model.addAttribute("orderTypes", OrderType.values());
+    model.addAttribute("ticketReferenceModes", TicketReferenceMode.values());
     model.addAttribute("isEdit", isEdit);
     // a special order, or one above it, keeps its complete sign (#1341); the service refuses a change
     model.addAttribute("signLocked", isEdit && form.getId() != null && specialOrders.isLockedSuborder(form.getId()));
@@ -519,6 +526,12 @@ public class SuborderController {
       }
     }
 
+    // what the suborder would inherit without a setting of its own (#1326) - from the parent chosen
+    // in the form, not the stored one, so the hint follows a change of the parent
+    if (currentCustomerorder != null) {
+      model.addAttribute("inheritedTicketReferencePolicy",
+          suborderService.getInheritedTicketReferencePolicy(currentCustomerorder.getId(), form.getParentId()));
+    }
   }
 
   private SuborderForm toForm(Suborder so) {
@@ -537,6 +550,10 @@ public class SuborderController {
     form.setTrainingFlag(so.isTrainingFlag());
     form.setHide(so.isHide());
     form.setOrderType(so.getOrderType());
+    if (so.getTicketReferencePolicy() != null) {
+      form.setTicketReferenceMode(so.getTicketReferencePolicy().mode());
+      form.setTicketReferenceLimit(so.getTicketReferencePolicy().limit());
+    }
     form.setValidFrom(format(so.getFromDate()));
     form.setValidUntil(so.getUntilDate() != null ? format(so.getUntilDate()) : "");
     if (so.getDebithours() != null && !so.getDebithours().isZero()) {

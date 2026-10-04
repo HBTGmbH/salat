@@ -173,7 +173,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                null, false,1, 0, 1);
+                List.of(), false,1, 0, 1);
     }
 
     @Test
@@ -208,7 +208,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                null, false,1, 0, 1);
+                List.of(), false,1, 0, 1);
     }
 
     @Test
@@ -269,7 +269,7 @@ class DailyReportRestEndpointTest {
         var booking = valueOf(TimereportDTO.builder()
                 .employeeorderId(1L).referenceday(day)
                 .taskdescription("test").duration(Duration.ofHours(1))
-                .ticketReference("ERP-1")
+                .ticketReferences(List.of("ERP-1"))
                 .build());
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -281,7 +281,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                "ERP-1", false, 1, 0, 1);
+                List.of("ERP-1"), false, 1, 0, 1);
     }
 
     /* The length check sits in the service; over the API its rejection is the caller's error (#1140). */
@@ -293,7 +293,7 @@ class DailyReportRestEndpointTest {
         var booking = valueOf(TimereportDTO.builder()
                 .employeeorderId(1L).referenceday(day)
                 .taskdescription("test").duration(Duration.ofHours(1))
-                .ticketReference("X".repeat(65))
+                .ticketReferences(List.of("X".repeat(65)))
                 .build());
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);

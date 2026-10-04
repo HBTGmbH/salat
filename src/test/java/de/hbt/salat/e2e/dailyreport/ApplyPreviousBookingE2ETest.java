@@ -65,8 +65,8 @@ class ApplyPreviousBookingE2ETest extends PlaywrightE2ETestBase {
   private void bookOnTheEarlierDay(Page page) {
     page.fill("#durationTime", "02:15");
     selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
-    page.locator("#ticketReference ~ .ts-wrapper .ts-control").click();
-    page.locator("#ticketReference-ts-control").pressSequentially(TICKET);
+    page.locator("#ticketReferences ~ .ts-wrapper .ts-control").click();
+    page.locator("#ticketReferences-ts-control").pressSequentially(TICKET);
     // leaving the field is what turns the typed text into the value
     page.locator("#commentField").click();
     page.fill("#commentField", COMMENT);

@@ -19,7 +19,25 @@
         <div class="text-muted text-truncate" style="font-size:0.75rem"
              th:text="|${singleTr.completeOrderSign} · ${singleTr.suborderDescription}|"></div>
         <!-- task description: editable or read-only -->
-        <div th:if="${singleTrEditable}" class="inline-edit-wrap mt-1">
+        <!--/* held (#1326), as in daily.html: the edited comment names tickets that are no reference yet */-->
+        <form th:if="${inlineTicketSuggestion != null and inlineTicketSuggestion.timereportId() == singleTr.id}"
+              class="mt-1"
+              th:action="@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})}" method="post"
+              th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
+              hx-swap="outerHTML">
+          <textarea class="form-control form-control-sm mb-2" rows="2" style="font-size:0.85rem; resize:none"
+                    name="taskdescription" th:attr="aria-label=#{main.daily.column.taskdescription}"
+                    th:text="${inlineTicketSuggestion.taskdescription()}"></textarea>
+          <div th:replace="~{fragments/ticket-suggestions :: suggestionBox(
+                 keys=${inlineTicketSuggestion.keys()},
+                 remaining=${inlineTicketSuggestion.remaining()},
+                 limited=${inlineTicketSuggestion.limited()},
+                 policyText=${inlineTicketSuggestion.policyText()},
+                 small=true,
+                 discardHref=@{/dailyreport/daily(mode='list',fMonth=${singleTrYearMonth.monthValue},fYear=${singleTrYearMonth.year})})}"></div>
+        </form>
+        <div th:if="${singleTrEditable and (inlineTicketSuggestion == null or inlineTicketSuggestion.timereportId() != singleTr.id)}"
+             class="inline-edit-wrap mt-1">
           <div class="inline-edit-display"
                th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
                th:classappend="${hasText} ? 'fw-medium' : 'is-empty text-muted'"
@@ -69,11 +87,11 @@
         <span th:unless="${singleTrEditable}"
               class="badge bg-blue-lt"
               th:text="${@durationUtils.format(singleTr.duration)}"></span>
-        <span th:if="${not #strings.isEmpty(singleTr.ticketReference)}"
+        <span th:each="reference : ${singleTr.ticketReferences}"
               class="badge bg-secondary-lt d-inline-block text-truncate"
               style="max-width:140px"
               th:title="#{main.daily.timereport.ticketreference.title}"
-              th:text="${singleTr.ticketReference}"></span>
+              th:text="${reference}"></span>
         <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple"
               th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
         <!--/* standby is booked here but counts towards no sum of this day (#463) */-->

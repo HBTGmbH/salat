@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Ticket keys of the comment that are no reference of the booking yet (#1326), offered when saving
+       was held - in the booking form and in the inline edit of the daily view. Nothing is ticked in
+       advance: the pattern also matches words that are no ticket at all. The two buttons submit the
+       answer as ticketSuggestionChoice, the ticked keys as adoptedTicketKeys; data-ticket-suggestions
+       in salat.js locks the boxes once the suborder's limit is reached and counts on the button.
+       Parameters: keys, remaining (Integer.MAX_VALUE without a bound), limited, policyText, small, and
+       discardHref - where "Verwerfen" leads, null for no such link. */-->
+<div th:fragment="suggestionBox(keys, remaining, limited, policyText, small, discardHref)"
+     class="alert alert-warning" th:classappend="${small} ? 'p-2 mb-0' : 'mb-3'"
+     data-ticket-suggestions
+     th:attr="data-remaining=${limited} ? ${remaining} : null,
+              data-limit-reached-title=#{main.ticketreferences.suggestions.limitreached}">
+  <div class="d-flex align-items-start mb-2">
+    <i class="ti ti-bulb me-2 mt-1" aria-hidden="true"></i>
+    <div>
+      <div class="fw-bold" th:text="#{main.ticketreferences.suggestions.title}">Noch nicht gespeichert: Im Kommentar stehen Tickets</div>
+      <div class="small" th:if="${limited}"
+           th:text="#{main.ticketreferences.suggestions.hint.limited(${policyText}, ${remaining})}">Anhaken, was als Ticket-Referenz an die Buchung soll – erlaubt sind höchstens 2, noch 1 frei.</div>
+      <div class="small" th:unless="${limited}"
+           th:text="#{main.ticketreferences.suggestions.hint}">Anhaken, was als Ticket-Referenz an die Buchung soll.</div>
+    </div>
+  </div>
+  <div class="mb-2 ms-4">
+    <label class="form-check mb-1" th:each="key : ${keys}">
+      <input class="form-check-input" type="checkbox" name="adoptedTicketKeys" th:value="${key}"/>
+      <span class="form-check-label font-monospace" th:text="${key}">ABC-120</span>
+    </label>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <button type="submit" class="btn btn-primary" th:classappend="${small} ? 'btn-sm' : ''"
+            name="ticketSuggestionChoice" value="adopt" data-adopt-button disabled
+            th:attr="data-label-none=#{main.ticketreferences.suggestions.adopt.none},
+                     data-label-one=#{main.ticketreferences.suggestions.adopt.one},
+                     data-label-many=#{main.ticketreferences.suggestions.adopt.many}"
+            th:text="#{main.ticketreferences.suggestions.adopt.none}">Ticket übernehmen und speichern</button>
+    <button type="submit" class="btn btn-outline-secondary" th:classappend="${small} ? 'btn-sm' : ''"
+            name="ticketSuggestionChoice" value="skip"
+            th:text="#{main.ticketreferences.suggestions.skip}">Ohne Übernahme speichern</button>
+    <!--/* alert-link, not btn-link: the colour of the alert's own links holds 4.5:1 on its tint, the
+           button link fell to 4.29:1 in dark mode */-->
+    <a th:if="${discardHref != null}" th:href="${discardHref}" class="alert-link align-self-center ms-1"
+       th:text="#{main.ticketreferences.suggestions.discard}">Verwerfen</a>
+  </div>
+</div>
+
+</body>
+</html>

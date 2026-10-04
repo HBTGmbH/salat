@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,24 +77,24 @@ class ApplyFavouriteTicketReferenceTest {
   }
 
   @Test
-  void the_reference_of_the_favourite_becomes_the_reference_of_the_booking() {
-    givenFavourite(favourite("PROJ-123"));
+  void the_references_of_the_favourite_become_the_references_of_the_booking() {
+    givenFavourite(favourite("PROJ-123", "PROJ-130"));
 
     applyIt();
 
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        eq("Daily"), eq("PROJ-123"), eq(false), anyLong(), anyLong(), anyInt());
+        eq("Daily"), eq(List.of("PROJ-123", "PROJ-130")), eq(false), anyLong(), anyLong(), anyInt());
   }
 
   /** A favourite made before this existed has no reference, and none is invented for it. */
   @Test
   void a_favourite_without_a_reference_books_without_one() {
-    givenFavourite(favourite(null));
+    givenFavourite(favourite());
 
     applyIt();
 
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        eq("Daily"), eq(null), eq(false), anyLong(), anyLong(), anyInt());
+        eq("Daily"), eq(List.of()), eq(false), anyLong(), anyLong(), anyInt());
   }
 
   private void givenFavourite(Favorite favourite) {
@@ -105,13 +106,13 @@ class ApplyFavouriteTicketReferenceTest {
         new MockHttpServletResponse(), new ExtendedModelMap());
   }
 
-  private static Favorite favourite(String ticketReference) {
+  private static Favorite favourite(String... ticketReferences) {
     return Favorite.builder()
         .employeeorderId(EMPLOYEE_ORDER_ID)
         .hours(1)
         .minutes(30)
         .comment("Daily")
-        .ticketReference(ticketReference)
+        .ticketReferences(new ArrayList<>(List.of(ticketReferences)))
         .build();
   }
 

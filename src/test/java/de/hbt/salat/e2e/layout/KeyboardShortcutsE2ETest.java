@@ -169,12 +169,12 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
       selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
       page.fill("#durationTime", "00:45");
       page.locator("#commentField").fill("Tastenkuerzel Ticket im Gange " + browser);
-      page.locator("#ticketReference ~ .ts-wrapper .ts-control").click();
-      page.locator("#ticketReference-ts-control").pressSequentially("EXTERN-7");
+      page.locator("#ticketReferences ~ .ts-wrapper .ts-control").click();
+      page.locator("#ticketReferences-ts-control").pressSequentially("EXTERN-7");
 
       String body = savedForm(page, () -> page.keyboard().press(SAVE));
 
-      assertTrue(body.contains("ticketReference=EXTERN-7"), body);
+      assertTrue(body.contains("ticketReferences=EXTERN-7"), body);
       page.waitForURL(Pattern.compile(".*/dailyreport/daily.*"));
     });
   }
