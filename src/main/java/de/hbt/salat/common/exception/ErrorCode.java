@@ -202,7 +202,6 @@ public enum ErrorCode {
   BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans, flat rates, customer rates or employee cost assignments still refer to the customer order"),
   BU_SUBORDER_HAS_BUDGET_REFERENCES("BU-0031", "budget plans, flat rates or employee cost assignments still refer to the suborder"),
   BU_PRICING_PATTERN_NOT_FOLLOWED("BU-0032", "the suborder pattern of a customer rate could not follow a renamed order or suborder"),
-  BU_EMPLOYEE_COST_ASSIGNMENT_SCOPE_AMBIGUOUS("BU-0033", "an employee cost assignment is either for a suborder or for a customer order, not for both"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
   JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),

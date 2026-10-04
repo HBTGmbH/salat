@@ -34,27 +34,35 @@
                 th:value="${emp.id}"
                 th:text="${@employeeLabelViewHelper.label(emp)} + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
       </salat:select>
-      <!--/* Order or suborder, not both (#1343); the service refuses both with BU-0033. A hidden order or
-             suborder only appears when the assignment already references it; say so. */-->
-      <salat:select th:field="*{customerorderId}" th:label="#{main.employeecost.assignment.field.customerorderSign}">
-        <option value="" th:text="#{main.employeecost.assignment.select.customerorder.none}">--- Kein Auftrag ---</option>
-        <option th:each="co : ${customerorders}"
-                th:value="${co.id}"
-                th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
-                th:attr="data-subtext=${subtext}"
-                th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
-      </salat:select>
-      <salat:select th:field="*{suborderId}" th:label="#{main.employeecost.assignment.field.suborderSign}">
-        <option value=""
-                th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
-        <option th:each="so : ${suborders}"
-                th:value="${so.id}"
-                th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
-                th:attr="data-subtext=${subtext}"
-                th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
-      </salat:select>
+      <!--/* Choosing an order narrows the suborders to its own (#1343); with both chosen the suborder applies
+             and the order only filtered. A hidden order or suborder only appears when the assignment
+             already references it; say so. Plain select rather than salat:select, which does not
+             forward the hx-* attributes. */-->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" for="customerorderId"
+                   th:text="#{main.budget.field.customerorderSign}">Auftrag</label>
+            <select class="form-select tomselect" th:field="*{customerorderId}"
+                    th:hx-post="@{/budget/employee-cost/assignments/suborders}"
+                    hx-swap="none"
+                    hx-include="closest form"
+                    hx-trigger="change">
+              <option value="" th:text="#{main.employeecost.assignment.select.customerorder.none}">--- Kein Auftrag ---</option>
+              <option th:each="co : ${customerorders}"
+                      th:value="${co.id}"
+                      th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, *{suborderId}, null)}"></div>
+        </div>
+      </div>
       <p class="form-text mt-n2 mb-3" th:text="#{main.employeecost.assignment.scope.hint}">
-        Für einen Unterauftrag oder einen ganzen Auftrag, nicht für beide. Ohne beides gilt die Zuordnung allgemein.
+        Nur ein Auftrag: Die Zuordnung gilt für alle seine Unteraufträge. Mit Unterauftrag gilt sie nur für diesen.
       </p>
       <div class="row">
         <div class="col-md-6">
@@ -74,6 +82,11 @@
                          th:cancelHref="${not #strings.isEmpty(assignmentForm.employeeCostName)} ? @{/budget/employee-cost/category(name=${assignmentForm.employeeCostName})} : @{/budget/employee-cost}" />
     </salat:buttons>
   </salat:form>
+
+  <!-- HTMX OOB updates -->
+  <div th:if="${htmxRequest}">
+    <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, ${assignmentForm.suborderId}, ${subordersChanged})}"></div>
+  </div>
 
 </main>
 </html>

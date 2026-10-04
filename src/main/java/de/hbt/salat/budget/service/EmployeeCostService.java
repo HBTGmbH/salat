@@ -354,13 +354,12 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
-        checkSingleScope(data);
         var employee = employeeOf(data);
         var customerorder = customerorderOf(data);
         var suborder = suborderOf(data);
         var category = categoryOf(data);
-        checkNoAssignmentOverlap(employee.getId(), data.customerorderId(), data.suborderId(), data.validFrom(),
-            endOfValidity(data.validUntil()), null);
+        checkNoAssignmentOverlap(employee.getId(), customerorderIdOf(customerorder), data.suborderId(),
+            data.validFrom(), endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
         applyAssignment(assignment, data, category, employee, customerorder, suborder);
         return assignmentRepository.save(assignment);
@@ -368,15 +367,14 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
-        checkSingleScope(data);
         var employee = employeeOf(data);
         var customerorder = customerorderOf(data);
         var suborder = suborderOf(data);
         var category = categoryOf(data);
         var assignment = getAssignmentById(id);
         var previous = assignment.getCategory();
-        checkNoAssignmentOverlap(employee.getId(), data.customerorderId(), data.suborderId(), data.validFrom(),
-            endOfValidity(data.validUntil()), id);
+        checkNoAssignmentOverlap(employee.getId(), customerorderIdOf(customerorder), data.suborderId(),
+            data.validFrom(), endOfValidity(data.validUntil()), id);
         applyAssignment(assignment, data, category, employee, customerorder, suborder);
         assignmentRepository.save(assignment);
         if (!previous.equals(category)) {
@@ -398,22 +396,15 @@ public class EmployeeCostService {
     }
 
     /**
-     * An assignment is for a suborder, for a whole customer order, or general (#1343). An assignment to
-     * the order covers all its suborders already, so one naming both would leave it open which step of
-     * the resolution it belongs to.
-     */
-    private static void checkSingleScope(EmployeeCostAssignmentData data) {
-        if (data.customerorderId() != null && data.suborderId() != null) {
-            throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_SCOPE_AMBIGUOUS);
-        }
-    }
-
-    /**
      * The customer order of the assignment, by id (#1343) — {@code null} unless the assignment is for a
      * whole order. An id nothing answers to is refused, as for the suborder.
+     *
+     * <p>An assignment is for a suborder, for a whole order, or general. Where the form names both, the
+     * suborder applies: the order only narrowed the choice of suborders, and an assignment to the order
+     * would cover all its suborders anyway.
      */
     private CustomerorderOption customerorderOf(EmployeeCostAssignmentData data) {
-        if (data.customerorderId() == null) {
+        if (data.customerorderId() == null || data.suborderId() != null) {
             return null;
         }
         return customerorderService.getCustomerorderOptionsByIds(List.of(data.customerorderId())).stream()
@@ -463,6 +454,10 @@ public class EmployeeCostService {
         if (!employeeCostRepository.findOverlapping(categoryId, from, until, excludeId).isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_OVERLAP);
         }
+    }
+
+    private static Long customerorderIdOf(CustomerorderOption customerorder) {
+        return customerorder == null ? null : customerorder.id();
     }
 
     /** Overlaps count within one step of the resolution only: the same suborder, the same order, or general (#1343). */

@@ -22,19 +22,12 @@ public record EmployeeCostAssignmentViewHelper(EmployeeCostAssignment assignment
         return assignment.isEmployeeUnresolved();
     }
 
-    /** Whether the assignment is for a whole customer order rather than a suborder (#1343). */
-    public boolean forCustomerorder() {
-        return assignment.isCustomerorderSpecific();
-    }
-
-    /** Whether the assignment is for a single suborder. */
-    public boolean forSuborder() {
-        return assignment.isSuborderSpecific();
-    }
-
-    /** The sign of what the assignment is for — order or suborder —, {@code null} for a general one. */
+    /**
+     * What the assignment is for (#1343): the sign of the order, or the complete sign of the suborder —
+     * {@code ORDER} against {@code ORDER/01} tells the two apart. {@code null} for a general one.
+     */
     public String scopeSign() {
-        return forCustomerorder() ? customerorderSign : suborderSign;
+        return assignment.isCustomerorderSpecific() ? customerorderSign : suborderSign;
     }
 
 }
