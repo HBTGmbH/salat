@@ -781,6 +781,10 @@ Entities are divided into two categories (→ ADR-0011):
   suborder ids (`OrderPosition`), not by a sign prefix. The exception is a `LIKE` pattern over
   complete order signs (`OrderPricing.suborderSign`, → `OrderPricingLookup`): that is a pattern,
   not a reference.
+- **A cost category is referenced by id** (#1209): rate periods (`EmployeeCost`) and assignments
+  (`EmployeeCostAssignment`) point at `CostCategory` by foreign key, and a rename changes that one
+  row. Their name columns are mirrors for views, ETL definitions and reports: written from the
+  category (`setCategory`, `followCategoryName`), never read — the getters answer from the category.
 - **Signs stay changeable** (#1206, → ADR-0034). Saving a renamed order, or a renamed or moved
   suborder, publishes `SignsRenamedEvent` with the old and the new complete sign. Whatever still
   names the order tree by sign listens to it and follows — or adds a notice that the success

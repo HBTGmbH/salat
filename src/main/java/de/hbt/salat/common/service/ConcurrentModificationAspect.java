@@ -1,5 +1,6 @@
 package de.hbt.salat.common.service;
 
+import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_NAME_EXISTS;
 import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_OVERLAP;
 import static de.hbt.salat.common.exception.ErrorCode.CO_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
@@ -69,7 +70,9 @@ public class ConcurrentModificationAspect {
   private static final Map<String, ErrorCode> FINDINGS_BY_UNIQUE_KEY = Map.of(
       "uk_employee_sign", EM_SIGN_TAKEN,
       "uk_customerorder_sign", CO_SIGN_TAKEN,
-      "uk_employee_cost_name_valid_from", BU_EMPLOYEE_COST_OVERLAP,
+      // #1209: the slices of a category by its id, the category itself by its name
+      "uk_employee_cost_category_valid_from", BU_EMPLOYEE_COST_OVERLAP,
+      "uk_employee_cost_category_name", BU_EMPLOYEE_COST_NAME_EXISTS,
       // #1333
       "uk_salat_user_loginname", EM_LOGINNAME_TAKEN,
       "uk_customer_shortname", CU_DUPLICATE_SHORT_NAME,

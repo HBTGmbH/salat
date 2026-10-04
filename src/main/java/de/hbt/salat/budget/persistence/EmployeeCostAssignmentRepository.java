@@ -15,11 +15,12 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 public interface EmployeeCostAssignmentRepository
     extends CrudRepository<EmployeeCostAssignment, Long>, PagingAndSortingRepository<EmployeeCostAssignment, Long> {
 
-    List<EmployeeCostAssignment> findAllByOrderByEmployeeCostNameAscIdAsc();
+    /** Every assignment, by the name of its category (#1209 — the category's, not the mirror column). */
+    List<EmployeeCostAssignment> findAllByOrderByCategoryNameAscIdAsc();
 
-    List<EmployeeCostAssignment> findByEmployeeCostName(String employeeCostName);
+    List<EmployeeCostAssignment> findByCategoryId(long categoryId);
 
-    long countByEmployeeCostName(String employeeCostName);
+    long countByCategoryId(long categoryId);
 
     /** The assignments specific to one of these suborders (#1205). Callers must not pass an empty collection. */
     List<EmployeeCostAssignment> findBySuborderIdIn(Collection<Long> suborderIds);

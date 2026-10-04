@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
+import de.hbt.salat.budget.domain.CostCategory;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 
 /**
@@ -36,6 +37,9 @@ public class EmployeeCostAssignmentRepositoryTest {
 
   @Autowired
   private EmployeeCostAssignmentRepository assignmentRepository;
+
+  @Autowired
+  private CostCategoryRepository categoryRepository;
 
   /** The update is a bulk statement the persistence context does not see; clearing it reads what is stored. */
   @Autowired
@@ -91,7 +95,8 @@ public class EmployeeCostAssignmentRepositoryTest {
 
   private void givenAssignment(Long employeeId, String employeeSign) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeCostName("Standard");
+    assignment.setCategory(categoryRepository.findByName("Standard")
+        .orElseGet(() -> categoryRepository.save(new CostCategory("Standard"))));
     assignment.setEmployeeId(employeeId);
     assignment.setEmployeeSign(employeeSign);
     assignment.setValidFrom(FROM);

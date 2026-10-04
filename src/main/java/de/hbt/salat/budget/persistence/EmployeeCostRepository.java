@@ -10,34 +10,42 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.budget.domain.EmployeeCost;
 
+/**
+ * The rate periods. Every query goes through the category (#1209), never through the name column,
+ * which only mirrors the category for readers outside the application.
+ */
 @Repository
 public interface EmployeeCostRepository
     extends CrudRepository<EmployeeCost, Long>, PagingAndSortingRepository<EmployeeCost, Long> {
 
-    List<EmployeeCost> findAllByOrderByNameAscValidFromAsc();
+    List<EmployeeCost> findAllByOrderByCategoryNameAscValidFromAsc();
 
-    /**
-     * All cost records carrying the given name. Several records share one name to model a rate that
-     * changed over time — the name is the category, not the key of a single record.
-     */
-    List<EmployeeCost> findByNameOrderByValidFromAsc(String name);
+    /** The rate periods of one category, oldest first. */
+    List<EmployeeCost> findByCategoryIdOrderByValidFromAsc(long categoryId);
 
-    @Query("SELECT DISTINCT c.name FROM EmployeeCost c ORDER BY c.name")
+    long countByCategoryId(long categoryId);
+
+    /** The names of the categories that carry at least one rate period. */
+    @Query("SELECT DISTINCT c.category.name FROM EmployeeCost c ORDER BY c.category.name")
     List<String> findDistinctNames();
 
     @Query("""
         SELECT c FROM EmployeeCost c
-        WHERE c.name = :name
+        WHERE c.category.id = :categoryId
           AND c.validFrom <= :until AND c.validUntil >= :from
           AND (:excludeId IS NULL OR c.id != :excludeId)
         """)
     List<EmployeeCost> findOverlapping(
-        @Param("name") String name,
+        @Param("categoryId") long categoryId,
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
         @Param("excludeId") Long excludeId);
 
-    @Query("SELECT c FROM EmployeeCost c WHERE c.name = :name AND c.validFrom <= :date AND c.validUntil >= :date")
-    Optional<EmployeeCost> findEffectiveByName(@Param("name") String name, @Param("date") LocalDate date);
+    @Query("""
+        SELECT c FROM EmployeeCost c
+        WHERE c.category.id = :categoryId AND c.validFrom <= :date AND c.validUntil >= :date
+        """)
+    Optional<EmployeeCost> findEffectiveByCategoryId(@Param("categoryId") long categoryId,
+                                                     @Param("date") LocalDate date);
 
 }

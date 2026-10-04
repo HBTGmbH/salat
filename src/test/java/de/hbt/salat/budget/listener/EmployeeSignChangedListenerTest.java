@@ -21,9 +21,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.budget.domain.CostCategory;
 import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.OrderPricing;
+import de.hbt.salat.budget.persistence.CostCategoryRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
 import de.hbt.salat.budget.persistence.OrderPricingRepository;
@@ -89,6 +91,9 @@ public class EmployeeSignChangedListenerTest {
 
   @Autowired
   private EmployeeCostRepository costRepository;
+
+  @Autowired
+  private CostCategoryRepository categoryRepository;
 
   @Autowired
   private EmployeeCostAssignmentRepository assignmentRepository;
@@ -256,9 +261,14 @@ public class EmployeeSignChangedListenerTest {
     return employee;
   }
 
+  /** Rate and assignment name the same category, stored once (#1209). */
+  private CostCategory category() {
+    return categoryRepository.findByName(CATEGORY).orElseGet(() -> categoryRepository.save(new CostCategory(CATEGORY)));
+  }
+
   private void givenCostRate() {
     var cost = new EmployeeCost();
-    cost.setName(CATEGORY);
+    cost.setCategory(category());
     cost.setCostCentsPerHour(5000);
     cost.setValidFrom(FROM);
     cost.setValidUntil(UNTIL);
@@ -267,7 +277,7 @@ public class EmployeeSignChangedListenerTest {
 
   private void givenAssignment(Employee employee) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeCostName(CATEGORY);
+    assignment.setCategory(category());
     assignment.setEmployeeId(employee.getId());
     assignment.setEmployeeSign(employee.getSign());
     assignment.setValidFrom(FROM);

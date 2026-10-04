@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.budget.domain.CostCategory;
 import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.EmployeeCostAssignmentData;
@@ -20,6 +21,7 @@ import de.hbt.salat.budget.domain.EmployeeCostCategory;
 import de.hbt.salat.budget.domain.EmployeeCostData;
 import de.hbt.salat.budget.domain.EmployeeCostLookup;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.budget.persistence.CostCategoryRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
 import de.hbt.salat.common.LocalDateRange;
@@ -40,6 +42,7 @@ public class EmployeeCostService {
 
     private final EmployeeCostRepository employeeCostRepository;
     private final EmployeeCostAssignmentRepository assignmentRepository;
+    private final CostCategoryRepository categoryRepository;
     private final EmployeeService employeeService;
     private final SuborderService suborderService;
 
@@ -52,9 +55,10 @@ public class EmployeeCostService {
     /**
      * The cost categories with the employees currently or prospectively assigned to them (#954).
      *
-     * <p>A category is a name. It shows up here as soon as a cost record or an assignment carries the
-     * name — an assignment left behind by a deleted rate (#895) keeps its category listed, otherwise
-     * it could no longer be reached through the UI at all.
+     * <p>Every category is listed, also one without a rate period: an assignment left behind by a
+     * deleted rate (#895) keeps its category, otherwise it could no longer be reached through the UI
+     * at all. A category neither rates nor assignments refer to goes away with the last of them
+     * ({@link #dropIfUnused}).
      *
      * <p>The signs are read off the people (#968), so they follow a rename by themselves. An
      * assignment the migration could not resolve costs nobody and names nobody here; the category
@@ -62,9 +66,9 @@ public class EmployeeCostService {
      */
     @Transactional(readOnly = true)
     public List<EmployeeCostCategory> getCategories() {
-        var assignments = assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc();
-        var names = new TreeSet<>(employeeCostRepository.findDistinctNames());
-        assignments.forEach(assignment -> names.add(assignment.getEmployeeCostName()));
+        var assignments = assignmentRepository.findAllByOrderByCategoryNameAscIdAsc();
+        var names = new TreeSet<String>();
+        categoryRepository.findAllByOrderByNameAsc().forEach(category -> names.add(category.getName()));
         var signs = employeeService.getSignsByIds(assignments.stream()
             .map(EmployeeCostAssignment::getEmployeeId)
             .filter(Objects::nonNull)
@@ -83,27 +87,34 @@ public class EmployeeCostService {
             .toList();
     }
 
-    /** The rate periods of one category, oldest first. Empty for a category only assignments name. */
+    /**
+     * The rate periods of one category, oldest first. Empty for a category without rate periods and for
+     * a name no category carries. The category pages address a category by its name, which is unique
+     * (#1209).
+     */
     @Transactional(readOnly = true)
     public List<EmployeeCost> getByName(String name) {
-        return employeeCostRepository.findByNameOrderByValidFromAsc(name);
+        return categoryRepository.findByName(name)
+            .map(category -> employeeCostRepository.findByCategoryIdOrderByValidFromAsc(category.getId()))
+            .orElse(List.of());
     }
 
-    /** Whether the name is taken — by a cost record or by an assignment still referencing it. */
+    /** Whether a category carries the name. */
     @Transactional(readOnly = true)
     public boolean categoryExists(String name) {
-        return employeeCostRepository.findDistinctNames().contains(name)
-            || assignmentRepository.countByEmployeeCostName(name) > 0;
+        return categoryRepository.existsByName(name);
     }
 
     @Transactional(readOnly = true)
     public List<EmployeeCostAssignment> getAllAssignments() {
-        return assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc();
+        return assignmentRepository.findAllByOrderByCategoryNameAscIdAsc();
     }
 
     @Transactional(readOnly = true)
     public List<EmployeeCostAssignment> getAssignmentsByName(String employeeCostName) {
-        return assignmentRepository.findByEmployeeCostName(employeeCostName);
+        return categoryRepository.findByName(employeeCostName)
+            .map(category -> assignmentRepository.findByCategoryId(category.getId()))
+            .orElse(List.of());
     }
 
     /**
@@ -124,9 +135,9 @@ public class EmployeeCostService {
     }
 
     /**
-     * Category names offered in a select box: every name in use, plus {@code keepName} even if no
-     * cost record carries it any more. Without that exception an assignment left behind by a deleted
-     * category would lose its name in the select and silently retarget itself on save.
+     * Category names offered in a select box: every category with a rate period, plus {@code keepName}
+     * even if its category has none any more. Without that exception an assignment left behind by a
+     * deleted rate would lose its category in the select and silently retarget itself on save.
      */
     @Transactional(readOnly = true)
     public List<String> getSelectableCostNames(String keepName) {
@@ -146,8 +157,8 @@ public class EmployeeCostService {
     @Transactional(readOnly = true)
     public EmployeeCostLookup lookup() {
         return EmployeeCostLookup.of(
-            assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc(),
-            employeeCostRepository.findAllByOrderByNameAscValidFromAsc());
+            assignmentRepository.findAllByOrderByCategoryNameAscIdAsc(),
+            employeeCostRepository.findAllByOrderByCategoryNameAscValidFromAsc());
     }
 
     /**
@@ -164,7 +175,7 @@ public class EmployeeCostService {
         if (suborderId != null) {
             var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeId, suborderId, date);
             if (!assignments.isEmpty()) {
-                return employeeCostRepository.findEffectiveByName(assignments.get(0).getEmployeeCostName(), date);
+                return employeeCostRepository.findEffectiveByCategoryId(assignments.get(0).getCategory().getId(), date);
             }
         }
         if (orderType == OrderType.BEREITSCHAFT) {
@@ -172,7 +183,7 @@ public class EmployeeCostService {
         }
         var assignments = assignmentRepository.findEffectiveGeneral(employeeId, date);
         if (!assignments.isEmpty()) {
-            return employeeCostRepository.findEffectiveByName(assignments.get(0).getEmployeeCostName(), date);
+            return employeeCostRepository.findEffectiveByCategoryId(assignments.get(0).getCategory().getId(), date);
         }
         return Optional.empty();
     }
@@ -188,95 +199,112 @@ public class EmployeeCostService {
         if (categoryExists(name)) {
             throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_NAME_EXISTS, name);
         }
+        categoryRepository.save(new CostCategory(name));
         return create(new EmployeeCostData(name, costCentsPerHour, DateUtils.today(), null));
     }
 
     /**
-     * Renames a whole category: every rate period carrying the name and every assignment referencing
-     * it (#954). Same reasoning as {@link #renameCategory(EmployeeCost, EmployeeCostData)} — a
-     * half-moved name resolves to no rate at all, and the affected bookings would silently cost
-     * 0 EUR in controlling (#922).
+     * Renames a category (#954). Rate periods and assignments refer to it by id (#1209), so the rename
+     * itself is this one row; their name columns follow only as mirrors for the views, ETL definitions
+     * and reports that still join on them.
      *
-     * <p>Renaming onto a name that already exists merges the two categories. That is intentional and
-     * only allowed while the merged rate periods stay free of overlaps.
+     * <p>Renaming onto a name that already exists merges the two categories: rate periods and
+     * assignments move over, and the renamed category goes away. That is intentional and only allowed
+     * while the merged rate periods stay free of overlaps.
      */
     @Authorized(requiresManager = true)
     public void renameCategory(String oldName, String newName) {
         if (Objects.equals(oldName, newName)) {
             return;
         }
-        var group = employeeCostRepository.findByNameOrderByValidFromAsc(oldName);
-        checkNoOverlapAfterMerge(newName, group.stream().map(EmployeeCostService::rangeOf).toList());
-
-        group.forEach(cost -> cost.setName(newName));
-        employeeCostRepository.saveAll(group);
-        moveAssignments(oldName, newName);
+        var category = categoryRepository.findByName(oldName).orElse(null);
+        if (category == null) {
+            return;
+        }
+        var ranges = employeeCostRepository.findByCategoryIdOrderByValidFromAsc(category.getId()).stream()
+            .map(EmployeeCostService::rangeOf).toList();
+        renameOrMerge(category, newName, ranges);
     }
 
+    /**
+     * A new rate period of an existing category. A name no category carries is refused: the rate form
+     * is reached from a category, and a stale or mistyped name must not make a new one (#1209).
+     */
     @Authorized(requiresManager = true)
     public EmployeeCost create(EmployeeCostData data) {
-        checkNoCostOverlap(data.name(), data.validFrom(), endOfValidity(data.validUntil()), null);
+        var category = categoryNamed(data.name());
+        checkNoCostOverlap(category.getId(), data.validFrom(), endOfValidity(data.validUntil()), null);
         var cost = new EmployeeCost();
+        cost.setCategory(category);
         apply(cost, data);
         return employeeCostRepository.save(cost);
     }
 
+    /**
+     * A rate period whose name changes renames its whole category — merging into an existing one,
+     * like {@link #renameCategory(String, String)} — and takes its own new values along.
+     */
     @Authorized(requiresManager = true)
     public void update(long id, EmployeeCostData data) {
         var cost = getById(id);
-        if (Objects.equals(cost.getName(), data.name())) {
-            checkNoCostOverlap(data.name(), data.validFrom(), endOfValidity(data.validUntil()), id);
+        var category = cost.getCategory();
+        var newRange = new LocalDateRange(data.validFrom(), endOfValidity(data.validUntil()));
+        if (Objects.equals(category.getName(), data.name())) {
+            checkNoCostOverlap(category.getId(), newRange.getFrom(), newRange.getUntil(), id);
             apply(cost, data);
             employeeCostRepository.save(cost);
             return;
         }
-        renameCategory(cost, data);
+        // The edited period contributes its new range, its siblings their stored ones.
+        var ranges = employeeCostRepository.findByCategoryIdOrderByValidFromAsc(category.getId()).stream()
+            .map(member -> Objects.equals(member.getId(), id) ? newRange : rangeOf(member))
+            .toList();
+        apply(cost, data);
+        renameOrMerge(category, data.name(), ranges);
     }
 
     /**
-     * Renaming carries the whole name group and every assignment referencing it along.
+     * Gives the category the new name, or — where another category carries it already — moves rate
+     * periods and assignments over to that one and drops the renamed category. The merged periods are
+     * checked for overlaps first.
      *
-     * <p>Assignments reference their cost by name, and several cost records share one name to model a
-     * rate that changed over time. Renaming the edited record alone would leave both the sibling
-     * records and the assignments on the old name, so {@code findEffectiveCost} would stop resolving
-     * — the affected bookings would fall back to 0 EUR in controlling without any error (#922).
+     * @param ranges the periods of the renamed category as they will be after the change
      */
-    private void renameCategory(EmployeeCost edited, EmployeeCostData data) {
-        var oldName = edited.getName();
-        var newName = data.name();
-        var group = employeeCostRepository.findByNameOrderByValidFromAsc(oldName);
-        // The edited record contributes its new range, its siblings their stored ones.
-        checkNoOverlapAfterMerge(newName, group.stream()
-            .map(member -> Objects.equals(member.getId(), edited.getId())
-                ? new LocalDateRange(data.validFrom(), endOfValidity(data.validUntil()))
-                : rangeOf(member))
-            .toList());
-
-        for (var member : group) {
-            if (Objects.equals(member.getId(), edited.getId())) {
-                apply(member, data);
-            } else {
-                member.setName(newName);
-            }
+    private void renameOrMerge(CostCategory category, String newName, List<LocalDateRange> ranges) {
+        var target = categoryRepository.findByName(newName).orElse(null);
+        checkNoOverlapAfterMerge(target, ranges);
+        var costs = employeeCostRepository.findByCategoryIdOrderByValidFromAsc(category.getId());
+        var assignments = assignmentRepository.findByCategoryId(category.getId());
+        if (target == null) {
+            category.setName(newName);
+            categoryRepository.save(category);
+            costs.forEach(EmployeeCost::followCategoryName);
+            assignments.forEach(EmployeeCostAssignment::followCategoryName);
+        } else {
+            costs.forEach(cost -> cost.setCategory(target));
+            assignments.forEach(assignment -> assignment.setCategory(target));
         }
-        employeeCostRepository.saveAll(group);
-        moveAssignments(oldName, newName);
-    }
-
-    private void moveAssignments(String oldName, String newName) {
-        var assignments = assignmentRepository.findByEmployeeCostName(oldName);
-        assignments.forEach(assignment -> assignment.setEmployeeCostName(newName));
+        employeeCostRepository.saveAll(costs);
         assignmentRepository.saveAll(assignments);
+        if (target != null) {
+            categoryRepository.delete(category);
+        }
     }
 
     /**
-     * A rename merges the moved periods into whatever already carries the target name, so the merged
-     * set has to stay free of overlaps — the same rule {@link #checkNoCostOverlap} enforces for a
-     * single record.
+     * A merge puts the moved periods next to those of the target category, so the merged set has to
+     * stay free of overlaps — the same rule {@link #checkNoCostOverlap} enforces for a single record.
+     * Without a target the periods are checked among themselves, because an edited one brings a new
+     * range along.
+     *
+     * @param target the category merged into, {@code null} for a plain rename
      */
-    private void checkNoOverlapAfterMerge(String newName, List<LocalDateRange> incoming) {
+    private void checkNoOverlapAfterMerge(CostCategory target, List<LocalDateRange> incoming) {
         var ranges = new ArrayList<LocalDateRange>();
-        employeeCostRepository.findByNameOrderByValidFromAsc(newName).forEach(cost -> ranges.add(rangeOf(cost)));
+        if (target != null) {
+            employeeCostRepository.findByCategoryIdOrderByValidFromAsc(target.getId())
+                .forEach(cost -> ranges.add(rangeOf(cost)));
+        }
         ranges.addAll(incoming);
         for (int i = 0; i < ranges.size(); i++) {
             for (int j = i + 1; j < ranges.size(); j++) {
@@ -288,30 +316,48 @@ public class EmployeeCostService {
     }
 
     /**
-     * Deleting is refused while any assignment references the name — including when a sibling record
-     * keeps the name alive. Removing an outdated rate of a category still in use would leave its
-     * period uncovered, and the bookings in that period would silently cost 0 EUR (#922). Retarget
-     * the assignments first; editing them keeps their audit trail.
+     * Deleting is refused while any assignment refers to the category — including when a sibling
+     * period keeps the category alive. Removing an outdated rate of a category still in use would
+     * leave its period uncovered, and the bookings in that period would silently cost 0 EUR (#922).
+     * Retarget the assignments first; editing them keeps their audit trail.
      */
     @Authorized(requiresManager = true)
     public void delete(long id) {
         var cost = getById(id);
-        var assignments = assignmentRepository.countByEmployeeCostName(cost.getName());
+        var category = cost.getCategory();
+        var assignments = assignmentRepository.countByCategoryId(category.getId());
         if (assignments > 0) {
-            throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_HAS_ASSIGNMENTS, cost.getName(), assignments);
+            throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_HAS_ASSIGNMENTS, category.getName(), assignments);
         }
         employeeCostRepository.deleteById(id);
+        dropIfUnused(category);
+    }
+
+    /**
+     * A category nothing refers to any more goes away, as it did while it was only a name: the
+     * overview listed a name as long as a rate period or an assignment carried it.
+     */
+    private void dropIfUnused(CostCategory category) {
+        if (employeeCostRepository.countByCategoryId(category.getId()) == 0
+            && assignmentRepository.countByCategoryId(category.getId()) == 0) {
+            categoryRepository.delete(category);
+        }
+    }
+
+    private CostCategory categoryNamed(String name) {
+        return categoryRepository.findByName(name)
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN, name));
     }
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
         var employee = employeeOf(data);
         var suborder = suborderOf(data);
-        checkReferences(data);
+        var category = categoryOf(data);
         checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
             endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
-        applyAssignment(assignment, data, employee, suborder);
+        applyAssignment(assignment, data, category, employee, suborder);
         return assignmentRepository.save(assignment);
     }
 
@@ -319,12 +365,16 @@ public class EmployeeCostService {
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
         var employee = employeeOf(data);
         var suborder = suborderOf(data);
-        checkReferences(data);
+        var category = categoryOf(data);
         var assignment = getAssignmentById(id);
+        var previous = assignment.getCategory();
         checkNoAssignmentOverlap(employee.getId(), data.suborderId(), data.validFrom(),
             endOfValidity(data.validUntil()), id);
-        applyAssignment(assignment, data, employee, suborder);
+        applyAssignment(assignment, data, category, employee, suborder);
         assignmentRepository.save(assignment);
+        if (!previous.equals(category)) {
+            dropIfUnused(previous);
+        }
     }
 
     /**
@@ -356,30 +406,30 @@ public class EmployeeCostService {
     }
 
     /**
-     * An assignment names its cost category by name, so it can be anything the request sends (#958).
-     * The select of the form is no protection: a post with another value, or none at all, reaches the
-     * same endpoint. An unknown name makes {@link #findEffectiveCost} resolve nothing, and that shows
-     * up as work costing 0 EUR in controlling rather than as an error — so it is refused here. Person
-     * and suborder are referenced by id (#968, #1205) and checked by {@link #employeeOf} and
-     * {@link #suborderOf}.
+     * The form names the cost category by its unique name, so it can be anything the request sends
+     * (#958). The select of the form is no protection: a post with another value, or none at all,
+     * reaches the same endpoint. An unknown name is refused here; the assignment itself then refers to
+     * the category by id (#1209). Person and suborder are referenced by id (#968, #1205) and checked by
+     * {@link #employeeOf} and {@link #suborderOf}.
      *
-     * <p>The category is checked through {@link #categoryExists}, which counts a name that only
-     * assignments still carry. An assignment left behind by a deleted cost rate (#895) therefore
-     * stays editable, which is the way to move it onto a rate that exists.
+     * <p>A category without rate periods still counts. An assignment left behind by a deleted cost
+     * rate (#895) therefore stays editable, which is the way to move it onto a rate that exists.
      */
-    private void checkReferences(EmployeeCostAssignmentData data) {
-        if (!categoryExists(data.employeeCostName())) {
-            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN, data.employeeCostName());
-        }
+    private CostCategory categoryOf(EmployeeCostAssignmentData data) {
+        return categoryNamed(data.employeeCostName());
     }
 
     @Authorized(requiresManager = true)
     public void deleteAssignment(long id) {
+        var category = assignmentRepository.findById(id).map(EmployeeCostAssignment::getCategory).orElse(null);
         assignmentRepository.deleteById(id);
+        if (category != null) {
+            dropIfUnused(category);
+        }
     }
 
-    private void checkNoCostOverlap(String name, LocalDate from, LocalDate until, Long excludeId) {
-        if (!employeeCostRepository.findOverlapping(name, from, until, excludeId).isEmpty()) {
+    private void checkNoCostOverlap(long categoryId, LocalDate from, LocalDate until, Long excludeId) {
+        if (!employeeCostRepository.findOverlapping(categoryId, from, until, excludeId).isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_OVERLAP);
         }
     }
@@ -390,8 +440,8 @@ public class EmployeeCostService {
         }
     }
 
+    /** The values of a rate period; its category is set by the caller. */
     private void apply(EmployeeCost cost, EmployeeCostData data) {
-        cost.setName(data.name());
         cost.setCostCentsPerHour(data.costCentsPerHour());
         cost.setValidFrom(data.validFrom());
         cost.setValidUntil(endOfValidity(data.validUntil()));
@@ -402,8 +452,8 @@ public class EmployeeCostService {
      *                 unresolved one being kept, whose sign then stays as it is
      */
     private void applyAssignment(EmployeeCostAssignment assignment, EmployeeCostAssignmentData data,
-                                 Employee employee, Suborder suborder) {
-        assignment.setEmployeeCostName(data.employeeCostName());
+                                 CostCategory category, Employee employee, Suborder suborder) {
+        assignment.setCategory(category);
         assignment.setEmployeeId(employee.getId());
         assignment.setEmployeeSign(employee.getSign());
         assignment.setSuborderId(suborder == null ? null : suborder.getId());

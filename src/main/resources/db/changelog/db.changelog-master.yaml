@@ -4626,3 +4626,73 @@ databaseChangeLog:
               ALTER TABLE `suborder`
                 ADD COLUMN `parent_key` bigint GENERATED ALWAYS AS (COALESCE(`parentorder_id`, 0)) STORED,
                 ADD CONSTRAINT `uk_suborder_customerorder_parent_sign` UNIQUE (`customerorder_id`, `parent_key`, `sign`)
+
+  - changeSet:
+      id: 128
+      author: kr
+      comment: Kostenkategorie als eigene Tabelle, Zeitscheiben und Zuordnungen verweisen per Fremdschluessel darauf (#1209)
+      # Bisher war eine Kategorie nur ein Name, den mehrere Zeitscheiben (employee_cost.name) und jede
+      # Zuordnung (employee_cost_employee.employee_cost_name) trugen. Eine Umbenennung musste alle
+      # treffen, und ein Tippfehler legte stillschweigend eine neue Kategorie an.
+      #
+      # Jeder Name, den eine Zeitscheibe oder eine Zuordnung traegt, wird eine Kategorie - auch der einer
+      # Zuordnung ohne Zeitscheibe (#895). Verglichen wird binaer wie bisher (utf8mb3_bin): Namen, die
+      # sich nur in der Schreibweise unterscheiden, bleiben zwei Kategorien, so wie die Anwendung sie
+      # schon unterschied.
+      #
+      # Die Namensspalten bleiben als Spiegel stehen, weil Views, ETL-Definitionen und Reports darueber
+      # verknuepfen. Die Anwendung schreibt sie aus der Kategorie und liest sie nicht mehr. Der
+      # eindeutige Schluessel einer Zeitscheibe geht vom Namen auf die Kategorie ueber.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: employee_cost_category
+      changes:
+        - sql:
+            sql: >-
+              CREATE TABLE `employee_cost_category` (
+                `id` bigint NOT NULL AUTO_INCREMENT,
+                `name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL,
+                `created` datetime DEFAULT NULL,
+                `lastupdate` datetime DEFAULT NULL,
+                `createdby` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL,
+                `lastupdatedby` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL,
+                `updatecounter` int DEFAULT NULL,
+                CONSTRAINT `pk_employee_cost_category` PRIMARY KEY (`id`),
+                CONSTRAINT `uk_employee_cost_category_name` UNIQUE (`name`)
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin
+        - sql:
+            sql: >-
+              INSERT INTO `employee_cost_category` (`name`, `created`, `createdby`, `updatecounter`)
+              SELECT n.`name`, NOW(), 'liquibase', 0
+              FROM (SELECT `name` FROM `employee_cost`
+                    UNION
+                    SELECT `employee_cost_name` FROM `employee_cost_employee`) n
+              ORDER BY n.`name`
+        - sql:
+            sql: >-
+              ALTER TABLE `employee_cost` ADD COLUMN `category_id` bigint NULL AFTER `id`
+        - sql:
+            sql: >-
+              UPDATE `employee_cost` c JOIN `employee_cost_category` k ON k.`name` = c.`name`
+              SET c.`category_id` = k.`id`
+        - sql:
+            sql: >-
+              ALTER TABLE `employee_cost`
+                MODIFY `category_id` bigint NOT NULL,
+                ADD CONSTRAINT `fk_employee_cost_category` FOREIGN KEY (`category_id`) REFERENCES `employee_cost_category` (`id`),
+                DROP INDEX `uk_employee_cost_name_valid_from`,
+                ADD CONSTRAINT `uk_employee_cost_category_valid_from` UNIQUE (`category_id`, `valid_from`)
+        - sql:
+            sql: >-
+              ALTER TABLE `employee_cost_employee` ADD COLUMN `employee_cost_category_id` bigint NULL AFTER `id`
+        - sql:
+            sql: >-
+              UPDATE `employee_cost_employee` a JOIN `employee_cost_category` k ON k.`name` = a.`employee_cost_name`
+              SET a.`employee_cost_category_id` = k.`id`
+        - sql:
+            sql: >-
+              ALTER TABLE `employee_cost_employee`
+                MODIFY `employee_cost_category_id` bigint NOT NULL,
+                ADD CONSTRAINT `fk_employee_cost_employee_category` FOREIGN KEY (`employee_cost_category_id`) REFERENCES `employee_cost_category` (`id`)

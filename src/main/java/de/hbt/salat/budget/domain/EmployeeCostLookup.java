@@ -25,6 +25,8 @@ import de.hbt.salat.order.domain.OrderType;
  * <p>The person is matched by id (#968), and so is the suborder (#1205), so a sign change — a
  * correction as much as an anonymization or a renamed order — leaves the resolution alone. An assignment whose person
  * the migration could not resolve carries no id and matches no booking, just as its sign matched none before.
+ * Assignment and rate periods meet over the id of their category (#1209), so renaming a category
+ * changes nothing either.
  */
 public final class EmployeeCostLookup {
 
@@ -42,12 +44,12 @@ public final class EmployeeCostLookup {
     }
 
     private final Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey;
-    private final Map<String, List<EmployeeCost>> costsByName;
+    private final Map<Long, List<EmployeeCost>> costsByCategoryId;
 
     private EmployeeCostLookup(Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey,
-                               Map<String, List<EmployeeCost>> costsByName) {
+                               Map<Long, List<EmployeeCost>> costsByCategoryId) {
         this.assignmentsByKey = assignmentsByKey;
-        this.costsByName = costsByName;
+        this.costsByCategoryId = costsByCategoryId;
     }
 
     /** Builds a lookup over the given assignments and costs. Iteration order defines precedence. */
@@ -59,11 +61,11 @@ public final class EmployeeCostLookup {
                 new AssignmentKey(assignment.getEmployeeId(), assignment.getSuborderId()),
                 k -> new ArrayList<>()).add(assignment);
         }
-        Map<String, List<EmployeeCost>> costsByName = new HashMap<>();
+        Map<Long, List<EmployeeCost>> costsByCategoryId = new HashMap<>();
         for (var cost : costs) {
-            costsByName.computeIfAbsent(cost.getName(), k -> new ArrayList<>()).add(cost);
+            costsByCategoryId.computeIfAbsent(cost.getCategory().getId(), k -> new ArrayList<>()).add(cost);
         }
-        return new EmployeeCostLookup(assignmentsByKey, costsByName);
+        return new EmployeeCostLookup(assignmentsByKey, costsByCategoryId);
     }
 
     /**
@@ -79,14 +81,14 @@ public final class EmployeeCostLookup {
         if (suborderId != null) {
             var assignment = findAssignment(AssignmentKey.specific(employeeId, suborderId), date);
             if (assignment.isPresent()) {
-                return findCost(assignment.get().getEmployeeCostName(), date);
+                return findCost(assignment.get().getCategory().getId(), date);
             }
         }
         if (orderType == OrderType.BEREITSCHAFT) {
             return Optional.empty();
         }
         return findAssignment(AssignmentKey.general(employeeId), date)
-            .flatMap(a -> findCost(a.getEmployeeCostName(), date));
+            .flatMap(a -> findCost(a.getCategory().getId(), date));
     }
 
     private Optional<EmployeeCostAssignment> findAssignment(AssignmentKey key, LocalDate date) {
@@ -95,8 +97,8 @@ public final class EmployeeCostLookup {
             .findFirst();
     }
 
-    private Optional<EmployeeCost> findCost(String name, LocalDate date) {
-        return costsByName.getOrDefault(name, List.of()).stream()
+    private Optional<EmployeeCost> findCost(long categoryId, LocalDate date) {
+        return costsByCategoryId.getOrDefault(categoryId, List.of()).stream()
             .filter(c -> !c.getValidFrom().isAfter(date) && !c.getValidUntil().isBefore(date))
             .findFirst();
     }
