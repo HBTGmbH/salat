@@ -1,7 +1,7 @@
 package de.hbt.salat.e2e.dailyreport;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.hbt.salat.common.GlobalConstants.SUBRORDER_SIGN_TRAINING;
+import static de.hbt.salat.e2e.E2ETestData.SUBORDER_TRAINING_SIGN;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -27,7 +27,7 @@ class SuborderTrainingDefaultE2ETest extends PlaywrightE2ETestBase {
       openBookingFormFor(page, suborderIdOf(page, E2ETestData.SUBORDER_ALPHA_DEV_SIGN));
       assertThat(trainingSwitch(page)).not().isChecked();
 
-      selectTomSelectOption(page, "suborderId", SUBRORDER_SIGN_TRAINING);
+      selectTomSelectOption(page, "suborderId", SUBORDER_TRAINING_SIGN);
 
       assertThat(trainingSwitch(page)).isChecked();
     });
@@ -37,7 +37,7 @@ class SuborderTrainingDefaultE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void a_preselected_suborder_with_the_training_flag_renders_the_switch_on(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, newBookingPath(), page -> {
-      openBookingFormFor(page, suborderIdOf(page, SUBRORDER_SIGN_TRAINING));
+      openBookingFormFor(page, suborderIdOf(page, SUBORDER_TRAINING_SIGN));
 
       assertThat(trainingSwitch(page)).isChecked();
     });
@@ -49,7 +49,7 @@ class SuborderTrainingDefaultE2ETest extends PlaywrightE2ETestBase {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, newBookingPath(), page -> {
       // the share-with-colleagues deeplink carries the training state of the shared booking and
       // must not be overruled by the default flag of its suborder
-      String trainingSuborderId = suborderIdOf(page, SUBRORDER_SIGN_TRAINING);
+      String trainingSuborderId = suborderIdOf(page, SUBORDER_TRAINING_SIGN);
       page.navigate(urlWithLogin(newBookingPath() + "?suborderId=" + trainingSuborderId
           + "&training=false", E2ETestData.EMPLOYEE_MA_SIGN));
 

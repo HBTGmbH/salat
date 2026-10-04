@@ -36,7 +36,8 @@ public class CustomerorderServiceTest {
         customerorderDAO,
         mock(CustomerDAO.class),
         mock(EmployeeDAO.class),
-        mock(CustomerorderRepository.class));
+        mock(CustomerorderRepository.class),
+        mock(SpecialOrders.class));
     when(customerorderDAO.getCustomerorders())
         .thenReturn(List.of(customerorder("visible", false), customerorder("hidden", true)));
   }

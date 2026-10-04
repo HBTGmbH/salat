@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.e2e.E2EBrowser;
 import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
@@ -69,7 +68,7 @@ class TimereportFormSubmitOnceE2ETest extends PlaywrightE2ETestBase {
   }
 
   private void fillBooking(Page page) {
-    selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+    selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
     page.fill("#durationTime", "01:00");
     page.fill("#commentField", "Einmal-absenden Buchung");
   }

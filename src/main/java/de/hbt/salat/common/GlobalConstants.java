@@ -132,11 +132,6 @@ public class GlobalConstants {
     public static final long REST_PERIOD_IN_MINUTES = 11 * MINUTES_PER_HOUR;
 
     public static final int DEFAULT_WORK_DAY_START = 9;
-    public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
-    public static final String CUSTOMERORDER_SIGN_TRAINING = "i976";
-    public static final String SUBRORDER_SIGN_TRAINING = "FORTBILDUNG";
-    public static final String SUBRORDER_SIGN_VACATION_SPECIAL = "Sonderurlaub";
-    public static final String COMPLETE_ORDER_SIGN_TRAINING = CUSTOMERORDER_SIGN_TRAINING + "/" + SUBRORDER_SIGN_TRAINING;
 
     public static final int MAX_TIME_REPORT_HOUR = 24;
     public static final int MIN_TIME_REPORT_HOUR = 0;

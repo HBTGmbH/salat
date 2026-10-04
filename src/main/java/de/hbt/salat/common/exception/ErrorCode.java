@@ -34,6 +34,7 @@ public enum ErrorCode {
   CO_RESP_CONTRACT_EMPLOYEE_REQUIRED("CO-0004", "responsible HBT contract employee is required"),
   CO_NOT_FOUND("CO-0005", "customer order was not found"),
   CO_SIGN_TAKEN("CO-0006", "another customer order already has this sign"),
+  CO_SPECIAL_ORDER_LOCKED("CO-0007", "the configuration names this customer order as a special order; its sign is locked"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
@@ -68,6 +69,7 @@ public enum ErrorCode {
   SO_NOT_FOUND("SO-0004", "suborder was not found"),
   SO_PARENTORDER_INVALID("SO-0005", "parent suborder does not exist or belongs to another customer order"),
   SO_SIGN_TAKEN("SO-0006", "a sibling suborder already has this sign"),
+  SO_SPECIAL_ORDER_LOCKED("SO-0007", "the configuration names this suborder, or one below it, as a special order; its complete sign is locked"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),

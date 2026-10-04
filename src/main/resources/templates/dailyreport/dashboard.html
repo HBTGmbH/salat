@@ -278,9 +278,12 @@
             <div class="d-flex justify-content-between align-items-baseline mb-1">
               <a th:if="${bookingListAllowed}" class="fw-semibold small"
                  th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders=${v.suborderIdsParam},fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${v.validFrom},fBookingsUntil=${v.bookingsUntil})}"
-                 th:aria-label="#{main.welcome.vacation.bookings.link.text(${v.suborderSign})}"
-                 th:text="${v.suborderSign}">Urlaub 2025</a>
-              <span th:unless="${bookingListAllowed}" class="fw-semibold small" th:text="${v.suborderSign}">Urlaub 2025</span>
+                 th:with="label=${v.special} ? #{main.my.accounts.vacation.special} : ${v.suborderSign}"
+                 th:aria-label="#{main.welcome.vacation.bookings.link.text(${label})}"
+                 th:text="${label}">Urlaub 2025</a>
+              <!--/* Sonderurlaub steht für alle Unteraufträge ohne Anspruch und trägt kein Kürzel (#1341) */-->
+              <span th:unless="${bookingListAllowed}" class="fw-semibold small"
+                    th:text="${v.special} ? #{main.my.accounts.vacation.special} : ${v.suborderSign}">Urlaub 2025</span>
               <span class="small"
                     th:classappend="${v.vacationBudgetExceeded} ? 'text-danger fw-bold' : 'text-muted'"
                     th:text="${v.special} ? ${v.usedVacationString} : ${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>

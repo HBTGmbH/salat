@@ -120,7 +120,8 @@ class SignsRenamedPublicationTest {
   void a_renamed_order_announces_its_old_and_new_sign() {
     var service = new CustomerorderService(eventPublisher, mock(CommandPublisher.class), customerorderDAO,
         mock(CustomerDAO.class), mock(EmployeeDAO.class), mock(CustomerorderRepository.class, invocation ->
-            invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null));
+            invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null),
+        mock(SpecialOrders.class));
 
     service.update(7L, customerorderDto("NEW"));
 
@@ -134,7 +135,8 @@ class SignsRenamedPublicationTest {
   void an_order_saved_under_its_sign_announces_nothing() {
     var service = new CustomerorderService(eventPublisher, mock(CommandPublisher.class), customerorderDAO,
         mock(CustomerDAO.class), mock(EmployeeDAO.class), mock(CustomerorderRepository.class, invocation ->
-            invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null));
+            invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null),
+        mock(SpecialOrders.class));
 
     service.update(7L, customerorderDto("CO"));
 
@@ -143,7 +145,7 @@ class SignsRenamedPublicationTest {
 
   private SuborderService suborderService() {
     return new SuborderService(eventPublisher, mock(CommandPublisher.class), suborderDAO,
-        mock(SuborderRepository.class), customerorderService);
+        mock(SuborderRepository.class), customerorderService, mock(SpecialOrders.class));
   }
 
   private List<SignsRenamedEvent> renames() {

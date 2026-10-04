@@ -6,7 +6,6 @@ import com.microsoft.playwright.Page;
 import java.time.LocalDate;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.e2e.E2EBrowser;
 import de.hbt.salat.e2e.E2ETestData;
@@ -109,7 +108,7 @@ class DurationInputModeE2ETest extends PlaywrightE2ETestBase {
    * Urlaub, carries no entitlement of its own that the people lead would first have to be granted.
    */
   private void submit(Page page) {
-    selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+    selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_TRAINING_SIGN);
     page.click("#timereportMainForm button[type=submit]");
     page.waitForLoadState();
   }

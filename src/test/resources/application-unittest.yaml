@@ -16,3 +16,12 @@ spring:
       ddl-auto: create
   liquibase:
     enabled: false
+salat:
+  # Die Tests legen ihre Aufträge selbst an; die Sonderaufträge der application.yaml gibt es in der
+  # leeren Datenbank nicht, und die Prüfung beim Start hielte an (#1341). E2ETestData setzt sie nach
+  # dem Anlegen der Testdaten.
+  training:
+    regular-suborder-signs: []
+  vacation:
+    customerorder-sign: ""
+    do-not-calculate-signs: []

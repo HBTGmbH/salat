@@ -80,11 +80,12 @@
           <label class="form-label required" th:for="sign" th:text="#{main.suborder.sign.text}">Sign</label>
           <div class="d-flex gap-2">
             <input type="text" class="form-control" id="sign" th:field="*{sign}"
-                   th:errorclass="is-invalid" required maxlength="30" />
+                   th:errorclass="is-invalid" required maxlength="30" th:readonly="${signLocked}" />
             <button type="button" class="btn btn-outline-secondary flex-shrink-0"
-                    id="generateSignBtn"
+                    id="generateSignBtn" th:disabled="${signLocked}"
                     th:title="#{main.suborder.generatesign.text}"><i class="bi bi-hash"></i></button>
           </div>
+          <div class="form-text" th:if="${signLocked}" th:text="#{main.order.sign.locked.help}"></div>
           <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('sign')}" th:errors="*{sign}"></div>
         </div>
         <div class="col-md-6">

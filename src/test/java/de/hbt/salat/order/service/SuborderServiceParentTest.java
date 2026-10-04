@@ -64,7 +64,8 @@ class SuborderServiceParentTest {
         mock(CommandPublisher.class),
         suborderDAO,
         mock(SuborderRepository.class),
-        customerorderService);
+        customerorderService,
+        mock(SpecialOrders.class));
 
     order = customerorder(ORDER_ID, "co");
     twin = suborder(TWIN, order, "01");
@@ -138,7 +139,7 @@ class SuborderServiceParentTest {
   private Suborder createAndCapture(Long parentId) {
     var repository = mock(SuborderRepository.class);
     var service = new SuborderService(mock(ApplicationEventPublisher.class), mock(CommandPublisher.class),
-        suborderDAO, repository, customerorderService);
+        suborderDAO, repository, customerorderService, mock(SpecialOrders.class));
     var saved = ArgumentCaptor.forClass(Suborder.class);
 
     service.create(dto("03", parentId), ORDER_ID);

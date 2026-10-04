@@ -1,7 +1,5 @@
 package de.hbt.salat.dailyreport.controller;
 
-import static de.hbt.salat.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
-import static de.hbt.salat.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
 import static de.hbt.salat.common.util.DateUtils.today;
 
 import java.time.Duration;
@@ -42,6 +40,7 @@ import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.service.SpecialOrders;
 
 @Controller
 @RequestMapping("/my-accounts")
@@ -65,6 +64,7 @@ public class MyAccountsController {
     private final MessageSourceAccessor messageSourceAccessor;
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
+    private final SpecialOrders specialOrders;
 
     @GetMapping
     public String show(@RequestParam(required = false) Long fEmployeeContractId,
@@ -178,10 +178,8 @@ public class MyAccountsController {
                 : List.<Employeeorder>of();
 
         if (dailyWorkingMinutes > 0 && !vacationOrders.isEmpty()) {
-            var currentYearSign = String.valueOf(currentYear);
-
             for (var order : vacationOrders) {
-                var isRegularVacation = !SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
+                var isRegularVacation = !isSpecialVacation(order);
                 if(isRegularVacation) {
                     Duration budget = order.getDebithours();
                     if (budget == null || budget.isZero()) continue;
@@ -192,7 +190,7 @@ public class MyAccountsController {
                     if(Validity.isInactiveOn(order.getUntilDate(), today)) {
                         budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForEmployeeOrder(
                                 order.getId(), yearStart, today));
-                    } else if (!currentYearSign.equals(order.getSuborder().getSign())) {
+                    } else if (!isOfYear(order, currentYear)) {
                         // only use remaining from last year
 
                         // calculate remaining budget for this year = budget - taken vacation last year
@@ -207,7 +205,7 @@ public class MyAccountsController {
                     }
 
                     double budgetDays = (double) budget.toMinutes() / dailyWorkingMinutes;
-                    if (currentYearSign.equals(order.getSuborder().getSign())) {
+                    if (isOfYear(order, currentYear)) {
                         annualEntitlementDays += budgetDays;
                     } else {
                         previousYearCarryoverDays += budgetDays;
@@ -216,7 +214,7 @@ public class MyAccountsController {
             }
 
             for (var order : vacationOrders) {
-                var isRegularVacation = !SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
+                var isRegularVacation = !isSpecialVacation(order);
                 if(isRegularVacation) {
                     long employeeorderId = order.getId();
                     takenDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
@@ -272,7 +270,7 @@ public class MyAccountsController {
             LocalDate yearStart, LocalDate horizon, long dailyWorkingMinutes) {
         double takenDays = 0;
         double plannedDays = 0;
-        for (var order : orders.stream().filter(MyAccountsController::isSpecialVacation).toList()) {
+        for (var order : orders.stream().filter(this::isSpecialVacation).toList()) {
             takenDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
                     order.getId(), yearStart, today) / dailyWorkingMinutes;
             plannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
@@ -337,8 +335,18 @@ public class MyAccountsController {
         return minutes == null ? 0 : Math.round((double) minutes / dailyWorkingMinutes * 10) / 10.0;
     }
 
-    private static boolean isSpecialVacation(Employeeorder order) {
-        return SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
+    /** Special leave: a suborder of the vacation order without a calculated entitlement (#1341). */
+    private boolean isSpecialVacation(Employeeorder order) {
+        return specialOrders.isVacationDoNotCalculate(order.getSuborder().getId());
+    }
+
+    /**
+     * Whether the yearly vacation suborder grants the entitlement of that year: the year it begins,
+     * not its sign (#1341) — the same rule the entitlement is calculated by.
+     */
+    private static boolean isOfYear(Employeeorder order, int year) {
+        var from = order.getSuborder().getFromDate();
+        return from != null && from.getYear() == year;
     }
 
     /**
@@ -391,10 +399,10 @@ public class MyAccountsController {
         int trainingSharePercent = totalWorkMinutes > 0 ? (int) Math.round(totalTrainingMinutes * 100.0 / totalWorkMinutes) : 0;
 
         long regularTrainingMinutes = trainingReports.stream()
-                .filter(t -> COMPLETE_ORDER_SIGN_TRAINING.equals(t.getCompleteOrderSign()))
+                .filter(this::isRegularTraining)
                 .mapToLong(t -> t.getDuration().toMinutes()).sum();
         long orderTrainingMinutes = trainingReports.stream()
-                .filter(t -> !COMPLETE_ORDER_SIGN_TRAINING.equals(t.getCompleteOrderSign()))
+                .filter(t -> !isRegularTraining(t))
                 .mapToLong(t -> t.getDuration().toMinutes()).sum();
 
         var bookings = trainingReports.stream()
@@ -411,7 +419,7 @@ public class MyAccountsController {
         var regularMonthMinutes = new TreeMap<YearMonth, Long>();
         var orderMonthMinutes = new TreeMap<YearMonth, Long>();
         for (var report : trainingReports) {
-            var target = COMPLETE_ORDER_SIGN_TRAINING.equals(report.getCompleteOrderSign())
+            var target = isRegularTraining(report)
                     ? regularMonthMinutes : orderMonthMinutes;
             target.merge(YearMonth.from(report.getReferenceday()), report.getDuration().toMinutes(), Long::sum);
         }
@@ -488,7 +496,12 @@ public class MyAccountsController {
     }
 
     private boolean isTraining(TimereportDTO timereport) {
-        return timereport.isTraining() || COMPLETE_ORDER_SIGN_TRAINING.equals(timereport.getCompleteOrderSign());
+        return timereport.isTraining() || isRegularTraining(timereport);
+    }
+
+    /** A booking on a suborder of the regular training, by id (#1341). */
+    private boolean isRegularTraining(TimereportDTO timereport) {
+        return specialOrders.isRegularTraining(timereport.getSuborderId());
     }
 
     private Employeecontract currentContract(Long fEmployeeContractId) {

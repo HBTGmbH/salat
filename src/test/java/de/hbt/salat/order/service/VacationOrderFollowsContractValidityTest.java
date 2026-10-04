@@ -63,7 +63,7 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
     EmployeeorderService.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class,
-    CustomerDAO.class, CommandPublisher.class})
+    CustomerDAO.class, CommandPublisher.class, SpecialOrders.class})
 public class VacationOrderFollowsContractValidityTest {
 
   private static final int YEAR = Year.now().getValue();
@@ -75,6 +75,8 @@ public class VacationOrderFollowsContractValidityTest {
   private static final Duration DAILY_WORKING_TIME = Duration.ofHours(8);
   private static final int VACATION_DAYS = 30;
   private static final Duration FULL_ENTITLEMENT = DAILY_WORKING_TIME.multipliedBy(VACATION_DAYS);
+  private static final String VACATION_SIGN = "URLAUB";
+  private static final String SPECIAL_LEAVE_SIGN = "Sonderurlaub";
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
@@ -100,6 +102,12 @@ public class VacationOrderFollowsContractValidityTest {
   @Autowired
   private EmployeeorderRepository employeeorderRepository;
 
+  @Autowired
+  private SalatProperties salatProperties;
+
+  @Autowired
+  private SpecialOrders specialOrders;
+
   @MockitoBean
   private AuthorizedUser authorizedUser;
 
@@ -112,6 +120,8 @@ public class VacationOrderFollowsContractValidityTest {
   private Employee employee;
   private Employee supervisor;
   private Customer customer;
+  private Suborder yearlySuborder;
+  private Suborder specialLeave;
 
   @BeforeEach
   public void setUp() {
@@ -193,6 +203,80 @@ public class VacationOrderFollowsContractValidityTest {
     assertThat(reloaded.getUntilDate()).isEqualTo(HALF_YEAR);
   }
 
+  /**
+   * Special leave has no entitlement (#1341). Shortening a contract used to recalculate it like a
+   * yearly suborder and parse its sign as the year — the change of the contract failed.
+   */
+  @Test
+  public void shortening_the_contract_cuts_special_leave_without_calculating_an_entitlement() {
+    long contractId = contractWithStandardOrders(YEAR_END);
+    var special = orderOn(contractId, specialLeave, YEAR_START, YEAR_END, Duration.ZERO);
+
+    updateContract(contractId, YEAR_START, HALF_YEAR);
+
+    var reloaded = employeeorderService.getEmployeeorderById(special.getId());
+    assertThat(reloaded.getUntilDate()).isEqualTo(HALF_YEAR);
+    assertThat(reloaded.getDebithours()).isEqualTo(Duration.ZERO);
+  }
+
+  /** The year of the entitlement is the year the suborder begins; its sign means nothing (#1341). */
+  @Test
+  public void the_entitlement_is_that_of_the_year_the_suborder_begins_whatever_its_sign() {
+    yearlySuborder.setSign("Urlaub dieses Jahres");
+    suborderRepository.save(yearlySuborder);
+
+    long contractId = contractWithStandardOrders(HALF_YEAR);
+
+    assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(FULL_ENTITLEMENT.dividedBy(2));
+  }
+
+  /** Created by hand without a debit, the order gets what the automatic creation would give it (#1341). */
+  @Test
+  public void a_vacation_order_created_by_hand_without_a_debit_gets_the_calculated_entitlement() {
+    long contractId = contractWithoutStandardOrders(HALF_YEAR);
+
+    employeeorderService.create(newOrder(contractId, yearlySuborder, Duration.ZERO));
+
+    assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(FULL_ENTITLEMENT.dividedBy(2));
+  }
+
+  /** A debit a manager enters stays — until the next change of the contract calculates it again. */
+  @Test
+  public void a_debit_entered_by_hand_stays_until_the_contract_changes() {
+    long contractId = contractWithoutStandardOrders(YEAR_END);
+
+    employeeorderService.create(newOrder(contractId, yearlySuborder, Duration.ofHours(10)));
+    assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(Duration.ofHours(10));
+
+    updateContract(contractId, YEAR_START, HALF_YEAR);
+    assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(FULL_ENTITLEMENT.dividedBy(2));
+  }
+
+  private long contractWithoutStandardOrders(LocalDate validUntil) {
+    return employeecontractService.createEmployeecontract(
+        employee.getId(), YEAR_START, validUntil, List.of(supervisor.getId()),
+        "task", false, false, DAILY_WORKING_TIME, VACATION_DAYS, Duration.ZERO, false).getId();
+  }
+
+  private Employeeorder newOrder(long contractId, Suborder suborder, Duration debithours) {
+    var employeeorder = new Employeeorder();
+    employeeorder.setEmployeecontract(employeecontractService.getEmployeecontractById(contractId));
+    employeeorder.setSuborder(suborder);
+    employeeorder.setSign(" ");
+    employeeorder.setFromDate(YEAR_START);
+    employeeorder.setUntilDate(employeecontractService.getEmployeecontractById(contractId).getValidUntil());
+    employeeorder.setDebithours(debithours);
+    return employeeorder;
+  }
+
+  private Employeeorder orderOn(long contractId, Suborder suborder, LocalDate from, LocalDate until,
+                                Duration debithours) {
+    var employeeorder = newOrder(contractId, suborder, debithours);
+    employeeorder.setFromDate(from);
+    employeeorder.setUntilDate(until);
+    return employeeorderRepository.save(employeeorder);
+  }
+
   private long contractWithStandardOrders(LocalDate validUntil) {
     return contractWithStandardOrders(YEAR_START, validUntil);
   }
@@ -237,9 +321,17 @@ public class VacationOrderFollowsContractValidityTest {
     return customerRepository.save(created);
   }
 
+  /**
+   * The vacation order with its yearly suborder and special leave, named as the special orders the
+   * way {@code application.yaml} names them in operation (#1341).
+   */
   private void vacationSuborder() {
-    suborder(customerorder(GlobalConstants.CUSTOMERORDER_SIGN_VACATION, "Urlaub"),
-        String.valueOf(YEAR), "Urlaub " + YEAR, true);
+    var vacationOrder = customerorder(VACATION_SIGN, "Urlaub");
+    yearlySuborder = suborder(vacationOrder, String.valueOf(YEAR), "Urlaub " + YEAR, true);
+    specialLeave = suborder(vacationOrder, SPECIAL_LEAVE_SIGN, "Sonderurlaub", false);
+    salatProperties.getVacation().setCustomerorderSign(VACATION_SIGN);
+    salatProperties.getVacation().setDoNotCalculateSigns(List.of(VACATION_SIGN + "/" + SPECIAL_LEAVE_SIGN));
+    specialOrders.resolve();
   }
 
   private Customerorder customerorder(String sign, String description) {

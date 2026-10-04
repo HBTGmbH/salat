@@ -790,6 +790,11 @@ Entities are divided into two categories (→ ADR-0011):
   names the order tree by sign listens to it and follows — or adds a notice that the success
   message shows (`NoticeViewHelper`). A new place that stores an order or suborder sign as more than
   a mirror has to do the same.
+  **Exception — special orders** (#1341, → ADR-0035): the vacation order, its suborders without a
+  calculated entitlement and the suborders of the regular training are named by sign in
+  `application.yaml` (`salat.vacation`, `salat.training`). `SpecialOrders` resolves them into ids at
+  start and answers by id; their signs, and those of every order and suborder above them, are locked
+  (CO-0007, SO-0007). No code recognizes a role by comparing a sign — ask `SpecialOrders`.
 
 ### Criteria-Abfragen über den EntityManager (#1092)
 

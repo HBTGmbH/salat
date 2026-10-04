@@ -30,6 +30,7 @@ import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.persistence.SalatUserRepository;
 import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.customer.persistence.CustomerRepository;
 import de.hbt.salat.dailyreport.persistence.PublicholidayRepository;
 import de.hbt.salat.dailyreport.persistence.ReferencedayRepository;
@@ -40,6 +41,7 @@ import de.hbt.salat.employee.persistence.EmployeecontractRepository;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
 import de.hbt.salat.order.persistence.EmployeeorderRepository;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.service.SpecialOrders;
 
 /**
  * Base class for Playwright-driven E2E tests against the {@code dailyreport} module.
@@ -127,6 +129,10 @@ public abstract class PlaywrightE2ETestBase {
   private TimereportRepository timereportRepository;
   @Autowired
   private WorkingdayRepository workingdayRepository;
+  @Autowired
+  private SalatProperties salatProperties;
+  @Autowired
+  private SpecialOrders specialOrders;
 
   // no SMTP server is available in the E2E environment; release/acceptance/sharing flows send
   // mail as a side effect, so the sender is stubbed out rather than left to fail with a raw
@@ -151,6 +157,7 @@ public abstract class PlaywrightE2ETestBase {
     E2ETestData.seedIfNeeded(customerRepository, customerorderRepository, suborderRepository,
         employeeRepository, employeecontractRepository, employeeorderRepository, salatUserRepository,
         publicholidayRepository, referencedayRepository, timereportRepository, workingdayRepository);
+    E2ETestData.configureSpecialOrders(salatProperties, specialOrders);
   }
 
   @AfterAll

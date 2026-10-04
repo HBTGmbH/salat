@@ -1,7 +1,6 @@
 package de.hbt.salat.order.service;
 
 import static java.lang.Boolean.TRUE;
-import static java.time.Year.parse;
 import static de.hbt.salat.common.exception.ErrorCode.EO_CONFLICT_RESOLUTION_GOT_VETO;
 import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
 import static de.hbt.salat.common.util.DateUtils.today;
@@ -9,10 +8,12 @@ import static de.hbt.salat.order.command.GetTimereportMinutesCommandEvent.OrderT
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,7 @@ public class EmployeeorderService {
   private final SuborderService suborderService;
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
+  private final SpecialOrders specialOrders;
 
   /**
    * Which of the given suborders the contract may book on the day: those with an employee order valid
@@ -73,8 +75,15 @@ public class EmployeeorderService {
     return new HashSet<>(employeeorderRepository.findBookableSuborderIds(employeecontractId, suborderIds, date));
   }
 
+  /**
+   * An employee order on a yearly vacation suborder that comes without an entitlement gets the
+   * calculated one, as the automatic creation gives it (#1341); one a manager entered stays.
+   */
   @Authorized(requiresManager = true)
   public void create(Employeeorder employeeorder) {
+    if (isVacationYear(employeeorder.getSuborder()) && hasNoDebit(employeeorder)) {
+      applyVacationEntitlement(employeeorder);
+    }
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
@@ -121,11 +130,9 @@ public class EmployeeorderService {
         if (!employeeorderPresent) {
 
           // skip vacation orders that do not match the contract
-          if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-            var year = parse(suborder.getSign());
-            if(!contractValidity.overlaps(year)) {
-              continue; // skip creation
-            }
+          var vacationYear = isVacationYear(suborder);
+          if (vacationYear && !contractValidity.overlaps(vacationYearOf(suborder))) {
+            continue; // skip creation
           }
 
           Employeeorder employeeorder = new Employeeorder();
@@ -135,12 +142,8 @@ public class EmployeeorderService {
           employeeorder.setSign(" ");
           employeeorder.setSuborder(suborder);
 
-          // calculate effective vacation entitlement and set budget accordingly
-          if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-            var vacationOrderYear = parse(suborder.getSign());
-            var vacationBudget = employeecontractService.getEffectiveVacationEntitlement(employeecontract.getId(), vacationOrderYear); // calculate real entitlement
-            employeeorder.setDebithours(vacationBudget);
-            employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
+          if (vacationYear) {
+            applyVacationEntitlement(employeeorder);
           }
 
           createOrUpdate(employeeorder, effectiveValidity.getFrom(), effectiveValidity.getUntil());
@@ -194,8 +197,9 @@ public class EmployeeorderService {
       }
       createOrUpdate(employeeorder, resultingValidity.getFrom(), resultingValidity.getUntil());
       // ensure the vacation budget matches the period the order now covers
-      if(isVacationOrder(employeeorder)) {
-        adjustVacationBudget(employeeorder);
+      if (isVacationYear(employeeorder.getSuborder())) {
+        applyVacationEntitlement(employeeorder);
+        createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
       }
     }
   }
@@ -310,15 +314,63 @@ public class EmployeeorderService {
     }).orElse(newOrder);
   }
 
-  private boolean isVacationOrder(Employeeorder employeeorder) {
-    return employeeorder.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION);
+  /** The form leaves the debit empty as zero (→ {@code EmployeeorderController}). */
+  private static boolean hasNoDebit(Employeeorder employeeorder) {
+    var debithours = employeeorder.getDebithours();
+    return debithours == null || debithours.isZero();
   }
 
-  private void adjustVacationBudget(Employeeorder employeeorder) {
-    var year = parse(employeeorder.getSuborder().getSign());
-    var budget = employeecontractService.getEffectiveVacationEntitlement(employeeorder.getEmployeecontract().getId(), year);
-    employeeorder.setDebithours(budget);
-    createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  /** A yearly suborder of the configured vacation order (→ {@link SpecialOrders#isVacationYear}). */
+  private boolean isVacationYear(Suborder suborder) {
+    return suborder != null && specialOrders.isVacationYear(suborder.getCustomerorder().getId(), suborder.getId());
+  }
+
+  /**
+   * The year a yearly vacation suborder grants the entitlement of: the year it begins (#1341). Its
+   * sign carries no meaning — it used to be parsed as the year, and a suborder named otherwise broke
+   * every contract change of the people on it.
+   */
+  private static Year vacationYearOf(Suborder suborder) {
+    return Year.from(suborder.getFromDate());
+  }
+
+  /**
+   * The one rule bound to the configured vacation order (#1341): the debit of an employee order on a
+   * yearly suborder is calculated, not entered. It is the effective vacation entitlement of the
+   * contract in the year the suborder begins ({@link Employeecontract#getEffectiveVacationEntitlement}):
+   * vacation days times the daily working time, cut pro rata where the contract does not cover the
+   * year, as total time.
+   *
+   * <p>The same rule applies when the order is created automatically, when a manager creates it
+   * without a debit, and when a change of the contract moves its validity. A manager may overwrite
+   * the debit in the form; the next contract change calculates it again and overwrites that value —
+   * there is no marker for a value set by hand.
+   */
+  private void applyVacationEntitlement(Employeeorder employeeorder) {
+    var year = vacationYearOf(employeeorder.getSuborder());
+    employeeorder.setDebithours(employeecontractService.getEffectiveVacationEntitlement(
+        employeeorder.getEmployeecontract().getId(), year));
+    employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
+  }
+
+  /**
+   * The entitlement an employee order of the contract on the suborder would get — what the form
+   * proposes for a yearly vacation suborder (#1341). Empty for any other suborder.
+   */
+  @Transactional(readOnly = true)
+  public Optional<Duration> getCalculatedVacationEntitlement(long employeecontractId, long suborderId) {
+    var suborder = suborderService.getSuborderById(suborderId);
+    if (!isVacationYear(suborder)) {
+      return Optional.empty();
+    }
+    return Optional.of(employeecontractService.getEffectiveVacationEntitlement(employeecontractId,
+        vacationYearOf(suborder)));
+  }
+
+  /** Whether the debit of an employee order on the suborder is calculated (→ {@link #applyVacationEntitlement}). */
+  @Transactional(readOnly = true)
+  public boolean hasCalculatedVacationEntitlement(long suborderId) {
+    return isVacationYear(suborderService.getSuborderById(suborderId));
   }
 
   public List<Employeeorder> getEmployeeordersByFilters(Boolean showInactive, String filter, Long employeeContractId, Long customerOrderId, Long suborderId, Boolean showHidden) {
@@ -393,12 +445,21 @@ public class EmployeeorderService {
     return employeeorderDAO.getEmployeeorderById(employeeOrderId);
   }
 
+  /**
+   * The contract's employee orders on the configured vacation order valid today, empty while the role
+   * is off (#1341).
+   */
   public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId) {
-    return employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, today());
+    var vacationId = specialOrders.getVacationCustomerorderId();
+    return vacationId == null ? List.of()
+        : employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, vacationId, today());
   }
 
+  /** Like {@link #getVacationEmployeeOrders(long)}, overlapping the range. */
   public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, final LocalDateRange range) {
-    return employeeorderDAO.getVacationEmployeeOrders(employeecontractId, range);
+    var vacationId = specialOrders.getVacationCustomerorderId();
+    return vacationId == null ? List.of()
+        : employeeorderDAO.getVacationEmployeeOrders(employeecontractId, vacationId, range);
   }
 
   public List<Employeeorder> getAllEmployeeOrders() {

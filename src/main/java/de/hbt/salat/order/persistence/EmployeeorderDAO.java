@@ -2,8 +2,6 @@ package de.hbt.salat.order.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
-import static java.util.List.of;
-import static de.hbt.salat.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
@@ -47,21 +45,19 @@ public class EmployeeorderDAO {
         return employeeorderRepository.findById(id).orElse(null);
     }
 
-    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final LocalDate date) {
-        var customerOrderSigns = of(CUSTOMERORDER_SIGN_VACATION);
-        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
-            employeecontractId,
-            customerOrderSigns
-        );
+    /** The employee orders of the contract on the vacation order, by its id (#1341), valid on the day. */
+    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId,
+        long vacationCustomerorderId, final LocalDate date) {
+        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderId(
+            employeecontractId, vacationCustomerorderId);
         return employeeorders.stream().filter(eo -> eo.isValidAt(date)).collect(Collectors.toList());
     }
 
-    public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, final LocalDateRange range) {
-        var customerOrderSigns = of(CUSTOMERORDER_SIGN_VACATION);
-        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
-            employeecontractId,
-            customerOrderSigns
-        );
+    /** Like {@link #getVacationEmployeeOrdersByEmployeeContractIdAndDate}, overlapping the range. */
+    public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, long vacationCustomerorderId,
+        final LocalDateRange range) {
+        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderId(
+            employeecontractId, vacationCustomerorderId);
         return employeeorders.stream().filter(eo -> eo.getValidity().overlaps(range)).collect(Collectors.toList());
     }
 

@@ -24,6 +24,7 @@ public class TextInputProcessor extends AbstractSalatProcessor {
         var helpText = tag.getAttributeValue("th:helpText");
         var placeholder = tag.getAttributeValue("th:placeholder");
         var inputType = tag.getAttributeValue("type");
+        var readonly = tag.getAttributeValue("th:readonly");
 
         var mf = context.getModelFactory();
         var newModel = mf.createModel();
@@ -50,6 +51,9 @@ public class TextInputProcessor extends AbstractSalatProcessor {
         }
         if (required) {
             inputAttrs.put("required", "required");
+        }
+        if (readonly != null && !readonly.isBlank()) {
+            inputAttrs.put("th:readonly", readonly);
         }
         newModel.add(mf.createStandaloneElementTag("input", inputAttrs, AttributeValueQuotes.DOUBLE, false, true));
 

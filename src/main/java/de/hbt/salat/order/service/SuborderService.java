@@ -62,6 +62,7 @@ public class SuborderService {
   private final SuborderDAO suborderDAO;
   private final SuborderRepository suborderRepository;
   private final CustomerorderService customerorderService;
+  private final SpecialOrders specialOrders;
 
   /**
    * The suborders the command palette considers for a query (#1157), hidden and ended ones last.
@@ -224,6 +225,12 @@ public class SuborderService {
         }
         ancestor = ancestor.getParentorder();
       }
+    }
+
+    // a special order, or one above it, keeps its complete sign: the configuration names it (#1341, ADR-0035)
+    var completeSignChanges = oldSign != null && !oldSign.equals(so.getCompleteOrderSign());
+    if (completeSignChanges && specialOrders.isLockedSuborder(so.getId())) {
+      throw new BusinessRuleException(ErrorCode.SO_SPECIAL_ORDER_LOCKED, oldSign);
     }
 
     if(!so.isNew()) {
@@ -546,6 +553,9 @@ public class SuborderService {
   public void deleteSuborderById(long suborderId) {
     var event = new SuborderDeleteEvent(suborderId);
     var suborder = suborderDAO.getSuborderById(suborderId);
+    if (specialOrders.isLockedSuborder(suborderId)) {
+      throw new BusinessRuleException(ErrorCode.SO_SPECIAL_ORDER_LOCKED, suborder.getCompleteOrderSign());
+    }
     try {
       eventPublisher.publishEvent(event);
     } catch(VetoedException e) {

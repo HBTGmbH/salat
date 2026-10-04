@@ -106,9 +106,10 @@
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" id="debit-hours">
         <div class="col-md-6">
-          <salat:textInput th:field="*{debithours}" th:label="#{main.general.debithours.text}" required="false" maxlength="10" />
+          <salat:textInput th:field="*{debithours}" th:label="#{main.general.debithours.text}" required="false" maxlength="10"
+                           th:helpText="${calculatedVacationEntitlement} ? #{main.employeeorder.debithours.vacation.help} : ''" />
         </div>
         <div class="col-md-6">
           <div class="mb-3">
@@ -188,6 +189,25 @@
           <div th:replace="~{fragments/form-fields :: dateInput(
             field='validUntil', label=#{main.employeecontract.validuntil.text}, required=false
           )}"></div>
+        </div>
+      </div>
+
+      <!--/* Soll und Hinweis folgen Vertrag und Unterauftrag: ein Jahres-Unterauftrag des Urlaubs schlägt den berechneten Anspruch vor (#1341) */-->
+      <div class="row" id="debit-hours" th:hx-swap-oob="${debitChanged}">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{debithours}" th:label="#{main.general.debithours.text}" required="false" maxlength="10"
+                           th:helpText="${calculatedVacationEntitlement} ? #{main.employeeorder.debithours.vacation.help} : ''" />
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.general.debithoursunit.text}">Debit Unit</label>
+            <select class="form-select" id="debithoursunit" th:field="*{debithoursunit}">
+              <option value="" th:text="#{main.general.selectone.text}">--</option>
+              <option value="0" th:text="#{main.general.totaltime.text}">Total</option>
+              <option value="1" th:text="#{main.general.year.text}">Year</option>
+              <option value="12" th:text="#{main.general.month.text}">Month</option>
+            </select>
+          </div>
         </div>
       </div>
 

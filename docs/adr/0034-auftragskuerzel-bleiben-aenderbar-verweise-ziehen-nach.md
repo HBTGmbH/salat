@@ -59,6 +59,14 @@ Lesezeichen, versandte Alarm-Mails und Benachrichtigungen — wird beim Aufruf a
 solange das Kürzel noch einen Auftrag nennt; nach einer Umbenennung leert er den Filter. Ein im
 Cookie gemerktes Kürzel verwirft der UiState-Filter, weil der Schlüssel neu ist.
 
+### Nachtrag (#1341)
+
+Ausgenommen sind die Sonderaufträge, die `application.yaml` über ihr Kürzel nennt — der
+Urlaubsauftrag, seine Unteraufträge ohne berechneten Anspruch und die Unteraufträge der regulären
+Fortbildung (→ ADR-0035). Ihre Kürzel, und die jedes Auftrags und Unterauftrags darüber, lassen sich
+in der Anwendung nicht ändern; ein genannter Unterauftrag lässt sich nicht umhängen. Umbenannt wird
+im Betrieb, in Datenbank und Konfiguration zugleich.
+
 ### Consequences
 
 * Good: Kürzel bleiben korrigierbar, ohne dass Bezüge lautlos verloren gehen.

@@ -7,12 +7,14 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.persistence.SalatUserRepository;
 import de.hbt.salat.common.GlobalConstants;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.util.ClockProvider;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.customer.domain.Customer;
@@ -37,6 +39,7 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
 import de.hbt.salat.order.persistence.EmployeeorderRepository;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.service.SpecialOrders;
 
 /**
  * Seeds a fixed, realistic set of master/reference data for the dailyreport E2E suite:
@@ -57,6 +60,14 @@ import de.hbt.salat.order.persistence.SuborderRepository;
 public class E2ETestData {
 
   public static final String CUSTOMER_HBT_SHORTNAME = "HBT";
+
+  /**
+   * The vacation and training orders of the seed. Which orders have these roles is configuration
+   * (#1341); {@link #configureSpecialOrders} names them, as {@code application.yaml} does in operation.
+   */
+  public static final String CUSTOMERORDER_VACATION_SIGN = "URLAUB";
+  public static final String CUSTOMERORDER_TRAINING_SIGN = "i976";
+  public static final String SUBORDER_TRAINING_SIGN = "FORTBILDUNG";
 
   public static final String SUBORDER_KRANKHEIT_SIGN = "Krankheit";
   public static final String CUSTOMERORDER_KRANK_SIGN = "KRANK";
@@ -231,6 +242,18 @@ public class E2ETestData {
     };
   }
 
+  /**
+   * Names the seeded vacation and training orders as the special orders and resolves them (#1341).
+   * The test profile leaves the setting empty, because the orders only exist once the seed has run;
+   * the application context starts before that.
+   */
+  public static void configureSpecialOrders(SalatProperties properties, SpecialOrders specialOrders) {
+    properties.getVacation().setCustomerorderSign(CUSTOMERORDER_VACATION_SIGN);
+    properties.getVacation().setDoNotCalculateSigns(List.of());
+    properties.getTraining().setRegularSuborderSigns(List.of(CUSTOMERORDER_TRAINING_SIGN + "/" + SUBORDER_TRAINING_SIGN));
+    specialOrders.resolve();
+  }
+
   public static void seedIfNeeded(
       CustomerRepository customerRepository,
       CustomerorderRepository customerorderRepository,
@@ -255,7 +278,7 @@ public class E2ETestData {
 
     // --- Standard/absence orders (all customer HBT, all suborders standard=true) ---
     Customerorder vacationOrder = customerorder(customerorderRepository, hbt,
-        GlobalConstants.CUSTOMERORDER_SIGN_VACATION, "Urlaub", OrderType.KRANK_URLAUB_ABWESEND);
+        CUSTOMERORDER_VACATION_SIGN, "Urlaub", OrderType.KRANK_URLAUB_ABWESEND);
     String currentYear = String.valueOf(Year.now(ClockProvider.getClock()).getValue());
     suborder(suborderRepository, vacationOrder, currentYear, "Urlaub " + currentYear,
         LocalDate.of(Integer.parseInt(currentYear), 1, 1), true, false);
@@ -265,8 +288,8 @@ public class E2ETestData {
     suborder(suborderRepository, sickOrder, SUBORDER_KRANKHEIT_SIGN, "Krankheit", PAST, true, false);
 
     Customerorder trainingOrder = customerorder(customerorderRepository, hbt,
-        GlobalConstants.CUSTOMERORDER_SIGN_TRAINING, "Fortbildung", OrderType.STANDARD);
-    suborder(suborderRepository, trainingOrder, GlobalConstants.SUBRORDER_SIGN_TRAINING, "Fortbildung",
+        CUSTOMERORDER_TRAINING_SIGN, "Fortbildung", OrderType.STANDARD);
+    suborder(suborderRepository, trainingOrder, SUBORDER_TRAINING_SIGN, "Fortbildung",
         PAST, true, true);
 
     // --- Project master data (richer scenario) ---
