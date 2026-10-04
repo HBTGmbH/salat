@@ -3,6 +3,7 @@ package de.hbt.salat.order.controller;
 import lombok.Getter;
 import lombok.Setter;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.TicketReferenceMode;
 
 @Getter
 @Setter
@@ -27,5 +28,8 @@ public class SuborderForm {
   private Boolean hide;
   private Long parentId;
   private OrderType orderType;
+  /** {@code null} inherits from above (#1326) */
+  private TicketReferenceMode ticketReferenceMode;
+  private Integer ticketReferenceLimit;
 
 }

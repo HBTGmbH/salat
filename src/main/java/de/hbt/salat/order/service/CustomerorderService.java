@@ -38,6 +38,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
@@ -142,6 +143,13 @@ public class CustomerorderService {
     co.setHide(dto.hide());
 
     co.setOrderType(dto.orderType());
+
+    // an order always has a setting (#1326); "at most" needs a number of at least 1
+    var ticketReferencePolicy = TicketReferencePolicy.of(dto.ticketReferenceMode(), dto.ticketReferenceLimit());
+    if (ticketReferencePolicy == null) {
+      throw new InvalidDataException(ErrorCode.CO_TICKET_REFERENCE_LIMIT_INVALID);
+    }
+    co.setTicketReferencePolicy(ticketReferencePolicy);
 
     if(!co.isNew()) {
       var event = new CustomerorderUpdateEvent(co);

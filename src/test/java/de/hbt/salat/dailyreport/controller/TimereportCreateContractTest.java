@@ -143,7 +143,7 @@ class TimereportCreateContractTest {
         "save", model);
 
     var form = (TimereportForm) model.get("timereportForm");
-    assertThat(form.getTicketReference()).isEqualTo("ABC-1");
+    assertThat(form.getTicketReferences()).containsExactly("ABC-1");
     assertThat(form.getComment()).isEqualTo("ABC-1 - Titel");
     assertThat(model.get("entryFocus")).isEqualTo(TimereportController.EntryFocus.SAVE);
   }

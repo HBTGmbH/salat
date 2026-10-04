@@ -88,7 +88,7 @@ public class TimereportListExcelService {
       text(row, 4, timereport.getCustomerorderSign() + " - " + timereport.getCustomerorderDescription());
       text(row, 5, timereport.getCompleteOrderSign() + " - " + timereport.getSuborderDescription());
       text(row, 6, timereport.getTaskdescription());
-      text(row, 7, timereport.getTicketReference());
+      text(row, 7, String.join(", ", timereport.getTicketReferences()));
       text(row, 8, formatDuration(timereport));
       var decimal = row.createCell(9, NUMERIC);
       decimal.setCellValue(timereport.getDuration().toMinutes() / (double) MINUTES_PER_HOUR);

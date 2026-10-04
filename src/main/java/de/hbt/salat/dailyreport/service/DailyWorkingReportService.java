@@ -8,7 +8,6 @@ import static de.hbt.salat.common.exception.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_F
 import static de.hbt.salat.common.exception.ErrorCode.TR_BOOKING_NO_CONTRACT;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
-import static de.hbt.salat.dailyreport.service.TimereportService.normalizeTicketReference;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,6 +28,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
@@ -302,42 +302,45 @@ public class DailyWorkingReportService {
     }
 
     /**
-     * Settles what each incoming booking says about its ticket reference (#1140), so that it can be
-     * compared with the stored bookings of the same day and employee order by plain equality.
+     * Settles what each incoming booking says about its ticket references (#1140, #1326), so that it can
+     * be compared with the stored bookings of the same day and employee order by plain equality.
      *
-     * <p>A given reference is normalized as in the booking form, an empty one means "no reference".
-     * A missing one ({@code null}: a file without the column, a client that does not know the field)
-     * says nothing about the reference, and dropping a stored one for that reason would lose it on
-     * every import of an older file. Such a booking therefore takes over the reference of a stored
-     * booking that equals it apart from the reference, preferring one not taken yet, so that two
-     * stored bookings differing only in their reference both keep theirs.
+     * <p>Given references — the list, or the single reference of an older client — are normalized as in
+     * the booking form; an empty list or text means "no reference". Missing ones ({@code null}: a file
+     * without the column, a client that does not know the field) say nothing about the references, and
+     * dropping stored ones for that reason would lose them on every import of an older file. Such a
+     * booking therefore takes over the references of a stored booking that equals it apart from them,
+     * preferring one not taken yet, so that two stored bookings differing only in their references both
+     * keep theirs.
      *
-     * <p>Where no stored booking matches, the booking is new or changed, and it stays without a
-     * reference: several bookings per order and day are normal, so which stored one a changed booking
+     * <p>Where no stored booking matches, the booking is new or changed, and it stays without
+     * references: several bookings per order and day are normal, so which stored one a changed booking
      * replaces cannot be told — the pairing in the import report is a display aid, not a decision.
      */
     private static List<DailyReportData> withResolvedTicketReferences(List<DailyReportData> bookings, List<DailyReportData> stored) {
         var taken = new ArrayList<DailyReportData>();
         var resolved = new ArrayList<DailyReportData>();
         for (var booking : bookings) {
-            if (booking.getTicketReference() != null) {
-                resolved.add(booking.withTicketReference(normalizeTicketReference(booking.getTicketReference())));
+            var given = booking.givenTicketReferences();
+            if (given != null) {
+                resolved.add(booking.withTicketReferences(TicketReferences.normalize(given)));
                 continue;
             }
+            var unsaid = booking.withoutId().withTicketReferences(null);
             var matching = stored.stream()
-                .filter(candidate -> candidate.withoutId().withTicketReference(null).equals(booking.withoutId()))
+                .filter(candidate -> candidate.withoutId().withTicketReferences(null).equals(unsaid))
                 .toList();
             var chosen = matching.stream().filter(not(taken::contains)).findFirst()
                 .or(() -> matching.stream().findFirst());
             chosen.ifPresent(taken::add);
-            resolved.add(booking.withTicketReference(chosen.map(DailyReportData::getTicketReference).orElse(null)));
+            resolved.add(booking.withTicketReferences(chosen.map(DailyReportData::getTicketReferences).orElse(List.of())));
         }
         return resolved;
     }
 
     private static ImportReport.BookingDetail toBookingDetail(DailyReportData b) {
         return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment(),
-            b.getTicketReference(), b.isTraining());
+            b.getTicketReferences() == null ? List.of() : b.getTicketReferences(), b.isTraining());
     }
 
     private record BookingCounts(List<ImportReport.BookingDetail> created, List<ImportReport.BookingDetail> deleted, List<ImportReport.UpdatedBookingDetail> updated) {
@@ -356,7 +359,7 @@ public class DailyWorkingReportService {
                 requireNonNull(employeeorder.getId(), "ID of order is required"),
                 day,
                 booking.getComment(),
-                booking.getTicketReference(),
+                booking.getTicketReferences(),
                 booking.isTraining(),
                 booking.getHours(),
                 booking.getMinutes(),

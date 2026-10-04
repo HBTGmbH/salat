@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* How many ticket references a booking may carry (#1326), the same field on the order and the
+       suborder form. A suborder offers "inherit" as the empty value; the order has no such choice.
+       The number only counts for "at most" and is hidden otherwise - the service ignores it then.
+       The toggle is the delegated data-ticket-limit-toggle handler in salat.js. */-->
+<div th:fragment="policyInput(inheritable)" class="mb-3">
+  <label class="form-label" for="ticketReferenceMode"
+         th:text="#{main.ticketreferences.policy.label}">Ticket-Referenzen je Buchung</label>
+  <div class="row g-2">
+    <div class="col">
+      <select class="form-select" id="ticketReferenceMode" th:field="*{ticketReferenceMode}"
+              data-ticket-limit-toggle="#ticketReferenceLimitField">
+        <option th:if="${inheritable}" value="" th:text="#{main.ticketreferences.mode.inherit}">Erben</option>
+        <option th:each="mode : ${ticketReferenceModes}"
+                th:value="${mode.name()}"
+                th:text="#{${mode.label}}"></option>
+      </select>
+    </div>
+    <div class="col-5" id="ticketReferenceLimitField"
+         th:classappend="${#strings.toString(ticketReferenceModeValue) == 'LIMITED'} ? '' : 'd-none'"
+         th:with="ticketReferenceModeValue=*{ticketReferenceMode}">
+      <div class="input-group">
+        <input type="number" class="form-control" min="1" step="1" th:field="*{ticketReferenceLimit}"
+               th:attr="aria-label=#{main.ticketreferences.limit.label}"/>
+        <span class="input-group-text" th:text="#{main.ticketreferences.limit.unit}">Stück</span>
+      </div>
+    </div>
+  </div>
+  <small class="form-hint" th:unless="${inheritable}"
+         th:text="#{main.ticketreferences.policy.order.help}">Gilt für alle Unteraufträge ohne eigene Einstellung.</small>
+  <th:block th:if="${inheritable}">
+    <small th:replace="~{:: inheritedHint(oob=false)}"></small>
+  </th:block>
+</div>
+
+<!--/* swapped out of band when the order or the parent changes, see SuborderController */-->
+<small th:fragment="inheritedHint(oob)" class="form-hint" id="ticketReferenceInheritedHint"
+       th:hx-swap-oob="${oob} ? 'true' : null"
+       th:with="source=${inheritedTicketReferencePolicy}">
+  <th:block th:if="${source != null}"
+            th:with="policyText=${@ticketReferencePolicyViewHelper.label(source.policy())},
+                     sourceText=${source.fromOrder()} ? #{main.ticketreferences.source.order(${source.sourceSign()})}
+                                                     : #{main.ticketreferences.source.suborder(${source.sourceSign()})}"
+            th:text="#{main.ticketreferences.policy.inherited(${policyText}, ${sourceText})}">Ohne eigene Einstellung gilt: höchstens 1, vom Auftrag 4711.</th:block>
+</small>
+
+</body>
+</html>

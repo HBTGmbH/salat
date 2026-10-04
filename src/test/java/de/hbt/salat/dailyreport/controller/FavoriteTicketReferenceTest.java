@@ -6,27 +6,30 @@ import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
 import static de.hbt.salat.dailyreport.controller.TimereportController.favoriteFrom;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import de.hbt.salat.common.exception.InvalidDataException;
 
 /**
- * A booking saved as a favourite takes its ticket reference along (#1029). Before that the
+ * A booking saved as a favourite takes its ticket references along (#1029, #1326). Before that the
  * favourite was built from comment and duration alone, so the reference was lost at the moment the
  * favourite was made.
  */
 class FavoriteTicketReferenceTest {
 
   @Test
-  void a_booking_saved_as_a_favourite_takes_its_reference_along() {
-    assertThat(favoriteFrom(7L, 1, 30, form("PROJ-123")).getTicketReference()).isEqualTo("PROJ-123");
+  void a_booking_saved_as_a_favourite_takes_its_references_along() {
+    assertThat(favoriteFrom(7L, 1, 30, form("PROJ-123", "PROJ-130")).getTicketReferences())
+        .containsExactly("PROJ-123", "PROJ-130");
   }
 
   @Test
   void a_booking_without_a_reference_makes_a_favourite_without_one() {
-    // null, not "": applying the favourite must not write an empty string into the booking
-    assertThat(favoriteFrom(7L, 1, 30, form("")).getTicketReference()).isNull();
-    assertThat(favoriteFrom(7L, 1, 30, form(null)).getTicketReference()).isNull();
-    assertThat(favoriteFrom(7L, 1, 30, form("   ")).getTicketReference()).isNull();
+    // no blank entry: applying the favourite must not write an empty reference into the booking
+    assertThat(favoriteFrom(7L, 1, 30, form()).getTicketReferences()).isEmpty();
+    assertThat(favoriteFrom(7L, 1, 30, form("")).getTicketReferences()).isEmpty();
+    assertThat(favoriteFrom(7L, 1, 30, form("   ")).getTicketReferences()).isEmpty();
   }
 
   /**
@@ -35,8 +38,8 @@ class FavoriteTicketReferenceTest {
    */
   @Test
   void the_reference_is_stored_under_the_same_rule_as_on_the_booking() {
-    assertThat(favoriteFrom(7L, 1, 30, form("  PROJ-123 ")).getTicketReference())
-        .isEqualTo("PROJ-123");
+    assertThat(favoriteFrom(7L, 1, 30, form("  proj-123 ")).getTicketReferences())
+        .containsExactly("PROJ-123");
 
     var tooLong = form("X".repeat(TICKET_REFERENCE_MAX_LENGTH + 1));
     assertThatThrownBy(() -> favoriteFrom(7L, 1, 30, tooLong))
@@ -54,10 +57,10 @@ class FavoriteTicketReferenceTest {
     assertThat(favourite.getComment()).isEqualTo("Daily");
   }
 
-  private static TimereportForm form(String ticketReference) {
+  private static TimereportForm form(String... ticketReferences) {
     var form = new TimereportForm();
     form.setComment("Daily");
-    form.setTicketReference(ticketReference);
+    form.setTicketReferences(new ArrayList<>(Arrays.asList(ticketReferences)));
     return form;
   }
 

@@ -41,6 +41,9 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.domain.SuborderSignRow;
+import de.hbt.salat.order.domain.TicketReferenceMode;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
+import de.hbt.salat.order.domain.TicketReferencePolicySource;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.event.SuborderDeleteEvent;
@@ -123,8 +126,20 @@ public class SuborderService {
             s.getCompleteOrderSign(),
             s.getShortdescription(),
             Boolean.TRUE.equals(s.getCommentnecessary()),
-            s.isTrainingFlag()))
+            s.isTrainingFlag(),
+            s.getEffectiveTicketReferencePolicy()))
         .toList();
+  }
+
+  /**
+   * What a suborder below {@code parentId} — at the top of the order where it is {@code null} — would
+   * inherit as its ticket reference setting, and from where (#1326).
+   */
+  @Transactional(readOnly = true)
+  public TicketReferencePolicySource getInheritedTicketReferencePolicy(long customerorderId, Long parentId) {
+    var customerorder = customerorderService.getCustomerorderById(customerorderId);
+    var parent = parentId != null ? suborderDAO.getSuborderById(parentId) : null;
+    return TicketReferencePolicySource.inheritedBy(customerorder, parent);
   }
 
   @Authorized(requiresManager = true)
@@ -181,6 +196,7 @@ public class SuborderService {
     so.setFixedPrice(data.fixedPrice());
     so.setTrainingFlag(data.trainingFlag());
     so.setOrderType(data.orderType());
+    so.setTicketReferencePolicy(ticketReferencePolicyOf(data.ticketReferenceMode(), data.ticketReferenceLimit()));
 
     if (data.validFrom() != null && !data.validFrom().trim().isEmpty()) {
       LocalDate fromDate = DateUtils.parseOrNull(data.validFrom());
@@ -324,8 +340,25 @@ public class SuborderService {
         debithours,
         debithoursunit,
         so.isHide(),
-        parentId
+        parentId,
+        so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().mode() : null,
+        so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().limit() : null
     );
+  }
+
+  /**
+   * A suborder's own ticket reference setting (#1326): {@code null} for no mode, which inherits from
+   * above. "At most" without a number of at least 1 is refused rather than read as "inherit".
+   */
+  private static TicketReferencePolicy ticketReferencePolicyOf(TicketReferenceMode mode, Integer limit) {
+    if (mode == null) {
+      return null;
+    }
+    var policy = TicketReferencePolicy.of(mode, limit);
+    if (policy == null) {
+      throw new InvalidDataException(ErrorCode.SO_TICKET_REFERENCE_LIMIT_INVALID);
+    }
+    return policy;
   }
 
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
@@ -620,6 +653,7 @@ public class SuborderService {
     copy.setFixedPrice(suborder.getFixedPrice());
     copy.setTrainingFlag(suborder.isTrainingFlag());
     copy.setOrderType(suborder.getOrderType());
+    copy.setTicketReferencePolicy(suborder.getTicketReferencePolicy());
 
     if (copyroot) {
       copy.setSign("copy_of_" + suborder.getSign());

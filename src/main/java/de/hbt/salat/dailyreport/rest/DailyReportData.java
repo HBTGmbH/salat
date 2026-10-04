@@ -9,6 +9,7 @@ import com.opencsv.bean.CsvBindByPosition;
 import com.opencsv.bean.CsvCustomBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -92,14 +93,27 @@ public class DailyReportData {
      * the stored booking; an empty text is what says "no reference".
      */
     @CsvBindByPosition(position = 9)
-    @Schema(description = "Referenz auf ein Ticket, etwa ein JIRA-Schlüssel, höchstens "
-        + TICKET_REFERENCE_MAX_LENGTH + " Zeichen. Beim Lesen null, wenn die Buchung keine hat. "
-        + "Beim Schreiben heißt ein leerer Text \"keine Referenz\"; fehlt das Feld oder ist es null, behält "
-        + "eine vorhandene Buchung, die der übergebenen bis auf die Referenz gleicht, ihre Referenz.",
+    @Schema(description = "Erste Ticket-Referenz, für Clients, die nur eine kennen; höchstens "
+        + TICKET_REFERENCE_MAX_LENGTH + " Zeichen. Beim Lesen die erste aus ticketReferences, null ohne Referenz. "
+        + "Beim Schreiben nur ausgewertet, wenn ticketReferences fehlt: dann die einzige Referenz, ein leerer Text "
+        + "heißt \"keine Referenz\". Fehlen beide Felder oder sind sie null, behält eine vorhandene Buchung, die "
+        + "der übergebenen bis auf die Referenzen gleicht, ihre Referenzen.",
         example = "ERP-3032",
         maxLength = TICKET_REFERENCE_MAX_LENGTH,
         nullable = true)
     private String ticketReference;
+
+    /**
+     * All references of the booking (#1326). {@code null} says nothing about them, like a missing
+     * {@link #ticketReference}; an empty list says "none".
+     */
+    @Schema(description = "Ticket-Referenzen der Buchung in ihrer Reihenfolge, je höchstens "
+        + TICKET_REFERENCE_MAX_LENGTH + " Zeichen; ein Ticket-Schlüssel wird in Großbuchstaben gespeichert. "
+        + "Wie viele erlaubt sind, legt der Unterauftrag fest. Beim Schreiben heißt eine leere Liste \"keine "
+        + "Referenz\"; fehlt das Feld, gilt ticketReference.",
+        example = "[\"ERP-3032\", \"ERP-3040\"]",
+        nullable = true)
+    private List<String> ticketReferences;
 
     /**
      * Optional in JSON and CSV: a missing or empty value is {@code false} (#1140). Jackson 3 builds
@@ -136,7 +150,8 @@ public class DailyReportData {
                 .minutes(timeReport.getDuration().toMinutesPart())
                 .suborderSign(timeReport.getCompleteOrderSign())
                 .orderSign(timeReport.getCustomerorderSign())
-                .ticketReference(timeReport.getTicketReference())
+                .ticketReference(timeReport.getTicketReferences().isEmpty() ? null : timeReport.getTicketReferences().getFirst())
+                .ticketReferences(List.copyOf(timeReport.getTicketReferences()))
                 .employeeSign(timeReport.getEmployeeSign())
                 .build();
     }
@@ -165,8 +180,29 @@ public class DailyReportData {
         return toBuilder().id(null).build();
     }
 
-    public DailyReportData withTicketReference(String ticketReference) {
-        return toBuilder().ticketReference(ticketReference).build();
+    /**
+     * This booking with {@code references} in both fields, the first as {@link #ticketReference}; {@code null}
+     * empties both, which is how a booking compares that says nothing about its references.
+     */
+    public DailyReportData withTicketReferences(List<String> references) {
+        if (references == null) {
+            return toBuilder().ticketReference(null).ticketReferences(null).build();
+        }
+        return toBuilder()
+                .ticketReference(references.isEmpty() ? null : references.getFirst())
+                .ticketReferences(List.copyOf(references))
+                .build();
+    }
+
+    /**
+     * What the booking says about its references (#1140, #1326): the list where it is given, else the single
+     * reference of an older client, else {@code null} — nothing said.
+     */
+    public List<String> givenTicketReferences() {
+        if (ticketReferences != null) {
+            return ticketReferences;
+        }
+        return ticketReference != null ? List.of(ticketReference) : null;
     }
 
 }

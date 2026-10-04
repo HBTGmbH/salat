@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.palette.PaletteCommand;
 import de.hbt.salat.common.palette.PaletteParameter;
@@ -175,7 +176,7 @@ class DailyReportPaletteSuggestionTest {
     ownCurrentContract();
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(OWN_CONTRACT_ID, TODAY)).thenReturn(List.of(order()));
     when(suborderService.getSuborderSummaries(OWN_CONTRACT_ID, ORDER_ID, TODAY))
-        .thenReturn(List.of(new SuborderSummary(MAINTENANCE_ID, "MUSTER-01.03", "Wartung", true, false)));
+        .thenReturn(List.of(new SuborderSummary(MAINTENANCE_ID, "MUSTER-01.03", "Wartung", true, false, TicketReferencePolicy.DEFAULT)));
     favourite(null);
     bookedLately();
 
@@ -379,7 +380,7 @@ class DailyReportPaletteSuggestionTest {
   }
 
   private static SuborderSummary summary(long id, String sign, String description) {
-    return new SuborderSummary(id, sign, description, false, false);
+    return new SuborderSummary(id, sign, description, false, false, TicketReferencePolicy.DEFAULT);
   }
 
   private static Customerorder order() {

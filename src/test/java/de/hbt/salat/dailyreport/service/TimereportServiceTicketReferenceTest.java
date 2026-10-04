@@ -1,58 +1,43 @@
 package de.hbt.salat.dailyreport.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
-import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
-import static de.hbt.salat.dailyreport.service.TimereportService.normalizeTicketReference;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.domain.Timereport;
 
 /**
- * The optional free text reference to an external ticket (#982). It is stored as entered - the
- * suggestions offered while booking are a convenience, not a constraint.
+ * The ticket references of a booking (#982, #1326). The rule they are stored under is
+ * {@code TicketReferences}, see {@code TicketReferencesTest}.
  */
 class TimereportServiceTicketReferenceTest {
 
-  @Test
-  void a_reference_is_stored_as_entered() {
-    assertThat(normalizeTicketReference("PROJ-123")).isEqualTo("PROJ-123");
-  }
-
-  @Test
-  void surrounding_whitespace_is_dropped() {
-    assertThat(normalizeTicketReference("  PROJ-123 ")).isEqualTo("PROJ-123");
-  }
-
-  @Test
-  void an_empty_field_means_no_reference() {
-    // an emptied form field has to clear the stored reference, not store a blank one
-    assertThat(normalizeTicketReference(null)).isNull();
-    assertThat(normalizeTicketReference("")).isNull();
-    assertThat(normalizeTicketReference("   ")).isNull();
-  }
-
-  @Test
-  void a_reference_longer_than_the_column_is_rejected() {
-    String tooLong = "X".repeat(TICKET_REFERENCE_MAX_LENGTH + 1);
-
-    assertThatThrownBy(() -> normalizeTicketReference(tooLong))
-        .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(TR_TICKET_REFERENCE_INVALID_LENGTH.getCode());
-  }
-
   /**
-   * Serial bookings are created from a twin of the first one. Were the reference not copied, every
-   * day but the first would lose it.
+   * Serial bookings are created from a twin of the first one. Were the references not copied, every
+   * day but the first would lose them.
    */
   @Test
-  void a_serial_booking_carries_the_reference_to_every_day() {
+  void a_serial_booking_carries_the_references_to_every_day() {
     var timereport = new Timereport();
-    timereport.setTicketReference("PROJ-123");
+    timereport.setTicketReferences(List.of("PROJ-123", "PROJ-130"));
 
-    assertThat(timereport.getTwin().getTicketReference()).isEqualTo("PROJ-123");
+    assertThat(timereport.getTwin().getTicketReferences()).containsExactly("PROJ-123", "PROJ-130");
   }
 
+  /** The report definitions read one reference per booking from the mirror column. */
+  @Test
+  void the_mirror_holds_the_first_reference() throws Exception {
+    var timereport = new Timereport();
+    timereport.setTicketReferences(List.of("PROJ-123", "PROJ-130"));
+    assertThat(mirrorOf(timereport)).isEqualTo("PROJ-123");
+
+    timereport.setTicketReferences(List.of());
+    assertThat(mirrorOf(timereport)).isNull();
+  }
+
+  private static Object mirrorOf(Timereport timereport) throws Exception {
+    var field = Timereport.class.getDeclaredField("ticketReference");
+    field.setAccessible(true);
+    return field.get(timereport);
+  }
 }

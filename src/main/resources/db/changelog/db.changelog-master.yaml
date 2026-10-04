@@ -4731,3 +4731,110 @@ databaseChangeLog:
             constraintName: fk_employee_cost_employee_customerorder
             referencedTableName: customerorder
             referencedColumnNames: id
+
+  - changeSet:
+      id: 130
+      author: kr
+      comment: Wie viele Ticket-Referenzen eine Buchung tragen darf, an Auftrag und Unterauftrag (#1326)
+      # Keine, hoechstens n oder beliebig viele: ticket_reference_mode NONE, LIMITED oder UNLIMITED,
+      # ticket_reference_limit traegt n nur bei LIMITED. Am Auftrag Pflicht, am Unterauftrag leer heisst
+      # erben (vom naechsten Unterauftrag darueber mit Einstellung, sonst vom Auftrag). Jeder bestehende
+      # Auftrag bekommt "beliebig viele", die Vorgabe auch fuer neue; jeder Unterauftrag erbt. Keine
+      # bestehende Buchung traegt mehr als eine Referenz, keine wird also ungueltig.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: customerorder
+                columnName: ticket_reference_mode
+      changes:
+        - sql:
+            sql: >-
+              ALTER TABLE `customerorder`
+                ADD COLUMN `ticket_reference_mode` varchar(16) NOT NULL DEFAULT 'UNLIMITED',
+                ADD COLUMN `ticket_reference_limit` int NULL
+        - sql:
+            sql: >-
+              ALTER TABLE `suborder`
+                ADD COLUMN `ticket_reference_mode` varchar(16) NULL,
+                ADD COLUMN `ticket_reference_limit` int NULL
+
+  - changeSet:
+      id: 131
+      author: kr
+      comment: Ticket-Referenzen einer Buchung in eigener Tabelle (#1326)
+      # Je Buchung, Position (ab 1) und Referenz eine Zeile; eine Referenz haengt an einer Buchung nur
+      # einmal. Kollation wie jira_ticket.issue_key (utf8mb3_bin) und ein Index auf der Referenz, damit
+      # ein Join referenz = issue_key den Index nutzt (#1327). ON DELETE CASCADE, weil das Bereinigen
+      # weich geloeschter Buchungen ein natives DELETE ist (hardDeleteSoftDeletedByEmployeeorderId).
+      #
+      # Der Bestand wird ohne Aufteilen uebernommen, auch fuer weich geloeschte Buchungen, und dabei
+      # normalisiert wie in TicketReferences: ohne umgebende Leerzeichen, ein Ticket-Schluessel in
+      # Grossbuchstaben. timereport.ticket_reference bleibt als Spiegel der ersten Referenz fuer die
+      # Report-Definitionen; die Anwendung schreibt ihn und liest ihn nicht mehr.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: timereport_ticket_reference
+      changes:
+        - sql:
+            sql: >-
+              CREATE TABLE `timereport_ticket_reference` (
+                `timereport_id` bigint NOT NULL,
+                `position` int NOT NULL,
+                `reference` varchar(64) NOT NULL,
+                CONSTRAINT `pk_timereport_ticket_reference` PRIMARY KEY (`timereport_id`, `position`),
+                CONSTRAINT `uk_timereport_ticket_reference_timereport_id_reference` UNIQUE (`timereport_id`, `reference`),
+                INDEX `idx_timereport_ticket_reference_reference` (`reference`),
+                CONSTRAINT `fk_timereport_ticket_reference_timereport` FOREIGN KEY (`timereport_id`)
+                  REFERENCES `timereport` (`id`) ON DELETE CASCADE
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin
+        - sql:
+            sql: >-
+              UPDATE `timereport` SET `ticket_reference` = NULL
+              WHERE `ticket_reference` IS NOT NULL AND TRIM(`ticket_reference`) = ''
+        - sql:
+            sql: >-
+              UPDATE `timereport` SET `ticket_reference` =
+                CASE WHEN TRIM(`ticket_reference`) REGEXP '^[A-Za-z][A-Za-z0-9_]+-[0-9]+$'
+                     THEN UPPER(TRIM(`ticket_reference`)) ELSE TRIM(`ticket_reference`) END
+              WHERE `ticket_reference` IS NOT NULL
+        - sql:
+            sql: >-
+              INSERT INTO `timereport_ticket_reference` (`timereport_id`, `position`, `reference`)
+              SELECT `id`, 1, `ticket_reference` FROM `timereport` WHERE `ticket_reference` IS NOT NULL
+
+  - changeSet:
+      id: 132
+      author: kr
+      comment: Ticket-Referenzen eines Favoriten in eigener Tabelle (#1326)
+      # Ein Favorit gibt alle Referenzen der Buchung zurueck, aus der er entstand - also wie die Buchung
+      # eine Liste. Der Bestand wird normalisiert uebernommen. Die alte Spalte favorite.ticket_reference
+      # bleibt vorerst stehen, die Anwendung liest und schreibt sie nicht mehr: ein Stand davor validiert
+      # beim Start gegen sie (ddl-auto: validate), ein Zuruecksetzen auf das vorige Release bliebe sonst
+      # haengen. Sie entfaellt mit dem Spiegel timereport.ticket_reference.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: favorite_ticket_reference
+      changes:
+        - sql:
+            sql: >-
+              CREATE TABLE `favorite_ticket_reference` (
+                `favorite_id` bigint NOT NULL,
+                `position` int NOT NULL,
+                `reference` varchar(64) NOT NULL,
+                CONSTRAINT `pk_favorite_ticket_reference` PRIMARY KEY (`favorite_id`, `position`),
+                CONSTRAINT `uk_favorite_ticket_reference_favorite_id_reference` UNIQUE (`favorite_id`, `reference`),
+                CONSTRAINT `fk_favorite_ticket_reference_favorite` FOREIGN KEY (`favorite_id`)
+                  REFERENCES `favorite` (`id`) ON DELETE CASCADE
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin
+        - sql:
+            sql: >-
+              INSERT INTO `favorite_ticket_reference` (`favorite_id`, `position`, `reference`)
+              SELECT `id`, 1,
+                CASE WHEN TRIM(`ticket_reference`) REGEXP '^[A-Za-z][A-Za-z0-9_]+-[0-9]+$'
+                     THEN UPPER(TRIM(`ticket_reference`)) ELSE TRIM(`ticket_reference`) END
+              FROM `favorite` WHERE `ticket_reference` IS NOT NULL AND TRIM(`ticket_reference`) <> ''

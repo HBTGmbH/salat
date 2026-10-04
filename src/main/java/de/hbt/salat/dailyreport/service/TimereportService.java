@@ -18,7 +18,6 @@ import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_DAY;
 import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 import static de.hbt.salat.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
 import static de.hbt.salat.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
-import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.LocalDateRange.FINIT_FROM_BOUNDARY;
@@ -39,7 +38,8 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY
 import static de.hbt.salat.common.exception.ErrorCode.TR_SERIAL_DAYS_OUT_OF_RANGE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
-import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
+import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCES_EXCEED_LIMIT;
+import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCES_NOT_ALLOWED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
@@ -91,6 +91,7 @@ import de.hbt.salat.common.util.BusinessRuleCheckUtils;
 import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
+import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.PreviousBooking;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
@@ -115,6 +116,7 @@ import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.event.EmployeeorderConflictResolutionEvent;
 import de.hbt.salat.order.event.EmployeeorderDeleteEvent;
 import de.hbt.salat.order.event.EmployeeorderUpdateEvent;
@@ -160,8 +162,12 @@ public class TimereportService {
         durationMinutes, numberOfSerialDays);
   }
 
+  /**
+   * @param ticketReferences stored under the rule of {@link TicketReferences}; how many the suborder
+   *                         allows is checked on saving (#1326)
+   */
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      String ticketReference, boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
+      List<String> ticketReferences, boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
       throws ErrorCodeException {
 
     // the form offers 1..MAX_SERIAL_BOOKING_DAYS; a hand-crafted POST must not ask for more (#826)
@@ -172,8 +178,8 @@ public class TimereportService {
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereportTemplate);
-    // set on the template, so getTwin() carries it to every serial day
-    timereportTemplate.setTicketReference(normalizeTicketReference(ticketReference));
+    // set on the template, so getTwin() carries them to every serial day
+    timereportTemplate.setTicketReferences(TicketReferences.normalize(ticketReferences));
 
     // create a timereport for every serial day requested - in most cases this is 1
     List<Timereport> timereportsToSave = new ArrayList<>();
@@ -211,8 +217,8 @@ public class TimereportService {
   }
 
   /**
-   * Leaves a stored ticket reference untouched. Callers that do not know about the reference — moving,
-   * shifting, importing — must not silently drop it (#982).
+   * Leaves the stored ticket references untouched. Callers that do not know about them — moving,
+   * shifting, importing — must not silently drop them (#982).
    */
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, boolean force) throws ErrorCodeException {
@@ -221,17 +227,18 @@ public class TimereportService {
   }
 
   /**
-   * Writes the ticket reference as given — an empty one clears it, which is what an emptied form field means.
+   * Writes the ticket references as given — an empty list clears them, which is what an emptied form
+   * field means.
    */
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      String ticketReference, boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
+      List<String> ticketReferences, boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
     updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, false, ticketReference, true);
+        durationMinutes, false, ticketReferences == null ? List.of() : ticketReferences, true);
   }
 
   private void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, boolean force,
-      String ticketReference, boolean applyTicketReference) throws ErrorCodeException {
+      List<String> ticketReferences, boolean applyTicketReferences) throws ErrorCodeException {
     if (force && !authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);
     }
@@ -249,8 +256,8 @@ public class TimereportService {
     BusinessRuleCheckUtils.isTrue(
         Objects.equals(previousContract.getEmployee().getId(), timereport.getEmployeecontract().getEmployee().getId()),
         TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE);
-    if (applyTicketReference) {
-      timereport.setTicketReference(normalizeTicketReference(ticketReference));
+    if (applyTicketReferences) {
+      timereport.setTicketReferences(TicketReferences.normalize(ticketReferences));
     }
     boolean dayChanged = !previousDate.equals(referenceDay);
     boolean contractChanged = !Objects.equals(previousContract.getId(), employeeContractId);
@@ -283,18 +290,15 @@ public class TimereportService {
   }
 
   /**
-   * Empty input and a blank one both mean "no reference"; anything longer than the column is rejected.
-   *
-   * <p>Public because a favourite stores the same reference and has to store it under the same rule
-   * (#1029) — written a second time next to the form, the two would drift apart.
+   * How many ticket references this booking may carry, as its suborder sets it after inheritance
+   * (#1326); {@code null} for a booking that does not exist. The inline edit of the daily view asks
+   * before it proposes keys from the comment.
    */
-  public static String normalizeTicketReference(String ticketReference) {
-    if (ticketReference == null || ticketReference.isBlank()) {
-      return null;
-    }
-    String trimmed = ticketReference.trim();
-    DataValidationUtils.lengthIsInRange(trimmed, 0, TICKET_REFERENCE_MAX_LENGTH, TR_TICKET_REFERENCE_INVALID_LENGTH);
-    return trimmed;
+  @Transactional(readOnly = true)
+  public TicketReferencePolicy getTicketReferencePolicy(long timereportId) {
+    return timereportRepository.findById(timereportId)
+        .map(timereport -> timereport.getSuborder().getEffectiveTicketReferencePolicy())
+        .orElse(null);
   }
 
   /**
@@ -367,6 +371,7 @@ public class TimereportService {
     validateTimeReportingBusinessRules(timereports);
     validateContractBusinessRules(timereports);
     validateOrderBusinessRules(timereports);
+    validateTicketReferences(timereports);
     validateEmployeeorderBudget(timereports);
 
     timereports.forEach(t -> {
@@ -584,6 +589,29 @@ public class TimereportService {
     );
   }
 
+  /**
+   * As many ticket references as the suborder allows (#1326), on every save — also when the references
+   * did not change and only the setting has become stricter since. A booking that would no longer fit
+   * is saved again only with fewer references; anything else would leave the count to whoever saves
+   * last. Every write path comes through here: form, inline edit, REST, CSV import, favourite,
+   * previous booking, shifting and moving to another suborder.
+   */
+  private void validateTicketReferences(List<Timereport> timereports) throws BusinessRuleException {
+    for (var timereport : timereports) {
+      var count = timereport.getTicketReferences().size();
+      var policy = timereport.getSuborder().getEffectiveTicketReferencePolicy();
+      if (policy.permits(count)) {
+        continue;
+      }
+      var sign = timereport.getSuborder().getCompleteOrderSign();
+      if (!policy.allowsAny()) {
+        throw new BusinessRuleException(TR_TICKET_REFERENCES_NOT_ALLOWED, sign);
+      }
+      throw new BusinessRuleException(TR_TICKET_REFERENCES_EXCEED_LIMIT, sign, policy.limit(),
+          DateUtils.format(timereport.getReferenceday().getRefdate()), count);
+    }
+  }
+
   private void validateContractBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereports.getFirst();
@@ -746,7 +774,8 @@ public class TimereportService {
   }
 
   /**
-   * Answers the jira module's question for the booked minutes per day and ticket (#1007). No
+   * Answers the jira module's question for the booked minutes per day and ticket (#1007), a booking
+   * with several references split among them (#1326). No
    * per-person filter applies here and none is missing: the caller is the replication, not a user,
    * and what leaves is a sum over everybody with no person in it. Which suborders may be asked
    * about is decided by the replication config, which only a manager can write.
@@ -758,8 +787,8 @@ public class TimereportService {
       event.setResult(List.of());
       return;
     }
-    event.setResult(timereportRepository.getTicketDaySums(
-        suborderIds, event.getFrom(), event.getUntil(), event.isInvoiceableOnly()));
+    event.setResult(TicketDaySums.of(timereportRepository.getBookedTicketReferences(
+        suborderIds, event.getFrom(), event.getUntil(), event.isInvoiceableOnly())));
   }
 
   @EventListener

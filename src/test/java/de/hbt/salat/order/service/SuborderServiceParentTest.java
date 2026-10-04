@@ -150,7 +150,7 @@ class SuborderServiceParentTest {
 
   private static SuborderDTO dto(String sign, Long parentId) {
     return new SuborderDTO(ORDER_ID, sign, "Leistung", "Leistung", null, 'y', false, false, false, false,
-        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId);
+        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null);
   }
 
   private static Customerorder customerorder(long id, String sign) {

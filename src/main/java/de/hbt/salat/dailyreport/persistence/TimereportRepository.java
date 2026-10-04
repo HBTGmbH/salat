@@ -18,7 +18,6 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes;
 import de.hbt.salat.dailyreport.domain.Timereport;
-import de.hbt.salat.jira.command.TicketDaySum;
 
 @Repository
 public interface TimereportRepository extends CrudRepository<Timereport, Long>, JpaSpecificationExecutor<Timereport> {
@@ -221,10 +220,13 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Long[]> getReportedMinutesForEmployeeordersAsMap(List<Long> ids);
 
   /**
-   * What was booked per day and ticket reference on the given suborders (#1007), summed over all
-   * people — the shape a JIRA worklog has: one number per day and ticket, no person, no task.
+   * Every ticket reference of every booking on the given suborders (#1007, #1326), one row per booking
+   * and reference with the duration of the whole booking — {@code TicketDaySums} splits it among the
+   * references and sums per day and ticket, the shape a JIRA worklog has: one number per day and ticket,
+   * no person, no task. Ordered by booking and position, so the references of a booking come together
+   * and in their order.
    *
-   * <p>The whole period is summed on every run rather than only the days that changed since the
+   * <p>The whole period is read on every run rather than only the days that changed since the
    * last one. A booking is soft-deleted through {@code @SQLDelete}, which writes nothing but
    * {@code deleted = true} — {@code lastupdate} is not moved, because the auditing listener does
    * not run on a delete. A deleted booking is therefore recognisable by no timestamp at all, and
@@ -237,20 +239,22 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
    * worklogs already written for it.
    */
   @Query("""
-      select new de.hbt.salat.jira.command.TicketDaySum(
+      select new de.hbt.salat.dailyreport.persistence.BookedTicketReference(
+             tr.id,
              tr.referenceday.refdate,
-             tr.ticketReference,
-             sum(tr.durationminutes) + 60 * sum(tr.durationhours))
-      from Timereport tr
+             index(ref),
+             ref,
+             tr.durationhours,
+             tr.durationminutes)
+      from Timereport tr join tr.ticketReferences ref
       where tr.deleted = false
-        and tr.ticketReference is not null
         and tr.suborder.id in (:suborderIds)
         and tr.referenceday.refdate >= :from and tr.referenceday.refdate <= :until
         and (:invoiceableOnly = false or tr.suborder.invoice = 'Y')
-      group by tr.referenceday.refdate, tr.ticketReference
+      order by tr.id, index(ref)
   """)
-  List<TicketDaySum> getTicketDaySums(Collection<Long> suborderIds, LocalDate from, LocalDate until,
-                                      boolean invoiceableOnly);
+  List<BookedTicketReference> getBookedTicketReferences(Collection<Long> suborderIds, LocalDate from, LocalDate until,
+                                                        boolean invoiceableOnly);
 
   @Modifying
   @NativeQuery("DELETE FROM timereport WHERE employeeorder_id = :employeeorderId and deleted = true")

@@ -36,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -69,6 +70,8 @@ import de.hbt.salat.employee.domain.Employee;
 public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List<DailyWorkingReportData>> {
 
     static final char COLUMN_SEPARATOR = ',';
+    /** Between several ticket references in one cell (#1326); a reference may contain blanks, so they cannot separate. */
+    static final String TICKET_REFERENCE_SEPARATOR = ";";
     static final String TEXT_CSV_DAILY_WORKING_REPORT_VALUE = "text/csv+dailyworkingreport";
     static final MediaType TEXT_CSV_DAILY_WORKING_REPORT = new MediaType(
             TEXT_CSV_DAILY_WORKING_REPORT_VALUE.split("/")[0],
@@ -338,10 +341,24 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                         .hours(row.getWorkingTime().getHour())
                         .minutes(row.getWorkingTime().getMinute())
                         .comment(row.getComment())
-                        .ticketReference(row.getTicketReference())
                         .training(Boolean.TRUE.equals(row.getTraining()))
-                        .build()))
+                        .build()
+                        .withTicketReferences(ticketReferencesOf(row.getTicketReference()))))
                 .toList();
+    }
+
+    /**
+     * The references of a cell (#1326): several separated by {@value #TICKET_REFERENCE_SEPARATOR}, as
+     * {@link #toBooking} writes them. {@code null} where the file has no such column — that says nothing
+     * about the references (#1140) —, an empty list for an empty cell.
+     */
+    static List<String> ticketReferencesOf(String cell) {
+        if (cell == null) {
+            return null;
+        }
+        return Arrays.stream(cell.split(TICKET_REFERENCE_SEPARATOR))
+            .filter(reference -> !reference.isBlank())
+            .toList();
     }
 
     /**
@@ -426,7 +443,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             reportData.getSuborderLabel(),
             LocalTime.of((int)reportData.getHours(), (int)reportData.getMinutes()),
             reportData.getComment(),
-            reportData.getTicketReference(),
+            reportData.getTicketReferences() == null || reportData.getTicketReferences().isEmpty()
+                ? null : String.join(TICKET_REFERENCE_SEPARATOR, reportData.getTicketReferences()),
             reportData.isTraining(),
             reportData.getEmployeeSign(),
             0
@@ -550,15 +568,17 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
     }
 
     /**
-     * Prüft die Länge schon beim Lesen, weil nur hier Zeile und Spalte bekannt sind. Gespeichert wird
-     * der Wert wie in der Buchungsmaske über {@code TimereportService.normalizeTicketReference}, die
-     * dieselbe Grenze noch einmal zieht; ein leerer Wert bleibt leer und heißt „keine Referenz“.
+     * Prüft die Länge jeder Referenz schon beim Lesen, weil nur hier Zeile und Spalte bekannt sind;
+     * mehrere stehen durch Semikolon getrennt in der Zelle (#1326). Gespeichert werden sie wie in der
+     * Buchungsmaske über {@code TicketReferences.normalize}, die dieselbe Grenze noch einmal zieht; ein
+     * leerer Wert bleibt leer und heißt „keine Referenz“.
      */
     public static class TicketReferenceConverter extends AbstractBeanField<String, String> {
 
         @Override
         protected String convert(String value) throws CsvConstraintViolationException {
-            if (value != null && value.trim().length() > TICKET_REFERENCE_MAX_LENGTH) {
+            if (value != null && Arrays.stream(value.split(TICKET_REFERENCE_SEPARATOR))
+                    .anyMatch(reference -> reference.trim().length() > TICKET_REFERENCE_MAX_LENGTH)) {
                 throw new CsvValueTooLongException(columnOf(this), TICKET_REFERENCE_MAX_LENGTH);
             }
             return value;

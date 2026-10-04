@@ -32,8 +32,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.PreviousBooking;
+import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.MatrixService;
@@ -47,6 +49,7 @@ import java.time.Duration;
 import de.hbt.salat.favorites.domain.Favorite;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.viewhelper.TicketReferencePolicyViewHelper;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 
 @Controller
@@ -66,6 +69,7 @@ public class DailyController {
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final DailyPreferenceService dailyPreferenceService;
+    private final TicketReferencePolicyViewHelper ticketReferencePolicyViewHelper;
 
     /**
      * The daily or the list view.
@@ -304,12 +308,15 @@ public class DailyController {
             @PathVariable long id,
             @RequestParam(required = false) String duration,
             @RequestParam(required = false) String taskdescription,
+            @RequestParam(required = false) String ticketSuggestionChoice,
+            @RequestParam(required = false) List<String> adoptedTicketKeys,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) {
         LocalDate date = today();
         Long ecId = null;
         String htmxError = null;
+        InlineTicketSuggestion ticketSuggestion = null;
         try {
             var tr = timereportService.getTimereportById(id);
             date = tr.getReferenceday();
@@ -327,9 +334,23 @@ public class DailyController {
                 throw new InvalidDataException(TR_DURATION_INVALID_FORMAT);
             }
             String desc = taskdescription != null ? taskdescription : tr.getTaskdescription();
-            timereportService.updateTimereport(id,
-                ecId, tr.getEmployeeorderId(),
-                date, desc, tr.isTraining(), hours, minutes);
+            // #1326: an edited comment naming tickets that are no reference yet is held, and the row
+            // offers them; the answer comes back with ticketSuggestionChoice and saves without asking again
+            if (taskdescription != null && (ticketSuggestionChoice == null || ticketSuggestionChoice.isBlank())) {
+                ticketSuggestion = ticketSuggestionFor(tr, desc);
+            }
+            if (ticketSuggestion == null) {
+                if ("adopt".equals(ticketSuggestionChoice) && adoptedTicketKeys != null && !adoptedTicketKeys.isEmpty()) {
+                    timereportService.updateTimereport(id,
+                        ecId, tr.getEmployeeorderId(),
+                        date, desc, TimereportController.withAdoptedKeys(tr.getTicketReferences(), adoptedTicketKeys),
+                        tr.isTraining(), hours, minutes);
+                } else {
+                    timereportService.updateTimereport(id,
+                        ecId, tr.getEmployeeorderId(),
+                        date, desc, tr.isTraining(), hours, minutes);
+                }
+            }
         } catch (ErrorCodeException ex) {
             htmxError = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
@@ -343,6 +364,7 @@ public class DailyController {
             if (isListMode) {
                 var tr = timereportService.getTimereportById(id);
                 model.addAttribute("singleTr", tr);
+                model.addAttribute("inlineTicketSuggestion", ticketSuggestion);
                 model.addAttribute("singleTrEditable", dailyService.isTimereportEditable(tr, ecId));
                 model.addAttribute("singleTrDate", date);
                 model.addAttribute("singleTrYearMonth", YearMonth.from(date));
@@ -362,10 +384,29 @@ public class DailyController {
             model.addAttribute("isHtmxRequest", true);
             model.addAttribute("isDailyMode", true);
             model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
+            model.addAttribute("inlineTicketSuggestion", ticketSuggestion);
             addBookingOffers(model, ecId, date);
             return "dailyreport/daily :: dailyBookings";
         }
         return "redirect:" + dailyViewUrl(date, reviewReturnUrlOf(request));
+    }
+
+    /**
+     * The keys of an edited comment to offer as references before it is saved (#1326), {@code null}
+     * where there are none or the suborder has no room left for one.
+     */
+    private InlineTicketSuggestion ticketSuggestionFor(TimereportDTO tr, String comment) {
+        var policy = timereportService.getTicketReferencePolicy(tr.getId());
+        var references = tr.getTicketReferences();
+        if (policy == null || policy.remaining(references.size()) == 0) {
+            return null;
+        }
+        var keys = TicketReferences.keysNotReferenced(comment, references);
+        if (keys.isEmpty()) {
+            return null;
+        }
+        return new InlineTicketSuggestion(tr.getId(), comment, keys, policy.remaining(references.size()),
+            ticketReferencePolicyViewHelper.label(policy));
     }
 
     @PostMapping("/apply-favourite")
@@ -381,10 +422,11 @@ public class DailyController {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
-            // the overload with the reference (#1029): without it the favourite would hand back
-            // everything but the ticket it was made for
+            // the overload with the references (#1029): without it the favourite would hand back
+            // everything but the tickets it was made for. More than the suborder allows by now is
+            // refused with a message, not cut short (#1326).
             timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
-                fav.getComment(), fav.getTicketReference(), false, fav.getHours(), fav.getMinutes(), 1);
+                fav.getComment(), fav.getTicketReferences(), false, fav.getHours(), fav.getMinutes(), 1);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
@@ -423,7 +465,7 @@ public class DailyController {
             @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam long employeeorderId,
             @RequestParam(required = false) String comment,
-            @RequestParam(required = false) String ticketReference,
+            @RequestParam(required = false) List<String> ticketReferences,
             @RequestParam long durationMinutes,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest request,
@@ -434,7 +476,7 @@ public class DailyController {
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
             timereportService.createTimereports(ecId, employeeorderId, date,
-                comment != null ? comment : "", ticketReference, false,
+                comment != null ? comment : "", ticketReferences, false,
                 durationMinutes / MINUTES_PER_HOUR, durationMinutes % MINUTES_PER_HOUR, 1);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
@@ -518,7 +560,7 @@ public class DailyController {
         }
         return new PreviousBookingView(booking.employeeorderId(),
             eo.getSuborder().getCompleteOrderSignAndDescription(),
-            booking.comment(), booking.ticketReference(), booking.duration());
+            booking.comment(), booking.ticketReferences(), booking.duration());
     }
 
     private List<FavoriteView> buildFavoriteViews() {
@@ -534,7 +576,7 @@ public class DailyController {
         if (eo == null) return null;
         String label = eo.getSuborder().getCompleteOrderSignAndDescription();
         Duration duration = Duration.ofHours(f.getHours()).plusMinutes(f.getMinutes());
-        return new FavoriteView(f.getId(), label, f.getComment(), f.getTicketReference(), duration);
+        return new FavoriteView(f.getId(), label, f.getComment(), List.copyOf(f.getTicketReferences()), duration);
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {

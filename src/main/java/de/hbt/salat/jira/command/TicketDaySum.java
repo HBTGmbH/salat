@@ -10,7 +10,8 @@ import java.time.LocalDate;
  * It also carries no person and no task description — a worklog in JIRA says how much, never who
  * and never what.
  *
- * @param ticketReference the free text reference of the bookings, as {@code Timereport} stores it
+ * @param ticketReference a ticket reference of the bookings, as {@code Timereport} stores it; the minutes are
+ *                        the share of each booking that falls to this reference (#1326)
  */
 public record TicketDaySum(LocalDate workDate, String ticketReference, long minutes) {
 

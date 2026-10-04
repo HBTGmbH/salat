@@ -40,6 +40,8 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.TicketReferenceMode;
+import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SpecialOrders;
@@ -102,6 +104,8 @@ public class CustomerorderController {
     var form = new CustomerorderForm();
     form.setValidFrom(format(today()));
     form.setOrderType(OrderType.STANDARD);
+    form.setTicketReferenceMode(TicketReferencePolicy.DEFAULT.mode());
+    form.setTicketReferenceLimit(TicketReferencePolicy.DEFAULT.limit());
     form.setResponsibleHbtIds(new java.util.ArrayList<>(List.of(authorizedEmployee.getEmployeeId())));
     form.setRespContrEmployeeId(authorizedEmployee.getEmployeeId());
     form.setCustomerId(fCustomerId);
@@ -140,7 +144,8 @@ public class CustomerorderController {
             form.getDescription(), form.getShortdescription(), form.getOrderCustomer(),
             form.getResponsibleCustomerContractually(), form.getResponsibleCustomerTechnical(),
             form.getResponsibleHbtIds(), form.getRespContrEmployeeId(),
-            form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType());
+            form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType(),
+            form.getTicketReferenceMode(), form.getTicketReferenceLimit());
         if (form.getId() == null) {
           newId = customerorderService.create(dto).getId();
         } else {
@@ -309,6 +314,7 @@ public class CustomerorderController {
     model.addAttribute("employees", employees);
 
     model.addAttribute("orderTypes", OrderType.values());
+    model.addAttribute("ticketReferenceModes", TicketReferenceMode.values());
     model.addAttribute("isEdit", isEdit);
     // a special order keeps its sign (#1341); the service refuses a change, the form shows why
     model.addAttribute("signLocked", isEdit && form.getId() != null && specialOrders.isLockedCustomerorder(form.getId()));
@@ -353,6 +359,8 @@ public class CustomerorderController {
     }
     form.setHide(co.getHide());
     form.setOrderType(co.getOrderType() != null ? co.getOrderType() : OrderType.STANDARD);
+    form.setTicketReferenceMode(co.getTicketReferencePolicy().mode());
+    form.setTicketReferenceLimit(co.getTicketReferencePolicy().limit());
     return form;
   }
 }

@@ -8,14 +8,16 @@ import static de.hbt.salat.common.util.DateUtils.today;
 import static de.hbt.salat.common.util.DurationUtils.parseFlexibleMinutes;
 import static de.hbt.salat.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 import static de.hbt.salat.dailyreport.preferences.DurationInputMode.BEGIN_END;
-import static de.hbt.salat.dailyreport.service.TimereportService.normalizeTicketReference;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -38,6 +40,7 @@ import de.hbt.salat.dailyreport.preferences.TimereportPreferenceService;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateTimeUtils;
+import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.RecentBooking;
 import de.hbt.salat.dailyreport.service.DailyService;
@@ -140,8 +143,9 @@ public class TimereportController {
         if (comment != null && !comment.isBlank()) {
             form.setComment(comment);
         }
+        // one reference, from the command palette or a deeplink (#1158)
         if (ticketReference != null && !ticketReference.isBlank()) {
-            form.setTicketReference(ticketReference);
+            form.setTicketReferences(new ArrayList<>(List.of(ticketReference)));
         }
         // #836: a suborder can carry a default flag for project based training. The explicit request
         // parameter comes from the share-with-colleagues deeplink and has to win over that default.
@@ -192,7 +196,7 @@ public class TimereportController {
                 valueOf(tr.getDurationhours()).intValueExact(),
                 valueOf(tr.getDurationminutes()).intValueExact()));
         form.setComment(tr.getTaskdescription() != null ? tr.getTaskdescription() : "");
-        form.setTicketReference(tr.getTicketReference() != null ? tr.getTicketReference() : "");
+        form.setTicketReferences(new ArrayList<>(tr.getTicketReferences()));
         form.setTraining(tr.isTraining());
 
         var suborders = suborderOptions(ecId, date);
@@ -444,6 +448,22 @@ public class TimereportController {
                     errorCodeViewHelper.toViewMessage("main.timereport.form.validation.suborder.required"));
         }
 
+        // #1326: ticket keys in the comment that are no reference yet are proposed before anything is
+        // saved - once; the answer comes back with ticketSuggestionChoice
+        var suborders = suborderOptions(ecId, date);
+        var ticketSuggestions = ticketSuggestionsFor(form, suborders);
+        if (!ticketSuggestions.isEmpty()) {
+            populateModel(fEmployeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
+            model.addAttribute("ticketSuggestions", ticketSuggestions);
+            model.addAttribute("pendingSaveAndNew", Boolean.TRUE.equals(saveAndNew));
+            model.addAttribute("pendingShareRecipientIds",
+                Boolean.TRUE.equals(shareWithColleagues) && recipientUserIds != null ? recipientUserIds : List.of());
+            return "dailyreport/timereport-form";
+        }
+        if ("adopt".equals(form.getTicketSuggestionChoice())) {
+            form.setTicketReferences(withAdoptedKeys(form.getTicketReferences(), form.getAdoptedTicketKeys()));
+        }
+
         try {
             // #1111: resolve the employee order before seeding, not after. Seeding a workingday
             // commits on its own now, so a failure here would leave the serial days behind without
@@ -476,10 +496,10 @@ public class TimereportController {
 
             if (isEdit) {
                 timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
-                        form.getComment(), form.getTicketReference(), form.isTraining(), durationHours, durationMinutes);
+                        form.getComment(), form.getTicketReferences(), form.isTraining(), durationHours, durationMinutes);
             } else {
                 timereportService.createTimereports(ecId, employeeOrderId, date,
-                        form.getComment(), form.getTicketReference(), form.isTraining(), durationHours, durationMinutes,
+                        form.getComment(), form.getTicketReferences(), form.isTraining(), durationHours, durationMinutes,
                         form.getNumberOfSerialDays());
                 // #844: only creating a booking teaches the preference — an edit always opens in
                 // duration mode because begin/end are not stored per booking
@@ -528,7 +548,6 @@ public class TimereportController {
             return "redirect:" + ReturnUrls.orElse(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
 
         } catch (ErrorCodeException ex) {
-            var suborders = suborderOptions(ecId, date);
             populateModel(fEmployeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
             model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
             return "dailyreport/timereport-form";
@@ -548,6 +567,11 @@ public class TimereportController {
         boolean commentNecessary = suborders.stream()
             .filter(s -> s.id().equals(form.getSuborderId()))
             .findFirst().map(SuborderOption::commentNecessary).orElse(false);
+        // the ticket field as the selected suborder allows it (#1326); a change of the suborder in the
+        // browser is followed by setTicketReferenceLimit() in the form
+        model.addAttribute("ticketReferencePolicy", suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .findFirst().map(SuborderOption::ticketReferencePolicy).orElse(null));
         model.addAttribute("timereportForm", form);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("suborders", suborders);
@@ -593,9 +617,44 @@ public class TimereportController {
     }
 
     /**
-     * The favourite a booking is saved as (#834), with the ticket reference of that booking (#1029).
-     * The reference goes through the same normalisation as the booking itself, so a favourite can
-     * never hold something the booking would have rejected.
+     * The keys of the comment to propose as references before saving (#1326): those that are no
+     * reference yet, and only on a first submit, while the suborder still has room for one. Empty
+     * otherwise — also where the suborder is not one the form offers, which saving refuses anyway.
+     */
+    static List<String> ticketSuggestionsFor(TimereportForm form, List<SuborderOption> suborders) {
+        if (form.getTicketSuggestionChoice() != null && !form.getTicketSuggestionChoice().isBlank()) {
+            return List.of();
+        }
+        var policy = suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .findFirst()
+            .map(SuborderOption::ticketReferencePolicy)
+            .orElse(null);
+        var references = form.getTicketReferences().stream().filter(r -> r != null && !r.isBlank()).toList();
+        if (policy == null || policy.remaining(references.size()) == 0) {
+            return List.of();
+        }
+        return TicketReferences.keysNotReferenced(form.getComment(), references);
+    }
+
+    /**
+     * The references with the ticked proposals behind them, a proposal already among them left out —
+     * the person may have added it by hand in the meantime.
+     */
+    static List<String> withAdoptedKeys(List<String> references, List<String> adopted) {
+        var result = new ArrayList<>(references);
+        var present = references.stream().filter(r -> r != null && !r.isBlank())
+            .map(TicketReferences::comparable).collect(Collectors.toCollection(HashSet::new));
+        adopted.stream().filter(key -> key != null && !key.isBlank())
+            .filter(key -> present.add(TicketReferences.comparable(key)))
+            .forEach(result::add);
+        return result;
+    }
+
+    /**
+     * The favourite a booking is saved as (#834), with the ticket references of that booking (#1029,
+     * #1326). They go through the same normalisation as the booking itself, so a favourite can never
+     * hold something the booking would have rejected.
      */
     static Favorite favoriteFrom(long employeeOrderId, long durationHours, long durationMinutes,
             TimereportForm form) {
@@ -604,7 +663,7 @@ public class TimereportController {
             .hours(valueOf(durationHours).intValueExact())
             .minutes(valueOf(durationMinutes).intValueExact())
             .comment(form.getComment())
-            .ticketReference(normalizeTicketReference(form.getTicketReference()))
+            .ticketReferences(TicketReferences.normalize(form.getTicketReferences()))
             .build();
     }
 

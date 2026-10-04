@@ -23,6 +23,7 @@ import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderDTO;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
@@ -120,12 +121,12 @@ class SpecialOrderLockTest {
 
   private static SuborderDTO suborderDto(String sign, Long parentId) {
     return new SuborderDTO(7L, sign, "Leistung", "Leistung", null, 'y', false, false, false, false,
-        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId);
+        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null);
   }
 
   private static CustomerorderDTO customerorderDto(String sign) {
     return new CustomerorderDTO(1L, FROM, null, sign, "Auftrag", "Auftrag", null, null, null, List.of(1L), 1L,
-        null, null, false, OrderType.STANDARD);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.LIMITED, 1);
   }
 
   private static Customerorder customerorder(long id, String sign) {

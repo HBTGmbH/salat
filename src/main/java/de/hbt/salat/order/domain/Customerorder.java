@@ -120,6 +120,32 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @Column(name = "orderType", columnDefinition = "varchar(255)")
     private OrderType orderType;
 
+    /**
+     * How many ticket references a booking may carry (#1326); a suborder may override it. Two columns
+     * rather than an embeddable: a suborder holds the same pair, nullable, and reads clearer as the same
+     * two fields. Read and written as {@link #getTicketReferencePolicy()}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ticket_reference_mode", nullable = false, columnDefinition = "varchar(16)")
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private TicketReferenceMode ticketReferenceMode = TicketReferencePolicy.DEFAULT.mode();
+
+    @Column(name = "ticket_reference_limit")
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Integer ticketReferenceLimit = TicketReferencePolicy.DEFAULT.limit();
+
+    public TicketReferencePolicy getTicketReferencePolicy() {
+        return new TicketReferencePolicy(ticketReferenceMode, ticketReferenceLimit);
+    }
+
+    public void setTicketReferencePolicy(TicketReferencePolicy policy) {
+        var value = policy != null ? policy : TicketReferencePolicy.DEFAULT;
+        this.ticketReferenceMode = value.mode();
+        this.ticketReferenceLimit = value.limit();
+    }
+
     public String getFormattedUntilDate() {
         LocalDate untilLocalDate = getUntilDate();
         if (untilLocalDate != null) {

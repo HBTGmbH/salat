@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,8 +44,9 @@ public class TimereportDTO implements Serializable {
   private final long employeeorderId;
   private final Duration duration;
   private final String taskdescription;
-  /** Optional free text reference to an external ticket (#982); null when none was entered. */
-  private final String ticketReference;
+  /** The ticket references of the booking in their order (#982, #1326); empty when there are none. */
+  @Builder.Default
+  private final List<String> ticketReferences = List.of();
   private final String status;
   private final boolean training;
   private final int sequencenumber;

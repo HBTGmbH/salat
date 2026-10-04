@@ -17,7 +17,7 @@ public class GlobalConstants {
 
     public static final int COMMENT_MAX_LENGTH = 32000;
 
-    /** Free text reference to an external ticket on a time report (#982) - matches timereport.ticket_reference */
+    /** Length of one ticket reference of a booking or favourite (#982, #1326) - matches the column of timereport_ticket_reference */
     public static final int TICKET_REFERENCE_MAX_LENGTH = 64;
 
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";

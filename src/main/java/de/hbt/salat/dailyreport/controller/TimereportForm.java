@@ -1,6 +1,9 @@
 package de.hbt.salat.dailyreport.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 import de.hbt.salat.dailyreport.preferences.DurationInputMode;
@@ -42,11 +45,28 @@ public class TimereportForm {
     private String comment = "";
 
     /**
-     * Optional free text reference to an external ticket (#982). Free text on purpose: the
-     * suggestions are a convenience, not a constraint, and a ticket that was never replicated must
-     * still be bookable.
+     * The ticket references of the booking (#982, #1326), as many as its suborder allows. Free text
+     * on purpose: the suggestions are a convenience, not a constraint, and a ticket that was never
+     * replicated must still be bookable.
      */
-    private String ticketReference = "";
+    private List<String> ticketReferences = new ArrayList<>();
+
+    /** Blank entries drop out: an empty field of the select is no reference. */
+    public void setTicketReferences(List<String> ticketReferences) {
+        this.ticketReferences = ticketReferences == null ? new ArrayList<>()
+            : ticketReferences.stream().filter(reference -> reference != null && !reference.isBlank())
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    /**
+     * The answer to the keys proposed from the comment when saving was held (#1326): {@code adopt} adds
+     * {@link #adoptedTicketKeys}, {@code skip} saves without them. Set by the two buttons of the
+     * proposal; empty on a first submit, which is the one that may be held.
+     */
+    private String ticketSuggestionChoice;
+
+    /** The proposed keys that were ticked. */
+    private List<String> adoptedTicketKeys = new ArrayList<>();
 
     private boolean training;
 

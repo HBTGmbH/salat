@@ -79,7 +79,7 @@
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
               <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">initial setup</td>
-              <td class="text-nowrap font-monospace small" th:text="${b.ticketReference()}">PROJ-123</td>
+              <td class="text-nowrap font-monospace small" th:text="${#strings.listJoin(b.ticketReferences(), ';')}">PROJ-123</td>
             </tr>
             </tbody>
           </table>
@@ -118,10 +118,10 @@
                 <span th:text="${u.to().comment()}" style="white-space: pre-wrap">initial setup</span>
               </td>
               <td class="text-nowrap font-monospace small">
-                  <span th:if="${u.from().ticketReference() ne u.to().ticketReference()}"
+                  <span th:if="${u.from().ticketReferences() ne u.to().ticketReferences()}"
                         class="text-muted text-decoration-line-through d-block"
-                        th:text="${u.from().ticketReference()}">PROJ-122</span>
-                <th:block th:text="${u.to().ticketReference()}">PROJ-123</th:block>
+                        th:text="${#strings.listJoin(u.from().ticketReferences(), ';')}">PROJ-122</span>
+                <th:block th:text="${#strings.listJoin(u.to().ticketReferences(), ';')}">PROJ-123</th:block>
               </td>
             </tr>
             </tbody>
@@ -148,7 +148,7 @@
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
               <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">initial setup</td>
-              <td class="text-nowrap font-monospace small" th:text="${b.ticketReference()}">PROJ-123</td>
+              <td class="text-nowrap font-monospace small" th:text="${#strings.listJoin(b.ticketReferences(), ';')}">PROJ-123</td>
             </tr>
             </tbody>
           </table>
@@ -394,7 +394,7 @@
               <td class="text-muted">11</td>
               <td class="fw-medium">ticketReference</td>
               <td class="text-muted" th:text="#{main.dailyreport.csv.format.col.ticketreference.format.text}">text, at most 64 characters</td>
-              <td class="font-monospace small">PROJ-123</td>
+              <td class="font-monospace small">PROJ-123;PROJ-130</td>
               <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.ticketreference.notes.text}">Ticket reference; empty means none</td>
             </tr>

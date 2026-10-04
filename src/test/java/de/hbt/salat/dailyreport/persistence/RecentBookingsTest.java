@@ -32,14 +32,14 @@ class RecentBookingsTest {
   void a_comment_brings_the_reference_of_the_booking_it_comes_from() {
     givenBookings(booking("Daily", "PROJ-123"));
 
-    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", "PROJ-123"));
+    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", List.of("PROJ-123")));
   }
 
   @Test
   void a_booking_without_a_reference_offers_the_comment_alone() {
     givenBookings(booking("Daily", null));
 
-    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", null));
+    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", List.of()));
   }
 
   /**
@@ -51,22 +51,22 @@ class RecentBookingsTest {
     givenBookings(booking("Daily", "PROJ-123"), booking("Daily", "PROJ-456"));
 
     assertThat(recentBookings()).containsExactly(
-        new RecentBooking("Daily", "PROJ-123"),
-        new RecentBooking("Daily", "PROJ-456"));
+        new RecentBooking("Daily", List.of("PROJ-123")),
+        new RecentBooking("Daily", List.of("PROJ-456")));
   }
 
   @Test
   void the_same_comment_on_the_same_ticket_is_offered_once() {
     givenBookings(booking("Daily", "PROJ-123"), booking(" Daily ", "PROJ-123"));
 
-    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", "PROJ-123"));
+    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", List.of("PROJ-123")));
   }
 
   @Test
   void a_booking_without_a_comment_is_no_offer() {
     givenBookings(booking(null, "PROJ-123"), booking("   ", "PROJ-456"), booking("Daily", null));
 
-    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", null));
+    assertThat(recentBookings()).containsExactly(new RecentBooking("Daily", List.of()));
   }
 
   @Test
@@ -88,7 +88,7 @@ class RecentBookingsTest {
   private static Timereport booking(String comment, String ticketReference) {
     var timereport = new Timereport();
     timereport.setTaskdescription(comment);
-    timereport.setTicketReference(ticketReference);
+    timereport.setTicketReferences(ticketReference == null ? List.of() : List.of(ticketReference));
     return timereport;
   }
 
