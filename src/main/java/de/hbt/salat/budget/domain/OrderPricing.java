@@ -40,6 +40,15 @@ public class OrderPricing extends AuditedEntity {
      * Suborder#getCompleteOrderSign()}, e.g. {@code ORDER/01/02}) — not the bare {@code
      * Suborder#getSign()}, and no reference: it stays as typed (#1212, → {@link OrderPricingLookup}).
      * {@code null} means the price applies to the whole customer order.
+     *
+     * <p>The one place where a sign of the order tree still decides what a record covers (AGENTS.md,
+     * #1205). That is intended — a pattern prices a group of suborders, including ones created
+     * later — but it has a consequence the ids elsewhere do not: nothing follows a rename or a move.
+     * Rename a suborder, or move it under another parent, and a pattern that named it by its old
+     * complete sign no longer matches; the rate stops pricing it without a word, and its bookings
+     * fall back to a less specific rate, or to none. The pattern is checked against the order tree
+     * only when the rate is saved ({@code OrderPricingService}); after a change in the tree it has to
+     * be adjusted by hand.
      */
     @Column(name = "suborder_sign")
     private String suborderSign;

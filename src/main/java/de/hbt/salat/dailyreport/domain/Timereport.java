@@ -59,8 +59,22 @@ public class Timereport extends AuditedEntity implements Serializable {
     private String taskdescription;
     private String status;
     /**
-     * Optional free text reference to an external ticket (#982). Deliberately not a relation to
-     * {@code jira_ticket} — it has to survive a booking whose ticket was never replicated.
+     * Optional free text reference to an external ticket (#982), in practice the JIRA issue key.
+     *
+     * <p>A deliberate exception to the rule that a record refers to another by id (AGENTS.md, #1205):
+     * the key is matched against {@code JiraTicket.key} as text, ignoring case, and there is no
+     * foreign key. An id would not do —
+     * <ul>
+     *   <li>the reference is typed and may name a ticket that was never replicated, or not yet;</li>
+     *   <li>the same key may be replicated under several scopes, so there is no single row to point
+     *       at;</li>
+     *   <li>a replicated ticket can disappear and come back (#1167) under a new row, and the booking
+     *       must still name it.</li>
+     * </ul>
+     * The worklog sync ({@code JiraWorklogSync.issueKey}) and the parent chains
+     * ({@code JiraTicket.parentKey}) rely on the same key, and a favourite carries it the same way.
+     * The key belongs to JIRA, not to SALAT: it changes only when a ticket is moved to another
+     * project there, and a booking then keeps the key it was booked on.
      */
     @Column(name = "ticket_reference")
     private String ticketReference;
