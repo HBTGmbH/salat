@@ -261,8 +261,9 @@ public class JiraReplicationConfigService {
   private void applyScope(JiraReplicationConfigData data, JiraReplicationConfig config, String scopeSign) {
     if (!Objects.equals(data.customerorderId(), config.getCustomerorderId())
         || !Objects.equals(data.suborderId(), config.getSuborderId())) {
-      log.info("Scope of JIRA replication {} changed from {} to {}, resetting the watermark so the "
-          + "tickets of the new scope are fetched", config.getName(), config.getScopeSign(), scopeSign);
+      log.info("Scope of JIRA replication {} changed from order {}/suborder {} to {}, resetting the "
+          + "watermark so the tickets of the new scope are fetched", config.getName(),
+          config.getCustomerorderId(), config.getSuborderId(), scopeSign);
       config.setLastMaxUpdated(null);
     }
     config.setCustomerorderId(data.customerorderId());
@@ -355,7 +356,7 @@ public class JiraReplicationConfigService {
       if (!data.customerorderId().equals(other.getCustomerorderId())) continue;
       if (scopesOverlap(location, other.getSuborderId())) {
         log.info("Worklog sync of JIRA replication {} refused: it overlaps with the replication {} "
-            + "on scope {} at the same JIRA instance", data.name(), other.getName(), other.getScopeSign());
+            + "at the same JIRA instance", data.name(), other.getName());
         throw new InvalidDataException(JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
       }
     }
