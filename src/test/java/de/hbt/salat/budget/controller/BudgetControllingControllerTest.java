@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -12,7 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,6 @@ import de.hbt.salat.budget.service.BudgetControllingService;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
-import de.hbt.salat.order.service.CustomerorderService;
 
 /**
  * The order arrives through the registered UiState mapping, so it is present on every request as
@@ -37,8 +37,7 @@ import de.hbt.salat.order.service.CustomerorderService;
  * spans 2000 to 2999 and is the most expensive thing the module does. Opening the page must stay
  * free.
  *
- * <p>The filter carries the id of the order (#1334); the evaluation is asked by the sign the order
- * has today.
+ * <p>The filter carries the id of the order (#1334), and the evaluation is asked by that id (#1338).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @ExtendWith(MockitoExtension.class)
@@ -54,9 +53,6 @@ class BudgetControllingControllerTest {
 
   @Mock
   private AuthorizedUser authorizedUser;
-
-  @Mock
-  private CustomerorderService customerorderService;
 
   @InjectMocks
   private BudgetControllingController controller;
@@ -74,9 +70,8 @@ class BudgetControllingControllerTest {
 
   @Test
   void submitting_the_form_evaluates_the_chosen_order() {
-    givenOrder();
-    when(budgetControllingService.compute(eq("1612"), any(), any(), anyBoolean()))
-        .thenReturn(result());
+    when(budgetControllingService.compute(eq(ORDER_ID), any(), any(), anyBoolean()))
+        .thenReturn(Optional.of(result()));
     var filter = new ControllingFilterForm();
     filter.setFrom(LocalDate.of(2026, 1, 1));
     filter.setUntil(LocalDate.of(2026, 3, 31));
@@ -86,7 +81,7 @@ class BudgetControllingControllerTest {
 
     verify(budgetAuthorization).checkAuthorizedForCustomerorderId(ORDER_ID);
     verify(budgetControllingService)
-        .compute("1612", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), false);
+        .compute(ORDER_ID, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), false);
     assertThat(model.getAttribute("result")).isNotNull();
   }
 
@@ -96,13 +91,12 @@ class BudgetControllingControllerTest {
    */
   @Test
   void submitting_without_a_period_evaluates_the_full_range() {
-    givenOrder();
-    when(budgetControllingService.compute(any(), any(), any(), anyBoolean())).thenReturn(result());
+    when(budgetControllingService.compute(anyLong(), any(), any(), anyBoolean())).thenReturn(Optional.of(result()));
 
     controller.show(ORDER_ID, true, new ControllingFilterForm(), new ConcurrentModel());
 
     verify(budgetControllingService)
-        .compute("1612", LocalDate.of(2000, 1, 1), LocalDate.of(2999, 12, 31), false);
+        .compute(ORDER_ID, LocalDate.of(2000, 1, 1), LocalDate.of(2999, 12, 31), false);
   }
 
   @Test
@@ -118,13 +112,13 @@ class BudgetControllingControllerTest {
   /** A remembered id outlives its order; there is nothing left to evaluate. */
   @Test
   void submitting_an_order_that_no_longer_exists_evaluates_nothing() {
-    when(customerorderService.getCustomerorderSignsByIds(List.of(ORDER_ID))).thenReturn(Map.of());
+    when(budgetControllingService.compute(anyLong(), any(), any(), anyBoolean())).thenReturn(Optional.empty());
     var model = new ConcurrentModel();
 
     controller.show(ORDER_ID, true, new ControllingFilterForm(), model);
 
     assertThat(model.containsAttribute("result")).isFalse();
-    verifyNoInteractions(budgetControllingService);
+    assertThat(model.containsAttribute("controllingError")).isFalse();
   }
 
   /** A missing privilege is answered as such, not as a hint next to an empty evaluation. */
@@ -136,10 +130,6 @@ class BudgetControllingControllerTest {
     assertThatThrownBy(() -> controller.show(ORDER_ID, true, new ControllingFilterForm(), new ConcurrentModel()))
         .isInstanceOf(AuthorizationException.class);
     verifyNoInteractions(budgetControllingService);
-  }
-
-  private void givenOrder() {
-    when(customerorderService.getCustomerorderSignsByIds(List.of(ORDER_ID))).thenReturn(Map.of(ORDER_ID, "1612"));
   }
 
   private static BudgetControllingResult result() {

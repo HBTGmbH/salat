@@ -148,10 +148,10 @@ public class BudgetAuthorizationTest {
   public void the_check_names_the_customer_order_it_rejects() {
     givenResponsibleFor(OWN);
 
-    assertThatThrownBy(() -> authorization.checkAuthorizedForCustomerorder(FOREIGN))
+    assertThatThrownBy(() -> authorization.checkAuthorizedForCustomerorderId(idOf(FOREIGN)))
         .isInstanceOf(AuthorizationException.class)
         .hasMessageContaining(ErrorCode.BU_ORDER_NOT_AUTHORIZED.getCode());
-    assertThatCode(() -> authorization.checkAuthorizedForCustomerorder(OWN))
+    assertThatCode(() -> authorization.checkAuthorizedForCustomerorderId(idOf(OWN)))
         .doesNotThrowAnyException();
   }
 

@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -191,7 +192,7 @@ public class BudgetSegmentControllingServiceTest {
 
     service.compute(FROM, UNTIL);
 
-    verify(budgetControllingService).compute("A", FROM, UNTIL, true);
+    verify(budgetControllingService).compute(idOf("A"), FROM, UNTIL, true);
   }
 
   /** Several plans on one order, and bookings besides — still one line and one evaluation. */
@@ -205,7 +206,7 @@ public class BudgetSegmentControllingServiceTest {
 
     var segments = service.compute(FROM, UNTIL).segments();
 
-    verify(budgetControllingService).compute(eq("A"), any(), any(), anyBoolean());
+    verify(budgetControllingService).compute(eq(idOf("A")), any(), any(), anyBoolean());
     assertThat(segments.get(0).orders()).hasSize(1);
   }
 
@@ -287,8 +288,8 @@ public class BudgetSegmentControllingServiceTest {
 
   private void givenEvaluations(BudgetControllingResult... results) {
     for (var result : results) {
-      when(budgetControllingService.compute(eq(result.customerorderSign()), any(), any(), anyBoolean()))
-          .thenReturn(result);
+      when(budgetControllingService.compute(eq(idOf(result.customerorderSign())), any(), any(), anyBoolean()))
+          .thenReturn(Optional.of(result));
     }
   }
 
@@ -326,6 +327,7 @@ public class BudgetSegmentControllingServiceTest {
     var customer = mock(Customer.class);
     when(customer.getSegment()).thenReturn(segment);
     var customerorder = mock(Customerorder.class);
+    when(customerorder.getId()).thenReturn(idOf(sign));
     when(customerorder.getSign()).thenReturn(sign);
     when(customerorder.getShortdescription()).thenReturn("order " + sign);
     when(customerorder.getCustomer()).thenReturn(customer);
@@ -346,7 +348,7 @@ public class BudgetSegmentControllingServiceTest {
   private static OrderBudget plan(String customerorderSign) {
     var plan = new OrderBudget();
     setId(plan, nextId++);
-    var customerorderId = (long) customerorderSign.hashCode();
+    var customerorderId = idOf(customerorderSign);
     SIGNS_BY_ID.put(customerorderId, customerorderSign);
     plan.setCustomerorderId(customerorderId);
     plan.setCustomerorderSign("stale-" + customerorderSign);
@@ -355,7 +357,12 @@ public class BudgetSegmentControllingServiceTest {
   }
 
   private static CustomerorderOption option(String sign) {
-    return new CustomerorderOption(sign.hashCode(), sign, null, null, null, null, false);
+    return new CustomerorderOption(idOf(sign), sign, null, null, null, null, false);
+  }
+
+  /** The id an order of the fixture has — derived from its sign, so that plans and options agree. */
+  private static long idOf(String sign) {
+    return sign.hashCode();
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */

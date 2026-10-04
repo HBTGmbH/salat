@@ -48,8 +48,7 @@ class LegacyBudgetFilterControllerTest {
   void setUp() {
     mockMvc = MockMvcBuilders.standaloneSetup(
         new LegacyBudgetFilterController(customerorderService),
-        new BudgetControllingController(budgetControllingService, budgetAuthorization, authorizedUser,
-            customerorderService)).build();
+        new BudgetControllingController(budgetControllingService, budgetAuthorization, authorizedUser)).build();
   }
 
   @Test

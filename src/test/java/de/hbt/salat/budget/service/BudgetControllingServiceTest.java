@@ -15,8 +15,10 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -52,7 +54,9 @@ import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -127,8 +131,11 @@ public class BudgetControllingServiceTest {
     var deep = suborder("D", 'Y', 11L, first);
     var second = suborder("02", 'Y', 20L, null);
 
-    when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
-    when(publicholidayService.getPublicHolidaysBetween(any(), any())).thenReturn(List.of());
+    // Read off the mock on every call, so that a test renaming the order sees the new sign.
+    when(customerorderService.getCustomerorderOptionsByIds(List.of(CUSTOMERORDER_ID))).thenAnswer(i ->
+        List.of(new CustomerorderOption(CUSTOMERORDER_ID, customerorder.getSign(), customerorder.getShortdescription(),
+            null, null, null, false)));
+    when(publicholidayService.getPublicHolidayDatesBetween(any(), any())).thenReturn(Set.of());
 
     // Plans, bookings and assignments all come out of the mutable fixture lists, so a test can set
     // them up in any order and the last word wins.
@@ -146,7 +153,7 @@ public class BudgetControllingServiceTest {
                   && !r.getReferenceday().isAfter(periodUntil))
               .toList();
         });
-    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> List.copyOf(suborders));
+    when(suborderService.getSuborderReadModelsByCustomerorderId(anyLong())).thenAnswer(i -> summaries());
     // The utilization reads the same fixture in bulk, over every order and plan asked about (#1222).
     when(customerorderService.getCustomerordersByIds(any())).thenReturn(List.of(customerorder));
     when(suborderService.getSubordersByCustomerorderIds(any())).thenAnswer(i -> List.copyOf(suborders));
@@ -210,9 +217,9 @@ public class BudgetControllingServiceTest {
     cost.setValidUntil(UNTIL);
     when(employeeCostService.lookup()).thenReturn(EmployeeCostLookup.of(List.of(assignment), List.of(cost)));
 
-    var before = service.compute("co", FROM, UNTIL, true).total();
+    var before = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
     givenReports(eightHoursOn(11L, IN_H1, "ANON-5"), eightHoursOn(20L, IN_H2, "ANON-5"));
-    var after = service.compute("co", FROM, UNTIL, true).total();
+    var after = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
 
     // 16 h at the personal rate of 150 EUR/h, and at the cost of 60 EUR/h
     assertThat(before.revenueEuro()).isEqualByComparingTo("2400.00");
@@ -235,9 +242,8 @@ public class BudgetControllingServiceTest {
     var before = compute();
 
     when(customerorder.getSign()).thenReturn("renamed");
-    when(customerorderService.getCustomerorderBySign("renamed")).thenReturn(customerorder);
     suborders.stream().filter(so -> so.getId() == 10L).findFirst().orElseThrow().setSign("X1");
-    var after = service.compute("renamed", FROM, UNTIL, false);
+    var after = compute();
 
     assertThat(after.total().revenueEuro()).isEqualByComparingTo(before.total().revenueEuro());
     assertThat(after.total().flatRateRevenueEuro()).isEqualByComparingTo(before.total().flatRateRevenueEuro());
@@ -1304,7 +1310,7 @@ public class BudgetControllingServiceTest {
   }
 
   private BudgetControllingResult compute(LocalDate from, LocalDate until) {
-    return service.compute("co", from, until, false);
+    return service.compute(CUSTOMERORDER_ID, from, until, false).orElseThrow();
   }
 
   private static BudgetControllingSection sectionOf(BudgetControllingResult result, SectionKind kind) {
@@ -1393,6 +1399,16 @@ public class BudgetControllingServiceTest {
     suborder.setInvoice(invoice);
     suborder.setParentorder(parent);
     return suborder;
+  }
+
+  /**
+   * The suborders as the order module hands them over (#1338), computed by its own rule rather than
+   * rebuilt here — so complete sign and path in these tests are the ones production computes.
+   */
+  private List<SuborderReadModel> summaries() {
+    var byId = new HashMap<Long, Suborder>();
+    suborders.forEach(suborder -> byId.put(suborder.getId(), suborder));
+    return suborders.stream().map(suborder -> SuborderReadModel.of(suborder, byId)).toList();
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */

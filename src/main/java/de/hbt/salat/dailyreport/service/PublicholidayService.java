@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -64,6 +65,17 @@ public class PublicholidayService {
 
   public List<Publicholiday> getPublicHolidaysBetween(LocalDate dateFirst, LocalDate dateLast) {
     return publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast);
+  }
+
+  /**
+   * The dates of the public holidays in the range, both ends included — what another module counts
+   * working days with, without the entity leaving this module (#1338, ADR-0021).
+   */
+  @Transactional(readOnly = true)
+  public Set<LocalDate> getPublicHolidayDatesBetween(LocalDate dateFirst, LocalDate dateLast) {
+    return publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast).stream()
+        .map(Publicholiday::getRefdate)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   /**

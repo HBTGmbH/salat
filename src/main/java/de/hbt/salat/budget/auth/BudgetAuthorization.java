@@ -80,12 +80,6 @@ public class BudgetAuthorization {
         return customerorderId != null && responsibleCustomerorderIds().contains(customerorderId);
     }
 
-    public void checkAuthorizedForCustomerorder(String customerorderSign) {
-        if (!isAuthorizedForCustomerorder(customerorderSign)) {
-            throw new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED, customerorderSign);
-        }
-    }
-
     /** The message names the order by its sign where it still exists, by the id otherwise. */
     public void checkAuthorizedForCustomerorderId(Long customerorderId) {
         if (!isAuthorizedForCustomerorderId(customerorderId)) {

@@ -39,6 +39,7 @@ import de.hbt.salat.order.domain.SuborderDTO;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.domain.SuborderSignRow;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
@@ -324,6 +325,23 @@ public class SuborderService {
     return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
         .filter(
                 not(Suborder::isHide))
+        .toList();
+  }
+
+  /**
+   * The visible suborders of the order as plain values, sorted by complete order sign like
+   * {@link #getSubordersByCustomerorderId} (#1338) — what another module evaluates an order with
+   * (→ ADR-0021, Nachtrag #1338). One statement for the order: path and complete sign are built from
+   * the suborders read, hidden parents included, not by walking the parent chain of each.
+   */
+  @Transactional(readOnly = true)
+  public List<SuborderReadModel> getSuborderReadModelsByCustomerorderId(long customerorderId) {
+    var all = suborderDAO.getSubordersByCustomerorderId(customerorderId);
+    var byId = new HashMap<Long, Suborder>();
+    all.forEach(suborder -> byId.put(suborder.getId(), suborder));
+    return all.stream()
+        .filter(not(Suborder::isHide))
+        .map(suborder -> SuborderReadModel.of(suborder, byId))
         .toList();
   }
 

@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -385,12 +386,13 @@ public class BudgetDashboardServiceTest {
         Collection<Long> ids = askAll(i.getArgument(0));
         return OrderFlatRateLookup.of(flatRates.stream().filter(r -> ids.contains(r.getCustomerorderId())).toList());
       });
-      when(publicholidayService.getPublicHolidaysBetween(any(), any())).thenAnswer(i -> {
+      when(publicholidayService.getPublicHolidayDatesBetween(any(), any())).thenAnswer(i -> {
         LocalDate from = i.getArgument(0);
         LocalDate until = i.getArgument(1);
         return holidays.stream()
-            .filter(h -> !h.getRefdate().isBefore(from) && !h.getRefdate().isAfter(until))
-            .toList();
+            .map(Publicholiday::getRefdate)
+            .filter(day -> !day.isBefore(from) && !day.isAfter(until))
+            .collect(Collectors.toSet());
       });
 
       var budgetAuthorization = mock(BudgetAuthorization.class);
