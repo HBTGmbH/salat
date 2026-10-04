@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -164,7 +165,7 @@ class TimereportListOrderOptionsTest {
     var created = new Customer();
     setField(created, "id", 42L);
     created.setName("Testkunde");
-    created.setShortname("TK");
+    created.setShortname(uniqueShortname("TK"));
     return created;
   }
 

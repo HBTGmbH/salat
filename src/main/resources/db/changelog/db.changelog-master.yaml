@@ -4529,3 +4529,100 @@ databaseChangeLog:
             referencedTableName: salat_user
             referencedColumnNames: id
             onDelete: SET NULL
+  - changeSet:
+      id: 123
+      author: kr
+      comment: salat_user.loginname ist eindeutig (#1333)
+      # Die Anmeldung, die Einstellungen und der Besitz von Reports (#1330) suchen genau ein Login je
+      # Namen. Binaer verglichen wie die Spalte (utf8mb3_bin); NULL bleibt mehrfach zulaessig.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            salat_user enthaelt doppelte Anmeldenamen; vor dem Start bereinigen (#1333).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `salat_user` WHERE `loginname` IS NOT NULL GROUP BY `loginname` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `salat_user` ADD CONSTRAINT `uk_salat_user_loginname` UNIQUE (`loginname`)
+
+  - changeSet:
+      id: 124
+      author: kr
+      comment: report_definition.name ist eindeutig (#1333)
+      # Die REST-Schnittstelle ruft einen Report ueber seinen Namen auf.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            report_definition enthaelt doppelte Namen; vor dem Start bereinigen (#1333).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `report_definition` WHERE `name` IS NOT NULL GROUP BY `name` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `report_definition` ADD CONSTRAINT `uk_report_definition_name` UNIQUE (`name`)
+
+  - changeSet:
+      id: 125
+      author: kr
+      comment: Der Name einer Berechtigungsregel ist ohne Ruecksicht auf Gross-/Kleinschreibung eindeutig (#1333)
+      # Der Service prueft das seit #1168; zwei gleichzeitige Speichervorgaenge kamen aber beide durch.
+      # Die Spalte sortiert binaer, ein einfacher Schluessel unterschiede Abc und abc. Deshalb ueber
+      # eine generierte Spalte LOWER(name), die die Anwendung nicht abbildet.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            authorization_rule enthaelt Namen, die sich nur in Gross-/Kleinschreibung unterscheiden; vor dem
+            Start bereinigen (#1333).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `authorization_rule` WHERE `name` IS NOT NULL GROUP BY LOWER(`name`) HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: >-
+              ALTER TABLE `authorization_rule`
+                ADD COLUMN `name_lower` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin
+                  GENERATED ALWAYS AS (LOWER(`name`)) STORED,
+                ADD CONSTRAINT `uk_authorization_rule_name_lower` UNIQUE (`name_lower`)
+
+  - changeSet:
+      id: 126
+      author: kr
+      comment: customer.shortname ist eindeutig (#1333)
+      # Der Kurzname unterscheidet Kunden in jeder Auswahlliste (#1266); der Service prueft ihn beim
+      # Speichern (CU-0003). Haelt an, solange der Bestand Duplikate traegt - sie sind vorher von Hand
+      # umzubenennen.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            customer enthaelt doppelte Kurznamen; vor dem Start bereinigen (#1333).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `customer` WHERE `shortname` IS NOT NULL GROUP BY `shortname` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `customer` ADD CONSTRAINT `uk_customer_shortname` UNIQUE (`shortname`)
+
+  - changeSet:
+      id: 127
+      author: kr
+      comment: Das Kuerzel eines Unterauftrags ist unter seinen Geschwistern eindeutig (#1333)
+      # Der vollstaendige Auftragsschluessel (AUFTRAG/01/02) nennt einen Unterauftrag in Reports,
+      # Importen und den Mustern der Kundenstundensaetze; er ist nur eindeutig, wenn es das Kuerzel
+      # unter Geschwistern ist. Ein Unique-Schluessel behandelt NULL als verschieden, und jeder
+      # Unterauftrag direkt unter dem Auftrag hat keinen Elternteil - deshalb ueber die generierte
+      # Spalte parent_key = COALESCE(parentorder_id, 0). Haelt an, solange der Bestand Duplikate
+      # traegt - sie sind vorher von Hand umzubenennen.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            suborder enthaelt Geschwister mit gleichem Kuerzel; vor dem Start bereinigen (#1333).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `suborder` GROUP BY `customerorder_id`, COALESCE(`parentorder_id`, 0), `sign` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: >-
+              ALTER TABLE `suborder`
+                ADD COLUMN `parent_key` bigint GENERATED ALWAYS AS (COALESCE(`parentorder_id`, 0)) STORED,
+                ADD CONSTRAINT `uk_suborder_customerorder_parent_sign` UNIQUE (`customerorder_id`, `parent_key`, `sign`)

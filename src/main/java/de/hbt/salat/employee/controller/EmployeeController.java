@@ -230,6 +230,10 @@ public class EmployeeController {
         } else if (form.getLoginname().length() > GlobalConstants.EMPLOYEE_LOGINNAME_MAX_LENGTH) {
             bindingResult.rejectValue("loginname", "error.loginname",
                     messages.getMessage("form.employee.error.loginname.toolong", "Login name is too long"));
+        } else if (employeeService.isLoginnameTaken(form.getLoginname(), form.getId())) {
+            // the sign-in looks up exactly one login per name (#1333)
+            bindingResult.rejectValue("loginname", "error.loginname",
+                    messages.getMessage("form.employee.error.loginname.alreadyexists", "Login name already exists"));
         }
 
         if (form.getStatus() == null || form.getStatus().isEmpty()) {

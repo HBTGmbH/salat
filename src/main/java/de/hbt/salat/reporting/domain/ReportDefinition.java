@@ -3,6 +3,7 @@ package de.hbt.salat.reporting.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,11 +12,13 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @Entity
 @Getter
 @Setter
-@Table(name = "report_definition")
+@Table(name = "report_definition",
+    uniqueConstraints = @UniqueConstraint(name = "uk_report_definition_name", columnNames = "name"))
 public class ReportDefinition extends AuditedEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
+  /** Unique (#1333): the REST interface calls a report by its name. */
   private String name;
   @Column(name = "`sql`")
   private String sql;

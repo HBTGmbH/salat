@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
-import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.DateUtils;
@@ -432,30 +431,17 @@ public class SuborderController {
       }
     }
 
-    // Sign uniqueness among siblings
-    if (form.getSign() != null && !form.getSign().isBlank() && suborderFromDate != null) {
-      var validityToCheck = new LocalDateRange(suborderFromDate, suborderUntilDate);
-      Long currentId = form.getId();
-      String signToCheck = form.getSign();
-      List<Suborder> siblings;
-      if (form.getParentId() == null) {
-        siblings = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()).stream()
-            .filter(s -> s.getParentorder() == null)
-            .filter(s -> !s.getId().equals(currentId))
-            .toList();
-      } else {
-        siblings = suborderService.getSuborderChildren(form.getParentId()).stream()
-            .filter(s -> s.getParentorder() != null && s.getParentorder().getId().equals(form.getParentId()))
-            .filter(s -> !s.getId().equals(currentId))
-            .toList();
-      }
-      for (Suborder sibling : siblings) {
-        if (sibling.getValidity().overlaps(validityToCheck)
-            && sibling.getSign().equalsIgnoreCase(signToCheck)) {
-          bindingResult.rejectValue("sign", "error.sign",
-              messages.getMessage("form.suborder.error.sign.alreadyexists", "Sign already exists for this period"));
-          break;
-        }
+    // Sign uniqueness among siblings, whatever their validity and whether hidden or not — the unique
+    // key of the table says the same (#1333), and the complete order sign is how reports, imports and
+    // the patterns of the customer rates name a suborder. Compared exactly, as the key does.
+    if (form.getSign() != null && !form.getSign().isBlank() && form.getCustomerorderId() != null) {
+      boolean taken = suborderService.getSubordersByCustomerorderIds(List.of(form.getCustomerorderId())).stream()
+          .filter(s -> !s.getId().equals(form.getId()))
+          .filter(s -> Objects.equals(s.getParentorder() == null ? null : s.getParentorder().getId(), form.getParentId()))
+          .anyMatch(s -> s.getSign().equals(form.getSign()));
+      if (taken) {
+        bindingResult.rejectValue("sign", "error.sign",
+            messages.getMessage("form.suborder.error.sign.alreadyexists", "Sign already exists"));
       }
     }
   }

@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.persistence;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -223,7 +224,7 @@ public class PreviousBookingsTest {
   private Customerorder customerorder() {
     var customer = new Customer();
     customer.setName("Testkunde");
-    customer.setShortname("TK");
+    customer.setShortname(uniqueShortname("TK"));
     customer.setAddress("Teststraße 1");
     entityManager.persist(customer);
 

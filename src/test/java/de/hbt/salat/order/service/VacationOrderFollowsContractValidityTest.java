@@ -1,5 +1,6 @@
 package de.hbt.salat.order.service;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -230,7 +231,7 @@ public class VacationOrderFollowsContractValidityTest {
 
   private Customer customer() {
     var created = new Customer();
-    created.setShortname("cust");
+    created.setShortname(uniqueShortname("cust"));
     created.setName("Customer");
     created.setAddress("Teststraße 1");
     return customerRepository.save(created);

@@ -158,6 +158,18 @@ public class ReportService {
         .toList();
   }
 
+  /**
+   * Whether another report definition already carries this name (#1333) — a report is called by its
+   * name over the REST interface. Every definition counts, not only those the caller may run.
+   *
+   * @param id the definition being edited, {@code null} for a new one
+   */
+  @Transactional(readOnly = true)
+  public boolean isNameTaken(String name, Long id) {
+    return reportDefinitionRepository.findAllByName(name).stream()
+        .anyMatch(definition -> !definition.getId().equals(id));
+  }
+
   public ReportDefinition create(String name, String sql) {
     if(!reportAuthorization.isAuthorizedForAnyReportDefinition(WRITE)) {
       return null;

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
@@ -195,12 +196,41 @@ class SuborderControllerTest {
     assertThat(data.getValue().trainingFlag()).isTrue();
   }
 
+  /**
+   * The sign is unique among the siblings, whatever their validity and whether hidden (#1333) — the
+   * twin "01" ends long before the new suborder starts and is still in the way.
+   */
+  @Test
+  void a_sign_a_sibling_carries_is_refused_whatever_its_validity() throws Exception {
+    twin.setUntilDate(ORDER_FROM.plusDays(1));
+    twin.setHide(true);
+    when(suborderService.getSubordersByCustomerorderIds(List.of(ORDER_ID))).thenReturn(List.of(twin));
+
+    mockMvc.perform(store("", "2026-06-01", "01"))
+        .andExpect(model().attributeHasFieldErrors("suborderForm", "sign"));
+
+    verify(suborderService, never()).create(any(), any());
+  }
+
+  @Test
+  void the_same_sign_below_another_parent_is_no_sibling() throws Exception {
+    when(suborderService.getSubordersByCustomerorderIds(List.of(ORDER_ID))).thenReturn(List.of(twin));
+
+    mockMvc.perform(store(String.valueOf(TWIN), "2026-06-01", "01"));
+
+    verify(suborderService).create(any(), eq(ORDER_ID));
+  }
+
   private static MockHttpServletRequestBuilder store(String parentId, String validFrom) {
+    return store(parentId, validFrom, "02");
+  }
+
+  private static MockHttpServletRequestBuilder store(String parentId, String validFrom, String sign) {
     return post("/orders/suborders/store")
         .param("customerId", "3")
         .param("customerorderId", "7")
         .param("parentId", parentId)
-        .param("sign", "02")
+        .param("sign", sign)
         .param("description", "Leistung")
         .param("validFrom", validFrom)
         .param("validUntil", "")

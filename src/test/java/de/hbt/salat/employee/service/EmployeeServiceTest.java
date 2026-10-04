@@ -164,6 +164,17 @@ public class EmployeeServiceTest {
 				.isGreaterThan(GlobalConstants.EMPLOYEE_SIGN_MAX_LENGTH);
 	}
 
+	/** The sign-in looks up exactly one login per name (#1333); the form asks before it saves. */
+	@Test
+	public void a_login_name_another_person_carries_is_taken() {
+		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		employeeDAO.createOrUpdate(employee);
+
+		assertThat(employeeDAO.isLoginnameTaken(TESTY_SIGN, null)).isTrue();
+		assertThat(employeeDAO.isLoginnameTaken(TESTY_SIGN, employee.getId())).isFalse();
+		assertThat(employeeDAO.isLoginnameTaken("nobody", null)).isFalse();
+	}
+
 	/** The login name is a reference too, and a duplicate one would make the login ambiguous. */
 	@Test
 	public void anonymized_loginname_is_out_of_reach_of_the_employee_form() {

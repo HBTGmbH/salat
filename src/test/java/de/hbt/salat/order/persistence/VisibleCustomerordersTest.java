@@ -1,5 +1,6 @@
 package de.hbt.salat.order.persistence;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -225,7 +226,7 @@ class VisibleCustomerordersTest {
   private Customer customer() {
     var created = new Customer();
     created.setName("Testkunde");
-    created.setShortname("TK");
+    created.setShortname(uniqueShortname("TK"));
     created.setAddress("Teststraße 1");
     return customerRepository.save(created);
   }

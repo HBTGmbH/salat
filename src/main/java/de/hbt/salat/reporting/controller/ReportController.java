@@ -114,6 +114,9 @@ public class ReportController {
 
     if (form.getName() == null || form.getName().isBlank()) {
       bindingResult.rejectValue("name", "error.name", "Name is required");
+    } else if (reportService.isNameTaken(form.getName(), form.getId())) {
+      // the REST interface calls a report by its name (#1333)
+      bindingResult.rejectValue("name", "error.name", "A report with this name already exists");
     }
     if (form.getSql() == null || form.getSql().isBlank()) {
       bindingResult.rejectValue("sql", "error.sql", "SQL is required");

@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.controller;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -231,7 +232,7 @@ class TimereportAbsenceDurationTest {
 
   private static Customerorder customerorder(long id, String sign, OrderType orderType) {
     var customer = new Customer();
-    customer.setShortname("HBT");
+    customer.setShortname(uniqueShortname("HBT"));
     var order = mock(Customerorder.class);
     when(order.getId()).thenReturn(id);
     when(order.getSign()).thenReturn(sign);

@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
@@ -282,7 +283,7 @@ class AcceptanceReviewBalanceTest {
 
   private Customerorder customerorder() {
     var customer = new Customer();
-    customer.setShortname("cust");
+    customer.setShortname(uniqueShortname("cust"));
     customer.setName("Customer");
     customer.setAddress("Teststraße 1");
     customerRepository.save(customer);

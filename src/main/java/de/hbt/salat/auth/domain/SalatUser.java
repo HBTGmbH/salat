@@ -3,6 +3,7 @@ package de.hbt.salat.auth.domain;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,13 +16,13 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-@Table(name = "salat_user")
+@Table(name = "salat_user", uniqueConstraints = @UniqueConstraint(name = "uk_salat_user_loginname", columnNames = "loginname"))
 public class SalatUser extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * login name of the user
+     * login name of the user — unique (#1333): the sign-in looks up exactly one login per name
      */
     private String loginname;
     

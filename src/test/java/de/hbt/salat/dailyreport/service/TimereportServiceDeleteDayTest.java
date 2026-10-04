@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -151,7 +152,7 @@ class TimereportServiceDeleteDayTest {
   private Suborder suborder(String sign) {
     var customer = new Customer();
     customer.setName("Testkunde");
-    customer.setShortname("TK");
+    customer.setShortname(uniqueShortname("TK"));
     customer.setAddress("Teststraße 1");
     entityManager.persist(customer);
 

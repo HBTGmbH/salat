@@ -1,5 +1,6 @@
 package de.hbt.salat.palette;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
@@ -98,7 +99,7 @@ class PaletteSearchIntegrationTest {
     }
     var customer = new Customer();
     customer.setName("Musterkunde");
-    customer.setShortname("MUSTER");
+    customer.setShortname(uniqueShortname("MUSTER"));
     customer.setAddress("Musterstraße 1");
     customer = customerRepository.save(customer);
     var order = new Customerorder();
