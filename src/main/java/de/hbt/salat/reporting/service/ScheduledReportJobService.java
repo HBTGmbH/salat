@@ -22,6 +22,7 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.util.DateTimeUtils;
+import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.JobExecutionResult;
 import de.hbt.salat.reporting.domain.ReportParameter;
 import de.hbt.salat.reporting.domain.ScheduledReportExecutionHistory;
@@ -44,12 +45,13 @@ public class ScheduledReportJobService {
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final ApplicationEventPublisher applicationEventPublisher;
   private final AuthorizedUser authorizedUser;
+  private final ReportAuthorization reportAuthorization;
 
   public List<ScheduledReportJob> getAllJobs() {
     if (authorizedUser.isManager()) {
       return (List<ScheduledReportJob>) scheduledReportJobRepository.findAll();
     }
-    return scheduledReportJobRepository.findByCreatedby(authorizedUser.getEffectiveLoginSign());
+    return scheduledReportJobRepository.findByOwnerUserIdIn(reportAuthorization.currentUserIds());
   }
 
   public ScheduledReportJob getJob(Long id) {
@@ -59,6 +61,7 @@ public class ScheduledReportJobService {
   }
 
   public ScheduledReportJob createJob(ScheduledReportJob job) {
+    job.setOwnerUserId(reportAuthorization.ownerForNewRecord());
     ScheduledReportJob saved = scheduledReportJobRepository.save(job);
     applicationEventPublisher.publishEvent(new ReportScheduledEvent(this, saved));
     return saved;
@@ -78,9 +81,9 @@ public class ScheduledReportJobService {
     applicationEventPublisher.publishEvent(new ReportUnscheduledEvent(this, job));
   }
 
+  /** By the id of the owning login, not by {@code createdby} (#1330). */
   private void checkOwnership(ScheduledReportJob job) {
-    if (!authorizedUser.isManager() &&
-        !authorizedUser.getEffectiveLoginSign().equals(job.getCreatedby())) {
+    if (!authorizedUser.isManager() && !reportAuthorization.isOwnedByCurrentUser(job.getOwnerUserId())) {
       throw new AuthorizationException(ErrorCode.AA_NOT_ATHORIZED);
     }
   }

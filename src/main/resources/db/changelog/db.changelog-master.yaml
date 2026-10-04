@@ -4473,3 +4473,59 @@ databaseChangeLog:
             constraintName: fk_jira_worklog_sync_suborder
             referencedTableName: suborder
             referencedColumnNames: id
+  - changeSet:
+      id: 122
+      author: kr
+      comment: Report-Definition und geplanter Report gehoeren einem Login ueber dessen id (#1330)
+      # Wem ein Report gehoert, ergab sich bisher aus createdby, dem Loginnamen als Text. Ein
+      # Loginname laesst sich aendern oder anonymisieren; der Besitz ging dann verloren, und wer den
+      # Namen spaeter bekam, erbte ihn (der Grund aus #1204). owner_user_id verweist auf salat_user;
+      # createdby bleibt als Audit-Feld unveraendert.
+      #
+      # Uebernommen wird nur eine eindeutige, binaer verglichene Zuordnung. Ohne Zuordnung bleibt
+      # owner_user_id NULL, dann aendert nur noch ein Manager den Satz. Wird ein Login geloescht
+      # (mit seiner Person), setzt der Fremdschluessel den Besitzer auf NULL, statt das Loeschen
+      # aufzuhalten.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: report_definition
+                columnName: owner_user_id
+      changes:
+        - addColumn:
+            tableName: report_definition
+            columns:
+              - column:
+                  name: owner_user_id
+                  type: bigint
+        - addColumn:
+            tableName: scheduled_report_job
+            columns:
+              - column:
+                  name: owner_user_id
+                  type: bigint
+        - sql:
+            sql: |-
+              UPDATE report_definition r
+                 SET r.owner_user_id = (SELECT MIN(u.id) FROM salat_user u
+                                         WHERE BINARY u.loginname = BINARY r.createdby
+                                        HAVING COUNT(*) = 1);
+              UPDATE scheduled_report_job j
+                 SET j.owner_user_id = (SELECT MIN(u.id) FROM salat_user u
+                                         WHERE BINARY u.loginname = BINARY j.createdby
+                                        HAVING COUNT(*) = 1)
+        - addForeignKeyConstraint:
+            baseTableName: report_definition
+            baseColumnNames: owner_user_id
+            constraintName: fk_report_definition_owner_user
+            referencedTableName: salat_user
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            baseTableName: scheduled_report_job
+            baseColumnNames: owner_user_id
+            constraintName: fk_scheduled_report_job_owner_user
+            referencedTableName: salat_user
+            referencedColumnNames: id
+            onDelete: SET NULL

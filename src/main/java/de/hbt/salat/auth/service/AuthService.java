@@ -202,6 +202,15 @@ public class AuthService {
   }
 
   /**
+   * The ids of the {@link de.hbt.salat.auth.domain.SalatUser} signed in under this login name, read from the database
+   * rather than from the cache of {@link #userIdsOf} (#1330). For deciding who owns a record: within the cache expiry
+   * a login name given to somebody new could otherwise still answer with the id of the person who had it before.
+   */
+  public Set<Long> findUserIds(String loginname) {
+    return loginname == null ? Set.of() : Set.copyOf(salatUserRepository.findIdsByLoginname(loginname));
+  }
+
+  /**
    * The login name to show for the grantee of a rule. The wildcard and a value that could not be assigned are shown as
    * they are stored.
    */
