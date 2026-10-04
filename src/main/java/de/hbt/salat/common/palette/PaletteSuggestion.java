@@ -3,8 +3,8 @@ package de.hbt.salat.common.palette;
 /**
  * A value the palette offers for a parameter of a command (#1158).
  *
- * @param value           what goes into the target: an ISO date, a month {@code JJJJ-MM}, the id of a
- *                        suborder or a contract, the sign of an order
+ * @param value           what goes into the target: an ISO date, a month {@code JJJJ-MM}, the id of an
+ *                        order, a suborder or a contract
  * @param label           the business key as it is shown on the chip — never a database id
  * @param detail          what tells it apart from its neighbour; may be {@code null}
  * @param note            shown on the right, e.g. "Favorit" or why it cannot be chosen; may be

@@ -125,7 +125,7 @@ public class OrderPricingServiceTest {
     var chosen = pricing("co-one", TODAY, OPEN_END);
     givenChosen("co-one", chosen);
 
-    assertThat(pricingsOf(service.getRows("co-one", false, true))).containsExactly(chosen);
+    assertThat(pricingsOf(service.getRows(TREE.orderId("co-one"), false, true))).containsExactly(chosen);
   }
 
   /**
@@ -150,16 +150,7 @@ public class OrderPricingServiceTest {
     var current = pricing("co-one", TODAY, OPEN_END);
     givenChosen("co-one", expired, current);
 
-    assertThat(pricingsOf(service.getRows("co-one", false, true))).containsExactly(current);
-  }
-
-  /** The empty option of the select submits an empty string, which means "all orders". */
-  @Test
-  public void treats_a_blank_customer_order_as_no_choice_at_all() {
-    var any = pricing("co", TODAY, OPEN_END);
-    given(any);
-
-    assertThat(pricingsOf(service.getRows("  ", false, true))).containsExactly(any);
+    assertThat(pricingsOf(service.getRows(TREE.orderId("co-one"), false, true))).containsExactly(current);
   }
 
   // --- the validity of the order behind the rate (#957) ---------------------------------------
@@ -436,9 +427,7 @@ public class OrderPricingServiceTest {
 
   /** The filter names the order by sign; the rates are read by the id behind it (#1212). */
   private void givenChosen(String customerorderSign, OrderPricing... pricings) {
-    var customerorderId = TREE.orderId(customerorderSign);
-    when(customerorderService.getCustomerorderIdBySign(customerorderSign)).thenReturn(customerorderId);
-    when(orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId))
+    when(orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(TREE.orderId(customerorderSign)))
         .thenReturn(List.of(pricings));
   }
 

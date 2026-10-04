@@ -120,6 +120,16 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       """)
   List<CustomerorderOption> findOptionsByIdIn(Collection<Long> ids);
 
+  /** Like {@link #findOptionsByIdIn}, for a caller that knows the orders by sign (#1334). */
+  @Query("""
+      select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,
+          c.description, cu.shortname, cu.name, c.hide)
+      from Customerorder c left join c.customer cu
+      where c.sign in :signs
+      order by c.sign
+      """)
+  List<CustomerorderOption> findOptionsBySignIn(Collection<String> signs);
+
   @Query("select c.id from Customerorder c where c.sign = :sign")
   Optional<Long> findIdBySign(String sign);
 

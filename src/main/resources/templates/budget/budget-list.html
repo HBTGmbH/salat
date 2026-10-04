@@ -16,15 +16,15 @@
           <div class="col-md-6">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
             <!--/* No submit button: the select filters on change (#952). */-->
-            <select class="form-select tomselect" name="fCustomerOrderSign" th:attr="data-value=${fCustomerOrderSign}"
+            <select class="form-select tomselect" name="fBudgetCustomerOrderId" th:attr="data-value=${fBudgetCustomerOrderId}"
                     onchange="form.requestSubmit()">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="co : ${customerorders}"
-                      th:value="${co.sign}"
+                      th:value="${co.id}"
                       th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
                       th:attr="data-subtext=${subtext}"
                       th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                      th:selected="${fCustomerOrderSign != null and fCustomerOrderSign == co.sign}"></option>
+                      th:selected="${fBudgetCustomerOrderId != null and fBudgetCustomerOrderId == co.id}"></option>
             </select>
           </div>
           <div class="col-auto ms-auto" th:if="${isManager}">

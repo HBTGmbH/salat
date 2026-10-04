@@ -58,6 +58,7 @@ public class BudgetAlertServiceTest {
     when(responsible.getSalatUser().getId()).thenReturn(RESPONSIBLE_USER_ID);
     var order = mock(Customerorder.class);
     when(order.getResponsibleHbt()).thenReturn(List.of(responsible));
+    when(order.getId()).thenReturn(CUSTOMERORDER_ID);
     when(customerorderService.getCustomerorderSignsByIds(List.of(CUSTOMERORDER_ID)))
         .thenReturn(Map.of(CUSTOMERORDER_ID, "co"));
     when(customerorderService.getCustomerorderBySign("co")).thenReturn(order);
@@ -70,7 +71,7 @@ public class BudgetAlertServiceTest {
     service.checkAndNotify();
 
     verify(notificationService).emitNotification(eq(List.of(RESPONSIBLE_USER_ID)), anyString(), any(),
-        anyString(), any(), eq("/budget/controlling?fCustomerOrderSign=co&evaluate=true"), any());
+        anyString(), any(), eq("/budget/controlling?fBudgetCustomerOrderId=" + CUSTOMERORDER_ID + "&evaluate=true"), any());
   }
 
   private void givenPlans(OrderBudget... plans) {

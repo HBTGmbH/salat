@@ -1,7 +1,7 @@
 package de.hbt.salat.budget.controller;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
+import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -59,16 +59,16 @@ public class OrderPricingController {
      * current rate can hang off an order that ended last year.
      */
     @GetMapping
-    public String list(@RequestParam(required = false) String fCustomerOrderSign,
+    public String list(@RequestParam(required = false) Long fBudgetCustomerOrderId,
                        @RequestParam(required = false) Boolean fPricingShowInactive,
                        @RequestParam(required = false) Boolean fPricingShowInactiveOrders,
                        Model model) {
         var inactive = Boolean.TRUE.equals(fPricingShowInactive);
         var inactiveOrders = Boolean.TRUE.equals(fPricingShowInactiveOrders);
         // The rows name their order by sign; description, customer and validity hang off the order.
-        model.addAttribute("rows", orderPricingService.getRows(fCustomerOrderSign, inactive, inactiveOrders));
+        model.addAttribute("rows", orderPricingService.getRows(fBudgetCustomerOrderId, inactive, inactiveOrders));
         model.addAttribute("customerorderOptions", filterOptions());
-        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
+        model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
         model.addAttribute("showInactive", inactive);
         model.addAttribute("showInactiveOrders", inactiveOrders);
         model.addAttribute("isManager", authorizedUser.isManager());
@@ -82,17 +82,16 @@ public class OrderPricingController {
      *
      * <p>That link names the order as {@code customerorderId}, the form field, not as the filter
      * parameter: a button that opens a form must not change the filter of the list behind it
-     * (ADR-0023). Where it brings no order, the one the list is filtered to prefills the form — the
-     * filter speaks in signs, the form in ids (#1212).
+     * (ADR-0023). Where it brings no order, the one the list is filtered to prefills the form.
      */
     @Authorized(requiresManager = true)
     @GetMapping("/create")
     public String createForm(@RequestParam(required = false) Long customerorderId,
-                             @RequestParam(required = false) String fCustomerOrderSign,
+                             @RequestParam(required = false) Long fBudgetCustomerOrderId,
                              @RequestParam(required = false) Long employeeId,
                              Model model) {
         var form = new OrderPricingForm();
-        form.setCustomerorderId(customerorderId != null ? customerorderId : customerorderIdOf(fCustomerOrderSign));
+        form.setCustomerorderId(customerorderId != null ? customerorderId : fBudgetCustomerOrderId);
         form.setEmployeeId(employeeId);
         addFormModel(model, form, false);
         return "budget/pricing-form";
@@ -160,11 +159,11 @@ public class OrderPricingController {
             if (form.isNew()) {
                 orderPricingService.save(data);
                 filterHintViewHelper.addSuccess(redirectAttributes,
-                    messages.getMessage("main.pricing.message.created"), CUSTOMER_ORDER_SIGN);
+                    messages.getMessage("main.pricing.message.created"), CUSTOMER_ORDER_ID);
             } else {
                 orderPricingService.update(form.getId(), data);
                 filterHintViewHelper.addSuccess(redirectAttributes,
-                    messages.getMessage("main.pricing.message.updated"), CUSTOMER_ORDER_SIGN);
+                    messages.getMessage("main.pricing.message.updated"), CUSTOMER_ORDER_ID);
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",
@@ -230,14 +229,6 @@ public class OrderPricingController {
         }
         var pricing = orderPricingService.getById(form.getId());
         return pricing.isEmployeeUnresolved() ? pricing.getEmployeeSign() : null;
-    }
-
-    private Long customerorderIdOf(String sign) {
-        if (trimToNull(sign) == null) {
-            return null;
-        }
-        var customerorder = customerorderService.getCustomerorderBySign(sign.trim());
-        return customerorder == null ? null : customerorder.getId();
     }
 
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {

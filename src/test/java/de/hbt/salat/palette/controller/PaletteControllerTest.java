@@ -72,9 +72,9 @@ class PaletteControllerTest {
           target("main.palette.target.customerorder.suborders",
               "/orders/suborders?fCustomerOrderId=11&fCustomerId=&fSuborderFilter=", 1),
           target("main.palette.target.customerorder.controlling",
-              "/budget/controlling?fCustomerOrderSign=MUSTER-01&evaluate=true", 2),
+              "/budget/controlling?fBudgetCustomerOrderId=11&evaluate=true", 2),
           target("main.palette.target.customerorder.budget",
-              "/budget?fCustomerOrderSign=MUSTER-01&fBudgetShowInactive=false", 3)));
+              "/budget?fBudgetCustomerOrderId=11&fBudgetShowInactive=false", 3)));
 
   private static final PaletteHit ENDED_ORDER = new PaletteHit(CUSTOMERORDER, "MUSTER-02", "MUSTER-02", null, null,
       true, false, 4, List.of(
@@ -206,8 +206,8 @@ class PaletteControllerTest {
     assertThat(targets(hit(html, CUSTOMERORDER, "MUSTER-01"))).containsExactly(
         "Auftrag öffnen -> /orders/customerorders/edit?id=11",
         "Unteraufträge -> /orders/suborders?fCustomerOrderId=11&fCustomerId=&fSuborderFilter=",
-        "Controlling, ausgewertet -> /budget/controlling?fCustomerOrderSign=MUSTER-01&evaluate=true",
-        "Budget -> /budget?fCustomerOrderSign=MUSTER-01&fBudgetShowInactive=false");
+        "Controlling, ausgewertet -> /budget/controlling?fBudgetCustomerOrderId=11&evaluate=true",
+        "Budget -> /budget?fBudgetCustomerOrderId=11&fBudgetShowInactive=false");
     assertThat(targets(hit(html, SUBORDER, "31"))).containsExactly(
         "Unterauftrag öffnen -> /orders/suborders/31/edit",
         "Buchen auf MUSTER-01/03 -> /dailyreport/timereports/new?suborderId=31&employeecontractId=7");

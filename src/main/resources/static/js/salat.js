@@ -2367,7 +2367,7 @@ function paletteTarget(dialog, invocation) {
       const order = value('customerorder');
       if (!order) return page();
       return {
-        href: data.targetControlling + '?' + new URLSearchParams({ fCustomerOrderSign: order.value, evaluate: 'true' }),
+        href: data.targetControlling + '?' + new URLSearchParams({ fBudgetCustomerOrderId: order.value, evaluate: 'true' }),
         title, parts: [order.detail ? order.label + ' ' + order.detail : order.label], warnings: [],
       };
     }

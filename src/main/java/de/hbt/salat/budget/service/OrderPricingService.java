@@ -83,10 +83,11 @@ public class OrderPricingService {
      * covered, and judging coverage by what the list happens to show would invent gaps.
      */
     @Transactional(readOnly = true)
-    public List<OrderPricingRow> getRows(String customerorderSign, boolean showInactive,
+    public List<OrderPricingRow> getRows(Long customerorderId, boolean showInactive,
                                          boolean showInactiveOrders) {
-        var sign = trimToNull(customerorderSign);
-        var pricings = sign == null ? getAll() : byCustomerorderSign(sign);
+        var pricings = customerorderId == null
+            ? getAll()
+            : orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
         var ordersById = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
         var employeeSigns = employeeSignsOf(pricings);
@@ -98,14 +99,6 @@ public class OrderPricingService {
             .filter(row -> showInactiveOrders || orderStillValid(row))
             .sorted(BY_ORDER_SIGN_THEN_VALID_FROM)
             .toList();
-    }
-
-    /** The rates of the order the filter names, read by the id behind the sign (#1212). */
-    private List<OrderPricing> byCustomerorderSign(String customerorderSign) {
-        var customerorderId = customerorderService.getCustomerorderIdBySign(customerorderSign);
-        return customerorderId == null
-            ? List.of()
-            : orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
     }
 
     private static OrderPricingRow row(OrderPricing pricing, Customerorder order,

@@ -4,12 +4,15 @@ package de.hbt.salat.budget.domain;
  * One customer order in the segment listing (#779): the line the controlling view shows as the total
  * of that order, plus what it takes to name and open it.
  *
+ * @param customerorderId what the button to the order's controlling page carries (#1334) — its
+ *                        sign may change
  * @param total the sum over every section of the order's evaluation
  *              (→ {@link BudgetControllingResult#total()}) — the same figures the order's own
  *              controlling page reports, which is what lets a reader follow the button and find the
  *              number again.
  */
 public record SegmentControllingOrder(
+    long customerorderId,
     String customerorderSign,
     String customerorderDescription,
     String customerShortname,
@@ -21,9 +24,11 @@ public record SegmentControllingOrder(
      * it is simply "the total" — so the order's is put on it here: the sign above, the customer and
      * the short description below, the same two lines a section uses for its suborders.
      */
-    public static SegmentControllingOrder of(String customerorderSign, String customerorderDescription,
-                                             String customerShortname, BudgetControllingRow total) {
-        return new SegmentControllingOrder(customerorderSign, customerorderDescription, customerShortname,
+    public static SegmentControllingOrder of(long customerorderId, String customerorderSign,
+                                             String customerorderDescription, String customerShortname,
+                                             BudgetControllingRow total) {
+        return new SegmentControllingOrder(customerorderId, customerorderSign, customerorderDescription,
+            customerShortname,
             total.toBuilder()
                 .sign(customerorderSign)
                 .label(label(customerorderDescription, customerShortname))

@@ -15,7 +15,7 @@
       <form method="get" th:action="@{/budget/controlling}" th:object="${filter}" class="row g-2 align-items-end">
         <!--/*
           Only the submit brings this along, and only then is anything computed (#1009). The presence
-          of fCustomerOrderSign cannot say it: the UiState fallback puts a remembered order under
+          of fBudgetCustomerOrderId cannot say it: the UiState fallback puts a remembered order under
           every request, and an unbounded evaluation is the most expensive thing the module does.
         */-->
         <input type="hidden" name="evaluate" value="true"/>
@@ -23,14 +23,14 @@
           <label class="form-label" th:text="#{main.controlling.filter.customerorder}">Auftrag</label>
           <!--/* The remembered order of the plan and the rate list (#952); a filter parameter carries
                  its own name rather than being bound to the form object (ADR-0022). */-->
-          <select class="form-select tomselect" name="fCustomerOrderSign">
+          <select class="form-select tomselect" name="fBudgetCustomerOrderId">
             <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag wählen ---</option>
             <option th:each="co : ${customerorders}"
-                    th:value="${co.sign}"
+                    th:value="${co.id}"
                     th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
                     th:attr="data-subtext=${subtext}"
                     th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                    th:selected="${fCustomerOrderSign != null and fCustomerOrderSign == co.sign}"></option>
+                    th:selected="${fBudgetCustomerOrderId != null and fBudgetCustomerOrderId == co.id}"></option>
           </select>
         </div>
         <div class="col-md-2">

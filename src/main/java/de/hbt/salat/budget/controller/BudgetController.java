@@ -2,7 +2,7 @@ package de.hbt.salat.budget.controller;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
+import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -83,13 +83,13 @@ public class BudgetController {
      * else, and both would otherwise share one remembered value (#952).
      */
     @GetMapping
-    public String list(@RequestParam(required = false) String fCustomerOrderSign,
+    public String list(@RequestParam(required = false) Long fBudgetCustomerOrderId,
                        @RequestParam(required = false) Boolean fBudgetShowInactive,
                        Model model) {
         List<OrderBudget> budgets;
-        if (fCustomerOrderSign != null && !fCustomerOrderSign.isBlank()) {
-            budgets = orderBudgetService.getVisibleByCustomerorderSign(
-                fCustomerOrderSign, Boolean.TRUE.equals(fBudgetShowInactive));
+        if (fBudgetCustomerOrderId != null) {
+            budgets = orderBudgetService.getVisibleByCustomerorderId(
+                fBudgetCustomerOrderId, Boolean.TRUE.equals(fBudgetShowInactive));
         } else {
             budgets = orderBudgetService.getAllVisible();
             if (!Boolean.TRUE.equals(fBudgetShowInactive)) {
@@ -98,7 +98,7 @@ public class BudgetController {
         }
         var orders = ordersOf(budgets);
         model.addAttribute("budgets", byOrderSignThenValidFrom(budgets, orders));
-        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
+        model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
         model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
@@ -234,11 +234,11 @@ public class BudgetController {
             if (form.isNew()) {
                 orderBudgetService.create(data);
                 filterHintViewHelper.addSuccess(redirectAttributes,
-                    messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_SIGN);
+                    messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_ID);
             } else {
                 orderBudgetService.update(form.getId(), data);
                 filterHintViewHelper.addSuccess(redirectAttributes,
-                    messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_SIGN);
+                    messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_ID);
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

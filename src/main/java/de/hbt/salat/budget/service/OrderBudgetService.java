@@ -98,15 +98,11 @@ public class OrderBudgetService {
 
     /** The visible plans of one customer order, optionally including the inactive ones. */
     @Transactional(readOnly = true)
-    public List<OrderBudget> getVisibleByCustomerorderSign(String customerorderSign, boolean includeInactive) {
-        budgetAuthorization.checkAuthorizedForCustomerorder(customerorderSign);
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
-        if (customerorder == null) {
-            return List.of();
-        }
+    public List<OrderBudget> getVisibleByCustomerorderId(long customerorderId, boolean includeInactive) {
+        budgetAuthorization.checkAuthorizedForCustomerorderId(customerorderId);
         return includeInactive
-            ? orderBudgetRepository.findByCustomerorderId(customerorder.getId())
-            : orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.getId(), Boolean.TRUE);
+            ? orderBudgetRepository.findByCustomerorderId(customerorderId)
+            : orderBudgetRepository.findByCustomerorderIdAndActive(customerorderId, Boolean.TRUE);
     }
 
     /** The active plans the current user may see — the basis of the dashboard. */

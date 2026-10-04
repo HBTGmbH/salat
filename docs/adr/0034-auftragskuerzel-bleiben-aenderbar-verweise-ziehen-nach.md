@@ -51,6 +51,14 @@ neuem vollständigen Schlüssel. Daran hängen:
 Was nicht nachzieht, steht als Hinweis unter der Erfolgsmeldung (`NoticeViewHelper`). Der Budgetfilter
 im UiState wird in einem eigenen Schritt auf die id umgestellt (#1334).
 
+### Nachtrag (#1334)
+
+Der Budgetfilter trägt seit #1334 die id des Auftrags (`fBudgetCustomerOrderId`, nicht
+`fCustomerOrderId`, den Filter des Moduls `order`). Ein Link mit dem alten `fCustomerOrderSign` —
+Lesezeichen, versandte Alarm-Mails und Benachrichtigungen — wird beim Aufruf auf die id umgeleitet,
+solange das Kürzel noch einen Auftrag nennt; nach einer Umbenennung leert er den Filter. Ein im
+Cookie gemerktes Kürzel verwirft der UiState-Filter, weil der Schlüssel neu ist.
+
 ### Consequences
 
 * Good: Kürzel bleiben korrigierbar, ohne dass Bezüge lautlos verloren gehen.

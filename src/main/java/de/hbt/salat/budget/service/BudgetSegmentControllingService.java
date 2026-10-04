@@ -79,7 +79,7 @@ public class BudgetSegmentControllingService {
             }
             var customer = customerorder.getCustomer();
             ordersBySegment.computeIfAbsent(segmentKeyOf(customer), key -> new ArrayList<>())
-                .add(SegmentControllingOrder.of(sign, customerorder.getShortdescription(),
+                .add(SegmentControllingOrder.of(customerorder.getId(), sign, customerorder.getShortdescription(),
                     customer == null ? null : customer.getShortname(), evaluation.total()));
         }
 

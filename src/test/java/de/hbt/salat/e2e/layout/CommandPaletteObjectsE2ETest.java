@@ -171,7 +171,7 @@ class CommandPaletteObjectsE2ETest extends PlaywrightE2ETestBase {
       page.keyboard().press("ArrowDown");
       page.keyboard().press("Enter");
 
-      page.waitForURL(Pattern.compile(".*/budget/controlling\\?fCustomerOrderSign=" + ORDER + "&evaluate=true.*"));
+      page.waitForURL(Pattern.compile(".*/budget/controlling\\?fBudgetCustomerOrderId=\\d+&evaluate=true.*"));
     });
   }
 
