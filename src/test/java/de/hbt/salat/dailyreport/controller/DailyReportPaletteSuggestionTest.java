@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.controller;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -383,7 +384,7 @@ class DailyReportPaletteSuggestionTest {
 
   private static Customerorder order() {
     var customer = new Customer();
-    customer.setShortname("MUSTERKUNDE");
+    customer.setShortname(uniqueShortname("MUSTERKUNDE"));
     var order = new Customerorder();
     setField(order, "id", ORDER_ID);
     order.setSign("MUSTER");

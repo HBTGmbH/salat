@@ -119,6 +119,23 @@ public class EmployeeService {
   }
 
   /**
+   * Whether another login than the person's own already carries this name (#1333). Asked of the
+   * logins, not of the people: an administrator has a login without being a person. Compared
+   * exactly, as the unique key of the column does.
+   *
+   * @param employeeId the person being edited, {@code null} for a new one
+   */
+  @Transactional(readOnly = true)
+  public boolean isLoginnameTaken(String loginname, Long employeeId) {
+    var holder = salatUserRepository.findByLoginname(loginname).orElse(null);
+    if (holder == null) {
+      return false;
+    }
+    var own = employeeId == null ? null : employeeDAO.getEmployeeById(employeeId);
+    return own == null || own.getSalatUser() == null || !holder.getId().equals(own.getSalatUser().getId());
+  }
+
+  /**
    * Every sign that exists, for deciding whether a record referencing one still resolves (#966).
    *
    * <p>Deliberately not {@link #getAllEmployees()}: that one leaves out hidden employees and

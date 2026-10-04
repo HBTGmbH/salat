@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes;
@@ -464,7 +465,7 @@ class MatrixServiceFillNotWorkedTest {
 
     var customer = new Customer();
     customer.setName("Testkunde");
-    customer.setShortname("TK");
+    customer.setShortname(uniqueShortname("TK"));
     customer.setAddress("Teststraße 1");
     customer = customerRepository.save(customer);
 

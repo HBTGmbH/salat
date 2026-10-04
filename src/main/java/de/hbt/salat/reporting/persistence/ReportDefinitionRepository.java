@@ -16,9 +16,9 @@ public interface ReportDefinitionRepository extends PagingAndSortingRepository<R
   Iterable<ReportDefinition> findAllByFilter(String filter, Sort by);
 
   /**
-   * Der Name eines Reports ist nicht eindeutig (report_definition hat keine Unique-Constraint),
-   * deshalb liefert die Suche eine Liste — wer über den Namen adressiert, muss den mehrdeutigen
-   * Fall behandeln statt einen Treffer zu raten.
+   * Seit #1333 ist der Name eindeutig ({@code uk_report_definition_name}). Die Suche liefert
+   * trotzdem eine Liste: Der Fall mehrerer Treffer bleibt behandelt ({@code RP-0002}), statt einen
+   * Treffer zu raten, falls der Schlüssel je wieder fällt.
    */
   List<ReportDefinition> findAllByName(String name);
 

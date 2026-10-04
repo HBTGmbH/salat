@@ -5,6 +5,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
@@ -17,6 +19,7 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @Getter
 @Setter
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_customer_shortname", columnNames = "shortname"))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Customer extends AuditedEntity implements Serializable {
 
@@ -24,6 +27,7 @@ public class Customer extends AuditedEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String name;
+    /** Unique (#1333): the short name is how a customer is told apart in every select (#1266). */
     private String shortname;
     private String address;
     private Boolean hide;

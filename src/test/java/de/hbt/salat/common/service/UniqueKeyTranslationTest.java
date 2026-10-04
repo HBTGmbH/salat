@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_OVERLAP;
+import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
+import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.EM_SIGN_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.XX_DUPLICATE_KEY;
 
 import jakarta.persistence.EntityManager;
@@ -22,14 +25,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.domain.Referenceday;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.reporting.domain.ReportDefinition;
 
 /**
  * Ein doppelter fachlicher Schlüssel endet als Befund, nicht als 500er (#1208) — gegen die echte
@@ -77,6 +83,28 @@ class UniqueKeyTranslationTest {
         .isEqualTo(BU_EMPLOYEE_COST_OVERLAP);
   }
 
+  /** Die Anmeldung sucht genau ein Login je Namen (#1333). */
+  @Test
+  void a_second_login_with_the_same_name_is_refused_with_its_own_finding() {
+    store.persist(login("abc"));
+
+    assertThat(findingOf(() -> store.persist(login("abc")))).isEqualTo(EM_LOGINNAME_TAKEN);
+  }
+
+  @Test
+  void a_second_customer_with_the_same_short_name_is_refused_with_its_own_finding() {
+    store.persist(customer("ACME"));
+
+    assertThat(findingOf(() -> store.persist(customer("ACME")))).isEqualTo(CU_DUPLICATE_SHORT_NAME);
+  }
+
+  @Test
+  void a_second_report_definition_with_the_same_name_is_refused_with_its_own_finding() {
+    store.persist(report("Umsatz"));
+
+    assertThat(findingOf(() -> store.persist(report("Umsatz")))).isEqualTo(RP_REPORT_NAME_TAKEN);
+  }
+
   /** Ohne eigenen Befund bleibt der allgemeine — der Tag ist meist gleichzeitig angelegt worden. */
   @Test
   void a_key_without_a_finding_of_its_own_gets_the_general_one() {
@@ -98,6 +126,28 @@ class UniqueKeyTranslationTest {
     employee.setLastname("Nachname");
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     return employee;
+  }
+
+  private static SalatUser login(String loginname) {
+    var login = new SalatUser();
+    login.setLoginname(loginname);
+    login.setStatus("ma");
+    return login;
+  }
+
+  private static Customer customer(String shortname) {
+    var customer = new Customer();
+    customer.setShortname(shortname);
+    customer.setName(shortname);
+    customer.setAddress("Teststraße 1");
+    return customer;
+  }
+
+  private static ReportDefinition report(String name) {
+    var report = new ReportDefinition();
+    report.setName(name);
+    report.setSql("select 1");
+    return report;
   }
 
   private static EmployeeCost cost(String name, LocalDate validFrom) {

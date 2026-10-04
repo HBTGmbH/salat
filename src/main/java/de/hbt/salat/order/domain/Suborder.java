@@ -73,6 +73,14 @@ public class Suborder extends AuditedEntity implements Serializable {
      */
     private String suborder_customer;
     private char invoice;
+    /**
+     * Unique among the siblings — same customer order, same parent (#1333), so that the complete
+     * order sign names exactly one suborder. The database enforces it with
+     * {@code uk_suborder_customerorder_parent_sign} over a generated column {@code parent_key}
+     * ({@code COALESCE(parentorder_id, 0)}): a unique key treats {@code NULL} as distinct, and every
+     * top-level suborder has none. That column is not mapped here, so the key is not declared on the
+     * entity either.
+     */
     private String sign;
     @Lob
     @Column(columnDefinition = "text")

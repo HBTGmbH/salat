@@ -72,6 +72,17 @@ public class ReportServiceTest {
         new UsernamePasswordAuthenticationToken(loginname, "N/A", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
   }
 
+  /** The REST interface calls a report by its name (#1333); the form asks before it saves. */
+  @Test
+  public void a_name_another_report_definition_carries_is_taken() {
+    loginAsManager("test");
+    var reportDefinition = reportService.create("Umsatz", "select 1");
+
+    assertThat(reportService.isNameTaken("Umsatz", null)).isTrue();
+    assertThat(reportService.isNameTaken("Umsatz", reportDefinition.getId())).isFalse();
+    assertThat(reportService.isNameTaken("Auslastung", null)).isFalse();
+  }
+
   @Test
   public void should_get_report_definition_by_id() {
     loginAsManager("test");

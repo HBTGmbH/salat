@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static de.hbt.salat.testutils.CustomerTestUtils.uniqueShortname;
 import static java.time.DayOfWeek.MONDAY;
 import static java.time.temporal.TemporalAdjusters.previousOrSame;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -335,7 +336,7 @@ class ContractChangeOvertimeTest {
 
   private Customerorder customerorder() {
     var customer = new Customer();
-    customer.setShortname("cust");
+    customer.setShortname(uniqueShortname("cust"));
     customer.setName("Customer");
     customer.setAddress("Teststraße 1");
     customerRepository.save(customer);

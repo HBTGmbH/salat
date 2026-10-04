@@ -56,6 +56,7 @@ public enum ErrorCode {
   EM_NOT_FOUND("EM-0003", "employee was not found"),
   EM_NO_LOGIN_EMPLOYEE("EM-0004", "no employee matches the current login"),
   EM_SIGN_TAKEN("EM-0005", "another employee already has this sign"),
+  EM_LOGINNAME_TAKEN("EM-0006", "another login already has this name"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),
@@ -66,6 +67,7 @@ public enum ErrorCode {
   SO_PARENTORDER_CYCLE("SO-0003", "parent would introduce a cycle or self-reference in the suborder hierarchy"),
   SO_NOT_FOUND("SO-0004", "suborder was not found"),
   SO_PARENTORDER_INVALID("SO-0005", "parent suborder does not exist or belongs to another customer order"),
+  SO_SIGN_TAKEN("SO-0006", "a sibling suborder already has this sign"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
@@ -226,6 +228,7 @@ public enum ErrorCode {
   RP_REPORT_ID_INVALID("RP-0007", "the report id is not a number"),
   RP_REPORT_NOT_SPECIFIED("RP-0008", "the report must be given by reportId or by report (its name)"),
   RP_DEFINITIONS_NAME_OLD_SIGN("RP-0009", "report definitions name the old sign of a renamed order or suborder"),
+  RP_REPORT_NAME_TAKEN("RP-0010", "another report definition already has this name"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

@@ -2,7 +2,11 @@ package de.hbt.salat.common.service;
 
 import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_OVERLAP;
 import static de.hbt.salat.common.exception.ErrorCode.CO_SIGN_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
+import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.EM_SIGN_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.SO_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 import static de.hbt.salat.common.exception.ErrorCode.XX_DUPLICATE_KEY;
 import static org.hibernate.exception.ConstraintViolationException.ConstraintKind.UNIQUE;
@@ -65,7 +69,12 @@ public class ConcurrentModificationAspect {
   private static final Map<String, ErrorCode> FINDINGS_BY_UNIQUE_KEY = Map.of(
       "uk_employee_sign", EM_SIGN_TAKEN,
       "uk_customerorder_sign", CO_SIGN_TAKEN,
-      "uk_employee_cost_name_valid_from", BU_EMPLOYEE_COST_OVERLAP);
+      "uk_employee_cost_name_valid_from", BU_EMPLOYEE_COST_OVERLAP,
+      // #1333
+      "uk_salat_user_loginname", EM_LOGINNAME_TAKEN,
+      "uk_customer_shortname", CU_DUPLICATE_SHORT_NAME,
+      "uk_suborder_customerorder_parent_sign", SO_SIGN_TAKEN,
+      "uk_report_definition_name", RP_REPORT_NAME_TAKEN);
 
   @AfterThrowing(pointcut = "within(de.hbt.salat..*) && @within(org.springframework.stereotype.Service)",
       throwing = "conflict")

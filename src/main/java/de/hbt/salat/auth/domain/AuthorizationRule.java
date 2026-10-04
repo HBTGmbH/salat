@@ -18,7 +18,9 @@ public class AuthorizationRule extends AuditedEntity {
     /**
      * What the rule is for (#1168). Only for people: {@link de.hbt.salat.auth.service.AuthService} never reads it. Unique
      * regardless of case, checked by the service; {@code null} for a rule that predates the column until it is next
-     * saved.
+     * saved. Since #1333 the database enforces it as well, with {@code uk_authorization_rule_name_lower} over a
+     * generated column {@code name_lower} ({@code LOWER(name)}) — the column itself sorts binary, a plain key would
+     * tell {@code Abc} from {@code abc}. The generated column is not mapped, so neither is the key.
      */
     @Column(name = "name")
     private String name;
