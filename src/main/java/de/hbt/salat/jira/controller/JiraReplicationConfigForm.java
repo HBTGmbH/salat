@@ -14,8 +14,8 @@ import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
  * it maps from does not carry one — so an edit starts with an empty field, which the service reads
  * as "keep the stored password".
  *
- * <p>The scope is stored as one sign but edited as two fields (#1025): an order to pick the
- * suborders from, and the suborder itself, which stays empty for an order-wide replication.
+ * <p>The scope is edited as two fields (#1025): an order to pick the suborders from, and the
+ * suborder itself, which stays empty for an order-wide replication. Both carry ids (#1322).
  */
 @Getter
 @Setter
@@ -24,15 +24,11 @@ public class JiraReplicationConfigForm {
   private Long id;
   private String name;
 
-  /** Sign of the customer order — on its own already a complete, order-wide scope. */
-  private String customerorderSign;
+  /** The customer order — on its own already a complete, order-wide scope. */
+  private Long customerorderId;
 
-  /**
-   * Fully qualified sign of the chosen suborder, {@code AUFTRAG/01/02}; empty for the whole order.
-   * The suborder sign alone would not do: {@code AUFTRAG/A/01} and {@code AUFTRAG/B/01} may both
-   * exist, so what identifies the scope is the path, not the last segment.
-   */
-  private String suborderSign;
+  /** The chosen suborder at any depth; empty for the whole order. */
+  private Long suborderId;
 
   private String baseUrl;
 
@@ -70,22 +66,12 @@ public class JiraReplicationConfigForm {
     return id == null;
   }
 
-  /** What the two fields amount to: the suborder if one is chosen, the order itself otherwise. */
-  public String getScopeSign() {
-    return suborderSign == null || suborderSign.isBlank() ? customerorderSign : suborderSign;
-  }
-
-  /**
-   * @param customerorderSign the order the stored scope sits under, as
-   *     {@code JiraReplicationConfigService.customerorderSignOf} resolved it. Passed in rather than
-   *     derived here: telling an order-wide scope from a suborder path takes a look at the order
-   *     tree, because an order sign may contain a slash itself.
-   */
-  public static JiraReplicationConfigForm of(JiraReplicationConfigInfo info, String customerorderSign) {
+  public static JiraReplicationConfigForm of(JiraReplicationConfigInfo info) {
     var form = new JiraReplicationConfigForm();
     form.setId(info.id());
     form.setName(info.name());
-    form.applyScope(info.scopeSign(), customerorderSign);
+    form.setCustomerorderId(info.customerorderId());
+    form.setSuborderId(info.suborderId());
     form.setBaseUrl(info.baseUrl());
     form.setApiFlavor(info.apiFlavor());
     form.setUsername(info.username());
@@ -101,13 +87,4 @@ public class JiraReplicationConfigForm {
     return form;
   }
 
-  /**
-   * Puts a stored scope into the two fields. A scope equal to the order is order-wide and leaves
-   * the suborder empty; anything else is the fully qualified sign the suborder select offers as its
-   * option values, and is kept whole.
-   */
-  private void applyScope(String scopeSign, String customerorderSign) {
-    this.customerorderSign = customerorderSign;
-    this.suborderSign = scopeSign == null || scopeSign.equals(customerorderSign) ? null : scopeSign;
-  }
 }

@@ -10,8 +10,11 @@ import java.time.LocalDateTime;
  * and the form work on it instead of on the entity, so the stored token has no way of reaching a
  * template, a log line or an error message by accident.
  *
- * @param scopeSign where the replication applies (#1025) — a customer order sign for the whole
- *     order, or the fully qualified sign of one suborder, {@code AUFTRAG/01/02}
+ * @param customerorderId the customer order the replication applies to (#1322)
+ * @param suborderId the suborder it is narrowed to, or {@code null} for the whole order
+ * @param scopeSign the scope as the list shows it — the order sign or the complete order sign of
+ *     the suborder, {@code AUFTRAG/01/02}, read from the current order tree rather than from the
+ *     mirror column
  * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
  * @param worklogSyncFrom first day the worklog sync covers
  * @param worklogSyncInvoiceableOnly whether only bookings on invoiceable suborders are written (#1218)
@@ -21,6 +24,8 @@ import java.time.LocalDateTime;
 public record JiraReplicationConfigInfo(
     Long id,
     String name,
+    Long customerorderId,
+    Long suborderId,
     String scopeSign,
     String baseUrl,
     JiraApiFlavor apiFlavor,
@@ -37,11 +42,17 @@ public record JiraReplicationConfigInfo(
     LocalDateTime lastMaxUpdated
 ) {
 
-  public static JiraReplicationConfigInfo from(JiraReplicationConfig config) {
+  /**
+   * @param scopeSign the sign of order or suborder as the order tree carries it now — see
+   *     {@code JiraScopes#signOf}
+   */
+  public static JiraReplicationConfigInfo from(JiraReplicationConfig config, String scopeSign) {
     return new JiraReplicationConfigInfo(
         config.getId(),
         config.getName(),
-        config.getScopeSign(),
+        config.getCustomerorderId(),
+        config.getSuborderId(),
+        scopeSign,
         config.getBaseUrl(),
         config.getApiFlavor(),
         config.getUsername(),

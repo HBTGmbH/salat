@@ -55,7 +55,7 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       // --- create: scoped to the whole order, which is what an empty suborder means -----------
       page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Neue Replikation")).click();
       page.locator("#name").fill(name);
-      selectTomSelectOption(page, "customerorderSign", E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
+      selectTomSelectOption(page, "customerorderId", E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
       // choosing the order reloads the suborder select out of band. Under Firefox in CI the save
       // that followed went unsent now and then (#1120) — the cause is not pinned down, but saving
       // once the select has landed is the state a user sees too, and the test no longer races it
@@ -78,9 +78,9 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("#password")).hasValue("");
       assertPageIsFreeOf(page, PASSWORD);
       page.locator("#name").fill(renamed);
-      // narrow the scope to one suborder (#1025) — the picked entry is the fully qualified sign,
+      // narrow the scope to one suborder (#1025) — the entry names the fully qualified sign,
       // and the suborders only appear once the chosen order has filled the select
-      selectTomSelectOption(page, "suborderSign", SUBORDER_SCOPE);
+      selectTomSelectOption(page, "suborderId", SUBORDER_SCOPE);
       save(page);
       assertThat(rowOf(page, renamed)).isVisible();
       assertThat(rowOf(page, renamed)).containsText(SUBORDER_SCOPE);
@@ -176,9 +176,10 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
    * alone.
    */
   private static void assertSubordersLoaded(Page page) {
-    Locator suborders = page.locator("#suborderSign");
+    Locator suborders = page.locator("#suborderId");
     assertThat(suborders).isEnabled();
-    assertThat(suborders.locator("option[value='" + SUBORDER_SCOPE + "']")).hasCount(1);
+    assertThat(suborders.locator("option").filter(new Locator.FilterOptions().setHasText(SUBORDER_SCOPE)))
+        .hasCount(1);
   }
 
   /** Re-resolved after every navigation: each action here reloads the list. */

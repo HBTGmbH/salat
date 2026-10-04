@@ -86,8 +86,7 @@ public class JiraReplicationConfigController {
   @GetMapping("/{id}/edit")
   public String editForm(@PathVariable long id, Model model) {
     var info = jiraReplicationConfigService.getById(id);
-    addFormModel(model, JiraReplicationConfigForm.of(info,
-        jiraReplicationConfigService.customerorderSignOf(info.scopeSign())));
+    addFormModel(model, JiraReplicationConfigForm.of(info));
     model.addAttribute("lastMaxUpdated", info.lastMaxUpdated());
     return "jira/replication-form";
   }
@@ -113,7 +112,8 @@ public class JiraReplicationConfigController {
                       RedirectAttributes redirectAttributes) {
     var data = new JiraReplicationConfigData(
         form.getName(),
-        form.getScopeSign(),
+        form.getCustomerorderId(),
+        form.getSuborderId(),
         form.getBaseUrl(),
         form.getApiFlavor(),
         form.getUsername(),
@@ -231,7 +231,7 @@ public class JiraReplicationConfigController {
   @Authorized(requiresManager = true)
   public String suborders(@ModelAttribute("replicationForm") JiraReplicationConfigForm form,
                           Model model, HttpServletRequest request) {
-    form.setSuborderSign(null); // the previous pick belongs to the order that was just replaced
+    form.setSuborderId(null); // the previous pick belongs to the order that was just replaced
     addFormModel(model, form);
     model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
     model.addAttribute("subordersChanged", true);
@@ -243,8 +243,14 @@ public class JiraReplicationConfigController {
     model.addAttribute("apiFlavors", JiraApiFlavor.values());
     model.addAttribute("isEdit", !form.isNew());
     model.addAttribute("customerorders",
-        customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
+        customerorderService.getSelectableCustomerorders(customerorderSignOf(form)));
     model.addAttribute("suborders", subordersOf(form));
+  }
+
+  /** The sign of the stored order, so that the select keeps it once it is hidden (#1005). */
+  private String customerorderSignOf(JiraReplicationConfigForm form) {
+    var id = form.getCustomerorderId();
+    return id == null ? null : customerorderService.getCustomerorderSignsByIds(List.of(id)).get(id);
   }
 
   /**
@@ -253,14 +259,9 @@ public class JiraReplicationConfigController {
    * the scope and silently write back whatever the browser preselected instead (→ AGENTS.md, #1005).
    */
   private List<Suborder> subordersOf(JiraReplicationConfigForm form) {
-    var sign = form.getCustomerorderSign();
-    if (sign == null || sign.isBlank()) {
-      return List.of();
-    }
-    var customerorder = customerorderService.getCustomerorderBySign(sign);
-    return customerorder == null ? List.of()
-        : suborderService.getSelectableSubordersByCustomerorderId(
-            customerorder.getId(), form.getSuborderSign());
+    var customerorderId = form.getCustomerorderId();
+    return customerorderId == null ? List.of()
+        : suborderService.getSelectableSubordersByCustomerorderId(customerorderId, form.getSuborderId());
   }
 
   private List<String> toMessages(ErrorCodeException ex) {

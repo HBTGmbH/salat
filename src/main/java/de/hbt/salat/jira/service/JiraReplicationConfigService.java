@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,8 +39,7 @@ import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
-import de.hbt.salat.order.service.CustomerorderService;
-import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.domain.SuborderLocation;
 
 /**
  * Maintains the replication configs that used to be edited by hand via SQL (#984).
@@ -64,43 +64,46 @@ public class JiraReplicationConfigService {
   private final JiraReplicationConfigRepository configRepository;
   private final JiraReplicationRunService jiraReplicationRunService;
   private final JiraSearchClients jiraSearchClients;
-  private final CustomerorderService customerorderService;
-  private final SuborderService suborderService;
+  private final JiraScopes scopes;
   private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
   public List<JiraReplicationConfigInfo> getAll() {
     checkManager();
-    return configRepository.findAllByOrderByNameAsc().stream()
-        .map(JiraReplicationConfigInfo::from)
+    var configs = configRepository.findAllByOrderByNameAsc();
+    var signs = scopes.signsOf(configs);
+    return configs.stream()
+        .map(config -> JiraReplicationConfigInfo.from(config, signs.get(config.getId())))
         .toList();
   }
 
   @Transactional(readOnly = true)
   public JiraReplicationConfigInfo getById(long id) {
     checkManager();
-    return JiraReplicationConfigInfo.from(load(id));
+    var config = load(id);
+    return JiraReplicationConfigInfo.from(config,
+        scopes.signOf(config.getCustomerorderId(), config.getSuborderId()));
   }
 
   public long create(JiraReplicationConfigData data) {
     checkManager();
-    validate(null, data);
+    var scopeSign = validate(null, data);
     if (isBlank(data.password())) {
       // On an edit an empty field means "keep what is stored"; on a new record there is nothing to
       // keep, so the replication would fail on its first run with a null password.
       throw new InvalidDataException(JI_REPLICATION_PASSWORD_REQUIRED);
     }
     var config = new JiraReplicationConfig();
-    apply(data, config);
+    apply(data, config, scopeSign);
     config.setPassword(data.password().trim());
     return configRepository.save(config).getId();
   }
 
   public void update(long id, JiraReplicationConfigData data) {
     checkManager();
-    validate(id, data);
+    var scopeSign = validate(id, data);
     var config = load(id);
-    apply(data, config);
+    apply(data, config, scopeSign);
     if (!isBlank(data.password())) {
       config.setPassword(data.password().trim());
     }
@@ -109,7 +112,7 @@ public class JiraReplicationConfigService {
 
   public void delete(long id) {
     checkManager();
-    // The tickets already replicated in this scope stay: jira_ticket hangs off scope_sign, not off
+    // The tickets already replicated in this scope stay: jira_ticket hangs off the scope, not off
     // the config, and the rows are not wrong — only no longer kept up to date. The confirmation
     // before deleting says so. Its run history goes with it: a run nobody can name any more says
     // nothing (#1282).
@@ -212,9 +215,9 @@ public class JiraReplicationConfigService {
         .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_NOT_FOUND));
   }
 
-  private void apply(JiraReplicationConfigData data, JiraReplicationConfig config) {
+  private void apply(JiraReplicationConfigData data, JiraReplicationConfig config, String scopeSign) {
     config.setName(data.name().trim());
-    applyScope(data, config);
+    applyScope(data, config, scopeSign);
     config.setBaseUrl(data.baseUrl().trim());
     config.setApiFlavor(data.apiFlavor() != null ? data.apiFlavor() : JiraApiFlavor.SERVER);
     config.setUsername(data.username().trim());
@@ -252,17 +255,18 @@ public class JiraReplicationConfigService {
    * already replicated stay where they are — under the old scope, no longer kept up to date, just as
    * they stay when the config is deleted. The field help says so.
    *
-   * <p>Unlike the text fields, the scope is not trimmed (#1171). It is an option value of the order
-   * and suborder selects, hence exactly the sign of the record, and signs may begin or end with a
-   * space: trimmed, the scope names no record, or silently another one.
+   * <p>The scope is compared by id (#1322): a renamed order is the same scope, a different order of
+   * the same name is not. The sign is written alongside as a mirror for reports and ETL definitions.
    */
-  private void applyScope(JiraReplicationConfigData data, JiraReplicationConfig config) {
-    var scopeSign = data.scopeSign();
-    if (!Objects.equals(scopeSign, config.getScopeSign())) {
+  private void applyScope(JiraReplicationConfigData data, JiraReplicationConfig config, String scopeSign) {
+    if (!Objects.equals(data.customerorderId(), config.getCustomerorderId())
+        || !Objects.equals(data.suborderId(), config.getSuborderId())) {
       log.info("Scope of JIRA replication {} changed from {} to {}, resetting the watermark so the "
           + "tickets of the new scope are fetched", config.getName(), config.getScopeSign(), scopeSign);
       config.setLastMaxUpdated(null);
     }
+    config.setCustomerorderId(data.customerorderId());
+    config.setSuborderId(data.suborderId());
     config.setScopeSign(scopeSign);
   }
 
@@ -301,14 +305,19 @@ public class JiraReplicationConfigService {
     config.setInheritedFieldNames(inherited);
   }
 
-  private void validate(Long id, JiraReplicationConfigData data) {
+  /**
+   * @return the sign of the scope as the order tree carries it now, for the mirror column
+   */
+  private String validate(Long id, JiraReplicationConfigData data) {
     requireText(data.name(), JI_REPLICATION_NAME_REQUIRED);
-    requireText(data.scopeSign(), JI_REPLICATION_SCOPE_REQUIRED);
+    if (data.customerorderId() == null) {
+      throw new InvalidDataException(JI_REPLICATION_SCOPE_REQUIRED);
+    }
     requireText(data.baseUrl(), JI_REPLICATION_BASE_URL_REQUIRED);
     requireText(data.username(), JI_REPLICATION_USERNAME_REQUIRED);
     // The replication insists on a JQL query, so a config without one can only ever fail.
     requireText(data.jql(), JI_REPLICATION_JQL_REQUIRED);
-    checkScopeExists(data.scopeSign());
+    var location = checkScopeExists(data);
 
     var baseUrl = data.baseUrl().trim().toLowerCase();
     if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
@@ -317,7 +326,9 @@ public class JiraReplicationConfigService {
     if (data.pageSize() != null && data.pageSize() <= 0) {
       throw new InvalidDataException(JI_REPLICATION_PAGE_SIZE_INVALID);
     }
-    checkWorklogScopeIsExclusive(id, data);
+    checkWorklogScopeIsExclusive(id, data, location);
+    return location.map(SuborderLocation::completeOrderSign)
+        .orElseGet(() -> scopes.signOf(data.customerorderId(), null));
   }
 
   /**
@@ -330,24 +341,21 @@ public class JiraReplicationConfigService {
    * <p>Only within one instance: two configs pointing at different JIRA installations share no
    * issue keys and cannot collide, however much their scopes overlap.
    */
-  private void checkWorklogScopeIsExclusive(Long id, JiraReplicationConfigData data) {
+  private void checkWorklogScopeIsExclusive(Long id, JiraReplicationConfigData data,
+                                            Optional<SuborderLocation> location) {
     if (!data.worklogSyncEnabled()) {
       return;
     }
-    var scopeSign = data.scopeSign();
     var baseUrl = normalizedBaseUrl(data.baseUrl());
-    var customerorderSign = customerorderSignOf(scopeSign);
     for (var other : configRepository.findAllByOrderByNameAsc()) {
       if (id != null && id.equals(other.getId())) continue;
       if (!Boolean.TRUE.equals(other.getWorklogSyncEnabled())) continue;
       if (!baseUrl.equals(normalizedBaseUrl(other.getBaseUrl()))) continue;
-      // Different customer orders never share a suborder, so their branches cannot overlap - and
-      // comparing the signs as strings would call 0283 and 0283/03.20 an overlap although they are
-      // two orders, not an order and its suborder.
-      if (!customerorderSign.equals(customerorderSignOf(other.getScopeSign()))) continue;
-      if (scopesOverlap(scopeSign, other.getScopeSign(), customerorderSign)) {
-        log.info("Worklog sync of scope {} refused: it overlaps with the replication {} on scope {} "
-            + "at the same JIRA instance", scopeSign, other.getName(), other.getScopeSign());
+      // Different customer orders never share a suborder, so their branches cannot overlap.
+      if (!data.customerorderId().equals(other.getCustomerorderId())) continue;
+      if (scopesOverlap(location, other.getSuborderId())) {
+        log.info("Worklog sync of JIRA replication {} refused: it overlaps with the replication {} "
+            + "on scope {} at the same JIRA instance", data.name(), other.getName(), other.getScopeSign());
         throw new InvalidDataException(JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
       }
     }
@@ -355,18 +363,20 @@ public class JiraReplicationConfigService {
 
   /**
    * Whether two scopes of the same customer order cover a common suborder. An order-wide scope
-   * covers every branch of its order; two suborder paths overlap when one is the other or lies
-   * below it, which the fully qualified sign shows at a segment boundary.
+   * covers every branch of its order; two suborder scopes overlap when one is the other or lies
+   * below it, which the path of suborder ids shows (#1322) — whatever the suborders are called and
+   * wherever they were moved.
+   *
+   * @param location where the scope being saved sits, empty for the whole order
+   * @param otherSuborderId the suborder of the other scope, {@code null} for the whole order
    */
-  private static boolean scopesOverlap(String one, String other, String customerorderSign) {
-    if (customerorderSign.equals(one) || customerorderSign.equals(other)) {
+  private boolean scopesOverlap(Optional<SuborderLocation> location, Long otherSuborderId) {
+    if (location.isEmpty() || otherSuborderId == null) {
       return true;
     }
-    return covers(one, other) || covers(other, one);
-  }
-
-  private static boolean covers(String outer, String inner) {
-    return inner.equals(outer) || inner.startsWith(outer + "/");
+    var other = scopes.locationOf(otherSuborderId);
+    return location.get().liesWithin(otherSuborderId)
+        || other.map(it -> it.liesWithin(location.get().id())).orElse(false);
   }
 
   /** A trailing slash and the case of the host say nothing about which instance is meant. */
@@ -377,47 +387,28 @@ public class JiraReplicationConfigService {
   }
 
   /**
-   * Which customer order a stored scope sits under (#1025) — the order itself when the replication
-   * is order-wide, the order of the suborder otherwise. The edit form needs it to load the suborders
-   * to choose from.
-   *
-   * <p>Deliberately asked rather than parsed. Splitting the scope at its first slash looks obvious
-   * and is wrong: an order sign may contain a slash itself, so {@code 0283/03.20/F&E/01} would be
-   * read as the order {@code 0283}, the form would open on a different order with nothing
-   * preselected, and saving it again would silently move the replication there.
-   *
-   * <p>An order sign wins over a suborder path that reads the same. Every row written before #1025
-   * carries an order sign and must keep meaning "the whole order"; a collision the other way can
-   * only arise from an order deliberately named like a path.
-   */
-  @Transactional(readOnly = true)
-  public String customerorderSignOf(String scopeSign) {
-    checkManager();
-    if (isBlank(scopeSign) || customerorderService.getCustomerorderBySign(scopeSign) != null) {
-      return scopeSign;
-    }
-    var suborder = suborderService.getSuborderByCompleteOrderSign(scopeSign);
-    return suborder != null ? suborder.getCustomerorder().getSign() : scopeSign;
-  }
-
-  /**
-   * A scope nobody can book on is a replication nobody reads (#1025): the suggestions resolve the
-   * branch of the chosen suborder upwards, so a sign that is in no branch never matches anything.
-   * The form picks the scope rather than letting it be typed, so this catches a post that bypasses
-   * the select and a record whose order was renamed in between.
-   *
-   * <p>Both readings are tried, and the shape of the sign decides nothing — an order-wide scope on
-   * the order {@code 0283/03.20} carries a slash without being a suborder path.
+   * A scope nobody can book on is a replication nobody reads (#1025). The form picks order and
+   * suborder rather than letting them be typed, so this catches a post that bypasses the selects,
+   * a record deleted in between, and a suborder that belongs to a different order than the one
+   * named.
    *
    * <p>Hidden and expired records count as existing. {@code hide} declutters the pickers of the
    * order module; it says nothing about whether work is still being booked, and an expired order is
    * exactly the one whose tickets are still being looked at while the last bookings are corrected.
+   *
+   * @return where the suborder of the scope sits, empty for an order-wide scope
    */
-  private void checkScopeExists(String scopeSign) {
-    if (customerorderService.getCustomerorderBySign(scopeSign) == null
-        && !suborderService.existsSuborderWithCompleteOrderSign(scopeSign)) {
+  private Optional<SuborderLocation> checkScopeExists(JiraReplicationConfigData data) {
+    if (!scopes.customerorderExists(data.customerorderId())) {
       throw new InvalidDataException(JI_REPLICATION_SCOPE_NOT_FOUND);
     }
+    if (data.suborderId() == null) {
+      return Optional.empty();
+    }
+    var location = scopes.locationOf(data.suborderId())
+        .filter(it -> it.customerorderId() == data.customerorderId())
+        .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_SCOPE_NOT_FOUND));
+    return Optional.of(location);
   }
 
   private static void requireText(String value, ErrorCode errorCode) {

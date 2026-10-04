@@ -11,13 +11,15 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -35,13 +37,13 @@ import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
-import de.hbt.salat.order.domain.Customerorder;
-import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
- * Maintaining the replication configs from the user interface (#984).
+ * Maintaining the replication configs from the user interface (#984), with the scope resolved by
+ * the ids of order and suborder (#1322).
  */
 @FixedClock
 @ExtendWith(MockitoExtension.class)
@@ -51,7 +53,21 @@ class JiraReplicationConfigServiceTest {
   private static final long ID = 42L;
   private static final String STORED_PASSWORD = "stored-token";
 
-  @InjectMocks
+  /** The order tree of these tests: ALPHA with A, A/01 below A, and B; the order BETA next to it. */
+  private static final long ALPHA = 1L;
+  private static final long BETA = 2L;
+  private static final long A = 11L;
+  private static final long A_01 = 12L;
+  private static final long B = 13L;
+  private static final long BETA_X = 21L;
+
+  private static final Map<Long, String> ORDERS = Map.of(ALPHA, "ALPHA", BETA, "BETA");
+  private static final Map<Long, SuborderLocation> SUBORDERS = Map.of(
+      A, new SuborderLocation(A, ALPHA, List.of(A), "ALPHA/A"),
+      A_01, new SuborderLocation(A_01, ALPHA, List.of(A, A_01), "ALPHA/A/01"),
+      B, new SuborderLocation(B, ALPHA, List.of(B), "ALPHA/B"),
+      BETA_X, new SuborderLocation(BETA_X, BETA, List.of(BETA_X), "BETA/X"));
+
   private JiraReplicationConfigService classUnderTest;
 
   @Mock
@@ -77,9 +93,17 @@ class JiraReplicationConfigServiceTest {
 
   @BeforeEach
   void setUp() {
+    // the real resolution against a mocked order module: what is tested is the reading by id
+    classUnderTest = new JiraReplicationConfigService(configRepository, jiraReplicationRunService,
+        jiraSearchClients, new JiraScopes(customerorderService, suborderService), authorizedUser);
     when(authorizedUser.isManager()).thenReturn(true);
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
-    when(suborderService.existsSuborderWithCompleteOrderSign(any())).thenReturn(true);
+    when(customerorderService.getCustomerorderSignsByIds(any())).thenAnswer(invocation ->
+        known(invocation.getArgument(0), ORDERS));
+    when(suborderService.getSuborderLocationsByIds(any())).thenAnswer(invocation ->
+        known(invocation.getArgument(0), SUBORDERS));
+    when(suborderService.getCompleteOrderSignsByIds(any())).thenAnswer(invocation ->
+        known(invocation.getArgument(0), SUBORDERS).entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().completeOrderSign())));
     when(configRepository.save(any())).thenAnswer(invocation -> {
       JiraReplicationConfig config = invocation.getArgument(0);
       if (config.getId() == null) {
@@ -172,7 +196,7 @@ class JiraReplicationConfigServiceTest {
 
   @Test
   void a_replication_without_a_jql_query_could_only_ever_fail() {
-    var withoutJql = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    var withoutJql = new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(withoutJql))
@@ -183,7 +207,7 @@ class JiraReplicationConfigServiceTest {
 
   @Test
   void a_base_url_without_a_scheme_is_rejected() {
-    var badUrl = new JiraReplicationConfigData("Alpha", "ALPHA", "jira.example.com",
+    var badUrl = new JiraReplicationConfigData("Alpha", ALPHA, null, "jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(badUrl))
@@ -194,7 +218,7 @@ class JiraReplicationConfigServiceTest {
 
   @Test
   void a_page_size_of_zero_or_less_is_rejected() {
-    var zeroPageSize = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    var zeroPageSize = new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(zeroPageSize))
@@ -206,7 +230,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_missing_flavor_is_stored_as_server() {
     // What a row without an explicit flavor has always meant.
-    classUnderTest.create(new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    classUnderTest.create(new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         null, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false));
 
     assertThat(saved().getApiFlavor()).isEqualTo(JiraApiFlavor.SERVER);
@@ -215,7 +239,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void switching_the_worklog_sync_on_without_a_date_starts_today() {
     // The first run must not carry the whole history of the order into JIRA (#1007).
-    classUnderTest.create(withWorklogSync("ALPHA", true, null));
+    classUnderTest.create(withWorklogSync(ALPHA, null, true, null));
 
     assertThat(saved().getWorklogSyncFrom()).isEqualTo(DateUtils.today());
   }
@@ -225,14 +249,14 @@ class JiraReplicationConfigServiceTest {
     // Moving it back is how a period is filled in afterwards, on purpose.
     var backfill = LocalDate.of(2026, 1, 1);
 
-    classUnderTest.create(withWorklogSync("ALPHA", true, backfill));
+    classUnderTest.create(withWorklogSync(ALPHA, null, true, backfill));
 
     assertThat(saved().getWorklogSyncFrom()).isEqualTo(backfill);
   }
 
   @Test
   void a_replication_without_the_worklog_sync_gets_no_start_date() {
-    classUnderTest.create(withWorklogSync("ALPHA", false, null));
+    classUnderTest.create(withWorklogSync(ALPHA, null, false, null));
 
     assertThat(saved().getWorklogSyncFrom()).isNull();
   }
@@ -246,7 +270,7 @@ class JiraReplicationConfigServiceTest {
     stored.setWorklogSyncFrom(LocalDate.of(2026, 1, 1));
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
-    classUnderTest.update(ID, withWorklogSync("ALPHA", false, LocalDate.of(2026, 1, 1)));
+    classUnderTest.update(ID, withWorklogSync(ALPHA, null, false, LocalDate.of(2026, 1, 1)));
 
     assertThat(stored.getWorklogSyncFrom()).isEqualTo(LocalDate.of(2026, 1, 1));
     assertThat(stored.getWorklogSyncEnabled()).isFalse();
@@ -284,32 +308,58 @@ class JiraReplicationConfigServiceTest {
     // An order-wide replication and one for a suborder inside it would each write their own worklog
     // on the same ticket and day — the time would stand twice in JIRA, and nothing in SALAT shows
     // it.
-    givenSuborderScope("ALPHA/01", "ALPHA");
-    givenOtherReplication("ALPHA/01", "https://jira.example.com", true);
+    givenOtherReplication(ALPHA, A, "https://jira.example.com", true);
 
-    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync("ALPHA", true, null)))
+    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync(ALPHA, null, true, null)))
         .isInstanceOf(InvalidDataException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
         .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
   }
 
   @Test
+  void a_suborder_below_one_with_a_worklog_sync_overlaps_it() {
+    givenOtherReplication(ALPHA, A, "https://jira.example.com", true);
+
+    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync(ALPHA, A_01, true, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
+  }
+
+  @Test
+  void a_suborder_above_one_with_a_worklog_sync_overlaps_it() {
+    givenOtherReplication(ALPHA, A_01, "https://jira.example.com", true);
+
+    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync(ALPHA, A, true, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
+  }
+
+  @Test
+  void two_sibling_branches_do_not_overlap() {
+    givenOtherReplication(ALPHA, A_01, "https://jira.example.com", true);
+
+    classUnderTest.create(withWorklogSync(ALPHA, B, true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
+  }
+
+  @Test
   void the_same_branch_on_another_jira_instance_is_allowed() {
     // Different installations share no issue keys, so there is nothing to collide.
-    givenSuborderScope("ALPHA/01", "ALPHA");
-    givenOtherReplication("ALPHA/01", "https://other-jira.example.com", true);
+    givenOtherReplication(ALPHA, A, "https://other-jira.example.com", true);
 
-    classUnderTest.create(withWorklogSync("ALPHA", true, null));
+    classUnderTest.create(withWorklogSync(ALPHA, null, true, null));
 
     assertThat(saved().getWorklogSyncEnabled()).isTrue();
   }
 
   @Test
   void an_overlapping_replication_that_writes_no_worklogs_is_no_obstacle() {
-    givenSuborderScope("ALPHA/01", "ALPHA");
-    givenOtherReplication("ALPHA/01", "https://jira.example.com", false);
+    givenOtherReplication(ALPHA, A, "https://jira.example.com", false);
 
-    classUnderTest.create(withWorklogSync("ALPHA", true, null));
+    classUnderTest.create(withWorklogSync(ALPHA, null, true, null));
 
     assertThat(saved().getWorklogSyncEnabled()).isTrue();
   }
@@ -322,27 +372,24 @@ class JiraReplicationConfigServiceTest {
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
     when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(stored));
 
-    classUnderTest.update(ID, withWorklogSync("ALPHA", true, null));
+    classUnderTest.update(ID, withWorklogSync(ALPHA, null, true, null));
 
     assertThat(stored.getWorklogSyncEnabled()).isTrue();
   }
 
   @Test
-  void two_orders_whose_signs_read_like_a_path_are_not_an_overlap() {
-    // 0283 and 0283/03.20 are two customer orders, not an order and its suborder — comparing the
-    // signs as strings would call them an overlap.
-    when(customerorderService.getCustomerorderBySign("0283")).thenReturn(new Customerorder());
-    when(customerorderService.getCustomerorderBySign("0283/03.20")).thenReturn(new Customerorder());
-    givenOtherReplication("0283/03.20", "https://jira.example.com", true);
+  void two_orders_never_overlap() {
+    // Different customer orders share no suborder — whatever their signs look like (#1322).
+    givenOtherReplication(BETA, null, "https://jira.example.com", true);
 
-    classUnderTest.create(withWorklogSync("0283", true, null));
+    classUnderTest.create(withWorklogSync(ALPHA, null, true, null));
 
     assertThat(saved().getWorklogSyncEnabled()).isTrue();
   }
 
   @Test
   void deleting_a_replication_leaves_the_replicated_tickets_alone() {
-    // jira_ticket hangs off scope_sign, not off the config — the rows are not wrong, only no
+    // jira_ticket hangs off the scope, not off the config — the rows are not wrong, only no
     // longer kept up to date.
     var stored = existingConfig();
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
@@ -384,7 +431,6 @@ class JiraReplicationConfigServiceTest {
     assertThatThrownBy(() -> classUnderTest.setEnabled(ID, true)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.resetWatermark(ID)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID)).isInstanceOf(AuthorizationException.class);
-    assertThatThrownBy(() -> classUnderTest.customerorderSignOf("ALPHA")).isInstanceOf(AuthorizationException.class);
 
     verifyNoInteractions(configRepository, jiraReplicationRunService, jiraSearchClients,
         customerorderService, suborderService);
@@ -447,35 +493,36 @@ class JiraReplicationConfigServiceTest {
 
   @Test
   void a_replication_can_be_scoped_to_one_suborder_of_any_depth() {
-    // the scope is stored as the fully qualified sign — the suborder sign alone is not unique
-    when(customerorderService.getCustomerorderBySign("ALPHA/A/01")).thenReturn(null);
+    classUnderTest.create(withScope(ALPHA, A_01, "token"));
 
-    classUnderTest.create(withScope("ALPHA/A/01", "token"));
+    assertThat(saved().getCustomerorderId()).isEqualTo(ALPHA);
+    assertThat(saved().getSuborderId()).isEqualTo(A_01);
+  }
 
+  @Test
+  void the_scope_sign_is_written_as_a_mirror_of_order_and_suborder() {
+    // reports and ETL definitions still read it; the application never does (#1322)
+    classUnderTest.create(withScope(ALPHA, A_01, "token"));
     assertThat(saved().getScopeSign()).isEqualTo("ALPHA/A/01");
-    verify(suborderService).existsSuborderWithCompleteOrderSign("ALPHA/A/01");
+
+    classUnderTest.create(withScope(ALPHA, null, "token"));
+    assertThat(saved().getScopeSign()).isEqualTo("ALPHA");
   }
 
   @Test
-  void an_order_sign_that_carries_a_slash_is_still_an_order_wide_scope() {
-    // "0283/03.20" is one order. Deciding by the shape of the sign - slash means suborder - would
-    // refuse the order-wide replication that works today, and eleven orders here carry one.
-    when(customerorderService.getCustomerorderBySign("0283/03.20")).thenReturn(new Customerorder());
+  void a_suborder_of_another_order_is_refused() {
+    // otherwise the replication would read the bookings of one order and claim to be another's
+    assertThatThrownBy(() -> classUnderTest.create(withScope(ALPHA, BETA_X, "token")))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND);
 
-    classUnderTest.create(withScope("0283/03.20", "token"));
-
-    assertThat(saved().getScopeSign()).isEqualTo("0283/03.20");
-    verifyNoInteractions(suborderService);
+    verify(configRepository, never()).save(any());
   }
 
   @Test
-  void a_scope_that_is_neither_an_order_nor_a_suborder_is_refused() {
-    // otherwise a replication is created that nothing ever reads: the suggestions resolve the
-    // branch of the booked suborder, and a sign outside every branch never matches
-    when(customerorderService.getCustomerorderBySign("ALPHA/nope")).thenReturn(null);
-    when(suborderService.existsSuborderWithCompleteOrderSign("ALPHA/nope")).thenReturn(false);
-
-    assertThatThrownBy(() -> classUnderTest.create(withScope("ALPHA/nope", "token")))
+  void an_unknown_suborder_is_refused() {
+    assertThatThrownBy(() -> classUnderTest.create(withScope(ALPHA, 999L, "token")))
         .isInstanceOf(InvalidDataException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
         .isEqualTo(ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND);
@@ -485,48 +532,19 @@ class JiraReplicationConfigServiceTest {
 
   @Test
   void an_unknown_customer_order_is_refused_just_the_same() {
-    when(customerorderService.getCustomerorderBySign("NOPE")).thenReturn(null);
-    when(suborderService.existsSuborderWithCompleteOrderSign("NOPE")).thenReturn(false);
-
-    assertThatThrownBy(() -> classUnderTest.create(withScope("NOPE", "token")))
+    assertThatThrownBy(() -> classUnderTest.create(withScope(999L, null, "token")))
         .isInstanceOf(InvalidDataException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
         .isEqualTo(ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND);
   }
 
   @Test
-  void the_order_behind_an_order_wide_scope_is_the_scope_itself() {
-    assertThat(classUnderTest.customerorderSignOf("ALPHA")).isEqualTo("ALPHA");
-
-    verifyNoInteractions(suborderService);
-  }
-
-  @Test
-  void the_order_behind_a_suborder_scope_is_asked_for_rather_than_parsed() {
-    // the edit form loads the suborders of this order, and an order sign may carry a slash itself:
-    // splitting "0283/03.20/F&E/01" at its first slash would name the unrelated order "0283",
-    // open the form there with nothing preselected, and move the replication on the next save
-    when(customerorderService.getCustomerorderBySign("0283/03.20/F&E/01")).thenReturn(null);
-    when(suborderService.getSuborderByCompleteOrderSign("0283/03.20/F&E/01"))
-        .thenReturn(suborderOf("0283/03.20"));
-
-    assertThat(classUnderTest.customerorderSignOf("0283/03.20/F&E/01")).isEqualTo("0283/03.20");
-  }
-
-  @Test
-  void a_scope_whose_order_is_gone_is_left_as_it_is_so_it_can_be_corrected() {
-    when(customerorderService.getCustomerorderBySign("GONE/01")).thenReturn(null);
-    when(suborderService.getSuborderByCompleteOrderSign("GONE/01")).thenReturn(null);
-
-    assertThat(classUnderTest.customerorderSignOf("GONE/01")).isEqualTo("GONE/01");
-  }
-
-  @Test
   void a_replication_without_a_scope_is_refused_before_anything_is_looked_up() {
-    assertThatThrownBy(() -> classUnderTest.create(withScope("  ", "token")))
+    assertThatThrownBy(() -> classUnderTest.create(withScope(null, null, "token")))
         .isInstanceOf(InvalidDataException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
         .isEqualTo(ErrorCode.JI_REPLICATION_SCOPE_REQUIRED);
+    verifyNoInteractions(customerorderService, suborderService);
   }
 
   @Test
@@ -537,9 +555,9 @@ class JiraReplicationConfigServiceTest {
     stored.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0));
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
-    classUnderTest.update(ID, withScope("ALPHA/A/01", null));
+    classUnderTest.update(ID, withScope(ALPHA, A_01, null));
 
-    assertThat(saved().getScopeSign()).isEqualTo("ALPHA/A/01");
+    assertThat(saved().getSuborderId()).isEqualTo(A_01);
     assertThat(saved().getLastMaxUpdated()).isNull();
   }
 
@@ -550,80 +568,40 @@ class JiraReplicationConfigServiceTest {
     stored.setLastMaxUpdated(watermark);
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
-    classUnderTest.update(ID, withScope("ALPHA", null));
+    classUnderTest.update(ID, withScope(ALPHA, null, null));
 
     assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
   }
 
   @Test
-  void an_order_whose_sign_begins_or_ends_with_a_space_is_stored_as_chosen() {
-    // the sign is an option value of the select, not typed text (#1171): trimmed, it names no
-    // order at all, and the replication could not be created for this scope
-    when(customerorderService.getCustomerorderBySign(" ALPHA ")).thenReturn(new Customerorder());
-    when(customerorderService.getCustomerorderBySign("ALPHA")).thenReturn(null);
-    when(suborderService.existsSuborderWithCompleteOrderSign("ALPHA")).thenReturn(false);
-
-    classUnderTest.create(withScope(" ALPHA ", "token"));
-
-    assertThat(saved().getScopeSign()).isEqualTo(" ALPHA ");
-  }
-
-  @Test
-  void a_suborder_whose_complete_sign_ends_with_a_space_is_stored_as_chosen() {
-    when(customerorderService.getCustomerorderBySign(any())).thenReturn(null);
-    when(suborderService.existsSuborderWithCompleteOrderSign(any())).thenReturn(false);
-    when(suborderService.existsSuborderWithCompleteOrderSign("ALPHA/01 ")).thenReturn(true);
-
-    classUnderTest.create(withScope("ALPHA/01 ", "token"));
-
-    assertThat(saved().getScopeSign()).isEqualTo("ALPHA/01 ");
-  }
-
-  @Test
-  void of_two_orders_that_differ_only_by_a_space_the_chosen_one_is_bound() {
-    // trimmed, " X" would silently become the other order "X"
-    when(customerorderService.getCustomerorderBySign("X")).thenReturn(new Customerorder());
-    when(customerorderService.getCustomerorderBySign(" X")).thenReturn(new Customerorder());
-
-    classUnderTest.create(withScope(" X", "token"));
-
-    assertThat(saved().getScopeSign()).isEqualTo(" X");
-  }
-
-  @Test
-  void a_scope_that_gains_a_space_is_another_scope_and_resets_the_watermark() {
+  void a_renamed_order_is_still_the_same_scope() {
+    // the stored mirror carries the old sign; what decides is the id (#1322)
+    var watermark = LocalDateTime.of(2026, 6, 1, 8, 0);
     var stored = existingConfig();
-    stored.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0));
+    stored.setScopeSign("ALPHA-OLD");
+    stored.setLastMaxUpdated(watermark);
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
-    classUnderTest.update(ID, withScope("ALPHA ", null));
+    classUnderTest.update(ID, withScope(ALPHA, null, null));
 
-    assertThat(saved().getScopeSign()).isEqualTo("ALPHA ");
-    assertThat(saved().getLastMaxUpdated()).isNull();
+    assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
+    assertThat(saved().getScopeSign()).isEqualTo("ALPHA");
   }
 
   @Test
-  void a_second_worklog_sync_on_a_suborder_whose_sign_ends_with_a_space_is_refused() {
-    // trimmed, the new scope would be compared as "ALPHA/01" and miss the replication that already
-    // writes worklogs for exactly this suborder
-    givenSuborderScope("ALPHA/01 ", "ALPHA");
-    givenOtherReplication("ALPHA/01 ", "https://jira.example.com", true);
+  void the_list_names_the_scope_as_the_order_tree_carries_it_now() {
+    // not the mirror column: nothing in the application reads it (#1322)
+    var stored = existingConfig();
+    setId(stored, ID);
+    stored.setSuborderId(A_01);
+    stored.setScopeSign("ALPHA/OLD/01");
+    when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(stored));
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
-    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync("ALPHA/01 ", true, null)))
-        .isInstanceOf(InvalidDataException.class)
-        .extracting(ex -> firstCode((ErrorCodeException) ex))
-        .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
-  }
-
-  @Test
-  void two_suborders_that_differ_only_by_a_space_are_not_an_overlap() {
-    givenSuborderScope("ALPHA/01", "ALPHA");
-    givenSuborderScope("ALPHA/01 ", "ALPHA");
-    givenOtherReplication("ALPHA/01", "https://jira.example.com", true);
-
-    classUnderTest.create(withWorklogSync("ALPHA/01 ", true, null));
-
-    assertThat(saved().getWorklogSyncEnabled()).isTrue();
+    assertThat(classUnderTest.getAll()).singleElement()
+        .satisfies(info -> assertThat(info.scopeSign()).isEqualTo("ALPHA/A/01"))
+        .satisfies(info -> assertThat(info.suborderId()).isEqualTo(A_01));
+    assertThat(classUnderTest.getById(ID).scopeSign()).isEqualTo("ALPHA/A/01");
   }
 
   @Test
@@ -716,12 +694,12 @@ class JiraReplicationConfigServiceTest {
   }
 
   private static JiraReplicationConfigData withJql(String jql) {
-    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", null, jql, null, null, null, 100, true, false, null, false);
   }
 
   private static JiraReplicationConfigData withFields(String additional, String inherited) {
-    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", null, "project = ALPHA", null, additional, inherited,
         100, true, false, null, false);
   }
@@ -729,6 +707,7 @@ class JiraReplicationConfigServiceTest {
   private JiraReplicationConfig existingConfig() {
     var config = new JiraReplicationConfig();
     config.setName("Alpha");
+    config.setCustomerorderId(ALPHA);
     config.setScopeSign("ALPHA");
     config.setBaseUrl("https://jira.example.com");
     config.setApiFlavor(JiraApiFlavor.SERVER);
@@ -739,51 +718,38 @@ class JiraReplicationConfigServiceTest {
     return config;
   }
 
-  private static Suborder suborderOf(String customerorderSign) {
-    var customerorder = new Customerorder();
-    customerorder.setSign(customerorderSign);
-    var suborder = new Suborder();
-    suborder.setCustomerorder(customerorder);
-    return suborder;
-  }
-
-  private static JiraReplicationConfigData withScope(String scopeSign, String password) {
-    return new JiraReplicationConfigData("Alpha", scopeSign, "https://jira.example.com",
+  private static JiraReplicationConfigData withScope(Long customerorderId, Long suborderId, String password) {
+    return new JiraReplicationConfigData("Alpha", customerorderId, suborderId, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
   }
 
-  private static JiraReplicationConfigData withWorklogSync(String scopeSign, boolean enabled,
-                                                           LocalDate from) {
-    return new JiraReplicationConfigData("Alpha", scopeSign, "https://jira.example.com",
+  private static JiraReplicationConfigData withWorklogSync(long customerorderId, Long suborderId,
+                                                           boolean enabled, LocalDate from) {
+    return new JiraReplicationConfigData("Alpha", customerorderId, suborderId, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
         enabled, from, false);
   }
 
   private static JiraReplicationConfigData withInvoiceableOnly(boolean invoiceableOnly) {
-    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
         true, LocalDate.of(2026, 1, 1), invoiceableOnly);
   }
 
-  /** A scope that is a suborder path under the given customer order, not an order of its own. */
-  private void givenSuborderScope(String completeOrderSign, String customerorderSign) {
-    when(customerorderService.getCustomerorderBySign(completeOrderSign)).thenReturn(null);
-    when(suborderService.getSuborderByCompleteOrderSign(completeOrderSign))
-        .thenReturn(suborderOf(customerorderSign));
-  }
-
-  private void givenOtherReplication(String scopeSign, String baseUrl, boolean worklogSync) {
+  private void givenOtherReplication(long customerorderId, Long suborderId, String baseUrl,
+                                     boolean worklogSync) {
     var other = new JiraReplicationConfig();
     setId(other, 99L);
     other.setName("Beta");
-    other.setScopeSign(scopeSign);
+    other.setCustomerorderId(customerorderId);
+    other.setSuborderId(suborderId);
     other.setBaseUrl(baseUrl);
     other.setWorklogSyncEnabled(worklogSync);
     when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(other));
   }
 
   private static JiraReplicationConfigData data(String password) {
-    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+    return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
   }
 
@@ -791,6 +757,11 @@ class JiraReplicationConfigServiceTest {
     var captor = ArgumentCaptor.forClass(JiraReplicationConfig.class);
     verify(configRepository, atLeastOnce()).save(captor.capture());
     return captor.getValue();
+  }
+
+  /** What the order module answers for these ids: the known ones, an unknown id is missing. */
+  private static <T> Map<Long, T> known(Collection<Long> ids, Map<Long, T> tree) {
+    return ids.stream().filter(tree::containsKey).collect(Collectors.toMap(id -> id, tree::get));
   }
 
   private static ErrorCode firstCode(ErrorCodeException ex) {

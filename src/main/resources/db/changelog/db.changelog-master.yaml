@@ -4283,3 +4283,72 @@ databaseChangeLog:
             tableName: order_pricing
             columnName: customerorder_id
             columnDataType: BIGINT
+  - changeSet:
+      id: 120
+      author: kr
+      comment: JIRA-Replikation verweist ueber die id auf Auftrag und Unterauftrag (#1322)
+      # Der Geltungsbereich einer Replikation stand bisher nur als Kuerzel in scope_sign: das Kuerzel
+      # des Auftrags oder der vollstaendige Schluessel eines Unterauftrags. Nach einer Umbenennung
+      # oder einem Umhaengen zeigte er ins Leere, und die Replikation fand nichts mehr. Ab hier
+      # stehen customerorder_id und suborder_id mit Fremdschluessel daneben; suborder_id ist NULL,
+      # wenn der ganze Auftrag gemeint ist. scope_sign bleibt als Spiegel fuer Reports und
+      # ETL-Definitionen und folgt einer Umbenennung (JiraScopeSignMirrorListener).
+      #
+      # Uebernommen wird nur eine eindeutige, binaer verglichene Zuordnung (#1212: die View
+      # suborder_fqs vergleicht sonst ohne Gross-/Kleinschreibung). Ein Auftragskuerzel geht einem
+      # gleichlautenden Unterauftragspfad vor, wie in der Anwendung bisher: jede Replikation von
+      # vor #1025 traegt ein Auftragskuerzel. Eine Replikation, deren Geltungsbereich sich nicht
+      # eindeutig aufloesen laesst, wird geloescht - samt ihrer Lauf-Historie, wie beim Loeschen
+      # in der Anwendung. Ihre Tickets und Worklogs bleiben; sie behandelt #1323.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: customerorder_id
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+              - column:
+                  name: suborder_id
+                  type: bigint
+        - sql:
+            sql: |-
+              UPDATE jira_replication_config c
+                 SET c.customerorder_id = (SELECT MIN(o.id) FROM customerorder o
+                                            WHERE BINARY o.sign = BINARY c.scope_sign
+                                           HAVING COUNT(*) = 1);
+              UPDATE jira_replication_config c
+                 SET c.suborder_id = (SELECT MIN(f.suborder_id) FROM suborder_fqs f
+                                       WHERE BINARY f.sign_fully_qualified = BINARY CONCAT(c.scope_sign, '/')
+                                      HAVING COUNT(*) = 1)
+               WHERE c.customerorder_id IS NULL
+                 AND NOT EXISTS (SELECT 1 FROM customerorder o WHERE BINARY o.sign = BINARY c.scope_sign);
+              UPDATE jira_replication_config c
+                 SET c.customerorder_id = (SELECT s.customerorder_id FROM suborder s WHERE s.id = c.suborder_id)
+               WHERE c.customerorder_id IS NULL
+                 AND c.suborder_id IS NOT NULL;
+              DELETE FROM jira_replication_run
+               WHERE replication_id IN (SELECT c.id FROM jira_replication_config c WHERE c.customerorder_id IS NULL);
+              DELETE FROM jira_replication_config
+               WHERE customerorder_id IS NULL
+        - addNotNullConstraint:
+            tableName: jira_replication_config
+            columnName: customerorder_id
+            columnDataType: BIGINT
+        - addForeignKeyConstraint:
+            baseTableName: jira_replication_config
+            baseColumnNames: customerorder_id
+            constraintName: fk_jira_replication_config_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: jira_replication_config
+            baseColumnNames: suborder_id
+            constraintName: fk_jira_replication_config_suborder
+            referencedTableName: suborder
+            referencedColumnNames: id

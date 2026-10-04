@@ -52,7 +52,7 @@ public class JiraWorklogSyncService {
   private static final int LOGGED_UNKNOWN_REFERENCES = 10;
 
   private final CommandPublisher commandPublisher;
-  private final JiraScopeSuborders scopeSuborders;
+  private final JiraScopes scopes;
   private final JiraTicketRepository ticketRepository;
   private final JiraWorklogSyncRepository syncRepository;
   private final JiraWorklogClients worklogClients;
@@ -79,7 +79,7 @@ public class JiraWorklogSyncService {
       return;
     }
 
-    var suborderIds = scopeSuborders.idsOf(cfg.getScopeSign());
+    var suborderIds = scopes.suborderIdsOf(cfg.getCustomerorderId(), cfg.getSuborderId());
     if (suborderIds.isEmpty()) {
       log.warn("Worklog sync of JIRA replication {} found no suborder under scope {} - skipped",
           cfg.getName(), cfg.getScopeSign());
