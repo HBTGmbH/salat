@@ -34,7 +34,16 @@
                 th:value="${emp.id}"
                 th:text="${@employeeLabelViewHelper.label(emp)} + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
       </salat:select>
-      <!--/* A hidden suborder only appears when the assignment already references it; say so. */-->
+      <!--/* Order or suborder, not both (#1343); the service refuses both with BU-0033. A hidden order or
+             suborder only appears when the assignment already references it; say so. */-->
+      <salat:select th:field="*{customerorderId}" th:label="#{main.employeecost.assignment.field.customerorderSign}">
+        <option value="" th:text="#{main.employeecost.assignment.select.customerorder.none}">--- Kein Auftrag ---</option>
+        <option th:each="co : ${customerorders}"
+                th:value="${co.id}"
+                th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
+      </salat:select>
       <salat:select th:field="*{suborderId}" th:label="#{main.employeecost.assignment.field.suborderSign}">
         <option value=""
                 th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
@@ -44,6 +53,9 @@
                 th:attr="data-subtext=${subtext}"
                 th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
       </salat:select>
+      <p class="form-text mt-n2 mb-3" th:text="#{main.employeecost.assignment.scope.hint}">
+        Für einen Unterauftrag oder einen ganzen Auftrag, nicht für beide. Ohne beides gilt die Zuordnung allgemein.
+      </p>
       <div class="row">
         <div class="col-md-6">
           <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.employeecost.field.validFrom}" required="true" />

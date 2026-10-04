@@ -64,7 +64,6 @@ class SuborderReadModelTest {
   @Test
   void the_values_are_those_of_the_entity() {
     var order = order();
-    order.setOrderType(OrderType.BEREITSCHAFT);
     var suborder = suborder(11L, order, null, "01");
     suborder.setShortdescription("short");
     suborder.setDebithours(Duration.ofHours(40));
@@ -75,8 +74,6 @@ class SuborderReadModelTest {
     assertThat(summary.shortdescription()).isEqualTo("short");
     assertThat(summary.debithours()).isEqualTo(Duration.ofHours(40));
     assertThat(summary.invoiceable()).isTrue();
-    // without a type of its own the suborder takes the order's
-    assertThat(summary.effectiveOrderType()).isEqualTo(OrderType.BEREITSCHAFT);
   }
 
   private static Customerorder order() {

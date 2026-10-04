@@ -30,7 +30,6 @@ import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
 import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.budget.service.EmployeeCostService;
-import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.budget.service.OrderPricingService;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.employee.auth.EmployeeAuthorization;
@@ -140,7 +139,7 @@ public class EmployeeSignChangedListenerTest {
 
     whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(employee.getId(), null, OrderType.STANDARD, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(employee.getId(), null, null, WORKDAY)).isPresent();
   }
 
   @Test
@@ -168,7 +167,7 @@ public class EmployeeSignChangedListenerTest {
     whenAnonymized(employee);
     var successor = givenEmployee(TESTY_SIGN);
 
-    assertThat(employeeCostService.findEffectiveCost(successor.getId(), null, OrderType.STANDARD, WORKDAY)).isEmpty();
+    assertThat(employeeCostService.findEffectiveCost(successor.getId(), null, null, WORKDAY)).isEmpty();
     assertThat(orderPricingService.lookupFor(List.of(ORDER_ID))
         .findEffectiveRate(ORDER_ID, null, successor.getId(), null, WORKDAY)).isEmpty();
   }
@@ -199,7 +198,7 @@ public class EmployeeSignChangedListenerTest {
     var newSign = whenAnonymized(employee);
 
     assertThat(assignmentSigns()).containsExactlyInAnyOrder(newSign, BOSS_SIGN);
-    assertThat(employeeCostService.findEffectiveCost(boss.getId(), null, OrderType.STANDARD, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(boss.getId(), null, null, WORKDAY)).isPresent();
   }
 
   /** The same has to hold for an ordinary correction of the sign, which is the commoner case. */
@@ -218,7 +217,7 @@ public class EmployeeSignChangedListenerTest {
 
     assertThat(assignmentSigns()).containsExactly("newby");
     assertThat(pricingSigns()).containsExactly("newby");
-    assertThat(employeeCostService.findEffectiveCost(employee.getId(), null, OrderType.STANDARD, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(employee.getId(), null, null, WORKDAY)).isPresent();
   }
 
   /** A save that leaves the sign alone must not rewrite anything. */

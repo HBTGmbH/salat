@@ -4696,3 +4696,38 @@ databaseChangeLog:
               ALTER TABLE `employee_cost_employee`
                 MODIFY `employee_cost_category_id` bigint NOT NULL,
                 ADD CONSTRAINT `fk_employee_cost_employee_category` FOREIGN KEY (`employee_cost_category_id`) REFERENCES `employee_cost_category` (`id`)
+
+  - changeSet:
+      id: 129
+      author: kr
+      comment: Kostenzuordnung auch fuer einen ganzen Auftrag (#1343)
+      # Eine Kostenzuordnung galt fuer einen Unterauftrag oder allgemein. Ab hier kann sie auch fuer
+      # einen ganzen Auftrag gelten, ueber customerorder_id mit Fremdschluessel; sie greift dann fuer
+      # alle seine Unterauftraege. Unterauftrag und Auftrag schliessen sich aus, das prueft der Service.
+      #
+      # customerorder_sign ist ein Spiegel des Auftragskuerzels fuer Views, ETL-Definitionen und
+      # Reports, wie suborder_sign (#1212). Die Anwendung schreibt ihn aus dem Auftrag, liest ihn nie
+      # und zieht ihn bei einer Umbenennung nach (OrderSignMirrorListener). Bestehende Zeilen bleiben
+      # leer: keine gilt bisher fuer einen ganzen Auftrag.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: employee_cost_employee
+                columnName: customerorder_id
+      changes:
+        - addColumn:
+            tableName: employee_cost_employee
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+              - column:
+                  name: customerorder_sign
+                  type: varchar(255)
+        - addForeignKeyConstraint:
+            baseTableName: employee_cost_employee
+            baseColumnNames: customerorder_id
+            constraintName: fk_employee_cost_employee_customerorder
+            referencedTableName: customerorder
+            referencedColumnNames: id

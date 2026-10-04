@@ -26,8 +26,9 @@ import de.hbt.salat.order.service.SuborderService;
  * counts where. The sign columns stay next to the ids only because reports, views and ETL definitions
  * still read them. A stale sign there would let a report lose the plans of a renamed order.
  *
- * <p>The customer rates refer to their order by id as well (#1212). Their suborder is a {@code LIKE}
- * pattern, no reference, and stays as typed.
+ * <p>The customer rates refer to their order by id as well (#1212), and so do cost assignments to a whole
+ * order (#1343). The suborder of a customer rate is a {@code LIKE} pattern, no reference, and stays as
+ * typed.
  */
 @Service
 @Transactional
@@ -64,6 +65,9 @@ public class OrderReferenceService {
             if (flatRate.getSuborderId() != null) {
                 flatRate.setSuborderSign(completeOrderSignOf(flatRate.getSuborderId(), flatRate.getSuborderSign()));
             }
+        }
+        for (var assignment : assignmentRepository.findByCustomerorderId(customerorderId)) {
+            assignment.setCustomerorderSign(customerorder.getSign());
         }
         var suborderIds = suborderService.getSubordersByCustomerorderId(customerorderId).stream()
             .map(Suborder::getId)
@@ -112,11 +116,12 @@ public class OrderReferenceService {
         }
     }
 
-    /** How many plans, flat rates and customer rates still refer to the customer order. */
+    /** How many plans, flat rates, cost assignments (#1343) and customer rates still refer to the customer order. */
     @Transactional(readOnly = true)
     public References referencesToCustomerorder(long customerorderId) {
         return new References(orderBudgetRepository.countByCustomerorderId(customerorderId),
-            orderFlatRateRepository.countByCustomerorderId(customerorderId), 0,
+            orderFlatRateRepository.countByCustomerorderId(customerorderId),
+            assignmentRepository.countByCustomerorderId(customerorderId),
             orderPricingRepository.countByCustomerorderId(customerorderId));
     }
 

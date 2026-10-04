@@ -31,6 +31,7 @@ import de.hbt.salat.budget.viewhelper.EmployeeCostAssignmentViewHelper;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -56,6 +57,7 @@ public class EmployeeCostController {
     private final EmployeeCostService employeeCostService;
     private final EmployeeService employeeService;
     private final SuborderService suborderService;
+    private final CustomerorderService customerorderService;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final MessageSourceAccessor messages;
 
@@ -253,6 +255,7 @@ public class EmployeeCostController {
         form.setId(assignment.getId());
         form.setEmployeeCostName(assignment.getEmployeeCostName());
         form.setEmployeeId(assignment.getEmployeeId());
+        form.setCustomerorderId(assignment.getCustomerorderId());
         form.setSuborderId(assignment.getSuborderId());
         form.setValidFrom(assignment.getValidFrom());
         form.setValidUntil(openEnd(assignment.getValidUntil()));
@@ -338,11 +341,17 @@ public class EmployeeCostController {
         Function<EmployeeCostAssignment, String> suborderSignOf = assignment -> assignment.getSuborderId() == null
             ? null
             : suborderSigns.get(assignment.getSuborderId());
+        var customerorderSigns = customerorderService.getCustomerorderSignsByIds(assignments.stream()
+            .map(EmployeeCostAssignment::getCustomerorderId)
+            .filter(Objects::nonNull)
+            .collect(toSet()));
+        Function<EmployeeCostAssignment, String> customerorderSignOf = assignment ->
+            assignment.getCustomerorderId() == null ? null : customerorderSigns.get(assignment.getCustomerorderId());
         model.addAttribute("categoryName", name);
         model.addAttribute("rates", rates);
         model.addAttribute("assignments", assignments.stream()
             .map(assignment -> new EmployeeCostAssignmentViewHelper(assignment, signOf.apply(assignment),
-                suborderSignOf.apply(assignment)))
+                customerorderSignOf.apply(assignment), suborderSignOf.apply(assignment)))
             .sorted(Comparator.comparing(EmployeeCostAssignmentViewHelper::employeeSign,
                     Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(row -> row.assignment().getValidFrom()))
@@ -357,15 +366,17 @@ public class EmployeeCostController {
     }
 
     /**
-     * The stored category and suborder stay in their select even when no cost record carries the name
-     * any more, or the suborder has meanwhile been hidden — otherwise editing an assignment would
-     * silently drop the reference (#895).
+     * The stored category, order and suborder stay in their select even when no cost record carries the
+     * name any more, or the order or suborder has meanwhile been hidden — otherwise editing an assignment
+     * would silently drop the reference (#895).
      */
     private void addAssignmentFormModel(Model model, EmployeeCostAssignmentForm form) {
         model.addAttribute("assignmentForm", form);
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
         model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
+        model.addAttribute("customerorders",
+            customerorderService.getSelectableCustomerorderOptions(form.getCustomerorderId()));
         var kept = form.getSuborderId() == null ? null : suborderService.getSuborderById(form.getSuborderId());
         model.addAttribute("suborders",
             suborderService.getAllSelectableSuborders(kept == null ? null : kept.getCompleteOrderSign()));
@@ -405,6 +416,7 @@ public class EmployeeCostController {
         return new EmployeeCostAssignmentData(
             trimToNull(form.getEmployeeCostName()),
             form.getEmployeeId(),
+            form.getCustomerorderId(),
             form.getSuborderId(),
             form.getValidFrom(),
             form.getValidUntil()

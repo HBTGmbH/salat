@@ -120,6 +120,19 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       """)
   List<CustomerorderOption> findOptionsByIdIn(Collection<Long> ids);
 
+  /**
+   * The orders a select offers, as options: everything not hidden, plus the order {@code keepId} even if
+   * it is hidden (#1343). {@code keepId} may be {@code null}.
+   */
+  @Query("""
+      select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,
+          c.description, cu.shortname, cu.name, c.hide)
+      from Customerorder c left join c.customer cu
+      where c.hide is null or c.hide = false or c.id = :keepId
+      order by c.sign
+      """)
+  List<CustomerorderOption> findSelectableOptions(Long keepId);
+
   /** Like {@link #findOptionsByIdIn}, for a caller that knows the orders by sign (#1334). */
   @Query("""
       select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,

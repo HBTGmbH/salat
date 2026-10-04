@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
 
 /**
@@ -16,10 +15,9 @@ import de.hbt.salat.order.domain.Suborder;
  * answered from memory, like the two lookups it composes.
  *
  * <p>Each suborder is flattened into plain values <em>here</em>, once. {@code getCompleteOrderSign()}
- * climbs the chain of parent suborders and {@code getEffectiveOrderType()} reaches for the customer
- * order, and doing either per booking is the pattern {@code docs/performance-tips.md} exists to
- * prevent. {@link EmployeeCostLookup} takes the suborder by id (#1205), {@link OrderPricingLookup}
- * its complete order sign as a LIKE pattern.
+ * climbs the chain of parent suborders, and doing that per booking is the pattern
+ * {@code docs/performance-tips.md} exists to prevent. {@link EmployeeCostLookup} takes order and
+ * suborder by id (#1205, #1343), {@link OrderPricingLookup} the complete order sign as a LIKE pattern.
  *
  * <p>A {@code null} cost lookup means costs are not reported at all: they are managers-only, and
  * {@code EmployeeCostService.lookup()} must not even be called for anybody else. That is why the
@@ -28,7 +26,7 @@ import de.hbt.salat.order.domain.Suborder;
 public final class AppliedRateLookup {
 
     /** What the resolution needs of a suborder — read once, not once per booking. */
-    private record SuborderRates(String completeOrderSign, boolean invoiceable, OrderType orderType) {}
+    private record SuborderRates(String completeOrderSign, boolean invoiceable) {}
 
     private final long customerorderId;
     private final Long orderBudgetId;
@@ -60,8 +58,7 @@ public final class AppliedRateLookup {
         Map<Long, SuborderRates> subordersById = new HashMap<>();
         for (var suborder : suborders) {
             subordersById.put(suborder.getId(), new SuborderRates(
-                suborder.getCompleteOrderSign(), suborder.isInvoiceable(),
-                suborder.getEffectiveOrderType()));
+                suborder.getCompleteOrderSign(), suborder.isInvoiceable()));
         }
         return new AppliedRateLookup(customerorderId, orderBudgetId, subordersById, costLookup,
             pricingLookup);
@@ -85,7 +82,7 @@ public final class AppliedRateLookup {
             return AppliedRate.none(includesCosts());
         }
         var cost = costLookup == null ? null : costLookup
-            .findEffectiveCost(employeeId, suborderId, suborder.orderType(), day)
+            .findEffectiveCost(employeeId, customerorderId, suborderId, day)
             .orElse(null);
         var price = pricingLookup
             .findEffectiveRate(customerorderId, suborder.completeOrderSign(), employeeId,

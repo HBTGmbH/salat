@@ -10,14 +10,31 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignment;
  * it was stored with — that is all there is to recognize it by, and the page marks it.
  */
 /**
- * @param suborderSign the complete sign the suborder has today, read by id (#1212); the stored one
- *                     for an assignment the migration could not resolve, {@code null} for a general one
+ * @param customerorderSign the sign the customer order has today, read by id (#1343); {@code null} unless
+ *                          the assignment is for a whole order
+ * @param suborderSign      the complete sign the suborder has today, read by id (#1212); {@code null}
+ *                          unless the assignment is for a suborder
  */
 public record EmployeeCostAssignmentViewHelper(EmployeeCostAssignment assignment, String employeeSign,
-                                               String suborderSign) {
+                                               String customerorderSign, String suborderSign) {
 
     public boolean employeeUnknown() {
         return assignment.isEmployeeUnresolved();
+    }
+
+    /** Whether the assignment is for a whole customer order rather than a suborder (#1343). */
+    public boolean forCustomerorder() {
+        return assignment.isCustomerorderSpecific();
+    }
+
+    /** Whether the assignment is for a single suborder. */
+    public boolean forSuborder() {
+        return assignment.isSuborderSpecific();
+    }
+
+    /** The sign of what the assignment is for — order or suborder —, {@code null} for a general one. */
+    public String scopeSign() {
+        return forCustomerorder() ? customerorderSign : suborderSign;
     }
 
 }

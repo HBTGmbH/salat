@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,7 @@ import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
+import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -227,6 +229,65 @@ public class BudgetControllingServiceTest {
     assertThat(before.costEuro()).isEqualByComparingTo("960.00");
     assertThat(after.revenueEuro()).isEqualByComparingTo(before.revenueEuro());
     assertThat(after.costEuro()).isEqualByComparingTo(before.costEuro());
+  }
+
+  /**
+   * Standby is costed like any other work (#1343): a booking on a standby suborder without an assignment
+   * of its own takes the general rate of the person. Before, it cost 0 EUR (#463).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_cost_standby_with_the_general_rate_of_the_person() {
+    suborders.stream().filter(so -> so.getId() == 20L).findFirst().orElseThrow()
+        .setOrderType(OrderType.BEREITSCHAFT);
+    givenCosts(costAssignment("general", null), cost("general", 750));
+
+    var total = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
+
+    // 8 h on co/01/D and 8 h of standby on co/02, all at 7.50 EUR/h
+    assertThat(total.costEuro()).isEqualByComparingTo("120.00");
+  }
+
+  /** An assignment to the whole order covers every suborder of it and beats the general one (#1343). */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_cost_every_suborder_of_the_order_by_an_assignment_to_the_order() {
+    givenCosts(costAssignment("general", null), cost("general", 6000),
+        costAssignment("order", CUSTOMERORDER_ID), cost("order", 750));
+
+    var total = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
+
+    assertThat(total.costEuro()).isEqualByComparingTo("120.00");
+  }
+
+  /** Assignments and rate periods, given in pairs or in any order — sorted apart by their type. */
+  private void givenCosts(Object... assignmentsAndCosts) {
+    var assignments = Arrays.stream(assignmentsAndCosts).filter(EmployeeCostAssignment.class::isInstance)
+        .map(EmployeeCostAssignment.class::cast).toList();
+    var costs = Arrays.stream(assignmentsAndCosts).filter(EmployeeCost.class::isInstance)
+        .map(EmployeeCost.class::cast).toList();
+    when(employeeCostService.lookup()).thenReturn(EmployeeCostLookup.of(assignments, costs));
+  }
+
+  /** @param customerorderId the order the assignment is for, {@code null} for the general one */
+  private static EmployeeCostAssignment costAssignment(String category, Long customerorderId) {
+    var assignment = new EmployeeCostAssignment();
+    assignment.setEmployeeId(EMPLOYEE_ID);
+    assignment.setEmployeeSign("emp");
+    assignment.setCustomerorderId(customerorderId);
+    assignment.setCategory(CostCategoryTestUtils.named(category));
+    assignment.setValidFrom(FROM);
+    assignment.setValidUntil(UNTIL);
+    return assignment;
+  }
+
+  private static EmployeeCost cost(String category, int centsPerHour) {
+    var cost = new EmployeeCost();
+    cost.setCategory(CostCategoryTestUtils.named(category));
+    cost.setCostCentsPerHour(centsPerHour);
+    cost.setValidFrom(FROM);
+    cost.setValidUntil(UNTIL);
+    return cost;
   }
 
   /**

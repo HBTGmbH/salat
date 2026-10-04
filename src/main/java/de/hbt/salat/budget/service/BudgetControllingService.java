@@ -55,7 +55,6 @@ import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
-import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -205,7 +204,7 @@ public class BudgetControllingService {
                         ? rateOf(r, customerorderId, soSign, planOfBooking.get(r.getId()), pricingLookup)
                         : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
-                    costLookup == null ? BigDecimal.ZERO : costOf(r, suborder.id(), suborder.effectiveOrderType(), costLookup),
+                    costLookup == null ? BigDecimal.ZERO : costOf(r, customerorderId, suborder.id(), costLookup),
                     r.getReferenceday().isBefore(windowStart)))
                 .toList());
         }
@@ -227,9 +226,10 @@ public class BudgetControllingService {
             .orElse(BigDecimal.ZERO);
     }
 
-    private static BigDecimal costOf(TimereportDTO report, long suborderId, OrderType orderType, EmployeeCostLookup lookup) {
+    private static BigDecimal costOf(TimereportDTO report, long customerorderId, long suborderId,
+                                     EmployeeCostLookup lookup) {
         var hours = minutesToHours(report.getDuration().toMinutes());
-        return lookup.findEffectiveCost(report.getEmployeeId(), suborderId, orderType, report.getReferenceday())
+        return lookup.findEffectiveCost(report.getEmployeeId(), customerorderId, suborderId, report.getReferenceday())
             .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }

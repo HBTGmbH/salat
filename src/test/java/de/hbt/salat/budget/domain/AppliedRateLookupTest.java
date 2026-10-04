@@ -118,14 +118,33 @@ public class AppliedRateLookupTest {
     assertThat(rate.hasPrice()).isTrue();
   }
 
-  /** Standby is paid differently from the work a general rate stands for (#463). */
+  /**
+   * A standby suborder costs what the assignments say, like any other (#1343): without an assignment of
+   * its own the general one of the person applies. The exception of #463 is gone.
+   */
   @Test
-  public void takes_no_general_cost_assignment_for_a_standby_suborder() {
+  public void takes_the_general_cost_assignment_for_a_standby_suborder_too() {
     var rate = lookup(suborder(true, OrderType.BEREITSCHAFT),
         costLookup("Senior", 9500), pricingLookup(14000))
         .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
-    assertThat(rate.missingCost()).isTrue();
+    assertThat(rate.costName()).isEqualTo("Senior");
+    assertThat(rate.costCentsPerHour()).isEqualTo(9500);
+  }
+
+  /** An assignment to the order of the lookup applies to its suborder and beats the general one (#1343). */
+  @Test
+  public void takes_the_cost_assignment_to_the_order_of_the_suborder() {
+    var toOrder = costAssignment("Standby", 750);
+    toOrder.setCustomerorderId(CUSTOMERORDER_ID);
+    var costs = EmployeeCostLookup.of(List.of(costAssignment("Senior", 9500), toOrder),
+        List.of(cost("Senior", 9500), cost("Standby", 750)));
+
+    var rate = lookup(suborder(true, OrderType.BEREITSCHAFT), costs, pricingLookup(14000))
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
+
+    assertThat(rate.costName()).isEqualTo("Standby");
+    assertThat(rate.costCentsPerHour()).isEqualTo(750);
   }
 
   /**
@@ -169,20 +188,27 @@ public class AppliedRateLookupTest {
   }
 
   private static EmployeeCostLookup costLookup(String name, int centsPerHour) {
+    return EmployeeCostLookup.of(List.of(costAssignment(name, centsPerHour)), List.of(cost(name, centsPerHour)));
+  }
+
+  /** The general assignment of the person to the category of that name. */
+  private static EmployeeCostAssignment costAssignment(String name, int centsPerHour) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(EMPLOYEE_ID);
     assignment.setEmployeeSign("abc");
     assignment.setCategory(CostCategoryTestUtils.named(name));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
+    return assignment;
+  }
 
+  private static EmployeeCost cost(String name, int centsPerHour) {
     var cost = new EmployeeCost();
     cost.setCategory(CostCategoryTestUtils.named(name));
     cost.setCostCentsPerHour(centsPerHour);
     cost.setValidFrom(FROM);
     cost.setValidUntil(UNTIL);
-
-    return EmployeeCostLookup.of(List.of(assignment), List.of(cost));
+    return cost;
   }
 
   private static OrderPricingLookup pricingLookup(int centsPerHour) {
