@@ -3,6 +3,7 @@ package de.hbt.salat.jira.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.jira.domain.JiraApiFlavor.SERVER;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.FAILED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.RUNNING;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SKIPPED;
@@ -22,7 +23,9 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
+import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 
 /**
@@ -32,8 +35,8 @@ import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class JiraReplicationRunServiceTest {
 
-  private static final long ALPHA = 9001L;
-  private static final long BETA = 9002L;
+  private long ALPHA;
+  private long BETA;
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
@@ -44,16 +47,24 @@ class JiraReplicationRunServiceTest {
   @Autowired
   private JiraReplicationRunRepository runRepository;
 
+  @Autowired
+  private JiraReplicationConfigRepository configRepository;
+
   @BeforeEach
   void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.isManager()).thenReturn(true);
+    when(authorizedUser.getLoginSign()).thenReturn("mgr");
+    ALPHA = replication("Alpha").getId();
+    BETA = replication("Beta").getId();
   }
 
   @AfterEach
   void tearDown() {
     runRepository.deleteByReplicationId(ALPHA);
     runRepository.deleteByReplicationId(BETA);
+    configRepository.deleteById(ALPHA);
+    configRepository.deleteById(BETA);
   }
 
   @Test
@@ -119,7 +130,7 @@ class JiraReplicationRunServiceTest {
     runService.recordSkippedRun(ALPHA, SCHEDULED, "Übersprungen");
 
     assertThat(runService.getLatestRuns(100, true))
-        .filteredOn(run -> run.getReplicationId() == ALPHA)
+        .filteredOn(run -> run.getReplication().getId() == ALPHA)
         .extracting(JiraReplicationRun::getStatus)
         .containsExactlyInAnyOrder(RUNNING, SKIPPED)
         .doesNotContain(SUCCEEDED);
@@ -136,6 +147,20 @@ class JiraReplicationRunServiceTest {
     assertThatThrownBy(() -> runService.markFinished(1L)).isInstanceOf(AuthorizationException.class);
     // the lock as well: the scheduled run gets through as the job user, which is a manager
     assertThatThrownBy(() -> runService.startRun(ALPHA, MANUAL)).isInstanceOf(AuthorizationException.class);
+  }
+
+  private JiraReplicationConfig replication(String name) {
+    var config = new JiraReplicationConfig();
+    config.setName(name);
+    config.setCustomerorderId(1L);
+    config.setScopeSign("SCOPE");
+    config.setBaseUrl("http://jira.example");
+    config.setApiFlavor(SERVER);
+    config.setUsername("user");
+    config.setPassword("secret");
+    config.setJql("project = RUN");
+    config.setEnabled(true);
+    return configRepository.save(config);
   }
 
 }

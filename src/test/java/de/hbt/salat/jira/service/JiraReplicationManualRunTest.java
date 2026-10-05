@@ -150,7 +150,7 @@ class JiraReplicationManualRunTest {
       release.countDown();
     }
     assertThat(finished(run).getStatus()).isEqualTo(SUCCEEDED);
-    assertThat(runRepo.findAll()).filteredOn(r -> r.getReplicationId() == configId)
+    assertThat(runRepo.findAll()).filteredOn(r -> r.getReplication().getId() == configId)
         .singleElement().extracting(JiraReplicationRun::getTriggeredBy).isEqualTo(MANUAL);
   }
 

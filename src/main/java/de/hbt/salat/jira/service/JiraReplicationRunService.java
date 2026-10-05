@@ -26,6 +26,7 @@ import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Status;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
+import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 
 /**
@@ -54,6 +55,7 @@ public class JiraReplicationRunService {
       DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
   private final JiraReplicationRunRepository runRepository;
+  private final JiraReplicationConfigRepository configRepository;
   private final RunFinisher runFinisher;
 
   /**
@@ -72,7 +74,7 @@ public class JiraReplicationRunService {
               running.getStartedAt().format(STARTED_AT_FORMAT));
         });
     return runRepository.save(JiraReplicationRun.builder()
-        .replicationId(replicationId)
+        .replication(configRepository.getReferenceById(replicationId))
         .startedAt(DateTimeUtils.now())
         .status(RUNNING)
         .triggeredBy(trigger)
@@ -83,7 +85,7 @@ public class JiraReplicationRunService {
   public void recordSkippedRun(long replicationId, Trigger trigger, String message) {
     var now = DateTimeUtils.now();
     runRepository.save(JiraReplicationRun.builder()
-        .replicationId(replicationId)
+        .replication(configRepository.getReferenceById(replicationId))
         .startedAt(now)
         .finishedAt(now)
         .status(SKIPPED)
@@ -166,7 +168,7 @@ public class JiraReplicationRunService {
   @Transactional(readOnly = true)
   public Set<Long> getRunningReplicationIds() {
     return runRepository.findByStatus(RUNNING).stream()
-        .map(JiraReplicationRun::getReplicationId)
+        .map(run -> run.getReplication().getId())
         .collect(toSet());
   }
 

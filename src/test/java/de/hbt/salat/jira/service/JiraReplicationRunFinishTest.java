@@ -86,7 +86,6 @@ class JiraReplicationRunFinishTest {
   private static JiraReplicationRun runningRun(long id) {
     return JiraReplicationRun.builder()
         .id(id)
-        .replicationId(9001L)
         .startedAt(LocalDateTime.of(2026, 10, 3, 2, 0, 0))
         .status(RUNNING)
         .triggeredBy(SCHEDULED)
