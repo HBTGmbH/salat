@@ -5444,3 +5444,25 @@ databaseChangeLog:
       changes:
         - dropView:
             viewName: suborder_fqs
+
+  - changeSet:
+      id: 142
+      author: kr
+      comment: Index auf etl_execution_history.executed_at fuer das naechtliche Aufraeumen (#1357)
+      # ETLExecutionHistoryCleanupService loescht taeglich alles vor der Aufbewahrungsfrist
+      # (WHERE executed_at < :cutoff). Ohne Index ging das die ganze Tabelle durch.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: etl_execution_history
+        - not:
+            - indexExists:
+                tableName: etl_execution_history
+                indexName: idx_etl_execution_history_executed_at
+      changes:
+        - createIndex:
+            tableName: etl_execution_history
+            indexName: idx_etl_execution_history_executed_at
+            columns:
+              - column:
+                  name: executed_at

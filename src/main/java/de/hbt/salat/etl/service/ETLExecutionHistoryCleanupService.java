@@ -14,9 +14,13 @@ import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
  * Löscht abgelaufene Einträge aus {@code etl_execution_history} und {@code etl_run_history}.
  *
  * <p>Die Tabelle wuchs unbegrenzt: jeder nächtliche ETL-Lauf schreibt eine Zeile pro Definition
- * und Referenzperiode, jede mit dem vollständigen SQL-Text im {@code message}-Feld (~6 KB). Die
- * Laufhistorie (#573) kommt mit derselben Frist mit — eine Zeile pro Lauf, die ohne Aufräumen
- * genauso stehenbliebe.
+ * und Referenzperiode. Seit #1357 trägt die Zeile im {@code message}-Feld nur noch Zeitraum, Dauer
+ * und Zeilenzahl je Teil (rund 250 Zeichen), im Fehlerfall dazu die gescheiterte Anweisung; vorher
+ * stand dort der SQL-Text jeder Anweisung (1,5 bis 20 KB). Die Laufhistorie (#573) kommt mit
+ * derselben Frist mit — eine Zeile pro Lauf, die ohne Aufräumen genauso stehenbliebe.
+ *
+ * <p>Das Löschen findet die abgelaufenen Zeilen über den Index auf {@code executed_at}; ohne ihn
+ * ging es die ganze Tabelle durch.
  */
 @Slf4j
 @Service
