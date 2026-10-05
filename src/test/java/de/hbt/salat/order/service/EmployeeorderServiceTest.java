@@ -77,6 +77,7 @@ class EmployeeorderServiceTest {
     child.setSign("A");
     child.setCustomerorder(parent.getSuborder().getCustomerorder());
     child.setParentorder(parent.getSuborder());
+    child.deriveCompleteOrderSign();
     var childOrder = order(2L, child, DAY.minusMonths(1));
     ordersOfContract(parent, childOrder);
 
@@ -113,6 +114,7 @@ class EmployeeorderServiceTest {
     var suborder = new Suborder();
     suborder.setSign(suborderSign);
     suborder.setCustomerorder(customerorder);
+    suborder.deriveCompleteOrderSign();
     return order(id, suborder, from);
   }
 

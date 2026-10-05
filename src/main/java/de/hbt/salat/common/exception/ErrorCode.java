@@ -72,6 +72,7 @@ public enum ErrorCode {
   SO_SIGN_TAKEN("SO-0006", "a sibling suborder already has this sign"),
   SO_SPECIAL_ORDER_LOCKED("SO-0007", "the configuration names this suborder, or one below it, as a special order; its complete sign is locked"),
   SO_TICKET_REFERENCE_LIMIT_INVALID("SO-0008", "an upper limit of ticket references per booking must be at least 1"),
+  SO_COMPLETE_SIGN_TAKEN("SO-0009", "another suborder already has this complete order sign"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),

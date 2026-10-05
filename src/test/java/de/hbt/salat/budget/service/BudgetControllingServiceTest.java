@@ -305,6 +305,8 @@ public class BudgetControllingServiceTest {
 
     when(customerorder.getSign()).thenReturn("renamed");
     suborders.stream().filter(so -> so.getId() == 10L).findFirst().orElseThrow().setSign("X1");
+    // as the order module does on a rename (#1342)
+    suborders.forEach(Suborder::deriveCompleteOrderSign);
     var after = compute();
 
     assertThat(after.total().revenueEuro()).isEqualByComparingTo(before.total().revenueEuro());
@@ -1460,6 +1462,7 @@ public class BudgetControllingServiceTest {
     suborder.setShortdescription(sign);
     suborder.setInvoice(invoice);
     suborder.setParentorder(parent);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 

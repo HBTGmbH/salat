@@ -401,10 +401,12 @@ public class OrderPricingLookupTest {
     var parent = new Suborder();
     parent.setCustomerorder(customerorder);
     parent.setSign(parentSign);
+    parent.deriveCompleteOrderSign();
     var child = new Suborder();
     child.setCustomerorder(customerorder);
     child.setParentorder(parent);
     child.setSign(childSign);
+    child.deriveCompleteOrderSign();
     return child;
   }
 

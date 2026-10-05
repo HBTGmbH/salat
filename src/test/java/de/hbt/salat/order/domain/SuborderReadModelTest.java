@@ -34,17 +34,20 @@ class SuborderReadModelTest {
   /**
    * The parents come from the suborders of the order read together, by id — not from the entity's
    * parent reference, which may be an uninitialized proxy whose walk would cost a statement per level.
+   * The complete sign is stored with the suborder (#1342) and needs no walk at all.
    */
   @Test
   void the_parents_are_read_from_the_suborders_of_the_order() {
     var order = order();
     var top = suborder(11L, order, null, "01");
-    var reference = suborder(11L, order, null, "stale");
+    var stale = suborder(99L, order, null, "stale");
+    var reference = suborder(11L, order, stale, "01");
     var leaf = suborder(13L, order, reference, "X");
 
     var summary = SuborderReadModel.of(leaf, byId(top, leaf));
 
-    assertThat(summary.completeOrderSign()).isEqualTo("CO/01/X");
+    assertThat(summary.path()).containsExactly(11L, 13L);
+    assertThat(summary.completeOrderSign()).isEqualTo(leaf.getCompleteOrderSign());
   }
 
   /** A hidden parent still belongs to the path; only the hidden suborder itself is left out by the service. */
@@ -97,6 +100,7 @@ class SuborderReadModelTest {
     suborder.setCustomerorder(order);
     suborder.setParentorder(parent);
     suborder.setSign(sign);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 

@@ -36,6 +36,7 @@ class SuborderLocationTest {
     suborder.setCustomerorder(order);
     suborder.setParentorder(parent);
     suborder.setSign(sign);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 

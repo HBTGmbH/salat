@@ -294,6 +294,7 @@ class TimereportServiceTicketReferenceLimitTest {
     newSuborder.setCustomerorder(customerorder);
     newSuborder.setSign(sign);
     newSuborder.setParentorder(parentSuborder);
+    newSuborder.deriveCompleteOrderSign();
     return newSuborder;
   }
 

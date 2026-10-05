@@ -232,6 +232,7 @@ public class AppliedRateLookupTest {
     suborder.setInvoice(invoiceable ? GlobalConstants.INVOICE_YES : 'N');
     suborder.setOrderType(orderType);
     setId(suborder, SUBORDER_ID);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 

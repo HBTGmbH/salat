@@ -46,8 +46,8 @@ See also README.md
   return a record instead of adding it to the store. The contents of a `@Query` are a string, and
   remain a matter of review.
 - **Read model of the owning module** (→ ADR-0021, Nachtrag #1338): where a value is logic of the
-  entity rather than a column — the complete order sign, the path in the order tree, the effective
-  order type — the join would have to rebuild that rule. Instead the owning module offers a record
+  entity rather than a column — the path in the order tree, the effective order type — the join
+  would have to rebuild that rule. Instead the owning module offers a record
   through its service, computed with its own rules (`SuborderReadModel`, `CustomerorderOption`,
   `PublicholidayService.getPublicHolidayDatesBetween`). The entity does not change for it: no new
   field, `@Formula` or fetch strategy for another module's needs. The join stays the right choice
@@ -795,6 +795,14 @@ Entities are divided into two categories (→ ADR-0011):
   `application.yaml` (`salat.vacation`, `salat.training`). `SpecialOrders` resolves them into ids at
   start and answers by id; their signs, and those of every order and suborder above them, are locked
   (CO-0007, SO-0007). No code recognizes a role by comparing a sign — ask `SpecialOrders`.
+- **The complete order sign is stored** (#1342): `suborder.complete_order_sign`
+  (`Suborder#getCompleteOrderSign()`, `ORDER/01/02`, without a trailing slash) is the one source of the
+  complete sign — for Java, JPQL, views, reports and ETL definitions alike. Nothing rebuilds it from the
+  parent chain. Only the order module writes it (`Suborder#deriveCompleteOrderSign`): on creating a
+  suborder, on renaming or moving one for its whole branch, and on renaming the order, in the same
+  transaction. A `LIKE` pattern that binds with a trailing slash compares against
+  `completeOrderSign + "/"` or `CONCAT(complete_order_sign, '/')` — the slash belongs to the comparison,
+  not to the data.
 
 ### Criteria-Abfragen über den EntityManager (#1092)
 

@@ -944,6 +944,7 @@ public class EmployeeCostServiceTest {
           suborder.setCustomerorder(customerorder);
           suborder.setSign(entry.getKey().substring("co/".length()));
           setId(suborder, id);
+          suborder.deriveCompleteOrderSign();
           return suborder;
         })
         .orElse(null);

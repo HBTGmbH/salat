@@ -268,6 +268,7 @@ public class BudgetResolverTest {
     var suborder = new Suborder();
     suborder.setSign(sign);
     suborder.setCustomerorder(order);
+    suborder.deriveCompleteOrderSign();
     setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }
@@ -277,6 +278,7 @@ public class BudgetResolverTest {
     suborder.setSign(sign);
     suborder.setCustomerorder(parent.getCustomerorder());
     suborder.setParentorder(parent);
+    suborder.deriveCompleteOrderSign();
     setId(suborder, SUBORDER_IDS.get(suborder.getCompleteOrderSign()));
     return suborder;
   }

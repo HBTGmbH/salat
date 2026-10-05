@@ -107,6 +107,8 @@ class TicketReferencePolicyTest {
     top.setSign("20");
     var middle = suborder(order, top, null);
     middle.setSign("1");
+    top.deriveCompleteOrderSign();
+    middle.deriveCompleteOrderSign();
 
     var fromParent = TicketReferencePolicySource.inheritedBy(order, middle);
     assertThat(fromParent.policy()).isEqualTo(ANY);

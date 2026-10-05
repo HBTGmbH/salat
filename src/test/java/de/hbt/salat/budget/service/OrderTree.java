@@ -123,6 +123,7 @@ class OrderTree {
     suborder.setParentorder(parent);
     suborder.setSign(completeOrderSign.substring(separator + 1));
     suborder.setShortdescription(completeOrderSign);
+    suborder.deriveCompleteOrderSign();
     suborders.put(completeOrderSign, suborder);
     return suborder;
   }

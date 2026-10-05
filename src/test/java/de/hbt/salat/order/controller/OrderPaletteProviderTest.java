@@ -12,8 +12,6 @@ import static de.hbt.salat.common.palette.PaletteKind.SUBORDER;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -349,7 +347,7 @@ class OrderPaletteProviderTest {
   @Test
   void leaves_the_context_of_a_suborder_out_without_a_customer_short_name() {
     loggedInAs(Role.EMPLOYEE);
-    givenSuborders(new SuborderSearchRow(SUBORDER_ID, "01", "Wartung", null, ORDER_ID, ORDER_SIGN,
+    givenSuborders(new SuborderSearchRow(SUBORDER_ID, "01", "Wartung", ORDER_SIGN + "/01", ORDER_ID, ORDER_SIGN,
         "Wartungsvertrag", null, false, false, null));
 
     assertThat(onlyHit(SUBORDER).context()).isNull();
@@ -430,12 +428,8 @@ class OrderPaletteProviderTest {
     when(customerorderService.getPaletteCandidates(any())).thenReturn(List.of(rows));
   }
 
-  /** The complete sign is the order's and the suborder's, as for a suborder without parent. */
   private void givenSuborders(SuborderSearchRow... rows) {
-    var list = List.of(rows);
-    when(suborderService.getPaletteCandidates(any(), any())).thenReturn(list);
-    when(suborderService.getCompleteOrderSigns(list)).thenReturn(Stream.of(rows)
-        .collect(Collectors.toMap(SuborderSearchRow::id, row -> row.customerorderSign() + "/" + row.sign())));
+    when(suborderService.getPaletteCandidates(any(), any())).thenReturn(List.of(rows));
   }
 
   private List<PaletteHit> hits(PaletteKind kind) {
@@ -471,7 +465,7 @@ class OrderPaletteProviderTest {
 
   private static SuborderSearchRow suborder(long id, String sign, Boolean hide, Boolean orderHide,
       LocalDate untilDate) {
-    return new SuborderSearchRow(id, sign, "Wartung", null, ORDER_ID, ORDER_SIGN, "Wartungsvertrag", "MK",
+    return new SuborderSearchRow(id, sign, "Wartung", ORDER_SIGN + "/" + sign, ORDER_ID, ORDER_SIGN, "Wartungsvertrag", "MK",
         hide, orderHide, untilDate);
   }
 }

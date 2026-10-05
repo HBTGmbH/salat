@@ -137,6 +137,14 @@ griffen ohnehin nur auf Java-Ebene. Diese Entscheidung hängt am Review.
 > eines Auftrags. Ein Lesemodell darf dabei nicht je Zeile nachladen: `SuborderReadModel` baut Pfad
 > und Kürzel aus den Unteraufträgen, die mit einer Abfrage gelesen sind, nicht über die Elternkette
 > jeder Entity.
+>
+> **Nachtrag 2026-10-05 (#1342): das vollständige Kürzel ist eine Spalte.** Das Modul `order`
+> speichert das vollständige Kürzel jedes Unterauftrags redundant in `suborder.complete_order_sign`
+> und hält es selbst aktuell, nach seiner eigenen Regel und in derselben Transaktion wie das
+> Umbenennen oder Umhängen. Das ist keine Änderung der Entity für den Bedarf eines anderen Moduls,
+> sondern ein eigener Wert des besitzenden Moduls. Für das Kürzel genügt damit der Join auf die
+> Spalte; `SuborderReadModel` liefert sie mit, statt sie zu bauen. Pfad und wirksamer Auftragstyp
+> bleiben Logik der Entity.
 
 ### Consequences
 

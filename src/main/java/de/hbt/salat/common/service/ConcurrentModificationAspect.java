@@ -7,6 +7,7 @@ import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
 import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.EM_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.SO_COMPLETE_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.SO_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 import static de.hbt.salat.common.exception.ErrorCode.XX_DUPLICATE_KEY;
@@ -77,6 +78,8 @@ public class ConcurrentModificationAspect {
       "uk_salat_user_loginname", EM_LOGINNAME_TAKEN,
       "uk_customer_shortname", CU_DUPLICATE_SHORT_NAME,
       "uk_suborder_customerorder_parent_sign", SO_SIGN_TAKEN,
+      // #1342: an order sign with a slash can spell the same path as a suborder of another order
+      "uk_suborder_complete_order_sign", SO_COMPLETE_SIGN_TAKEN,
       "uk_report_definition_name", RP_REPORT_NAME_TAKEN);
 
   @AfterThrowing(pointcut = "within(de.hbt.salat..*) && @within(org.springframework.stereotype.Service)",

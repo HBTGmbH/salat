@@ -3,6 +3,7 @@ package de.hbt.salat.order.persistence;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -11,7 +12,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
-import de.hbt.salat.order.domain.SuborderSignRow;
+import de.hbt.salat.order.domain.SuborderCompleteSign;
 
 @Repository
 public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaSpecificationExecutor<Suborder> {
@@ -90,9 +91,9 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
    * is decided in Java again, by {@link de.hbt.salat.common.Hiding} and {@link de.hbt.salat.common.Validity}.
    */
   @Query("""
-      select new de.hbt.salat.order.domain.SuborderSearchRow(s.id, s.sign, s.shortdescription, p.id,
-          c.id, c.sign, c.shortdescription, cu.shortname, s.hide, c.hide, s.untilDate)
-      from Suborder s join s.customerorder c join c.customer cu left join s.parentorder p
+      select new de.hbt.salat.order.domain.SuborderSearchRow(s.id, s.sign, s.shortdescription,
+          s.completeOrderSign, c.id, c.sign, c.shortdescription, cu.shortname, s.hide, c.hide, s.untilDate)
+      from Suborder s join s.customerorder c join c.customer cu
       where (lower(s.sign) like :word1 escape '!' or lower(s.shortdescription) like :word1 escape '!'
           or lower(c.sign) like :word1 escape '!' or lower(c.shortdescription) like :word1 escape '!'
           or lower(cu.shortname) like :word1 escape '!')
@@ -113,11 +114,17 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
   List<SuborderSearchRow> findPaletteCandidates(String word1, String word2, String word3,
       Long employeeId, LocalDate today, Pageable page);
 
-  /** Sign and parent of each suborder, one step of the parent chain for many suborders at once. */
+  /**
+   * The complete signs of the suborders with these ids (#1342). Callers must not pass an empty
+   * collection — {@code IN ()} is not valid SQL.
+   */
   @Query("""
-      select new de.hbt.salat.order.domain.SuborderSignRow(s.id, s.sign, p.id)
-      from Suborder s left join s.parentorder p
+      select new de.hbt.salat.order.domain.SuborderCompleteSign(s.id, s.completeOrderSign)
+      from Suborder s
       where s.id in :ids
       """)
-  List<SuborderSignRow> findSignRows(Collection<Long> ids);
+  List<SuborderCompleteSign> findCompleteSigns(Collection<Long> ids);
+
+  /** The suborder with exactly this complete sign, over the unique key on the column (#1342). */
+  Optional<Suborder> findByCompleteOrderSign(String completeOrderSign);
 }

@@ -180,6 +180,7 @@ class SignsRenamedPublicationTest {
     suborder.setCustomerorder(customerorder);
     suborder.setSign(sign);
     suborder.setFromDate(FROM);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 }

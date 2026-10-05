@@ -564,6 +564,7 @@ class DailyWorkingReportServiceImportTest {
     suborder.setSign(sign);
     suborder.setDescription(description);
     suborder.setCustomerorder(customerorder);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 
