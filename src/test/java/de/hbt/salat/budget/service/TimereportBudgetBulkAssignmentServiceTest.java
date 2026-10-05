@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +37,7 @@ import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
-import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -56,12 +58,17 @@ public class TimereportBudgetBulkAssignmentServiceTest {
 
   /** The orders and suborders by sign — plans and bookings refer to them by id (#1205). */
   private static final Map<String, Long> ORDER_IDS = Map.of("CO", 1L);
-  private static final Map<String, Long> SUBORDER_IDS = Map.of("CO/01", 1L, "CO/01/02", 2L, "CO/02", 3L);
+  private static final Map<String, Long> SUBORDER_IDS = Map.of(
+      "CO/01", 1L, "CO/01/02", 2L, "CO/02", 3L, "CO/01/03", 4L, "CO/02/04", 5L);
+  /** The current tree by id; a test may move a suborder before it runs. */
+  private final Map<Long, Suborder> suborders = new LinkedHashMap<>();
+  private final Map<String, Customerorder> customerorders = new LinkedHashMap<>();
   private final List<TimereportBudgetAssignment> stored = new ArrayList<>();
   private final List<TimereportDTO> reports = new ArrayList<>();
 
   private TimereportBudgetAssignmentRepository assignmentRepository;
   private OrderBudgetService orderBudgetService;
+  private SuborderService suborderService;
   private AuthorizedUser authorizedUser;
   private TimereportBudgetBulkAssignmentService service;
 
@@ -71,8 +78,7 @@ public class TimereportBudgetBulkAssignmentServiceTest {
     assignmentRepository = mock(TimereportBudgetAssignmentRepository.class);
     orderBudgetService = mock(OrderBudgetService.class);
     var timereportService = mock(TimereportService.class);
-    var customerorderService = mock(CustomerorderService.class);
-    var suborderService = mock(SuborderService.class);
+    suborderService = mock(SuborderService.class);
     authorizedUser = mock(AuthorizedUser.class);
     when(authorizedUser.isManager()).thenReturn(true);
 
@@ -96,7 +102,6 @@ public class TimereportBudgetBulkAssignmentServiceTest {
       return saved;
     });
 
-    when(customerorderService.getCustomerorderBySign("CO")).thenReturn(customerorder("CO", 1L));
     when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
         .thenAnswer(invocation -> {
           LocalDate from = invocation.getArgument(0);
@@ -106,16 +111,21 @@ public class TimereportBudgetBulkAssignmentServiceTest {
               .toList();
         });
 
-    // CO/01 with CO/01/02 below it, plus the sibling CO/02.
+    // CO/01 with CO/01/02 and CO/01/03 below it, plus the sibling CO/02 with CO/02/04.
     var co01 = firstLevel("CO", "01");
-    when(suborderService.getSuborderById(1L)).thenReturn(co01);
-    when(suborderService.getSuborderById(2L)).thenReturn(below(co01, "02"));
-    when(suborderService.getSuborderById(3L)).thenReturn(firstLevel("CO", "02"));
+    var co02 = firstLevel("CO", "02");
+    List.of(co01, below(co01, "02"), co02, below(co01, "03"), below(co02, "04"))
+        .forEach(suborder -> suborders.put(suborder.getId(), suborder));
+    when(suborderService.getSuborderById(anyLong()))
+        .thenAnswer(invocation -> suborders.get(invocation.<Long>getArgument(0)));
+    // Read from the tree as it is when asked, as the order module does.
+    when(suborderService.getAllSuborderReadModelsByCustomerorderId(1L)).thenAnswer(invocation ->
+        suborders.values().stream().map(suborder -> SuborderReadModel.of(suborder, suborders)).toList());
 
     // The real resolver: scope and validity must be judged by the production rule.
     var budgetResolver = new BudgetResolver(orderBudgetRepository, suborderService);
     service = new TimereportBudgetBulkAssignmentService(assignmentRepository, orderBudgetService,
-        budgetResolver, timereportService, customerorderService, authorizedUser);
+        budgetResolver, timereportService, new OrderPositions(suborderService), authorizedUser);
   }
 
   // --- preview --------------------------------------------------------------------------------
@@ -227,6 +237,65 @@ public class TimereportBudgetBulkAssignmentServiceTest {
 
     assertThat(stored).extracting(TimereportBudgetAssignment::getTimereportId)
         .containsExactlyInAnyOrder(100L, 101L);
+  }
+
+  /**
+   * A sibling below the same parent shares the parent's path but not the selected suborder, so it
+   * stays out — and so does the parent above the selection.
+   */
+  @Test
+  public void should_leave_out_a_sibling_of_the_selected_suborder() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01/02", 2L, MAR, HOUR);
+    givenReport(101L, "CO", "CO/01/03", 4L, MAR, HOUR);
+    givenReport(102L, "CO", "CO/01", 1L, MAR, HOUR);
+
+    service.assign(data("CO/01/02", JAN, DEC, 7L, false));
+
+    assertThat(stored).singleElement()
+        .extracting(TimereportBudgetAssignment::getTimereportId).isEqualTo(100L);
+  }
+
+  /**
+   * The selection is decided by the path of suborder ids in the current tree, not by the complete
+   * sign the booking carries (#1339): a suborder moved to another parent takes its bookings along,
+   * so the run acts on the subtree the preview showed.
+   */
+  @Test
+  public void should_follow_a_suborder_moved_to_another_parent() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/02/04", 5L, MAR, HOUR);
+    suborders.get(5L).setParentorder(suborders.get(1L));
+
+    assertThat(service.preview(data("CO/02", JAN, DEC, 7L, false)).selected().bookings()).isZero();
+    service.assign(data("CO/01", JAN, DEC, 7L, false));
+
+    assertThat(stored).singleElement()
+        .extracting(TimereportBudgetAssignment::getTimereportId).isEqualTo(100L);
+  }
+
+  /** The positions are read once for the order, not once per booking. */
+  @Test
+  public void should_read_the_positions_once_per_selection() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR);
+    givenReport(101L, "CO", "CO/01/02", 2L, MAR, HOUR);
+    givenReport(102L, "CO", "CO/02", 3L, MAR, HOUR);
+
+    service.preview(data("CO/01", JAN, DEC, 7L, false));
+
+    verify(suborderService, times(1)).getAllSuborderReadModelsByCustomerorderId(1L);
+  }
+
+  /** The whole order needs no position at all. */
+  @Test
+  public void should_not_read_positions_without_a_selected_suborder() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR);
+
+    service.preview(data(null, JAN, DEC, 7L, false));
+
+    verify(suborderService, never()).getAllSuborderReadModelsByCustomerorderId(anyLong());
   }
 
   // --- applying -------------------------------------------------------------------------------
@@ -450,8 +519,9 @@ public class TimereportBudgetBulkAssignmentServiceTest {
   private static BulkAssignmentData data(String suborderSign, LocalDate from, LocalDate until,
                                          Long targetBudgetId, List<Long> employeeIds,
                                          boolean includeAssigned) {
-    return new BulkAssignmentData("CO", suborderSign, from, until, targetBudgetId, employeeIds,
-        includeAssigned);
+    return new BulkAssignmentData(ORDER_IDS.get("CO"),
+        suborderSign == null ? null : SUBORDER_IDS.get(suborderSign), from, until, targetBudgetId,
+        employeeIds, includeAssigned);
   }
 
   private void givenPlan(long id, String customerorderSign, String suborderSign,
@@ -498,18 +568,14 @@ public class TimereportBudgetBulkAssignmentServiceTest {
     stored.add(assignment);
   }
 
-  private static Customerorder customerorder(String sign, long id) {
-    var order = new Customerorder();
-    order.setSign(sign);
-    order.setShortdescription(sign + " description");
-    setId(order, id);
-    return order;
-  }
-
-  private static Suborder firstLevel(String orderSign, String sign) {
-    var order = new Customerorder();
-    setId(order, ORDER_IDS.get(orderSign));
-    order.setSign(orderSign);
+  /** One instance per order: a suborder can only be moved below a parent of the very same order. */
+  private Suborder firstLevel(String orderSign, String sign) {
+    var order = customerorders.computeIfAbsent(orderSign, key -> {
+      var customerorder = new Customerorder();
+      setId(customerorder, ORDER_IDS.get(key));
+      customerorder.setSign(key);
+      return customerorder;
+    });
     var suborder = new Suborder();
     suborder.setSign(sign);
     suborder.setCustomerorder(order);

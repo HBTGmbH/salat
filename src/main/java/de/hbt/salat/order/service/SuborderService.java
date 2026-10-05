@@ -348,11 +348,25 @@ public class SuborderService {
    */
   @Transactional(readOnly = true)
   public List<SuborderReadModel> getSuborderReadModelsByCustomerorderId(long customerorderId) {
+    return suborderReadModelsOf(customerorderId, false);
+  }
+
+  /**
+   * {@link #getSuborderReadModelsByCustomerorderId} with the hidden suborders included (#1339). A
+   * suborder is hidden once nobody is to book on it any more, but the bookings made before stay on
+   * it — a reader deciding by path which bookings lie in a subtree has to find their suborder too.
+   */
+  @Transactional(readOnly = true)
+  public List<SuborderReadModel> getAllSuborderReadModelsByCustomerorderId(long customerorderId) {
+    return suborderReadModelsOf(customerorderId, true);
+  }
+
+  private List<SuborderReadModel> suborderReadModelsOf(long customerorderId, boolean includeHidden) {
     var all = suborderDAO.getSubordersByCustomerorderId(customerorderId);
     var byId = new HashMap<Long, Suborder>();
     all.forEach(suborder -> byId.put(suborder.getId(), suborder));
     return all.stream()
-        .filter(not(Suborder::isHide))
+        .filter(suborder -> includeHidden || !suborder.isHide())
         .map(suborder -> SuborderReadModel.of(suborder, byId))
         .toList();
   }

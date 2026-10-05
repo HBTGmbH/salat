@@ -31,30 +31,30 @@
 
             <div class="mb-3">
               <label class="form-label required" th:text="#{main.bulkassignment.field.customerorder}">Auftrag</label>
-              <select class="form-select tomselect" th:field="*{customerorderSign}"
+              <select class="form-select tomselect" th:field="*{customerorderId}"
                       th:hx-post="@{/budget/bulk-assignment/refresh}"
                       hx-swap="none"
                       hx-include="closest form"
                       hx-trigger="change">
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="co : ${customerorders}"
-                        th:value="${co.sign}"
+                        th:value="${co.id}"
                         th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
                         th:attr="data-subtext=${subtext}"
                         th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
               </select>
             </div>
 
-            <div class="mb-3" id="suborderSignInput">
+            <div class="mb-3" id="suborderIdInput">
               <label class="form-label" th:text="#{main.bulkassignment.field.suborder}">Unterauftrag</label>
-              <select class="form-select tomselect" th:field="*{suborderSign}"
+              <select class="form-select tomselect" th:field="*{suborderId}"
                       th:hx-post="@{/budget/bulk-assignment/refresh-employees}"
                       hx-swap="none"
                       hx-include="closest form"
                       hx-trigger="change">
                 <option value="" th:text="#{main.bulkassignment.field.suborder.all}">-- Ganzer Auftrag --</option>
                 <option th:each="so : ${suborders}"
-                        th:value="${so.completeOrderSign}"
+                        th:value="${so.id}"
                         th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
                         th:attr="data-subtext=${subtext}"
                         th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
@@ -137,17 +137,17 @@
   <div th:if="${htmxRequest}">
     <div th:replace="~{budget/bulk-assignment-preview :: panel('true')}"></div>
 
-    <div class="mb-3" id="suborderSignInput" th:hx-swap-oob="${selectionChanged}">
+    <div class="mb-3" id="suborderIdInput" th:hx-swap-oob="${selectionChanged}">
       <label class="form-label" th:text="#{main.bulkassignment.field.suborder}">Unterauftrag</label>
-      <select class="form-select tomselect" name="suborderSign"
+      <select class="form-select tomselect" name="suborderId"
               th:hx-post="@{/budget/bulk-assignment/refresh-employees}"
               hx-swap="none"
               hx-include="closest form"
               hx-trigger="change">
         <option value="" th:text="#{main.bulkassignment.field.suborder.all}">-- Ganzer Auftrag --</option>
         <option th:each="so : ${suborders}"
-                th:value="${so.completeOrderSign}"
-                th:selected="${form.suborderSign != null and form.suborderSign == so.completeOrderSign}"
+                th:value="${so.id}"
+                th:selected="${form.suborderId != null and form.suborderId == so.id}"
                 th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
                 th:attr="data-subtext=${subtext}"
                 th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>

@@ -57,7 +57,7 @@ public class BulkAssignmentFormTest {
   @Test
   public void stays_complete_without_a_choice_of_people() {
     var form = form();
-    form.setCustomerorderSign("CO");
+    form.setCustomerorderId(1L);
     form.setFrom(LocalDate.of(2026, 1, 1));
     form.setUntil(LocalDate.of(2026, 12, 31));
     form.setTargetBudgetId(7L);

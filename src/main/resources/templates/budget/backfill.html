@@ -22,10 +22,10 @@
         Ordnet bislang unzugeordnete Buchungen dem passenden Budgetplan zu.
       </p>
       <form method="post" th:action="@{/budget/backfill/run}" th:object="${form}">
-        <salat:select th:field="*{customerorderSign}" th:label="#{main.backfill.filter.customerorder}">
+        <salat:select th:field="*{customerorderId}" th:label="#{main.backfill.filter.customerorder}">
           <option value="" th:text="#{main.backfill.filter.allorders}">--- Alle Aufträge ---</option>
           <option th:each="co : ${customerorders}"
-                  th:value="${co.sign}"
+                  th:value="${co.id}"
                   th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
                   th:attr="data-subtext=${subtext}"
                   th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>

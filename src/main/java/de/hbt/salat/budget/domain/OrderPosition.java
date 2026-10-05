@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderReadModel;
 
 /**
  * Where something sits in the order tree, by id (#1205): the customer order, and the suborders from
@@ -38,6 +39,11 @@ public record OrderPosition(long customerorderId, List<Long> suborderPath) {
         }
         Collections.reverse(path);
         return new OrderPosition(suborder.getCustomerorder().getId(), path);
+    }
+
+    /** The position of a suborder read by the order module, whose path is already built (#1339). */
+    public static OrderPosition of(SuborderReadModel suborder) {
+        return new OrderPosition(suborder.customerorderId(), suborder.path());
     }
 
     /** Whether the position is the customer order as a whole. */

@@ -27,7 +27,6 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.TimereportService;
-import de.hbt.salat.order.service.CustomerorderService;
 
 /**
  * Assigns the bookings of a period to one budget plan in one go (#911).
@@ -50,7 +49,7 @@ public class TimereportBudgetBulkAssignmentService {
     private final OrderBudgetService orderBudgetService;
     private final BudgetResolver budgetResolver;
     private final TimereportService timereportService;
-    private final CustomerorderService customerorderService;
+    private final OrderPositions orderPositions;
     private final AuthorizedUser authorizedUser;
 
     /**
@@ -66,11 +65,7 @@ public class TimereportBudgetBulkAssignmentService {
         if (!data.hasSelectableReports()) {
             return List.of();
         }
-        var customerorder = customerorderService.getCustomerorderBySign(data.customerorderSign());
-        if (customerorder == null) {
-            return List.of();
-        }
-        return reportsInScope(customerorder.getId(), data).stream()
+        return reportsInScope(data).stream()
             .map(report -> new BulkAssignmentEmployee(
                 report.getEmployeeId(), report.getEmployeeSign(), report.getEmployeeName()))
             .distinct()
@@ -176,25 +171,31 @@ public class TimereportBudgetBulkAssignmentService {
     }
 
     private List<TimereportDTO> selectedReports(BulkAssignmentData data) {
-        var customerorder = customerorderService.getCustomerorderBySign(data.customerorderSign());
-        if (customerorder == null) {
-            throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderSign());
+        if (data.customerorderId() == null) {
+            throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, "");
         }
-        return reportsInScope(customerorder.getId(), data).stream()
+        return reportsInScope(data).stream()
             // Applied after the scope, so the option list of the people (#953) sees everyone who
             // booked in the scope — narrowing to a person must not remove them from their own list.
             .filter(report -> data.coversEmployee(report.getEmployeeId()))
             .toList();
     }
 
-    /** The bookings of order, suborder and period — everything but the choice of people. */
-    private List<TimereportDTO> reportsInScope(long customerorderId, BulkAssignmentData data) {
-        return timereportService
-            .getTimereportsByDatesAndCustomerOrderId(data.from(), data.until(), customerorderId)
-            .stream()
-            // The booking already carries its suborder's complete sign, so narrowing to a suborder
-            // needs no lookup — and the prefix match includes the levels below it.
-            .filter(report -> data.coversSuborder(report.getCompleteOrderSign()))
+    /**
+     * The bookings of order, suborder and period — everything but the choice of people. Whether a
+     * booking lies in the selected suborder or below it is decided by the path of suborder ids in
+     * the current tree (#1339), not by its complete order sign: a moved suborder takes its bookings
+     * along. The positions are read once for the order, not per booking.
+     */
+    private List<TimereportDTO> reportsInScope(BulkAssignmentData data) {
+        var reports = timereportService
+            .getTimereportsByDatesAndCustomerOrderId(data.from(), data.until(), data.customerorderId());
+        if (!data.isNarrowedToSuborder()) {
+            return reports;
+        }
+        var positionOfSuborder = orderPositions.ofSubordersOf(data.customerorderId());
+        return reports.stream()
+            .filter(report -> data.coversPosition(positionOfSuborder.get(report.getSuborderId())))
             .toList();
     }
 

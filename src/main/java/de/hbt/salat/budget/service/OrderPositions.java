@@ -1,11 +1,15 @@
 package de.hbt.salat.budget.service;
 
+import static java.util.stream.Collectors.toMap;
+
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderPosition;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -37,6 +41,16 @@ public class OrderPositions {
         }
         var suborder = suborderService.getSuborderById(suborderId);
         return suborder == null ? Optional.empty() : Optional.of(OrderPosition.of(suborder));
+    }
+
+    /**
+     * The position of every suborder of the order by suborder id, hidden ones included, read in one
+     * go (#1339) — for a caller placing many bookings of one order, which would otherwise read a
+     * parent chain per booking. A suborder of another order is missing from the map.
+     */
+    public Map<Long, OrderPosition> ofSubordersOf(long customerorderId) {
+        return suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId).stream()
+            .collect(toMap(SuborderReadModel::id, OrderPosition::of));
     }
 
 }

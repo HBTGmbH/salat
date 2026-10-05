@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 public class BudgetBackfillForm {
 
-    private String customerorderSign;
+    /** By id, not by sign (#1339): a sign can be renamed between choosing and running. */
+    private Long customerorderId;
 
 }

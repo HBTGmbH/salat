@@ -21,7 +21,6 @@ import de.hbt.salat.budget.viewhelper.BulkAssignmentPreviewViewHelper;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
-import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -37,7 +36,6 @@ public class BudgetBulkAssignmentController {
     private final TimereportBudgetBulkAssignmentService bulkAssignmentService;
     private final OrderBudgetService orderBudgetService;
     private final BudgetAuthorization budgetAuthorization;
-    private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final MessageSourceAccessor messages;
@@ -69,7 +67,7 @@ public class BudgetBulkAssignmentController {
     @PostMapping("/refresh")
     public String refresh(@ModelAttribute("form") BulkAssignmentForm form, Model model,
                           HttpServletRequest request) {
-        form.setSuborderSign(null);
+        form.setSuborderId(null);
         form.setTargetBudgetId(null);
         form.setEmployeeIds(new ArrayList<>());
         addSelectionLists(form, model);
@@ -122,22 +120,17 @@ public class BudgetBulkAssignmentController {
      */
     private List<BulkAssignmentEmployee> addSelectionLists(BulkAssignmentForm form, Model model) {
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
-        var sign = form.getCustomerorderSign();
-        if (sign == null || sign.isBlank()) {
+        var customerorderId = form.getCustomerorderId();
+        if (customerorderId == null) {
             model.addAttribute("suborders", List.of());
             model.addAttribute("budgets", List.of());
             model.addAttribute("employees", List.of());
             return List.of();
         }
-        var customerorder = customerorderService.getCustomerorderBySign(sign);
-        model.addAttribute("suborders", customerorder == null
-            ? List.of()
-            : suborderService.getSubordersByCustomerorderId(customerorder.getId()));
+        model.addAttribute("suborders", suborderService.getSubordersByCustomerorderId(customerorderId));
         // Only active plans can hold bookings, so offering the inactive ones would only produce a
         // preview in which everything is unassignable.
-        model.addAttribute("budgets", customerorder == null
-            ? List.of()
-            : orderBudgetService.getActiveByCustomerorderId(customerorder.getId()));
+        model.addAttribute("budgets", orderBudgetService.getActiveByCustomerorderId(customerorderId));
         // Only people who actually booked in the current selection (#953) — the list is derived from
         // the bookings themselves, so no choice can come up empty.
         var employees = bulkAssignmentService.selectableEmployees(form.toData());
