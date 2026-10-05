@@ -191,8 +191,7 @@ public class InvoiceController {
         // suborders. Empty when the user may see no budget data of this order — then only the
         // suborder narrowing is available (#915).
         model.addAttribute("orderBudgets", ofNullable(form.getOrderId())
-            .map(orderId -> customerorderService.getCustomerorderById(orderId))
-            .map(order -> budgetQueryService.getActivePlans(order.getSign()))
+            .map(budgetQueryService::getActivePlans)
             .orElse(List.of()));
         model.addAttribute("invoiceSettings", invoiceSettingsService.getAllSettings());
         model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form));

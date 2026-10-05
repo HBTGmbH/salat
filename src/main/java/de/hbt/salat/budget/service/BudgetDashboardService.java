@@ -77,28 +77,28 @@ public class BudgetDashboardService {
     }
 
     /**
-     * The customer order signs the filters agree on, or {@code null} when neither is set — that is
-     * what tells {@code getAllActiveVisible} to apply no restriction at all. Two set filters
+     * The ids of the customer orders the filters agree on, or {@code null} when neither is set — that
+     * is what tells {@code getAllActiveVisible} to apply no restriction at all. Two set filters
      * intersect: the order has to belong to the segment <em>and</em> have that responsible. An empty
      * result is a legitimate answer ("no order matches") and must stay distinguishable from
-     * {@code null}.
+     * {@code null}. By id, the way the plans refer to their order (#1340).
      */
-    private Collection<String> restrictionFor(Long customerSegmentId, Long responsibleEmployeeId) {
+    private Collection<Long> restrictionFor(Long customerSegmentId, Long responsibleEmployeeId) {
         if (customerSegmentId == null && responsibleEmployeeId == null) {
             return null;
         }
-        Set<String> signs = null;
+        Set<Long> customerorderIds = null;
         if (customerSegmentId != null) {
-            signs = new LinkedHashSet<>(customerorderService.getSignsByCustomerSegmentId(customerSegmentId));
+            customerorderIds = new LinkedHashSet<>(customerorderService.getIdsByCustomerSegmentId(customerSegmentId));
         }
         if (responsibleEmployeeId != null) {
-            var responsibleSigns = customerorderService.getSignsByResponsibleEmployeeId(responsibleEmployeeId);
-            if (signs == null) {
-                signs = new LinkedHashSet<>(responsibleSigns);
+            var responsibleOrderIds = customerorderService.getIdsByResponsibleHbtEmployeeId(responsibleEmployeeId);
+            if (customerorderIds == null) {
+                customerorderIds = new LinkedHashSet<>(responsibleOrderIds);
             } else {
-                signs.retainAll(Set.copyOf(responsibleSigns));
+                customerorderIds.retainAll(Set.copyOf(responsibleOrderIds));
             }
         }
-        return signs;
+        return customerorderIds;
     }
 }

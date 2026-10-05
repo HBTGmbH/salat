@@ -7,6 +7,7 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.persistence.EmployeeRepository;
 import de.hbt.salat.settings.service.UserPreferenceService;
 
 @Service
@@ -17,6 +18,7 @@ public class EmployeePreferenceService {
 
   private final UserPreferenceService userPreferenceService;
   private final AuthorizedEmployee authorizedEmployee;
+  private final EmployeeRepository employeeRepository;
 
   @Transactional(readOnly = true)
   public EmployeePreferences getForCurrentUser() {
@@ -26,9 +28,7 @@ public class EmployeePreferenceService {
 
   @Transactional(readOnly = true)
   public EmployeePreferences getForEmployee(Employee employee) {
-    if (employee.getSalatUser() == null) return EmployeePreferences.defaults();
-    return EmployeePreferences.from(
-        userPreferenceService.getModuleSettings(employee.getSalatUser(), EmployeePreferences.MODULE_KEY));
+    return preferencesOf(employee);
   }
 
   @Transactional(readOnly = true)
@@ -41,7 +41,18 @@ public class EmployeePreferenceService {
 
   @Transactional(readOnly = true)
   public String getNotificationEmailFor(Employee employee) {
-    return orDefault(getForEmployee(employee).notificationEmail(), defaultEmailFor(employee));
+    return notificationEmailOf(employee);
+  }
+
+  /**
+   * {@link #getNotificationEmailFor(Employee)} by the id, for a module that knows the person only as
+   * values (#1340, ADR-0021); {@code null} when there is no employee with this id.
+   */
+  @Transactional(readOnly = true)
+  public String getNotificationEmailForEmployeeId(long employeeId) {
+    return employeeRepository.findById(employeeId)
+        .map(this::notificationEmailOf)
+        .orElse(null);
   }
 
   @Transactional(readOnly = true)
@@ -67,6 +78,17 @@ public class EmployeePreferenceService {
   private String defaultEmailForCurrentUser() {
     String sign = authorizedEmployee.getSign();
     return sign != null ? defaultEmail(sign) : null;
+  }
+
+  /** Read by the id of the login, so that the entity of the module {@code auth} does not travel (#1340). */
+  private EmployeePreferences preferencesOf(Employee employee) {
+    if (employee.getSalatUser() == null) return EmployeePreferences.defaults();
+    return EmployeePreferences.from(
+        userPreferenceService.getModuleSettings(employee.getSalatUser().getId(), EmployeePreferences.MODULE_KEY));
+  }
+
+  private String notificationEmailOf(Employee employee) {
+    return orDefault(preferencesOf(employee).notificationEmail(), defaultEmail(employee.getSign()));
   }
 
   private static String defaultEmail(String sign) {

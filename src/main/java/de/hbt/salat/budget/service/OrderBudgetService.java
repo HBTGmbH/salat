@@ -112,24 +112,24 @@ public class OrderBudgetService {
     }
 
     /**
-     * The active plans the current user may see, restricted to the given customer order signs.
-     * {@code null} means no restriction at all; an empty collection means nothing matches and is
-     * answered without a query. The authorization filter still runs on top — a restriction narrows
-     * the result, it never widens it.
+     * The active plans the current user may see, restricted to the customer orders with the given
+     * ids (#1340). {@code null} means no restriction at all; an empty collection means nothing
+     * matches and is answered without a query. The authorization filter still runs on top — a
+     * restriction narrows the result, it never widens it.
      */
     @Transactional(readOnly = true)
-    public List<OrderBudget> getAllActiveVisible(Collection<String> restrictToCustomerorderSigns) {
-        if (restrictToCustomerorderSigns == null) {
+    public List<OrderBudget> getAllActiveVisible(Collection<Long> restrictToCustomerorderIds) {
+        if (restrictToCustomerorderIds == null) {
             return filterAuthorized(orderBudgetRepository.findAllActiveWithAdjustments());
         }
-        var ids = customerorderIdsBySign(restrictToCustomerorderSigns).values();
-        if (ids.isEmpty()) {
+        if (restrictToCustomerorderIds.isEmpty()) {
             return List.of();
         }
-        return filterAuthorized(orderBudgetRepository.findAllActiveWithAdjustmentsByCustomerorderIds(ids));
+        return filterAuthorized(
+            orderBudgetRepository.findAllActiveWithAdjustmentsByCustomerorderIds(restrictToCustomerorderIds));
     }
 
-    /** The ids behind the signs a filter or the palette asks with; a sign nobody carries is left out. */
+    /** The ids behind the signs the palette asks with; a sign nobody carries is left out. */
     private Map<String, Long> customerorderIdsBySign(Collection<String> customerorderSigns) {
         if (customerorderSigns.isEmpty()) {
             return Map.of();

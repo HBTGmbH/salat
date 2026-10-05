@@ -10,7 +10,6 @@ import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.InvoicableBudget;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.TimereportBudgetAssignmentRepository;
-import de.hbt.salat.order.service.CustomerorderService;
 
 /**
  * The narrow read port other modules use to reach budget data (#915). Deliberately small: active
@@ -32,22 +31,17 @@ public class BudgetQueryService {
     private final OrderBudgetRepository orderBudgetRepository;
     private final TimereportBudgetAssignmentRepository assignmentRepository;
     private final BudgetAuthorization budgetAuthorization;
-    private final CustomerorderService customerorderService;
 
     /**
      * The active plans of the customer order, empty when the caller may not see its budget data —
-     * an empty selection, not an error: the caller has a way to work without a plan.
+     * an empty selection, not an error: the caller has a way to work without a plan. Asked by the id
+     * the caller holds, the order is not loaded at all (#1340); an id without an order has no plans.
      */
-    public List<InvoicableBudget> getActivePlans(String customerorderSign) {
-        if (!budgetAuthorization.isAuthorizedForCustomerorder(customerorderSign)) {
+    public List<InvoicableBudget> getActivePlans(long customerorderId) {
+        if (!budgetAuthorization.isAuthorizedForCustomerorderId(customerorderId)) {
             return List.of();
         }
-        // asked with the sign the caller shows, read by the id behind it (#1205)
-        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
-        if (customerorder == null) {
-            return List.of();
-        }
-        return orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.getId(), Boolean.TRUE)
+        return orderBudgetRepository.findByCustomerorderIdAndActive(customerorderId, Boolean.TRUE)
             .stream()
             .map(InvoicableBudget::from)
             .toList();

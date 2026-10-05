@@ -512,9 +512,9 @@ public class OrderBudgetServiceTest {
 
   @Test
   public void a_restriction_is_passed_on_to_the_query() {
-    service.getAllActiveVisible(List.of("co", "other"));
+    service.getAllActiveVisible(List.of(TREE.orderId("co"), TREE.orderId("other")));
 
-    // asked with the signs the dashboard filters by, queried with the ids behind them (#1205)
+    // the dashboard filters by the ids of the orders, the query takes them as they are (#1340)
     verify(orderBudgetRepository).findAllActiveWithAdjustmentsByCustomerorderIds(
         argThat(ids -> ids.size() == 2 && ids.containsAll(List.of(TREE.orderId("co"), TREE.orderId("other")))));
     verify(orderBudgetRepository, never()).findAllActiveWithAdjustments();

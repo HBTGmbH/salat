@@ -444,22 +444,13 @@ public class SuborderService {
 
   /**
    * The suborders of the given customer orders, hidden ones included — for lists whose rows name
-   * their suborder by its complete order sign and need its description next to it (#952).
+   * their suborder by its complete order sign and need its description next to it (#952, by the ids
+   * of the orders since #1205).
    *
    * <p>The orders are matched over one query instead of one query per row. That query selects the
    * suborders of these orders only (#1222) — it used to read every suborder of the installation and
    * pick the matching ones in Java. Sorted by complete order sign, as before.
    */
-  public List<Suborder> getSubordersByCustomerorderSigns(Collection<String> customerorderSigns) {
-    if (customerorderSigns.isEmpty()) {
-      return List.of();
-    }
-    return suborderRepository.findAllByCustomerorderSigns(Set.copyOf(customerorderSigns)).stream()
-        .sorted(comparing(Suborder::getCompleteOrderSign))
-        .toList();
-  }
-
-  /** Like {@link #getSubordersByCustomerorderSigns}, by the ids of the orders (#1205). */
   public List<Suborder> getSubordersByCustomerorderIds(Collection<Long> customerorderIds) {
     if (customerorderIds.isEmpty()) {
       return List.of();
@@ -517,22 +508,6 @@ public class SuborderService {
   }
 
   /**
-   * Whether the given {@code LIKE} pattern covers at least one suborder below the customer order
-   * with the given sign. Pricing records select their suborders by such a pattern rather than by an
-   * exact sign, so this applies the same rule as {@code OrderPricingLookup} — including the trailing
-   * slash the pattern binds against.
-   */
-  /**
-   * Whether a suborder with exactly this complete order sign exists (#958). Records that reference a
-   * suborder by sign rather than by id — the scope of a JIRA replication does — have no customer order
-   * to narrow the search by, so the sign is matched against all suborders, over the stored column
-   * (#1342).
-   */
-  public boolean existsSuborderWithCompleteOrderSign(String completeOrderSign) {
-    return getSuborderByCompleteOrderSign(completeOrderSign) != null;
-  }
-
-  /**
    * The suborder carrying exactly this complete order sign, or {@code null} (#1025). A record that
    * stores such a sign cannot get back to the customer order behind it by splitting the string: an
    * order sign may contain a slash itself, so the first segment of {@code 0283/03.20/F&E/01} is not
@@ -543,15 +518,18 @@ public class SuborderService {
     return suborderRepository.findByCompleteOrderSign(completeOrderSign).orElse(null);
   }
 
-  public boolean existsSuborderMatching(String customerorderSign, String pattern) {
+  /**
+   * Whether the given {@code LIKE} pattern covers at least one suborder below the customer order
+   * with the given id. Pricing records select their suborders by such a pattern rather than by an
+   * exact sign, so this applies the same rule as {@code OrderPricingLookup} — including the trailing
+   * slash the pattern binds against. Hidden suborders cover nothing. The order is asked by id: the
+   * caller holds it already, and its sign would only be resolved back into the id here (#1340).
+   */
+  public boolean existsSuborderMatching(long customerorderId, String pattern) {
     var likePattern = SqlLikePattern.startingWith(pattern);
-    return subordersOf(customerorderSign).stream()
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
+        .filter(not(Suborder::isHide))
         .anyMatch(suborder -> likePattern.matches(suborder.getCompleteOrderSign() + "/"));
-  }
-
-  private List<Suborder> subordersOf(String customerorderSign) {
-    var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
-    return customerorder == null ? List.of() : getSubordersByCustomerorderId(customerorder.getId());
   }
 
   @Authorized(requiresManager = true)

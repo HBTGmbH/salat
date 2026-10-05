@@ -37,6 +37,7 @@ import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.domain.CustomerorderOption;
+import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
@@ -279,16 +280,39 @@ public class CustomerorderService {
   }
 
   /**
-   * The signs of every customer order belonging to a customer of this segment. Returns signs rather
-   * than orders because the callers use them to restrict a query, not to display the orders.
+   * The responsibles of the order ({@code responsibleHbt}) as values, empty when there is no order
+   * with this id — for a module that notifies them and must not hold the employees (#1340,
+   * ADR-0021).
    */
-  public List<String> getSignsByCustomerSegmentId(long segmentId) {
-    return customerorderRepository.findSignsByCustomerSegmentId(segmentId);
+  @Transactional(readOnly = true)
+  public List<CustomerorderResponsible> getResponsiblesByCustomerorderId(long customerorderId) {
+    var customerorder = customerorderDAO.getCustomerorderById(customerorderId);
+    if (customerorder == null || customerorder.getResponsibleHbt() == null) {
+      return List.of();
+    }
+    return customerorder.getResponsibleHbt().stream()
+        .map(CustomerorderResponsible::of)
+        .toList();
   }
 
-  /** The signs of every customer order this employee is responsible for. */
-  public List<String> getSignsByResponsibleEmployeeId(long responsibleEmployeeId) {
-    return customerorderRepository.findSignsByResponsibleHbt(responsibleEmployeeId);
+  /**
+   * The ids of every customer order belonging to a customer of this segment. Ids rather than orders
+   * because the callers use them to restrict a query, not to display the orders (#1340).
+   */
+  @Transactional(readOnly = true)
+  public List<Long> getIdsByCustomerSegmentId(long segmentId) {
+    return customerorderRepository.findIdsByCustomerSegmentId(segmentId);
+  }
+
+  /**
+   * The ids of every customer order that lists this employee among its responsibles
+   * ({@code responsibleHbt}) — the role the "responsible" filters offer
+   * ({@link #getVisibleResponsibleEmployees}). Unlike {@link #getIdsByResponsibleEmployeeId}, the
+   * responsible of the contract ({@code respEmpHbtContract}) does not count (#1340).
+   */
+  @Transactional(readOnly = true)
+  public List<Long> getIdsByResponsibleHbtEmployeeId(long responsibleEmployeeId) {
+    return customerorderRepository.findIdsByResponsibleHbt(responsibleEmployeeId);
   }
 
   /**

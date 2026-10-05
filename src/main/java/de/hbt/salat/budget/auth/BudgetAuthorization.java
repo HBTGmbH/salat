@@ -51,6 +51,10 @@ public class BudgetAuthorization {
         return authorizedUser.isManager();
     }
 
+    /**
+     * By sign, for the callers that are handed signs — the command palette finds its orders by
+     * concept over the sign (ADR-0031). Where the id is at hand, ask by the id (#1340).
+     */
     public boolean isAuthorizedForCustomerorder(String customerorderSign) {
         if (authorizedUser.isRestricted()) return false;
         if (seesAllCustomerorders()) return true;

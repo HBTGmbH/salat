@@ -34,11 +34,15 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       """)
   List<Long> findIdsByResponsibleEmployee(long employeeId);
 
-  @Query("select c.sign from Customerorder c where c.customer.segment.id = :segmentId")
-  List<String> findSignsByCustomerSegmentId(long segmentId);
+  @Query("select c.id from Customerorder c where c.customer.segment.id = :segmentId")
+  List<Long> findIdsByCustomerSegmentId(long segmentId);
 
-  @Query("select c.sign from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
-  List<String> findSignsByResponsibleHbt(long responsibleHbtId);
+  /**
+   * The ids of the orders listing this employee among {@code responsibleHbt} — that role only,
+   * unlike {@link #findIdsByResponsibleEmployee}.
+   */
+  @Query("select c.id from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
+  List<Long> findIdsByResponsibleHbt(long responsibleHbtId);
 
   /**
    * Every employee who is responsible for at least one customer order — the choices of the

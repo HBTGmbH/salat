@@ -618,7 +618,7 @@ public class OrderPricingServiceTest {
 
   private void givenSuborders(String... completeOrderSigns) {
     // The pattern check of #958 runs first and is not what these tests are about.
-    when(suborderService.existsSuborderMatching(any(), any())).thenReturn(true);
+    when(suborderService.existsSuborderMatching(anyLong(), any())).thenReturn(true);
     when(suborderService.getSubordersByCustomerorderId(TREE.orderId("co")))
         .thenReturn(List.of(completeOrderSigns).stream().map(TREE::suborder).toList());
   }
