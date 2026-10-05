@@ -5776,3 +5776,18 @@ databaseChangeLog:
         - dropColumn:
             tableName: etl_definition
             columnName: unresolved_dependencies
+
+  - changeSet:
+      id: 154
+      author: kr
+      comment: Tabelle statusreport entfernen
+      # Changeset 30 entfernte nur den Verweis customerorder.statusreport, die Tabelle blieb als Relikt
+      # stehen; der Kommentar von Changeset 16 nennt sie, entfernt aber EMPLOYEEORDERCONTENT. Die
+      # Anwendung kennt die Tabelle nicht, und keine Report-, ETL- oder View-Definition liest sie.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: statusreport
+      changes:
+        - sql:
+            sql: DROP TABLE IF EXISTS statusreport
