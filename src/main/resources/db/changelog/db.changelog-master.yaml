@@ -5609,3 +5609,43 @@ databaseChangeLog:
       changes:
         - sql:
             sql: DROP TABLE IF EXISTS team_lead, team_member
+
+  - changeSet:
+      id: 149
+      author: kr
+      comment: Ausfuehrungshistorie geplanter Reports verweist per Fremdschluessel auf Job und Report (#1366)
+      # job_id und report_definition_id hatten keinen Fremdschluessel. Ein geloeschter Job liess seine
+      # Eintraege mit einer id zurueck, die ins Leere zeigt. Die Eintraege bleiben, die Verweise werden
+      # leer; job_name und report_definition_name halten sie lesbar. Danach setzt ON DELETE SET NULL
+      # dasselbe beim Loeschen fort.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyTableName: scheduled_report_execution_history
+                foreignKeyName: fk_scheduled_report_execution_history_job
+      changes:
+        - sql:
+            sql: |-
+              UPDATE scheduled_report_execution_history h
+                 SET h.job_id = NULL
+               WHERE h.job_id IS NOT NULL
+                 AND NOT EXISTS (SELECT 1 FROM scheduled_report_job j WHERE j.id = h.job_id);
+              UPDATE scheduled_report_execution_history h
+                 SET h.report_definition_id = NULL
+               WHERE h.report_definition_id IS NOT NULL
+                 AND NOT EXISTS (SELECT 1 FROM report_definition r WHERE r.id = h.report_definition_id);
+        - addForeignKeyConstraint:
+            baseTableName: scheduled_report_execution_history
+            baseColumnNames: job_id
+            constraintName: fk_scheduled_report_execution_history_job
+            referencedTableName: scheduled_report_job
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            baseTableName: scheduled_report_execution_history
+            baseColumnNames: report_definition_id
+            constraintName: fk_scheduled_report_execution_history_report
+            referencedTableName: report_definition
+            referencedColumnNames: id
+            onDelete: SET NULL

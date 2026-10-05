@@ -162,9 +162,9 @@ public class ScheduledReportJobService {
 
   private ScheduledReportExecutionHistory historyEntry(ScheduledReportJob job, LocalDateTime executedAt, boolean success, String message) {
     return ScheduledReportExecutionHistory.builder()
-        .jobId(job.getId())
+        .job(job)
         .jobName(job.getName())
-        .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
+        .reportDefinition(job.getReportDefinition())
         .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
         .executedAt(executedAt)
         .success(success)
