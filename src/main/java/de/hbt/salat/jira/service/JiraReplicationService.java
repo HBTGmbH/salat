@@ -100,8 +100,7 @@ public class JiraReplicationService {
 
     int pageSize = cfg.getPageSize() != null && cfg.getPageSize() > 0 ? cfg.getPageSize() : 100;
     var fieldConfig = JiraFieldConfig.from(cfg);
-    // The scope as the order tree names it now (#1323): written as the sign of every ticket, read
-    // for nothing but that and the log.
+    // The scope as the order tree names it now (#1323), for the log.
     var scopeSign = scopes.signOf(cfg.getCustomerorderId(), cfg.getSuborderId());
 
     log.info("Starting JIRA replication: id={}, name={}, scopeSign={}, apiFlavor={}, "
@@ -151,7 +150,7 @@ public class JiraReplicationService {
         if (issue.getFields() != null) answeredFields.addAll(issue.getFields().keySet());
         long jiraId = Long.parseLong(issue.getId());
         if (seenJiraIds != null) seenJiraIds.add(jiraId);
-        var changed = upsertIfChanged(cfg, scopeSign, fieldConfig, jiraId, issue);
+        var changed = upsertIfChanged(cfg, fieldConfig, jiraId, issue);
         if (changed) {
           processed++;
         }
@@ -405,8 +404,8 @@ public class JiraReplicationService {
     return fields;
   }
 
-  private boolean upsertIfChanged(JiraReplicationConfig cfg, String scopeSign, JiraFieldConfig fieldConfig,
-                                  long jiraId, JiraIssue issue) {
+  private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
+                                  JiraIssue issue) {
     var existing = ticketRepo.findInScopeByJiraId(cfg.getCustomerorderId(), cfg.getSuborderId(), jiraId)
         .orElse(null);
     var fields = issue.getFields();
@@ -424,9 +423,8 @@ public class JiraReplicationService {
     }
 
     var t = existing != null ? existing : new JiraTicket();
-    t.setCustomerorderId(cfg.getCustomerorderId());
-    t.setSuborderId(cfg.getSuborderId());
-    t.setScopeSign(scopeSign);
+    t.setCustomerorder(cfg.getCustomerorder());
+    t.setSuborder(cfg.getSuborder());
     t.setJiraId(jiraId);
     t.setKey(issue.getKey());
     t.setSummary(safe(getString(fields, "summary"), 1024));

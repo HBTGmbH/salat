@@ -3,11 +3,14 @@ package de.hbt.salat.jira.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.jira.OrderTree.customerorderWithId;
+import static de.hbt.salat.jira.OrderTree.suborderWithId;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,6 +40,7 @@ import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -91,12 +95,22 @@ class JiraReplicationConfigServiceTest {
   @Mock
   private AuthorizedUser authorizedUser;
 
+  @Mock
+  private OrderReferences orderReferences;
+
   @BeforeEach
   void setUp() {
     // the real resolution against a mocked order module: what is tested is the reading by id
     classUnderTest = new JiraReplicationConfigService(configRepository, jiraReplicationRunService,
-        jiraSearchClients, new JiraScopes(customerorderService, suborderService), authorizedUser);
+        jiraSearchClients, new JiraScopes(customerorderService, suborderService), orderReferences, authorizedUser);
     when(authorizedUser.isManager()).thenReturn(true);
+    when(orderReferences.customerorder(anyLong())).thenAnswer(invocation ->
+        customerorderWithId(invocation.getArgument(0)));
+    when(orderReferences.suborder(any())).thenAnswer(invocation -> {
+      Long suborderId = invocation.getArgument(0);
+      return suborderId == null ? null
+          : suborderWithId(suborderId, customerorderWithId(SUBORDERS.get(suborderId).customerorderId()));
+    });
     when(customerorderService.getCustomerorderSignsByIds(any())).thenAnswer(invocation ->
         known(invocation.getArgument(0), ORDERS));
     when(suborderService.getSuborderLocationsByIds(any())).thenAnswer(invocation ->
@@ -500,16 +514,6 @@ class JiraReplicationConfigServiceTest {
   }
 
   @Test
-  void the_scope_sign_is_written_as_a_mirror_of_order_and_suborder() {
-    // reports and ETL definitions still read it; the application never does (#1322)
-    classUnderTest.create(withScope(ALPHA, A_01, "token"));
-    assertThat(saved().getScopeSign()).isEqualTo("ALPHA/A/01");
-
-    classUnderTest.create(withScope(ALPHA, null, "token"));
-    assertThat(saved().getScopeSign()).isEqualTo("ALPHA");
-  }
-
-  @Test
   void a_suborder_of_another_order_is_refused() {
     // otherwise the replication would read the bookings of one order and claim to be another's
     assertThatThrownBy(() -> classUnderTest.create(withScope(ALPHA, BETA_X, "token")))
@@ -575,26 +579,25 @@ class JiraReplicationConfigServiceTest {
 
   @Test
   void a_renamed_order_is_still_the_same_scope() {
-    // the stored mirror carries the old sign; what decides is the id (#1322)
+    // the stored reference still carries the old sign; what decides is the id (#1322, #1368)
     var watermark = LocalDateTime.of(2026, 6, 1, 8, 0);
     var stored = existingConfig();
-    stored.setScopeSign("ALPHA-OLD");
+    stored.getCustomerorder().setSign("ALPHA-OLD");
     stored.setLastMaxUpdated(watermark);
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
     classUnderTest.update(ID, withScope(ALPHA, null, null));
 
     assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
-    assertThat(saved().getScopeSign()).isEqualTo("ALPHA");
+    assertThat(saved().getCustomerorderId()).isEqualTo(ALPHA);
   }
 
   @Test
   void the_list_names_the_scope_as_the_order_tree_carries_it_now() {
-    // not the mirror column: nothing in the application reads it (#1322)
+    // asked of the order module by id (#1322), one query for all configs
     var stored = existingConfig();
     setId(stored, ID);
-    stored.setSuborderId(A_01);
-    stored.setScopeSign("ALPHA/OLD/01");
+    stored.setSuborder(suborderWithId(A_01, stored.getCustomerorder()));
     when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(stored));
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
@@ -707,8 +710,7 @@ class JiraReplicationConfigServiceTest {
   private JiraReplicationConfig existingConfig() {
     var config = new JiraReplicationConfig();
     config.setName("Alpha");
-    config.setCustomerorderId(ALPHA);
-    config.setScopeSign("ALPHA");
+    config.setCustomerorder(customerorderWithId(ALPHA));
     config.setBaseUrl("https://jira.example.com");
     config.setApiFlavor(JiraApiFlavor.SERVER);
     config.setUsername("jira-user");
@@ -741,8 +743,8 @@ class JiraReplicationConfigServiceTest {
     var other = new JiraReplicationConfig();
     setId(other, 99L);
     other.setName("Beta");
-    other.setCustomerorderId(customerorderId);
-    other.setSuborderId(suborderId);
+    other.setCustomerorder(customerorderWithId(customerorderId));
+    other.setSuborder(suborderId == null ? null : suborderWithId(suborderId, other.getCustomerorder()));
     other.setBaseUrl(baseUrl);
     other.setWorklogSyncEnabled(worklogSync);
     when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(other));

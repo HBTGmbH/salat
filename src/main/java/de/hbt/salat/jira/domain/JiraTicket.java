@@ -2,6 +2,10 @@ package de.hbt.salat.jira.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -11,7 +15,18 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
+/**
+ * A ticket replicated from JIRA, kept per scope — the pair of customer order and suborder.
+ *
+ * <p>Issue key and JIRA id are unique within a scope, and the run looks tickets up by scope and
+ * {@code updated_ts}. Those keys live in the changelog only (changeset 150, #1372): a {@code null}
+ * suborder means the whole order, and {@code NULL} is never equal to {@code NULL} in a unique key,
+ * so the suborder enters them as {@code COALESCE(suborder_id, 0)} — a functional key part the
+ * schema generator of the tests cannot express.
+ */
 @Entity
 @Table(name = "jira_ticket")
 @Getter
@@ -26,24 +41,19 @@ public class JiraTicket extends AuditedEntity {
    *
    * <p>The ticket outlives the replication that fetched it (#1025): deleting the config leaves the
    * ticket here, and a new replication on the same order and suborder finds it again. That is why it
-   * refers to order and suborder rather than to the config — and why by id, not by sign: a rename or
-   * a move in the order tree changes nothing about which scope it belongs to.
+   * refers to order and suborder rather than to the config — and why as a reference, not by sign: a
+   * rename or a move in the order tree changes nothing about which scope it belongs to. Master data
+   * of the order module (#1368, ADR-0036): read only, no cascade.
    */
-  @Column(name = "customerorder_id", nullable = false)
-  private Long customerorderId;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "customerorder_id", nullable = false,
+      foreignKey = @ForeignKey(name = "fk_jira_ticket_customerorder"))
+  private Customerorder customerorder;
 
   /** The suborder of the scope, {@code null} when the replication covers the whole order (#1323). */
-  @Column(name = "suborder_id")
-  private Long suborderId;
-
-  /**
-   * The scope as a sign, kept as a mirror because reports and ETL definitions still read it (#1323):
-   * the order sign, or the complete order sign of the suborder. The application never resolves
-   * anything through it; it is written on save and follows a rename or a move
-   * ({@code JiraScopeSignMirrorListener}).
-   */
-  @Column(name = "scope_sign", nullable = false)
-  private String scopeSign;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "suborder_id", foreignKey = @ForeignKey(name = "fk_jira_ticket_suborder"))
+  private Suborder suborder;
 
   @Column(name = "jira_id", nullable = false)
   private Long jiraId;
@@ -100,4 +110,14 @@ public class JiraTicket extends AuditedEntity {
    */
   @Column(name = "field_config_hash", length = 64)
   private String fieldConfigHash;
+
+  /** The id of {@link #customerorder}, read off the reference without loading the order. */
+  public Long getCustomerorderId() {
+    return customerorder != null ? customerorder.getId() : null;
+  }
+
+  /** The id of {@link #suborder}, {@code null} for the whole order; the suborder is not loaded. */
+  public Long getSuborderId() {
+    return suborder != null ? suborder.getId() : null;
+  }
 }

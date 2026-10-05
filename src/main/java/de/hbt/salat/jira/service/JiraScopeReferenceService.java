@@ -1,7 +1,6 @@
 package de.hbt.salat.jira.service;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -12,19 +11,17 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
-import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 
 /**
- * What the JIRA module does when the order tree changes (#1322, #1323): it keeps the scope sign of
- * its replications, tickets and worklogs in step, says how many replications still refer to an order
- * or a suborder that is about to go, and takes the tickets and worklogs of a scope along when it
- * goes — the counterpart of {@code OrderReferenceService} in the budget module.
+ * What the JIRA module does when the order tree changes (#1322, #1323): it takes the replications,
+ * tickets and worklogs of a moved suborder along to its new order, says how many replications still
+ * refer to an order or a suborder that is about to go, and takes the tickets and worklogs of a scope
+ * along when it goes — the counterpart of {@code OrderReferenceService} in the budget module.
  *
- * <p>Replications, tickets and worklogs refer to order and suborder by id, and the application
- * resolves by that id alone. The sign columns stay next to the ids only because reports and ETL
- * definitions still read them; a stale sign there would let them lose the tickets of a renamed
- * order.
+ * <p>Replications, tickets and worklogs refer to order and suborder as references (#1368,
+ * ADR-0036). A rename therefore needs nothing here: the sign is read from the order tree wherever it
+ * is shown (#1372).
  */
 @Slf4j
 @Service
@@ -39,60 +36,24 @@ public class JiraScopeReferenceService {
   private final JiraScopes scopes;
 
   /**
-   * Rewrites the scope sign of every replication, ticket and worklog of the order from the current
-   * tree.
-   *
-   * <p>Called while the order is being updated, before it is saved and inside the same transaction.
-   * The suborders read here are the managed instances of that transaction, so a complete order sign
-   * is already the new one. Tickets and worklogs are rewritten in bulk, and only where the sign
-   * differs — an order carries thousands of tickets, and a save that renames nothing writes nothing.
-   */
-  @Authorized(requiresManager = true)
-  public void followCustomerorder(Customerorder customerorder) {
-    for (var config : configRepository.findByCustomerorderId(customerorder.getId())) {
-      var sign = config.getSuborderId() == null
-          ? customerorder.getSign()
-          : scopes.signOf(customerorder.getId(), config.getSuborderId());
-      if (sign != null) {
-        config.setScopeSign(sign);
-      }
-    }
-    ticketRepository.mirrorOrderWide(customerorder.getId(), customerorder.getSign());
-    worklogSyncRepository.mirrorOrderWide(customerorder.getId(), customerorder.getSign());
-    var suborderIds = new LinkedHashSet<Long>(ticketRepository.findSuborderIdsOfCustomerorder(customerorder.getId()));
-    suborderIds.addAll(worklogSyncRepository.findSuborderIdsOfCustomerorder(customerorder.getId()));
-    for (var suborderId : suborderIds) {
-      var sign = scopes.signOf(customerorder.getId(), suborderId);
-      if (sign != null) {
-        mirrorSuborder(suborderId, customerorder.getId(), sign);
-      }
-    }
-  }
-
-  /**
-   * Rewrites order and scope sign of every replication, ticket and worklog on the suborder or below
-   * it. A renamed suborder changes the complete order sign of its whole branch, and a suborder moved
-   * to another customer order takes its branch along — what was replicated on it follows, since it
-   * means that place in the tree and not the order it used to hang under.
+   * Takes every replication, ticket and worklog on the suborder or below it along to the customer
+   * order the suborder now hangs under. The scope is the pair of order and suborder; a suborder moved
+   * to another customer order takes its branch along, and what was replicated on it follows, since
+   * it means that place in the tree and not the order it used to hang under.
    *
    * <p>Called while the suborder is being updated, before it is saved: the entity already carries
-   * its new sign, parent and order.
+   * its new parent and order, and so does every suborder of its branch. Tickets and worklogs are
+   * rewritten in bulk and only where the order differs, so a save that moves nothing writes nothing.
    */
   @Authorized(requiresManager = true)
   public void followSuborder(Suborder suborder) {
     var branch = suborder.getAllChildren().stream()
         .collect(Collectors.toMap(Suborder::getId, Function.identity()));
     for (var config : configRepository.findBySuborderIdIn(branch.keySet())) {
-      var scope = branch.get(config.getSuborderId());
-      config.setCustomerorderId(scope.getCustomerorder().getId());
-      config.setScopeSign(scope.getCompleteOrderSign());
+      config.setCustomerorder(branch.get(config.getSuborderId()).getCustomerorder());
     }
-    var suborderIds = new LinkedHashSet<Long>(ticketRepository.findSuborderIdsIn(branch.keySet()));
-    suborderIds.addAll(worklogSyncRepository.findSuborderIdsIn(branch.keySet()));
-    for (var suborderId : suborderIds) {
-      var scope = branch.get(suborderId);
-      mirrorSuborder(suborderId, scope.getCustomerorder().getId(), scope.getCompleteOrderSign());
-    }
+    ticketRepository.moveBranchToCustomerorder(branch.keySet(), suborder.getCustomerorder());
+    worklogSyncRepository.moveBranchToCustomerorder(branch.keySet(), suborder.getCustomerorder());
   }
 
   /** How many replications apply to the customer order, order-wide or on one of its suborders. */
@@ -139,11 +100,6 @@ public class JiraScopeReferenceService {
     var worklogs = worklogSyncRepository.deleteBySuborderIdIn(branch);
     log.info("Suborder {} is deleted: removed {} JIRA tickets and {} worklog rows of its branch",
         suborderId, tickets, worklogs);
-  }
-
-  private void mirrorSuborder(long suborderId, long customerorderId, String sign) {
-    ticketRepository.mirrorSuborder(suborderId, customerorderId, sign);
-    worklogSyncRepository.mirrorSuborder(suborderId, customerorderId, sign);
   }
 
 }

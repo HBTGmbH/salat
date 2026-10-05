@@ -11,6 +11,7 @@ import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.MANUAL;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.SCHEDULED;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -19,14 +20,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
+import de.hbt.salat.order.domain.Customerorder;
 
 /**
  * The run history of the replications and the lock it is at the same time (#1282).
@@ -50,11 +55,23 @@ class JiraReplicationRunServiceTest {
   @Autowired
   private JiraReplicationConfigRepository configRepository;
 
+  @Autowired
+  private EntityManager entityManager;
+
+  @Autowired
+  private PlatformTransactionManager transactionManager;
+
+  /** The order the replications apply to — real, because they refer to it with a foreign key (#1368). */
+  private OrderTree orderTree;
+  private Customerorder customerorder;
+
   @BeforeEach
   void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.isManager()).thenReturn(true);
     when(authorizedUser.getLoginSign()).thenReturn("mgr");
+    orderTree = new OrderTree(entityManager, "JIRA-RUN");
+    customerorder = new TransactionTemplate(transactionManager).execute(status -> orderTree.customerorder("JIRA-RUN"));
     ALPHA = replication("Alpha").getId();
     BETA = replication("Beta").getId();
   }
@@ -65,6 +82,7 @@ class JiraReplicationRunServiceTest {
     runRepository.deleteByReplicationId(BETA);
     configRepository.deleteById(ALPHA);
     configRepository.deleteById(BETA);
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> orderTree.remove(customerorder));
   }
 
   @Test
@@ -152,8 +170,7 @@ class JiraReplicationRunServiceTest {
   private JiraReplicationConfig replication(String name) {
     var config = new JiraReplicationConfig();
     config.setName(name);
-    config.setCustomerorderId(1L);
-    config.setScopeSign("SCOPE");
+    config.setCustomerorder(customerorder);
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
     config.setUsername("user");

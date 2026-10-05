@@ -13,8 +13,7 @@ import java.time.LocalDateTime;
  * @param customerorderId the customer order the replication applies to (#1322)
  * @param suborderId the suborder it is narrowed to, or {@code null} for the whole order
  * @param scopeSign the scope as the list shows it — the order sign or the complete order sign of
- *     the suborder, {@code AUFTRAG/01/02}, read from the current order tree rather than from the
- *     mirror column
+ *     the suborder, {@code AUFTRAG/01/02}, read from the current order tree
  * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
  * @param worklogSyncFrom first day the worklog sync covers
  * @param worklogSyncInvoiceableOnly whether only bookings on invoiceable suborders are written (#1218)

@@ -5649,3 +5649,41 @@ databaseChangeLog:
             referencedTableName: report_definition
             referencedColumnNames: id
             onDelete: SET NULL
+
+  - changeSet:
+      id: 150
+      author: kr
+      comment: JIRA-Tabellen ohne scope_sign, Schluessel auf den Geltungsbereich ueber die ids (#1372)
+      # Seit #1322/#1323 verweisen Konfigurationen, Tickets und Worklogs ueber customerorder_id und
+      # suborder_id auf ihren Geltungsbereich; scope_sign war ein Spiegel, den keine Report-, ETL- oder
+      # View-Definition liest. Er trug aber noch die eindeutigen Schluessel. Die gehen auf das Paar der
+      # ids ueber, bevor die alten fallen. suborder_id ist NULL fuer den ganzen Auftrag, und NULL ist in
+      # einem eindeutigen Schluessel nicht gleich NULL - deshalb der funktionale Teil
+      # COALESCE(suborder_id, 0). Der Bestand hat unter den neuen Schluesseln keine Dubletten (geprueft
+      # auf dem Stand der Produktion).
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: jira_ticket
+            columnName: scope_sign
+      changes:
+        - sql:
+            sql: |-
+              ALTER TABLE jira_ticket
+                ADD UNIQUE KEY uq_jira_ticket_scope_issue_key (customerorder_id, (COALESCE(suborder_id, 0)), issue_key),
+                ADD UNIQUE KEY uq_jira_ticket_scope_jira_id (customerorder_id, (COALESCE(suborder_id, 0)), jira_id),
+                ADD KEY idx_jira_ticket_scope_updated (customerorder_id, suborder_id, updated_ts);
+              ALTER TABLE jira_worklog_sync
+                ADD UNIQUE KEY uq_jira_worklog_sync_scope_issue_date (customerorder_id, (COALESCE(suborder_id, 0)), issue_key, work_date),
+                ADD KEY idx_jira_worklog_sync_scope_work_date (customerorder_id, suborder_id, work_date);
+              ALTER TABLE jira_ticket
+                DROP INDEX uq_jira_ticket_co_issue_key,
+                DROP INDEX uq_jira_ticket_co_jiraid,
+                DROP INDEX idx_jira_ticket_co_updated,
+                DROP COLUMN scope_sign;
+              ALTER TABLE jira_worklog_sync
+                DROP INDEX uq_jira_worklog_sync_scope_key_date,
+                DROP INDEX idx_jira_worklog_sync_scope_date,
+                DROP COLUMN scope_sign;
+              ALTER TABLE jira_replication_config
+                DROP COLUMN scope_sign;

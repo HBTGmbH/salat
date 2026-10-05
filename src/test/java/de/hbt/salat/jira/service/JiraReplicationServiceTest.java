@@ -16,6 +16,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.util.ReflectionUtils.findField;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
 import static org.springframework.util.ReflectionUtils.setField;
+import static de.hbt.salat.jira.OrderTree.customerorderWithId;
+import static de.hbt.salat.jira.OrderTree.suborderWithId;
 import static de.hbt.salat.jira.domain.JiraApiFlavor.CLOUD;
 import static de.hbt.salat.jira.domain.JiraApiFlavor.SERVER;
 
@@ -51,6 +53,8 @@ import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 @FixedClock
 @SpringBootTest
@@ -59,6 +63,8 @@ class JiraReplicationServiceTest {
   /** The order of the mock replication, and a suborder below it (#1323). */
   private static final long ORDER = 1L;
   private static final long SUBORDER_A_01 = 12L;
+  private static final Customerorder ORDER_REFERENCE = customerorderWithId(ORDER);
+  private static final Suborder SUBORDER_A_01_REFERENCE = suborderWithId(SUBORDER_A_01, ORDER_REFERENCE);
 
   @MockitoBean
   private JiraSearchClients searchClients;
@@ -319,16 +325,17 @@ class JiraReplicationServiceTest {
   @Test
   void testARunReadsAndWritesOnlyTicketsOfItsOwnScope() {
     // Two replications on the same order but with different scopes are independent (#1025). Every
-    // ticket access keys on exactly one scope - the pair of order and suborder ids (#1323) - and the
-    // sign is written as a mirror of it.
+    // ticket access keys on exactly one scope - the pair of order and suborder (#1323) - and the
+    // ticket takes both over from the config as references (#1368).
     JiraReplicationConfig config = createMockReplicationConfig();
-    config.setSuborderId(SUBORDER_A_01);
+    config.setSuborder(SUBORDER_A_01_REFERENCE);
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
 
     jiraReplicationService.runReplication(config.getId());
 
-    assertEquals("MOCK_ORDER/A/01", savedTicket().getScopeSign());
+    assertThat(savedTicket().getCustomerorder()).isSameAs(ORDER_REFERENCE);
+    assertThat(savedTicket().getSuborder()).isSameAs(SUBORDER_A_01_REFERENCE);
     assertEquals(ORDER, savedTicket().getCustomerorderId());
     assertEquals(SUBORDER_A_01, savedTicket().getSuborderId());
     verify(ticketRepo).findInScopeByJiraId(ORDER, SUBORDER_A_01, 1001L);
@@ -341,13 +348,13 @@ class JiraReplicationServiceTest {
     // The chain is walked over the tickets of this scope alone, so a parent replicated by another
     // replication of the same order is not reached and no field is inherited across the boundary.
     JiraReplicationConfig config = createIncrementalReplicationConfig();
-    config.setSuborderId(SUBORDER_A_01);
+    config.setSuborder(SUBORDER_A_01_REFERENCE);
     config.setAdditionalFieldNames("customfield_10123");
     config.setInheritedFieldNames("customfield_10123");
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues());
     var child = ticket("MOCK-2", "MOCK-1");
-    child.setSuborderId(SUBORDER_A_01);
+    child.setSuborder(SUBORDER_A_01_REFERENCE);
     // the parent lives in the order-wide scope and is therefore invisible to this run
     when(ticketRepo.findInScope(ORDER, SUBORDER_A_01)).thenReturn(List.of(child));
 
@@ -645,11 +652,11 @@ class JiraReplicationServiceTest {
   void theRemovalLeavesOtherScopesAloneEvenWithTheSameKeyAndId() {
     // two JIRA instances can hand out the same key and the same id, the scope tells them apart
     JiraReplicationConfig config = createMockReplicationConfig();
-    config.setSuborderId(SUBORDER_A_01);
+    config.setSuborder(SUBORDER_A_01_REFERENCE);
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues());
     var own = stored(1002L, "MOCK-2");
-    own.setSuborderId(SUBORDER_A_01);
+    own.setSuborder(SUBORDER_A_01_REFERENCE);
     when(ticketRepo.findInScope(ORDER, SUBORDER_A_01)).thenReturn(List.of(own));
     when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(stored(1002L, "MOCK-2")));
 
@@ -737,8 +744,7 @@ class JiraReplicationServiceTest {
 
   private static JiraTicket ticket(String key, String parentKey) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderId(ORDER);
-    ticket.setScopeSign("MOCK_ORDER");
+    ticket.setCustomerorder(ORDER_REFERENCE);
     ticket.setKey(key);
     ticket.setParentKey(parentKey);
     return ticket;
@@ -776,7 +782,7 @@ class JiraReplicationServiceTest {
     config.setPassword("mockPassword");
     config.setJql("project = MOCK");
     config.setPageSize(50);
-    config.setCustomerorderId(ORDER);
+    config.setCustomerorder(ORDER_REFERENCE);
     return config;
   }
 

@@ -39,6 +39,7 @@ import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 
 /**
@@ -65,6 +66,7 @@ public class JiraReplicationConfigService {
   private final JiraReplicationRunService jiraReplicationRunService;
   private final JiraSearchClients jiraSearchClients;
   private final JiraScopes scopes;
+  private final OrderReferences orderReferences;
   private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
@@ -256,7 +258,8 @@ public class JiraReplicationConfigService {
    * they stay when the config is deleted. The field help says so.
    *
    * <p>The scope is compared by id (#1322): a renamed order is the same scope, a different order of
-   * the same name is not. The sign is written alongside as a mirror for reports and ETL definitions.
+   * the same name is not. Order and suborder are set as references (#1368); the sign only goes into
+   * the log.
    */
   private void applyScope(JiraReplicationConfigData data, JiraReplicationConfig config, String scopeSign) {
     if (!Objects.equals(data.customerorderId(), config.getCustomerorderId())
@@ -266,9 +269,8 @@ public class JiraReplicationConfigService {
           config.getCustomerorderId(), config.getSuborderId(), scopeSign);
       config.setLastMaxUpdated(null);
     }
-    config.setCustomerorderId(data.customerorderId());
-    config.setSuborderId(data.suborderId());
-    config.setScopeSign(scopeSign);
+    config.setCustomerorder(orderReferences.customerorder(data.customerorderId()));
+    config.setSuborder(orderReferences.suborder(data.suborderId()));
   }
 
   /**
@@ -307,7 +309,7 @@ public class JiraReplicationConfigService {
   }
 
   /**
-   * @return the sign of the scope as the order tree carries it now, for the mirror column
+   * @return the sign of the scope as the order tree carries it now, for the log
    */
   private String validate(Long id, JiraReplicationConfigData data) {
     requireText(data.name(), JI_REPLICATION_NAME_REQUIRED);

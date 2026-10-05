@@ -14,6 +14,7 @@ import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
+import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
 
 /**
@@ -53,14 +54,14 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
     if (!jiraTicketRepository.findInScope(contosoId, null).isEmpty()) {
       return;
     }
-    saveTicket(contosoId, 4711L, TICKET_KEY, TICKET_SUMMARY);
-    saveTicket(contosoId, 4712L, OTHER_TICKET_KEY, OTHER_TICKET_SUMMARY);
+    var contoso = customerorderRepository.findById(contosoId).orElseThrow();
+    saveTicket(contoso, 4711L, TICKET_KEY, TICKET_SUMMARY);
+    saveTicket(contoso, 4712L, OTHER_TICKET_KEY, OTHER_TICKET_SUMMARY);
   }
 
-  private void saveTicket(long customerorderId, long jiraId, String key, String summary) {
+  private void saveTicket(Customerorder customerorder, long jiraId, String key, String summary) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderId(customerorderId);
-    ticket.setScopeSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
+    ticket.setCustomerorder(customerorder);
     ticket.setJiraId(jiraId);
     ticket.setKey(key);
     ticket.setSummary(summary);

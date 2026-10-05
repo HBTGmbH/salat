@@ -12,6 +12,7 @@ import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.RUNNING;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.MANUAL;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -27,15 +28,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.orm.jpa.EntityManagerHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
+import de.hbt.salat.order.domain.Customerorder;
 
 /**
  * A replication started by hand (#1282) is started from inside the HTTP request, and with Open
@@ -59,7 +64,7 @@ class JiraReplicationManualRunTest {
   @MockitoSpyBean
   private JiraWorklogSyncService worklogSyncService;
 
-  /** The order 1L of the config is not in the test database; the sign is all the run reads. */
+  /** The run reads nothing of the order tree but the sign for its log. */
   @MockitoBean
   private JiraScopes scopes;
 
@@ -80,6 +85,15 @@ class JiraReplicationManualRunTest {
   @Autowired
   private EntityManagerFactory entityManagerFactory;
 
+  @Autowired
+  private EntityManager sharedEntityManager;
+
+  @Autowired
+  private PlatformTransactionManager transactionManager;
+
+  /** Real, because config and tickets refer to it with a foreign key (#1368). */
+  private OrderTree orderTree;
+  private Customerorder customerorder;
   private long configId;
 
   @BeforeEach
@@ -88,12 +102,13 @@ class JiraReplicationManualRunTest {
     when(authorizedUser.getLoginSign()).thenReturn("mgr");
     when(authorizedUser.isManager()).thenReturn(true);
     when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
-    when(scopes.signOf(1L, null)).thenReturn(SCOPE);
+    orderTree = new OrderTree(sharedEntityManager, SCOPE);
+    customerorder = new TransactionTemplate(transactionManager).execute(status -> orderTree.customerorder(SCOPE));
+    when(scopes.signOf(customerorder.getId(), null)).thenReturn(SCOPE);
 
     var config = new JiraReplicationConfig();
     config.setName("Manueller Lauf");
-    config.setCustomerorderId(1L);
-    config.setScopeSign(SCOPE);
+    config.setCustomerorder(customerorder);
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
     config.setUsername("user");
@@ -106,8 +121,9 @@ class JiraReplicationManualRunTest {
   @AfterEach
   void tearDown() {
     runRepo.deleteByReplicationId(configId);
-    ticketRepo.deleteAll(ticketRepo.findInScope(1L, null));
+    ticketRepo.deleteAll(ticketRepo.findInScope(customerorder.getId(), null));
     configRepo.deleteById(configId);
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> orderTree.remove(customerorder));
   }
 
   @Test
@@ -178,7 +194,7 @@ class JiraReplicationManualRunTest {
   }
 
   private JiraTicket ticket(String key) {
-    return ticketRepo.findInScope(1L, null).stream()
+    return ticketRepo.findInScope(customerorder.getId(), null).stream()
         .filter(ticket -> ticket.getKey().equals(key))
         .findFirst().orElseThrow();
   }

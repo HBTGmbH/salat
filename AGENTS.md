@@ -786,9 +786,8 @@ Entities are divided into two categories (→ ADR-0011):
   views, ETL definitions and reports join on the id as well (#1202).
 - **The same holds for customer orders and suborders** (#1205): a record refers to them by
   `customerorder_id` / `suborder_id` with a foreign key, never by sign — signs are renamed, and a
-  suborder can be moved to another parent. The budget module keeps no sign column next to the ids
-  (#1321, #1359); the one mirror left is `scope_sign` of the JIRA tables, which
-  `JiraScopeSignMirrorListener` keeps in step. A subtree is decided by the path of
+  suborder can be moved to another parent. No sign column stands next to the ids, in the budget
+  module (#1321, #1359) as little as in the JIRA tables (#1372). A subtree is decided by the path of
   suborder ids (`OrderPosition`), not by a sign prefix. The exception is a `LIKE` pattern over
   complete order signs (`OrderPricing.suborderSign`, → `OrderPricingLookup`): that is a pattern,
   not a reference.
