@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +24,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.TimereportService;
-import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
@@ -54,20 +53,20 @@ public class TimereportBudgetBackfillService {
     private final AuthorizedUser authorizedUser;
 
     /**
-     * Assigns every so far unassigned booking for which exactly one active plan fits. Pass a
-     * customer order sign to restrict the run to that order, or {@code null} to run over every order
+     * Assigns every so far unassigned booking for which exactly one active plan fits. Pass the id of
+     * a customer order to restrict the run to that order, or {@code null} to run over every order
      * that has an active plan — the restriction is what makes it possible to work through a large
-     * installation order by order instead of in one go.
+     * installation order by order instead of in one go. The order is chosen by id (#1339): its sign
+     * can be renamed between choosing and running.
      */
     @Authorized(requiresManager = true)
-    public BudgetBackfillResult backfill(String customerorderSign) {
+    public BudgetBackfillResult backfill(Long customerorderId) {
         checkManager();
-        var customerorders = customerorderSign == null || customerorderSign.isBlank()
-            ? orderBudgetRepository.findActiveCustomerorderIds().stream()
-                .map(customerorderService::getCustomerorderById)
-                .filter(Objects::nonNull)
-                .toList()
-            : Stream.ofNullable(customerorderService.getCustomerorderBySign(customerorderSign)).toList();
+        var customerorderIds = customerorderId == null
+            ? orderBudgetRepository.findActiveCustomerorderIds()
+            : List.of(customerorderId);
+        // Sign and description only label the protocol, so the order is read as plain values.
+        var customerorders = customerorderService.getCustomerorderOptionsByIds(customerorderIds);
         return new BudgetBackfillResult(customerorders.stream()
             .map(this::backfillOrder)
             .filter(Objects::nonNull)
@@ -75,8 +74,8 @@ public class TimereportBudgetBackfillService {
             .toList());
     }
 
-    private BudgetBackfillOrderResult backfillOrder(Customerorder customerorder) {
-        var plans = orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.getId(), TRUE);
+    private BudgetBackfillOrderResult backfillOrder(CustomerorderOption customerorder) {
+        var plans = orderBudgetRepository.findByCustomerorderIdAndActive(customerorder.id(), TRUE);
         if (plans.isEmpty()) {
             // Without an active plan nothing can be assigned. Listing the order's whole history as
             // "no plan" would only bury the orders that do need attention.
@@ -86,8 +85,8 @@ public class TimereportBudgetBackfillService {
         var from = plans.stream().map(OrderBudget::getValidFrom).min(naturalOrder()).orElseThrow();
         var until = plans.stream().map(OrderBudget::getValidUntil).max(naturalOrder()).orElseThrow();
 
-        var reports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
-        var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByCustomerorderId(customerorder.getId()));
+        var reports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.id());
+        var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByCustomerorderId(customerorder.id()));
         var pending = split(reports, assignedIds);
 
         var assigned = BudgetBookingCounts.NONE;
@@ -113,7 +112,7 @@ public class TimereportBudgetBackfillService {
         // One plain bulk save per order; no batching machinery until it is measurably needed.
         assignmentRepository.saveAll(newAssignments);
 
-        return new BudgetBackfillOrderResult(customerorder.getSign(), customerorder.getShortdescription(),
+        return new BudgetBackfillOrderResult(customerorder.sign(), customerorder.shortdescriptionOrDescription(),
             from, until, assigned, ambiguous, withoutPlan, pending.alreadyAssigned());
     }
 

@@ -125,7 +125,7 @@
       <!--/* Straight into the bulk assignment, order and period already filled in (#913) */-->
       <a class="btn btn-outline-primary btn-sm ms-2"
          th:if="${section.kind().name() == 'UNPLANNED' and isManager}"
-         th:href="@{/budget/bulk-assignment(customerorderSign=${result.customerorderSign()},
+         th:href="@{/budget/bulk-assignment(customerorderId=${fBudgetCustomerOrderId},
                     from=${result.filter().getFrom()},until=${result.filter().getUntil()})}">
         <i class="icon ti ti-arrow-right"></i>
         <span th:text="#{main.controlling.section.UNPLANNED.assign}">Zuordnen</span>

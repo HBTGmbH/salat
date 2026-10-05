@@ -15,10 +15,11 @@ import de.hbt.salat.budget.domain.BulkAssignmentEmployee;
 @Data
 public class BulkAssignmentForm {
 
-    private String customerorderSign;
+    /** By id, not by sign (#1339): a sign can be renamed between preview and run. */
+    private Long customerorderId;
 
-    /** The complete order sign of the suborder, blank for the whole customer order. */
-    private String suborderSign;
+    /** The suborder, {@code null} for the whole customer order. */
+    private Long suborderId;
 
     /**
      * ISO both ways. Without the annotation Spring prints a {@code LocalDate} in the short German
@@ -44,13 +45,13 @@ public class BulkAssignmentForm {
 
     /** Whether the selection is complete enough to be previewed or applied. */
     public boolean isComplete() {
-        return customerorderSign != null && !customerorderSign.isBlank()
+        return customerorderId != null
             && from != null && until != null && !from.isAfter(until)
             && targetBudgetId != null;
     }
 
     public BulkAssignmentData toData() {
-        return new BulkAssignmentData(customerorderSign, suborderSign, from, until,
+        return new BulkAssignmentData(customerorderId, suborderId, from, until,
             targetBudgetId, employeeIds == null ? List.of() : employeeIds, includeAssigned);
     }
 

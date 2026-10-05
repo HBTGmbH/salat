@@ -1,6 +1,7 @@
 package de.hbt.salat.order.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
 
@@ -137,6 +139,23 @@ public class SuborderServiceTest {
   }
 
   /**
+   * A booking stays on its suborder after the suborder is hidden, so a reader placing bookings in
+   * the tree by path has to find the hidden one too (#1339) — while the read models of the visible
+   * suborders still leave it out.
+   */
+  @Test
+  public void should_include_hidden_suborders_with_their_path_in_all_read_models() {
+    givenOrderWithHiddenChild();
+
+    assertThat(suborderService.getAllSuborderReadModelsByCustomerorderId(CUSTOMERORDER_ID))
+        .extracting(SuborderReadModel::id, SuborderReadModel::path)
+        .containsExactly(tuple(1L, List.of(1L)), tuple(2L, List.of(1L, 2L)));
+    assertThat(suborderService.getSuborderReadModelsByCustomerorderId(CUSTOMERORDER_ID))
+        .extracting(SuborderReadModel::id)
+        .containsExactly(1L);
+  }
+
+  /**
    * The select box of the invoice mask hides what is inactive, and inactive means the validity has
    * ended before today (#1095, ADR-0029). A suborder entered ahead of time has not ended, so it
    * stays — otherwise nobody sees it and it gets entered a second time.
@@ -243,6 +262,7 @@ public class SuborderServiceTest {
 
   private void givenOrderWithHiddenChild() {
     var customerorder = mock(Customerorder.class);
+    when(customerorder.getId()).thenReturn(CUSTOMERORDER_ID);
     when(customerorder.getSign()).thenReturn("co");
 
     var parent = new Suborder();

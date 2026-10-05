@@ -3,6 +3,7 @@ package de.hbt.salat.budget.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,7 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -54,6 +57,7 @@ public class TimereportBudgetBackfillServiceTest {
 
   /** The orders and suborders by sign — plans and bookings refer to them by id (#1205). */
   private static final Map<String, Long> ORDER_IDS = Map.of("CO", 1L, "OTHER", 2L);
+  private static final long CO = 1L;
   private static final Map<String, Long> SUBORDER_IDS = Map.of(
       "CO/01", 1L, "CO/01/02", 2L, "CO/02", 3L, "CO/01/02/03", 4L, "OTHER/01", 5L);
   private final List<TimereportBudgetAssignment> stored = new ArrayList<>();
@@ -93,13 +97,12 @@ public class TimereportBudgetBackfillServiceTest {
       return saved;
     });
 
-    // Both known orders; the sign carries the id, so the report fixture can stay simple.
-    var co = customerorder("CO", 1L);
-    var other = customerorder("OTHER", 2L);
-    when(customerorderService.getCustomerorderBySign("CO")).thenReturn(co);
-    when(customerorderService.getCustomerorderBySign("OTHER")).thenReturn(other);
-    when(customerorderService.getCustomerorderById(1L)).thenReturn(co);
-    when(customerorderService.getCustomerorderById(2L)).thenReturn(other);
+    // Both known orders, as the order module answers for ids: ordered by sign, unknown ids missing.
+    var orders = List.of(option("CO", 1L), option("OTHER", 2L));
+    when(customerorderService.getCustomerorderOptionsByIds(anyCollection())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return orders.stream().filter(order -> ids.contains(order.id())).toList();
+    });
     when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
         .thenAnswer(invocation -> {
           LocalDate from = invocation.getArgument(0);
@@ -134,7 +137,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenReport(101L, "CO", 1L, JUN, HOUR);
     givenReport(102L, "CO", 2L, SEP, HOUR);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).hasSize(3);
     assertThat(stored).allSatisfy(a -> assertThat(a.getOrderBudget().getId()).isEqualTo(7L));
@@ -154,7 +157,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenReport(101L, "CO", 2L, MAR, HOUR);
     givenReport(102L, "CO", 4L, MAR, HOUR);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).hasSize(3);
     assertThat(order(result, "CO").assigned().bookings()).isEqualTo(3);
@@ -174,7 +177,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenReport(102L, "CO", 1L, MAR, HOUR);  // CO/01, above it
     givenReport(103L, "CO", 3L, MAR, HOUR);  // CO/02, another branch
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).extracting(TimereportBudgetAssignment::getTimereportId)
         .containsExactlyInAnyOrder(100L, 101L);
@@ -188,7 +191,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenPlan(8L, "CO", null, JAN, JUN, true);
     givenReport(100L, "CO", 1L, MAR, HOUR);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).isEmpty();
     assertThat(order(result, "CO").ambiguous().bookings()).isEqualTo(1);
@@ -200,7 +203,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
     givenReport(100L, "CO", 3L, MAR, Duration.ofMinutes(90));
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).isEmpty();
     assertThat(order(result, "CO").withoutPlan().bookings()).isEqualTo(1);
@@ -213,10 +216,10 @@ public class TimereportBudgetBackfillServiceTest {
     givenPlan(7L, "CO", null, JAN, DEC, true);
     givenReport(100L, "CO", 1L, MAR, HOUR);
     givenReport(101L, "CO", 1L, JUN, HOUR);
-    service.backfill("CO");
+    service.backfill(CO);
     var afterFirstRun = List.copyOf(stored);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).containsExactlyElementsOf(afterFirstRun);
     assertThat(order(result, "CO").assigned().bookings()).isZero();
@@ -230,7 +233,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenReport(100L, "CO", 1L, MAR, HOUR);
     givenReport(200L, "OTHER", 5L, MAR, HOUR);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(result.orders()).singleElement()
         .extracting(BudgetBackfillOrderResult::customerorderSign).isEqualTo("CO");
@@ -276,7 +279,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenReport(100L, "CO", 1L, MAR, HOUR);
     givenReport(101L, "CO", 1L, SEP, HOUR);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(stored).hasSize(1);
     assertThat(order(result, "CO").assigned().bookings()).isEqualTo(1);
@@ -292,12 +295,35 @@ public class TimereportBudgetBackfillServiceTest {
     givenPlan(8L, "CO", "CO/02", JUN, DEC, true);
     givenReport(100L, "CO", 3L, SEP, HOUR);
 
-    var result = service.backfill("CO");
+    var result = service.backfill(CO);
 
     assertThat(order(result, "CO").assigned().bookings()).isEqualTo(1);
 
     assertThat(order(result, "CO").examinedFrom()).isEqualTo(JAN);
     assertThat(order(result, "CO").examinedUntil()).isEqualTo(DEC);
+  }
+
+  /** The protocol names the order by its current sign and description, read by id (#1339). */
+  @Test
+  public void should_name_the_order_in_the_protocol() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR, HOUR);
+
+    var result = service.backfill(CO);
+
+    assertThat(order(result, "CO").customerorderDescription()).isEqualTo("CO description");
+  }
+
+  /** An order deleted since it was chosen has nothing left to assign; the run must not fail on it. */
+  @Test
+  public void should_find_nothing_for_an_order_that_no_longer_exists() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR, HOUR);
+
+    var result = service.backfill(99L);
+
+    assertThat(result.isEmpty()).isTrue();
+    assertThat(stored).isEmpty();
   }
 
   @Test
@@ -306,7 +332,7 @@ public class TimereportBudgetBackfillServiceTest {
     givenPlan(7L, "CO", null, JAN, DEC, true);
     givenReport(100L, "CO", 1L, MAR, HOUR);
 
-    assertThatThrownBy(() -> service.backfill("CO"))
+    assertThatThrownBy(() -> service.backfill(CO))
         .isInstanceOf(AuthorizationException.class)
         .hasMessageContaining(ErrorCode.AA_NEEDS_MANAGER.getCode());
     assertThat(stored).isEmpty();
@@ -348,12 +374,8 @@ public class TimereportBudgetBackfillServiceTest {
         .build());
   }
 
-  private static Customerorder customerorder(String sign, long id) {
-    var order = new Customerorder();
-    order.setSign(sign);
-    order.setShortdescription(sign + " description");
-    setId(order, id);
-    return order;
+  private static CustomerorderOption option(String sign, long id) {
+    return new CustomerorderOption(id, sign, sign + " description", null, null, null, false);
   }
 
   private static Suborder firstLevel(String orderSign, String sign) {
