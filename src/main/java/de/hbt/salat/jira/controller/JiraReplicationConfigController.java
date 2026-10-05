@@ -1,6 +1,5 @@
 package de.hbt.salat.jira.controller;
 
-import static java.util.stream.Collectors.toMap;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -20,7 +19,6 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
-import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 import de.hbt.salat.jira.service.JiraReplicationConfigService;
 import de.hbt.salat.jira.service.JiraReplicationLauncher;
 import de.hbt.salat.jira.service.JiraReplicationRunService;
@@ -64,14 +62,12 @@ public class JiraReplicationConfigController {
   @GetMapping
   public String list(@RequestParam(required = false) Boolean fJiraRunFailedOnly, Model model) {
     var replications = jiraReplicationConfigService.getAll();
-    var namesById = replications.stream()
-        .collect(toMap(JiraReplicationConfigInfo::id, JiraReplicationConfigInfo::name));
     boolean failedOnly = Boolean.TRUE.equals(fJiraRunFailedOnly);
 
     model.addAttribute("replications", replications);
     model.addAttribute("runningReplicationIds", jiraReplicationRunService.getRunningReplicationIds());
     model.addAttribute("runs", jiraReplicationRunService.getLatestRuns(RUN_LIMIT, failedOnly).stream()
-        .map(run -> JiraReplicationRunViewHelper.from(run, namesById))
+        .map(JiraReplicationRunViewHelper::from)
         .toList());
     model.addAttribute("fJiraRunFailedOnly", failedOnly);
     return "jira/replication-list";

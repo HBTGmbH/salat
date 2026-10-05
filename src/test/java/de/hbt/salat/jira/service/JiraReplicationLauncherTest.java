@@ -113,7 +113,6 @@ class JiraReplicationLauncherTest {
   private static JiraReplicationRun openedRun() {
     return JiraReplicationRun.builder()
         .id(RUN_ID)
-        .replicationId(REPLICATION_ID)
         .status(RUNNING)
         .triggeredBy(MANUAL)
         .build();
