@@ -4838,3 +4838,224 @@ databaseChangeLog:
                 CASE WHEN TRIM(`ticket_reference`) REGEXP '^[A-Za-z][A-Za-z0-9_]+-[0-9]+$'
                      THEN UPPER(TRIM(`ticket_reference`)) ELSE TRIM(`ticket_reference`) END
               FROM `favorite` WHERE `ticket_reference` IS NOT NULL AND TRIM(`ticket_reference`) <> ''
+
+  - changeSet:
+      id: 133
+      author: kr
+      comment: Kosten- und Preis-Views verknuepfen ueber die ids (#1345, #1202, #1359)
+      # Die drei Views sind bisher von Hand in der Datenbank gepflegt worden und stehen hiermit zum ersten
+      # Mal im Changelog. Sie lasen die Spiegelspalten employee_cost.name, employee_cost_employee.employee_cost_name,
+      # employee_sign, customerorder_sign und suborder_sign sowie order_pricing.employee_sign und customerorder_sign.
+      # Jetzt treffen sie Person, Auftrag, Unterauftrag und Kostenkategorie ueber die id, so wie die Anwendung
+      # (EmployeeCostLookup, OrderPricingLookup). Die Spiegelspalten koennen danach entfallen.
+      #
+      # Die Spalten der Views und ihre Bedeutung bleiben, damit die Reports darauf unveraendert laufen:
+      # - cost_suborder_sign_matcher ist der vollstaendige Schluessel des Unterauftrags der Zuordnung ohne
+      #   Schraegstrich, bei einer Zuordnung zum Auftrag dessen Kuerzel, sonst leer. Die Laenge ordnet weiter
+      #   von der speziellen zur allgemeinen Zuordnung.
+      # - price_employee_sign_matcher ist das Kuerzel der Person bei einem persoenlichen Satz, sonst leer.
+      # - order_pricing.suborder_sign ist ein LIKE-Muster und kein Verweis, es bleibt (#1212).
+      #
+      # Unterschiede zur Fassung von Hand, gegen den Bestand geprueft:
+      # - Eine Zuordnung zu einem Unterauftrag gilt fuer dessen Teilbaum, verglichen mit abschliessendem
+      #   Schraegstrich; ein Geschwister mit gleichem Anfang (AUFTRAG/010 zu AUFTRAG/01) faellt nicht mehr hinein.
+      # - Eine Zuordnung zu einem Auftrag gilt nur fuer diesen Auftrag (#1343), nicht mehr fuer alle.
+      # - Ein persoenlicher Stundensatz gilt nur fuer seine Person. Die alte Fassung verglich das Kuerzel per
+      #   LIKE mit angehaengtem Prozentzeichen und traf damit jede Person, deren Kuerzel gleich anfaengt.
+      # - Eine Zuordnung ohne Person (#968) gilt fuer niemanden.
+      changes:
+        - createView:
+            viewName: order_cost_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT DISTINCT data.customer_name,
+                              data.order_sign,
+                              data.employee_sign,
+                              data.suborder_sign,
+                              GREATEST(data.employee_order_from, data.ecost_from)  AS valid_from,
+                              LEAST(data.employee_order_until, data.ecost_until)   AS valid_until,
+                              data.ecost_name                                      AS cost_name,
+                              ROUND(data.ecost_cost_cents_per_hour / 100, 2)       AS cost_eur_per_hour,
+                              data.ece_suborder_sign                               AS cost_suborder_sign_matcher
+              FROM (SELECT cust.shortname                                                                    AS customer_name,
+                           co.sign                                                                           AS order_sign,
+                           emp.sign                                                                          AS employee_sign,
+                           s_fqs.sign_fully_qualified                                                        AS suborder_sign,
+                           so.invoice                                                                        AS suborder_invoice,
+                           eo.fromDate                                                                       AS employee_order_from,
+                           IFNULL(eo.untilDate, IFNULL(so.untilDate, IFNULL(co.untilDate, '2999-12-31')))    AS employee_order_until,
+                           IFNULL(TRIM(TRAILING '/' FROM (SELECT f.sign_fully_qualified FROM suborder_fqs f
+                                                          WHERE f.suborder_id = ece.suborder_id)),
+                                  IFNULL((SELECT c2.sign FROM customerorder c2 WHERE c2.id = ece.customerorder_id), '')) AS ece_suborder_sign,
+                           IFNULL((SELECT ecat.name FROM employee_cost_category ecat WHERE ecat.id = ecost.category_id),
+                                  '???')                                                                     AS ecost_name,
+                           IFNULL(ecost.cost_cents_per_hour, 99999)                                          AS ecost_cost_cents_per_hour,
+                           GREATEST(IFNULL(ecost.valid_from, '2000-01-01'), IFNULL(ece.valid_from, '2000-01-01'))  AS ecost_from,
+                           LEAST(IFNULL(ecost.valid_until, '2999-12-31'), IFNULL(ece.valid_until, '2999-12-31'))   AS ecost_until
+                    FROM customerorder co
+                             JOIN customer cust ON cust.id = co.CUSTOMER_ID
+                             JOIN suborder so ON so.CUSTOMERORDER_ID = co.id
+                             JOIN employeeorder eo ON eo.SUBORDER_ID = so.id
+                             JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                             JOIN employee emp ON emp.id = ec.EMPLOYEE_ID
+                             JOIN suborder_fqs s_fqs ON s_fqs.suborder_id = so.id
+                             LEFT JOIN employee_cost_employee ece
+                                       ON ece.employee_id = emp.id
+                                           AND (ece.customerorder_id IS NULL OR ece.customerorder_id = co.id)
+                                           AND (ece.suborder_id IS NULL OR s_fqs.sign_fully_qualified LIKE
+                                               CONCAT((SELECT f.sign_fully_qualified FROM suborder_fqs f
+                                                       WHERE f.suborder_id = ece.suborder_id), '%'))
+                             LEFT JOIN employee_cost ecost ON ecost.category_id = ece.employee_cost_category_id) data
+              WHERE data.employee_order_until >= data.ecost_from
+                AND data.employee_order_from <= data.ecost_until
+        - createView:
+            viewName: order_pricing_cost_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT data.customer_name,
+                     data.order_sign,
+                     data.employee_sign,
+                     data.suborder_sign,
+                     data.suborder_invoice,
+                     GREATEST(data.employee_order_from, data.ecost_from, data.op_from)  AS valid_from,
+                     LEAST(data.employee_order_until, data.ecost_until, data.op_until)  AS valid_until,
+                     data.ecost_name                                                    AS cost_name,
+                     ROUND(data.ecost_cost_cents_per_hour / 100, 2)                     AS cost_eur_per_hour,
+                     data.op_description                                                AS price_description,
+                     ROUND(data.op_price_cents_per_hour / 100, 2)                       AS price_eur_per_hour,
+                     data.ece_suborder_sign                                             AS cost_suborder_sign_matcher,
+                     data.op_employee_sign                                              AS price_employee_sign_matcher,
+                     data.op_suborder_sign                                              AS price_suborder_sign_matcher
+              FROM (SELECT cust.shortname                                                                    AS customer_name,
+                           co.sign                                                                           AS order_sign,
+                           emp.sign                                                                          AS employee_sign,
+                           s_fqs.sign_fully_qualified                                                        AS suborder_sign,
+                           so.invoice                                                                        AS suborder_invoice,
+                           eo.fromDate                                                                       AS employee_order_from,
+                           IFNULL(eo.untilDate, IFNULL(so.untilDate, IFNULL(co.untilDate, '2999-12-31')))    AS employee_order_until,
+                           IFNULL(TRIM(TRAILING '/' FROM (SELECT f.sign_fully_qualified FROM suborder_fqs f
+                                                          WHERE f.suborder_id = ece.suborder_id)),
+                                  IFNULL((SELECT c2.sign FROM customerorder c2 WHERE c2.id = ece.customerorder_id), '')) AS ece_suborder_sign,
+                           IFNULL((SELECT ecat.name FROM employee_cost_category ecat WHERE ecat.id = ecost.category_id),
+                                  '???')                                                                     AS ecost_name,
+                           IFNULL(ecost.cost_cents_per_hour, 99999)                                          AS ecost_cost_cents_per_hour,
+                           GREATEST(IFNULL(ecost.valid_from, '2000-01-01'), IFNULL(ece.valid_from, '2000-01-01'))  AS ecost_from,
+                           LEAST(IFNULL(ecost.valid_until, '2999-12-31'), IFNULL(ece.valid_until, '2999-12-31'))   AS ecost_until,
+                           IFNULL(op.description, '???')                                                     AS op_description,
+                           IFNULL(op.price_cents_per_hour, 0)                                                AS op_price_cents_per_hour,
+                           IFNULL(op.valid_from, '2000-01-01')                                               AS op_from,
+                           IFNULL(op.valid_until, '2999-12-31')                                              AS op_until,
+                           IF(op.employee_id IS NULL, '', emp.sign)                                          AS op_employee_sign,
+                           IFNULL(op.suborder_sign, '')                                                      AS op_suborder_sign
+                    FROM customerorder co
+                             JOIN customer cust ON cust.id = co.CUSTOMER_ID
+                             JOIN suborder so ON so.CUSTOMERORDER_ID = co.id
+                             JOIN employeeorder eo ON eo.SUBORDER_ID = so.id
+                             JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                             JOIN employee emp ON emp.id = ec.EMPLOYEE_ID
+                             JOIN suborder_fqs s_fqs ON s_fqs.suborder_id = so.id
+                             LEFT JOIN employee_cost_employee ece
+                                       ON ece.employee_id = emp.id
+                                           AND (ece.customerorder_id IS NULL OR ece.customerorder_id = co.id)
+                                           AND (ece.suborder_id IS NULL OR s_fqs.sign_fully_qualified LIKE
+                                               CONCAT((SELECT f.sign_fully_qualified FROM suborder_fqs f
+                                                       WHERE f.suborder_id = ece.suborder_id), '%'))
+                             LEFT JOIN employee_cost ecost ON ecost.category_id = ece.employee_cost_category_id
+                             LEFT JOIN order_pricing op
+                                       ON op.customerorder_id = co.id
+                                           AND (op.employee_id IS NULL OR op.employee_id = emp.id)
+                                           AND s_fqs.sign_fully_qualified LIKE CONCAT(IFNULL(op.suborder_sign, ''), '%')) data
+              WHERE data.employee_order_until >= data.op_from
+                AND data.employee_order_from <= data.op_until
+                AND data.employee_order_until >= data.ecost_from
+                AND data.employee_order_from <= data.ecost_until
+        - createView:
+            viewName: order_pricing_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT DISTINCT data.customer_name,
+                              data.order_sign,
+                              data.employee_sign,
+                              data.suborder_sign,
+                              data.suborder_id,
+                              GREATEST(data.employee_order_from, data.op_from)  AS valid_from,
+                              LEAST(data.employee_order_until, data.op_until)   AS valid_until,
+                              data.op_description                               AS price_description,
+                              ROUND(data.op_price_cents_per_hour / 100, 2)      AS price_eur_per_hour,
+                              data.op_employee_sign                             AS price_employee_sign_matcher,
+                              data.op_suborder_sign                             AS price_suborder_sign_matcher
+              FROM (SELECT cust.shortname                                                                 AS customer_name,
+                           co.sign                                                                        AS order_sign,
+                           emp.sign                                                                       AS employee_sign,
+                           s_fqs.sign_fully_qualified                                                     AS suborder_sign,
+                           so.invoice                                                                     AS suborder_invoice,
+                           eo.fromDate                                                                    AS employee_order_from,
+                           IFNULL(eo.untilDate, IFNULL(so.untilDate, IFNULL(co.untilDate, '2999-12-31'))) AS employee_order_until,
+                           IFNULL(op.description, '???')                                                  AS op_description,
+                           IFNULL(op.price_cents_per_hour, 0)                                             AS op_price_cents_per_hour,
+                           IFNULL(op.valid_from, '2000-01-01')                                            AS op_from,
+                           IFNULL(op.valid_until, '2999-12-31')                                           AS op_until,
+                           IF(op.employee_id IS NULL, '', emp.sign)                                       AS op_employee_sign,
+                           IFNULL(op.suborder_sign, '')                                                   AS op_suborder_sign,
+                           so.id                                                                          AS suborder_id
+                    FROM customerorder co
+                             JOIN customer cust ON cust.id = co.CUSTOMER_ID
+                             JOIN suborder so ON so.CUSTOMERORDER_ID = co.id
+                             JOIN employeeorder eo ON eo.SUBORDER_ID = so.id
+                             JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                             JOIN employee emp ON emp.id = ec.EMPLOYEE_ID
+                             JOIN suborder_fqs s_fqs ON s_fqs.suborder_id = so.id
+                             LEFT JOIN order_pricing op
+                                       ON op.customerorder_id = co.id
+                                           AND (op.employee_id IS NULL OR op.employee_id = emp.id)
+                                           AND s_fqs.sign_fully_qualified LIKE CONCAT(IFNULL(op.suborder_sign, ''), '%')) data
+              WHERE data.employee_order_until >= data.op_from
+                AND data.employee_order_from <= data.op_until
+                AND data.suborder_invoice = 'Y'
+
+  - changeSet:
+      id: 134
+      author: kr
+      comment: View team_membership - Teamzuordnung aus Vertrag und Vorgesetzten (#1320)
+      # Je Vertrag und Vorgesetzter/Vorgesetztem eine Zeile. Fuehrende Quelle sind die Vorgesetzten des
+      # Vertrags (employeecontract_supervisor), ueber die auch die Anwendung entscheidet, wessen Buchungen
+      # eine Person mit der Rolle People Lead lesen darf. Die Tabellen team_lead/team_member, die Reports
+      # bisher lasen, pflegt niemand und sie verknuepfen ueber Kuerzel; sie entfallen nach der Umstellung.
+      #
+      # Ein Team ist die Menge der Vorgesetzten eines Vertrags, eine Doppelspitze also ein Team. Schluessel
+      # ist team_key (die ids der Vorgesetzten); team_name aus den Vornamen dient nur der Anzeige, zwei
+      # Leitungen gleichen Vornamens waeren daran nicht zu unterscheiden.
+      #
+      # lead_login ist der Login der Leitung: Reports setzen ###-AUTH-USER-SIGN-### auf den Login der
+      # angemeldeten Person, und der ist nicht bei jeder Person gleich ihrem Kuerzel.
+      #
+      # Vertraege mit Freelancer-Kennzeichen sind nicht enthalten. Ein Report schraenkt die Zeilen ueber
+      # valid_from/valid_until auf seinen Zeitraum ein.
+      changes:
+        - createView:
+            viewName: team_membership
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT ec.id         AS employeecontract_id,
+                     ec.validFrom  AS valid_from,
+                     ec.validUntil AS valid_until,
+                     e.id          AS member_id,
+                     e.sign        AS member_sign,
+                     s.id          AS lead_id,
+                     s.sign        AS lead_sign,
+                     su.loginname  AS lead_login,
+                     tn.team_key,
+                     tn.team_name
+              FROM employeecontract ec
+                       JOIN employee e ON e.id = ec.EMPLOYEE_ID
+                       JOIN employeecontract_supervisor es ON es.EMPLOYEECONTRACT_ID = ec.id
+                       JOIN employee s ON s.id = es.SUPERVISOR_ID
+                       LEFT JOIN employee_salat_user esu ON esu.employee_id = s.id
+                       LEFT JOIN salat_user su ON su.id = esu.salat_user_id
+                       JOIN (SELECT es2.EMPLOYEECONTRACT_ID,
+                                    GROUP_CONCAT(s2.id ORDER BY s2.id SEPARATOR ',') AS team_key,
+                                    CONCAT('Team ', GROUP_CONCAT(s2.firstname ORDER BY s2.firstname SEPARATOR ' und ')) AS team_name
+                             FROM employeecontract_supervisor es2
+                                      JOIN employee s2 ON s2.id = es2.SUPERVISOR_ID
+                             GROUP BY es2.EMPLOYEECONTRACT_ID) tn ON tn.EMPLOYEECONTRACT_ID = ec.id
+              WHERE NOT COALESCE(ec.freelancer, 0)
