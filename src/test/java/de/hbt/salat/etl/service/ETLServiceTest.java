@@ -42,6 +42,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
@@ -131,6 +132,9 @@ public class ETLServiceTest {
    * schriebene Zeile ist dieselbe Instanz, keine zweite (#1071).
    */
   private final List<ETLRunHistory> savedInstances = new ArrayList<>();
+
+  /** Die Einträge der Ausführungshistorie, in der Reihenfolge des Speicherns. */
+  private final List<ETLExecutionHistory> savedEntries = new ArrayList<>();
 
   private record RunState(Status status, Trigger triggeredBy, LocalDateTime startedAt,
                           LocalDateTime finishedAt, String message) {}
@@ -252,6 +256,84 @@ public class ETLServiceTest {
     assertThat(savedRuns).hasSize(2);
     assertThat(savedRuns.getLast().status()).isEqualTo(Status.FAILED);
     assertThat(savedRuns.getLast().message()).contains("Lauf abgebrochen nach 0 Definition(en)");
+  }
+
+  // --- Der Eintrag je Periode (#1357) ------------------------------------------------------------
+
+  @Test
+  void a_successful_entry_holds_period_durations_and_counts_but_no_sql() {
+    givenThreePartDefinition();
+    when(jdbcTemplate.update(anyString())).thenReturn(3);
+
+    etlService.execute(ONE_MONTH, List.of("worked-hours"), SCHEDULED);
+
+    var entry = savedEntries.getFirst();
+    assertThat(entry.isSuccess()).isTrue();
+    assertThat(entry.getMessage())
+        .doesNotContain("Init SQL", "Execute SQL", "Cleanup SQL", "create table", "insert into", "drop table")
+        .startsWith("Date Range: 2026-03-01 - 2026-03-31\n")
+        .containsPattern("\nInit took \\S+ \\S+ \\(3 rows affected, 0 tables/objects created\\)\n")
+        .containsPattern("\nExecute took \\S+ \\S+ \\(6 rows affected\\)\n")
+        .containsPattern("\nCleanup took \\S+ \\S+ \\(3 rows affected, 0 tables/objects dropped\\)\n$");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "init,    1, create table tmp_hours as select 1",
+      "execute, 2, insert into target select 2",
+      "cleanup, 1, drop table tmp_hours",
+  })
+  void a_failed_entry_names_the_statement_its_part_and_the_error(String part, int position, String failing) {
+    givenThreePartDefinition();
+    when(jdbcTemplate.update(anyString())).thenAnswer(i -> {
+      if (failing.equals(i.getArgument(0))) {
+        throw new DataAccessResourceFailureException("table is locked");
+      }
+      return 1;
+    });
+
+    etlService.execute(ONE_MONTH, List.of("worked-hours"), SCHEDULED);
+
+    var entry = savedEntries.getFirst();
+    assertThat(entry.isSuccess()).isFalse();
+    assertThat(entry.getMessage())
+        .contains("Failed statement (" + part + ", statement " + position + "): " + failing + "\n")
+        .contains("ETL execution failed: table is locked\n")
+        .doesNotContain("Init SQL", "Execute SQL", "Cleanup SQL");
+  }
+
+  /** Scheitert schon das Auflösen der Parameter, steht die Anweisung so in der Meldung, wie sie definiert ist. */
+  @Test
+  void a_statement_whose_parameters_cannot_be_resolved_is_named_as_defined() {
+    givenThreePartDefinition();
+    when(parameterResolver.resolve(anyString(), any())).thenAnswer(i -> {
+      if (i.getArgument(0, String.class).contains(":unknown")) {
+        throw new IllegalStateException("unknown parameter");
+      }
+      return i.getArgument(0);
+    });
+    definitionRepo.findByName("worked-hours").orElseThrow()
+        .setExecute(new SqlStatements(List.of("insert into target select :unknown")));
+
+    assertThatThrownBy(() -> etlService.execute(ONE_MONTH, List.of("worked-hours"), SCHEDULED))
+        .isInstanceOf(IllegalStateException.class);
+
+    assertThat(savedEntries.getFirst().getMessage())
+        .contains("Failed statement (execute, statement 1): insert into target select :unknown\n")
+        .contains("unknown parameter");
+  }
+
+  /** Eine Definition mit Anweisungen in allen drei Teilen, zwei davon in execute. */
+  private void givenThreePartDefinition() {
+    givenDefinition("worked-hours");
+    var definition = definitionRepo.findByName("worked-hours").orElseThrow();
+    definition.setInit(new SqlStatements(List.of("create table tmp_hours as select 1")));
+    definition.setExecute(new SqlStatements(List.of("insert into target select 1", "insert into target select 2")));
+    definition.setCleanup(new SqlStatements(List.of("drop table tmp_hours")));
+    lenient().when(historyRepo.save(any())).thenAnswer(i -> {
+      savedEntries.add(i.getArgument(0));
+      return i.getArgument(0);
+    });
   }
 
   // --- Die Sperre und die eine Zeile pro Anstoß (#1071) --------------------------------------

@@ -502,6 +502,11 @@ public class ETLService {
    * Das ist der Sinn der Trennung: „bevor ein Lauf entsteht" lässt sich nicht zusagen, wenn die
    * Prüfung mitten im Lauf sitzt (#1071).
    *
+   * <p>Der Eintrag je Periode hält nur fest, was sich nicht aus Definition und Zeitraum herleiten
+   * lässt (#1357): Zeitraum, Dauer und Zeilenzahl je Teil, im Fehlerfall die gescheiterte Anweisung.
+   * Das SQL jeder Anweisung stand früher darin und machte rund 95 % des Eintrags aus — ein Lauf über
+   * die ganze Historie schrieb so über 100 MB.
+   *
    * @return {@code true}, wenn jede Referenzperiode dieser Definition durchlief
    */
   private boolean executeETL(ETLDefinition def, LocalDateRange dateRange) {
@@ -513,18 +518,13 @@ public class ETLService {
       boolean success = false;
       StringBuilder message = new StringBuilder();
       message.append("Date Range: ").append(refPeriod).append("\n");
+      var running = new RunningStatement();
 
       try {
         var initDiff = schemaDiffService.diffAround(
             () -> {
               var stopwatch = Stopwatch.createStarted();
-              int initRows = 0;
-              for (String rawSql : def.getInit().getStatements()) {
-                String sql = parameterResolver.resolve(rawSql, refPeriod);
-                log.debug("Send init SQL: {}", sql);
-                message.append("Init SQL: ").append(sql).append("\n");
-                initRows += jdbc.update(sql);
-              }
+              int initRows = executeStatements("init", def.getInit(), refPeriod, running);
               stopwatch.stop();
               message.append("Init took ").append(stopwatch).append(" (").append(initRows).append(" rows affected, ");
             },
@@ -534,13 +534,7 @@ public class ETLService {
 
         {
           var stopwatch = Stopwatch.createStarted();
-          int executeRows = 0;
-          for (String rawSql : def.getExecute().getStatements()) {
-            String sql = parameterResolver.resolve(rawSql, refPeriod);
-            log.debug("Send execute SQL: {}", sql);
-            message.append("Execute SQL: ").append(sql).append("\n");
-            executeRows += jdbc.update(sql);
-          }
+          int executeRows = executeStatements("execute", def.getExecute(), refPeriod, running);
           stopwatch.stop();
           message.append("Execute took ").append(stopwatch).append(" (").append(executeRows).append(" rows affected)\n");
         }
@@ -548,13 +542,7 @@ public class ETLService {
         var cleanupDiff = schemaDiffService.diffAround(
             () -> {
               var stopwatch = Stopwatch.createStarted();
-              int cleanupRows = 0;
-              for (String rawSql : def.getCleanup().getStatements()) {
-                String sql = parameterResolver.resolve(rawSql, refPeriod);
-                log.debug("Send cleanup SQL: {}", sql);
-                message.append("Cleanup SQL: ").append(sql).append("\n");
-                cleanupRows += jdbc.update(sql);
-              }
+              int cleanupRows = executeStatements("cleanup", def.getCleanup(), refPeriod, running);
               stopwatch.stop();
               message.append("Cleanup took ").append(stopwatch).append(" (").append(cleanupRows).append(" rows affected, ");
             },
@@ -565,12 +553,14 @@ public class ETLService {
         success = true;
       } catch (DataAccessException ex) {
         log.error("ETL execution failed: {}", etlName, ex);
+        running.appendTo(message);
         message.append("ETL execution failed: ").append(ex.getMessage()).append("\n");
       } catch (RuntimeException ex) {
         // Alles jenseits des SQLs — aufgelöste Parameter, Schema-Vergleich — bricht den ganzen Lauf
-        // ab, so wie bisher. Ohne diesen Zweig stünde in der Zeile aber nur das zuletzt abgesetzte
-        // SQL und kein Wort darüber, woran es lag (#573).
+        // ab, so wie bisher. Ohne diesen Zweig stünde in der Zeile kein Wort darüber, woran es lag
+        // (#573).
         log.error("ETL execution failed unexpectedly: {}", etlName, ex);
+        running.appendTo(message);
         message.append("ETL execution failed: ").append(ex).append("\n");
         throw ex;
       } finally {
@@ -582,6 +572,55 @@ public class ETLService {
       }
     }
     return allPeriodsSucceeded;
+  }
+
+  /**
+   * Setzt die Anweisungen eines Teils ab und hält dabei fest, welche gerade läuft — für die Meldung,
+   * falls sie scheitert.
+   *
+   * @return die Summe der betroffenen Zeilen
+   */
+  private int executeStatements(String part, SqlStatements statements, LocalDateRange refPeriod,
+      RunningStatement running) {
+    int rows = 0;
+    var rawStatements = statements.getStatements();
+    for (int i = 0; i < rawStatements.size(); i++) {
+      // Erst die rohe Anweisung: scheitert schon das Auflösen der Parameter, steht sie in der Meldung.
+      running.start(part, i + 1, rawStatements.get(i));
+      String sql = parameterResolver.resolve(rawStatements.get(i), refPeriod);
+      running.start(part, i + 1, sql);
+      log.debug("Send {} SQL: {}", part, sql);
+      rows += jdbc.update(sql);
+    }
+    running.finish();
+    return rows;
+  }
+
+  /**
+   * Die Anweisung, die gerade läuft (#1357). Im Erfolgsfall kommt sie nicht in die Meldung — nur
+   * wenn eine Ausnahme sie unterbricht, steht sie samt Teil und Position darin.
+   */
+  private static final class RunningStatement {
+    private String part;
+    private int position;
+    private String sql;
+
+    void start(String part, int position, String sql) {
+      this.part = part;
+      this.position = position;
+      this.sql = sql;
+    }
+
+    void finish() {
+      sql = null;
+    }
+
+    void appendTo(StringBuilder message) {
+      if (sql != null) {
+        message.append("Failed statement (").append(part).append(", statement ").append(position).append("): ")
+            .append(sql).append("\n");
+      }
+    }
   }
 
   private List<LocalDateRange> generateReferencePeriodRanges(LocalDateRange dateRange, ReferencePeriod referencePeriod) {
