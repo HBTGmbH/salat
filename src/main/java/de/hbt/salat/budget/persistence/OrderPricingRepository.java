@@ -3,7 +3,6 @@ package de.hbt.salat.budget.persistence;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -21,8 +20,7 @@ public interface OrderPricingRepository
      * The customer orders the list view offers for filtering (#949). Taken from the pricings
      * themselves rather than from the selectable orders: a pricing outlives its order's visibility,
      * so an order that has been hidden or has expired still needs to be reachable — those are the
-     * rows one is looking for when tidying up. By id, not by the sign column: that one only mirrors
-     * the order for reports (#1212).
+     * rows one is looking for when tidying up. By id (#1212).
      */
     @Query("SELECT DISTINCT p.customerorderId FROM OrderPricing p")
     List<Long> findDistinctCustomerorderIds();
@@ -41,17 +39,13 @@ public interface OrderPricingRepository
      * <p>The order is compared by id (#1212).
      *
      * <p>Person and plan need no such folding: both are foreign keys and either set or {@code NULL}.
-     * {@code p.orderBudget.id} reads that key without joining the plan. A rate whose person the
-     * migration could not resolve (#968) carries no id but still its sign; it applies to nobody and
-     * therefore competes with nothing, which is what the sign condition says. It goes away together
-     * with the sign column.
+     * {@code p.orderBudget.id} reads that key without joining the plan.
      */
     @Query("""
         SELECT p FROM OrderPricing p
         WHERE p.customerorderId = :co
           AND COALESCE(p.suborderSign, '') = COALESCE(:so, '')
-          AND ((:emp IS NULL AND p.employeeId IS NULL AND COALESCE(p.employeeSign, '') = '')
-               OR p.employeeId = :emp)
+          AND ((:emp IS NULL AND p.employeeId IS NULL) OR p.employeeId = :emp)
           AND ((:budgetId IS NULL AND p.orderBudget.id IS NULL) OR p.orderBudget.id = :budgetId)
           AND p.validFrom <= :until AND p.validUntil >= :from
           AND (:excludeId IS NULL OR p.id != :excludeId)
@@ -72,22 +66,5 @@ public interface OrderPricingRepository
         ORDER BY p.validFrom ASC, p.id ASC
         """)
     List<OrderPricing> findByOrderBudgetId(@Param("budgetId") long orderBudgetId);
-
-    /**
-     * Keeps the sign column in step with the person (#966, #968) — see
-     * {@code EmployeeCostAssignmentRepository#updateEmployeeSign}. Rates for everyone carry no id
-     * and are left alone.
-     */
-    @Modifying
-    @Query("UPDATE OrderPricing p SET p.employeeSign = :sign WHERE p.employeeId = :employeeId")
-    int updateEmployeeSign(@Param("employeeId") long employeeId, @Param("sign") String sign);
-
-    /**
-     * Keeps the sign column in step with the order (#1212) — the application resolves by the id, the
-     * column is there for reports and ETL definitions.
-     */
-    @Modifying
-    @Query("UPDATE OrderPricing p SET p.customerorderSign = :sign WHERE p.customerorderId = :customerorderId")
-    int updateCustomerorderSign(@Param("customerorderId") long customerorderId, @Param("sign") String sign);
 
 }

@@ -327,9 +327,7 @@ public class TimereportBudgetBackfillServiceTest {
     var plan = new OrderBudget();
     plan.setName("plan-" + id);
     plan.setCustomerorderId(ORDER_IDS.get(customerorderSign));
-    plan.setCustomerorderSign(customerorderSign);
     plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
     plan.setActive(active);

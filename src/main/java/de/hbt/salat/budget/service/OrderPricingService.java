@@ -52,8 +52,7 @@ public class OrderPricingService {
     private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
 
     /**
-     * By the sign the order has today, then by start of validity. The sign comes from the order, not
-     * from the record's sign column, which only mirrors it for reports (#1212).
+     * By the sign the order has today, then by start of validity. The sign comes from the order (#1212).
      */
     private static final Comparator<OrderPricingRow> BY_ORDER_SIGN_THEN_VALID_FROM = Comparator
         .comparing((OrderPricingRow row) -> row.customerorder().getSign())
@@ -121,14 +120,8 @@ public class OrderPricingService {
         return ids.isEmpty() ? Map.of() : employeeService.getSignsByIds(ids);
     }
 
-    /**
-     * The sign a rate is shown with: the person's, or — for a rate whose person the migration could
-     * not resolve (#968) — the one it was stored with, which is all there is to recognize it by.
-     */
+    /** The sign a rate is shown with: the person's, or {@code null} for a rate for everyone. */
     private static String employeeSignOf(OrderPricing pricing, Map<Long, String> employeeSigns) {
-        if (pricing.isEmployeeUnresolved()) {
-            return pricing.getEmployeeSign();
-        }
         return pricing.getEmployeeId() == null ? null : employeeSigns.get(pricing.getEmployeeId());
     }
 
@@ -263,11 +256,6 @@ public class OrderPricingService {
     /**
      * The order is required on an edit as well: it is referenced by id now and cannot go away while
      * a rate names it (#1212).
-     *
-     * <p>A rate whose person the migration could not resolve (#968) stays unresolved when saved
-     * without a person. The form cannot offer that person, so its empty choice would otherwise turn
-     * one person's rate into the rate of everyone on the order — without anybody having picked that.
-     * Such a rate applies to nobody and so competes with no other; it is not checked for overlaps.
      */
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
@@ -275,18 +263,11 @@ public class OrderPricingService {
         var pricing = getById(id);
         var customerorder = customerorderOf(data);
         var employee = employeeOf(data);
-        var staysUnresolved = employee == null && pricing.isEmployeeUnresolved();
         checkSuborderPatternMatches(customerorder, data.suborderSign());
         var plan = resolvePlan(data, validUntil);
-        if (!staysUnresolved) {
-            checkNoOverlap(customerorder.getId(), data.suborderSign(), data.employeeId(),
-                data.orderBudgetId(), data.validFrom(), validUntil, id);
-        }
-        var unresolvedSign = pricing.getEmployeeSign();
+        checkNoOverlap(customerorder.getId(), data.suborderSign(), data.employeeId(),
+            data.orderBudgetId(), data.validFrom(), validUntil, id);
         apply(pricing, data, customerorder, employee, plan);
-        if (staysUnresolved) {
-            pricing.setEmployeeSign(unresolvedSign);
-        }
         orderPricingRepository.save(pricing);
     }
 
@@ -296,19 +277,9 @@ public class OrderPricingService {
     }
 
     /**
-     * Writes the new sign of a person into the sign column of their rates (#966, #968) — see
-     * {@code EmployeeCostService#followSignChange}. Driven by the event of the employee module,
-     * where changing a sign takes a manager.
-     */
-    public void followSignChange(long employeeId, String newSign) {
-        orderPricingRepository.updateEmployeeSign(employeeId, newSign);
-    }
-
-    /**
      * The person the rate is for, or {@code null} for a rate for everyone on the order — the normal
      * case. An id nobody carries is refused here rather than by the foreign key, which would only
-     * fail the statement; and the person is needed anyway, for the sign column that is still
-     * written alongside the id (#968).
+     * fail the statement.
      */
     private Employee employeeOf(OrderPricingData data) {
         if (data.employeeId() == null) {
@@ -402,10 +373,8 @@ public class OrderPricingService {
     private void apply(OrderPricing pricing, OrderPricingData data, Customerorder customerorder, Employee employee,
                        OrderBudget plan) {
         pricing.setCustomerorderId(customerorder.getId());
-        pricing.setCustomerorderSign(customerorder.getSign());
         pricing.setSuborderSign(data.suborderSign());
         pricing.setEmployeeId(employee == null ? null : employee.getId());
-        pricing.setEmployeeSign(employee == null ? null : employee.getSign());
         pricing.setOrderBudget(plan);
         pricing.setDescription(data.description());
         pricing.setPriceCentsPerHour(data.priceCentsPerHour());

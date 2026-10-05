@@ -288,16 +288,13 @@ public class OrderBudgetService {
         return new Scope(OrderPosition.of(suborder), customerorder, suborder);
     }
 
-    /** The scope of a plan being saved: its position, and the records the sign columns are written from. */
+    /** The scope of a plan being saved: its position, and the order and suborder it lives on. */
     private record Scope(OrderPosition position, Customerorder customerorder, Suborder suborder) {}
 
     private void apply(OrderBudget budget, OrderBudgetData data, Scope scope) {
         budget.setName(data.name());
         budget.setCustomerorderId(scope.customerorder().getId());
-        // mirrors for the reports, written from the records (#1205)
-        budget.setCustomerorderSign(scope.customerorder().getSign());
         budget.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
-        budget.setSuborderSign(scope.suborder() == null ? null : scope.suborder().getCompleteOrderSign());
         budget.setValidFrom(data.validFrom());
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));

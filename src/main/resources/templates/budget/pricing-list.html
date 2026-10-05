@@ -88,15 +88,7 @@
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td th:text="${p.suborderSign} ?: '-'"></td>
-          <!--/* Ein Satz, dessen Person die Umstellung auf den Personenbezug nicht zuordnen konnte,
-                 greift lautlos nicht (#968). */-->
-          <td>
-            <span th:text="${row.employeeSign()} ?: '-'"></span>
-            <span th:if="${row.employeeUnknown()}" class="badge bg-red-lt ms-1"
-                  th:title="#{main.budget.employeesign.unknown}">
-              <i class="icon ti ti-user-off m-0"></i>
-            </span>
-          </td>
+          <td th:text="${row.employeeSign()} ?: '-'"></td>
           <!--/* Leer heisst planlos — der Satz gilt dann unabhaengig davon, zu welchem Plan eine
                  Buchung gehoert (#1065). */-->
           <td th:text="${row.orderBudgetName()} ?: '-'"></td>

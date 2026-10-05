@@ -36,7 +36,6 @@ import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.event.EmployeeAnonymizedEvent;
 import de.hbt.salat.employee.event.EmployeeDeleteEvent;
-import de.hbt.salat.employee.event.EmployeeSignChangedEvent;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
 
@@ -239,7 +238,6 @@ public class EmployeeService {
     if (!employee.getSign().equals(confirmSign)) {
       throw new InvalidDataException(EM_ANONYMIZE_WRONG_SIGN, employee.getSign());
     }
-    var previousSign = employee.getSign();
     employee.setFirstname("Anonymized");
     employee.setLastname("User");
     employee.setSign(anonymousSign(employeeId));
@@ -250,7 +248,6 @@ public class EmployeeService {
       salatUserRepository.save(employee.getSalatUser());
     }
     employeeRepository.save(employee);
-    publishSignChange(employeeId, previousSign, employee.getSign());
   }
 
   /**
@@ -274,26 +271,8 @@ public class EmployeeService {
     return "anon-" + employeeId;
   }
 
-  /**
-   * For creating an employee and for changes that leave the sign alone. A change that touches the
-   * sign belongs in {@link #createOrUpdate(Employee, String)} — records elsewhere reference the
-   * employee by it and have to be told.
-   */
   @Authorized(requiresManager = true)
   public void createOrUpdate(Employee employee) {
-    createOrUpdate(employee, employee.getSign());
-  }
-
-  /**
-   * Saves the employee and announces a changed sign to whoever references it, with {@code
-   * previousSign} being the sign as it was stored before the change.
-   *
-   * <p>The caller has to pass it because by the time the employee arrives here it already carries
-   * the new one: the form is applied to the loaded entity, so the old value is gone from the object
-   * before the service ever sees it.
-   */
-  @Authorized(requiresManager = true)
-  public void createOrUpdate(Employee employee, String previousSign) {
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
       throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getLoginSign());
     }
@@ -305,17 +284,5 @@ public class EmployeeService {
     }
 
     employeeRepository.save(employee);
-    publishSignChange(employee.getId(), previousSign, employee.getSign());
-  }
-
-  /**
-   * Announces a changed sign, and only a changed one — a save that leaves the sign alone is the
-   * normal case and must not make followers rewrite anything.
-   */
-  private void publishSignChange(long employeeId, String previousSign, String newSign) {
-    if (previousSign == null || previousSign.equals(newSign)) {
-      return;
-    }
-    eventPublisher.publishEvent(new EmployeeSignChangedEvent(employeeId, previousSign, newSign));
   }
 }

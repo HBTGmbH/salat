@@ -34,27 +34,11 @@ public class OrderBudget extends AuditedEntity {
     private Long customerorderId;
 
     /**
-     * The sign of {@link #customerorderId}, kept because reports still read it (#1205, the way of
-     * #968). The application does not resolve anything through it: it is written on save from the
-     * chosen order and follows a rename ({@code OrderSignMirrorListener}).
-     */
-    @Column(name = "customerorder_sign", nullable = false)
-    private String customerorderSign;
-
-    /**
      * The suborder the plan lives on; it covers that suborder and everything below it
      * (→ {@link BudgetScope}). {@code null} means the budget applies to the whole customer order.
      */
     @Column(name = "suborder_id")
     private Long suborderId;
-
-    /**
-     * The complete order sign of {@link #suborderId} ({@code Suborder#getCompleteOrderSign()},
-     * e.g. {@code ORDER/01/02}), kept as a mirror like {@link #customerorderSign}; the application
-     * never reads it (#1212).
-     */
-    @Column(name = "suborder_sign")
-    private String suborderSign;
 
     @Column(name = "valid_from", nullable = false)
     private LocalDate validFrom;

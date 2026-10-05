@@ -41,7 +41,7 @@ public class FlatRateAllocationTest {
 
   /** Where a flat rate sits, read from the tree above — what {@code OrderPositions} answers in the application. */
   private static final Function<OrderFlatRate, Optional<OrderPosition>> POSITIONS =
-      rate -> Optional.of(positionOf(rate.getSuborderSign()));
+      rate -> Optional.of(positionOf(signOf(rate.getSuborderId())));
 
   @Test
   public void the_single_plan_covering_the_due_date_holds_the_amount() {
@@ -184,13 +184,22 @@ public class FlatRateAllocationTest {
     assertThat(FlatRateAllocation.uniquePlanFor(dueAmount(null, IN_H1), List.of(plan), POSITIONS)).contains(plan);
   }
 
-  /** A flat rate the migration could not resolve sits nowhere, so no derived plan holds it (#1205). */
+  /** A flat rate whose suborder no longer exists sits nowhere, so no derived plan holds it (#1205). */
   @Test
   public void a_flat_rate_without_a_position_is_held_by_no_derived_plan() {
     var plan = plan("year", null, JAN, DEC, true);
 
     assertThat(FlatRateAllocation.uniquePlanFor(dueAmount(null, IN_H1), List.of(plan), rate -> Optional.empty()))
         .isEmpty();
+  }
+
+  /** The complete order sign of a suborder id of the tree above. */
+  private static String signOf(Long suborderId) {
+    return suborderId == null ? null : SUBORDER_IDS.entrySet().stream()
+        .filter(entry -> entry.getValue().equals(suborderId))
+        .map(Map.Entry::getKey)
+        .findFirst()
+        .orElseThrow();
   }
 
   /** The position of a complete order sign of the tree above, built from its prefixes. */
@@ -214,9 +223,7 @@ public class FlatRateAllocationTest {
   private static FlatRateDueAmount dueAmount(String suborderSign, LocalDate due) {
     var rate = new OrderFlatRate();
     rate.setCustomerorderId(CO_ID);
-    rate.setCustomerorderSign("co");
     rate.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    rate.setSuborderSign(suborderSign);
     rate.setRhythm(FlatRateRhythm.ONCE);
     rate.setValidFrom(due);
     rate.setValidUntil(due);
@@ -241,9 +248,7 @@ public class FlatRateAllocationTest {
     var plan = new OrderBudget();
     plan.setName(name);
     plan.setCustomerorderId(CO_ID);
-    plan.setCustomerorderSign("co");
     plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    plan.setSuborderSign(suborderSign);
     plan.setValidFrom(from);
     plan.setValidUntil(until);
     plan.setActive(active);

@@ -201,19 +201,6 @@ public class EmployeeCostLookupTest {
   }
 
   /**
-   * The person is matched by id (#968): an assignment still carrying the sign the person had before
-   * a correction or an anonymization resolves unchanged, without anything following the sign.
-   */
-  @Test
-  public void should_match_the_person_by_id_whatever_sign_the_assignment_was_stored_with() {
-    var stale = assignment(EMP, null, "general");
-    stale.setEmployeeSign("old-sign");
-
-    assertThat(cents(EmployeeCostLookup.of(List.of(stale), List.of(cost("general", 100))), EMP, null))
-        .isEqualTo(100);
-  }
-
-  /**
    * Assignment and rate period meet over the id of their category (#1209). The same category read
    * twice and renamed in between — what a rename between two reads amounts to — resolves unchanged;
    * the name decides nothing.
@@ -236,17 +223,6 @@ public class EmployeeCostLookupTest {
     assertThat(cents(lookup, EMP, null)).isEqualTo(200);
   }
 
-  /** An assignment the migration could not resolve names nobody and costs nobody's work (#968). */
-  @Test
-  public void should_not_match_an_assignment_whose_person_is_unresolved() {
-    var unresolved = assignment(EMP, null, "general");
-    unresolved.setEmployeeId(null);
-
-    var lookup = EmployeeCostLookup.of(List.of(unresolved), List.of(cost("general", 100)));
-
-    assertThat(lookup.findEffectiveCost(EMP, null, null, DATE)).isEmpty();
-  }
-
   @Test
   public void should_return_empty_for_an_empty_lookup() {
     assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost(EMP, ORDER, SUBORDER_IDS.get("so"), DATE)).isEmpty();
@@ -263,8 +239,6 @@ public class EmployeeCostLookupTest {
   private static EmployeeCostAssignment assignment(long employeeId, String suborderSign, String costName) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(employeeId);
-    assignment.setEmployeeSign("sign-" + employeeId);
-    assignment.setSuborderSign(suborderSign);
     assignment.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
     assignment.setCategory(CostCategoryTestUtils.named(costName));
     assignment.setValidFrom(LocalDate.of(2026, 1, 1));
@@ -276,7 +250,6 @@ public class EmployeeCostLookupTest {
   private static EmployeeCostAssignment toOrder(long employeeId, long customerorderId, String costName) {
     var assignment = assignment(employeeId, null, costName);
     assignment.setCustomerorderId(customerorderId);
-    assignment.setCustomerorderSign("order-" + customerorderId);
     return assignment;
   }
 

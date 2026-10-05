@@ -113,8 +113,7 @@ public class BudgetSegmentControllingService {
     private List<String> candidateSigns(LocalDate from, LocalDate until) {
         var signs = new LinkedHashSet<String>();
         signs.addAll(timereportService.getCustomerorderSignsWithReportsBetween(from, until));
-        // Plans and flat rates name their order by id; the sign is the order's own, not the mirror
-        // column the reports read (#1212).
+        // Plans and flat rates name their order by id; the sign is the order's own (#1212).
         var planOrderIds = orderBudgetService.getAllActiveVisible().stream()
             .map(OrderBudget::getCustomerorderId)
             .distinct()

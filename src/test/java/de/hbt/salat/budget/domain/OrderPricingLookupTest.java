@@ -70,28 +70,6 @@ public class OrderPricingLookupTest {
     assertThat(lookup.findEffectiveRate(CO, "so", EMP, null, DATE)).isEmpty();
   }
 
-  /**
-   * A rate whose order the migration could not resolve (#1212) prices nothing — not even the order
-   * whose sign it still carries.
-   */
-  @Test
-  public void should_apply_a_rate_without_an_order_to_nothing() {
-    var unresolved = pricing("co", null, null, 900);
-    unresolved.setCustomerorderId(null);
-
-    assertThat(rate(OrderPricingLookup.of(List.of(unresolved)), "co", "co/01", SOMEBODY)).isNull();
-    assertThat(OrderPricingLookup.of(List.of(unresolved)).hasUncoveredPeriod(CO, JAN, DEC)).isFalse();
-  }
-
-  /** The order is matched by id: a rename leaves its sign column behind and changes nothing (#1212). */
-  @Test
-  public void should_match_the_order_by_id_whatever_sign_the_rate_carries() {
-    var renamed = pricing("co", null, null, 100);
-    renamed.setCustomerorderSign("old-sign");
-
-    assertThat(rate(OrderPricingLookup.of(List.of(renamed)), "co", "co/01", SOMEBODY)).isEqualTo(100);
-  }
-
   @Test
   public void should_only_match_rates_valid_on_the_given_date() {
     var expired = pricing("co", null, null, 100);
@@ -247,56 +225,6 @@ public class OrderPricingLookupTest {
   }
 
   /**
-   * The person is matched by id (#968): a rate still carrying the sign the person had before a
-   * correction or an anonymization applies unchanged, without anything following the sign.
-   */
-  @Test
-  public void should_match_the_person_by_id_whatever_sign_the_rate_was_stored_with() {
-    var stale = pricing("co", null, EMP, 200);
-    stale.setEmployeeSign("old-sign");
-    var lookup = OrderPricingLookup.of(List.of(pricing("co", null, null, 100), stale));
-
-    assertThat(rate(lookup, "co", "co/01", EMP)).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/01", OTHER)).isEqualTo(100);
-  }
-
-  /**
-   * A rate whose person the migration could not resolve (#968) keeps its sign and has no id. It must
-   * apply to nobody — read as "no person" it would price the work of everyone on the order.
-   */
-  @Test
-  public void should_apply_a_rate_whose_person_is_unresolved_to_nobody() {
-    var unresolved = pricing("co", null, null, 900);
-    unresolved.setEmployeeSign("gone");
-    var lookup = OrderPricingLookup.of(List.of(pricing("co", null, null, 100), unresolved));
-
-    assertThat(rate(lookup, "co", "co/01", SOMEBODY)).isEqualTo(100);
-    assertThat(OrderPricingLookup.of(List.of(unresolved)).findEffectiveRate(CO, "co/01", SOMEBODY, null, DATE))
-        .isEmpty();
-  }
-
-  /** Neither does it price the order as a whole, so it cannot close a gap in the coverage either. */
-  @Test
-  public void should_not_count_a_rate_whose_person_is_unresolved_as_order_wide() {
-    var unresolved = rate("co", JAN, DEC);
-    unresolved.setEmployeeSign("gone");
-    var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN), unresolved));
-
-    assertThat(unresolved.isOrderWide()).isFalse();
-    assertThat(lookup.hasUncoveredPeriod(CO, JAN, DEC)).isTrue();
-  }
-
-  /** An empty sign without an id names nobody either — the reports read it the same way. */
-  @Test
-  public void should_treat_an_empty_sign_without_an_id_as_a_rate_for_everyone() {
-    var blank = pricing("co", null, null, 100);
-    blank.setEmployeeSign("");
-
-    assertThat(blank.isForEveryone()).isTrue();
-    assertThat(rate(OrderPricingLookup.of(List.of(blank)), "co", "co/01", SOMEBODY)).isEqualTo(100);
-  }
-
-  /**
    * The coverage check of the rate list (#957). It answers a question about the order-wide rates
    * only: a rate for one suborder or one person does not claim to price the order as a whole, so
    * holding it to the order period would report a gap wherever such a rate exists.
@@ -428,10 +356,8 @@ public class OrderPricingLookupTest {
   private static OrderPricing pricing(String co, String so, Long employeeId, int cents) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(idOf(co));
-    pricing.setCustomerorderSign(co);
     pricing.setSuborderSign(so);
     pricing.setEmployeeId(employeeId);
-    pricing.setEmployeeSign(employeeId == null ? null : "sign-" + employeeId);
     pricing.setPriceCentsPerHour(cents);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));
     pricing.setValidUntil(LocalDate.of(2026, 12, 31));

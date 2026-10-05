@@ -75,20 +75,6 @@ public class BudgetScopeTest {
     assertThat(BudgetScope.covers(plan(CO, 11L), null)).isFalse();
   }
 
-  /**
-   * The signs stored next to the ids say nothing about coverage any more (#1205): a renamed order
-   * or suborder leaves the plan's sign columns behind for a moment, and the plan still covers what it
-   * covered.
-   */
-  @Test
-  public void the_signs_of_the_plan_do_not_take_part() {
-    var plan = plan(CO, 14L);
-    plan.setCustomerorderSign("OLD");
-    plan.setSuborderSign("OLD/99");
-
-    assertThat(BudgetScope.covers(plan, at(CO, 11L, 14L, 15L))).isTrue();
-  }
-
   /** A suborder moved to another parent takes its bookings along: the path is read from the tree. */
   @Test
   public void a_moved_suborder_follows_its_new_parent() {
@@ -97,18 +83,13 @@ public class BudgetScopeTest {
     assertThat(BudgetScope.covers(plan(CO, 17L), at(CO, 17L, 15L))).isTrue();
   }
 
-  /**
-   * The suborder id decides, not the sign column: the column only mirrors the suborder for the
-   * reports (#1212), and since Changeset 119 no record names a suborder without its id.
-   */
+  /** The suborder id decides whether a plan is order-wide (#1212). */
   @Test
-  public void the_suborder_id_decides_whether_a_plan_is_order_wide_not_the_sign_column() {
-    var stale = plan(CO, null);
-    stale.setSuborderSign("CO/01");
+  public void the_suborder_id_decides_whether_a_plan_is_order_wide() {
+    var orderWide = plan(CO, null);
     var onSuborder = plan(CO, 11L);
-    onSuborder.setSuborderSign(null);
 
-    assertThat(stale.isOrderWide()).isTrue();
+    assertThat(orderWide.isOrderWide()).isTrue();
     assertThat(onSuborder.isOrderWide()).isFalse();
   }
 
@@ -126,16 +107,11 @@ public class BudgetScopeTest {
     assertThat(at(CO, 11L, 14L, 15L).level()).isEqualTo(3);
   }
 
-  /**
-   * A plan as the services store it: the ids, and the signs written next to them. The sign of the
-   * suborder is what tells "no suborder" from "a suborder the migration could not resolve".
-   */
+  /** A plan as the services store it: order and suborder by id. */
   private static OrderBudget plan(Long customerorderId, Long suborderId) {
     var plan = new OrderBudget();
     plan.setCustomerorderId(customerorderId);
-    plan.setCustomerorderSign("CO");
     plan.setSuborderId(suborderId);
-    plan.setSuborderSign(suborderId == null ? null : "CO/" + suborderId);
     return plan;
   }
 

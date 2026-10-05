@@ -340,7 +340,6 @@ public class OrderBudgetServiceTest {
   public void should_list_only_the_plans_of_authorized_orders() {
     var own = plan(null, JAN, DEC, 1L);
     var foreign = plan(null, JAN, DEC, 2L);
-    foreign.setCustomerorderSign("other-co");
     when(orderBudgetRepository.findAllActiveWithAdjustments()).thenReturn(List.of(own, foreign));
     when(budgetAuthorization.seesAllCustomerorders()).thenReturn(false);
     when(budgetAuthorization.isAuthorized(own)).thenReturn(true);
@@ -387,9 +386,9 @@ public class OrderBudgetServiceTest {
 
   // --- order and suborder by id (#1205) -----------------------------------------------------------
 
-  /** The plan stores the ids, and writes the signs the reports still read from the records. */
+  /** The plan stores order and suborder by id. */
   @Test
-  public void stores_order_and_suborder_by_id_and_writes_their_signs_from_the_records() {
+  public void stores_order_and_suborder_by_id() {
     givenExisting();
     when(orderBudgetRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -397,8 +396,6 @@ public class OrderBudgetServiceTest {
 
     assertThat(stored.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
     assertThat(stored.getSuborderId()).isEqualTo(TREE.suborderId("co/01/A"));
-    assertThat(stored.getCustomerorderSign()).isEqualTo("co");
-    assertThat(stored.getSuborderSign()).isEqualTo("co/01/A");
   }
 
   @Test
@@ -526,9 +523,7 @@ public class OrderBudgetServiceTest {
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until, Long id) {
     var budget = new OrderBudget();
     budget.setCustomerorderId(TREE.orderId("co"));
-    budget.setCustomerorderSign("co");
     budget.setSuborderId(TREE.suborderId(suborderSign));
-    budget.setSuborderSign(suborderSign);
     budget.setActive(true);
     budget.setValidFrom(from);
     budget.setValidUntil(until);

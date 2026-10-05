@@ -127,9 +127,7 @@ class BudgetPlanPresenceTest {
     var plan = new OrderBudget();
     plan.setName("Plan");
     plan.setCustomerorderId(customerorderId);
-    plan.setCustomerorderSign("MUSTER-" + customerorderId);
     plan.setSuborderId(suborderId);
-    plan.setSuborderSign(suborderId == null ? null : "MUSTER-" + customerorderId + "/" + suborderId);
     plan.setValidFrom(FROM);
     plan.setValidUntil(UNTIL);
     plan.setActive(active);

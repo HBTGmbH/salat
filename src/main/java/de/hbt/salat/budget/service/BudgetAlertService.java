@@ -71,8 +71,7 @@ public class BudgetAlertService {
     }
 
     /**
-     * The sign the plan's order has today, read by the plan's id — not the plan's sign column, which
-     * only mirrors the order for reports (#1212).
+     * The sign the plan's order has today, read by the plan's id (#1212).
      */
     private String customerorderSignOf(OrderBudget budget) {
         var customerorderId = budget.getCustomerorderId();

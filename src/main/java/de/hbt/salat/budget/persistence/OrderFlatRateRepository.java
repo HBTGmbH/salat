@@ -13,7 +13,7 @@ import de.hbt.salat.budget.domain.OrderFlatRate;
 public interface OrderFlatRateRepository
     extends CrudRepository<OrderFlatRate, Long>, PagingAndSortingRepository<OrderFlatRate, Long> {
 
-    /** The flat rates of a customer order, by its id (#1205) — the sign column is a mirror only. */
+    /** The flat rates of a customer order, by its id (#1205). */
     List<OrderFlatRate> findByCustomerorderIdOrderByValidFromAsc(Long customerorderId);
 
     List<OrderFlatRate> findByCustomerorderIdInOrderByIdAsc(Collection<Long> customerorderIds);

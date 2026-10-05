@@ -93,7 +93,7 @@ public class OrderPricingDeviationTest {
   @Test
   public void reports_no_gap_on_an_employee_specific_rate() {
     var pricing = pricing(JAN, JUN);
-    pricing.setEmployeeSign("emp");
+    pricing.setEmployeeId(1L);
 
     assertThat(deviationOf(pricing, order(JAN, DEC), pricing).uncoveredOrderPeriod()).isFalse();
   }
@@ -115,7 +115,6 @@ public class OrderPricingDeviationTest {
   private static OrderPricing pricing(LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(ORDER_ID);
-    pricing.setCustomerorderSign("co");
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);

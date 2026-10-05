@@ -17,9 +17,8 @@ import de.hbt.salat.common.domain.AuditedEntity;
  *
  * <p>Until #1209 a category was only a name that several rate periods and every assignment carried.
  * Renaming it had to hit all of them, and a typo in the name silently made a new category. Now the
- * name sits here, unique, and a rename changes this one row. The name columns of the two tables stay
- * as mirrors for the views, ETL definitions and reports that still join on them; the application
- * writes them from here and never reads them.
+ * name sits here, unique, and a rename changes this one row. The name columns of the two tables are
+ * gone (#1345).
  *
  * <p>The name compares as stored, case included, like the name columns it replaces
  * ({@code utf8mb3_bin}) and like the lookup in memory did.

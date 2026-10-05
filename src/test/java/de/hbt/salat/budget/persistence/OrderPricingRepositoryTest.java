@@ -21,7 +21,7 @@ import de.hbt.salat.budget.domain.OrderPricing;
 /**
  * The customer orders offered in the filter of the rate list (#949). They come from the pricings
  * themselves, so an order that has meanwhile been hidden or has expired stays reachable — a pricing
- * refers to its order by sign and outlives it.
+ * refers to its order by id and outlives its visibility.
  */
 @DataJpaTest
 @Import(AuthorizedUserAuditorAware.class)
@@ -55,13 +55,11 @@ public class OrderPricingRepositoryTest {
     assertThat(orderPricingRepository.findDistinctCustomerorderIds()).containsExactly(idOf("co-one"));
   }
 
-  /** By id, not by the sign column (#1212): a rate whose sign column is stale is found all the same. */
+  /** By id (#1212): the rates of other orders stay out. */
   @Test
   public void reads_the_rates_of_one_order_by_its_id_oldest_first() {
     var later = pricing("co-one", UNTIL.plusDays(1), UNTIL.plusYears(1));
     var earlier = pricing("co-one", FROM, UNTIL);
-    earlier.setCustomerorderSign("co-renamed-elsewhere");
-    orderPricingRepository.save(earlier);
     pricing("co-other", FROM, UNTIL);
 
     assertThat(orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(idOf("co-one")))
@@ -106,12 +104,10 @@ public class OrderPricingRepositoryTest {
     assertThat(overlapping("co", null)).containsExactly(existing);
   }
 
-  /** The order is compared by id (#1212): its sign column may lag behind, and it decides nothing. */
+  /** The order is part of the overlap key, compared by id (#1212). */
   @Test
-  public void a_rate_of_another_order_does_not_overlap_whatever_sign_it_carries() {
-    var other = pricing("co", FROM, UNTIL);
-    other.setCustomerorderId(idOf("co-other"));
-    orderPricingRepository.save(other);
+  public void a_rate_of_another_order_does_not_overlap() {
+    pricing("co-other", FROM, UNTIL);
 
     assertThat(overlapping("co", null)).isEmpty();
   }
@@ -129,7 +125,6 @@ public class OrderPricingRepositoryTest {
     var plan = new OrderBudget();
     plan.setName(name);
     plan.setCustomerorderId(idOf("co"));
-    plan.setCustomerorderSign("co");
     plan.setValidFrom(FROM);
     plan.setValidUntil(UNTIL);
     plan.setActive(true);
@@ -140,7 +135,6 @@ public class OrderPricingRepositoryTest {
                                     OrderBudget plan) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(idOf(customerorderSign));
-    pricing.setCustomerorderSign(customerorderSign);
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);
@@ -151,7 +145,6 @@ public class OrderPricingRepositoryTest {
   private OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(idOf(customerorderSign));
-    pricing.setCustomerorderSign(customerorderSign);
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);

@@ -151,12 +151,11 @@ public class EmployeeCostServiceTest {
     var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
     givenAssignment("junior", "emp", null, JAN, DEC, 2L);
     // id 2 now holds the general scope, so the edited one has to move out of it
-    assignments.get(0).setSuborderSign("co/01");
     assignments.get(0).setSuborderId(SUBORDERS.get("co/01"));
 
     service.updateAssignment(edited.getId(), assignmentData("senior", "emp", "co/01", JAN, DEC));
 
-    assertThat(edited.getSuborderSign()).isEqualTo("co/01");
+    assertThat(edited.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
   }
 
   /** Editing keeps the record, so its audit trail survives — that is the point of #922. */
@@ -171,8 +170,7 @@ public class EmployeeCostServiceTest {
     verify(assignmentRepository, never()).deleteById(anyLong());
     assertThat(edited.getEmployeeCostName()).isEqualTo("junior");
     assertThat(edited.getEmployeeId()).isEqualTo(PEOPLE.get("other"));
-    assertThat(edited.getEmployeeSign()).isEqualTo("other");
-    assertThat(edited.getSuborderSign()).isEqualTo("co/01");
+    assertThat(edited.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
     assertThat(edited.getValidFrom()).isEqualTo(JUL);
   }
 
@@ -213,12 +211,9 @@ public class EmployeeCostServiceTest {
     verify(assignmentRepository, never()).save(any());
   }
 
-  /**
-   * The id is the reference; the sign is written next to it only for the views, ETL definitions and
-   * reports that still join on it (#968) — and it is the person's sign, not one the request sends.
-   */
+  /** The person is stored by id (#968). */
   @Test
-  public void should_store_the_person_by_id_and_their_current_sign_next_to_it() {
+  public void should_store_the_person_by_id() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
 
     service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC));
@@ -226,21 +221,6 @@ public class EmployeeCostServiceTest {
     var saved = ArgumentCaptor.forClass(EmployeeCostAssignment.class);
     verify(assignmentRepository).save(saved.capture());
     assertThat(saved.getValue().getEmployeeId()).isEqualTo(PEOPLE.get("emp"));
-    assertThat(saved.getValue().getEmployeeSign()).isEqualTo("emp");
-  }
-
-  /** Editing an assignment the migration could not resolve is how its person gets picked. */
-  @Test
-  public void should_resolve_an_unresolved_assignment_when_its_person_is_picked() {
-    givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    var unresolved = givenAssignment("senior", "gone", null, JAN, DEC, 1L);
-    unresolved.setEmployeeId(null);
-
-    service.updateAssignment(unresolved.getId(), assignmentData("senior", "emp", null, JAN, DEC));
-
-    assertThat(unresolved.getEmployeeId()).isEqualTo(PEOPLE.get("emp"));
-    assertThat(unresolved.getEmployeeSign()).isEqualTo("emp");
-    assertThat(unresolved.isEmployeeUnresolved()).isFalse();
   }
 
   @Test
@@ -263,32 +243,29 @@ public class EmployeeCostServiceTest {
     verify(suborderService, never()).getSuborderById(anyLong());
   }
 
-  /** The suborder is stored by id, its complete order sign written from the suborder (#1205). */
+  /** The suborder is stored by id (#1205). */
   @Test
-  public void should_store_the_suborder_by_id_and_write_its_sign_from_the_suborder() {
+  public void should_store_the_suborder_by_id() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
     when(assignmentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     var stored = service.createAssignment(assignmentData("senior", "emp", "co/01", JAN, DEC));
 
     assertThat(stored.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
-    assertThat(stored.getSuborderSign()).isEqualTo("co/01");
   }
 
   // --- an assignment to a whole order (#1343) ---------------------------------------------------
 
-  /** The order is stored by id, its sign written from the order as a mirror for the reports. */
+  /** The order is stored by id. */
   @Test
-  public void should_store_the_order_by_id_and_write_its_sign_from_the_order() {
+  public void should_store_the_order_by_id() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
     when(assignmentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     var stored = service.createAssignment(orderAssignmentData("senior", "emp", CUSTOMERORDER, JAN, DEC));
 
     assertThat(stored.getCustomerorderId()).isEqualTo(CUSTOMERORDER);
-    assertThat(stored.getCustomerorderSign()).isEqualTo("co");
     assertThat(stored.getSuborderId()).isNull();
-    assertThat(stored.getSuborderSign()).isNull();
   }
 
   @Test
@@ -315,9 +292,7 @@ public class EmployeeCostServiceTest {
         CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC));
 
     assertThat(stored.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
-    assertThat(stored.getSuborderSign()).isEqualTo("co/01");
     assertThat(stored.getCustomerorderId()).isNull();
-    assertThat(stored.getCustomerorderSign()).isNull();
   }
 
   /** The overlap check follows: it is the step of the suborder that has to be free, not the one of the order. */
@@ -335,17 +310,15 @@ public class EmployeeCostServiceTest {
   public void should_narrow_an_assignment_from_the_whole_order_down_to_a_suborder() {
     var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
     edited.setCustomerorderId(CUSTOMERORDER);
-    edited.setCustomerorderSign("co");
 
     service.updateAssignment(edited.getId(), new EmployeeCostAssignmentData("senior", PEOPLE.get("emp"),
         CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC));
 
     assertThat(edited.getSuborderId()).isEqualTo(SUBORDERS.get("co/01"));
     assertThat(edited.getCustomerorderId()).isNull();
-    assertThat(edited.getCustomerorderSign()).isNull();
   }
 
-  /** Moving an assignment from a suborder to the whole order clears the suborder and its mirror. */
+  /** Moving an assignment from a suborder to the whole order clears the suborder. */
   @Test
   public void should_move_an_assignment_from_a_suborder_to_the_whole_order() {
     var edited = givenAssignment("senior", "emp", "co/01", JAN, DEC, 1L);
@@ -353,9 +326,7 @@ public class EmployeeCostServiceTest {
     service.updateAssignment(edited.getId(), orderAssignmentData("senior", "emp", CUSTOMERORDER, JAN, DEC));
 
     assertThat(edited.getCustomerorderId()).isEqualTo(CUSTOMERORDER);
-    assertThat(edited.getCustomerorderSign()).isEqualTo("co");
     assertThat(edited.getSuborderId()).isNull();
-    assertThat(edited.getSuborderSign()).isNull();
   }
 
   @Test
@@ -786,11 +757,9 @@ public class EmployeeCostServiceTest {
 
   /**
    * A rename is the category's own row: rate periods and assignments keep pointing at the same id.
-   * Their name columns follow only as mirrors for the views, ETL definitions and reports joining on
-   * them.
    */
   @Test
-  public void should_rename_the_category_row_and_let_the_mirrors_follow() {
+  public void should_rename_the_category_row() {
     var cost = givenCost("senior", 8000, JAN, OPEN_END, 1L);
     var assignment = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
     var category = cost.getCategory();
@@ -801,8 +770,6 @@ public class EmployeeCostServiceTest {
     assertThat(category.getName()).isEqualTo("senior consultant");
     assertThat(cost.getCategory()).isSameAs(category);
     assertThat(assignment.getCategory()).isSameAs(category);
-    assertThat(mirror(cost, "name")).isEqualTo("senior consultant");
-    assertThat(mirror(assignment, "employeeCostName")).isEqualTo("senior consultant");
   }
 
   /** Renaming onto an existing name merges: everything moves over, and one category is left. */
@@ -817,7 +784,6 @@ public class EmployeeCostServiceTest {
     assertThat(categories).containsExactly(junior.getCategory());
     assertThat(senior.getCategory()).isSameAs(junior.getCategory());
     assertThat(assignment.getCategory()).isSameAs(junior.getCategory());
-    assertThat(mirror(assignment, "employeeCostName")).isEqualTo("junior");
   }
 
   /** A rate period goes into a category that exists; a mistyped name no longer makes a new one. */
@@ -863,17 +829,6 @@ public class EmployeeCostServiceTest {
 
   // --- test fixture ---------------------------------------------------------------------------
 
-  /** The mirror column of an entity, which the application writes but never reads (#1209). */
-  private static Object mirror(Object entity, String field) {
-    try {
-      var declared = entity.getClass().getDeclaredField(field);
-      declared.setAccessible(true);
-      return declared.get(entity);
-    } catch (ReflectiveOperationException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
   private EmployeeCost givenCost(String name, int cents, LocalDate from, LocalDate until, long id) {
     var cost = new EmployeeCost();
     cost.setCategory(category(name));
@@ -890,8 +845,6 @@ public class EmployeeCostServiceTest {
     var assignment = new EmployeeCostAssignment();
     assignment.setCategory(category(costName));
     assignment.setEmployeeId(idOf(employeeSign));
-    assignment.setEmployeeSign(employeeSign);
-    assignment.setSuborderSign(suborderSign);
     assignment.setSuborderId(suborderSign == null ? null : SUBORDERS.get(suborderSign));
     assignment.setValidFrom(from);
     assignment.setValidUntil(until);
@@ -1011,31 +964,6 @@ public class EmployeeCostServiceTest {
           .filter(c -> excludeId == null || !excludeId.equals(c.getId()))
           .toList();
     });
-  }
-
-  // --- assignments the migration could not resolve (#968) --------------------------------------
-
-  /** It costs nobody's work, so the overview names nobody for it — the category page marks it. */
-  @Test
-  public void should_name_nobody_for_an_assignment_whose_person_is_unresolved() {
-    givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    givenAssignment("senior", "emp", null, JAN, DEC, 1L);
-    givenAssignment("senior", "gone", null, JAN, DEC, 2L).setEmployeeId(null);
-
-    assertThat(service.getCategories()).singleElement()
-        .extracting(EmployeeCostCategory::employeeSigns).asInstanceOf(list(String.class))
-        .containsExactly("emp");
-  }
-
-  /** The overview shows the person's current sign, not the one stored with the assignment. */
-  @Test
-  public void should_name_an_employee_by_their_current_sign() {
-    givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setEmployeeSign("old-sign");
-
-    assertThat(service.getCategories()).singleElement()
-        .extracting(EmployeeCostCategory::employeeSigns).asInstanceOf(list(String.class))
-        .containsExactly("emp");
   }
 
   private void stubAssignmentRepository() {

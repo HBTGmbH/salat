@@ -342,8 +342,8 @@ public class BudgetSegmentControllingServiceTest {
   }
 
   /**
-   * The sign column is deliberately stale: the page names the order by the sign it has today, read by
-   * id (#1212), and must not fall back on the mirror the reports read.
+   * The plan refers to its order by id; the page names the order by the sign it has today, read by
+   * that id (#1212).
    */
   private static OrderBudget plan(String customerorderSign) {
     var plan = new OrderBudget();
@@ -351,7 +351,6 @@ public class BudgetSegmentControllingServiceTest {
     var customerorderId = idOf(customerorderSign);
     SIGNS_BY_ID.put(customerorderId, customerorderSign);
     plan.setCustomerorderId(customerorderId);
-    plan.setCustomerorderSign("stale-" + customerorderSign);
     plan.setActive(true);
     return plan;
   }

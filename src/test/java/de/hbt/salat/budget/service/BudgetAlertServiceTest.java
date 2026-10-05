@@ -29,10 +29,7 @@ import de.hbt.salat.notification.service.NotificationService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
 
-/**
- * The alert names the order of a plan as it is called today: read by the plan's id, not by its sign
- * column, which only mirrors the order for the reports (#1212).
- */
+/** The alert names the order of a plan as it is called today, read by the plan's order id (#1212). */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BudgetAlertServiceTest {
 
@@ -66,7 +63,7 @@ public class BudgetAlertServiceTest {
 
   @Test
   public void alerts_the_responsibles_of_the_order_behind_the_id_named_as_it_is_called_today() {
-    givenPlans(plan(CUSTOMERORDER_ID, "stale-co"));
+    givenPlans(plan(CUSTOMERORDER_ID));
 
     service.checkAndNotify();
 
@@ -78,12 +75,11 @@ public class BudgetAlertServiceTest {
     when(orderBudgetRepository.findByActiveAndAlertThresholdPercentIsNotNull(Boolean.TRUE)).thenReturn(List.of(plans));
   }
 
-  private static OrderBudget plan(long customerorderId, String customerorderSign) {
+  private static OrderBudget plan(long customerorderId) {
     var plan = new OrderBudget();
     ReflectionTestUtils.setField(plan, "id", 1L);
     plan.setName("plan");
     plan.setCustomerorderId(customerorderId);
-    plan.setCustomerorderSign(customerorderSign);
     plan.setAlertThresholdPercent(80);
     return plan;
   }

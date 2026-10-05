@@ -28,8 +28,7 @@ import java.util.stream.Stream;
  */
 /**
  * @param scopeSigns the sign each plan's scope has today, by plan id — the complete suborder sign, or
- *                   the order sign for an order-wide plan (#1212). Read by id rather than off the
- *                   plans' sign columns, which only mirror order and suborder for reports.
+ *                   the order sign for an order-wide plan (#1212). Read by id.
  */
 public record SelectablePlans(List<OrderBudget> plans, Long notFittingId, Map<Long, String> scopeSigns) {
 

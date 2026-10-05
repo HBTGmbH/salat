@@ -311,27 +311,11 @@ public class BudgetDashboardServiceTest {
       assertThat(asked).isNotEmpty().doesNotContain("C", 3L, 105L);
     }
 
-    /**
-     * A row names its order by the sign the order has today, read by id (#1212). The plans' sign
-     * column only mirrors it for the reports; a stale mirror must not reach the page, and the rows
-     * stay sorted by the order's sign.
-     */
-    @Test
-    public void a_row_names_its_order_by_the_sign_the_order_has_today() {
-      plans.stream().filter(plan -> "A".equals(plan.getCustomerorderSign()))
-          .forEach(plan -> plan.setCustomerorderSign("Z-stale"));
-
-      var rows = figures.computeDashboard(null, null);
-
-      assertThat(rows).extracting(BudgetDashboardRow::budgetId, BudgetDashboardRow::customerorderSign)
-          .containsExactly(tuple(101L, "A"), tuple(102L, "A"), tuple(103L, "B"), tuple(104L, "B"));
-    }
-
     /** The dashboard asks {@code OrderBudgetService} for the visible plans; C is not among them. */
     private OrderBudgetService visiblePlans() {
       var orderBudgetService = mock(OrderBudgetService.class);
       when(orderBudgetService.getAllActiveVisible(any())).thenAnswer(i -> plans.stream()
-          .filter(p -> !"C".equals(p.getCustomerorderSign()))
+          .filter(p -> p.getCustomerorderId() != orderIdOf("C"))
           .toList());
       return orderBudgetService;
     }
@@ -442,12 +426,10 @@ public class BudgetDashboardServiceTest {
       var plan = new OrderBudget();
       setId(plan, id);
       plan.setName("plan " + id);
-      // by id, as the services store it (#1205); the signs stand next to the ids
+      // by id, as the services store it (#1205)
       plan.setCustomerorderId(orderIdOf(orderSign));
-      plan.setCustomerorderSign(orderSign);
       plan.setSuborderId(suborderSign == null ? null : suborders.stream()
           .filter(so -> so.getCompleteOrderSign().equals(suborderSign)).findFirst().orElseThrow().getId());
-      plan.setSuborderSign(suborderSign);
       plan.setActive(true);
       plan.setValidFrom(LocalDate.parse(from));
       plan.setValidUntil(LocalDate.parse(until));
@@ -495,7 +477,6 @@ public class BudgetDashboardServiceTest {
     private OrderPricing rate(String orderSign, String suborderSign, int centsPerHour) {
       var rate = new OrderPricing();
       rate.setCustomerorderId(orderIdOf(orderSign));
-      rate.setCustomerorderSign(orderSign);
       rate.setSuborderSign(suborderSign);
       rate.setPriceCentsPerHour(centsPerHour);
       rate.setValidFrom(LocalDate.of(2026, 1, 1));
@@ -508,7 +489,6 @@ public class BudgetDashboardServiceTest {
       var rate = new OrderFlatRate();
       setId(rate, nextId++);
       rate.setCustomerorderId(orderIdOf(orderSign));
-      rate.setCustomerorderSign(orderSign);
       rate.setDescription(rhythm + " " + orderSign);
       rate.setRhythm(rhythm);
       rate.setAmount(new BigDecimal(amount));

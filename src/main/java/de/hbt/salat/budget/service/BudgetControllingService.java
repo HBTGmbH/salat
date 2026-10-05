@@ -270,9 +270,9 @@ public class BudgetControllingService {
     }
 
     /**
-     * The signs the order and the suborders of its plans and flat rates have today, by id (#1212) —
-     * the sign columns of plans and flat rates only mirror them for reports. A suborder that has been
-     * moved to another order is no longer among the order's own and is asked for on its own.
+     * The signs the order and the suborders of its plans and flat rates have today, by id (#1212). A
+     * suborder that has been moved to another order is no longer among the order's own and is asked
+     * for on its own.
      */
     private ScopeSigns scopeSigns(CustomerorderOption customerorder, List<SuborderReadModel> suborders,
                                   List<OrderBudget> budgets, OrderFlatRateLookup flatRateLookup) {

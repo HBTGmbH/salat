@@ -169,7 +169,6 @@ public class AppliedRateLookupTest {
     var suborder = suborder(true, OrderType.STANDARD);
     var onOtherSign = new OrderPricing();
     onOtherSign.setCustomerorderId(CUSTOMERORDER_ID);
-    onOtherSign.setCustomerorderSign("co");
     onOtherSign.setSuborderSign("co/99");
     onOtherSign.setPriceCentsPerHour(99900);
     onOtherSign.setValidFrom(FROM);
@@ -195,7 +194,6 @@ public class AppliedRateLookupTest {
   private static EmployeeCostAssignment costAssignment(String name, int centsPerHour) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(EMPLOYEE_ID);
-    assignment.setEmployeeSign("abc");
     assignment.setCategory(CostCategoryTestUtils.named(name));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
@@ -214,7 +212,6 @@ public class AppliedRateLookupTest {
   private static OrderPricingLookup pricingLookup(int centsPerHour) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(CUSTOMERORDER_ID);
-    pricing.setCustomerorderSign("co");
     pricing.setPriceCentsPerHour(centsPerHour);
     pricing.setValidFrom(FROM);
     pricing.setValidUntil(UNTIL);

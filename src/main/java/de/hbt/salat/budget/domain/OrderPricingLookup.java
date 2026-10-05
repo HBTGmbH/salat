@@ -31,8 +31,7 @@ import de.hbt.salat.common.util.SqlLikePattern;
  * employee" ({@link OrderPricing#isForEveryone()}). While the person was still stored as a sign it
  * was compared for equality — the report prefix-matches it, but stored signs exist that are a
  * prefix of a different employee's sign, so copying that would have attached rates to the wrong
- * people. A rate whose person the migration could not resolve names nobody the lookup knows and
- * applies to nobody ({@link OrderPricing#isEmployeeUnresolved()}).
+ * people.
  *
  * <p>A rate may also be bound to a budget plan (#1065). Such a rate applies only to bookings
  * assigned to that plan; every other booking falls back to the plan-less rate, exactly as work by
