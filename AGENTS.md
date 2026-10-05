@@ -30,7 +30,7 @@ See also README.md
   extracting a module later a replication task instead of a remodelling. Four constraints come with
   it:
   - Every module the query **traverses** must be import-legal too, not just the one it names — a
-    path over `Timereport.employeecontract.employee` reads `employee`.
+    path over `Timereport.employeeorder.employeecontract.employee` reads `order` and `employee`.
   - No entity as a record component, no interface projection that navigates in the caller, no
     `Object[]`/`Tuple` — each hands the association graph back out.
   - Read only: no `@Modifying`, no DML, no cascade across the boundary. Writing stays with events.

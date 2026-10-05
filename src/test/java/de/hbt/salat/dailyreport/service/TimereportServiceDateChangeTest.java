@@ -352,9 +352,7 @@ class TimereportServiceDateChangeTest {
   private Timereport givenBooking(LocalDate day, String status) {
     var timereport = new Timereport();
     ReflectionTestUtils.setField(timereport, "id", TIMEREPORT_ID);
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(employeeorder.getSuborder());
     timereport.setReferenceday(referenceday(day));
     timereport.setTaskdescription("comment");
     timereport.setDurationhours(1);

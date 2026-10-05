@@ -126,9 +126,7 @@ class TimereportServiceDeleteDayTest {
     var referenceday = referenceday(entityManager, date);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(onEmployeeorder);
-    timereport.setSuborder(onEmployeeorder.getSuborder());
     timereport.setReferenceday(referenceday);
     timereport.setDurationhours(1);
     timereport.setDurationminutes(0);

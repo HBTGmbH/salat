@@ -29,8 +29,8 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
    * {@code Suborder#getEffectiveOrderType} applies, expressed in JPQL.
    */
   String IS_WORKING_TIME = """
-      and (case when tr.suborder.orderType is not null then tr.suborder.orderType
-                else tr.suborder.customerorder.orderType end
+      and (case when tr.employeeorder.suborder.orderType is not null then tr.employeeorder.suborder.orderType
+                else tr.employeeorder.suborder.customerorder.orderType end
            is distinct from de.hbt.salat.order.domain.OrderType.BEREITSCHAFT)
       """;
 
@@ -39,7 +39,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
           @QueryHint(name = HibernateHints.HINT_CACHE_REGION, value = "TimereportRepository.findAllByEmployeecontractIdAndReferencedayRefdate")
     }
   )
-  @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId and t.referenceday.refdate = :refDate")
+  @Query("select t from Timereport t where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId and t.referenceday.refdate = :refDate")
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdate(long employeecontractId, LocalDate refDate);
 
   /**
@@ -50,10 +50,10 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   @Query("select t from Timereport t where t.deleted = false and t.id in :ids")
   List<Timereport> findAllByIdIn(Collection<Long> ids);
 
-  @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId and t.referenceday.refdate >= :refDate")
+  @Query("select t from Timereport t where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId and t.referenceday.refdate >= :refDate")
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdateIsGreaterThanEqual(long employeecontractId, LocalDate refDate);
 
-  @Query("select t from Timereport t where t.deleted = false and t.status = :status and t.employeecontract.id = :employeecontractId and t.referenceday.refdate <= :refDate")
+  @Query("select t from Timereport t where t.deleted = false and t.status = :status and t.employeeorder.employeecontract.id = :employeecontractId and t.referenceday.refdate <= :refDate")
   List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, LocalDate refDate);
 
   @QueryHints(value = {
@@ -63,9 +63,9 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   )
   @Query("""
       select t from Timereport t
-      where t.deleted = false and t.employeecontract.id = :employeecontractId
+      where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
         and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
-      order by t.employeecontract.employee.sign asc,
+      order by t.employeeorder.employeecontract.employee.sign asc,
       t.referenceday.refdate asc,
       t.employeeorder.suborder.customerorder.sign asc,
       t.employeeorder.suborder.sign asc
@@ -82,27 +82,27 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   @Query("""
       select t from Timereport t
-      where t.deleted = false and t.employeecontract.id = :employeecontractId
-      and (t.referenceday.refdate < t.employeecontract.validFrom
-      or t.employeecontract.validUntil is not null and t.referenceday.refdate > t.employeecontract.validUntil)
-      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
+      where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
+      and (t.referenceday.refdate < t.employeeorder.employeecontract.validFrom
+      or t.employeeorder.employeecontract.validUntil is not null and t.referenceday.refdate > t.employeeorder.employeecontract.validUntil)
+      order by t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingEmployeecontractValidity(long employeecontractId);
 
   @Query("""
       select t from Timereport t
-      where t.deleted = false and t.employeecontract.id = :employeecontractId
+      where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
       and (t.referenceday.refdate < t.employeeorder.fromDate
       or t.employeeorder.untilDate is not null and t.referenceday.refdate > t.employeeorder.untilDate)
-      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
+      order by t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(long employeecontractId);
 
   @Query("""
-      select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId
+      select t from Timereport t where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
       and t.referenceday.refdate >= :releaseDate
       and t.durationminutes = 0 and t.durationhours = 0
-      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
+      order by t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);
 
@@ -112,7 +112,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
    * instead of loading every booking of the period only to throw the bookings away.
    */
   @Query("""
-      select distinct t.suborder.customerorder.sign from Timereport t
+      select distinct t.employeeorder.suborder.customerorder.sign from Timereport t
       where t.deleted = false and t.referenceday.refdate between :from and :until
       """)
   List<String> findDistinctCustomerorderSignsBetween(LocalDate from, LocalDate until);
@@ -127,23 +127,23 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
    */
   @Query("""
       select distinct t.referenceday.refdate from Timereport t
-      where t.deleted = false and t.employeecontract.id = :employeecontractId
+      where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
         and t.referenceday.refdate between :from and :until
       """)
   List<LocalDate> findBookedDaysBetween(long employeecontractId, LocalDate from, LocalDate until);
 
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
-      + "where tr.deleted = false and tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId")
+      + "where tr.deleted = false and tr.employeeorder.suborder.id = :suborderId and tr.employeeorder.employeecontract.id = :employeecontractId")
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);
 
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
-      + "where tr.deleted = false and tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId "
+      + "where tr.deleted = false and tr.employeeorder.suborder.id = :suborderId and tr.employeeorder.employeecontract.id = :employeecontractId "
       + "and tr.referenceday.refdate > :after")
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContractAfter(long suborderId, long employeecontractId,
       LocalDate after);
 
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
-      + "where tr.deleted = false and tr.suborder.invoice = '" + INVOICE_YES + "' and tr.employeeorder.suborder.customerorder.id = :customerorderId")
+      + "where tr.deleted = false and tr.employeeorder.suborder.invoice = '" + INVOICE_YES + "' and tr.employeeorder.suborder.customerorder.id = :customerorderId")
   Optional<Long> getReportedMinutesForCustomerorder(long customerorderId);
 
   @Query("""
@@ -174,7 +174,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   @Query("""
       select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
-      where tr.deleted = false and tr.employeecontract.id = :employeecontractId
+      where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
   """ + IS_WORKING_TIME)
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
@@ -185,14 +185,14 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
              extract(month from tr.referenceday.refdate),
              sum(tr.durationminutes) + 60 * sum(tr.durationhours))
       from Timereport tr
-      where tr.deleted = false and tr.employeecontract.id = :employeecontractId
+      where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
   """ + IS_WORKING_TIME + """
       group by extract(year from tr.referenceday.refdate), extract(month from tr.referenceday.refdate)
   """)
   List<MonthlyReportedMinutes> getReportedMinutesByMonthForEmployeecontract(long employeecontractId, LocalDate begin, LocalDate end);
 
-  @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId")
+  @Query("select t from Timereport t where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId")
   List<Timereport> findAllByEmployeecontractId(long employeecontractId);
 
   @Query("""
@@ -248,9 +248,9 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
              tr.durationminutes)
       from Timereport tr join tr.ticketReferences ref
       where tr.deleted = false
-        and tr.suborder.id in (:suborderIds)
+        and tr.employeeorder.suborder.id in (:suborderIds)
         and tr.referenceday.refdate >= :from and tr.referenceday.refdate <= :until
-        and (:invoiceableOnly = false or tr.suborder.invoice = 'Y')
+        and (:invoiceableOnly = false or tr.employeeorder.suborder.invoice = 'Y')
       order by tr.id, index(ref)
   """)
   List<BookedTicketReference> getBookedTicketReferences(Collection<Long> suborderIds, LocalDate from, LocalDate until,

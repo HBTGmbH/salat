@@ -119,6 +119,7 @@ public enum ErrorCode {
   TR_TICKET_REFERENCE_DUPLICATE("TR-0048", "a ticket reference occurs more than once on the booking"),
   TR_TICKET_REFERENCES_NOT_ALLOWED("TR-0049", "the suborder of the booking allows no ticket references"),
   TR_TICKET_REFERENCES_EXCEED_LIMIT("TR-0050", "the booking has more ticket references than its suborder allows"),
+  TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT("TR-0051", "the employee order belongs to another employee contract than the booking"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

@@ -240,9 +240,7 @@ public class AssignedBookingRepositoryTest {
     entityManager.persist(employeeorder);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(suborder);
     timereport.setReferenceday(referenceday(entityManager, day));
     timereport.setDurationhours(hours);
     timereport.setDurationminutes(minutes);

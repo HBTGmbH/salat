@@ -9,7 +9,12 @@ import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
 
+import jakarta.persistence.criteria.From;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.metamodel.SingularAttribute;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,10 +28,13 @@ import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.*;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employee_;
+import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Employeecontract_;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Customerorder_;
+import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Employeeorder_;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
@@ -192,22 +200,53 @@ public class TimereportDAO {
 
     private Specification<Timereport> matchesEmployeecontractId(long employeecontractId) {
         return (root, query, builder) ->
-            builder.equal(root.join(Timereport_.employeecontract).get(Employeecontract_.id), employeecontractId);
+            builder.equal(employeeorder(root).get(Employeeorder_.employeecontract).get(Employeecontract_.id), employeecontractId);
     }
 
     private Specification<Timereport> matchesCustomerorderId(long customerorderId) {
         return (root, query, builder) ->
-            builder.equal(root.join(Timereport_.suborder).join(Suborder_.customerorder).get(Customerorder_.id), customerorderId);
+            builder.equal(suborder(root).get(Suborder_.customerorder).get(Customerorder_.id), customerorderId);
     }
 
     private Specification<Timereport> matchesSuborderId(long suborderId) {
         return (root, query, builder) ->
-            builder.equal(root.join(Timereport_.suborder).get(Suborder_.id), suborderId);
+            builder.equal(employeeorder(root).get(Employeeorder_.suborder).get(Suborder_.id), suborderId);
     }
 
     private Specification<Timereport> matchesEmployeeorderId(long employeeorderId) {
         return (root, query, builder) ->
-            builder.equal(root.join(Timereport_.employeeorder).get(Employeeorder_.id), employeeorderId);
+            builder.equal(employeeorder(root).get(Employeeorder_.id), employeeorderId);
+    }
+
+    /**
+     * The employee order of the booking, joined once per query however many conditions and orderings
+     * ask for it. Suborder and contract of a booking are those of its employee order (#1210), so
+     * every condition on them goes through this join.
+     */
+    private static Join<Timereport, Employeeorder> employeeorder(Root<Timereport> root) {
+        return joinOnce(root, Timereport_.employeeorder);
+    }
+
+    private static Join<Employeeorder, Suborder> suborder(Root<Timereport> root) {
+        return joinOnce(employeeorder(root), Employeeorder_.suborder);
+    }
+
+    private static Join<Employeecontract, Employee> employee(Root<Timereport> root) {
+        return joinOnce(joinOnce(employeeorder(root), Employeeorder_.employeecontract), Employeecontract_.employee);
+    }
+
+    /**
+     * The inner join of {@code from} along {@code attribute}: the one an earlier specification of the
+     * same query made, otherwise a new one. Each specification sees only the root, and a plain
+     * {@code join} per specification would join the same table once for every condition that reads it.
+     */
+    @SuppressWarnings("unchecked")
+    private static <X, Y> Join<X, Y> joinOnce(From<?, X> from, SingularAttribute<? super X, Y> attribute) {
+        return from.getJoins().stream()
+            .filter(join -> join.getJoinType() == JoinType.INNER && join.getAttribute().getName().equals(attribute.getName()))
+            .map(join -> (Join<X, Y>) join)
+            .findFirst()
+            .orElseGet(() -> from.join(attribute));
     }
 
     private Specification<Timereport> notDeleted() {
@@ -219,7 +258,7 @@ public class TimereportDAO {
         return (root, query, builder) -> {
             var orderList = new ArrayList<Order>();
             orderList.addAll(query.getOrderList());
-            orderList.add(builder.asc(root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.sign)));
+            orderList.add(builder.asc(employee(root).get(Employee_.sign)));
             orderList.add(builder.asc(root.join(Timereport_.referenceday).get(Referenceday_.refdate)));
             orderList.add(builder.asc(root.get(Timereport_.sequencenumber)));
             query.orderBy(orderList);
@@ -231,10 +270,10 @@ public class TimereportDAO {
         return (root, query, builder) -> {
             var orderList = new ArrayList<Order>();
             orderList.addAll(query.getOrderList());
-            orderList.add(builder.asc(root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.sign)));
+            orderList.add(builder.asc(employee(root).get(Employee_.sign)));
             orderList.add(builder.asc(root.join(Timereport_.referenceday).get(Referenceday_.refdate)));
-            orderList.add(builder.asc(root.join(Timereport_.suborder).join(Suborder_.customerorder).get(Customerorder_.sign)));
-            orderList.add(builder.asc(root.join(Timereport_.suborder).get(Suborder_.sign)));
+            orderList.add(builder.asc(joinOnce(suborder(root), Suborder_.customerorder).get(Customerorder_.sign)));
+            orderList.add(builder.asc(suborder(root).get(Suborder_.sign)));
             query.orderBy(orderList);
             return null;
         };

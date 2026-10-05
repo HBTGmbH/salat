@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.Referenceday;
@@ -58,14 +59,19 @@ class TimereportServiceDurationTest {
   private TimereportAuthorization timereportAuthorization;
 
   private void givenValidMasterData() {
-    when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID))
-        .thenReturn(new Employeecontract());
-    when(employeeorderDAO.getEmployeeorderById(EMPLOYEE_ORDER_ID)).thenReturn(new Employeeorder());
+    var contract = new Employeecontract();
+    ReflectionTestUtils.setField(contract, "id", EMPLOYEE_CONTRACT_ID);
+    when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+    // the employee order belongs to the contract booked for (#1210)
+    var employeeorder = new Employeeorder();
+    employeeorder.setEmployeecontract(contract);
+    when(employeeorderDAO.getEmployeeorderById(EMPLOYEE_ORDER_ID)).thenReturn(employeeorder);
     var referenceday = new Referenceday();
     referenceday.setRefdate(DATE);
     when(referencedayRepository.findByRefdate(DATE)).thenReturn(Optional.of(referenceday));
     var storedTimereport = new Timereport();
     storedTimereport.setReferenceday(referenceday);
+    storedTimereport.setEmployeeorder(employeeorder);
     when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(storedTimereport));
   }
 

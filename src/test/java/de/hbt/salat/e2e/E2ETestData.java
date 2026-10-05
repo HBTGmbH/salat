@@ -518,9 +518,7 @@ public class E2ETestData {
 
       var timereport = new Timereport();
       timereport.setReferenceday(referenceday(day));
-      timereport.setEmployeecontract(contract);
       timereport.setEmployeeorder(employeeorder);
-      timereport.setSuborder(employeeorder.getSuborder());
       timereport.setDurationhours((int) duration.toHours());
       timereport.setDurationminutes(duration.toMinutesPart());
       timereport.setTaskdescription(comment);
