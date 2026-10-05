@@ -5059,3 +5059,35 @@ databaseChangeLog:
                                       JOIN employee s2 ON s2.id = es2.SUPERVISOR_ID
                              GROUP BY es2.EMPLOYEECONTRACT_ID) tn ON tn.EMPLOYEECONTRACT_ID = ec.id
               WHERE NOT COALESCE(ec.freelancer, 0)
+
+  - changeSet:
+      id: 135
+      author: kr
+      comment: Unterauftrag und Vertrag einer Buchung kommen aus dem Mitarbeiterauftrag (#1210)
+      # timereport.SUBORDER_ID und timereport.EMPLOYEECONTRACT_ID waren Kopien dessen, was der
+      # Mitarbeiterauftrag (EMPLOYEEORDER_ID) schon festlegt. Massgeblich ist der Mitarbeiterauftrag;
+      # die Anwendung liest Unterauftrag und Vertrag einer Buchung seitdem von dort. Altbuchungen, deren
+      # SUBORDER_ID vom Unterauftrag ihres Mitarbeiterauftrags abwich, gehoeren damit zu diesem - so
+      # entschieden. Ein abweichender Vertrag kam im Bestand nicht vor. Erst fallen die Fremdschluessel,
+      # dann die Spalten; die gleichnamigen Indizes ueber je eine Spalte gehen mit der Spalte.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: timereport
+            columnName: SUBORDER_ID
+        - columnExists:
+            tableName: timereport
+            columnName: EMPLOYEECONTRACT_ID
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: timereport
+            constraintName: FKDA2C76616F5511F2
+        - dropForeignKeyConstraint:
+            baseTableName: timereport
+            constraintName: FKDA2C7661789484B2
+        - dropColumn:
+            tableName: timereport
+            columnName: SUBORDER_ID
+        - dropColumn:
+            tableName: timereport
+            columnName: EMPLOYEECONTRACT_ID

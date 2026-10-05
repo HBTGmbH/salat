@@ -278,9 +278,7 @@ class TimereportServiceTicketReferenceLimitTest {
   private Timereport givenBooking(String... references) {
     var timereport = new Timereport();
     ReflectionTestUtils.setField(timereport, "id", TIMEREPORT_ID);
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorderDAO.getEmployeeorderById(EMPLOYEE_ORDER_ID));
-    timereport.setSuborder(suborder);
     timereport.setReferenceday(referenceday(DAY));
     timereport.setTaskdescription("Kommentar");
     timereport.setDurationhours(1);

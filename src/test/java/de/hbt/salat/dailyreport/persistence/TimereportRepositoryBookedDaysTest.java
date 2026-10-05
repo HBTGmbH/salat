@@ -129,9 +129,7 @@ public class TimereportRepositoryBookedDaysTest {
     var referenceday = referenceday(entityManager, date);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(employeeorder.getSuborder());
     timereport.setReferenceday(referenceday);
     timereport.setDurationhours(1);
     timereport.setDurationminutes(0);

@@ -207,9 +207,7 @@ class TimereportListFilterValuesTest {
     var referenceday = referenceday(entityManager, DAY);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder(contract, suborder));
-    timereport.setSuborder(suborder);
     timereport.setReferenceday(referenceday);
     timereport.setDurationhours(1);
     timereport.setDurationminutes(0);

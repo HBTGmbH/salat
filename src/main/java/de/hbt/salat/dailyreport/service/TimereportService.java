@@ -32,6 +32,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_F
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT;
 import static de.hbt.salat.common.exception.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
@@ -390,6 +391,14 @@ public class TimereportService {
     DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
     Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
     DataValidationUtils.notNull(employeeorder, TR_EMPLOYEE_ORDER_NOT_FOUND);
+    // the contract of a booking is that of its employee order (#1210): an employee order of another
+    // contract - from a favourite or a previous booking - would book for that contract instead
+    if (!Objects.equals(employeeorder.getEmployeecontract().getId(), employeecontract.getId())) {
+      throw new InvalidDataException(TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT,
+          employeeorder.getSuborder().getCompleteOrderSign(),
+          contractLabel(employeeorder.getEmployeecontract()),
+          contractLabel(employeecontract));
+    }
     DataValidationUtils.notNull(referenceDay, TR_REFERENCE_DAY_NULL);
     Referenceday referenceday = getOrAddReferenceday(referenceDay);
     DataValidationUtils.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
@@ -401,14 +410,16 @@ public class TimereportService {
     long totalDurationMinutes = durationHours * MINUTES_PER_HOUR + durationMinutes;
     DataValidationUtils.isTrue(totalDurationMinutes <= MINUTES_PER_DAY, TR_DURATION_EXCEEDS_ONE_DAY);
 
-    timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(employeeorder.getSuborder());
     timereport.setReferenceday(referenceday);
     timereport.setTaskdescription(taskDescription.trim());
     timereport.setTraining(trainingFlag);
     timereport.setDurationhours((int) (totalDurationMinutes / MINUTES_PER_HOUR));
     timereport.setDurationminutes((int) (totalDurationMinutes % MINUTES_PER_HOUR));
+  }
+
+  private static String contractLabel(Employeecontract employeecontract) {
+    return employeecontract.getEmployee().getSign() + " " + employeecontract.getTimeString().strip();
   }
 
   /**
@@ -762,7 +773,6 @@ public class TimereportService {
     timereports.forEach(tr -> {
       previousEmployeecontractIds.put(tr.getId(), tr.getEmployeecontract().getId());
       tr.setEmployeeorder(updatingEmployeeorder);
-      tr.setEmployeecontract(updatingEmployeeorder.getEmployeecontract());
       setStatus(tr);
       timereportRepository.save(tr);
       event.addLog("Buchung %s, %s, %s verschoben".formatted(tr.getReferenceday().getRefdate(), tr.getSuborder().getCompleteOrderSign(),

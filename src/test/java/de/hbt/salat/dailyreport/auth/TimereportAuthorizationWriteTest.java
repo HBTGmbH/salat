@@ -37,6 +37,7 @@ import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.order.domain.Employeeorder;
 
 /**
  * Wer eine Buchung schreiben darf, hängt an ihrem Status und daran, wer fragt: die Person selbst,
@@ -226,7 +227,9 @@ class TimereportAuthorizationWriteTest {
 
     private Timereport timereport(String status) {
         var timereport = new Timereport();
-        timereport.setEmployeecontract(contract);
+        var employeeorder = new Employeeorder();
+        employeeorder.setEmployeecontract(contract);
+        timereport.setEmployeeorder(employeeorder);
         timereport.setStatus(status);
         return timereport;
     }

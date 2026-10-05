@@ -58,18 +58,18 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT new de.hbt.salat.budget.domain.AssignedBooking(
-               t.id, t.referenceday.refdate, t.suborder.id,
-               t.employeecontract.employee.id,
-               t.employeecontract.employee.sign,
-               concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname),
+               t.id, t.referenceday.refdate, eo.suborder.id,
+               eo.employeecontract.employee.id,
+               eo.employeecontract.employee.sign,
+               concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname),
                t.durationhours, t.durationminutes, t.taskdescription)
-        FROM TimereportBudgetAssignment a, Timereport t
+        FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
           AND t.referenceday.refdate >= :from AND t.referenceday.refdate <= :until
         ORDER BY t.referenceday.refdate DESC,
-                 t.employeecontract.employee.sign ASC,
-                 t.suborder.id ASC,
+                 eo.employeecontract.employee.sign ASC,
+                 eo.suborder.id ASC,
                  t.id ASC
         """)
     List<AssignedBooking> findAssignedBookings(@Param("budgetId") long orderBudgetId,
@@ -119,23 +119,23 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT new de.hbt.salat.budget.domain.AssignedEmployeeDay(
-               t.employeecontract.employee.id,
-               t.employeecontract.employee.sign,
-               concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname),
-               t.suborder.id, t.referenceday.refdate,
+               eo.employeecontract.employee.id,
+               eo.employeecontract.employee.sign,
+               concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname),
+               eo.suborder.id, t.referenceday.refdate,
                count(t), sum(t.durationhours * 60 + t.durationminutes))
-        FROM TimereportBudgetAssignment a, Timereport t
+        FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
           AND t.referenceday.refdate >= :from AND t.referenceday.refdate <= :until
-        GROUP BY t.employeecontract.employee.id,
-                 t.employeecontract.employee.sign,
-                 t.employeecontract.employee.firstname,
-                 t.employeecontract.employee.lastname,
-                 t.suborder.id,
+        GROUP BY eo.employeecontract.employee.id,
+                 eo.employeecontract.employee.sign,
+                 eo.employeecontract.employee.firstname,
+                 eo.employeecontract.employee.lastname,
+                 eo.suborder.id,
                  t.referenceday.refdate
-        ORDER BY t.employeecontract.employee.sign ASC,
-                 t.suborder.id ASC,
+        ORDER BY eo.employeecontract.employee.sign ASC,
+                 eo.suborder.id ASC,
                  t.referenceday.refdate ASC
         """)
     List<AssignedEmployeeDay> findAssignedEmployeeDays(@Param("budgetId") long orderBudgetId,
@@ -171,17 +171,17 @@ public interface TimereportBudgetAssignmentRepository
     @Query("""
         SELECT new de.hbt.salat.budget.domain.BudgetEmployeeSign(
                a.orderBudget.id,
-               t.employeecontract.employee.sign,
-               concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname))
-        FROM TimereportBudgetAssignment a, Timereport t
+               eo.employeecontract.employee.sign,
+               concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname))
+        FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id IN :budgetIds
         GROUP BY a.orderBudget.id,
-                 t.employeecontract.employee.sign,
-                 t.employeecontract.employee.firstname,
-                 t.employeecontract.employee.lastname
+                 eo.employeecontract.employee.sign,
+                 eo.employeecontract.employee.firstname,
+                 eo.employeecontract.employee.lastname
         ORDER BY a.orderBudget.id ASC,
-                 t.employeecontract.employee.sign ASC
+                 eo.employeecontract.employee.sign ASC
         """)
     List<BudgetEmployeeSign> findEmployeeSignsByBudgetIds(@Param("budgetIds") Collection<Long> budgetIds);
 
@@ -202,9 +202,9 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT new de.hbt.salat.budget.domain.PlanBooking(
-               a.orderBudget.id, t.suborder.id, t.employeecontract.employee.id,
+               a.orderBudget.id, eo.suborder.id, eo.employeecontract.employee.id,
                t.referenceday.refdate, t.durationhours, t.durationminutes)
-        FROM TimereportBudgetAssignment a, Timereport t
+        FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id IN :budgetIds
           AND t.referenceday.refdate <= :until

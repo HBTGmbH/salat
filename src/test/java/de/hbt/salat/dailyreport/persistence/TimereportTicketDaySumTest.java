@@ -200,9 +200,7 @@ public class TimereportTicketDaySumTest {
     var referenceday = referenceday(entityManager, date);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(onSuborder);
     timereport.setReferenceday(referenceday);
     timereport.setDurationhours(hours);
     timereport.setDurationminutes(minutes);

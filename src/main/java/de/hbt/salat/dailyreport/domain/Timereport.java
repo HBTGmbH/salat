@@ -38,6 +38,11 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
 
+/**
+ * A booking. Its suborder and its contract are those of its employee order (#1210): the booking
+ * carries no copy of either, and {@link #getSuborder()} and {@link #getEmployeecontract()} answer
+ * from {@link #employeeorder}.
+ */
 @Getter
 @Setter
 @Entity
@@ -53,19 +58,13 @@ public class Timereport extends AuditedEntity implements Serializable {
     @JoinColumn(name = "REFERENCEDAY_ID")
     private Referenceday referenceday;
 
-    @ManyToOne
+    /**
+     * The employee order booked on. It decides the suborder and the contract of the booking (#1210);
+     * a booking without one does not exist.
+     */
+    @ManyToOne(optional = false)
     @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "EMPLOYEECONTRACT_ID")
-    private Employeecontract employeecontract;
-
-    @ManyToOne
-    @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "SUBORDER_ID")
-    private Suborder suborder;
-
-    @ManyToOne
-    @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "EMPLOYEEORDER_ID")
+    @JoinColumn(name = "EMPLOYEEORDER_ID", nullable = false)
     private Employeeorder employeeorder;
 
     private Integer durationhours;
@@ -149,9 +148,7 @@ public class Timereport extends AuditedEntity implements Serializable {
         Timereport timereport = new Timereport();
         timereport.setDurationhours(durationhours);
         timereport.setDurationminutes(durationminutes);
-        timereport.setEmployeecontract(employeecontract);
         timereport.setStatus(status);
-        timereport.setSuborder(suborder);
         timereport.setTaskdescription(taskdescription);
         timereport.setTicketReferences(ticketReferences);
         timereport.setTraining(training);
@@ -161,7 +158,18 @@ public class Timereport extends AuditedEntity implements Serializable {
         return timereport;
     }
 
+    /** The contract of the booking: that of its employee order since #1210. */
+    public Employeecontract getEmployeecontract() {
+        return employeeorder.getEmployeecontract();
+    }
+
+    /** The suborder of the booking: that of its employee order since #1210. */
+    public Suborder getSuborder() {
+        return employeeorder.getSuborder();
+    }
+
     public boolean getFitsToContract() {
+        var employeecontract = getEmployeecontract();
         return !referenceday.getRefdate().isBefore(employeecontract.getValidFrom())
                && (employeecontract.getValidUntil() == null || !referenceday.getRefdate().isAfter(employeecontract.getValidUntil()));
     }

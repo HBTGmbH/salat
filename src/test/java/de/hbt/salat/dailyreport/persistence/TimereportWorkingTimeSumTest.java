@@ -143,9 +143,7 @@ public class TimereportWorkingTimeSumTest {
     var referenceday = referenceday(entityManager, DAY);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(suborder);
     timereport.setReferenceday(referenceday);
     timereport.setDurationhours(hours);
     timereport.setDurationminutes(0);

@@ -277,9 +277,7 @@ public class BudgetEmployeeQueryTest {
     entityManager.persist(employeeorder);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(contract);
     timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(suborder);
     timereport.setReferenceday(referenceday(day));
     timereport.setDurationhours(hours);
     timereport.setDurationminutes(minutes);

@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.AbstractQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
@@ -24,12 +25,16 @@ import de.hbt.salat.dailyreport.domain.Referenceday_;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.Timereport_;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employee_;
+import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Employeecontract_;
 import de.hbt.salat.customer.domain.Customer_;
+import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Customerorder_;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Employeeorder_;
+import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
 
 /**
@@ -58,13 +63,15 @@ public class TimereportListDAO {
     CriteriaQuery<Timereport> query = builder.createQuery(Timereport.class);
     var root = query.from(Timereport.class);
     // The DTO of a row reads the day, the contract with its employee, and the order with its customer. Without the
-    // fetch joins every one of those is a statement of its own, per row.
+    // fetch joins every one of those is a statement of its own, per row. Contract and suborder are those of the
+    // employee order (#1210).
     root.fetch(Timereport_.referenceday);
-    root.fetch(Timereport_.employeecontract).fetch(Employeecontract_.employee);
-    root.fetch(Timereport_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
-    root.fetch(Timereport_.employeeorder);
-    query.where(conditions(filter, visibility, query, root, builder));
-    query.orderBy(orderBy(filter, root, builder));
+    var employeeorder = root.fetch(Timereport_.employeeorder);
+    employeeorder.fetch(Employeeorder_.employeecontract).fetch(Employeecontract_.employee);
+    employeeorder.fetch(Employeeorder_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
+    var joins = BookingJoins.of(root);
+    query.where(conditions(filter, visibility, query, root, joins, builder));
+    query.orderBy(orderBy(filter, root, joins, builder));
 
     var typed = entityManager.createQuery(query);
     if (filter.limited()) {
@@ -78,16 +85,16 @@ public class TimereportListDAO {
    * in der gebucht wurde. Jede andere Spalte sortiert genauso in der Abfrage — und behaelt Datum und Kuerzel als
    * zweites Kriterium, damit zwei gleiche Werte nicht bei jedem Aufruf anders herum stehen.
    */
-  private List<Order> orderBy(TimereportListFilter filter, Root<Timereport> root, CriteriaBuilder builder) {
+  private List<Order> orderBy(TimereportListFilter filter, Root<Timereport> root, BookingJoins joins,
+      CriteriaBuilder builder) {
     var refdate = root.join(Timereport_.referenceday).get(Referenceday_.refdate);
-    var sign = root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.sign);
-    var suborder = root.join(Timereport_.suborder);
+    var sign = joins.employee().get(Employee_.sign);
 
     Expression<?> primary = switch (filter.sort()) {
       case DATE -> refdate;
       case EMPLOYEE -> sign;
-      case ORDER -> suborder.join(Suborder_.customerorder).get(Customerorder_.sign);
-      case SUBORDER -> suborder.get(Suborder_.sign);
+      case ORDER -> joins.customerorder().get(Customerorder_.sign);
+      case SUBORDER -> joins.suborder().get(Suborder_.sign);
       case DURATION -> builder.sum(
           builder.prod(root.get(Timereport_.durationhours).as(Long.class), (long) MINUTES_PER_HOUR),
           root.get(Timereport_.durationminutes).as(Long.class));
@@ -113,22 +120,22 @@ public class TimereportListDAO {
     var builder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Object[]> query = builder.createQuery(Object[].class);
     var root = query.from(Timereport.class);
-    var suborder = root.join(Timereport_.suborder);
+    var joins = BookingJoins.of(root);
 
     Expression<Long> minutes = builder.sum(
         builder.prod(root.get(Timereport_.durationhours).as(Long.class), (long) MINUTES_PER_HOUR),
         root.get(Timereport_.durationminutes).as(Long.class));
     Expression<Long> billableMinutes = builder.<Long>selectCase()
-        .when(builder.equal(suborder.get(Suborder_.invoice), YESNO_YES), minutes)
+        .when(builder.equal(joins.suborder().get(Suborder_.invoice), YESNO_YES), minutes)
         .otherwise(0L);
 
     query.multiselect(
         builder.count(root),
         builder.sum(minutes),
         builder.sum(billableMinutes),
-        builder.countDistinct(root.join(Timereport_.employeecontract).join(Employeecontract_.employee)),
-        builder.countDistinct(suborder.join(Suborder_.customerorder)));
-    query.where(conditions(filter, visibility, query, root, builder));
+        builder.countDistinct(joins.employee()),
+        builder.countDistinct(joins.customerorder()));
+    query.where(conditions(filter, visibility, query, root, joins, builder));
 
     var row = entityManager.createQuery(query).getSingleResult();
     return new Totals(
@@ -152,8 +159,8 @@ public class TimereportListDAO {
    * billable ones — reads the whole table, because no single index serves an {@code or} across both. That is the
    * position of everybody responsible for an order, and it cost more than a second per list on every call.
    *
-   * <p>One known exception: a few legacy bookings carry a suborder other than the one of their employee order, within
-   * the same order. Such a suborder can be missing from the order dialog; its order is not, and it still finds them.
+   * <p>Since #1210 a booking has no suborder and no contract of its own; both are those of its employee order, so the
+   * two questions cannot give different answers.
    */
   public FilterValues findFilterValues(TimereportVisibility visibility) {
     var builder = entityManager.getCriteriaBuilder();
@@ -197,7 +204,7 @@ public class TimereportListDAO {
   }
 
   private Predicate conditions(TimereportListFilter filter, TimereportVisibility visibility,
-      AbstractQuery<?> query, Root<Timereport> root, CriteriaBuilder builder) {
+      AbstractQuery<?> query, Root<Timereport> root, BookingJoins joins, CriteriaBuilder builder) {
 
     var predicates = new ArrayList<Predicate>();
     predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
@@ -206,10 +213,10 @@ public class TimereportListDAO {
     predicates.add(builder.greaterThanOrEqualTo(refdate, filter.from()));
     predicates.add(builder.lessThanOrEqualTo(refdate, filter.until()));
 
-    var suborder = root.join(Timereport_.suborder);
-    var customerorder = suborder.join(Suborder_.customerorder);
+    var suborder = joins.suborder();
+    var customerorder = joins.customerorder();
     var dimensions = new Dimensions(
-        root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.id),
+        joins.employee().get(Employee_.id),
         customerorder.get(Customerorder_.id),
         suborder.get(Suborder_.id),
         suborder.get(Suborder_.invoice));
@@ -281,6 +288,22 @@ public class TimereportListDAO {
       clauses.add(parts.isEmpty() ? builder.conjunction() : builder.and(parts.toArray(Predicate[]::new)));
     }
     return Optional.of(builder.or(clauses.toArray(Predicate[]::new)));
+  }
+
+  /**
+   * The joins a booking query reads suborder, order and employee from, made once per query and shared by condition,
+   * ordering and sums. Suborder and contract of a booking are those of its employee order (#1210), so all of them hang
+   * on the one join to it.
+   */
+  private record BookingJoins(Join<Employeeorder, Suborder> suborder, Join<Suborder, Customerorder> customerorder,
+                              Join<Employeecontract, Employee> employee) {
+
+    static BookingJoins of(Root<Timereport> root) {
+      var employeeorder = root.join(Timereport_.employeeorder);
+      var suborder = employeeorder.join(Employeeorder_.suborder);
+      return new BookingJoins(suborder, suborder.join(Suborder_.customerorder),
+          employeeorder.join(Employeeorder_.employeecontract).join(Employeecontract_.employee));
+    }
   }
 
   /** Where the four dimensions of a visibility clause sit — on a booking, or on an employee order. */

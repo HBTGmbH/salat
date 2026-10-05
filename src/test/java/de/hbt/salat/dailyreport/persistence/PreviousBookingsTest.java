@@ -184,9 +184,7 @@ public class PreviousBookingsTest {
     entityManager.persist(referenceday);
 
     var timereport = new Timereport();
-    timereport.setEmployeecontract(onEmployeeorder.getEmployeecontract());
     timereport.setEmployeeorder(onEmployeeorder);
-    timereport.setSuborder(onEmployeeorder.getSuborder());
     timereport.setReferenceday(referenceday);
     timereport.setDurationhours(hours);
     timereport.setDurationminutes(minutes);

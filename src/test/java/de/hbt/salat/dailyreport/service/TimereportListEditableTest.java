@@ -36,6 +36,7 @@ import de.hbt.salat.dailyreport.persistence.TimereportListDAO.Totals;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.jira.service.JiraTicketService;
+import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -131,7 +132,9 @@ class TimereportListEditableTest {
   private static Timereport booking(long id, Employeecontract contract, String status) {
     var timereport = new Timereport();
     setField(timereport, "id", id);
-    timereport.setEmployeecontract(contract);
+    var employeeorder = new Employeeorder();
+    employeeorder.setEmployeecontract(contract);
+    timereport.setEmployeeorder(employeeorder);
     timereport.setStatus(status);
     return timereport;
   }
