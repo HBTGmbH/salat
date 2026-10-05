@@ -5591,3 +5591,21 @@ databaseChangeLog:
         - dropColumn:
             tableName: favorite
             columnName: ticket_reference
+
+  - changeSet:
+      id: 148
+      author: kr
+      comment: Tabellen team_lead und team_member entfernen (#1320)
+      # Weder die Anwendung noch der Changelog hat sie angelegt oder gepflegt; die Reports lesen die
+      # Teamzuordnung seit Changeset 134 aus der View team_membership. Sie stehen nur in Datenbanken,
+      # die aus dem alten Bestand kommen, deshalb DROP ... IF EXISTS.
+      preConditions:
+        - onFail: MARK_RAN
+        - or:
+            - tableExists:
+                tableName: team_lead
+            - tableExists:
+                tableName: team_member
+      changes:
+        - sql:
+            sql: DROP TABLE IF EXISTS team_lead, team_member
