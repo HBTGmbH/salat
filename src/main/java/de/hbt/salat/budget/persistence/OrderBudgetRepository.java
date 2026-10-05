@@ -15,7 +15,7 @@ import de.hbt.salat.budget.domain.OrderBudget;
 public interface OrderBudgetRepository
     extends CrudRepository<OrderBudget, Long>, PagingAndSortingRepository<OrderBudget, Long> {
 
-    /** The plans of a customer order, by its id (#1205) — the sign column is a mirror for reports only. */
+    /** The plans of a customer order, by its id (#1205). */
     List<OrderBudget> findByCustomerorderId(Long customerorderId);
 
     List<OrderBudget> findByCustomerorderIdAndActive(Long customerorderId, Boolean active);
@@ -25,8 +25,8 @@ public interface OrderBudgetRepository
     long countBySuborderId(Long suborderId);
 
     /**
-     * Every plan, by start of validity. Not by the sign column: that one only mirrors the order for
-     * reports (#1212); a view that lists plans by order sorts by the sign of the order itself.
+     * Every plan, by start of validity. A view that lists plans by order sorts by the sign of the
+     * order itself (#1212).
      */
     List<OrderBudget> findAllByOrderByValidFromAscIdAsc();
 

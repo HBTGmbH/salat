@@ -336,21 +336,14 @@ public class EmployeeCostController {
         return employeeCostService.getAssignmentsByName(name);
     }
 
-    /**
-     * The signs are read off the people (#968), so they follow a rename. An assignment whose person
-     * the migration could not resolve shows the sign it was stored with and is marked: it costs the
-     * work 0 EUR without a word, which is what the mark is for.
-     */
+    /** The signs are read off the people (#968), so they follow a rename. */
     private void addCategoryModel(Model model, String name, List<EmployeeCost> rates,
                                   List<EmployeeCostAssignment> assignments) {
         var signs = employeeService.getSignsByIds(assignments.stream()
             .map(EmployeeCostAssignment::getEmployeeId)
-            .filter(Objects::nonNull)
             .collect(toSet()));
-        Function<EmployeeCostAssignment, String> signOf = assignment -> assignment.isEmployeeUnresolved()
-            ? assignment.getEmployeeSign()
-            : signs.get(assignment.getEmployeeId());
-        // The suborders by id as well (#1212): the assignment's sign column only mirrors them for reports.
+        Function<EmployeeCostAssignment, String> signOf = assignment -> signs.get(assignment.getEmployeeId());
+        // The suborders by id as well (#1212).
         var suborderSigns = suborderService.getCompleteOrderSignsByIds(assignments.stream()
             .map(EmployeeCostAssignment::getSuborderId)
             .filter(Objects::nonNull)
@@ -394,7 +387,6 @@ public class EmployeeCostController {
         model.addAttribute("assignmentForm", form);
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
-        model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
         var kept = form.getSuborderId() == null ? null : suborderService.getSuborderById(form.getSuborderId());
         if (kept != null && form.getCustomerorderId() == null) {
             form.setCustomerorderId(kept.getCustomerorder().getId());
@@ -407,19 +399,6 @@ public class EmployeeCostController {
                 .toList());
         model.addAttribute("customerorders", customerorderService.getSelectableCustomerorderOptions(customerorderId));
         model.addAttribute("isEdit", !form.isNew());
-    }
-
-    /**
-     * The sign an assignment was stored with when the migration could not resolve its person (#968),
-     * or {@code null} — named in the empty choice of the select, which cannot offer that person. The
-     * person is required, so saving asks for one.
-     */
-    private String unresolvedEmployeeSignOf(EmployeeCostAssignmentForm form) {
-        if (form.isNew() || form.getEmployeeId() != null) {
-            return null;
-        }
-        var assignment = employeeCostService.getAssignmentById(form.getId());
-        return assignment.isEmployeeUnresolved() ? assignment.getEmployeeSign() : null;
     }
 
     private List<String> validateAssignment(EmployeeCostAssignmentForm form) {

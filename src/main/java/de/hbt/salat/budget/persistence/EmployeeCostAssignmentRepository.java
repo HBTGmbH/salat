@@ -3,7 +3,6 @@ package de.hbt.salat.budget.persistence;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -15,7 +14,7 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 public interface EmployeeCostAssignmentRepository
     extends CrudRepository<EmployeeCostAssignment, Long>, PagingAndSortingRepository<EmployeeCostAssignment, Long> {
 
-    /** Every assignment, by the name of its category (#1209 — the category's, not the mirror column). */
+    /** Every assignment, by the name of its category (#1209). */
     List<EmployeeCostAssignment> findAllByOrderByCategoryNameAscIdAsc();
 
     List<EmployeeCostAssignment> findByCategoryId(long categoryId);
@@ -75,14 +74,5 @@ public interface EmployeeCostAssignmentRepository
     List<EmployeeCostAssignment> findEffectiveGeneral(
         @Param("emp") long employeeId,
         @Param("date") LocalDate date);
-
-    /**
-     * Keeps the sign column in step with the person (#966, #968). The application resolves by
-     * {@code employeeId} and no longer needs it; views, ETL definitions and reports still join on
-     * it until they have moved to {@code employee_id}.
-     */
-    @Modifying
-    @Query("UPDATE EmployeeCostAssignment a SET a.employeeSign = :sign WHERE a.employeeId = :employeeId")
-    int updateEmployeeSign(@Param("employeeId") long employeeId, @Param("sign") String sign);
 
 }

@@ -20,7 +20,6 @@ import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.SuborderDeleteEvent;
-import de.hbt.salat.order.service.SuborderService;
 
 /**
  * Budget data refers to its order and suborder by id with a foreign key (#1205). Deleting what it
@@ -43,7 +42,7 @@ class OrderReferenceVetoListenerTest {
     assignmentRepository = mock(EmployeeCostAssignmentRepository.class);
     orderPricingRepository = mock(OrderPricingRepository.class);
     listener = new OrderReferenceVetoListener(new OrderReferenceService(orderBudgetRepository, orderFlatRateRepository,
-        assignmentRepository, orderPricingRepository, mock(SuborderService.class)));
+        assignmentRepository, orderPricingRepository));
   }
 
   @Test

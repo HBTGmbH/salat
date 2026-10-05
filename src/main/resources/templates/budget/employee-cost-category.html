@@ -142,16 +142,7 @@
             </td>
           </tr>
           <tr th:each="row : ${assignments}" th:with="a=${row.assignment()}">
-            <!--/* Eine Zuordnung, deren Person die Umstellung auf den Personenbezug nicht zuordnen
-                   konnte, greift lautlos nicht (#968). */-->
-            <td>
-              <span th:text="${row.employeeSign()}"></span>
-              <span th:if="${row.employeeUnknown()}"
-                    class="badge bg-red-lt ms-1"
-                    th:title="#{main.budget.employeesign.unknown}">
-                <i class="icon ti ti-user-off m-0"></i>
-              </span>
-            </td>
+            <td th:text="${row.employeeSign()}"></td>
             <td>
               <span th:text="${row.scopeSign()} ?: '—'"></span>
             </td>

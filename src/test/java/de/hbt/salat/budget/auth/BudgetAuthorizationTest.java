@@ -97,19 +97,6 @@ public class BudgetAuthorizationTest {
     assertThat(authorization.isAuthorized(budgetOn(FOREIGN))).isFalse();
   }
 
-  /**
-   * A plan answers to the order it refers to by id (#1205), not to whatever carries its sign: two
-   * orders may share a sign, and responsibility for one must not open the plans of the other.
-   */
-  @Test
-  public void a_plan_of_another_order_with_the_same_sign_is_not_authorized() {
-    givenResponsibleFor(OWN);
-    var planOfAnotherOrder = budgetOn(OWN);
-    planOfAnotherOrder.setCustomerorderId(idOf(FOREIGN));
-
-    assertThat(authorization.isAuthorized(planOfAnotherOrder)).isFalse();
-  }
-
   @Test
   public void a_user_without_any_responsibility_gets_no_budget_menu() {
     givenResponsibleFor();
@@ -231,7 +218,6 @@ public class BudgetAuthorizationTest {
   private static OrderBudget budgetOn(String customerorderSign) {
     var budget = new OrderBudget();
     budget.setCustomerorderId(idOf(customerorderSign));
-    budget.setCustomerorderSign(customerorderSign);
     return budget;
   }
 

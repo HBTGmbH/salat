@@ -194,9 +194,8 @@ public class BudgetControllingServiceTest {
 
   /**
    * Anonymizing a person overwrites their sign by design (#966), and budgets reach into the past:
-   * the controlling has to value their work exactly as before. Rate and cost assignment still carry
-   * the old sign — nothing has followed it — and apply all the same, because both resolve the
-   * person by id (#968).
+   * the controlling has to value their work exactly as before. Rate and cost assignment apply all
+   * the same, because both resolve the person by id (#968).
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
@@ -204,12 +203,10 @@ public class BudgetControllingServiceTest {
     var personalRate = orderWideRate();
     personalRate.setPriceCentsPerHour(15000);
     personalRate.setEmployeeId(EMPLOYEE_ID);
-    personalRate.setEmployeeSign("emp");
     when(orderPricingService.lookupFor(any()))
         .thenReturn(OrderPricingLookup.of(List.of(orderWideRate(), personalRate)));
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(EMPLOYEE_ID);
-    assignment.setEmployeeSign("emp");
     assignment.setCategory(CostCategoryTestUtils.named("senior"));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
@@ -273,7 +270,6 @@ public class BudgetControllingServiceTest {
   private static EmployeeCostAssignment costAssignment(String category, Long customerorderId) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(EMPLOYEE_ID);
-    assignment.setEmployeeSign("emp");
     assignment.setCustomerorderId(customerorderId);
     assignment.setCategory(CostCategoryTestUtils.named(category));
     assignment.setValidFrom(FROM);
@@ -291,10 +287,10 @@ public class BudgetControllingServiceTest {
   }
 
   /**
-   * Plans, flat rates and cost assignments refer to their order and suborder by id (#1205). Renaming
-   * the order and a suborder — and moving nothing else — leaves the plan's own sign columns behind;
-   * the controlling reads the ids and reports exactly what it reported before. The customer rates
-   * refer to their order by id as well (#1212): the rate keeps its old sign here, and still applies.
+   * Plans, flat rates and cost assignments refer to their order and suborder by id (#1205). After
+   * renaming the order and a suborder — and moving nothing else — the controlling reads the ids and
+   * reports exactly what it reported before. The customer rates refer to their order by id as well
+   * (#1212) and still apply.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
@@ -316,7 +312,7 @@ public class BudgetControllingServiceTest {
         .containsExactlyElementsOf(before.sections().stream().map(BudgetControllingSection::kind).toList());
     assertThat(after.sections()).extracting(section -> section.groups().size())
         .containsExactlyElementsOf(before.sections().stream().map(section -> section.groups().size()).toList());
-    // the plan's group shows the sign its suborder has today, not the one stored with the plan
+    // the plan's group shows the sign its suborder has today
     assertThat(sectionOf(after, SectionKind.SUBORDER_LEVEL).groups()).extracting(BudgetControllingGroup::sign)
         .containsExactly("renamed/X1");
   }
@@ -1188,8 +1184,7 @@ public class BudgetControllingServiceTest {
 
   /**
    * A flat rate line is labelled with the sign its scope has today, read by id (#1212): the
-   * suborder's complete sign, or the order's for an order-wide one. The fixtures keep a stale sign
-   * in the flat rates' own columns (→ {@link #mirrorOf}).
+   * suborder's complete sign, or the order's for an order-wide one.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
@@ -1510,26 +1505,12 @@ public class BudgetControllingServiceTest {
         .build();
   }
 
-  /**
-   * The sign columns of plans and flat rates carry a stale value wherever there is an id: what the
-   * evaluation shows is the sign order and suborder have today, read by id (#1212), and every
-   * assertion on a sign checks that. A suborder sign without an id is one the migration could not
-   * resolve and stays as it is.
-   */
-  private static final String STALE = "stale-";
-
-  private static String mirrorOf(String suborderSign) {
-    return suborderSign == null || SUBORDER_IDS.get(suborderSign) == null ? suborderSign : STALE + suborderSign;
-  }
-
   private static OrderBudget plan(String name, String suborderSign, LocalDate from, LocalDate until, String amount) {
     var budget = new OrderBudget();
     setId(budget, nextId++);
     budget.setName(name);
     budget.setCustomerorderId(CUSTOMERORDER_ID);
-    budget.setCustomerorderSign(STALE + "co");
     budget.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    budget.setSuborderSign(mirrorOf(suborderSign));
     budget.setActive(true);
     budget.setValidFrom(from);
     budget.setValidUntil(until);
@@ -1715,9 +1696,7 @@ public class BudgetControllingServiceTest {
     var rate = new OrderFlatRate();
     setId(rate, nextId++);
     rate.setCustomerorderId(CUSTOMERORDER_ID);
-    rate.setCustomerorderSign(STALE + "co");
     rate.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
-    rate.setSuborderSign(mirrorOf(suborderSign));
     rate.setDescription(description);
     rate.setRhythm(rhythm);
     rate.setAmount(amount == null ? null : new BigDecimal(amount));
@@ -1729,7 +1708,6 @@ public class BudgetControllingServiceTest {
   private static OrderPricing orderWideRate() {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(CUSTOMERORDER_ID);
-    pricing.setCustomerorderSign("co");
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));
     pricing.setValidUntil(LocalDate.of(2026, 12, 31));

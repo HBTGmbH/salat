@@ -57,8 +57,7 @@ import de.hbt.salat.order.service.SuborderService;
 public class OrderFlatRateService {
 
     /**
-     * By the sign the order has today, then by start of validity. The sign comes from the order, not
-     * from the record's sign column, which only mirrors it for reports (#1212).
+     * By the sign the order has today, then by start of validity. The sign comes from the order (#1212).
      */
     private static final Comparator<OrderFlatRateRow> BY_ORDER_SIGN_THEN_VALID_FROM = Comparator
         .comparing((OrderFlatRateRow row) -> row.customerorder().getSign())
@@ -110,7 +109,7 @@ public class OrderFlatRateService {
 
     /**
      * The complete signs of the suborders of the given flat rates, by id — the list names them as
-     * they are called today, not as the mirror column has them (#1212).
+     * they are called today (#1212).
      */
     private Map<Long, String> suborderSignsOf(List<OrderFlatRate> flatRates) {
         var ids = flatRates.stream().map(OrderFlatRate::getSuborderId).filter(Objects::nonNull)
@@ -342,10 +341,7 @@ public class OrderFlatRateService {
 
     private void apply(OrderFlatRate flatRate, OrderFlatRateData data, FlatRateScope scope, OrderBudget plan) {
         flatRate.setCustomerorderId(scope.customerorder().getId());
-        // mirrors for readers outside the application, written from the records (#1205)
-        flatRate.setCustomerorderSign(scope.customerorder().getSign());
         flatRate.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
-        flatRate.setSuborderSign(scope.suborder() == null ? null : scope.suborder().getCompleteOrderSign());
         flatRate.setOrderBudget(plan);
         flatRate.setDescription(data.description());
         flatRate.setRhythm(data.rhythm());

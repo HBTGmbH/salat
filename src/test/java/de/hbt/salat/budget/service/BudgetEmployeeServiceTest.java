@@ -381,8 +381,6 @@ public class BudgetEmployeeServiceTest {
   private void costAssignment(String employeeSign, String suborderSign, String costName) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeId(idOf(employeeSign));
-    assignment.setEmployeeSign(employeeSign);
-    assignment.setSuborderSign(suborderSign);
     // by id since #1205; the fixture's suborders are co/01 and co/02
     assignment.setSuborderId(suborderSign == null ? null : "co/01".equals(suborderSign) ? BILLED : NOT_INVOICEABLE);
     assignment.setCategory(CostCategoryTestUtils.named(costName));
@@ -404,10 +402,8 @@ public class BudgetEmployeeServiceTest {
                        LocalDate from, LocalDate until) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(CUSTOMERORDER_ID);
-    pricing.setCustomerorderSign("co");
     pricing.setSuborderSign(suborderSign);
     pricing.setEmployeeId(employeeSign == null ? null : idOf(employeeSign));
-    pricing.setEmployeeSign(employeeSign);
     pricing.setPriceCentsPerHour(centsPerHour);
     pricing.setValidFrom(from);
     pricing.setValidUntil(until);
@@ -418,7 +414,6 @@ public class BudgetEmployeeServiceTest {
     var budget = new OrderBudget();
     budget.setName("plan " + id);
     budget.setCustomerorderId(CUSTOMERORDER_ID);
-    budget.setCustomerorderSign("co");
     budget.setValidFrom(FROM);
     budget.setValidUntil(UNTIL);
     budget.setActive(true);

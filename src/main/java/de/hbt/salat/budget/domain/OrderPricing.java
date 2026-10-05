@@ -28,14 +28,6 @@ public class OrderPricing extends AuditedEntity {
     private Long customerorderId;
 
     /**
-     * The sign of {@link #customerorderId}, kept because reports and ETL definitions still join on it
-     * (#1212, the two-step way of #968). Written from the order on save and on every change of the
-     * order ({@code OrderReferenceService#followOrderTree}); the application resolves by the id alone.
-     */
-    @Column(name = "customerorder_sign", nullable = false)
-    private String customerorderSign;
-
-    /**
      * A {@code LIKE} pattern over the complete order sign of the suborder ({@code
      * Suborder#getCompleteOrderSign()}, e.g. {@code ORDER/01/02}) — not the bare {@code
      * Suborder#getSign()}, and no reference: it stays as typed (#1212, → {@link OrderPricingLookup}).
@@ -54,22 +46,9 @@ public class OrderPricing extends AuditedEntity {
     @Column(name = "suborder_sign")
     private String suborderSign;
 
-    /**
-     * The person the rate applies to (#968); {@code null} means everyone on the order — unless
-     * {@link #employeeSign} is set, see {@link #isEmployeeUnresolved()}.
-     */
+    /** The person the rate applies to (#968); {@code null} means everyone on the order. */
     @Column(name = "employee_id")
     private Long employeeId;
-
-    /**
-     * The sign of {@link #employeeId}, kept only because views, ETL definitions and reports still
-     * join on it (#968). The application reads it for one thing alone, telling an unresolved rate
-     * from one for everyone; otherwise it is written on save from the chosen person and follows a
-     * sign change ({@code EmployeeSignChangedListener}). It goes away once those readers have moved
-     * to {@code employee_id}.
-     */
-    @Column(name = "employee_sign")
-    private String employeeSign;
 
     /**
      * The budget plan this rate is bound to; {@code null} means it applies whatever plan a booking
@@ -131,17 +110,7 @@ public class OrderPricing extends AuditedEntity {
 
     /** Whether the rate applies to every person on the order — it names no person at all. */
     public boolean isForEveryone() {
-        return employeeId == null && isBlank(employeeSign);
-    }
-
-    /**
-     * Whether the rate names a person the migration could not resolve (#968): a sign carried by no
-     * person or by several, and no id. Such a rate applies to nobody, exactly as it did while rates
-     * were matched by sign — reading the missing id as "everyone" would hand one person's rate to
-     * the whole order.
-     */
-    public boolean isEmployeeUnresolved() {
-        return employeeId == null && !isBlank(employeeSign);
+        return employeeId == null;
     }
 
     private static boolean isBlank(String value) {

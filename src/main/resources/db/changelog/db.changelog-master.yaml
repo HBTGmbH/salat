@@ -5466,3 +5466,107 @@ databaseChangeLog:
             columns:
               - column:
                   name: executed_at
+
+  - changeSet:
+      id: 143
+      author: kr
+      comment: Kostenzuordnung und Kundenstundensatz ohne Kuerzelspalte der Person (#1202)
+      # employee_id ist seit #968 der Verweis auf die Person, employee_sign stand nur noch fuer Views,
+      # ETL-Definitionen und Reports daneben. Die lesen seit der Umstellung ueber die id; geprueft per
+      # EXPLAIN aller Definitionen gegen ein Schema ohne die Spalte, auf dem Stand der Produktion.
+      #
+      # Die Bedingung prueft die Daten: Eine Kostenzuordnung ohne Person wuerde NOT NULL scheitern
+      # lassen, und ein Stundensatz mit Kuerzel ohne id galt bisher fuer niemanden - ohne die Spalte
+      # gaelte er fuer alle. Gibt es solche Saetze, ueberspringt CONTINUE den Changeset und versucht
+      # ihn beim naechsten Start wieder.
+      preConditions:
+        - onFail: CONTINUE
+        - columnExists:
+            tableName: employee_cost_employee
+            columnName: employee_sign
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT (SELECT COUNT(*) FROM employee_cost_employee WHERE employee_id IS NULL)
+                   + (SELECT COUNT(*) FROM order_pricing
+                      WHERE employee_id IS NULL AND COALESCE(employee_sign, '') <> '')
+      changes:
+        - addNotNullConstraint:
+            tableName: employee_cost_employee
+            columnName: employee_id
+            columnDataType: bigint
+        - dropColumn:
+            tableName: employee_cost_employee
+            columnName: employee_sign
+        - dropColumn:
+            tableName: order_pricing
+            columnName: employee_sign
+
+  - changeSet:
+      id: 144
+      author: kr
+      comment: Zeitscheibe und Zuordnung ohne Namensspalte der Kostenkategorie (#1345)
+      # Seit #1209 verweisen beide per Fremdschluessel auf employee_cost_category; die Namensspalten
+      # waren Spiegel fuer Views, ETL-Definitionen und Reports. Die lesen den Namen seither aus der
+      # Kategorie, geprueft wie bei Changeset 143.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employee_cost_employee
+            columnName: employee_cost_name
+      changes:
+        - dropColumn:
+            tableName: employee_cost
+            columnName: name
+        - dropColumn:
+            tableName: employee_cost_employee
+            columnName: employee_cost_name
+
+  - changeSet:
+      id: 145
+      author: kr
+      comment: Budgetplan und Pauschale ohne Kuerzelspalten des Auftragsbezugs (#1321)
+      # customerorder_id und suborder_id sind seit #1205/#1212 der Verweis; die Kuerzelspalten waren
+      # Spiegel fuer Reports, die seit der Umstellung ueber die ids lesen (geprueft wie bei Changeset
+      # 143). Der Index idx_order_flat_rate_co_sign liegt nur auf customerorder_sign und geht mit der
+      # Spalte.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: order_budget
+            columnName: customerorder_sign
+      changes:
+        - dropColumn:
+            tableName: order_budget
+            columnName: customerorder_sign
+        - dropColumn:
+            tableName: order_budget
+            columnName: suborder_sign
+        - dropColumn:
+            tableName: order_flat_rate
+            columnName: customerorder_sign
+        - dropColumn:
+            tableName: order_flat_rate
+            columnName: suborder_sign
+
+  - changeSet:
+      id: 146
+      author: kr
+      comment: Kostenzuordnung und Kundenstundensatz ohne Kuerzelspiegel des Auftragsbezugs (#1359)
+      # Gleicher Weg wie Changeset 145. order_pricing.suborder_sign bleibt: Es ist ein LIKE-Muster und
+      # kein Verweis (#1212).
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employee_cost_employee
+            columnName: customerorder_sign
+      changes:
+        - dropColumn:
+            tableName: employee_cost_employee
+            columnName: customerorder_sign
+        - dropColumn:
+            tableName: employee_cost_employee
+            columnName: suborder_sign
+        - dropColumn:
+            tableName: order_pricing
+            columnName: customerorder_sign

@@ -48,23 +48,12 @@ public class OrderFlatRate extends AuditedEntity {
     @Column(name = "customerorder_id", nullable = false)
     private Long customerorderId;
 
-    /** The sign of {@link #customerorderId}, a mirror only — see {@code OrderBudget#getCustomerorderSign()}. */
-    @Column(name = "customerorder_sign", nullable = false)
-    private String customerorderSign;
-
     /**
      * The suborder the flat rate applies to, with its subtree. {@code null} means the flat rate
      * applies to the whole customer order.
      */
     @Column(name = "suborder_id")
     private Long suborderId;
-
-    /**
-     * The complete order sign of {@link #suborderId} ({@code Suborder#getCompleteOrderSign()}, e.g.
-     * {@code ORDER/01/02}), a mirror only; the application never reads it (#1212).
-     */
-    @Column(name = "suborder_sign")
-    private String suborderSign;
 
     /**
      * The budget plan this amount counts against; {@code null} leaves the allocation to be derived

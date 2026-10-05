@@ -112,8 +112,7 @@ public class BudgetController {
     }
 
     /**
-     * By the sign the order has today, then by start of validity — the sign of the order, not the
-     * plan's sign column, which only mirrors it for reports (#1212).
+     * By the sign the order has today, then by start of validity (#1212).
      */
     static List<OrderBudget> byOrderSignThenValidFrom(List<OrderBudget> budgets, Map<Long, Customerorder> orders) {
         Function<OrderBudget, String> orderSign = budget ->
@@ -293,8 +292,7 @@ public class BudgetController {
     }
 
     /**
-     * The signs order and suborders have today, read by id (#1212) — the plan's and the flat rates'
-     * sign columns only mirror them for reports.
+     * The signs order and suborders have today, read by id (#1212).
      */
     private void addSigns(OrderBudget budget, List<OrderFlatRate> boundFlatRates, Model model) {
         var customerorderId = budget.getCustomerorderId();

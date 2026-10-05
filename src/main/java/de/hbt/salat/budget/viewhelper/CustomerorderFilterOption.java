@@ -8,9 +8,8 @@ import de.hbt.salat.order.viewhelper.CustomerorderViewHelper;
  * every other order select (→ ADR-0017): the sign and the short description on the first line, the
  * customer underneath as {@code data-subtext}.
  *
- * <p>Built from the orders the records refer to by id (#1212), not from the records' sign columns,
- * which only mirror the order for reports. A hidden or expired order is labelled as usual — those
- * are the entries one is looking for when tidying up.
+ * <p>Built from the orders the records refer to by id (#1212). A hidden or expired order is labelled
+ * as usual — those are the entries one is looking for when tidying up.
  *
  * @param id            the value of the option — the filter carries the id, not the sign (#1334)
  * @param customerLabel {@code null} when there is no customer to name; the attribute is then left

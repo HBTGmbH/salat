@@ -47,7 +47,7 @@ public class BudgetDashboardService {
                     b.getId(),
                     b.getName(),
                     b.getCustomerorderId(),
-                    // the order's own sign; the plan's sign column mirrors it for reports only (#1212)
+                    // the order's own sign (#1212)
                     utilization.customerorderSign(),
                     utilization.customerorderDescription(),
                     b.getValidFrom(),

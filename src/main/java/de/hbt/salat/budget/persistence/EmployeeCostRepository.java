@@ -11,8 +11,7 @@ import org.springframework.stereotype.Repository;
 import de.hbt.salat.budget.domain.EmployeeCost;
 
 /**
- * The rate periods. Every query goes through the category (#1209), never through the name column,
- * which only mirrors the category for readers outside the application.
+ * The rate periods. Every query goes through the category (#1209).
  */
 @Repository
 public interface EmployeeCostRepository

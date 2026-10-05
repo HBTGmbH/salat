@@ -128,16 +128,11 @@ public class OrderPricingServiceTest {
     assertThat(pricingsOf(service.getRows(TREE.orderId("co-one"), false, true))).containsExactly(chosen);
   }
 
-  /**
-   * By the sign the order has today, read by id (#1212): the rates' sign column only mirrors it for
-   * the reports and is deliberately stale here.
-   */
+  /** By the sign the order has today, read by id (#1212). */
   @Test
   public void lists_the_rates_by_the_sign_their_order_has_today() {
     var onOther = pricing("other", TODAY, OPEN_END);
-    onOther.setCustomerorderSign("a-stale");
     var onCo = pricing("co", TODAY, OPEN_END);
-    onCo.setCustomerorderSign("z-stale");
     given(onOther, onCo);
 
     assertThat(pricingsOf(service.getRows(null, true, true))).containsExactly(onCo, onOther);
@@ -230,18 +225,14 @@ public class OrderPricingServiceTest {
     verify(orderPricingRepository, never()).save(any());
   }
 
-  /**
-   * The id is the reference; the sign is written next to it only for the views, ETL definitions and
-   * reports that still join on it (#968) — and it is the person's sign.
-   */
+  /** The person is stored by id (#968). */
   @Test
-  public void should_store_the_person_by_id_and_their_current_sign_next_to_it() {
+  public void should_store_the_person_by_id() {
     service.save(data("co", null, EMP));
 
     var saved = ArgumentCaptor.forClass(OrderPricing.class);
     verify(orderPricingRepository).save(saved.capture());
     assertThat(saved.getValue().getEmployeeId()).isEqualTo(EMP);
-    assertThat(saved.getValue().getEmployeeSign()).isEqualTo("emp");
   }
 
   /** No employee at all is the normal case: the rate then applies to everyone on the order. */
@@ -264,15 +255,14 @@ public class OrderPricingServiceTest {
     verify(orderPricingRepository, never()).save(any());
   }
 
-  /** The order is referenced by id; the sign is written next to it for the readers outside (#1212). */
+  /** The order is referenced by id (#1212). */
   @Test
-  public void should_store_the_order_by_id_and_its_current_sign_next_to_it() {
+  public void should_store_the_order_by_id() {
     service.save(data("co", null, null));
 
     var saved = ArgumentCaptor.forClass(OrderPricing.class);
     verify(orderPricingRepository).save(saved.capture());
     assertThat(saved.getValue().getCustomerorderId()).isEqualTo(TREE.orderId("co"));
-    assertThat(saved.getValue().getCustomerorderSign()).isEqualTo("co");
   }
 
   /** An edit names its order like a new rate does — the form cannot submit a rate without one. */
@@ -300,86 +290,31 @@ public class OrderPricingServiceTest {
     verify(orderPricingRepository, never()).save(any());
   }
 
-  // --- rates whose person the migration could not resolve (#968) ------------------------------
-
-  /**
-   * Such a rate keeps its sign and has no id. It resolves to nothing and lets the work fall back to
-   * the order-wide rate, so the list has to say so instead of leaving it to be noticed in a total.
-   */
-  @Test
-  public void marks_a_rate_whose_person_is_unresolved() {
-    given(unresolvedPricing("ghost"));
-
-    assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
-      assertThat(row.employeeUnknown()).isTrue();
-      assertThat(row.employeeSign()).isEqualTo("ghost");
-    });
-  }
-
-  /** The list shows the person's current sign, not the one stored with the rate. */
+  /** The list shows the person's current sign. */
   @Test
   public void shows_the_current_sign_of_the_person() {
     when(employeeService.getSignsByIds(Set.of(EMP))).thenReturn(Map.of(EMP, "emp"));
     var pricing = pricingFor(EMP);
-    pricing.setEmployeeSign("old-sign");
     given(pricing);
 
     assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
-      assertThat(row.employeeUnknown()).isFalse();
       assertThat(row.employeeSign()).isEqualTo("emp");
     });
   }
 
-  /** A rate without an employee applies to everyone on the order — there is nothing to be unknown. */
+  /** A rate without an employee applies to everyone on the order and shows no sign. */
   @Test
-  public void marks_no_rate_that_names_no_employee() {
+  public void shows_no_sign_for_a_rate_that_names_no_employee() {
     given(pricingFor(null));
 
     assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
-      assertThat(row.employeeUnknown()).isFalse();
       assertThat(row.employeeSign()).isNull();
     });
-  }
-
-  /**
-   * The form cannot offer the person of an unresolved rate, so its empty choice arrives as "no
-   * person". Saved as such, one person's rate would become the rate of everyone on the order.
-   */
-  @Test
-  public void keeps_an_unresolved_rate_unresolved_when_saved_without_a_person() {
-    var unresolved = unresolvedPricing("ghost");
-    setId(unresolved, 7L);
-    when(orderPricingRepository.findById(7L)).thenReturn(Optional.of(unresolved));
-
-    service.update(7L, data("co", null, null));
-
-    assertThat(unresolved.isEmployeeUnresolved()).isTrue();
-    assertThat(unresolved.getEmployeeSign()).isEqualTo("ghost");
-    verify(orderPricingRepository, never()).findOverlapping(anyLong(), any(), any(), any(), any(), any(), any());
-  }
-
-  @Test
-  public void resolves_an_unresolved_rate_when_its_person_is_picked() {
-    var unresolved = unresolvedPricing("ghost");
-    setId(unresolved, 7L);
-    when(orderPricingRepository.findById(7L)).thenReturn(Optional.of(unresolved));
-
-    service.update(7L, data("co", null, EMP));
-
-    assertThat(unresolved.getEmployeeId()).isEqualTo(EMP);
-    assertThat(unresolved.getEmployeeSign()).isEqualTo("emp");
   }
 
   private static OrderPricing pricingFor(Long employeeId) {
     var pricing = pricing("co", TODAY.minusYears(1), OPEN_END);
     pricing.setEmployeeId(employeeId);
-    pricing.setEmployeeSign(employeeId == null ? null : "sign-" + employeeId);
-    return pricing;
-  }
-
-  private static OrderPricing unresolvedPricing(String employeeSign) {
-    var pricing = pricing("co", TODAY.minusYears(1), OPEN_END);
-    pricing.setEmployeeSign(employeeSign);
     return pricing;
   }
 
@@ -434,7 +369,6 @@ public class OrderPricingServiceTest {
   private static OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderId(TREE.orderId(customerorderSign));
-    pricing.setCustomerorderSign(customerorderSign);
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);
@@ -698,9 +632,7 @@ public class OrderPricingServiceTest {
     setId(plan, id);
     plan.setName("plan " + id);
     plan.setCustomerorderId(TREE.orderId(customerorderSign));
-    plan.setCustomerorderSign(customerorderSign);
     plan.setSuborderId(TREE.suborderId(suborderSign));
-    plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
     plan.setActive(active);

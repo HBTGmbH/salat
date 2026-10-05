@@ -161,17 +161,15 @@ public class OrderFlatRateServiceTest {
     verify(suborderService, never()).getSuborderById(anyLong());
   }
 
-  /** Order and suborder are stored by id; the signs are written from the records for the readers outside (#1205). */
+  /** Order and suborder are stored by id (#1205). */
   @Test
-  public void stores_order_and_suborder_by_id_and_writes_their_signs_from_the_records() {
+  public void stores_order_and_suborder_by_id() {
     service.save(new OrderFlatRateData(TREE.orderId("co"), TREE.suborderId("co/01/A"), null, "description",
         FlatRateRhythm.ONCE, new BigDecimal("1000"), TODAY, TODAY));
 
     var stored = savedFlatRate();
     assertThat(stored.getCustomerorderId()).isEqualTo(TREE.orderId("co"));
     assertThat(stored.getSuborderId()).isEqualTo(TREE.suborderId("co/01/A"));
-    assertThat(stored.getCustomerorderSign()).isEqualTo("co");
-    assertThat(stored.getSuborderSign()).isEqualTo("co/01/A");
   }
 
   /**
@@ -286,15 +284,12 @@ public class OrderFlatRateServiceTest {
 
   /**
    * The list names order and suborder as they are called today, read by id (#1212), and sorts by the
-   * order's sign: the flat rates' sign columns only mirror them for the reports and are stale here.
+   * order's sign.
    */
   @Test
   public void lists_the_flat_rates_by_the_signs_their_order_and_suborder_have_today() {
     var onOther = flatRate("other", null, FlatRateRhythm.ONCE, TODAY, TODAY);
-    onOther.setCustomerorderSign("a-stale");
     var onCo = flatRate("co", "co/01/A", FlatRateRhythm.ONCE, TODAY, TODAY);
-    onCo.setCustomerorderSign("z-stale");
-    onCo.setSuborderSign("co/stale");
     given(onOther, onCo);
 
     assertThat(service.getRows(null, false, true))
@@ -343,9 +338,7 @@ public class OrderFlatRateServiceTest {
     var flatRate = new OrderFlatRate();
     setId(flatRate, 1L);
     flatRate.setCustomerorderId(TREE.orderId(customerorderSign));
-    flatRate.setCustomerorderSign(customerorderSign);
     flatRate.setSuborderId(TREE.suborderId(suborderSign));
-    flatRate.setSuborderSign(suborderSign);
     flatRate.setRhythm(rhythm);
     flatRate.setValidFrom(from);
     flatRate.setValidUntil(until);
@@ -489,9 +482,7 @@ public class OrderFlatRateServiceTest {
     setId(plan, id);
     plan.setName("plan " + id);
     plan.setCustomerorderId(TREE.orderId(customerorderSign));
-    plan.setCustomerorderSign(customerorderSign);
     plan.setSuborderId(TREE.suborderId(suborderSign));
-    plan.setSuborderSign(suborderSign);
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
     plan.setActive(active);

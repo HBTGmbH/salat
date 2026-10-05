@@ -119,17 +119,6 @@ public class EmployeeCostService {
             .orElse(List.of());
     }
 
-    /**
-     * Writes the new sign of a person into the sign column of their assignments (#966, #968). The
-     * resolution goes by id and does not need it; the column is kept in step only for the views,
-     * ETL definitions and reports that still join on it. Driven by the event of the employee
-     * module; changing a sign takes a manager there just as the class-level authorization demands
-     * one here.
-     */
-    public void followSignChange(long employeeId, String newSign) {
-        assignmentRepository.updateEmployeeSign(employeeId, newSign);
-    }
-
     @Transactional(readOnly = true)
     public EmployeeCostAssignment getAssignmentById(long id) {
         return assignmentRepository.findById(id)
@@ -208,8 +197,7 @@ public class EmployeeCostService {
 
     /**
      * Renames a category (#954). Rate periods and assignments refer to it by id (#1209), so the rename
-     * itself is this one row; their name columns follow only as mirrors for the views, ETL definitions
-     * and reports that still join on them.
+     * itself is this one row.
      *
      * <p>Renaming onto a name that already exists merges the two categories: rate periods and
      * assignments move over, and the renamed category goes away. That is intentional and only allowed
@@ -281,8 +269,6 @@ public class EmployeeCostService {
         if (target == null) {
             category.setName(newName);
             categoryRepository.save(category);
-            costs.forEach(EmployeeCost::followCategoryName);
-            assignments.forEach(EmployeeCostAssignment::followCategoryName);
         } else {
             costs.forEach(cost -> cost.setCategory(target));
             assignments.forEach(assignment -> assignment.setCategory(target));
@@ -384,8 +370,7 @@ public class EmployeeCostService {
 
     /**
      * The person the assignment is for. The foreign key would refuse an id nobody carries as well,
-     * but only as a failed statement; and the person is needed anyway, for the sign column that is
-     * still written alongside the id (#968).
+     * but only as a failed statement.
      */
     private Employee employeeOf(EmployeeCostAssignmentData data) {
         var employee = data.employeeId() == null ? null : employeeService.getEmployeeById(data.employeeId());
@@ -485,13 +470,8 @@ public class EmployeeCostService {
                                  Suborder suborder) {
         assignment.setCategory(category);
         assignment.setEmployeeId(employee.getId());
-        assignment.setEmployeeSign(employee.getSign());
         assignment.setCustomerorderId(customerorder == null ? null : customerorder.id());
-        // a mirror for the readers outside the application, written from the order (#1343)
-        assignment.setCustomerorderSign(customerorder == null ? null : customerorder.sign());
         assignment.setSuborderId(suborder == null ? null : suborder.getId());
-        // a mirror for the readers outside the application, written from the suborder (#1205)
-        assignment.setSuborderSign(suborder == null ? null : suborder.getCompleteOrderSign());
         assignment.setValidFrom(data.validFrom());
         assignment.setValidUntil(endOfValidity(data.validUntil()));
     }

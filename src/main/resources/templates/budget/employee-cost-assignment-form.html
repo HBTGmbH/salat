@@ -26,10 +26,9 @@
         <option th:each="name : ${costNames}" th:value="${name}" th:text="${name}"></option>
       </salat:select>
       <!--/* A hidden employee only appears when the assignment already references them; say so. */-->
-      <!--/* A person the migration could not resolve cannot be offered; the empty choice names the stored sign. */-->
       <salat:select th:field="*{employeeId}" th:label="#{main.employeecost.assignment.field.employeeSign}" required="true">
         <option value=""
-                th:text="${unresolvedEmployeeSign} != null ? #{main.budget.employeesign.unresolved.option(${unresolvedEmployeeSign})} : #{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
+                th:text="#{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
         <option th:each="emp : ${employees}"
                 th:value="${emp.id}"
                 th:text="${@employeeLabelViewHelper.label(emp)} + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>

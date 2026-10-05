@@ -209,26 +209,12 @@ public class OrderPricingController {
 
     /**
      * The customer orders offered in the list filter — those that actually carry a rate, labelled
-     * like every other order select. Read by the id of the rates, not by their sign column (#1212).
+     * like every other order select. Read by the id of the rates (#1212).
      */
     private List<CustomerorderFilterOption> filterOptions() {
         return orderPricingService.getCustomerordersWithPricing().stream()
             .map(order -> CustomerorderFilterOption.of(order, customerorderViewHelper))
             .toList();
-    }
-
-    /**
-     * The sign a rate was stored with when the migration could not resolve its person (#968), or
-     * {@code null}. The select cannot offer that person, so its empty choice names the sign instead
-     * of "everyone" — saving without a person leaves such a rate as it is ({@code
-     * OrderPricingService#update}).
-     */
-    private String unresolvedEmployeeSignOf(OrderPricingForm form) {
-        if (form.isNew() || form.getEmployeeId() != null) {
-            return null;
-        }
-        var pricing = orderPricingService.getById(form.getId());
-        return pricing.isEmployeeUnresolved() ? pricing.getEmployeeSign() : null;
     }
 
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {
@@ -241,7 +227,6 @@ public class OrderPricingController {
             customerorderService.getSelectableCustomerorders(customerorder == null ? null : customerorder.getSign()));
         model.addAttribute("suborders", subordersOf(customerorder));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
-        model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
         // The plans that can ever apply to what the form currently says — the same set the saving
         // judges by (#1065). The stored one stays in the list even once it is inactive.
         model.addAttribute("budgetPlans", orderPricingService.getSelectablePlans(

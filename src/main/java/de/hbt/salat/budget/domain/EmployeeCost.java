@@ -8,7 +8,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -28,21 +27,10 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class EmployeeCost extends AuditedEntity {
 
-    /** The category, by foreign key (#1209). Set through {@link #setCategory}, which writes the mirror too. */
+    /** The category, by foreign key (#1209). */
     @ManyToOne(optional = false)
     @JoinColumn(name = "category_id", nullable = false, foreignKey = @ForeignKey(name = "fk_employee_cost_category"))
-    @Setter(AccessLevel.NONE)
     private CostCategory category;
-
-    /**
-     * The name of {@link #category}, kept only because views, ETL definitions and reports still join on
-     * it (#1209). The application never reads it: {@link #getName()} answers from the category, and the
-     * column is written whenever the category is set or renamed.
-     */
-    @Column(nullable = false)
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.NONE)
-    private String name;
 
     @Column(name = "cost_cents_per_hour", nullable = false)
     private Integer costCentsPerHour;
@@ -53,17 +41,7 @@ public class EmployeeCost extends AuditedEntity {
     @Column(name = "valid_until", nullable = false)
     private LocalDate validUntil;
 
-    public void setCategory(CostCategory category) {
-        this.category = category;
-        followCategoryName();
-    }
-
-    /** Writes the current name of the category into the mirror column, after a rename. */
-    public void followCategoryName() {
-        this.name = category.getName();
-    }
-
-    /** The name of the category — read from the category, not from the mirror column. */
+    /** The name of the category. */
     public String getName() {
         return category.getName();
     }

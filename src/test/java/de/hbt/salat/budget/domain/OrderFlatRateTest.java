@@ -116,13 +116,11 @@ public class OrderFlatRateTest {
    * the subtree that plan covers (→ {@code FlatRateAllocationTest}).
    */
   @Test
-  public void a_flat_rate_on_a_suborder_keeps_its_own_sign() {
+  public void a_flat_rate_on_a_suborder_is_not_order_wide() {
     var rate = flatRate(FlatRateRhythm.ONCE, JAN, JAN, "100");
     rate.setSuborderId(11L);
-    rate.setSuborderSign("co/01/D");
 
     assertThat(rate.isOrderWide()).isFalse();
-    assertThat(rate.getSuborderSign()).isEqualTo("co/01/D");
   }
 
   private static BigDecimal total(OrderFlatRate rate, LocalDate from, LocalDate until) {
@@ -140,7 +138,6 @@ public class OrderFlatRateTest {
 
   private static OrderFlatRate flatRate(FlatRateRhythm rhythm, LocalDate from, LocalDate until, String amount) {
     var rate = new OrderFlatRate();
-    rate.setCustomerorderSign("co");
     rate.setRhythm(rhythm);
     rate.setValidFrom(from);
     rate.setValidUntil(until);

@@ -13,22 +13,14 @@ import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.util.SqlLikePattern;
-import de.hbt.salat.order.domain.Customerorder;
-import de.hbt.salat.order.domain.Suborder;
-import de.hbt.salat.order.service.SuborderService;
 
 /**
- * What the budget module does when the order tree changes (#1205): it keeps the sign columns of its
- * records in step, and it says what still refers to an order or a suborder that is about to go.
+ * What the budget module does when the order tree changes (#1205): it takes the suborder patterns of the
+ * customer rates along, and it says what still refers to an order or a suborder that is about to go.
  *
- * <p>Plans, flat rates and cost assignments refer to their order and suborder by id now, and the
- * application resolves by that id alone: a renamed order or a moved suborder no longer changes what
- * counts where. The sign columns stay next to the ids only because reports, views and ETL definitions
- * still read them. A stale sign there would let a report lose the plans of a renamed order.
- *
- * <p>The customer rates refer to their order by id as well (#1212), and so do cost assignments to a whole
- * order (#1343). The suborder of a customer rate is a {@code LIKE} pattern, no reference, and stays as
- * typed.
+ * <p>Plans, flat rates, cost assignments and customer rates refer to their order and suborder by id
+ * (#1205, #1212, #1343), and a renamed order or a moved suborder changes nothing about them. The suborder
+ * of a customer rate is a {@code LIKE} pattern, no reference, and is the one thing a rename has to reach.
  */
 @Service
 @Transactional
@@ -40,45 +32,6 @@ public class OrderReferenceService {
     private final OrderFlatRateRepository orderFlatRateRepository;
     private final EmployeeCostAssignmentRepository assignmentRepository;
     private final OrderPricingRepository orderPricingRepository;
-    private final SuborderService suborderService;
-
-    /**
-     * Rewrites the sign columns of the budget data of the order from the current tree.
-     *
-     * <p>Called while the order or one of its suborders is being updated, before it is saved and
-     * inside the same transaction. The suborders read here are the managed instances of that
-     * transaction, so a complete order sign is already the new one — for a suborder and for
-     * everything below it. The whole order is refreshed every time: a renamed or moved suborder
-     * changes the complete sign of its subtree, and an order has a handful of such records at most.
-     */
-    @Authorized(requiresManager = true)
-    public void followOrderTree(Customerorder customerorder) {
-        var customerorderId = customerorder.getId();
-        for (var plan : orderBudgetRepository.findByCustomerorderId(customerorderId)) {
-            plan.setCustomerorderSign(customerorder.getSign());
-            if (plan.getSuborderId() != null) {
-                plan.setSuborderSign(completeOrderSignOf(plan.getSuborderId(), plan.getSuborderSign()));
-            }
-        }
-        for (var flatRate : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId)) {
-            flatRate.setCustomerorderSign(customerorder.getSign());
-            if (flatRate.getSuborderId() != null) {
-                flatRate.setSuborderSign(completeOrderSignOf(flatRate.getSuborderId(), flatRate.getSuborderSign()));
-            }
-        }
-        for (var assignment : assignmentRepository.findByCustomerorderId(customerorderId)) {
-            assignment.setCustomerorderSign(customerorder.getSign());
-        }
-        var suborderIds = suborderService.getSubordersByCustomerorderId(customerorderId).stream()
-            .map(Suborder::getId)
-            .toList();
-        if (!suborderIds.isEmpty()) {
-            for (var assignment : assignmentRepository.findBySuborderIdIn(suborderIds)) {
-                assignment.setSuborderSign(completeOrderSignOf(assignment.getSuborderId(), assignment.getSuborderSign()));
-            }
-        }
-        orderPricingRepository.updateCustomerorderSign(customerorderId, customerorder.getSign());
-    }
 
     /**
      * Rewrites the suborder patterns of the customer rates after an order or a suborder got a new
@@ -141,11 +94,6 @@ public class OrderReferenceService {
         public boolean any() {
             return plans + flatRates + costAssignments + rates > 0;
         }
-    }
-
-    private String completeOrderSignOf(long suborderId, String current) {
-        var suborder = suborderService.getSuborderById(suborderId);
-        return suborder == null ? current : suborder.getCompleteOrderSign();
     }
 
 }
