@@ -136,7 +136,6 @@ public class TimereportWorkingTimeSumTest {
     var employeeorder = new Employeeorder();
     employeeorder.setSuborder(suborder);
     employeeorder.setEmployeecontract(contract);
-    employeeorder.setSign(suborder.getSign());
     employeeorder.setFromDate(DAY.minusYears(1));
     entityManager.persist(employeeorder);
 

@@ -169,7 +169,6 @@ public class MoveTimereportsService {
     eo.setUntilDate(targetSuborder.getUntilDate());
     eo.setSuborder(targetSuborder);
     eo.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
-    eo.setSign(" ");
     eo.setDebithours(Duration.ZERO);
     return eo;
   }

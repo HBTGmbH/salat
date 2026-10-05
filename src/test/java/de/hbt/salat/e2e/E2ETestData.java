@@ -568,7 +568,6 @@ public class E2ETestData {
     Employeeorder employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(contract);
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign(" ");
     employeeorder.setFromDate(PAST);
     employeeorder.setDebithours(Duration.ZERO);
     return repository.save(employeeorder);

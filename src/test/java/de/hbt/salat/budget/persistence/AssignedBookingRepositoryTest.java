@@ -235,7 +235,6 @@ public class AssignedBookingRepositoryTest {
     var employeeorder = new Employeeorder();
     employeeorder.setSuborder(suborder);
     employeeorder.setEmployeecontract(contract);
-    employeeorder.setSign(suborder.getSign());
     employeeorder.setFromDate(FROM);
     entityManager.persist(employeeorder);
 

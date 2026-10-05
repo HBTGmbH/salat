@@ -544,7 +544,6 @@ class PaletteCandidatesTest {
     var employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(contract);
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign("eo-" + suborder.getSign());
     employeeorder.setFromDate(fromDate);
     employeeorder.setUntilDate(untilDate);
     employeeorder.setDebithours(Duration.ZERO);

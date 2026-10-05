@@ -201,7 +201,6 @@ public class PreviousBookingsTest {
     var newEmployeeorder = new Employeeorder();
     newEmployeeorder.setSuborder(onSuborder);
     newEmployeeorder.setEmployeecontract(onContract);
-    newEmployeeorder.setSign(onSuborder.getSign());
     newEmployeeorder.setFromDate(DAY.minusYears(1));
     return entityManager.persist(newEmployeeorder);
   }

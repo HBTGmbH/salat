@@ -172,7 +172,6 @@ public class TimereportRepositoryBookedDaysTest {
     var employeeorder = new Employeeorder();
     employeeorder.setSuborder(suborder);
     employeeorder.setEmployeecontract(contract);
-    employeeorder.setSign(sign);
     employeeorder.setFromDate(MONDAY.minusYears(1));
     return entityManager.persist(employeeorder);
   }

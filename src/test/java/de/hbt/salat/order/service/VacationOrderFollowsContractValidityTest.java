@@ -262,7 +262,6 @@ public class VacationOrderFollowsContractValidityTest {
     var employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(employeecontractService.getEmployeecontractById(contractId));
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign(" ");
     employeeorder.setFromDate(YEAR_START);
     employeeorder.setUntilDate(employeecontractService.getEmployeecontractById(contractId).getValidUntil());
     employeeorder.setDebithours(debithours);
@@ -306,7 +305,6 @@ public class VacationOrderFollowsContractValidityTest {
     var employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(employeecontractService.getEmployeecontractById(contractId));
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign(" ");
     employeeorder.setFromDate(from);
     employeeorder.setUntilDate(until);
     employeeorder.setDebithours(Duration.ZERO);
