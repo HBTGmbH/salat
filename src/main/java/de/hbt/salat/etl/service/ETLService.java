@@ -376,14 +376,12 @@ public class ETLService {
   private void runWithHistory(ETLRunHistory run, LocalDateRange dateRange, Supplier<List<ETLDefinition>> definitions) {
     var executed = new ArrayList<String>();
     var failed = new ArrayList<String>();
-    var unresolved = new ArrayList<String>();
     try {
       for (ETLDefinition definition : definitions.get()) {
         if (!executeETL(definition, dateRange)) {
           failed.add(definition.getName());
         }
         executed.add(definition.getName());
-        unresolved.addAll(unresolvedDependenciesOf(definition));
       }
     } catch (RuntimeException e) {
       log.error("ETL run aborted after {} definition(s)", executed.size(), e);
@@ -391,28 +389,13 @@ public class ETLService {
       throw e;
     }
 
-    var note = unresolved.isEmpty() ? "" : " — Abhängigkeiten ohne Definition: " + String.join(", ", unresolved);
     if (failed.isEmpty()) {
-      finishRun(run, SUCCEEDED, "%d Definition(en) ausgeführt: %s%s"
-          .formatted(executed.size(), String.join(", ", executed), note));
+      finishRun(run, SUCCEEDED, "%d Definition(en) ausgeführt: %s"
+          .formatted(executed.size(), String.join(", ", executed)));
     } else {
-      finishRun(run, FAILED, "%d Definition(en) ausgeführt: %s — fehlgeschlagen: %s%s"
-          .formatted(executed.size(), String.join(", ", executed), String.join(", ", failed), note));
+      finishRun(run, FAILED, "%d Definition(en) ausgeführt: %s — fehlgeschlagen: %s"
+          .formatted(executed.size(), String.join(", ", executed), String.join(", ", failed)));
     }
-  }
-
-  /**
-   * Die Namen, die die Umstellung auf ids (#1207) keiner Definition eindeutig zuordnen konnte. Sie
-   * lassen den Lauf nicht scheitern, sondern stehen in seiner Meldung und im Log — dort, wo jemand
-   * nachsieht, warum eine Definition ohne ihre Vorgänger lief.
-   */
-  private List<String> unresolvedDependenciesOf(ETLDefinition definition) {
-    var unresolved = definition.getUnresolvedDependencies();
-    if (unresolved == null || unresolved.isEmpty()) {
-      return List.of();
-    }
-    log.warn("ETL definition {} names dependencies no definition answers to: {}", definition.getName(), unresolved);
-    return unresolved.stream().sorted().map(name -> name + " (bei " + definition.getName() + ")").toList();
   }
 
   /**

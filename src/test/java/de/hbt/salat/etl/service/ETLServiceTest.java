@@ -691,24 +691,6 @@ public class ETLServiceTest {
     assertThat(savedRuns.getLast().message()).contains("base-neu", "report-neu");
   }
 
-  /**
-   * Ein Name, den die Umstellung keiner Definition zuordnen konnte, lässt den Lauf nicht scheitern.
-   * Er steht in der Meldung — dort, wo jemand nachsieht, warum eine Definition ohne ihre Vorgänger lief.
-   */
-  @Test
-  void an_unresolved_dependency_is_named_in_the_run_and_does_not_let_it_fail() {
-    givenGraph();
-    when(authorization.isAuthorized(any(), any())).thenReturn(true);
-    givenRunnable();
-    definitionRepo.findAll().stream().filter(def -> def.getName().equals("report")).findFirst().orElseThrow()
-        .setUnresolvedDependencies(Set.of("umbenannt"));
-
-    etlService.executeAll(ONE_MONTH, SCHEDULED);
-
-    assertThat(savedRuns.getLast().status()).isEqualTo(Status.SUCCEEDED);
-    assertThat(savedRuns.getLast().message()).contains("Abhängigkeiten ohne Definition: umbenannt (bei report)");
-  }
-
   /** Jede Definition des Graphen bekommt einen Abschnitt und eine Anweisung, damit sie laufen kann. */
   private void givenRunnable() {
     definitionRepo.findAll().forEach(def -> {
