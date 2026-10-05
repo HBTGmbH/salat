@@ -5703,3 +5703,56 @@ databaseChangeLog:
         - dropColumn:
             tableName: employeeorder
             columnName: sign
+
+  - changeSet:
+      id: 152
+      author: kr
+      comment: Fehlende Fremdschluessel fuer Budgetplan-Eintraege, Favoriten und Benachrichtigungen (#1374)
+      # Ohne Fremdschluessel blieben Zeilen zurueck, deren Ziel geloescht war. Ein Favorit ohne Person
+      # oder Mitarbeiterauftrag und eine Benachrichtigung ohne Login sind wertlos: sie gehen vorab und
+      # kuenftig per ON DELETE CASCADE mit ihrem Ziel. favorites kann auf das Loeschen eines
+      # Mitarbeiterauftrags nicht per Event reagieren, es darf order nicht importieren. Die Eintraege
+      # eines Budgetplans loescht der Plan selbst (cascade = ALL), dort genuegt der einfache Schluessel.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyTableName: favorite
+                foreignKeyName: fk_favorite_employeeorder
+      changes:
+        - sql:
+            sql: |-
+              DELETE f FROM favorite f
+               WHERE NOT EXISTS (SELECT 1 FROM employee e WHERE e.id = f.employeeId)
+                  OR NOT EXISTS (SELECT 1 FROM employeeorder eo WHERE eo.id = f.employeeorderId);
+              DELETE n FROM notification n
+               WHERE NOT EXISTS (SELECT 1 FROM salat_user u WHERE u.id = n.recipient_user_id);
+              DELETE s FROM order_budget_scope_entry s
+               WHERE NOT EXISTS (SELECT 1 FROM order_budget b WHERE b.id = s.order_budget_id);
+        - addForeignKeyConstraint:
+            baseTableName: order_budget_scope_entry
+            baseColumnNames: order_budget_id
+            constraintName: fk_order_budget_scope_entry_budget
+            referencedTableName: order_budget
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: favorite
+            baseColumnNames: employeeId
+            constraintName: fk_favorite_employee
+            referencedTableName: employee
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: favorite
+            baseColumnNames: employeeorderId
+            constraintName: fk_favorite_employeeorder
+            referencedTableName: employeeorder
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: notification
+            baseColumnNames: recipient_user_id
+            constraintName: fk_notification_recipient_user
+            referencedTableName: salat_user
+            referencedColumnNames: id
+            onDelete: CASCADE
