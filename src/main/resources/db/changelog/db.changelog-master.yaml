@@ -5063,6 +5063,80 @@ databaseChangeLog:
   - changeSet:
       id: 135
       author: kr
+      comment: Preis- und Umsatz-View lesen Unterauftrag und Vertrag der Buchung ueber den Mitarbeiterauftrag (#1210)
+      # Beide Views wurden bisher von Hand in der Datenbank gepflegt und stehen hiermit zum ersten Mal im
+      # Changelog. Sie lasen timereport.SUBORDER_ID und EMPLOYEECONTRACT_ID, die Changeset 136 entfernt; vorher
+      # muessen sie ersetzt sein, sonst werden sie ungueltig. Ergebnis gegen den Bestand geprueft: zeilengleich,
+      # nachdem die Buchungen mit abweichendem Unterauftrag den ihres Mitarbeiterauftrags angenommen haben.
+      # Spalten und Bedeutung bleiben, der Report darauf laeuft unveraendert.
+      changes:
+        - createView:
+            viewName: order_pricing_view2
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT data2.refdate,
+                     data2.employee_sign,
+                     data2.order_sign,
+                     data2.suborder_sign,
+                     data2.SUBORDER_ID,
+                     data2.price_eur_per_hour
+              FROM (SELECT data.refdate,
+                           data.employee_sign,
+                           data.order_sign,
+                           data.suborder_sign,
+                           data.SUBORDER_ID,
+                           data.price_eur_per_hour,
+                           ROW_NUMBER() OVER (PARTITION BY data.employee_sign, data.order_sign, data.suborder_sign, data.SUBORDER_ID, data.refdate
+                                              ORDER BY LENGTH(IFNULL(data.price_employee_sign_matcher, '')) DESC,
+                                                       LENGTH(IFNULL(data.price_suborder_sign_matcher, '')) DESC) AS rn
+                    FROM (SELECT DISTINCT eo.SUBORDER_ID,
+                                          r.refdate,
+                                          op.price_eur_per_hour,
+                                          op.employee_sign,
+                                          op.order_sign,
+                                          op.suborder_sign,
+                                          op.price_employee_sign_matcher,
+                                          op.price_suborder_sign_matcher
+                          FROM referenceday r
+                                   JOIN timereport t ON t.REFERENCEDAY_ID = r.id
+                                   JOIN employeeorder eo ON eo.id = t.EMPLOYEEORDER_ID
+                                   JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                                   JOIN suborder so ON so.id = eo.SUBORDER_ID
+                                   JOIN customerorder co ON co.id = so.CUSTOMERORDER_ID
+                                   JOIN employee e ON e.id = ec.EMPLOYEE_ID
+                                   JOIN order_pricing_view op
+                                        ON r.refdate BETWEEN op.valid_from AND op.valid_until
+                                            AND op.suborder_id = eo.SUBORDER_ID
+                                            AND op.order_sign = co.sign
+                                            AND op.employee_sign = e.sign
+                          WHERE t.deleted = 0) data) data2
+              WHERE data2.rn = 1
+        - createView:
+            viewName: revenue_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT tr.id                                                AS timereport_id,
+                     co.id                                                AS customerorder_id,
+                     co.sign                                              AS customerorder_sign,
+                     so.id                                                AS suborder_id,
+                     op.suborder_sign                                     AS suborder_sign_fully_qualified,
+                     tr.EMPLOYEEORDER_ID                                  AS employeeorder_id,
+                     op.refdate                                           AS timereport_date,
+                     tr.durationminutes + tr.durationhours * 60           AS timereport_minutes,
+                     IFNULL(op.price_eur_per_hour, 0) * 100 / 60          AS price_cents_per_minute,
+                     op.price_eur_per_hour
+              FROM order_pricing_view2 op
+                       JOIN referenceday r ON r.refdate = op.refdate
+                       JOIN timereport tr ON tr.REFERENCEDAY_ID = r.id AND tr.deleted = 0
+                       JOIN employeeorder eo ON eo.id = tr.EMPLOYEEORDER_ID AND eo.SUBORDER_ID = op.SUBORDER_ID
+                       JOIN suborder so ON so.id = eo.SUBORDER_ID
+                       JOIN customerorder co ON co.id = so.CUSTOMERORDER_ID
+                       JOIN employee e ON e.sign = op.employee_sign
+                       JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID AND ec.EMPLOYEE_ID = e.id
+
+  - changeSet:
+      id: 136
+      author: kr
       comment: Unterauftrag und Vertrag einer Buchung kommen aus dem Mitarbeiterauftrag (#1210)
       # timereport.SUBORDER_ID und timereport.EMPLOYEECONTRACT_ID waren Kopien dessen, was der
       # Mitarbeiterauftrag (EMPLOYEEORDER_ID) schon festlegt. Massgeblich ist der Mitarbeiterauftrag;
@@ -5070,6 +5144,9 @@ databaseChangeLog:
       # SUBORDER_ID vom Unterauftrag ihres Mitarbeiterauftrags abwich, gehoeren damit zu diesem - so
       # entschieden. Ein abweichender Vertrag kam im Bestand nicht vor. Erst fallen die Fremdschluessel,
       # dann die Spalten; die gleichnamigen Indizes ueber je eine Spalte gehen mit der Spalte.
+      #
+      # Report- und ETL-Definitionen pflegt die Anwendung nicht per Changeset: sie muessen in der Datenbank
+      # umgestellt sein, bevor dieses Changeset laeuft, sonst brechen sie. Die beiden Views ersetzt Changeset 135.
       preConditions:
         - onFail: MARK_RAN
         - columnExists:
