@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -73,6 +74,7 @@ import de.hbt.salat.etl.persistence.ETLDefinitionRepository;
 import de.hbt.salat.etl.persistence.ETLExecutionHistoryRepository;
 import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
 import de.hbt.salat.etl.service.SchemaDiffService.Diff;
+import de.hbt.salat.etl.service.SchemaDiffService.SchemaObject;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -147,7 +149,7 @@ public class ETLServiceTest {
     lenient().when(parameterResolver.resolve(anyString(), any())).thenAnswer(i -> i.getArgument(0));
     lenient().when(schemaDiffService.diffAround(any(), anyString())).thenAnswer(invocation -> {
       invocation.getArgument(0, Runnable.class).run();
-      return new Diff(List.of(), List.of(), List.of());
+      return new Diff(List.of(), List.of());
     });
     // Jeder öffentliche Einstieg fragt zuerst, ob die Anmeldung überhaupt einen ETL ausführen darf —
     // und zwar bevor eine Zeile entsteht, denn die Zeile ist die Sperre. Wo es um diese Frage selbst
@@ -168,6 +170,33 @@ public class ETLServiceTest {
     assertThat(savedRuns.getLast().status()).isEqualTo(Status.SUCCEEDED);
     assertThat(savedRuns.getLast().finishedAt()).isNotNull();
     assertThat(savedRuns.getLast().message()).contains("1 Definition(en) ausgeführt");
+  }
+
+  /**
+   * Vom Schema-Vergleich zählt nur die Anzahl: was init anlegt und was cleanup entfernt (#1356).
+   * Der Vergleich liefert hier für beide Teile dasselbe Ergebnis — welche Liste je Teil gelesen
+   * wird, zeigt die Zahl.
+   */
+  @Test
+  void the_execution_entry_counts_what_init_created_and_cleanup_dropped() {
+    givenDefinition("worked-hours");
+    doAnswer(invocation -> {
+      invocation.getArgument(0, Runnable.class).run();
+      return new Diff(
+          List.of(new SchemaObject("TABLE", "tmp_a"), new SchemaObject("TABLE", "tmp_b")),
+          List.of(new SchemaObject("TABLE", "tmp_c")));
+    }).when(schemaDiffService).diffAround(any(), anyString());
+    var entries = new ArrayList<ETLExecutionHistory>();
+    when(historyRepo.save(any())).thenAnswer(i -> {
+      entries.add(i.getArgument(0));
+      return i.getArgument(0);
+    });
+
+    etlService.execute(ONE_MONTH, List.of("worked-hours"), SCHEDULED);
+
+    assertThat(entries).singleElement().satisfies(entry -> assertThat(entry.getMessage())
+        .contains("rows affected, 2 tables/objects created)\n")
+        .contains("rows affected, 1 tables/objects dropped)\n"));
   }
 
   /**
