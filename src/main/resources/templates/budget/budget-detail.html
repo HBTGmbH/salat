@@ -218,7 +218,7 @@
         <tbody>
           <tr th:each="p : ${boundPricings}">
             <td th:text="${p.suborderSign} ?: '-'"></td>
-            <td th:text="${p.employeeUnresolved} ? ${p.employeeSign} : (${p.employeeId} != null ? ${boundPricingSigns.get(p.employeeId)} : '-')"></td>
+            <td th:text="${p.employeeId} != null ? ${boundPricingSigns.get(p.employeeId)} : '-'"></td>
             <td th:text="${p.description} ?: '-'"></td>
             <td class="text-end" th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
             <td class="d-none d-md-table-cell small text-muted">
