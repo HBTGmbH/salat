@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * A suborder as plain values, computed by this module's own rules (#1338): what another module
  * evaluates a customer order with, without the entity leaving this module (→ ADR-0021, Nachtrag
- * #1338). The complete order sign and the path are logic of the entity, not columns; they are
- * computed here so that no reader rebuilds them.
+ * #1338). The path is logic of the entity, not a column; it is computed here so that no reader
+ * rebuilds it. The complete order sign is stored with the suborder (#1342) and comes along.
  *
  * @param id                 the suborder
  * @param customerorderId    the customer order it belongs to
@@ -30,8 +30,8 @@ public record SuborderReadModel(long id, long customerorderId, List<Long> path, 
   }
 
   /**
-   * Reads the values of a suborder whose whole order is at hand. Path and complete sign are built
-   * from {@code orderSuborders} by the ids of the parents rather than by walking the lazily fetched
+   * Reads the values of a suborder whose whole order is at hand. The path is built from
+   * {@code orderSuborders} by the ids of the parents rather than by walking the lazily fetched
    * parent chain, so summarizing every suborder of an order costs no statement beyond the one that
    * read them. A parent missing from the map — which the rule that a parent belongs to the same order
    * rules out — is walked through the entity instead.
@@ -40,17 +40,14 @@ public record SuborderReadModel(long id, long customerorderId, List<Long> path, 
    */
   public static SuborderReadModel of(Suborder suborder, Map<Long, Suborder> orderSuborders) {
     var path = new ArrayList<Long>();
-    var signs = new ArrayList<String>();
     // a parent already on the path would be a cycle; the walk ends there instead of running forever
     for (var current = suborder; current != null && !path.contains(current.getId());
         current = parentOf(current, orderSuborders)) {
       path.add(current.getId());
-      signs.add(current.getSign());
     }
     Collections.reverse(path);
-    Collections.reverse(signs);
-    var completeOrderSign = suborder.getCustomerorder().getSign() + "/" + String.join("/", signs);
-    return new SuborderReadModel(suborder.getId(), suborder.getCustomerorder().getId(), path, completeOrderSign,
+    return new SuborderReadModel(suborder.getId(), suborder.getCustomerorder().getId(), path,
+        suborder.getCompleteOrderSign(),
         suborder.getShortdescription(), suborder.getDebithours(), suborder.isInvoiceable(), suborder.isHide());
   }
 

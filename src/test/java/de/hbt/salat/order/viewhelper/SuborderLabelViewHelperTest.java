@@ -54,6 +54,7 @@ class SuborderLabelViewHelperTest {
     suborder.setShortdescription(shortdescription);
     suborder.setDescription(shortdescription);
     suborder.setCustomerorder(customerorder);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 

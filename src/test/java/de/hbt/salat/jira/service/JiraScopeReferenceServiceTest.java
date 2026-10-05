@@ -60,6 +60,7 @@ class JiraScopeReferenceServiceTest {
     below.setCustomerorder(order);
     below.setParentorder(first);
     below.setSign("A");
+    completeSignsDerived();
     first.setSuborders(List.of(below));
 
     configRepository = mock(JiraReplicationConfigRepository.class);
@@ -83,6 +84,7 @@ class JiraScopeReferenceServiceTest {
   @Test
   void a_renamed_order_renames_every_scope_below_it() {
     order.setSign("CO-NEW");
+    completeSignsDerived();
 
     classUnderTest.followCustomerorder(order);
 
@@ -96,6 +98,7 @@ class JiraScopeReferenceServiceTest {
     when(ticketRepository.findSuborderIdsOfCustomerorder(1L)).thenReturn(List.of(12L));
     when(worklogSyncRepository.findSuborderIdsOfCustomerorder(1L)).thenReturn(List.of(12L));
     order.setSign("CO-NEW");
+    completeSignsDerived();
 
     classUnderTest.followCustomerorder(order);
 
@@ -109,6 +112,7 @@ class JiraScopeReferenceServiceTest {
   @Test
   void a_renamed_suborder_renames_its_branch_and_leaves_the_order_wide_scope_alone() {
     first.setSign("02");
+    completeSignsDerived();
 
     classUnderTest.followSuborder(first);
 
@@ -124,6 +128,7 @@ class JiraScopeReferenceServiceTest {
     other.setCustomerorder(order);
     other.setSign("02");
     below.setParentorder(other);
+    completeSignsDerived();
 
     classUnderTest.followSuborder(below);
 
@@ -136,6 +141,7 @@ class JiraScopeReferenceServiceTest {
     // they mean that place in the tree, not the order it used to hang under
     first.setCustomerorder(otherOrder);
     below.setCustomerorder(otherOrder);
+    completeSignsDerived();
 
     classUnderTest.followSuborder(first);
 
@@ -152,6 +158,7 @@ class JiraScopeReferenceServiceTest {
     when(worklogSyncRepository.findSuborderIdsIn(any())).thenReturn(List.of(12L));
     first.setCustomerorder(otherOrder);
     below.setCustomerorder(otherOrder);
+    completeSignsDerived();
 
     classUnderTest.followSuborder(first);
 
@@ -199,6 +206,12 @@ class JiraScopeReferenceServiceTest {
     config.setSuborderId(suborderId);
     config.setScopeSign(scopeSign);
     return config;
+  }
+
+  /** What the order module does whenever the tree changes (#1342): the stored complete signs follow. */
+  private void completeSignsDerived() {
+    first.deriveCompleteOrderSign();
+    below.deriveCompleteOrderSign();
   }
 
   private static void setId(AuditedEntity entity, long id) {

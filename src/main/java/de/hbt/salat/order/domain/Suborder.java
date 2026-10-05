@@ -16,6 +16,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -37,6 +40,8 @@ import de.hbt.salat.common.util.DateUtils;
 @Getter
 @Setter
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_suborder_complete_order_sign",
+        columnNames = "complete_order_sign"))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Suborder extends AuditedEntity implements Serializable {
 
@@ -82,6 +87,20 @@ public class Suborder extends AuditedEntity implements Serializable {
      * entity either.
      */
     private String sign;
+
+    /**
+     * The complete order sign ({@code ORDER/01/02}, no trailing slash), stored redundantly (#1342): it
+     * follows from the order's sign and the signs along the parent chain, and every reader — lists,
+     * search, reports, ETL — used to rebuild it from there, level by level. Only this module writes it,
+     * through {@link #deriveCompleteOrderSign()}: on persist, and wherever the order, the sign or the
+     * parent changes, for the suborder and everything below it ({@code SuborderService}). It is unique
+     * because sign and order are; an order sign containing a slash could still collide with a suborder
+     * path of another order, and the key refuses that.
+     */
+    @Column(name = "complete_order_sign", nullable = false, length = 1000)
+    @Setter(AccessLevel.NONE)
+    private String completeOrderSign;
+
     @Lob
     @Column(columnDefinition = "text")
     private String description;
@@ -338,16 +357,22 @@ public class Suborder extends AuditedEntity implements Serializable {
         return result.reversed();
     }
 
+    /** The stored complete order sign, {@code ORDER/01/02} (#1342); reads no parent. */
     public String getCompleteOrderSign() {
-        StringBuilder result = new StringBuilder();
-        acceptVisitor((suborder) -> {
-            if(result.isEmpty()) {
-                result.append(suborder.getCustomerorder().getSign());
-            }
-            result.append("/");
-            result.append(suborder.getSign());
-        }, VisitorDirection.PARENT);
-        return result.toString();
+        return completeOrderSign;
+    }
+
+    /**
+     * Sets the complete order sign from the order's sign and the signs along the parent chain (#1342).
+     * Runs on persist; the order module calls it for every suborder whose order, sign or parent — or
+     * that of a suborder above it — has changed. The chain must be free of cycles.
+     */
+    @PrePersist
+    public void deriveCompleteOrderSign() {
+        var result = new StringBuilder(customerorder.getSign());
+        // top down: the visitor reaches the parents before this suborder
+        acceptVisitor(suborder -> result.append('/').append(suborder.getSign()), VisitorDirection.PARENT);
+        completeOrderSign = result.toString();
     }
 
     public String getCompleteOrderDescription(boolean shortDescription, boolean useCustomerDescription) {

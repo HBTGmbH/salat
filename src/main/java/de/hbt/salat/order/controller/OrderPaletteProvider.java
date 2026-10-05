@@ -94,11 +94,11 @@ public class OrderPaletteProvider implements PaletteProvider {
       }
     }
     var rows = suborderService.getPaletteCandidates(query, bookableFor);
-    var completeSigns = suborderService.getCompleteOrderSigns(rows);
-    return rows.stream().map(row -> suborderHit(query, row, completeSigns.get(row.id()))).toList();
+    return rows.stream().map(row -> suborderHit(query, row)).toList();
   }
 
-  private PaletteHit suborderHit(PaletteQuery query, SuborderSearchRow row, String completeSign) {
+  private PaletteHit suborderHit(PaletteQuery query, SuborderSearchRow row) {
+    var completeSign = row.completeOrderSign();
     var ended = Validity.isInactive(row.untilDate());
     // a suborder under a hidden order is no more on offer than the order itself
     var hidden = Hiding.isHidden(row.hide()) || Hiding.isHidden(row.customerorderHide());

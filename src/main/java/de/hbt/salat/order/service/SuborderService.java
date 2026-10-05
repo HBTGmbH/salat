@@ -40,7 +40,7 @@ import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
 import de.hbt.salat.order.domain.SuborderReadModel;
-import de.hbt.salat.order.domain.SuborderSignRow;
+import de.hbt.salat.order.domain.SuborderCompleteSign;
 import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.domain.TicketReferencePolicySource;
@@ -56,9 +56,6 @@ import de.hbt.salat.order.persistence.SuborderRepository;
 @RequiredArgsConstructor
 @Authorized
 public class SuborderService {
-
-  /** Deeper than any suborder tree in the data; guards the parent walk against a cycle. */
-  private static final int MAX_SUBORDER_DEPTH = 20;
 
   private final ApplicationEventPublisher eventPublisher;
   private final CommandPublisher commandPublisher;
@@ -77,39 +74,6 @@ public class SuborderService {
     return suborderRepository.findPaletteCandidates(query.likeWord(0), query.likeWord(1),
         query.likeWord(2), bookableForEmployeeId, DateUtils.today(),
         PageRequest.of(0, PaletteQuery.CANDIDATE_LIMIT));
-  }
-
-  /**
-   * The complete signs ({@link Suborder#getCompleteOrderSign()}, {@code ORDER/SUB/SUBSUB}) of the
-   * given rows. The parent chains are read one level at a time for all rows together — the entity
-   * would load them lazily, one query per suborder and level.
-   */
-  @Transactional(readOnly = true)
-  public Map<Long, String> getCompleteOrderSigns(Collection<SuborderSearchRow> rows) {
-    var known = new HashMap<Long, SuborderSignRow>();
-    rows.forEach(row -> known.put(row.id(), new SuborderSignRow(row.id(), row.sign(), row.parentId())));
-    for (int level = 0; level < MAX_SUBORDER_DEPTH; level++) {
-      var missing = known.values().stream()
-          .map(SuborderSignRow::parentId)
-          .filter(Objects::nonNull)
-          .filter(not(known::containsKey))
-          .collect(Collectors.toSet());
-      if (missing.isEmpty()) break;
-      var found = suborderRepository.findSignRows(missing);
-      // a parent the database does not return would be asked for again on every level
-      if (found.isEmpty()) break;
-      found.forEach(row -> known.put(row.id(), row));
-    }
-    var signs = new HashMap<Long, String>();
-    for (var row : rows) {
-      var chain = new ArrayList<String>();
-      for (var step = known.get(row.id()); step != null && chain.size() < MAX_SUBORDER_DEPTH;
-          step = step.parentId() == null ? null : known.get(step.parentId())) {
-        chain.addFirst(step.sign());
-      }
-      signs.put(row.id(), row.customerorderSign() + "/" + String.join("/", chain));
-    }
-    return signs;
   }
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
@@ -243,6 +207,9 @@ public class SuborderService {
       }
     }
 
+    // a new sign, parent or order moves the stored complete sign of the whole branch along (#1342)
+    so.acceptVisitor(Suborder::deriveCompleteOrderSign);
+
     // a special order, or one above it, keeps its complete sign: the configuration names it (#1341, ADR-0035)
     var completeSignChanges = oldSign != null && !oldSign.equals(so.getCompleteOrderSign());
     if (completeSignChanges && specialOrders.isLockedSuborder(so.getId())) {
@@ -276,8 +243,12 @@ public class SuborderService {
     var customerorder = event.getDomainObject();
     var newValidity = customerorder.getValidity();
 
-    // adjust suborders
     List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorder.getId());
+    // a renamed order moves the stored complete sign of each of its suborders along (#1342) — before
+    // the validity is adjusted below, which would otherwise take every suborder as renamed itself
+    suborders.forEach(Suborder::deriveCompleteOrderSign);
+
+    // adjust suborders
     for (Suborder suborder : suborders) {
       var existingValidity = suborder.getValidity();
       var updating = existingValidity.overlaps(newValidity);
@@ -371,8 +342,9 @@ public class SuborderService {
   /**
    * The visible suborders of the order as plain values, sorted by complete order sign like
    * {@link #getSubordersByCustomerorderId} (#1338) — what another module evaluates an order with
-   * (→ ADR-0021, Nachtrag #1338). One statement for the order: path and complete sign are built from
-   * the suborders read, hidden parents included, not by walking the parent chain of each.
+   * (→ ADR-0021, Nachtrag #1338). One statement for the order: the path is built from the suborders
+   * read, hidden parents included, not by walking the parent chain of each; the complete sign is
+   * stored (#1342).
    */
   @Transactional(readOnly = true)
   public List<SuborderReadModel> getSuborderReadModelsByCustomerorderId(long customerorderId) {
@@ -428,8 +400,11 @@ public class SuborderService {
    */
   @Transactional(readOnly = true)
   public Map<Long, String> getCompleteOrderSignsByIds(Collection<Long> suborderIds) {
-    return getSubordersByIds(suborderIds).stream()
-        .collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign));
+    if (suborderIds.isEmpty()) {
+      return Map.of();
+    }
+    return suborderRepository.findCompleteSigns(Set.copyOf(suborderIds)).stream()
+        .collect(Collectors.toMap(SuborderCompleteSign::id, SuborderCompleteSign::completeOrderSign));
   }
 
   /**
@@ -471,10 +446,9 @@ public class SuborderService {
    * The suborders of the given customer orders, hidden ones included — for lists whose rows name
    * their suborder by its complete order sign and need its description next to it (#952).
    *
-   * <p>The complete order sign is derived rather than stored, so it cannot be queried; the orders
-   * are matched over one query instead of one query per row. That query selects the suborders of
-   * these orders only (#1222) — it used to read every suborder of the installation and pick the
-   * matching ones in Java. Sorted by complete order sign, as before.
+   * <p>The orders are matched over one query instead of one query per row. That query selects the
+   * suborders of these orders only (#1222) — it used to read every suborder of the installation and
+   * pick the matching ones in Java. Sorted by complete order sign, as before.
    */
   public List<Suborder> getSubordersByCustomerorderSigns(Collection<String> customerorderSigns) {
     if (customerorderSigns.isEmpty()) {
@@ -551,8 +525,8 @@ public class SuborderService {
   /**
    * Whether a suborder with exactly this complete order sign exists (#958). Records that reference a
    * suborder by sign rather than by id — the scope of a JIRA replication does — have no customer order
-   * to narrow the search by, so the sign is matched against all suborders. That is a full read, but
-   * it happens on a manager's write, and the forms of those records load the same list anyway.
+   * to narrow the search by, so the sign is matched against all suborders, over the stored column
+   * (#1342).
    */
   public boolean existsSuborderWithCompleteOrderSign(String completeOrderSign) {
     return getSuborderByCompleteOrderSign(completeOrderSign) != null;
@@ -562,13 +536,11 @@ public class SuborderService {
    * The suborder carrying exactly this complete order sign, or {@code null} (#1025). A record that
    * stores such a sign cannot get back to the customer order behind it by splitting the string: an
    * order sign may contain a slash itself, so the first segment of {@code 0283/03.20/F&E/01} is not
-   * the order. Asking here is exact where parsing only guesses.
+   * the order. Asking here is exact where parsing only guesses — one lookup over the unique key of
+   * the stored column (#1342).
    */
   public Suborder getSuborderByCompleteOrderSign(String completeOrderSign) {
-    return suborderDAO.getSuborders().stream()
-        .filter(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()))
-        .findFirst()
-        .orElse(null);
+    return suborderRepository.findByCompleteOrderSign(completeOrderSign).orElse(null);
   }
 
   public boolean existsSuborderMatching(String customerorderSign, String pattern) {

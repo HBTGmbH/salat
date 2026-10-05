@@ -430,6 +430,7 @@ class DailyWorkingReportCsvConverterTest {
         suborder.setSign("01");
         suborder.setDescription("Stuhlpolsterung");
         suborder.setCustomerorder(customerorder);
+        suborder.deriveCompleteOrderSign();
         var employeeorder = new Employeeorder();
         ReflectionTestUtils.setField(employeeorder, "id", 183209L);
         employeeorder.setSuborder(suborder);

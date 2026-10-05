@@ -22,8 +22,9 @@ import de.hbt.salat.common.util.SqlLikePattern;
  * <h2>Matching</h2>
  *
  * <p>{@code suborderSign} is not a key but an SQL {@code LIKE} pattern, matched against the complete
- * order sign of the suborder <em>with a trailing slash</em> — the shape the reporting SQL builds via
- * its {@code suborder_fqs} view. A pattern ending in a slash therefore covers a suborder and its
+ * order sign of the suborder <em>with a trailing slash</em>. The stored sign carries none (#1342); the
+ * slash belongs to the comparison, here as in the reporting SQL, which compares against
+ * {@code CONCAT(complete_order_sign, '/')}. A pattern ending in a slash therefore covers a suborder and its
  * whole subtree and cannot spill over into a sibling whose sign merely starts with the same
  * characters; {@code %} and {@code _} may be used as wildcards. An empty pattern covers the whole
  * customer order. The order is matched by id (#1212). The person is matched by id (#968), no person meaning "any
@@ -180,15 +181,15 @@ public final class OrderPricingLookup {
     }
 
     /**
-     * Callers pass the complete order sign as {@code Suborder#getCompleteOrderSign()} returns it. The
-     * slash is appended here rather than at the call sites, which share the value with the employee
-     * cost lookup, where the suborder sign is compared for equality.
+     * Callers pass the complete order sign as {@code Suborder#getCompleteOrderSign()} returns it, without
+     * a trailing slash. The slash is appended here rather than at the call sites, which share the value
+     * with the employee cost lookup, where the suborder sign is compared for equality.
      */
     private static String withTrailingSlash(String suborderSign) {
         if (suborderSign == null || suborderSign.isBlank()) {
             return "";
         }
-        return suborderSign.endsWith("/") ? suborderSign : suborderSign + "/";
+        return suborderSign + "/";
     }
 
 }

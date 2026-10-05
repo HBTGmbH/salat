@@ -30,7 +30,7 @@ import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
-import de.hbt.salat.order.domain.SuborderSignRow;
+import de.hbt.salat.order.domain.SuborderCompleteSign;
 
 /**
  * The candidates the command palette asks the database for (#1157): orders and suborders that
@@ -346,9 +346,9 @@ class PaletteCandidatesTest {
     var child = suborder(order, parent, "02", "Wartung", false, TODAY.minusDays(1));
 
     assertThat(suborderRows("mk", null, PaletteQuery.CANDIDATE_LIMIT)).containsExactly(
-        new SuborderSearchRow(parent.getId(), "01", "Leistung", null, order.getId(), "MUSTER-01",
+        new SuborderSearchRow(parent.getId(), "01", "Leistung", "MUSTER-01/01", order.getId(), "MUSTER-01",
             "Vertrag", "MK", false, true, null),
-        new SuborderSearchRow(child.getId(), "02", "Wartung", parent.getId(), order.getId(), "MUSTER-01",
+        new SuborderSearchRow(child.getId(), "02", "Wartung", "MUSTER-01/01/02", order.getId(), "MUSTER-01",
             "Vertrag", "MK", false, true, TODAY.minusDays(1)));
   }
 
@@ -409,19 +409,33 @@ class PaletteCandidatesTest {
     assertThat(suborderIds("leistung", null)).containsExactly(booked.getId(), unbooked.getId());
   }
 
-  // --- the parent chain ------------------------------------------------------------------------
+  // --- the stored complete sign (#1342) -------------------------------------------------------
 
   @Test
-  void reads_sign_and_parent_of_each_suborder_asked_for() {
+  void reads_the_complete_sign_of_each_suborder_asked_for() {
     var order = order("MUSTER-01");
     var top = suborder(order, "01");
     var child = suborder(order, top, "02", "Leistung", false, null);
     suborder(order, child, "03", "Leistung", false, null);
+    entityManager.flush();
 
-    assertThat(suborderRepository.findSignRows(List.of(top.getId(), child.getId())))
+    assertThat(suborderRepository.findCompleteSigns(List.of(top.getId(), child.getId())))
         .containsExactlyInAnyOrder(
-            new SuborderSignRow(top.getId(), "01", null),
-            new SuborderSignRow(child.getId(), "02", top.getId()));
+            new SuborderCompleteSign(top.getId(), "MUSTER-01/01"),
+            new SuborderCompleteSign(child.getId(), "MUSTER-01/01/02"));
+  }
+
+  /** Exact and case-sensitive, like the comparison in Java it replaced. */
+  @Test
+  void finds_a_suborder_by_exactly_its_complete_sign() {
+    var order = order("MUSTER-01");
+    var top = suborder(order, "01");
+    var child = suborder(order, top, "a", "Leistung", false, null);
+    entityManager.flush();
+
+    assertThat(suborderRepository.findByCompleteOrderSign("MUSTER-01/01/a")).contains(child);
+    assertThat(suborderRepository.findByCompleteOrderSign("MUSTER-01/01/A")).isEmpty();
+    assertThat(suborderRepository.findByCompleteOrderSign("MUSTER-01/01/")).isEmpty();
   }
 
   // --- helpers ---------------------------------------------------------------------------------

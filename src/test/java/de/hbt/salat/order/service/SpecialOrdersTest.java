@@ -153,6 +153,7 @@ class SpecialOrdersTest {
     suborder.setParentorder(parent);
     suborder.setSign(sign);
     suborder.setFromDate(LocalDate.of(2026, 1, 1));
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 }

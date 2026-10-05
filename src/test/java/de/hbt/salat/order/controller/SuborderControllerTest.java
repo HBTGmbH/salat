@@ -97,6 +97,7 @@ class SuborderControllerTest {
     twin.setCustomerorder(order);
     twin.setSign("01");
     twin.setFromDate(TWIN_FROM);
+    twin.deriveCompleteOrderSign();
 
     when(customerService.getSelectableCustomers(any())).thenReturn(List.of(customer));
     when(customerorderService.getVisibleCustomerorders()).thenReturn(List.of(order));

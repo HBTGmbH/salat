@@ -5168,3 +5168,279 @@ databaseChangeLog:
         - dropColumn:
             tableName: timereport
             columnName: EMPLOYEECONTRACT_ID
+
+  - changeSet:
+      id: 137
+      author: kr
+      comment: Unterauftrag erhaelt die Spalte complete_order_sign fuer den vollstaendigen Schluessel (#1342)
+      # Der vollstaendige Schluessel (AUFTRAG/01/02, ohne abschliessenden Schraegstrich) wird redundant am
+      # Unterauftrag gespeichert. Bisher baute ihn jeder Leser aus der Kette der Elternknoten neu, die
+      # Anwendung Ebene fuer Ebene, Reports und ETL ueber die View suborder_fqs mit neun festen Self-Joins.
+      # Ab jetzt haelt das Modul order die Spalte aktuell (Suborder#deriveCompleteOrderSign).
+      #
+      # Erst leer anlegen, in eigenen Changesets befuellen und dann verschaerfen: MySQL fuehrt DDL ohne
+      # Transaktion aus. Stuende alles in einem Changeset und schluege die Befuellung fehl, liefe er beim
+      # naechsten Start nicht wieder an - die Spalte gaebe es dann ja schon.
+      #
+      # Kollation utf8mb3_bin wie die Kuerzelspalten, damit Vergleich und Eindeutigkeit Gross- und
+      # Kleinschreibung unterscheiden wie die Anwendung. Laenge 1000: mehr passt mit utf8mb3 nicht in einen
+      # eindeutigen Index (3072 Bytes). Die Anwendung laesst Kuerzel mit 16 Zeichen zu, das reicht fuer
+      # ueber 50 Ebenen; der laengste Schluessel im Bestand hat 61 Zeichen.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: suborder
+                columnName: complete_order_sign
+      changes:
+        - sql:
+            sql: ALTER TABLE `suborder` ADD COLUMN `complete_order_sign` varchar(1000) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NULL
+
+  - changeSet:
+      id: 138
+      author: kr
+      comment: complete_order_sign aus dem Bestand befuellen (#1342)
+      # Rekursiv und damit ohne feste Tiefe, anders als suborder_fqs: die Befuellung laeuft nur einmal, ihre
+      # Laufzeit spielt keine Rolle. Ausgangspunkt sind die Unterauftraege ohne Elternteil; ein Unterauftrag,
+      # den die Kette nicht von dort erreicht, bliebe leer, und Changeset 139 haelt dann an. Gegen den
+      # Bestand geprueft: fuer jeden Unterauftrag gleich suborder_fqs.sign_fully_qualified ohne den
+      # abschliessenden Schraegstrich.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: suborder
+            columnName: complete_order_sign
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) > 0 FROM `suborder` WHERE `complete_order_sign` IS NULL
+      changes:
+        - sql:
+            sql: |-
+              UPDATE suborder s
+                  JOIN (WITH RECURSIVE chain (id, complete_order_sign) AS (
+                            SELECT top.id,
+                                   CAST(CONCAT(c.sign, '/', top.sign) AS CHAR(1000) CHARACTER SET utf8mb3) COLLATE utf8mb3_bin
+                            FROM suborder top
+                                     JOIN customerorder c ON c.id = top.CUSTOMERORDER_ID
+                            WHERE top.PARENTORDER_ID IS NULL
+                            UNION ALL
+                            SELECT child.id, CONCAT(parent.complete_order_sign, '/', child.sign)
+                            FROM suborder child
+                                     JOIN chain parent ON parent.id = child.PARENTORDER_ID)
+                        SELECT id, complete_order_sign FROM chain) derived ON derived.id = s.id
+              SET s.complete_order_sign = derived.complete_order_sign
+
+  - changeSet:
+      id: 139
+      author: kr
+      comment: complete_order_sign ist Pflicht und eindeutig (#1342)
+      # Eindeutig, weil Auftragskuerzel (uk_customerorder_sign) und Kuerzel unter einem Elternteil
+      # (uk_suborder_customerorder_parent_sign) es sind. Einzige Luecke: ein Auftragskuerzel mit
+      # Schraegstrich kann denselben Pfad ergeben wie ein Unterauftrag eines anderen Auftrags. Der Bestand
+      # hat keinen solchen Fall; der Schluessel verhindert, dass einer entsteht.
+      #
+      # Eigenes SQL statt addNotNullConstraint: MODIFY ueber Liquibase verliert die Kollation der Spalte.
+      preConditions:
+        - onFail: HALT
+        - onFailMessage: >-
+            suborder enthaelt fehlende oder doppelte Werte in (complete_order_sign); Changeset 138 haette
+            jeden Unterauftrag befuellen muessen (#1342).
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM `suborder` WHERE `complete_order_sign` IS NULL
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM (SELECT 1 FROM `suborder` GROUP BY `complete_order_sign` HAVING COUNT(*) > 1) d
+      changes:
+        - sql:
+            sql: ALTER TABLE `suborder` MODIFY `complete_order_sign` varchar(1000) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL, ADD CONSTRAINT `uk_suborder_complete_order_sign` UNIQUE (`complete_order_sign`)
+
+  - changeSet:
+      id: 140
+      author: kr
+      comment: suborder_fqs und die Kosten- und Preis-Views lesen complete_order_sign (#1342)
+      # Uebergang: suborder_fqs liefert denselben Schluessel mit abschliessendem Schraegstrich, jetzt aus der
+      # Spalte statt ueber neun Self-Joins - ohne feste Tiefe, und Report- und ETL-Definitionen laufen
+      # unveraendert weiter, bis sie umgestellt sind. Die Kollation bleibt utf8mb3_bin, die der Spalte.
+      #
+      # Die drei Views aus Changeset 133 lesen die Spalte direkt. Ihre Spalten und Werte bleiben gleich,
+      # suborder_sign weiter mit Schraegstrich; der Schraegstrich steckt im Vergleich, nicht in den Daten.
+      # Gegen den Bestand geprueft: zeilengleich.
+      changes:
+        - createView:
+            viewName: suborder_fqs
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT s.id AS suborder_id,
+                     CONCAT(s.complete_order_sign, '/') AS sign_fully_qualified
+              FROM suborder s
+        - createView:
+            viewName: order_cost_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT DISTINCT data.customer_name,
+                              data.order_sign,
+                              data.employee_sign,
+                              data.suborder_sign,
+                              GREATEST(data.employee_order_from, data.ecost_from)  AS valid_from,
+                              LEAST(data.employee_order_until, data.ecost_until)   AS valid_until,
+                              data.ecost_name                                      AS cost_name,
+                              ROUND(data.ecost_cost_cents_per_hour / 100, 2)       AS cost_eur_per_hour,
+                              data.ece_suborder_sign                               AS cost_suborder_sign_matcher
+              FROM (SELECT cust.shortname                                                                    AS customer_name,
+                           co.sign                                                                           AS order_sign,
+                           emp.sign                                                                          AS employee_sign,
+                           CONCAT(so.complete_order_sign, '/')                                              AS suborder_sign,
+                           so.invoice                                                                        AS suborder_invoice,
+                           eo.fromDate                                                                       AS employee_order_from,
+                           IFNULL(eo.untilDate, IFNULL(so.untilDate, IFNULL(co.untilDate, '2999-12-31')))    AS employee_order_until,
+                           IFNULL((SELECT f.complete_order_sign FROM suborder f WHERE f.id = ece.suborder_id),
+                                  IFNULL((SELECT c2.sign FROM customerorder c2 WHERE c2.id = ece.customerorder_id), '')) AS ece_suborder_sign,
+                           IFNULL((SELECT ecat.name FROM employee_cost_category ecat WHERE ecat.id = ecost.category_id),
+                                  '???')                                                                     AS ecost_name,
+                           IFNULL(ecost.cost_cents_per_hour, 99999)                                          AS ecost_cost_cents_per_hour,
+                           GREATEST(IFNULL(ecost.valid_from, '2000-01-01'), IFNULL(ece.valid_from, '2000-01-01'))  AS ecost_from,
+                           LEAST(IFNULL(ecost.valid_until, '2999-12-31'), IFNULL(ece.valid_until, '2999-12-31'))   AS ecost_until
+                    FROM customerorder co
+                             JOIN customer cust ON cust.id = co.CUSTOMER_ID
+                             JOIN suborder so ON so.CUSTOMERORDER_ID = co.id
+                             JOIN employeeorder eo ON eo.SUBORDER_ID = so.id
+                             JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                             JOIN employee emp ON emp.id = ec.EMPLOYEE_ID
+                             LEFT JOIN employee_cost_employee ece
+                                       ON ece.employee_id = emp.id
+                                           AND (ece.customerorder_id IS NULL OR ece.customerorder_id = co.id)
+                                           AND (ece.suborder_id IS NULL OR CONCAT(so.complete_order_sign, '/') LIKE
+                                               CONCAT((SELECT f.complete_order_sign FROM suborder f
+                                                       WHERE f.id = ece.suborder_id), '/%'))
+                             LEFT JOIN employee_cost ecost ON ecost.category_id = ece.employee_cost_category_id) data
+              WHERE data.employee_order_until >= data.ecost_from
+                AND data.employee_order_from <= data.ecost_until
+        - createView:
+            viewName: order_pricing_cost_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT data.customer_name,
+                     data.order_sign,
+                     data.employee_sign,
+                     data.suborder_sign,
+                     data.suborder_invoice,
+                     GREATEST(data.employee_order_from, data.ecost_from, data.op_from)  AS valid_from,
+                     LEAST(data.employee_order_until, data.ecost_until, data.op_until)  AS valid_until,
+                     data.ecost_name                                                    AS cost_name,
+                     ROUND(data.ecost_cost_cents_per_hour / 100, 2)                     AS cost_eur_per_hour,
+                     data.op_description                                                AS price_description,
+                     ROUND(data.op_price_cents_per_hour / 100, 2)                       AS price_eur_per_hour,
+                     data.ece_suborder_sign                                             AS cost_suborder_sign_matcher,
+                     data.op_employee_sign                                              AS price_employee_sign_matcher,
+                     data.op_suborder_sign                                              AS price_suborder_sign_matcher
+              FROM (SELECT cust.shortname                                                                    AS customer_name,
+                           co.sign                                                                           AS order_sign,
+                           emp.sign                                                                          AS employee_sign,
+                           CONCAT(so.complete_order_sign, '/')                                              AS suborder_sign,
+                           so.invoice                                                                        AS suborder_invoice,
+                           eo.fromDate                                                                       AS employee_order_from,
+                           IFNULL(eo.untilDate, IFNULL(so.untilDate, IFNULL(co.untilDate, '2999-12-31')))    AS employee_order_until,
+                           IFNULL((SELECT f.complete_order_sign FROM suborder f WHERE f.id = ece.suborder_id),
+                                  IFNULL((SELECT c2.sign FROM customerorder c2 WHERE c2.id = ece.customerorder_id), '')) AS ece_suborder_sign,
+                           IFNULL((SELECT ecat.name FROM employee_cost_category ecat WHERE ecat.id = ecost.category_id),
+                                  '???')                                                                     AS ecost_name,
+                           IFNULL(ecost.cost_cents_per_hour, 99999)                                          AS ecost_cost_cents_per_hour,
+                           GREATEST(IFNULL(ecost.valid_from, '2000-01-01'), IFNULL(ece.valid_from, '2000-01-01'))  AS ecost_from,
+                           LEAST(IFNULL(ecost.valid_until, '2999-12-31'), IFNULL(ece.valid_until, '2999-12-31'))   AS ecost_until,
+                           IFNULL(op.description, '???')                                                     AS op_description,
+                           IFNULL(op.price_cents_per_hour, 0)                                                AS op_price_cents_per_hour,
+                           IFNULL(op.valid_from, '2000-01-01')                                               AS op_from,
+                           IFNULL(op.valid_until, '2999-12-31')                                              AS op_until,
+                           IF(op.employee_id IS NULL, '', emp.sign)                                          AS op_employee_sign,
+                           IFNULL(op.suborder_sign, '')                                                      AS op_suborder_sign
+                    FROM customerorder co
+                             JOIN customer cust ON cust.id = co.CUSTOMER_ID
+                             JOIN suborder so ON so.CUSTOMERORDER_ID = co.id
+                             JOIN employeeorder eo ON eo.SUBORDER_ID = so.id
+                             JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                             JOIN employee emp ON emp.id = ec.EMPLOYEE_ID
+                             LEFT JOIN employee_cost_employee ece
+                                       ON ece.employee_id = emp.id
+                                           AND (ece.customerorder_id IS NULL OR ece.customerorder_id = co.id)
+                                           AND (ece.suborder_id IS NULL OR CONCAT(so.complete_order_sign, '/') LIKE
+                                               CONCAT((SELECT f.complete_order_sign FROM suborder f
+                                                       WHERE f.id = ece.suborder_id), '/%'))
+                             LEFT JOIN employee_cost ecost ON ecost.category_id = ece.employee_cost_category_id
+                             LEFT JOIN order_pricing op
+                                       ON op.customerorder_id = co.id
+                                           AND (op.employee_id IS NULL OR op.employee_id = emp.id)
+                                           AND CONCAT(so.complete_order_sign, '/') LIKE CONCAT(IFNULL(op.suborder_sign, ''), '%')) data
+              WHERE data.employee_order_until >= data.op_from
+                AND data.employee_order_from <= data.op_until
+                AND data.employee_order_until >= data.ecost_from
+                AND data.employee_order_from <= data.ecost_until
+        - createView:
+            viewName: order_pricing_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT DISTINCT data.customer_name,
+                              data.order_sign,
+                              data.employee_sign,
+                              data.suborder_sign,
+                              data.suborder_id,
+                              GREATEST(data.employee_order_from, data.op_from)  AS valid_from,
+                              LEAST(data.employee_order_until, data.op_until)   AS valid_until,
+                              data.op_description                               AS price_description,
+                              ROUND(data.op_price_cents_per_hour / 100, 2)      AS price_eur_per_hour,
+                              data.op_employee_sign                             AS price_employee_sign_matcher,
+                              data.op_suborder_sign                             AS price_suborder_sign_matcher
+              FROM (SELECT cust.shortname                                                                 AS customer_name,
+                           co.sign                                                                        AS order_sign,
+                           emp.sign                                                                       AS employee_sign,
+                           CONCAT(so.complete_order_sign, '/')                                           AS suborder_sign,
+                           so.invoice                                                                     AS suborder_invoice,
+                           eo.fromDate                                                                    AS employee_order_from,
+                           IFNULL(eo.untilDate, IFNULL(so.untilDate, IFNULL(co.untilDate, '2999-12-31'))) AS employee_order_until,
+                           IFNULL(op.description, '???')                                                  AS op_description,
+                           IFNULL(op.price_cents_per_hour, 0)                                             AS op_price_cents_per_hour,
+                           IFNULL(op.valid_from, '2000-01-01')                                            AS op_from,
+                           IFNULL(op.valid_until, '2999-12-31')                                           AS op_until,
+                           IF(op.employee_id IS NULL, '', emp.sign)                                       AS op_employee_sign,
+                           IFNULL(op.suborder_sign, '')                                                   AS op_suborder_sign,
+                           so.id                                                                          AS suborder_id
+                    FROM customerorder co
+                             JOIN customer cust ON cust.id = co.CUSTOMER_ID
+                             JOIN suborder so ON so.CUSTOMERORDER_ID = co.id
+                             JOIN employeeorder eo ON eo.SUBORDER_ID = so.id
+                             JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+                             JOIN employee emp ON emp.id = ec.EMPLOYEE_ID
+                             LEFT JOIN order_pricing op
+                                       ON op.customerorder_id = co.id
+                                           AND (op.employee_id IS NULL OR op.employee_id = emp.id)
+                                           AND CONCAT(so.complete_order_sign, '/') LIKE CONCAT(IFNULL(op.suborder_sign, ''), '%')) data
+              WHERE data.employee_order_until >= data.op_from
+                AND data.employee_order_from <= data.op_until
+                AND data.suborder_invoice = 'Y'
+
+  - changeSet:
+      id: 141
+      author: kr
+      comment: View suborder_fqs entfernen (#1342)
+      # Laeuft erst, wenn keine Report-, ETL- oder View-Definition sie mehr liest. Die Definitionen pflegt
+      # die Anwendung, nicht der Changelog; bis sie umgestellt sind, ueberspringt CONTINUE den Changeset und
+      # versucht ihn beim naechsten Start wieder. Gesucht wird ohne Gross-/Kleinschreibung, die Spalten der
+      # Definitionen sind utf8mb3_bin.
+      preConditions:
+        - onFail: CONTINUE
+        - viewExists:
+            viewName: suborder_fqs
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT (SELECT COUNT(*) FROM report_definition WHERE LOWER(`sql`) LIKE '%suborder!_fqs%' ESCAPE '!')
+                   + (SELECT COUNT(*) FROM etl_definition
+                      WHERE LOWER(CONCAT_WS(' ', `init`, `execute`, `cleanup`)) LIKE '%suborder!_fqs%' ESCAPE '!')
+                   + (SELECT COUNT(*) FROM information_schema.VIEWS
+                      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME <> 'suborder_fqs'
+                        AND LOWER(VIEW_DEFINITION) LIKE '%suborder!_fqs%' ESCAPE '!')
+                   + (SELECT COUNT(*) FROM information_schema.ROUTINES
+                      WHERE ROUTINE_SCHEMA = DATABASE() AND LOWER(ROUTINE_DEFINITION) LIKE '%suborder!_fqs%' ESCAPE '!')
+      changes:
+        - dropView:
+            viewName: suborder_fqs

@@ -432,6 +432,7 @@ public class BudgetDashboardServiceTest {
       suborder.setShortdescription(sign);
       suborder.setInvoice(invoice);
       suborder.setHide(hide);
+      suborder.deriveCompleteOrderSign();
       suborders.add(suborder);
       return suborder;
     }

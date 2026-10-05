@@ -60,6 +60,7 @@ class OrderSignMirrorListenerTest {
     below.setCustomerorder(order);
     below.setParentorder(first);
     below.setSign("A");
+    completeSignsDerived();
 
     plan.setCustomerorderId(1L);
     plan.setCustomerorderSign("CO");
@@ -92,6 +93,7 @@ class OrderSignMirrorListenerTest {
   @Test
   void a_renamed_order_is_written_into_every_sign_column_of_its_budget_data() {
     order.setSign("NEW");
+    completeSignsDerived();
 
     listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order));
 
@@ -106,6 +108,7 @@ class OrderSignMirrorListenerTest {
   @Test
   void a_renamed_order_takes_its_cost_assignments_to_the_whole_order_along() {
     order.setSign("NEW");
+    completeSignsDerived();
 
     listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order));
 
@@ -119,6 +122,7 @@ class OrderSignMirrorListenerTest {
   @Test
   void a_renamed_order_takes_its_customer_rates_along() {
     order.setSign("NEW");
+    completeSignsDerived();
 
     listener.onCustomerorderUpdate(new CustomerorderUpdateEvent(order));
 
@@ -129,6 +133,7 @@ class OrderSignMirrorListenerTest {
   @Test
   void a_renamed_suborder_is_written_into_its_subtree() {
     first.setSign("X1");
+    completeSignsDerived();
 
     listener.onSuborderUpdate(new SuborderUpdateEvent(first));
 
@@ -141,6 +146,7 @@ class OrderSignMirrorListenerTest {
   @Test
   void a_moved_suborder_is_written_with_its_new_parent() {
     below.setParentorder(null);
+    completeSignsDerived();
 
     listener.onSuborderUpdate(new SuborderUpdateEvent(below));
 
@@ -228,6 +234,12 @@ class OrderSignMirrorListenerTest {
     pricing.setCustomerorderId(1L);
     pricing.setSuborderSign(suborderPattern);
     return pricing;
+  }
+
+  /** What the order module does whenever the tree changes (#1342): the stored complete signs follow. */
+  private void completeSignsDerived() {
+    first.deriveCompleteOrderSign();
+    below.deriveCompleteOrderSign();
   }
 
   private static void setId(AuditedEntity entity, long id) {

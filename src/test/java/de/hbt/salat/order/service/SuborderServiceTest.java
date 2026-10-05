@@ -197,6 +197,7 @@ public class SuborderServiceTest {
     inherited.setCustomerorder(customerorder);
     inherited.setParentorder(future);
     inherited.setSign("inherited");
+    inherited.deriveCompleteOrderSign();
     var ended = suborder(customerorder, "ended", today.minusYears(1), today.minusDays(1));
     var endsToday = suborder(customerorder, "endstoday", today.minusYears(1), today);
     var openEnd = suborder(customerorder, "openend", today.minusYears(1), null);
@@ -213,6 +214,7 @@ public class SuborderServiceTest {
     suborder.setSign(sign);
     suborder.setFromDate(from);
     suborder.setUntilDate(until);
+    suborder.deriveCompleteOrderSign();
     return suborder;
   }
 
@@ -236,12 +238,14 @@ public class SuborderServiceTest {
     parent.setCustomerorder(customerorder);
     parent.setSign("01");
     setField(parent, "id", 1L);
+    parent.deriveCompleteOrderSign();
     var child = new Suborder();
     child.setCustomerorder(customerorder);
     child.setParentorder(parent);
     child.setSign("02");
     child.setHide(true);
     setField(child, "id", 2L);
+    child.deriveCompleteOrderSign();
 
     when(suborderDAO.getSubordersByCustomerorderId(anyLong()))
         .thenReturn(List.of(parent, child));
@@ -256,10 +260,12 @@ public class SuborderServiceTest {
     var parent = new Suborder();
     parent.setCustomerorder(customerorder);
     parent.setSign("01");
+    parent.deriveCompleteOrderSign();
     var child = new Suborder();
     child.setCustomerorder(customerorder);
     child.setParentorder(parent);
     child.setSign("02");
+    child.deriveCompleteOrderSign();
 
     when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
     when(suborderDAO.getSubordersByCustomerorderId(anyLong()))
