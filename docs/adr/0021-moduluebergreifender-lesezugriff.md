@@ -145,6 +145,14 @@ griffen ohnehin nur auf Java-Ebene. Diese Entscheidung hängt am Review.
 > sondern ein eigener Wert des besitzenden Moduls. Für das Kürzel genügt damit der Join auf die
 > Spalte; `SuborderReadModel` liefert sie mit, statt sie zu bauen. Pfad und wirksamer Auftragstyp
 > bleiben Logik der Entity.
+>
+> **Nachtrag 2026-10-06 (#1351, → ADR-0036): Referenzen auf Stammdaten.** Eine Entity darf eine Entity
+> eines anderen Moduls referenzieren (`@ManyToOne`), wenn diese Stammdaten sind — Kunde, Auftrag,
+> Unterauftrag, Mitarbeiterauftrag, Person, Vertrag, Login — und die Importrichtung es erlaubt. Die
+> Referenz ist `LAZY` und nur lesend; ein Join über sie ist ein Join nach Punkt 1. Punkt 2 gilt weiter
+> für alles, was eine Abfrage oder ein Service herausgibt: Records und Service-Signaturen bleiben frei
+> von Entities eines anderen Moduls, und `noEntityCrossesAModuleBoundaryThroughAService` prüft das
+> unverändert. Bewegungsdaten wie Buchungen werden weiter über die id verbunden.
 
 ### Consequences
 

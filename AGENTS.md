@@ -53,6 +53,17 @@ See also README.md
   field, `@Formula` or fetch strategy for another module's needs. The join stays the right choice
   where the reading module needs columns only and bounds the set in its own query (#997); a read
   model must not load per row.
+- **References across a module boundary** (→ ADR-0036): a reference to **master data** of another
+  module — customer, customer order, suborder, employee order, employee, employee contract, login
+  (`SalatUser`) — may be a real `@ManyToOne`, in the import direction `ArchitectureTest` allows.
+  **Transaction data stays an id** (`TimereportBudgetAssignment.timereportId`: a booking is
+  soft-deleted and sensitive). Within a module the reference is the rule, transaction data included.
+  A reference across the boundary is always `LAZY`, read only — no cascade, no setter called on the
+  other module's entity, writing stays with events (ADR-0003) — and navigation stays within master
+  data. Lists fetch it with `join fetch` or `@BatchSize`, never per row. When a module is extracted,
+  master data becomes a read copy in the module and the reference points at that copy. Entities in
+  service signatures across the boundary stay forbidden (ADR-0021, #1244). Several modules still hold
+  `Long` ids from before this rule; their conversion has its own issues (#1367–#1370).
 
 ## Controller and View Guidelines (target stack)
 - Controllers:
@@ -771,20 +782,20 @@ Entities are divided into two categories (→ ADR-0011):
 - Standard entity annotations: `@Entity`, `@Getter @Setter` (Lombok), `@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)`
 - Boolean columns in the database must be `bit(1)` — Hibernate maps `Boolean` to `bit`, not `tinyint`. In Liquibase migrations always use `type: bit(1)`.
 - **A person is referenced by `employee_id`, never by their sign** (#968). The sign changes — a
-  correction, an anonymization — and nothing makes it unique. Where a sign column still stands next
-  to the id because views, ETL definitions or reports join on it, the application writes it from
-  the person and never reads it to resolve anything.
+  correction, an anonymization — and nothing makes it unique. No sign column stands next to the id:
+  views, ETL definitions and reports join on the id as well (#1202).
 - **The same holds for customer orders and suborders** (#1205): a record refers to them by
   `customerorder_id` / `suborder_id` with a foreign key, never by sign — signs are renamed, and a
-  suborder can be moved to another parent. Where the sign column stays as a mirror for readers outside
-  the application, `OrderSignMirrorListener` keeps it in step. A subtree is decided by the path of
+  suborder can be moved to another parent. The budget module keeps no sign column next to the ids
+  (#1321, #1359); the one mirror left is `scope_sign` of the JIRA tables, which
+  `JiraScopeSignMirrorListener` keeps in step. A subtree is decided by the path of
   suborder ids (`OrderPosition`), not by a sign prefix. The exception is a `LIKE` pattern over
   complete order signs (`OrderPricing.suborderSign`, → `OrderPricingLookup`): that is a pattern,
   not a reference.
 - **A cost category is referenced by id** (#1209): rate periods (`EmployeeCost`) and assignments
   (`EmployeeCostAssignment`) point at `CostCategory` by foreign key, and a rename changes that one
-  row. Their name columns are mirrors for views, ETL definitions and reports: written from the
-  category (`setCategory`, `followCategoryName`), never read — the getters answer from the category.
+  row. The name lives on the category alone (#1345); `getName()` and `getEmployeeCostName()` read it
+  from there.
 - **Signs stay changeable** (#1206, → ADR-0034). Saving a renamed order, or a renamed or moved
   suborder, publishes `SignsRenamedEvent` with the old and the new complete sign. Whatever still
   names the order tree by sign listens to it and follows — or adds a notice that the success

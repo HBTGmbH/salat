@@ -49,3 +49,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0033](0033-gleichzeitige-aenderung-wird-zum-fachlichen-befund.md) | Eine gleichzeitige Änderung wird am Service zum fachlichen Befund | Accepted | 2026-10-01 |
 | [0034](0034-auftragskuerzel-bleiben-aenderbar-verweise-ziehen-nach.md) | Auftrags- und Unterauftragskürzel bleiben änderbar, was sie nennt, zieht nach | Accepted | 2026-10-04 |
 | [0035](0035-sonderauftraege-per-konfiguration-ueber-das-kuerzel.md) | Sonderaufträge per Konfiguration über das Kürzel, ihre Kürzel gesperrt | Accepted | 2026-10-04 |
+| [0036](0036-stammdaten-ueber-modulgrenzen-als-referenz.md) | Bezüge über Modulgrenzen: Stammdaten als Referenz, Bewegungsdaten über die id | Accepted | 2026-10-06 |
