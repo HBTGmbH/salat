@@ -78,35 +78,35 @@ class VisibleEmployeeordersTest {
   /** Der Befund aus #1104: beide Eltern haben ihr Flag nie gesetzt. */
   @Test
   void offers_an_order_whose_parents_never_had_their_hide_flag_set() {
-    employeeorder("never-set", suborder(customerorder("co", null), null));
+    employeeorder(suborder(customerorder("never-set", null), null));
 
     assertThat(visibleSigns()).containsExactly("never-set");
   }
 
   @Test
   void offers_an_order_whose_suborder_never_had_its_hide_flag_set() {
-    employeeorder("suborder-null", suborder(customerorder("co", false), null));
+    employeeorder(suborder(customerorder("suborder-null", false), null));
 
     assertThat(visibleSigns()).containsExactly("suborder-null");
   }
 
   @Test
   void offers_an_order_whose_customerorder_never_had_its_hide_flag_set() {
-    employeeorder("customerorder-null", suborder(customerorder("co", null), false));
+    employeeorder(suborder(customerorder("customerorder-null", null), false));
 
     assertThat(visibleSigns()).containsExactly("customerorder-null");
   }
 
   @Test
   void leaves_out_an_order_under_a_hidden_suborder() {
-    employeeorder("hidden-suborder", suborder(customerorder("co", false), true));
+    employeeorder(suborder(customerorder("hidden-suborder", false), true));
 
     assertThat(visibleSigns()).isEmpty();
   }
 
   @Test
   void leaves_out_an_order_under_a_hidden_customerorder() {
-    employeeorder("hidden-customerorder", suborder(customerorder("co", true), false));
+    employeeorder(suborder(customerorder("hidden-customerorder", true), false));
 
     assertThat(visibleSigns()).isEmpty();
   }
@@ -114,19 +114,19 @@ class VisibleEmployeeordersTest {
   /** Mit dem Schalter kommen die verborgenen zurück — das Prädikat entfällt dann ganz. */
   @Test
   void shows_the_hidden_ones_when_asked_for() {
-    employeeorder("never-set", suborder(customerorder("co1", null), null));
-    employeeorder("hidden-suborder", suborder(customerorder("co2", false), true));
+    employeeorder(suborder(customerorder("never-set", null), null));
+    employeeorder(suborder(customerorder("hidden-suborder", false), true));
 
     assertThat(employeeorderDAO
         .getEmployeeordersByFilters(true, null, null, null, null, null, true))
-        .extracting(Employeeorder::getSign)
+        .extracting(VisibleEmployeeordersTest::labelOf)
         .containsExactlyInAnyOrder("never-set", "hidden-suborder");
   }
 
   private List<String> visibleSigns() {
     return employeeorderDAO.getEmployeeordersByFilters(true, null, null, null, null, null, false)
         .stream()
-        .map(Employeeorder::getSign)
+        .map(VisibleEmployeeordersTest::labelOf)
         .toList();
   }
 
@@ -164,11 +164,15 @@ class VisibleEmployeeordersTest {
     return entityManager.persist(suborder);
   }
 
-  private void employeeorder(String sign, Suborder suborder) {
+  /** Each case puts its label into the sign of the customer order. */
+  private static String labelOf(Employeeorder employeeorder) {
+    return employeeorder.getSuborder().getCustomerorder().getSign();
+  }
+
+  private void employeeorder(Suborder suborder) {
     var employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(contract);
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign(sign);
     employeeorder.setFromDate(FROM);
     employeeorder.setDebithours(Duration.ZERO);
     entityManager.persist(employeeorder);

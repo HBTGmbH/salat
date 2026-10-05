@@ -128,7 +128,6 @@ public class TimereportsOfEmployeeorderDayTest {
     var newEmployeeorder = new Employeeorder();
     newEmployeeorder.setSuborder(suborder);
     newEmployeeorder.setEmployeecontract(employeecontract);
-    newEmployeeorder.setSign(suborder.getSign());
     newEmployeeorder.setFromDate(DAY.minusYears(1));
     return entityManager.persist(newEmployeeorder);
   }

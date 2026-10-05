@@ -5687,3 +5687,19 @@ databaseChangeLog:
                 DROP COLUMN scope_sign;
               ALTER TABLE jira_replication_config
                 DROP COLUMN scope_sign;
+
+  - changeSet:
+      id: 151
+      author: kr
+      comment: Spalte sign des Mitarbeiterauftrags entfernen (#1373)
+      # Jeder Mitarbeiterauftrag trug dasselbe Leerzeichen; die Anwendung las die Spalte nie, und keine
+      # Report-, ETL- oder View-Definition liest sie.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employeeorder
+            columnName: sign
+      changes:
+        - dropColumn:
+            tableName: employeeorder
+            columnName: sign

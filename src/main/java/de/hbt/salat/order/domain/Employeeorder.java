@@ -42,11 +42,6 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
     private Employeecontract employeecontract;
 
-    /**
-     * sign of the employee order
-     */
-    private String sign;
-
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)

@@ -328,7 +328,6 @@ class ContractChangeOvertimeTest {
     var employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(employeecontract);
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign(" ");
     employeeorder.setFromDate(from);
     employeeorder.setUntilDate(until);
     employeeorder.setDebithours(Duration.ZERO);

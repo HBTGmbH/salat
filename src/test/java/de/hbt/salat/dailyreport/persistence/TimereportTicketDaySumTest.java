@@ -193,7 +193,6 @@ public class TimereportTicketDaySumTest {
     var employeeorder = new Employeeorder();
     employeeorder.setSuborder(onSuborder);
     employeeorder.setEmployeecontract(contract);
-    employeeorder.setSign(onSuborder.getSign());
     employeeorder.setFromDate(DAY.minusYears(1));
     entityManager.persist(employeeorder);
 

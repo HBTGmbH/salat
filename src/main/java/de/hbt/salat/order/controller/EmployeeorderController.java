@@ -251,9 +251,6 @@ public class EmployeeorderController {
         eo.setSuborder(suborderService.getSuborderById(form.getSuborderId()));
         eo.setFromDate(form.getValidFromTyped());
         eo.setUntilDate(form.getValidUntilTyped());
-        if (eo.getSign() == null) {
-            eo.setSign(" ");
-        }
 
         Duration debitDuration = form.getDebithoursTyped();
         if (debitDuration == null || debitDuration.isZero()) {

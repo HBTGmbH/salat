@@ -494,7 +494,6 @@ class MatrixServiceFillNotWorkedTest {
     var employeeorder = new Employeeorder();
     employeeorder.setSuborder(suborder);
     employeeorder.setEmployeecontract(contract);
-    employeeorder.setSign(sign);
     employeeorder.setFromDate(validFrom);
     return employeeorderRepository.save(employeeorder);
   }

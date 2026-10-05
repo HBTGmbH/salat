@@ -139,7 +139,6 @@ public class EmployeeorderService {
           employeeorder.setFromDate(effectiveValidity.getFrom());
           employeeorder.setUntilDate(effectiveValidity.getUntil());
           employeeorder.setEmployeecontract(employeecontract);
-          employeeorder.setSign(" ");
           employeeorder.setSuborder(suborder);
 
           if (vacationYear) {
@@ -256,7 +255,6 @@ public class EmployeeorderService {
     newOrder.setUntilDate(DateUtils.min(updatingEmployeecontract.getValidUntil(), conflictingOrder.getUntilDate()));
     newOrder.setEmployeecontract(updatingEmployeecontract);
     newOrder.setSuborder(conflictingOrder.getSuborder());
-    newOrder.setSign(conflictingOrder.getSign());
     newOrder.setDebithours(conflictingOrder.getDebithours());
     newOrder.setDebithoursunit(conflictingOrder.getDebithoursunit());
 
@@ -282,7 +280,7 @@ public class EmployeeorderService {
       var allMessages = new ArrayList<ServiceFeedbackMessage>();
       allMessages.add(error(
           EO_CONFLICT_RESOLUTION_GOT_VETO,
-          mergedOrder.getSign()
+          mergedOrder.getSuborder().getCompleteOrderSign()
       ));
       allMessages.addAll(e.getMessages());
       event.veto(allMessages);

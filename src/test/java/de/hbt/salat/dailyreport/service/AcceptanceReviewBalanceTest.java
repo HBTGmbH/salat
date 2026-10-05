@@ -276,7 +276,6 @@ class AcceptanceReviewBalanceTest {
     var employeeorder = new Employeeorder();
     employeeorder.setEmployeecontract(employeecontract);
     employeeorder.setSuborder(suborder);
-    employeeorder.setSign(" ");
     employeeorder.setFromDate(CONTRACT_START);
     employeeorder.setDebithours(Duration.ZERO);
     return employeeorderRepository.save(employeeorder).getId();
