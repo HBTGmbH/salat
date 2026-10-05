@@ -98,8 +98,8 @@ public class Timereport extends AuditedEntity implements Serializable {
      * for all their references rather than one per booking. Deleting a booking removes its references
      * along with it, even though the booking itself is only marked deleted ({@code @SQLDelete}):
      * Hibernate clears a collection before it deletes its owner, and nothing reads a deleted booking.
-     * The mirror below keeps the first one. The hard delete of soft-deleted bookings is a native
-     * statement, which the foreign key's {@code ON DELETE CASCADE} covers.
+     * The hard delete of soft-deleted bookings is a native statement, which the foreign key's
+     * {@code ON DELETE CASCADE} covers.
      */
     @ElementCollection
     @CollectionTable(name = "timereport_ticket_reference",
@@ -116,16 +116,6 @@ public class Timereport extends AuditedEntity implements Serializable {
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private List<String> ticketReferences = new ArrayList<>();
-
-    /**
-     * Mirror of the first reference for the report definitions in the database, which read one
-     * reference per booking (#1326). The application writes it from {@link #ticketReferences} and
-     * never reads it; it goes once the reports read the references themselves.
-     */
-    @Column(name = "ticket_reference", length = TICKET_REFERENCE_MAX_LENGTH)
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.NONE)
-    private String ticketReference;
 
     /** Training on the job (#836); a column with {@code NOT NULL DEFAULT false} since #1246. */
     @Column(nullable = false)
@@ -199,7 +189,6 @@ public class Timereport extends AuditedEntity implements Serializable {
             return;
         }
         this.ticketReferences = new ArrayList<>(values);
-        this.ticketReference = values.isEmpty() ? null : values.getFirst();
     }
 
     public Duration getDuration() {

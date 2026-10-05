@@ -5570,3 +5570,24 @@ databaseChangeLog:
         - dropColumn:
             tableName: order_pricing
             columnName: customerorder_sign
+
+  - changeSet:
+      id: 147
+      author: kr
+      comment: Alte Spalten der Ticket-Referenz entfernen (#1354)
+      # Seit #1326 stehen die Referenzen in timereport_ticket_reference und favorite_ticket_reference.
+      # timereport.ticket_reference spiegelte die erste Referenz fuer Reports, die seither die Tabelle
+      # lesen; favorite.ticket_reference las und schrieb nichts mehr. Ein Release vor diesem startet
+      # danach nicht mehr, es mappt timereport.ticket_reference.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: timereport
+            columnName: ticket_reference
+      changes:
+        - dropColumn:
+            tableName: timereport
+            columnName: ticket_reference
+        - dropColumn:
+            tableName: favorite
+            columnName: ticket_reference

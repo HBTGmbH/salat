@@ -24,20 +24,4 @@ class TimereportServiceTicketReferenceTest {
     assertThat(timereport.getTwin().getTicketReferences()).containsExactly("PROJ-123", "PROJ-130");
   }
 
-  /** The report definitions read one reference per booking from the mirror column. */
-  @Test
-  void the_mirror_holds_the_first_reference() throws Exception {
-    var timereport = new Timereport();
-    timereport.setTicketReferences(List.of("PROJ-123", "PROJ-130"));
-    assertThat(mirrorOf(timereport)).isEqualTo("PROJ-123");
-
-    timereport.setTicketReferences(List.of());
-    assertThat(mirrorOf(timereport)).isNull();
-  }
-
-  private static Object mirrorOf(Timereport timereport) throws Exception {
-    var field = Timereport.class.getDeclaredField("ticketReference");
-    field.setAccessible(true);
-    return field.get(timereport);
-  }
 }
