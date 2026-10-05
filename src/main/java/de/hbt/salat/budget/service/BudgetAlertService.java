@@ -3,6 +3,7 @@ package de.hbt.salat.budget.service;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +11,6 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.service.MailService;
@@ -18,6 +18,7 @@ import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
 import de.hbt.salat.notification.service.NotificationService;
+import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.service.CustomerorderService;
 
 @Slf4j
@@ -51,7 +52,7 @@ public class BudgetAlertService {
 
                 if (utilization >= threshold) {
                     if (budget.getAlertSentAt() == null) {
-                        sendAlert(budget.getId(), budget.getName(), customerorderSignOf(budget),
+                        sendAlert(budget.getId(), budget.getName(), budget.getCustomerorderId(),
                             utilization, threshold, today);
                         orderBudgetService.updateAlertSentAt(budget.getId(), today);
                         log.info("Budget alert sent for budget {} ({}): {}% >= {}%",
@@ -73,29 +74,33 @@ public class BudgetAlertService {
     /**
      * The sign the plan's order has today, read by the plan's id (#1212).
      */
-    private String customerorderSignOf(OrderBudget budget) {
-        var customerorderId = budget.getCustomerorderId();
+    private String customerorderSignOf(long customerorderId) {
         return customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId);
     }
 
-    private void sendAlert(long budgetId, String budgetName, String coSign,
+    /**
+     * The order is read by the id of the plan, its responsibles come as values from the module
+     * {@code order} — no entity of another module crosses into budget (#1340, ADR-0021). The text
+     * still names the order by the sign it has today.
+     */
+    private void sendAlert(long budgetId, String budgetName, long customerorderId,
                            double utilization, int threshold, LocalDate today) {
-        var co = customerorderService.getCustomerorderBySign(coSign);
-        var responsibleEmployees = co.getResponsibleHbt();
-        if (responsibleEmployees == null || responsibleEmployees.isEmpty()) {
+        var coSign = customerorderSignOf(customerorderId);
+        var responsibleEmployees = customerorderService.getResponsiblesByCustomerorderId(customerorderId);
+        if (responsibleEmployees.isEmpty()) {
             log.warn("No responsible employees for customerorder {} — skipping alert for budget {}", coSign, budgetId);
             return;
         }
 
         var recipientUserIds = responsibleEmployees.stream()
-            .filter(e -> e.getSalatUser() != null)
-            .map(e -> e.getSalatUser().getId())
+            .map(CustomerorderResponsible::salatUserId)
+            .filter(Objects::nonNull)
             .toList();
 
         // evaluate=true because the link is meant to show the evaluation, not just to preselect the
         // order — merely opening the page computes nothing (#1009). By id: the mail outlives a rename
         // of the order, the sign in its text is a snapshot (#1334).
-        var controllingUrl = "/budget/controlling?fBudgetCustomerOrderId=" + co.getId() + "&evaluate=true";
+        var controllingUrl = "/budget/controlling?fBudgetCustomerOrderId=" + customerorderId + "&evaluate=true";
         var utilizationStr = String.format("%.1f", utilization);
         var thresholdStr = String.valueOf(threshold);
 
@@ -112,8 +117,8 @@ public class BudgetAlertService {
         var baseUrl = salatProperties.getUrl() != null ? salatProperties.getUrl() : "";
         var absoluteUrl = baseUrl + controllingUrl;
 
-        for (var employee : responsibleEmployees) {
-            var emailAddress = employeePreferenceService.getNotificationEmailFor(employee);
+        for (var responsible : responsibleEmployees) {
+            var emailAddress = employeePreferenceService.getNotificationEmailForEmployeeId(responsible.employeeId());
             if (emailAddress == null || emailAddress.isBlank()) continue;
             try {
                 var subject = MessageFormat.format(
@@ -123,9 +128,9 @@ public class BudgetAlertService {
                     budgetName, coSign, utilization, threshold, absoluteUrl);
                 mailService.sendEmail(subject, body,
                     new MailContact("Salat Budget", alertEmailFrom),
-                    new MailContact(employee.getName(), emailAddress));
+                    new MailContact(responsible.name(), emailAddress));
             } catch (Exception e) {
-                log.warn("Failed to send alert email to {}", employee.getName(), e);
+                log.warn("Failed to send alert email to {}", responsible.name(), e);
             }
         }
     }

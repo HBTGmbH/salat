@@ -29,6 +29,8 @@ import de.hbt.salat.order.persistence.SuborderRepository;
 @FixedClock("2026-06-25T10:15:30")
 public class SuborderServiceTest {
 
+  private static final long CUSTOMERORDER_ID = 1L;
+
   private SuborderDAO suborderDAO;
   private CustomerorderService customerorderService;
   private SuborderService suborderService;
@@ -54,24 +56,33 @@ public class SuborderServiceTest {
   public void should_accept_a_subtree_pattern_covering_at_least_one_suborder() {
     givenOrderWithNestedSuborder();
 
-    assertThat(suborderService.existsSuborderMatching("co", "co/01/")).isTrue();
-    assertThat(suborderService.existsSuborderMatching("co", "co/%/02/")).isTrue();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "co/01/")).isTrue();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "co/%/02/")).isTrue();
   }
 
   @Test
   public void should_reject_a_pattern_covering_no_suborder() {
     givenOrderWithNestedSuborder();
 
-    assertThat(suborderService.existsSuborderMatching("co", "co/07/")).isFalse();
-    assertThat(suborderService.existsSuborderMatching("co", "02")).isFalse();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "co/07/")).isFalse();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "02")).isFalse();
   }
 
   @Test
   public void should_accept_an_empty_pattern_as_covering_the_whole_order() {
     givenOrderWithNestedSuborder();
 
-    assertThat(suborderService.existsSuborderMatching("co", null)).isTrue();
-    assertThat(suborderService.existsSuborderMatching("co", "")).isTrue();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, null)).isTrue();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "")).isTrue();
+  }
+
+  /** A hidden suborder is not on offer, so a pattern that only it would match covers nothing. */
+  @Test
+  public void should_reject_a_pattern_covering_only_a_hidden_suborder() {
+    givenOrderWithHiddenChild();
+
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "co/01/")).isTrue();
+    assertThat(suborderService.existsSuborderMatching(CUSTOMERORDER_ID, "co/01/02/")).isFalse();
   }
 
   /**
@@ -254,7 +265,7 @@ public class SuborderServiceTest {
   private void givenOrderWithNestedSuborder() {
     // Customerorder has no id setter, and getCompleteOrderSign() only needs the sign.
     var customerorder = mock(Customerorder.class);
-    when(customerorder.getId()).thenReturn(1L);
+    when(customerorder.getId()).thenReturn(CUSTOMERORDER_ID);
     when(customerorder.getSign()).thenReturn("co");
 
     var parent = new Suborder();
@@ -267,8 +278,7 @@ public class SuborderServiceTest {
     child.setSign("02");
     child.deriveCompleteOrderSign();
 
-    when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
-    when(suborderDAO.getSubordersByCustomerorderId(anyLong()))
+    when(suborderDAO.getSubordersByCustomerorderId(CUSTOMERORDER_ID))
         .thenReturn(List.of(parent, child));
   }
 

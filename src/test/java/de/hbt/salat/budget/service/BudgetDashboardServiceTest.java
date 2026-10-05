@@ -55,7 +55,8 @@ import de.hbt.salat.order.service.SuborderService;
 
 /**
  * The dashboard filters by customer segment and by order responsible (#920). Both filters are
- * resolved to customer order signs and handed to the query; two set filters intersect. What the
+ * resolved to the ids of the customer orders (#1340) and handed to the query; two set filters
+ * intersect. What the
  * user is allowed to see is decided further down, in {@code OrderBudgetService}.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -63,6 +64,9 @@ public class BudgetDashboardServiceTest {
 
   private static final long SEGMENT_ID = 7L;
   private static final long RESPONSIBLE_ID = 42L;
+  private static final long ORDER_A = 1L;
+  private static final long ORDER_B = 2L;
+  private static final long ORDER_C = 3L;
 
   private OrderBudgetService orderBudgetService;
   private BudgetControllingService budgetControllingService;
@@ -85,36 +89,36 @@ public class BudgetDashboardServiceTest {
     service.computeDashboard(null, null);
 
     assertThat(capturedRestriction()).isNull();
-    verify(customerorderService, never()).getSignsByCustomerSegmentId(SEGMENT_ID);
-    verify(customerorderService, never()).getSignsByResponsibleEmployeeId(RESPONSIBLE_ID);
+    verify(customerorderService, never()).getIdsByCustomerSegmentId(SEGMENT_ID);
+    verify(customerorderService, never()).getIdsByResponsibleHbtEmployeeId(RESPONSIBLE_ID);
   }
 
   @Test
   public void the_segment_filter_restricts_to_the_orders_of_that_segment() {
-    when(customerorderService.getSignsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of("A", "B"));
+    when(customerorderService.getIdsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of(ORDER_A, ORDER_B));
 
     service.computeDashboard(SEGMENT_ID, null);
 
-    assertThat(capturedRestriction()).containsExactlyInAnyOrder("A", "B");
+    assertThat(capturedRestriction()).containsExactlyInAnyOrder(ORDER_A, ORDER_B);
   }
 
   @Test
   public void the_responsible_filter_restricts_to_the_orders_of_that_employee() {
-    when(customerorderService.getSignsByResponsibleEmployeeId(RESPONSIBLE_ID)).thenReturn(List.of("B", "C"));
+    when(customerorderService.getIdsByResponsibleHbtEmployeeId(RESPONSIBLE_ID)).thenReturn(List.of(ORDER_B, ORDER_C));
 
     service.computeDashboard(null, RESPONSIBLE_ID);
 
-    assertThat(capturedRestriction()).containsExactlyInAnyOrder("B", "C");
+    assertThat(capturedRestriction()).containsExactlyInAnyOrder(ORDER_B, ORDER_C);
   }
 
   @Test
   public void both_filters_together_keep_only_what_they_agree_on() {
-    when(customerorderService.getSignsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of("A", "B"));
-    when(customerorderService.getSignsByResponsibleEmployeeId(RESPONSIBLE_ID)).thenReturn(List.of("B", "C"));
+    when(customerorderService.getIdsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of(ORDER_A, ORDER_B));
+    when(customerorderService.getIdsByResponsibleHbtEmployeeId(RESPONSIBLE_ID)).thenReturn(List.of(ORDER_B, ORDER_C));
 
     service.computeDashboard(SEGMENT_ID, RESPONSIBLE_ID);
 
-    assertThat(capturedRestriction()).containsExactly("B");
+    assertThat(capturedRestriction()).containsExactly(ORDER_B);
   }
 
   /**
@@ -123,7 +127,7 @@ public class BudgetDashboardServiceTest {
    */
   @Test
   public void a_filter_matching_no_order_yields_an_empty_restriction_not_an_absent_one() {
-    when(customerorderService.getSignsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of());
+    when(customerorderService.getIdsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of());
 
     service.computeDashboard(SEGMENT_ID, null);
 
@@ -132,8 +136,8 @@ public class BudgetDashboardServiceTest {
 
   @Test
   public void filters_that_have_no_order_in_common_yield_an_empty_restriction() {
-    when(customerorderService.getSignsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of("A"));
-    when(customerorderService.getSignsByResponsibleEmployeeId(RESPONSIBLE_ID)).thenReturn(List.of("C"));
+    when(customerorderService.getIdsByCustomerSegmentId(SEGMENT_ID)).thenReturn(List.of(ORDER_A));
+    when(customerorderService.getIdsByResponsibleHbtEmployeeId(RESPONSIBLE_ID)).thenReturn(List.of(ORDER_C));
 
     service.computeDashboard(SEGMENT_ID, RESPONSIBLE_ID);
 
@@ -141,7 +145,7 @@ public class BudgetDashboardServiceTest {
   }
 
   @SuppressWarnings("unchecked")
-  private Collection<String> capturedRestriction() {
+  private Collection<Long> capturedRestriction() {
     var captor = ArgumentCaptor.forClass(Collection.class);
     verify(orderBudgetService).getAllActiveVisible(captor.capture());
     return captor.getValue();

@@ -3,16 +3,22 @@ package de.hbt.salat.employee.preferences;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.employee.preferences.EmployeePreferences.KEY_GRAVATAR_EMAIL;
+import static de.hbt.salat.employee.preferences.EmployeePreferences.KEY_NOTIFICATION_EMAIL;
 import static de.hbt.salat.employee.preferences.EmployeePreferences.MODULE_KEY;
 
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
+import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.persistence.EmployeeRepository;
 import de.hbt.salat.settings.service.UserPreferenceService;
 
 /**
@@ -22,17 +28,23 @@ import de.hbt.salat.settings.service.UserPreferenceService;
 @ExtendWith(MockitoExtension.class)
 class EmployeePreferenceServiceTest {
 
+  private static final long EMPLOYEE_ID = 3L;
+  private static final long SALAT_USER_ID = 9L;
+
   @Mock
   private UserPreferenceService userPreferenceService;
 
   @Mock
   private AuthorizedEmployee authorizedEmployee;
 
+  @Mock
+  private EmployeeRepository employeeRepository;
+
   private EmployeePreferenceService service;
 
   @BeforeEach
   void setUp() {
-    service = new EmployeePreferenceService(userPreferenceService, authorizedEmployee);
+    service = new EmployeePreferenceService(userPreferenceService, authorizedEmployee, employeeRepository);
     lenient().when(authorizedEmployee.getSign()).thenReturn("xyz");
   }
 
@@ -86,6 +98,45 @@ class EmployeePreferenceServiceTest {
     stored(Map.of());
 
     assertThat(service.getGravatarEmailForCurrentUser()).isNull();
+  }
+
+  /**
+   * Ein anderes Modul kennt die Person nur ueber die id (#1340): hinterlegte Adresse vor der
+   * Standardadresse aus dem Kuerzel, wie bei der Abfrage ueber den Mitarbeitenden.
+   */
+  @Test
+  void the_notification_address_by_id_prefers_the_stored_one() {
+    var employee = employeeWithLogin("abc");
+    when(employeeRepository.findById(EMPLOYEE_ID)).thenReturn(Optional.of(employee));
+    when(userPreferenceService.getModuleSettings(SALAT_USER_ID, MODULE_KEY))
+        .thenReturn(Map.of(KEY_NOTIFICATION_EMAIL, "notify@example.com"));
+
+    assertThat(service.getNotificationEmailForEmployeeId(EMPLOYEE_ID)).isEqualTo("notify@example.com");
+  }
+
+  @Test
+  void the_notification_address_by_id_falls_back_to_the_default_address() {
+    var employee = employeeWithLogin("abc");
+    when(employeeRepository.findById(EMPLOYEE_ID)).thenReturn(Optional.of(employee));
+    when(userPreferenceService.getModuleSettings(SALAT_USER_ID, MODULE_KEY)).thenReturn(Map.of());
+
+    assertThat(service.getNotificationEmailForEmployeeId(EMPLOYEE_ID)).isEqualTo("abc@hbt.de");
+  }
+
+  @Test
+  void an_unknown_id_has_no_notification_address() {
+    when(employeeRepository.findById(EMPLOYEE_ID)).thenReturn(Optional.empty());
+
+    assertThat(service.getNotificationEmailForEmployeeId(EMPLOYEE_ID)).isNull();
+  }
+
+  private static Employee employeeWithLogin(String sign) {
+    var employee = new Employee();
+    employee.setSign(sign);
+    var salatUser = new SalatUser();
+    setField(salatUser, "id", SALAT_USER_ID);
+    employee.setSalatUser(salatUser);
+    return employee;
   }
 
   private void stored(Map<String, Object> settings) {

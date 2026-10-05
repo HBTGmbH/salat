@@ -309,7 +309,7 @@ public class OrderPricingService {
      * the order-wide one, so require that it covers at least one suborder of the chosen order.
      */
     private void checkSuborderPatternMatches(Customerorder customerorder, String suborderSign) {
-        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorder.getSign(), suborderSign)) {
+        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorder.getId(), suborderSign)) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
     }

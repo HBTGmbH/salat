@@ -65,13 +65,6 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
    */
   @Query("""
       select s from Suborder s join fetch s.customerorder c
-      where c.sign in :customerorderSigns
-      """)
-  List<Suborder> findAllByCustomerorderSigns(Collection<String> customerorderSigns);
-
-  /** Like {@link #findAllByCustomerorderSigns}, by the ids of the orders (#1205). */
-  @Query("""
-      select s from Suborder s join fetch s.customerorder c
       where c.id in :customerorderIds
       """)
   List<Suborder> findAllByCustomerorderIds(Collection<Long> customerorderIds);
