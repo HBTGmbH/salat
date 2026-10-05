@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.jira.domain.JiraWorklogSync;
+import de.hbt.salat.order.domain.Customerorder;
 
 /**
- * What SALAT has written to JIRA, found by the scope that wrote it — order and suborder by id
- * (#1323); a {@code null} suborder is the whole order and compared as such.
+ * What SALAT has written to JIRA, found by the scope that wrote it — order and suborder, compared
+ * by id (#1323); a {@code null} suborder is the whole order and compared as such.
  */
 @Repository
 public interface JiraWorklogSyncRepository extends JpaRepository<JiraWorklogSync, Long> {
@@ -24,44 +25,25 @@ public interface JiraWorklogSyncRepository extends JpaRepository<JiraWorklogSync
    */
   @Query("""
       select w from JiraWorklogSync w
-      where w.customerorderId = :customerorderId
-        and (w.suborderId = :suborderId or (w.suborderId is null and :suborderId is null))
+      where w.customerorder.id = :customerorderId
+        and (w.suborder.id = :suborderId or (w.suborder is null and :suborderId is null))
         and w.workDate >= :from
       """)
   List<JiraWorklogSync> findInScopeFrom(long customerorderId, Long suborderId, LocalDate from);
 
-  /** The suborders of this order that carry worklogs of their own (#1323). */
-  @Query("""
-      select distinct w.suborderId from JiraWorklogSync w
-      where w.customerorderId = :customerorderId and w.suborderId is not null
-      """)
-  List<Long> findSuborderIdsOfCustomerorder(long customerorderId);
-
-  /** Those of these suborders that carry worklogs of their own (#1323). */
-  @Query("select distinct w.suborderId from JiraWorklogSync w where w.suborderId in :suborderIds")
-  List<Long> findSuborderIdsIn(Collection<Long> suborderIds);
-
-  /** Keeps the sign column of the order-wide rows in step with the order (#1323). */
+  /** Takes the rows of a moved suborder branch along, like {@code JiraTicketRepository}. */
   @Modifying
   @Query("""
-      update JiraWorklogSync w set w.scopeSign = :sign
-      where w.customerorderId = :customerorderId and w.suborderId is null and w.scopeSign <> :sign
+      update JiraWorklogSync w set w.customerorder = :customerorder
+      where w.suborder.id in :suborderIds and w.customerorder <> :customerorder
       """)
-  int mirrorOrderWide(long customerorderId, String sign);
-
-  /** Same for the rows of one suborder — including the order, should it have been moved there. */
-  @Modifying
-  @Query("""
-      update JiraWorklogSync w set w.customerorderId = :customerorderId, w.scopeSign = :sign
-      where w.suborderId = :suborderId and (w.scopeSign <> :sign or w.customerorderId <> :customerorderId)
-      """)
-  int mirrorSuborder(long suborderId, long customerorderId, String sign);
+  int moveBranchToCustomerorder(Collection<Long> suborderIds, Customerorder customerorder);
 
   @Modifying
-  @Query("delete from JiraWorklogSync w where w.customerorderId = :customerorderId")
+  @Query("delete from JiraWorklogSync w where w.customerorder.id = :customerorderId")
   int deleteByCustomerorderId(long customerorderId);
 
   @Modifying
-  @Query("delete from JiraWorklogSync w where w.suborderId in :suborderIds")
+  @Query("delete from JiraWorklogSync w where w.suborder.id in :suborderIds")
   int deleteBySuborderIdIn(Collection<Long> suborderIds);
 }

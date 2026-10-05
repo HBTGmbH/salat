@@ -17,12 +17,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
+import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 /**
  * The ticket search behind the suggestions of the booking form (#982): scoped to the branch that is
  * being booked on (#1025), matching key and title alike, most recently updated first. Every scope is
- * the pair of order and suborder ids (#1323), a {@code null} suborder the whole order.
+ * the pair of order and suborder (#1323, as references since #1368), a {@code null} suborder the
+ * whole order.
  */
 @DataJpaTest
 @Import(AuthorizedUserAuditorAware.class)
@@ -30,11 +34,14 @@ import de.hbt.salat.jira.domain.JiraTicket;
 class JiraTicketRepositoryTest {
 
   /** Order-wide, one branch, and the sibling branch that shares the suborder sign of the first. */
-  private static final long ALPHA = 1L;
-  private static final long BETA = 2L;
-  private static final long A = 10L;
-  private static final long A_01 = 11L;
-  private static final long B_01 = 21L;
+  private Customerorder alphaOrder;
+  private Customerorder betaOrder;
+  private Suborder a01;
+  private long ALPHA;
+  private long BETA;
+  private long A;
+  private long A_01;
+  private long B_01;
 
   @Autowired
   private JiraTicketRepository jiraTicketRepository;
@@ -50,10 +57,23 @@ class JiraTicketRepositoryTest {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.getLoginSign()).thenReturn("test");
 
-    save(ALPHA, null, "ALPHA", 1L, "ALPHA-1", "Login schlägt fehl", LocalDateTime.parse("2026-01-01T10:00"));
-    save(ALPHA, A_01, "ALPHA/A/01", 2L, "ALPHA-2", "Bericht exportieren", LocalDateTime.parse("2026-03-01T10:00"));
-    save(ALPHA, B_01, "ALPHA/B/01", 3L, "ALPHA-3", "Login aus dem Nachbarast", LocalDateTime.parse("2026-04-01T10:00"));
-    save(BETA, null, "BETA", 4L, "BETA-1", "Login schlägt fehl", LocalDateTime.parse("2026-05-01T10:00"));
+    var tree = new OrderTree(entityManager);
+    alphaOrder = tree.customerorder("ALPHA");
+    betaOrder = tree.customerorder("BETA");
+    var a = tree.suborder(alphaOrder, null, "A");
+    a01 = tree.suborder(alphaOrder, a, "01");
+    var b = tree.suborder(alphaOrder, null, "B");
+    var b01 = tree.suborder(alphaOrder, b, "01");
+    ALPHA = alphaOrder.getId();
+    BETA = betaOrder.getId();
+    A = a.getId();
+    A_01 = a01.getId();
+    B_01 = b01.getId();
+
+    save(alphaOrder, null, 1L, "ALPHA-1", "Login schlägt fehl", LocalDateTime.parse("2026-01-01T10:00"));
+    save(alphaOrder, a01, 2L, "ALPHA-2", "Bericht exportieren", LocalDateTime.parse("2026-03-01T10:00"));
+    save(alphaOrder, b01, 3L, "ALPHA-3", "Login aus dem Nachbarast", LocalDateTime.parse("2026-04-01T10:00"));
+    save(betaOrder, null, 4L, "BETA-1", "Login schlägt fehl", LocalDateTime.parse("2026-05-01T10:00"));
   }
 
   @Test
@@ -115,31 +135,43 @@ class JiraTicketRepositoryTest {
         .extracting(JiraTicket::getKey).containsExactlyInAnyOrder("ALPHA-1", "ALPHA-2", "BETA-1");
   }
 
+  /**
+   * The scope is the reference, not a sign (#1368, #1372): renaming order and suborder leaves every
+   * ticket where it was.
+   */
   @Test
-  void a_renamed_order_renames_the_sign_of_its_order_wide_tickets() {
-    jiraTicketRepository.mirrorOrderWide(ALPHA, "ALPHA-NEU");
+  void a_renamed_order_and_suborder_keep_their_tickets() {
+    alphaOrder.setSign("ALPHA-NEU");
+    a01.setSign("02");
+    entityManager.flush();
     entityManager.clear();
 
-    assertThat(jiraTicketRepository.findInScope(ALPHA, null)).extracting(JiraTicket::getScopeSign)
-        .containsExactly("ALPHA-NEU");
-    assertThat(jiraTicketRepository.findInScope(ALPHA, A_01)).extracting(JiraTicket::getScopeSign)
-        .containsExactly("ALPHA/A/01");
+    assertThat(jiraTicketRepository.findInScope(ALPHA, null)).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-1");
+    assertThat(jiraTicketRepository.findInScope(ALPHA, A_01)).singleElement()
+        .satisfies(ticket -> {
+          assertThat(ticket.getKey()).isEqualTo("ALPHA-2");
+          assertThat(ticket.getCustomerorder().getSign()).isEqualTo("ALPHA-NEU");
+          assertThat(ticket.getSuborder().getSign()).isEqualTo("02");
+        });
   }
 
   @Test
   void a_suborder_moved_to_another_order_takes_its_tickets_along() {
-    jiraTicketRepository.mirrorSuborder(A_01, BETA, "BETA/A/01");
+    var moved = jiraTicketRepository.moveBranchToCustomerorder(List.of(A, A_01), betaOrder);
     entityManager.clear();
 
-    assertThat(jiraTicketRepository.findInScope(BETA, A_01)).singleElement()
-        .satisfies(ticket -> assertThat(ticket.getScopeSign()).isEqualTo("BETA/A/01"));
+    assertThat(moved).isEqualTo(1);
+    assertThat(jiraTicketRepository.findInScope(BETA, A_01)).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-2");
     assertThat(jiraTicketRepository.findInScope(ALPHA, A_01)).isEmpty();
+    assertThat(jiraTicketRepository.findInScope(ALPHA, null)).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-1");
   }
 
   @Test
-  void the_suborders_that_carry_tickets_are_found_per_order_and_per_branch() {
-    assertThat(jiraTicketRepository.findSuborderIdsOfCustomerorder(ALPHA)).containsExactlyInAnyOrder(A_01, B_01);
-    assertThat(jiraTicketRepository.findSuborderIdsIn(List.of(A, A_01))).containsExactly(A_01);
+  void a_branch_already_on_its_order_is_not_rewritten() {
+    assertThat(jiraTicketRepository.moveBranchToCustomerorder(List.of(A, A_01), alphaOrder)).isZero();
   }
 
   @Test
@@ -157,12 +189,11 @@ class JiraTicketRepositoryTest {
     return jiraTicketRepository.search(ALPHA, List.of(A, A_01), term, PageRequest.of(0, 20));
   }
 
-  private void save(long customerorderId, Long suborderId, String scopeSign, long jiraId, String key,
-                    String summary, LocalDateTime updated) {
+  private void save(Customerorder customerorder, Suborder suborder, long jiraId, String key, String summary,
+                    LocalDateTime updated) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderId(customerorderId);
-    ticket.setSuborderId(suborderId);
-    ticket.setScopeSign(scopeSign);
+    ticket.setCustomerorder(customerorder);
+    ticket.setSuborder(suborder);
     ticket.setJiraId(jiraId);
     ticket.setKey(key);
     ticket.setSummary(summary);

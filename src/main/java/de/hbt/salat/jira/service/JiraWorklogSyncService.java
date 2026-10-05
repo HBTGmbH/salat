@@ -79,7 +79,7 @@ public class JiraWorklogSyncService {
       return;
     }
 
-    // The scope as the order tree names it now (#1323): the sign of the rows written, and the log.
+    // The scope as the order tree names it now (#1323), for the log.
     var scopeSign = scopes.signOf(cfg.getCustomerorderId(), cfg.getSuborderId());
     var suborderIds = scopes.suborderIdsOf(cfg.getCustomerorderId(), cfg.getSuborderId());
     if (suborderIds.isEmpty()) {
@@ -97,7 +97,7 @@ public class JiraWorklogSyncService {
         cfg.getName(), scopeSign, from, until, wanted.size(), stored.size());
 
     var outcome = new Outcome();
-    wanted.forEach((key, minutes) -> writeOne(cfg, scopeSign, key, minutes, stored.get(key), outcome));
+    wanted.forEach((key, minutes) -> writeOne(cfg, key, minutes, stored.get(key), outcome));
     var unwanted = new LinkedHashMap<>(stored);
     unwanted.keySet().removeAll(wanted.keySet());
     var replicated = replicatedKeys(cfg, unwanted.keySet());
@@ -214,8 +214,8 @@ public class JiraWorklogSyncService {
    * failure is logged and the run carries on with the next one — the remembered row stays as it
    * was, so the next run tries again.
    */
-  private void writeOne(JiraReplicationConfig cfg, String scopeSign, WorklogKey key, long minutes,
-                        JiraWorklogSync stored, Outcome outcome) {
+  private void writeOne(JiraReplicationConfig cfg, WorklogKey key, long minutes, JiraWorklogSync stored,
+                        Outcome outcome) {
     if (stored != null && stored.getMinutes() == minutes) {
       outcome.unchanged++;
       return;
@@ -225,7 +225,7 @@ public class JiraWorklogSyncService {
     var entry = new JiraWorklogEntry(key.workDate(), Math.toIntExact(minutes));
     try {
       if (stored == null) {
-        remember(cfg, scopeSign, key, client.create(target, entry), minutes);
+        remember(cfg, key, client.create(target, entry), minutes);
         outcome.created++;
         return;
       }
@@ -274,12 +274,10 @@ public class JiraWorklogSyncService {
     }
   }
 
-  private void remember(JiraReplicationConfig cfg, String scopeSign, WorklogKey key, String worklogId,
-                        long minutes) {
+  private void remember(JiraReplicationConfig cfg, WorklogKey key, String worklogId, long minutes) {
     var row = new JiraWorklogSync();
-    row.setCustomerorderId(cfg.getCustomerorderId());
-    row.setSuborderId(cfg.getSuborderId());
-    row.setScopeSign(scopeSign);
+    row.setCustomerorder(cfg.getCustomerorder());
+    row.setSuborder(cfg.getSuborder());
     row.setIssueKey(key.issueKey());
     row.setWorkDate(key.workDate());
     row.setWorklogId(worklogId);

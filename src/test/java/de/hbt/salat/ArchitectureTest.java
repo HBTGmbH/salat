@@ -217,8 +217,8 @@ public class ArchitectureTest {
    *
    * <p>The edge is free of cycles: the transitive hull of order is {common, auth, customer,
    * employee, settings, notification}, none of which imports jira — {@link #beFreeOfCycles} covers
-   * that for good. jira still hangs its tickets off signs rather than off foreign ids, so the
-   * storage form stays independent of the order tables.
+   * that for good. Replications, tickets and worklogs refer to order and suborder as references to
+   * master data (#1368, ADR-0036), which this edge allows.
    *
    * <p>{@code dailyreport} is deliberately <em>not</em> in this list, although the worklog sync
    * (#1007) needs the booked minutes. That is what the command event in {@code de.hbt.salat.jira.command}

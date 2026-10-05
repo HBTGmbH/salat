@@ -6,6 +6,7 @@ import static de.hbt.salat.jira.domain.JiraApiFlavor.SERVER;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.SCHEDULED;
 
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -19,6 +20,7 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
@@ -48,6 +50,9 @@ class JiraReplicationRunCleanupServiceTest {
 
   @Autowired
   private SalatProperties salatProperties;
+
+  @Autowired
+  private EntityManager entityManager;
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
@@ -104,8 +109,7 @@ class JiraReplicationRunCleanupServiceTest {
   private JiraReplicationConfig replication(String name) {
     var config = new JiraReplicationConfig();
     config.setName(name);
-    config.setCustomerorderId(1L);
-    config.setScopeSign("SCOPE");
+    config.setCustomerorder(new OrderTree(entityManager).customerorder("SCOPE"));
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
     config.setUsername("user");

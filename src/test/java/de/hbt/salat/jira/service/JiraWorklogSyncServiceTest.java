@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.jira.OrderTree.customerorderWithId;
 import static de.hbt.salat.jira.domain.JiraApiFlavor.SERVER;
 
 import java.time.LocalDate;
@@ -36,6 +37,7 @@ import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraWorklogSync;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
+import de.hbt.salat.order.domain.Customerorder;
 
 /**
  * Writing the booked hours back to JIRA (#1007): one worklog per day and ticket, overwritten when
@@ -51,6 +53,7 @@ class JiraWorklogSyncServiceTest {
   private static final LocalDate DAY = LocalDate.of(2026, 6, 10);
   private static final String SCOPE = "ALPHA";
   private static final long CUSTOMERORDER_ID = 7L;
+  private static final Customerorder CUSTOMERORDER = customerorderWithId(CUSTOMERORDER_ID);
 
   @InjectMocks
   private JiraWorklogSyncService classUnderTest;
@@ -131,10 +134,9 @@ class JiraWorklogSyncServiceTest {
     assertThat(saved.getWorkDate()).isEqualTo(DAY);
     assertThat(saved.getWorklogId()).isEqualTo("10101");
     assertThat(saved.getMinutes()).isEqualTo(90);
-    // the scope by id, the sign as a mirror of it (#1323)
-    assertThat(saved.getCustomerorderId()).isEqualTo(CUSTOMERORDER_ID);
-    assertThat(saved.getSuborderId()).isNull();
-    assertThat(saved.getScopeSign()).isEqualTo(SCOPE);
+    // the scope of the config, taken over as references (#1323, #1368)
+    assertThat(saved.getCustomerorder()).isSameAs(CUSTOMERORDER);
+    assertThat(saved.getSuborder()).isNull();
   }
 
   @Test
@@ -435,8 +437,7 @@ class JiraWorklogSyncServiceTest {
   private JiraReplicationConfig config() {
     var config = new JiraReplicationConfig();
     config.setName("Alpha");
-    config.setCustomerorderId(CUSTOMERORDER_ID);
-    config.setScopeSign(SCOPE);
+    config.setCustomerorder(CUSTOMERORDER);
     config.setBaseUrl("https://jira.example.com");
     config.setApiFlavor(SERVER);
     config.setUsername("jira-user");
@@ -481,7 +482,7 @@ class JiraWorklogSyncServiceTest {
     var tickets = new ArrayList<JiraTicket>();
     for (String key : keys) {
       var ticket = new JiraTicket();
-      ticket.setScopeSign(SCOPE);
+      ticket.setCustomerorder(CUSTOMERORDER);
       ticket.setKey(key);
       tickets.add(ticket);
     }
@@ -491,7 +492,7 @@ class JiraWorklogSyncServiceTest {
   private JiraWorklogSync givenStoredWorklog(String issueKey, LocalDate workDate, String worklogId,
                                              int minutes) {
     var row = new JiraWorklogSync();
-    row.setScopeSign(SCOPE);
+    row.setCustomerorder(CUSTOMERORDER);
     row.setIssueKey(issueKey);
     row.setWorkDate(workDate);
     row.setWorklogId(worklogId);

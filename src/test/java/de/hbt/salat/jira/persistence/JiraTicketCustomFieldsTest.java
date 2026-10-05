@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
+import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 
@@ -83,8 +84,7 @@ class JiraTicketCustomFieldsTest {
 
   private Long save(Consumer<JiraTicket> fill) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderId(1L);
-    ticket.setScopeSign("ALPHA");
+    ticket.setCustomerorder(new OrderTree(entityManager).customerorder("ALPHA"));
     ticket.setJiraId(1L);
     ticket.setKey("ALPHA-1");
     ticket.setFieldConfigHash("0123456789abcdef");

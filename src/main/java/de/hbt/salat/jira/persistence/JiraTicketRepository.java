@@ -9,34 +9,35 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.order.domain.Customerorder;
 
 /**
  * The replicated tickets, found by the scope they were fetched under — the pair of customer order
  * and suborder ids (#1323). A {@code null} suborder means the whole order and is compared as such:
- * {@code t.suborderId = :suborderId} alone would never match it.
+ * {@code t.suborder.id = :suborderId} alone would never match it.
  */
 @Repository
 public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
 
   @Query("""
       select t from JiraTicket t
-      where t.customerorderId = :customerorderId
-        and (t.suborderId = :suborderId or (t.suborderId is null and :suborderId is null))
+      where t.customerorder.id = :customerorderId
+        and (t.suborder.id = :suborderId or (t.suborder is null and :suborderId is null))
         and t.jiraId = :jiraId
       """)
   Optional<JiraTicket> findInScopeByJiraId(long customerorderId, Long suborderId, long jiraId);
 
   @Query("""
       select t from JiraTicket t
-      where t.customerorderId = :customerorderId
-        and (t.suborderId = :suborderId or (t.suborderId is null and :suborderId is null))
+      where t.customerorder.id = :customerorderId
+        and (t.suborder.id = :suborderId or (t.suborder is null and :suborderId is null))
       """)
   List<JiraTicket> findInScope(long customerorderId, Long suborderId);
 
   @Query("""
       select t from JiraTicket t
-      where t.customerorderId = :customerorderId
-        and (t.suborderId = :suborderId or (t.suborderId is null and :suborderId is null))
+      where t.customerorder.id = :customerorderId
+        and (t.suborder.id = :suborderId or (t.suborder is null and :suborderId is null))
         and t.key in :keys
       """)
   List<JiraTicket> findInScopeByKeyIn(long customerorderId, Long suborderId, Collection<String> keys);
@@ -48,8 +49,8 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
    */
   @Query("""
       select t from JiraTicket t
-      where (t.suborderId is null and t.customerorderId in :customerorderIds)
-         or t.suborderId in :suborderIds
+      where (t.suborder is null and t.customerorder.id in :customerorderIds)
+         or t.suborder.id in :suborderIds
       """)
   List<JiraTicket> findInScopes(Collection<Long> customerorderIds, Collection<Long> suborderIds);
 
@@ -65,49 +66,31 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
    */
   @Query("""
       select t from JiraTicket t
-      where ((t.suborderId is null and t.customerorderId = :customerorderId) or t.suborderId in :suborderIds)
+      where ((t.suborder is null and t.customerorder.id = :customerorderId) or t.suborder.id in :suborderIds)
         and (lower(t.key) like lower(concat('%', :searchTerm, '%'))
              or lower(t.summary) like lower(concat('%', :searchTerm, '%')))
       order by t.updatedTs desc nulls last, t.key asc
       """)
   List<JiraTicket> search(long customerorderId, Collection<Long> suborderIds, String searchTerm, Pageable pageable);
 
-  /** The suborders of this order that carry tickets of their own (#1323). */
-  @Query("""
-      select distinct t.suborderId from JiraTicket t
-      where t.customerorderId = :customerorderId and t.suborderId is not null
-      """)
-  List<Long> findSuborderIdsOfCustomerorder(long customerorderId);
-
-  /** Those of these suborders that carry tickets of their own (#1323). */
-  @Query("select distinct t.suborderId from JiraTicket t where t.suborderId in :suborderIds")
-  List<Long> findSuborderIdsIn(Collection<Long> suborderIds);
-
   /**
-   * Keeps the sign column of the order-wide tickets in step with the order (#1323). Rows that
-   * already carry the sign are left alone, so a save that renames nothing writes nothing.
+   * Takes the tickets of a suborder branch along to the customer order it was moved to (#1323).
+   * Their scope is the pair of order and suborder, and a moved suborder means its new place in the
+   * tree. Rows already on that order are left alone, so a save that moves nothing writes nothing.
    */
   @Modifying
   @Query("""
-      update JiraTicket t set t.scopeSign = :sign
-      where t.customerorderId = :customerorderId and t.suborderId is null and t.scopeSign <> :sign
+      update JiraTicket t set t.customerorder = :customerorder
+      where t.suborder.id in :suborderIds and t.customerorder <> :customerorder
       """)
-  int mirrorOrderWide(long customerorderId, String sign);
-
-  /** Same for the tickets of one suborder — including the order, should it have been moved there. */
-  @Modifying
-  @Query("""
-      update JiraTicket t set t.customerorderId = :customerorderId, t.scopeSign = :sign
-      where t.suborderId = :suborderId and (t.scopeSign <> :sign or t.customerorderId <> :customerorderId)
-      """)
-  int mirrorSuborder(long suborderId, long customerorderId, String sign);
+  int moveBranchToCustomerorder(Collection<Long> suborderIds, Customerorder customerorder);
 
   @Modifying
-  @Query("delete from JiraTicket t where t.customerorderId = :customerorderId")
+  @Query("delete from JiraTicket t where t.customerorder.id = :customerorderId")
   int deleteByCustomerorderId(long customerorderId);
 
   @Modifying
-  @Query("delete from JiraTicket t where t.suborderId in :suborderIds")
+  @Query("delete from JiraTicket t where t.suborder.id in :suborderIds")
   int deleteBySuborderIdIn(Collection<Long> suborderIds);
 
 }

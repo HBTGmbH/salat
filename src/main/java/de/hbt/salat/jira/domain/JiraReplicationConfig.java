@@ -6,6 +6,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,6 +17,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 @Entity
 @Table(name = "jira_replication_config")
@@ -23,11 +29,16 @@ public class JiraReplicationConfig extends AuditedEntity {
 
   /**
    * The customer order this replication applies to (#1322) — on its own the whole order, or the
-   * order of {@link #suborderId}. Required: the migration deleted every config whose scope it could
+   * order of {@link #suborder}. Required: the migration deleted every config whose scope it could
    * not resolve.
+   *
+   * <p>A reference to master data of the order module (#1368, ADR-0036): read only, no cascade, and
+   * nothing here ever calls a setter on it.
    */
-  @Column(name = "customerorder_id", nullable = false)
-  private Long customerorderId;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "customerorder_id", nullable = false,
+      foreignKey = @ForeignKey(name = "fk_jira_replication_config_customerorder"))
+  private Customerorder customerorder;
 
   /**
    * The suborder the replication is narrowed to, at any depth; it covers that suborder and the
@@ -35,24 +46,13 @@ public class JiraReplicationConfig extends AuditedEntity {
    *
    * <p>A rename of the order or the suborder, or moving the suborder to another parent, changes
    * nothing about what is covered (#1322): order and suborder are archived, not deleted (ADR-0012),
-   * and the id stays.
+   * and the reference stays. #1025 once chose a sign here because the tickets outlive the config
+   * (see {@code JiraReplicationConfigService.delete}); that argues against a reference to the
+   * <em>config</em>, not against one to order and suborder.
    */
-  @Column(name = "suborder_id")
-  private Long suborderId;
-
-  /**
-   * The scope as a sign, kept as a mirror because reports and ETL definitions still read it
-   * (#1322, the way of #968): the customer order sign for the whole order, or the complete order
-   * sign of the suborder, {@code AUFTRAG/01/02}. The application never resolves anything through
-   * it; it is written on save and follows a rename or a move ({@code JiraScopeSignMirrorListener}).
-   *
-   * <p>#1025 chose the sign because the tickets outlive the config (see
-   * {@code JiraReplicationConfigService.delete}). That argues against a reference to the
-   * <em>config</em>, not against one to order and suborder — what this column was, it is now only for
-   * readers outside the application.
-   */
-  @Column(name = "scope_sign", nullable = false)
-  private String scopeSign;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "suborder_id", foreignKey = @ForeignKey(name = "fk_jira_replication_config_suborder"))
+  private Suborder suborder;
 
   @Column(name = "name", nullable = false)
   private String name;
@@ -132,6 +132,16 @@ public class JiraReplicationConfig extends AuditedEntity {
 
   @Column(name = "last_max_updated")
   private LocalDateTime lastMaxUpdated;
+
+  /** The id of {@link #customerorder}, read off the reference without loading the order. */
+  public Long getCustomerorderId() {
+    return customerorder != null ? customerorder.getId() : null;
+  }
+
+  /** The id of {@link #suborder}, {@code null} for the whole order; the suborder is not loaded. */
+  public Long getSuborderId() {
+    return suborder != null ? suborder.getId() : null;
+  }
 
   /**
    * A missing value keeps behaving the way the replication did before Cloud support existed. Since
