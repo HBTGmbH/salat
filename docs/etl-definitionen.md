@@ -12,7 +12,6 @@ aus (Liste unter „System → ETL-Läufe", REST-Schnittstelle, nächtlicher Lau
 | `description` | Freitext für die Auswahlliste. |
 | `reference_period` | `YEAR`, `QUARTER`, `MONTH`, `WEEK` oder `DAY` — in welche Abschnitte der Zeitraum eines Laufs zerlegt wird. |
 | `init`, `execute`, `cleanup` | Die SQL-Blöcke, die je Abschnitt laufen. |
-| `unresolved_dependencies` | Nur Altbestand: Namen, die die Umstellung auf ids keiner Definition zuordnen konnte. Siehe unten. |
 
 ## Abhängigkeiten
 
@@ -35,11 +34,3 @@ SELECT abhaengig.id, vorher.id
 - Wird eine Definition gelöscht, verschwinden ihre eigenen Abhängigkeiten mit ihr. Hängt noch eine
   andere Definition von ihr ab, weist die Datenbank das Löschen ab.
 - Ein Zyklus lässt den Lauf weiterhin scheitern, mit Meldung in seiner Zeile.
-
-## Nicht zugeordnete Namen
-
-Was bei der Umstellung in `dependencies` stand und keine Definition traf, steht in
-`unresolved_dependencies`. Solche Namen lassen den Lauf **nicht** scheitern. Sie stehen in der
-Meldung jedes Laufs der betroffenen Definition („Abhängigkeiten ohne Definition: …") und im Log.
-Korrigiert wird, indem die richtige Zeile in `etl_definition_dependency` eingetragen und der Name
-aus `unresolved_dependencies` entfernt wird.

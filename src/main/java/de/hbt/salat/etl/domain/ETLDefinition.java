@@ -65,12 +65,4 @@ public class ETLDefinition extends AuditedEntity implements Serializable {
   @Column(name = "depends_on_id")
   private Set<Long> dependencyIds = new HashSet<>();
 
-  /**
-   * Names the move to ids could not assign to exactly one definition (#1207). Kept so that nothing
-   * is lost, named in the message of every run of this definition, and otherwise ignored: they do
-   * not let a run fail.
-   */
-  @Column(name = "unresolved_dependencies")
-  private Set<String> unresolvedDependencies = new HashSet<>();
-
 }

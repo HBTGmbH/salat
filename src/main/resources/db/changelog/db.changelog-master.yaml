@@ -5756,3 +5756,23 @@ databaseChangeLog:
             referencedTableName: salat_user
             referencedColumnNames: id
             onDelete: CASCADE
+
+  - changeSet:
+      id: 153
+      author: kr
+      comment: Spalte unresolved_dependencies der ETL-Definitionen entfernen (#1375)
+      # Sie hielt die Namen, die die Umstellung auf ids (#1207) keiner Definition zuordnen konnte. Neue
+      # entstehen nicht mehr. Steht doch noch ein Name darin, ueberspringt CONTINUE den Changeset, bis
+      # er als Zeile in etl_definition_dependency eingetragen und hier geloescht ist.
+      preConditions:
+        - onFail: CONTINUE
+        - columnExists:
+            tableName: etl_definition
+            columnName: unresolved_dependencies
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM etl_definition WHERE COALESCE(unresolved_dependencies, '') <> ''
+      changes:
+        - dropColumn:
+            tableName: etl_definition
+            columnName: unresolved_dependencies
