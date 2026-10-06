@@ -642,13 +642,18 @@ class JiraReplicationServiceTest {
     assertThat(result.summary()).contains("2 übersprungen").contains("MOCK-1 (Andere)").contains("MOCK-3 (Andere)");
   }
 
-  /** The chains are walked over every ticket of the scope, but only the run's own are written (#1386). */
+  /**
+   * Top-level key and inherited fields are derived, never entered (#1386): a run resolves them for
+   * every ticket of the scope — its own, those of another replication and those by hand alike.
+   */
   @Test
-  void theParentChainsWriteOnlyTheRunsOwnTickets() {
+  void theParentChainsAreResolvedForEveryTicketOfTheScope() {
     JiraReplicationConfig config = createMockReplicationConfig();
+    config.setInheritedFieldNames("team");
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues());
     var parentByHand = byHand("HAND-1");
+    parentByHand.setCustomFields(Map.of("team", "Blau"));
     var own = stored(1001L, "MOCK-1");
     own.setParentKey("HAND-1");
     var otherChild = stored(1002L, "MOCK-2");
@@ -660,9 +665,11 @@ class JiraReplicationServiceTest {
     jiraReplicationService.runReplication(config.getId());
 
     assertThat(own.getTopLevelKey()).isEqualTo("HAND-1");
-    assertThat(otherChild.getTopLevelKey()).isNull();
-    assertThat(parentByHand.getTopLevelKey()).isNull();
+    assertThat(otherChild.getTopLevelKey()).isEqualTo("HAND-1");
+    assertThat(parentByHand.getTopLevelKey()).isEqualTo("HAND-1");
+    assertThat(otherChild.getCustomFieldsEffective()).containsEntry("team", new ResolvedFieldValue("Blau", "HAND-1"));
   }
+
 
   /** A replication set up later takes a ticket maintained by hand over by its key (#1386). */
   @Test

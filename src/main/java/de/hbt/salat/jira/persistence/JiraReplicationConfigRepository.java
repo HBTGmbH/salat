@@ -19,6 +19,14 @@ public interface JiraReplicationConfigRepository extends JpaRepository<JiraRepli
 
   List<JiraReplicationConfig> findAllByOrderByNameAsc();
 
+  /** The replications of exactly this scope (#1386) — whose inherited fields the scope resolves. */
+  @Query("""
+      select c from JiraReplicationConfig c
+      where c.customerorder.id = :customerorderId
+        and (c.suborder.id = :suborderId or (c.suborder is null and :suborderId is null))
+      """)
+  List<JiraReplicationConfig> findInScope(long customerorderId, Long suborderId);
+
   /**
    * The replications that cover a scope (#1386): the order-wide one of the order and those of the
    * suborders on the path down to the scope, that suborder included. {@code pathSuborderIds} is empty

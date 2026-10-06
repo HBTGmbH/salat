@@ -6,6 +6,7 @@ import java.util.Locale;
 /**
  * What the ticket page filters by (#1386).
  *
+ * @param customerorderId {@code null} for every order the user may see, as the page opens
  * @param suborderId {@code null} for every scope of the order, otherwise the branch below it
  * @param keys the keys asked for, upper case; empty for all
  * @param withChildren whether the tickets below the keys come along, as in the booking list
@@ -14,7 +15,7 @@ import java.util.Locale;
  * @param maxResults how many rows are listed at most; counted are all hits
  * @param sort the column the rows are sorted by; ties go by key
  */
-public record JiraTicketListFilter(long customerorderId, Long suborderId, List<String> keys, boolean withChildren,
+public record JiraTicketListFilter(Long customerorderId, Long suborderId, List<String> keys, boolean withChildren,
     String title, List<String> issueTypes, int maxResults, JiraTicketSort sort, boolean descending) {
 
   public JiraTicketListFilter {
@@ -26,7 +27,7 @@ public record JiraTicketListFilter(long customerorderId, Long suborderId, List<S
   }
 
   /** Sorted by key ascending, the way the page opens. */
-  public JiraTicketListFilter(long customerorderId, Long suborderId, List<String> keys, boolean withChildren,
+  public JiraTicketListFilter(Long customerorderId, Long suborderId, List<String> keys, boolean withChildren,
                               String title, List<String> issueTypes, int maxResults) {
     this(customerorderId, suborderId, keys, withChildren, title, issueTypes, maxResults, JiraTicketSort.KEY, false);
   }
