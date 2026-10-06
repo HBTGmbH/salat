@@ -10,11 +10,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.jira.domain.JiraTicketImport;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 
 /**
@@ -24,9 +26,8 @@ import de.hbt.salat.jira.domain.ResolvedFieldValue;
  * arrive at the same values.
  *
  * <p>Which fields are inherited follows from the scope, not from the one writing: the inherited fields
- * of every replication of the scope, together with those an import marked as inherited. The latter
- * are stored nowhere else than in their result, the {@code custom_fields_effective} of the tickets
- * maintained by hand.
+ * of every replication of the scope, together with those the latest import of the scope marked as
+ * inherited.
  */
 final class JiraTicketChains {
 
@@ -37,14 +38,13 @@ final class JiraTicketChains {
    * The fields resolved along the parent chain in a scope.
    *
    * @param configsOfScope the replications of exactly this scope
-   * @param tickets the tickets of the scope
+   * @param latestImport the latest import of exactly this scope, if there was one
    */
-  static Set<String> inheritedFields(Collection<JiraReplicationConfig> configsOfScope, Collection<JiraTicket> tickets) {
+  static Set<String> inheritedFields(Collection<JiraReplicationConfig> configsOfScope,
+                                     Optional<JiraTicketImport> latestImport) {
     var fields = new LinkedHashSet<String>();
     configsOfScope.forEach(config -> fields.addAll(JiraFieldConfig.from(config).inheritedFieldPaths()));
-    tickets.stream()
-        .filter(ticket -> !ticket.isReplicated() && ticket.getCustomFieldsEffective() != null)
-        .forEach(ticket -> fields.addAll(ticket.getCustomFieldsEffective().keySet()));
+    latestImport.ifPresent(ticketImport -> fields.addAll(ticketImport.inheritedFields()));
     return fields;
   }
 

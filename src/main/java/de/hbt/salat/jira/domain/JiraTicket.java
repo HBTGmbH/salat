@@ -65,6 +65,14 @@ public class JiraTicket extends AuditedEntity {
   @JoinColumn(name = "replication_id", foreignKey = @ForeignKey(name = "fk_jira_ticket_replication"))
   private JiraReplicationConfig replication;
 
+  /**
+   * The import that wrote this ticket last (#1386); {@code null} for one never imported. Kept when a
+   * replication takes the ticket over: it says where the ticket came from, not who maintains it.
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "import_id", foreignKey = @ForeignKey(name = "fk_jira_ticket_import"))
+  private JiraTicketImport ticketImport;
+
   /** The id JIRA gave the issue; {@code null} for a ticket maintained by hand (#1386). */
   @Column(name = "jira_id")
   private Long jiraId;

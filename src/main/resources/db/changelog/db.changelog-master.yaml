@@ -5880,3 +5880,95 @@ databaseChangeLog:
                       HAVING COUNT(*) = 1) c
                   ON c.customerorder_id = t.customerorder_id AND c.so = COALESCE(t.suborder_id, 0)
                  SET t.replication_id = c.id
+
+  - changeSet:
+      id: 158
+      author: kr
+      comment: Ticketimporte mit Herkunft und Spaltenzuordnung, Ticket kennt seinen Import (#1386)
+      # Ein Import haelt fest, wer wann welche Datei in welchen Bereich gespielt hat, und wie ihre
+      # Spalten gelesen wurden. Die Zuordnung des letzten Imports eines Bereichs schlaegt die Vorschau
+      # wieder vor, und ihre vererbten Zusatzfelder gelten fuer die manuellen Tickets des Bereichs.
+      # import_id nennt den Import, der ein Ticket zuletzt geschrieben hat.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: jira_ticket_import
+      changes:
+        - createTable:
+            tableName: jira_ticket_import
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_jira_ticket_import
+              - column:
+                  name: customerorder_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_jira_ticket_import_customerorder
+                    references: customerorder(id)
+              - column:
+                  name: suborder_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_jira_ticket_import_suborder
+                    references: suborder(id)
+              - column:
+                  name: file_name
+                  type: varchar(255)
+              - column:
+                  name: column_mapping
+                  type: json
+              - column:
+                  name: created_count
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_count
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - createIndex:
+            tableName: jira_ticket_import
+            indexName: idx_jira_ticket_import_scope
+            columns:
+              - column:
+                  name: customerorder_id
+              - column:
+                  name: suborder_id
+        - addColumn:
+            tableName: jira_ticket
+            columns:
+              - column:
+                  name: import_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: jira_ticket
+            baseColumnNames: import_id
+            constraintName: fk_jira_ticket_import
+            referencedTableName: jira_ticket_import
+            referencedColumnNames: id
+            onDelete: SET NULL

@@ -16,6 +16,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
@@ -24,6 +25,7 @@ import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.JiraTicketImportRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 
 /**
@@ -44,6 +46,7 @@ public class JiraReplicationService {
   private final JiraWorklogSyncService worklogSyncService;
   private final JiraReplicationRunService runService;
   private final JiraScopes scopes;
+  private final JiraTicketImportRepository importRepo;
 
   public List<JiraReplicationConfig> getEnabledReplications() {
     return configRepo.findByEnabledTrue();
@@ -263,7 +266,9 @@ public class JiraReplicationService {
     var configs = new ArrayList<>(configRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
     configs.removeIf(other -> Objects.equals(other.getId(), cfg.getId()));
     configs.add(cfg);
-    var inherited = JiraTicketChains.inheritedFields(configs, tickets);
+    var latestImport = importRepo.findLatestInScope(cfg.getCustomerorderId(), cfg.getSuborderId(), PageRequest.of(0, 1))
+        .stream().findFirst();
+    var inherited = JiraTicketChains.inheritedFields(configs, latestImport);
     var changed = JiraTicketChains.resolve(tickets, inherited);
     log.info("Resolved parent chains for {} changed tickets of scope {} with inherited fields {}",
         changed.size(), scopeSign, inherited);

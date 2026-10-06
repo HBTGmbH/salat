@@ -92,6 +92,13 @@
         <div class="datagrid-content"
              th:text="${detail.lastChange != null} ? ${#temporals.format(detail.lastChange, 'dd.MM.yyyy HH:mm')} + (${detail.lastChangeBy != null} ? ' (' + ${detail.lastChangeBy} + ')' : '') : '–'">01.01.2026</div>
       </div>
+      <div class="datagrid-item" th:if="${detail.importedFrom != null or detail.importedAt != null}">
+        <div class="datagrid-title" th:text="#{main.jira.ticket.field.import}">Import</div>
+        <div class="datagrid-content"
+             th:text="${#temporals.format(detail.importedAt, 'dd.MM.yyyy HH:mm')}
+                      + (${detail.importedFrom != null} ? ' · ' + ${detail.importedFrom} : '')
+                      + (${detail.importedBy != null} ? ' (' + ${detail.importedBy} + ')' : '')">06.10.2026 17:40 · export.csv</div>
+      </div>
     </div>
 
     <th:block th:if="${not detail.fieldNames().isEmpty()}">

@@ -187,7 +187,8 @@ public class JiraTicketController {
   @PostMapping(path = "/import/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public String importPreview(@ModelAttribute("importForm") JiraTicketImportForm form, Model model) throws IOException {
     try {
-      var preview = maintenanceService.preview(form.getFile() == null ? null : form.getFile().getBytes());
+      var preview = maintenanceService.preview(form.getFile() == null ? null : form.getFile().getBytes(),
+          form.getCustomerorderId(), form.getSuborderId());
       var columns = new ArrayList<JiraTicketImportForm.Column>();
       for (int column = 0; column < preview.headings().size(); column++) {
         columns.add(JiraTicketImportForm.Column.of(preview.suggested().get(column), preview.headings().get(column)));
@@ -214,6 +215,7 @@ public class JiraTicketController {
     }
     try {
       int count = maintenanceService.importTickets(form.getCustomerorderId(), form.getSuborderId(),
+          form.getFile() == null ? null : form.getFile().getOriginalFilename(),
           form.getFile() == null ? null : form.getFile().getBytes(), form.mapping());
       redirectAttributes.addFlashAttribute("toastSuccess",
           messages.getMessage("main.jira.ticket.message.imported", new Object[] {count}));
