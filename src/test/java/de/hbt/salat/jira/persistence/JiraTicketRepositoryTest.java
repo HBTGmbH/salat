@@ -122,8 +122,7 @@ class JiraTicketRepositoryTest {
     assertThat(jiraTicketRepository.findInScope(ALPHA, A_01)).extracting(JiraTicket::getKey)
         .containsExactly("ALPHA-2");
     assertThat(jiraTicketRepository.findInScopeByJiraId(ALPHA, null, 2L)).isEmpty();
-    assertThat(jiraTicketRepository.findInScopeByKeyIn(ALPHA, A_01, List.of("ALPHA-1", "ALPHA-2")))
-        .extracting(JiraTicket::getKey).containsExactly("ALPHA-2");
+    assertThat(jiraTicketRepository.findInScopeByKey(ALPHA, A_01, "ALPHA-1")).isEmpty();
   }
 
   @Test

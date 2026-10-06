@@ -22,6 +22,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -48,6 +49,8 @@ import de.hbt.salat.order.domain.Customerorder;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class JiraWorklogSyncServiceTest {
+
+  private static final long REPLICATION_ID = 11L;
 
   private static final LocalDate SYNC_FROM = LocalDate.of(2026, 6, 1);
   private static final LocalDate DAY = LocalDate.of(2026, 6, 10);
@@ -137,6 +140,24 @@ class JiraWorklogSyncServiceTest {
     // the scope of the config, taken over as references (#1323, #1368)
     assertThat(saved.getCustomerorder()).isSameAs(CUSTOMERORDER);
     assertThat(saved.getSuborder()).isNull();
+  }
+
+  /**
+   * Only tickets the replication maintains are written back to (#1386): one of the scope maintained
+   * by hand or by another replication is not its business, however much was booked on it.
+   */
+  @Test
+  void a_ticket_the_replication_does_not_maintain_gets_no_worklog() {
+    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90), new TicketDaySum(DAY, "HAND-1", 60));
+    givenReplicatedTickets("ALPHA-1");
+    when(worklogClient.create(any(), any())).thenReturn("10101");
+
+    classUnderTest.sync(config());
+
+    var target = ArgumentCaptor.forClass(JiraWorklogTarget.class);
+    verify(worklogClient).create(target.capture(), any());
+    assertThat(target.getValue().issueKey()).isEqualTo("ALPHA-1");
+    verify(ticketRepository).findMaintainedByKeyIn(eq(REPLICATION_ID), anyList());
   }
 
   @Test
@@ -436,6 +457,7 @@ class JiraWorklogSyncServiceTest {
 
   private JiraReplicationConfig config() {
     var config = new JiraReplicationConfig();
+    ReflectionTestUtils.setField(config, "id", REPLICATION_ID);
     config.setName("Alpha");
     config.setCustomerorder(CUSTOMERORDER);
     config.setBaseUrl("https://jira.example.com");
@@ -486,7 +508,7 @@ class JiraWorklogSyncServiceTest {
       ticket.setKey(key);
       tickets.add(ticket);
     }
-    when(ticketRepository.findInScopeByKeyIn(eq(CUSTOMERORDER_ID), isNull(), anyList())).thenReturn(tickets);
+    when(ticketRepository.findMaintainedByKeyIn(eq(REPLICATION_ID), anyList())).thenReturn(tickets);
   }
 
   private JiraWorklogSync givenStoredWorklog(String issueKey, LocalDate workDate, String worklogId,
