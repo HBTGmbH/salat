@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.jira.domain.JiraTicketParentLink;
 import de.hbt.salat.order.domain.Customerorder;
 
 /**
@@ -55,21 +56,68 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
       """)
   Optional<JiraTicket> findInScopeByKey(long customerorderId, Long suborderId, String key);
 
-  /** Every ticket of a customer order, of the whole order and of all its suborders, for the ticket page (#1386). */
+  /**
+   * The rows of the ticket page (#1386): the tickets of an order — of every scope, or of the given
+   * suborders — narrowed by key, title and type, by key. A flag stands for "no restriction", because
+   * an empty {@code in} list is no portable way of saying so; the list next to it is then ignored.
+   */
   @Query("""
       select t from JiraTicket t left join fetch t.replication
       where t.customerorder.id = :customerorderId
+        and (:allScopes = true or t.suborder.id in :suborderIds)
+        and (:allKeys = true or upper(t.key) in :keys)
+        and (:title is null or lower(t.summary) like lower(concat('%', :title, '%')))
+        and (:allTypes = true or t.issueType in :issueTypes)
       order by t.key
       """)
-  List<JiraTicket> findAllOfCustomerorder(long customerorderId);
+  List<JiraTicket> findForTicketPage(long customerorderId, boolean allScopes, Collection<Long> suborderIds,
+      boolean allKeys, Collection<String> keys, String title, boolean allTypes, Collection<String> issueTypes,
+      Pageable page);
 
-  /** The tickets of these suborders, for the ticket page narrowed to a branch (#1386). */
+  /**
+   * The figures of the ticket page over every hit, per type: the type, all hits and the replicated
+   * ones among them. Same conditions as {@link #findForTicketPage}.
+   */
+  @Query("""
+      select t.issueType, count(t), count(t.replication) from JiraTicket t
+      where t.customerorder.id = :customerorderId
+        and (:allScopes = true or t.suborder.id in :suborderIds)
+        and (:allKeys = true or upper(t.key) in :keys)
+        and (:title is null or lower(t.summary) like lower(concat('%', :title, '%')))
+        and (:allTypes = true or t.issueType in :issueTypes)
+      group by t.issueType
+      """)
+  List<Object[]> countForTicketPage(long customerorderId, boolean allScopes, Collection<Long> suborderIds,
+      boolean allKeys, Collection<String> keys, String title, boolean allTypes, Collection<String> issueTypes);
+
+  /** Every type the tickets of an order carry, for the type filter of the ticket page. */
+  @Query("""
+      select distinct t.issueType from JiraTicket t
+      where t.customerorder.id = :customerorderId and t.issueType is not null
+      order by t.issueType
+      """)
+  List<String> findIssueTypesOfCustomerorder(long customerorderId);
+
+  /** Key and parent of every ticket of an order, for taking the tickets below a key along. */
+  @Query("""
+      select new de.hbt.salat.jira.domain.JiraTicketParentLink(t.key, t.parentKey) from JiraTicket t
+      where t.customerorder.id = :customerorderId
+      """)
+  List<JiraTicketParentLink> findParentLinksOfCustomerorder(long customerorderId);
+
+  /** The tickets of the order with this key — one per scope at most — for jumping to a parent. */
+  @Query("select t from JiraTicket t where t.customerorder.id = :customerorderId and t.key = :key")
+  List<JiraTicket> findInCustomerorderByKey(long customerorderId, String key);
+
+  /** The tickets of the same scope naming this key as parent, for the detail page. */
   @Query("""
       select t from JiraTicket t left join fetch t.replication
-      where t.suborder.id in :suborderIds
+      where t.customerorder.id = :customerorderId
+        and (t.suborder.id = :suborderId or (t.suborder is null and :suborderId is null))
+        and t.parentKey = :key
       order by t.key
       """)
-  List<JiraTicket> findAllOfSuborders(Collection<Long> suborderIds);
+  List<JiraTicket> findChildrenInScope(long customerorderId, Long suborderId, String key);
 
   @Query("""
       select t from JiraTicket t

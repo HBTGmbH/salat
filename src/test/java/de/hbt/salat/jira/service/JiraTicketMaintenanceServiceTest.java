@@ -3,6 +3,7 @@ package de.hbt.salat.jira.service;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyIterable;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageRequest;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.AuthorizationException;
@@ -32,6 +34,9 @@ import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.jira.domain.JiraTicketListFilter;
+import de.hbt.salat.jira.domain.JiraTicketParentLink;
+import de.hbt.salat.jira.domain.JiraTicketRow;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
@@ -124,13 +129,14 @@ class JiraTicketMaintenanceServiceTest {
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_VALUE_TOO_LONG));
   }
 
-  /** The replication would overwrite or take over whatever is entered by hand. */
+  /** Who maintains a ticket is decided per ticket: a replication on the scope blocks nothing. */
   @Test
-  void nothing_is_created_where_a_replication_covers_the_scope() {
+  void a_ticket_is_created_even_where_a_replication_covers_the_scope() {
     when(configRepository.findCovering(ORDER, List.of(SUBORDER))).thenReturn(List.of(replication("Alpha-JIRA")));
 
-    assertThatThrownBy(() -> service.create(ORDER, SUBORDER, new JiraManualTicketData("ABC-1", null, null, null)))
-        .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_SCOPE_COVERED));
+    service.create(ORDER, SUBORDER, new JiraManualTicketData("ABC-1", null, null, null));
+
+    verify(ticketRepository).save(any(JiraTicket.class));
     assertThat(service.getCoveringReplications(ORDER, SUBORDER)).containsExactly("Alpha-JIRA");
   }
 
@@ -312,13 +318,89 @@ class JiraTicketMaintenanceServiceTest {
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_EMPTY));
   }
 
+  /** A ticket a replication maintains is not overwritten by an import; the others of the file wait. */
   @Test
-  void nothing_is_imported_where_a_replication_covers_the_scope() {
-    when(configRepository.findCovering(ORDER, List.of())).thenReturn(List.of(replication("Alpha-JIRA")));
+  void an_import_does_not_overwrite_a_replicated_ticket() {
+    var replicated = manual("ABC-1", 5L);
+    replicated.setReplication(replication("Alpha-JIRA"));
+    when(ticketRepository.findInScope(ORDER, null)).thenReturn(List.of(replicated));
 
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, "Key\nABC-1\n".getBytes(UTF_8),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "Key\nABC-2\nABC-1\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY))))
-        .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_SCOPE_COVERED));
+        .satisfies(ex -> assertThat(((ErrorCodeException) ex).getMessages())
+            .extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().get(0))
+            .containsExactly(tuple(ErrorCode.JI_TICKET_IMPORT_KEY_REPLICATED, 3)));
+    verify(ticketRepository, never()).saveAll(anyIterable());
+  }
+
+  /** Figures over every hit; the rows up to the limit (#1386). */
+  @Test
+  void the_list_counts_every_hit_per_type_and_lists_up_to_the_limit() {
+    when(ticketRepository.findIssueTypesOfCustomerorder(ORDER)).thenReturn(List.of("Bug", "Story"));
+    when(ticketRepository.countForTicketPage(ORDER, true, List.of(-1L), true, List.of(""), null, true, List.of("")))
+        .thenReturn(new ArrayList<>(List.of(new Object[] {"Bug", 1L, 0L}, new Object[] {"Story", 3L, 2L})));
+    var listed = List.of(manual("ABC-1", 1L), manual("ABC-2", 2L));
+    when(ticketRepository.findForTicketPage(ORDER, true, List.of(-1L), true, List.of(""), null, true, List.of(""),
+        PageRequest.of(0, 2))).thenReturn(listed);
+
+    var result = service.search(new JiraTicketListFilter(ORDER, null, List.of(), true, null, List.of(), 2));
+
+    assertThat(result.totalCount()).isEqualTo(4);
+    assertThat(result.replicatedCount()).isEqualTo(2);
+    assertThat(result.manualCount()).isEqualTo(2);
+    assertThat(result.countByType()).containsExactly(entry("Story", 3L), entry("Bug", 1L));
+    assertThat(result.rows()).extracting(JiraTicketRow::key).containsExactly("ABC-1", "ABC-2");
+    assertThat(result.truncated()).isTrue();
+    assertThat(result.issueTypes()).containsExactly("Bug", "Story");
+  }
+
+  /** As the ticket filter of the booking list: a key brings the tickets below it along, ignoring case. */
+  @Test
+  void a_key_filter_takes_the_tickets_below_along() {
+    when(ticketRepository.findParentLinksOfCustomerorder(ORDER)).thenReturn(List.of(
+        new JiraTicketParentLink("ABC-2", "abc-1"), new JiraTicketParentLink("ABC-3", "ABC-2"),
+        new JiraTicketParentLink("XYZ-1", null)));
+
+    service.search(new JiraTicketListFilter(ORDER, null, List.of("abc-1"), true, null, List.of(), 50));
+    service.search(new JiraTicketListFilter(ORDER, null, List.of("abc-1"), false, null, List.of(), 50));
+
+    verify(ticketRepository).countForTicketPage(ORDER, true, List.of(-1L), false, List.of("ABC-1", "ABC-2", "ABC-3"),
+        null, true, List.of(""));
+    verify(ticketRepository).countForTicketPage(ORDER, true, List.of(-1L), false, List.of("ABC-1"),
+        null, true, List.of(""));
+  }
+
+  /** A parent is looked up in the ticket's own scope first, then anywhere in the order. */
+  @Test
+  void a_related_ticket_is_found_in_the_scope_first_then_in_the_order() {
+    var from = manual("ABC-2", 5L);
+    when(ticketRepository.findById(5L)).thenReturn(Optional.of(from));
+    when(ticketRepository.findInScopeByKey(ORDER, null, "ABC-1")).thenReturn(Optional.of(manual("ABC-1", 6L)));
+    when(ticketRepository.findInCustomerorderByKey(ORDER, "ABC-0")).thenReturn(List.of(manual("ABC-0", 7L)));
+
+    assertThat(service.findRelated(5L, "ABC-1")).contains(6L);
+    assertThat(service.findRelated(5L, "ABC-0")).contains(7L);
+    assertThat(service.findRelated(5L, "NIRGENDS-1")).isEmpty();
+  }
+
+  @Test
+  void the_detail_carries_labels_fields_and_children() {
+    var ticket = manual("ABC-1", 5L);
+    ticket.setLabels("alpha, beta");
+    ticket.setCustomFields(java.util.Map.of("team", "Blau"));
+    when(ticketRepository.findById(5L)).thenReturn(Optional.of(ticket));
+    when(ticketRepository.findChildrenInScope(ORDER, null, "ABC-1")).thenReturn(List.of(manual("ABC-2", 6L)));
+
+    var detail = service.getDetail(5L);
+
+    assertThat(detail.labels()).containsExactly("alpha", "beta");
+    assertThat(detail.fieldNames()).containsExactly("team");
+    assertThat(detail.children()).extracting(JiraTicketRow::key).containsExactly("ABC-2");
+    assertThat(detail.row().maintainedByHand()).isTrue();
+  }
+
+  private static JiraTicketListFilter filter(List<String> keys, List<String> types) {
+    return new JiraTicketListFilter(ORDER, null, keys, true, null, types, 50);
   }
 
   @Test
@@ -336,7 +418,8 @@ class JiraTicketMaintenanceServiceTest {
 
     assertThatThrownBy(() -> service.create(ORDER, null, new JiraManualTicketData("ABC-1", null, null, null)))
         .isInstanceOf(AuthorizationException.class);
-    assertThatThrownBy(() -> service.getTickets(ORDER, null)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.search(filter(List.of(), List.of()))).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.getDetail(5L)).isInstanceOf(InvalidDataException.class);
     verify(ticketRepository, never()).save(any(JiraTicket.class));
   }
 

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='orders',
+        subSection='jira-tickets',
+        ticket=${detail.row},
+        title=${detail.row.key},
+        pageTitle=#{main.jira.ticket.detail.title(${detail.row.key})},
+        sectionTitle=#{main.general.mainmenu.orders.text}
+">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title">
+        <span class="font-monospace" th:text="${ticket.key}">ABC-1</span>
+        <span class="text-secondary ms-2" th:text="${ticket.summary}">Titel</span>
+      </h3>
+      <div class="card-actions d-flex gap-2">
+        <a class="btn btn-outline-secondary" th:href="@{/jira/tickets}" th:text="#{main.jira.ticket.detail.back}">Zur Liste</a>
+        <a th:if="${ticket.maintainedByHand}" class="btn btn-outline-primary"
+           th:href="@{/jira/tickets/{id}/edit(id=${ticket.id})}">
+          <i class="icon ti ti-pencil"></i>
+          <span th:text="#{main.button.label.edit.text}">Bearbeiten</span>
+        </a>
+        <form th:if="${ticket.maintainedByHand}" th:action="@{/jira/tickets/{id}/delete(id=${ticket.id})}" method="post"
+              data-confirm
+              th:data-confirm-title="#{main.jira.ticket.delete.confirm.title}"
+              th:data-confirm-text="#{main.jira.ticket.delete.confirm.text}"
+              th:data-confirm-detail="${ticket.key}"
+              th:data-confirm-detail-secondary="${ticket.scopeSign}"
+              th:data-confirm-label="#{main.general.button.delete.text}"
+              data-confirm-variant="danger">
+          <button type="submit" class="btn btn-outline-danger">
+            <i class="icon ti ti-trash"></i>
+            <span th:text="#{main.general.button.delete.text}">Löschen</span>
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="datagrid">
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.key}">Key</div>
+          <div class="datagrid-content font-monospace" th:text="${ticket.key}">ABC-1</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.jiraId}">Id</div>
+          <div class="datagrid-content" th:text="${detail.jiraId != null} ? ${detail.jiraId} : '–'">10001</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.issueType}">Typ</div>
+          <div class="datagrid-content" th:text="${ticket.issueType != null} ? ${ticket.issueType} : '–'">Story</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.origin}">Herkunft</div>
+          <div class="datagrid-content"><span th:replace="~{jira/ticket-list :: originBadge(${ticket})}"></span></div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.parentKey}">Parent</div>
+          <div class="datagrid-content font-monospace">
+            <a th:if="${ticket.parentKey != null}" th:href="@{/jira/tickets/{id}/related(id=${ticket.id},key=${ticket.parentKey})}"
+               th:text="${ticket.parentKey}">ABC-0</a>
+            <span th:if="${ticket.parentKey == null}">–</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.topLevelKey}">Top-Level</div>
+          <div class="datagrid-content font-monospace">
+            <a th:if="${ticket.topLevelKey != null and ticket.topLevelKey != ticket.key}"
+               th:href="@{/jira/tickets/{id}/related(id=${ticket.id},key=${ticket.topLevelKey})}"
+               th:text="${ticket.topLevelKey}">ABC-0</a>
+            <span th:if="${ticket.topLevelKey == null or ticket.topLevelKey == ticket.key}"
+                  th:text="#{main.jira.ticket.detail.isTopLevel}">selbst</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.scope}">Bereich</div>
+          <div class="datagrid-content font-monospace" th:text="${ticket.scopeSign}">ALPHA/01</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.labels}">Labels</div>
+          <div class="datagrid-content">
+            <span th:if="${detail.labels.isEmpty()}">–</span>
+            <span th:each="label : ${detail.labels}" class="badge bg-secondary-lt me-1" th:text="${label}">alpha</span>
+          </div>
+        </div>
+        <!--/* Two clocks (#1386): when the ticket was created and last updated — in JIRA, or by hand —
+               and when this application first and last wrote the row. */-->
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.created}">Erstellt</div>
+          <div class="datagrid-content"
+               th:text="${detail.createdTs != null} ? ${#temporals.format(detail.createdTs, 'dd.MM.yyyy HH:mm')} : '–'">01.01.2026</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.updated}">Aktualisiert</div>
+          <div class="datagrid-content"
+               th:text="${ticket.updatedTs != null} ? ${#temporals.format(ticket.updatedTs, 'dd.MM.yyyy HH:mm')} : '–'">01.01.2026</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.inSystemSince}">im System seit</div>
+          <div class="datagrid-content"
+               th:text="${ticket.inSystemSince != null} ? ${#temporals.format(ticket.inSystemSince, 'dd.MM.yyyy HH:mm')} + (${detail.inSystemBy != null} ? ' (' + ${detail.inSystemBy} + ')' : '') : '–'">01.01.2026</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.ticket.field.lastChange}">zuletzt geändert</div>
+          <div class="datagrid-content"
+               th:text="${detail.lastChange != null} ? ${#temporals.format(detail.lastChange, 'dd.MM.yyyy HH:mm')} + (${detail.lastChangeBy != null} ? ' (' + ${detail.lastChangeBy} + ')' : '') : '–'">01.01.2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3" th:if="${not detail.customFields.isEmpty() or not detail.effectiveFields.isEmpty()}">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.jira.ticket.detail.fields}">Zusatzfelder</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.jira.ticket.import.preview.fieldname}">Feldname</th>
+            <th th:text="#{main.jira.ticket.detail.fields.own}">am Ticket</th>
+            <th th:text="#{main.jira.ticket.detail.fields.effective}">wirksam</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="name : ${detail.fieldNames()}">
+            <td class="font-monospace small" th:text="${name}">customfield_10500</td>
+            <td th:text="${detail.customFields.get(name)}">Blau</td>
+            <td th:with="effective=${detail.effectiveFields.get(name)}">
+              <span th:if="${effective != null}" th:text="${effective.value}">Blau</span>
+              <span th:if="${effective != null and effective.from != null}" class="text-secondary small">
+                (<span th:text="#{main.jira.ticket.detail.fields.from}">von</span>
+                <a class="font-monospace" th:href="@{/jira/tickets/{id}/related(id=${ticket.id},key=${effective.from})}"
+                   th:text="${effective.from}">ABC-1</a>)
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.jira.ticket.detail.children(${detail.children.size()})}">Unter-Tickets (0)</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <tbody>
+          <tr th:if="${detail.children.isEmpty()}">
+            <td class="text-center text-muted py-3" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="child : ${detail.children}">
+            <td class="text-nowrap font-monospace w-1">
+              <a th:href="@{/jira/tickets/{id}(id=${child.id})}" th:text="${child.key}">ABC-2</a>
+            </td>
+            <td th:text="${child.summary}">Titel</td>
+            <td class="d-none d-md-table-cell" th:text="${child.issueType}">Story</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</html>

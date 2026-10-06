@@ -2,15 +2,22 @@ package de.hbt.salat.jira.service;
 
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_IMPORT_ID_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_IMPORT_KEY_REPLICATED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_KEY_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_KEY_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_REPLICATED;
-import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_SCOPE_COVERED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_VALUE_TOO_LONG;
 import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import org.springframework.data.domain.PageRequest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +39,9 @@ import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.jira.domain.JiraTicketDetail;
+import de.hbt.salat.jira.domain.JiraTicketListFilter;
+import de.hbt.salat.jira.domain.JiraTicketListResult;
 import de.hbt.salat.jira.domain.JiraTicketImportPreview;
 import de.hbt.salat.jira.domain.JiraTicketRow;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
@@ -40,18 +50,17 @@ import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
 
 /**
- * Tickets maintained by hand, for scopes no replication covers (#1386) — a customer whose JIRA allows
- * no API access, or who has no JIRA at all.
+ * Tickets maintained by hand (#1386) — for a customer whose JIRA allows no API access or who has no
+ * JIRA at all, and next to a replication for what it does not fetch (yet).
  *
  * <p>They live in {@code jira_ticket} like the replicated ones, in the same scope of order and
  * suborder, and so reach the suggestions of the booking form, the ticket filter of the booking list
  * and the reports without any of them knowing the difference. What tells them apart is the
  * replication: a ticket without one is maintained here.
  *
- * <p>Where a replication covers the scope — the order itself, or a suborder on the path down to it —
- * nothing is created or imported here: the replication is the source of those tickets and would
- * take a manual one over by its key on its next run. A manual ticket that is already there, left
- * from before the replication, may still be changed and deleted.
+ * <p>Who maintains a ticket is decided per ticket, not per scope: one a replication maintains is
+ * not changed here, not even by an import, and one maintained by hand stays editable until a
+ * replication of the same scope delivers its key and takes it over on its next run.
  */
 @Service
 @RequiredArgsConstructor
@@ -66,20 +75,73 @@ public class JiraTicketMaintenanceService {
   private final OrderReferences orderReferences;
 
   /**
-   * The tickets of the order, replicated and maintained by hand: of the whole order and every
-   * suborder, or only of the suborder {@code suborderId} and the branch below it.
+   * The ticket page (#1386): the tickets of the order, replicated and maintained by hand, as the
+   * filter narrows them, up to its limit — counted are all hits. Keys with their children are
+   * expanded within the order, like the ticket filter of the booking list.
    */
   @Transactional(readOnly = true)
-  public List<JiraTicketRow> getTickets(long customerorderId, Long suborderId) {
+  public JiraTicketListResult search(JiraTicketListFilter filter) {
+    long customerorderId = filter.customerorderId();
     authorization.checkMayMaintain(customerorderId);
-    var tickets = suborderId == null
-        ? ticketRepository.findAllOfCustomerorder(customerorderId)
-        : ticketRepository.findAllOfSuborders(scopes.branchOf(suborderId));
-    var signs = new HashMap<List<Long>, String>();
-    return tickets.stream()
-        .map(ticket -> toRow(ticket, signs.computeIfAbsent(scopeOf(ticket),
-            scope -> scopes.signOf(ticket.getCustomerorderId(), ticket.getSuborderId()))))
-        .toList();
+    var issueTypes = ticketRepository.findIssueTypesOfCustomerorder(customerorderId);
+
+    boolean allScopes = filter.suborderId() == null;
+    List<Long> suborderIds = allScopes ? List.of(-1L) : scopes.branchOf(filter.suborderId());
+    if (suborderIds.isEmpty()) return JiraTicketListResult.empty(issueTypes);
+    var keys = filter.withChildren() ? withChildren(customerorderId, filter.keys()) : filter.keys();
+    boolean allKeys = keys.isEmpty();
+    boolean allTypes = filter.issueTypes().isEmpty();
+    Collection<String> keyList = allKeys ? List.of("") : keys;
+    Collection<String> typeList = allTypes ? List.of("") : filter.issueTypes();
+
+    var countByType = new LinkedHashMap<String, Long>();
+    long total = 0;
+    long replicated = 0;
+    var counts = new ArrayList<>(ticketRepository.countForTicketPage(customerorderId, allScopes, suborderIds, allKeys,
+        keyList, filter.title(), allTypes, typeList));
+    counts.sort(Comparator.comparing((Object[] row) -> (Long) row[1]).reversed()
+        .thenComparing(row -> row[0] == null ? "" : (String) row[0]));
+    for (var row : counts) {
+      countByType.put(row[0] == null ? "" : (String) row[0], (Long) row[1]);
+      total += (Long) row[1];
+      replicated += (Long) row[2];
+    }
+    if (total == 0) return JiraTicketListResult.empty(issueTypes);
+
+    var tickets = ticketRepository.findForTicketPage(customerorderId, allScopes, suborderIds, allKeys, keyList,
+        filter.title(), allTypes, typeList, PageRequest.of(0, filter.maxResults()));
+    return new JiraTicketListResult(toRows(tickets), total, replicated, countByType, issueTypes);
+  }
+
+  /** Everything about one ticket, with the tickets that name it as parent. */
+  @Transactional(readOnly = true)
+  public JiraTicketDetail getDetail(long id) {
+    var ticket = load(id);
+    authorization.checkMayMaintain(ticket.getCustomerorderId());
+    var row = toRow(ticket, scopes.signOf(ticket.getCustomerorderId(), ticket.getSuborderId()));
+    var labels = ticket.getLabels() == null ? List.<String>of()
+        : Arrays.stream(ticket.getLabels().split(",")).map(String::trim).filter(label -> !label.isEmpty()).toList();
+    var children = toRows(ticketRepository.findChildrenInScope(ticket.getCustomerorderId(), ticket.getSuborderId(),
+        ticket.getKey()));
+    return new JiraTicketDetail(row, ticket.getJiraId(), labels, ticket.getCreatedTs(), ticket.getCreatedby(),
+        ticket.getLastupdate(), ticket.getLastupdatedby(),
+        ticket.getCustomFields() == null ? Map.of() : new TreeMap<>(ticket.getCustomFields()),
+        ticket.getCustomFieldsEffective() == null ? Map.of() : new TreeMap<>(ticket.getCustomFieldsEffective()),
+        children);
+  }
+
+  /**
+   * The ticket a parent or top-level key of ticket {@code fromId} names: in its own scope first —
+   * a parent chain stays within it — otherwise anywhere in the order. Empty where the order has no
+   * ticket with that key; a reference in JIRA may well name one that is not maintained here.
+   */
+  @Transactional(readOnly = true)
+  public Optional<Long> findRelated(long fromId, String key) {
+    var from = load(fromId);
+    authorization.checkMayMaintain(from.getCustomerorderId());
+    return ticketRepository.findInScopeByKey(from.getCustomerorderId(), from.getSuborderId(), key)
+        .or(() -> ticketRepository.findInCustomerorderByKey(from.getCustomerorderId(), key).stream().findFirst())
+        .map(JiraTicket::getId);
   }
 
   @Transactional(readOnly = true)
@@ -97,7 +159,7 @@ public class JiraTicketMaintenanceService {
 
   public long create(long customerorderId, Long suborderId, JiraManualTicketData data) {
     authorization.checkMayMaintain(customerorderId);
-    checkScopeOpen(customerorderId, suborderId);
+    checkScopeExists(customerorderId, suborderId);
     var values = validated(data);
     checkKeyFree(customerorderId, suborderId, values.key(), null);
     var ticket = newTicket(customerorderId, suborderId);
@@ -143,7 +205,7 @@ public class JiraTicketMaintenanceService {
    */
   public int importTickets(long customerorderId, Long suborderId, byte[] content, List<JiraImportColumn> mapping) {
     authorization.checkMayMaintain(customerorderId);
-    checkScopeOpen(customerorderId, suborderId);
+    checkScopeExists(customerorderId, suborderId);
     var file = JiraTicketFile.read(content);
 
     var inScope = ticketRepository.findInScope(customerorderId, suborderId);
@@ -158,6 +220,11 @@ public class JiraTicketMaintenanceService {
 
     var findings = new ArrayList<ServiceFeedbackMessage>();
     for (var ticket : tickets) {
+      var stored = byKey.get(ticket.key());
+      if (stored != null && stored.isReplicated()) {
+        findings.add(error(JI_TICKET_IMPORT_KEY_REPLICATED, ticket.line(), ticket.key(),
+            stored.getReplication().getName()));
+      }
       var carrier = ticket.jiraId() == null ? null : byJiraId.get(ticket.jiraId());
       if (carrier != null && !carrier.getKey().equals(ticket.key())) {
         findings.add(error(JI_TICKET_IMPORT_ID_TAKEN, ticket.line(), ticket.jiraId(), carrier.getKey()));
@@ -191,12 +258,8 @@ public class JiraTicketMaintenanceService {
     return ticket;
   }
 
-  private void checkScopeOpen(long customerorderId, Long suborderId) {
-    var covering = coveringReplications(customerorderId, suborderId);
-    if (!covering.isEmpty()) {
-      throw new InvalidDataException(JI_TICKET_SCOPE_COVERED,
-          String.join(", ", covering.stream().map(JiraReplicationConfig::getName).toList()));
-    }
+  private void checkScopeExists(long customerorderId, Long suborderId) {
+    coveringReplications(customerorderId, suborderId);
   }
 
   /** Also checks that the scope exists and the suborder belongs to the order. */
@@ -354,10 +417,38 @@ public class JiraTicketMaintenanceService {
     return Arrays.asList(ticket.getCustomerorderId(), ticket.getSuborderId());
   }
 
+  /** The scope signs are looked up once per scope, not per row. */
+  private List<JiraTicketRow> toRows(List<JiraTicket> tickets) {
+    var signs = new HashMap<List<Long>, String>();
+    return tickets.stream()
+        .map(ticket -> toRow(ticket, signs.computeIfAbsent(scopeOf(ticket),
+            scope -> scopes.signOf(ticket.getCustomerorderId(), ticket.getSuborderId()))))
+        .toList();
+  }
+
+  /** The keys and every ticket below them in the order, level by level; comparison ignores case. */
+  private List<String> withChildren(long customerorderId, List<String> keys) {
+    if (keys.isEmpty()) return keys;
+    var result = new LinkedHashSet<>(keys);
+    var links = ticketRepository.findParentLinksOfCustomerorder(customerorderId);
+    boolean grown = true;
+    while (grown) {
+      grown = false;
+      for (var link : links) {
+        if (link.parentKey() != null && result.contains(link.parentKey().toUpperCase(Locale.ROOT))
+            && result.add(link.key().toUpperCase(Locale.ROOT))) {
+          grown = true;
+        }
+      }
+    }
+    return List.copyOf(result);
+  }
+
   private static JiraTicketRow toRow(JiraTicket ticket, String scopeSign) {
     var replication = ticket.getReplication();
     return new JiraTicketRow(ticket.getId(), ticket.getCustomerorderId(), ticket.getSuborderId(), ticket.getKey(),
-        ticket.getSummary(), ticket.getIssueType(), ticket.getParentKey(), scopeSign,
-        replication != null ? replication.getName() : null, replication == null);
+        ticket.getSummary(), ticket.getIssueType(), ticket.getParentKey(), ticket.getTopLevelKey(), scopeSign,
+        replication != null ? replication.getId() : null, replication != null ? replication.getName() : null,
+        replication == null, ticket.getUpdatedTs(), ticket.getCreated());
   }
 }
