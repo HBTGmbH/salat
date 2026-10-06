@@ -659,6 +659,18 @@ class JiraTicketMaintenanceServiceTest {
     assertThat(service.getScopeCustomerorders(null)).extracting(CustomerorderOption::id).containsExactly(OTHER_ORDER);
   }
 
+  /** Whether a remembered order has tickets at all; for another order the answer is no (#1386). */
+  @Test
+  void an_order_has_tickets_only_for_whoever_may_see_it() {
+    when(ticketRepository.existsInCustomerorder(ORDER)).thenReturn(true);
+    assertThat(service.hasTickets(ORDER)).isTrue();
+
+    givenResponsibleFor(OTHER_ORDER);
+    assertThat(new JiraTicketMaintenanceService(ticketRepository, configRepository,
+        new JiraTicketAuthorization(authorizedUser, customerorderService), scopes, orderReferences, importRepository,
+        suborderService).hasTickets(ORDER)).isFalse();
+  }
+
   /** The suborders of another order are not offered — not even their signs (#1386). */
   @Test
   void the_suborders_of_another_order_are_out_of_reach() {

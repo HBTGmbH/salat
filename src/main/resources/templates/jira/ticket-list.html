@@ -59,6 +59,12 @@
                   th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
                   th:selected="${fJiraTicketSuborderId != null and fJiraTicketSuborderId == so.id}"></option>
         </select>
+        <!--/* Why the select is locked once an order is chosen: its tickets are all order-wide, or a
+               remembered order has none at all. */-->
+        <div class="form-text" th:if="${fJiraTicketCustomerorderId != null and #lists.isEmpty(suborders)}"
+             th:text="${orderHasTickets} ? #{main.jira.ticket.filter.suborder.orderOnly} : #{main.jira.ticket.filter.suborder.noTickets}">
+          Tickets nur auf Auftragsebene
+        </div>
       </div>
       <div class="col-lg-4">
         <label class="form-label" for="type-select" th:text="#{main.jira.ticket.field.issueType}">Typ</label>
@@ -70,38 +76,43 @@
       </div>
     </div>
 
-    <div class="row g-3 mt-0 align-items-end">
-      <div class="col-lg-3">
-        <label class="form-label" for="key-input" th:text="#{main.jira.ticket.filter.keys}">Key</label>
+    <!--/* The second row on the grid of the first (#1386): key under order, title under suborder, the
+           limit and the buttons under the type. The switch sits on the line of its label, so that
+           every field of the row starts at the same height. */-->
+    <div class="row g-3 mt-0">
+      <div class="col-lg-4">
+        <div class="d-flex align-items-baseline">
+          <label class="form-label" for="key-input" th:text="#{main.jira.ticket.filter.keys}">Schlüssel</label>
+          <label class="form-check form-switch mb-0 ms-auto small">
+            <input class="form-check-input" type="checkbox" id="children-switch" th:checked="${fJiraTicketChildren}"/>
+            <span class="form-check-label" th:text="#{main.jira.ticket.filter.children}">mit untergeordneten Tickets</span>
+          </label>
+        </div>
         <input type="search" class="form-control" id="key-input" autocomplete="off"
                th:value="${fJiraTicketKeys}" th:placeholder="#{main.jira.ticket.filter.keys.placeholder}"/>
       </div>
-      <div class="col-lg-auto">
-        <label class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" id="children-switch" th:checked="${fJiraTicketChildren}"/>
-          <span class="form-check-label" th:text="#{main.jira.ticket.filter.children}">mit untergeordneten Tickets</span>
-        </label>
-      </div>
-      <div class="col-lg-3">
+      <div class="col-lg-4">
         <label class="form-label" for="title-input" th:text="#{main.jira.ticket.field.summary}">Titel</label>
         <input type="search" class="form-control" id="title-input" autocomplete="off"
                th:value="${fJiraTicketTitle}" th:placeholder="#{main.general.filter.text}"/>
       </div>
-      <div class="col-auto">
-        <label class="form-label" for="limit-select" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
-        <select class="form-select tomselect" id="limit-select" autocomplete="off" style="width: 10rem">
-          <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
-                  th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
-        </select>
-      </div>
-      <div class="col-auto ms-auto">
-        <div class="btn-list">
-          <a class="btn btn-link"
-             th:href="@{/jira/tickets(fJiraTicketKeys='',fJiraTicketChildren='true',fJiraTicketTitle='',fJiraTicketTypes='',fJiraTicketSort='KEY')}"
-             th:text="#{main.general.button.reset.text}">Zurücksetzen</a>
-          <button type="submit" class="btn btn-primary">
-            <i class="icon ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
-          </button>
+      <div class="col-lg-4">
+        <div class="d-flex align-items-end gap-3">
+          <div class="flex-grow-1">
+            <label class="form-label" for="limit-select" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
+            <select class="form-select tomselect" id="limit-select" autocomplete="off">
+              <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
+                      th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
+            </select>
+          </div>
+          <div class="btn-list flex-nowrap">
+            <a class="btn btn-link"
+               th:href="@{/jira/tickets(fJiraTicketKeys='',fJiraTicketChildren='true',fJiraTicketTitle='',fJiraTicketTypes='',fJiraTicketSort='KEY')}"
+               th:text="#{main.general.button.reset.text}">Zurücksetzen</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="icon ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
