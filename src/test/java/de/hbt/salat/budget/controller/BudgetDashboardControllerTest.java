@@ -6,8 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import de.hbt.salat.common.domain.AuditedEntity;
-import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.order.domain.ResponsibleOption;
 
 /**
  * The responsible filter of the dashboard offers only the responsibles of the chosen segment
@@ -42,21 +41,7 @@ public class BudgetDashboardControllerTest {
     assertThat(BudgetDashboardController.offeredResponsibleId(null, List.of(employee(1L)))).isNull();
   }
 
-  private static Employee employee(long id) {
-    var employee = new Employee();
-    setId(employee, id);
-    return employee;
+  private static ResponsibleOption employee(long id) {
+    return new ResponsibleOption(id, "s" + id, "Name " + id, false);
   }
-
-  /** The id is generated, so there is no setter; a stored record always has one. */
-  private static void setId(AuditedEntity entity, long id) {
-    try {
-      var field = AuditedEntity.class.getDeclaredField("id");
-      field.setAccessible(true);
-      field.set(entity, id);
-    } catch (ReflectiveOperationException e) {
-      throw new IllegalStateException("cannot assign an id to the test record", e);
-    }
-  }
-
 }

@@ -10,10 +10,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
+import de.hbt.salat.order.domain.ResponsibleOption;
 
 @Repository
 public interface CustomerorderRepository extends PagingAndSortingRepository<Customerorder, Long>,
@@ -66,11 +66,13 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
    * (#1104) — a {@code hide != true} would drop such a row, although nobody hid it.
    */
   @Query("""
-      select distinct e from Customerorder c join c.responsibleHbt e
+      select distinct new de.hbt.salat.order.domain.ResponsibleOption(
+             e.id, e.sign, concat(e.firstname, ' ', e.lastname), e.hide)
+      from Customerorder c join c.responsibleHbt e
       where (c.hide is null or c.hide = false) and (e.hide is null or e.hide = false)
       order by e.sign
       """)
-  List<Employee> findAllVisibleResponsibleHbt();
+  List<ResponsibleOption> findAllVisibleResponsibleHbt();
 
   /**
    * Same, but restricted to the orders of one customer segment — the choices of the "responsible"
@@ -78,12 +80,14 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
    * into a selection that no order can match.
    */
   @Query("""
-      select distinct e from Customerorder c join c.responsibleHbt e
+      select distinct new de.hbt.salat.order.domain.ResponsibleOption(
+             e.id, e.sign, concat(e.firstname, ' ', e.lastname), e.hide)
+      from Customerorder c join c.responsibleHbt e
       where (c.hide is null or c.hide = false) and (e.hide is null or e.hide = false)
       and c.customer.segment.id = :segmentId
       order by e.sign
       """)
-  List<Employee> findVisibleResponsibleHbtByCustomerSegmentId(long segmentId);
+  List<ResponsibleOption> findVisibleResponsibleHbtByCustomerSegmentId(long segmentId);
 
   List<Customerorder> findAllByCustomerId(long customerId);
 

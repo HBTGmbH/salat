@@ -25,6 +25,7 @@ import de.hbt.salat.customer.persistence.CustomerSegmentRepository;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.ResponsibleOption;
 import de.hbt.salat.order.domain.OrderType;
 
 /**
@@ -174,13 +175,13 @@ public class CustomerorderRepositoryTest {
 
   private List<String> signsOfVisibleResponsibles() {
     return customerorderRepository.findAllVisibleResponsibleHbt().stream()
-        .map(Employee::getSign)
+        .map(ResponsibleOption::sign)
         .toList();
   }
 
   private List<String> signsOfResponsiblesInSegment(long segmentId) {
     return customerorderRepository.findVisibleResponsibleHbtByCustomerSegmentId(segmentId).stream()
-        .map(Employee::getSign)
+        .map(ResponsibleOption::sign)
         .toList();
   }
 
