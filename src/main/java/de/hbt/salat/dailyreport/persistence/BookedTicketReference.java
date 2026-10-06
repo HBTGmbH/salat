@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.persistence;
 
+import java.time.Duration;
 import java.time.LocalDate;
 
 /**
@@ -9,9 +10,9 @@ import java.time.LocalDate;
  * @param position where the reference stands on the booking, counted from 1
  */
 public record BookedTicketReference(Long timereportId, LocalDate workDate, Integer position, String reference,
-                                    Integer durationhours, Integer durationminutes) {
+                                    Duration duration) {
 
   public long minutes() {
-    return 60L * (durationhours == null ? 0 : durationhours) + (durationminutes == null ? 0 : durationminutes);
+    return duration.toMinutes();
   }
 }

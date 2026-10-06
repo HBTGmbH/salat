@@ -9,7 +9,9 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,10 +146,8 @@ class WorkingdaySeedTest {
     verify(workingdayRepository).save(saved.capture());
     assertThat(saved.getValue().getRefday()).isEqualTo(DAY);
     assertThat(saved.getValue().getType()).isEqualTo(WORKED);
-    assertThat(saved.getValue().getStarttimehour()).isEqualTo(9);
-    assertThat(saved.getValue().getStarttimeminute()).isEqualTo(15);
-    assertThat(saved.getValue().getBreakhours()).isZero();
-    assertThat(saved.getValue().getBreakminutes()).isZero();
+    assertThat(saved.getValue().getStartTime()).isEqualTo(LocalTime.of(9, 15));
+    assertThat(saved.getValue().getBreakLength()).isZero();
   }
 
   private Workingday storedWorkingday(WorkingDayType type, int hour, int minute) {
@@ -156,17 +156,14 @@ class WorkingdaySeedTest {
     stored.setEmployeecontract(contract);
     stored.setRefday(DAY);
     stored.setType(type);
-    stored.setStarttimehour(hour);
-    stored.setStarttimeminute(minute);
-    stored.setBreakhours(0);
-    stored.setBreakminutes(type == WORKED ? 30 : 0);
+    stored.setStartTime(LocalTime.of(hour, minute));
+    stored.setBreakLength(Duration.ofMinutes(type == WORKED ? 30 : 0));
     when(workingdayRepository.findByRefdayAndEmployeecontractId(DAY, EMPLOYEE_CONTRACT_ID)).thenReturn(Optional.of(stored));
     return stored;
   }
 
   private void assertStart(Workingday workingday, int hour, int minute) {
     verify(workingdayRepository).save(workingday);
-    assertThat(workingday.getStarttimehour()).isEqualTo(hour);
-    assertThat(workingday.getStarttimeminute()).isEqualTo(minute);
+    assertThat(workingday.getStartTime()).isEqualTo(LocalTime.of(hour, minute));
   }
 }

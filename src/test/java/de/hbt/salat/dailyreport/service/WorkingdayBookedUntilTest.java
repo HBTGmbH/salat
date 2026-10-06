@@ -133,10 +133,8 @@ class WorkingdayBookedUntilTest {
     var workingday = new Workingday();
     workingday.setRefday(DAY);
     workingday.setType(type);
-    workingday.setStarttimehour(startHour);
-    workingday.setStarttimeminute(startMinute);
-    workingday.setBreakhours(breakHours);
-    workingday.setBreakminutes(breakMinutes);
+    workingday.setStartTime(LocalTime.of(startHour, startMinute));
+    workingday.setBreakLength(Duration.ofHours(breakHours).plusMinutes(breakMinutes));
     when(workingdayRepository.findByRefdayAndEmployeecontractId(DAY, EMPLOYEE_CONTRACT_ID)).thenReturn(Optional.of(workingday));
   }
 

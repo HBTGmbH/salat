@@ -12,6 +12,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,8 +105,7 @@ class WorkingdayConcurrentCreationTest {
 
     assertThat(storedWorkingdays()).hasSize(1);
     var stored = storedWorkingdays().getFirst();
-    assertThat(stored.getStarttimehour()).isEqualTo(9);
-    assertThat(stored.getStarttimeminute()).isEqualTo(30);
+    assertThat(stored.getStartTime()).isEqualTo(LocalTime.of(9, 30));
   }
 
   /**
@@ -137,7 +137,7 @@ class WorkingdayConcurrentCreationTest {
     assertThatNoException().isThrownBy(() -> workingdayService.upsertWorkingday(newWorkingday(10, 15)));
 
     assertThat(storedWorkingdays()).hasSize(1);
-    assertThat(storedWorkingdays().getFirst().getStarttimehour()).isEqualTo(10);
+    assertThat(storedWorkingdays().getFirst().getStartTime().getHour()).isEqualTo(10);
   }
 
   private ListAppender<ILoggingEvent> recordLog() {
@@ -160,10 +160,8 @@ class WorkingdayConcurrentCreationTest {
     var workingday = new Workingday();
     workingday.setEmployeecontract(contract);
     workingday.setRefday(DAY);
-    workingday.setStarttimehour(startHour);
-    workingday.setStarttimeminute(startMinute);
-    workingday.setBreakhours(0);
-    workingday.setBreakminutes(0);
+    workingday.setStartTime(LocalTime.of(startHour, startMinute));
+    workingday.setBreakLength(Duration.ZERO);
     workingday.setType(WORKED);
     return workingday;
   }

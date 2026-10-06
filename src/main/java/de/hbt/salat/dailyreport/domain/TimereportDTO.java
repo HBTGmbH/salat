@@ -62,8 +62,6 @@ public class TimereportDTO implements Serializable {
   private final String createdby;
   private final String lastupdatedby;
   private final boolean fitsToContract;
-  private final long durationhours;
-  private final long durationminutes;
 
   public boolean matches5MinuteSchema() {
     return duration.toMinutesPart() % 5 == 0;

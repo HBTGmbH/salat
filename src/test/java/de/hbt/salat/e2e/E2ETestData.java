@@ -5,6 +5,7 @@ import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Year;
 import java.util.HashMap;
 import java.util.List;
@@ -519,8 +520,7 @@ public class E2ETestData {
       var timereport = new Timereport();
       timereport.setReferenceday(referenceday(day));
       timereport.setEmployeeorder(employeeorder);
-      timereport.setDurationhours((int) duration.toHours());
-      timereport.setDurationminutes(duration.toMinutesPart());
+      timereport.setDuration(duration);
       timereport.setTaskdescription(comment);
       timereport.setStatus(status);
       timereport.setTraining(false);
@@ -547,7 +547,7 @@ public class E2ETestData {
       workingday.setRefday(day);
       workingday.setType(type);
       if (type == WORKED) {
-        workingday.setStarttimehour(9);
+        workingday.setStartTime(LocalTime.of(9, 0));
       }
       workingdays.save(workingday);
     }

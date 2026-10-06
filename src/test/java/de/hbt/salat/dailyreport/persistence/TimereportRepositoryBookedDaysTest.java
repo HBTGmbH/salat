@@ -131,8 +131,7 @@ public class TimereportRepositoryBookedDaysTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday);
-    timereport.setDurationhours(1);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(1));
     timereport.setStatus(status);
     timereport.setTaskdescription("");
     timereport.setTraining(false);

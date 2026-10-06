@@ -156,9 +156,9 @@ public class BudgetEmployeeQueryTest {
    * happens in {@code findAssignedBookingTotals}, so at least the two agree. The count keeps it.
    */
   @Test
-  public void drops_a_booking_without_a_duration_out_of_the_sum_but_not_out_of_the_count() {
+  public void counts_a_booking_of_no_duration_but_adds_nothing_to_the_sum() {
     book(plan, DAY, "abc", suborderA, 1, 0);
-    bookWithoutDuration(plan, DAY, "abc", suborderA);
+    book(plan, DAY, "abc", suborderA, 0, 0);
 
     assertThat(days()).singleElement().satisfies(row -> {
       assertThat(row.bookings()).isEqualTo(2);
@@ -260,13 +260,8 @@ public class BudgetEmployeeQueryTest {
     return persistBooking(budget, day, employeeSign, suborder, hours, minutes);
   }
 
-  private void bookWithoutDuration(OrderBudget budget, LocalDate day, String employeeSign,
-                                   Suborder suborder) {
-    persistBooking(budget, day, employeeSign, suborder, null, null);
-  }
-
   private long persistBooking(OrderBudget budget, LocalDate day, String employeeSign,
-                              Suborder suborder, Integer hours, Integer minutes) {
+                              Suborder suborder, int hours, int minutes) {
     var contract = employeecontract(employeeSign);
 
     var employeeorder = new Employeeorder();
@@ -278,8 +273,7 @@ public class BudgetEmployeeQueryTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday(day));
-    timereport.setDurationhours(hours);
-    timereport.setDurationminutes(minutes);
+    timereport.setDuration(Duration.ofHours(hours).plusMinutes(minutes));
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription("");
     timereport.setTraining(false);

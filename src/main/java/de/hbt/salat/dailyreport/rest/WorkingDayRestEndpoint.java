@@ -17,7 +17,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -115,10 +117,8 @@ public class WorkingDayRestEndpoint {
         var wd = ofNullable(workingdayService.getWorkingday(employeecontract.getId(), date)).orElseGet(Workingday::new);
         wd.setEmployeecontract(employeecontract);
         wd.setRefday(date);
-        wd.setStarttimehour(data.getStarthour());
-        wd.setStarttimeminute(data.getStartminute());
-        wd.setBreakhours(data.getBreakhours());
-        wd.setBreakminutes(data.getBreakminutes());
+        wd.setStartTime(LocalTime.of(data.getStarthour(), data.getStartminute()));
+        wd.setBreakLength(Duration.ofHours(data.getBreakhours()).plusMinutes(data.getBreakminutes()));
         if(data.getType() != null) {
             wd.setType(data.getType());
         }

@@ -42,10 +42,10 @@ public class WorkingDayData {
     static WorkingDayData valueOf(Workingday wd) {
         return WorkingDayData.builder()
                 .id(wd.getId())
-                .starthour(wd.getStarttimehour())
-                .startminute(wd.getStarttimeminute())
-                .breakhours(wd.getBreakhours())
-                .breakminutes(wd.getBreakminutes())
+                .starthour(wd.getStartTime().getHour())
+                .startminute(wd.getStartTime().getMinute())
+                .breakhours(Math.toIntExact(wd.getBreakLength().toHours()))
+                .breakminutes(wd.getBreakLength().toMinutesPart())
                 .date(DateUtils.format(wd.getRefday()))
                 .type(wd.getType())
                 .build();

@@ -193,8 +193,7 @@ public class TimereportController {
         form.setOrderId(tr.getCustomerorderId());
         form.setSuborderId(tr.getSuborderId());
         form.setDurationTime(String.format("%02d:%02d",
-                valueOf(tr.getDurationhours()).intValueExact(),
-                valueOf(tr.getDurationminutes()).intValueExact()));
+                tr.getDuration().toHours(), tr.getDuration().toMinutesPart()));
         form.setComment(tr.getTaskdescription() != null ? tr.getTaskdescription() : "");
         form.setTicketReferences(new ArrayList<>(tr.getTicketReferences()));
         form.setTraining(tr.isTraining());
@@ -368,7 +367,7 @@ public class TimereportController {
         }
 
         String senderDisplayName = authorizedEmployee.getName();
-        var duration = String.format("%02d:%02d", tr.getDurationhours(), tr.getDurationminutes());
+        var duration = String.format("%02d:%02d", tr.getDuration().toHours(), tr.getDuration().toMinutesPart());
         String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
             tr.getSuborderId(),
             tr.getReferenceday(),

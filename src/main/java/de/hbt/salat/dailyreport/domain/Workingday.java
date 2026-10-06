@@ -1,5 +1,7 @@
 package de.hbt.salat.dailyreport.domain;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -17,6 +19,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.common.domain.DurationMinutesConverter;
 import de.hbt.salat.employee.domain.Employeecontract;
 
 /**
@@ -44,23 +47,28 @@ public class Workingday extends AuditedEntity implements Serializable {
     private Employeecontract employeecontract;
 
     private LocalDate refday;
-    private int starttimehour;
-    private int starttimeminute;
-    private int breakhours;
-    private int breakminutes;
+
+    /**
+     * The start of the working day (#1382): one {@code TIME} column instead of hour and minute,
+     * which had no meaning of their own. A time of day rather than minutes since midnight, so that
+     * the column reads as what it is in a report as well.
+     */
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime = LocalTime.MIDNIGHT;
+
+    /** The length of the break (#1382), stored in minutes in one column. */
+    @Convert(converter = DurationMinutesConverter.class)
+    @Column(name = "break_minutes", nullable = false)
+    private Duration breakLength = Duration.ZERO;
+
     @Enumerated(EnumType.STRING)
     private WorkingDayType type = WorkingDayType.WORKED;
 
     public LocalDateTime getStartOfWorkingDay() {
-        LocalTime localTime = LocalTime.of(starttimehour, starttimeminute);
-        return LocalDateTime.of(refday, localTime);
-    }
-
-    public Duration getBreakLength() {
-        return Duration.ofHours(breakhours).plusMinutes(breakminutes);
+        return LocalDateTime.of(refday, startTime);
     }
 
     public long getBreakLengthInMinutes() {
-        return getBreakLength().toMinutes();
+        return breakLength.toMinutes();
     }
 }

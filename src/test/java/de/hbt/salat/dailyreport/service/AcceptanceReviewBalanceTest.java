@@ -8,6 +8,7 @@ import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -255,8 +256,8 @@ class AcceptanceReviewBalanceTest {
       var workingday = new Workingday();
       workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(contract));
       workingday.setRefday(day);
-      workingday.setStarttimehour(8);
-      workingday.setBreakminutes(45);
+      workingday.setStartTime(LocalTime.of(8, 0));
+      workingday.setBreakLength(Duration.ofMinutes(45));
       workingdayRepository.save(workingday);
     }
     timereportService.createTimereports(contract, employeeorder, day, "task", false, hours, 0, 1);

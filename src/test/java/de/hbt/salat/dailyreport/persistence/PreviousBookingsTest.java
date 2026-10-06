@@ -186,8 +186,7 @@ public class PreviousBookingsTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(onEmployeeorder);
     timereport.setReferenceday(referenceday);
-    timereport.setDurationhours(hours);
-    timereport.setDurationminutes(minutes);
+    timereport.setDuration(Duration.ofHours(hours).plusMinutes(minutes));
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription(comment);
     timereport.setTicketReferences(ticketReference == null ? List.of() : List.of(ticketReference));

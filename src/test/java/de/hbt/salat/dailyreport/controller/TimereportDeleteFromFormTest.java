@@ -182,8 +182,6 @@ class TimereportDeleteFromFormTest {
         .customerorderId(1L)
         .suborderId(5L)
         .duration(Duration.ofMinutes(90))
-        .durationhours(1)
-        .durationminutes(30)
         .taskdescription("comment")
         .build();
   }

@@ -11,7 +11,9 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,20 +106,16 @@ class WorkingdayMarkNotWorkedTest {
     stored.setEmployeecontract(contract);
     stored.setRefday(DAY);
     stored.setType(WORKED);
-    stored.setStarttimehour(8);
-    stored.setStarttimeminute(30);
-    stored.setBreakhours(1);
-    stored.setBreakminutes(15);
+    stored.setStartTime(LocalTime.of(8, 30));
+    stored.setBreakLength(Duration.ofHours(1).plusMinutes(15));
     when(workingdayRepository.findByRefdayAndEmployeecontractId(DAY, EMPLOYEE_CONTRACT_ID)).thenReturn(Optional.of(stored));
 
     workingdayService.markNotWorked(contract, DAY);
 
     verify(workingdayRepository).save(stored);
     assertThat(stored.getType()).isEqualTo(NOT_WORKED);
-    assertThat(stored.getStarttimehour()).isZero();
-    assertThat(stored.getStarttimeminute()).isZero();
-    assertThat(stored.getBreakhours()).isZero();
-    assertThat(stored.getBreakminutes()).isZero();
+    assertThat(stored.getStartTime()).isEqualTo(LocalTime.MIDNIGHT);
+    assertThat(stored.getBreakLength()).isZero();
   }
 
   /** Steht inzwischen eine Buchung an dem Tag, etwa aus einem zweiten Fenster, wird nichts markiert. */

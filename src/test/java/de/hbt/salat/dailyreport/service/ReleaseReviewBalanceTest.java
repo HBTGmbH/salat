@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.HashSet;
@@ -291,8 +292,8 @@ class ReleaseReviewBalanceTest {
       var workingday = new Workingday();
       workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(contract));
       workingday.setRefday(day);
-      workingday.setStarttimehour(8);
-      workingday.setBreakminutes(45);
+      workingday.setStartTime(LocalTime.of(8, 0));
+      workingday.setBreakLength(Duration.ofMinutes(45));
       workingdayRepository.save(workingday);
     }
     timereportService.createTimereports(contract, employeeorder, day, "task", false, hours, 0, 1);

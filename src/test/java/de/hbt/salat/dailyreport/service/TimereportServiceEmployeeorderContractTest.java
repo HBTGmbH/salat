@@ -11,7 +11,9 @@ import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Year;
 import java.util.List;
 import java.util.Optional;
@@ -126,7 +128,7 @@ class TimereportServiceEmployeeorderContractTest {
     when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(any(), anyLong())).thenAnswer(call -> {
       var workingday = new Workingday();
       workingday.setRefday(call.getArgument(0));
-      workingday.setStarttimehour(8);
+      workingday.setStartTime(LocalTime.of(8, 0));
       return workingday;
     });
     when(timereportRepository.save(any())).thenAnswer(call -> call.getArgument(0));
@@ -181,8 +183,7 @@ class TimereportServiceEmployeeorderContractTest {
     timereport.setEmployeeorder(employeeorderDAO.getEmployeeorderById(EMPLOYEE_ORDER_ID));
     timereport.setReferenceday(referenceday(DAY));
     timereport.setTaskdescription("Kommentar");
-    timereport.setDurationhours(1);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(1));
     timereport.setStatus(TIMEREPORT_STATUS_OPEN);
     when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(timereport));
   }

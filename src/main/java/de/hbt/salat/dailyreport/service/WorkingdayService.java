@@ -88,7 +88,7 @@ public class WorkingdayService {
    */
   public LocalTime getEffectiveStart(Workingday workingday, long employeecontractId) {
     if (workingday != null) {
-      return LocalTime.of(workingday.getStarttimehour(), workingday.getStarttimeminute());
+      return workingday.getStartTime();
     }
     return dailyPreferenceService.getForEmployeeContractId(employeecontractId).workDayStart();
   }
@@ -171,10 +171,8 @@ public class WorkingdayService {
           return created;
         });
     workingday.setType(NOT_WORKED);
-    workingday.setStarttimehour(0);
-    workingday.setStarttimeminute(0);
-    workingday.setBreakhours(0);
-    workingday.setBreakminutes(0);
+    workingday.setStartTime(LocalTime.MIDNIGHT);
+    workingday.setBreakLength(Duration.ZERO);
     upsertWorkingday(workingday);
   }
 
@@ -206,10 +204,8 @@ public class WorkingdayService {
         .findByRefdayAndEmployeecontractId(workingday.getRefday(), workingday.getEmployeecontract().getId())
         .orElseThrow(() -> conflict);
 
-    existing.setStarttimehour(workingday.getStarttimehour());
-    existing.setStarttimeminute(workingday.getStarttimeminute());
-    existing.setBreakhours(workingday.getBreakhours());
-    existing.setBreakminutes(workingday.getBreakminutes());
+    existing.setStartTime(workingday.getStartTime());
+    existing.setBreakLength(workingday.getBreakLength());
     existing.setType(workingday.getType());
 
     checkUpsertAllowed(existing);
@@ -337,10 +333,9 @@ public class WorkingdayService {
         .reduce(Duration.ZERO, Duration::plus);
     if (workingday != null) {
       elapsed = elapsed
-          .plusHours(workingday.getStarttimehour())
-          .plusMinutes(workingday.getStarttimeminute())
-          .plusHours(workingday.getBreakhours())
-          .plusMinutes(workingday.getBreakminutes());
+          .plusHours(workingday.getStartTime().getHour())
+          .plusMinutes(workingday.getStartTime().getMinute())
+          .plus(workingday.getBreakLength());
     }
     return LocalTime.MIDNIGHT.plus(elapsed);
   }
@@ -366,7 +361,7 @@ public class WorkingdayService {
    */
   public TargetEnd calculateTargetEnd(Workingday workingday, long employeecontractId, Duration dayTarget) {
     var bookedBreak = workingday != null
-        ? Duration.ofHours(workingday.getBreakhours()).plusMinutes(workingday.getBreakminutes())
+        ? workingday.getBreakLength()
         : Duration.ZERO;
     var considerMandatoryBreak = dailyPreferenceService.getForEmployeeContractId(employeecontractId)
         .considerMandatoryBreak();
@@ -391,7 +386,7 @@ public class WorkingdayService {
     }
     var start = getEffectiveStart(workingday, employeecontractId);
     long breakMinutes = workingday != null
-        ? workingday.getBreakhours() * 60L + workingday.getBreakminutes()
+        ? workingday.getBreakLength().toMinutes()
         : 0;
     long workedMinutes = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date).stream()
         .filter(tr -> excludedTimereportId == null || tr.getId() != excludedTimereportId)
@@ -406,8 +401,7 @@ public class WorkingdayService {
     LocalTime end = LocalTime.MIDNIGHT
         .plusHours(start.getHour())
         .plusMinutes(start.getMinute())
-        .plusHours(workingday != null ? workingday.getBreakhours() : 0)
-        .plusMinutes(workingday != null ? workingday.getBreakminutes() : 0)
+        .plus(workingday != null ? workingday.getBreakLength() : Duration.ZERO)
         .plus(worked);
     return "%02d:%02d".formatted(end.getHour(), end.getMinute());
   }
@@ -433,13 +427,10 @@ public class WorkingdayService {
       workingday = new Workingday();
       workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
       workingday.setRefday(date);
-      workingday.setBreakhours(0);
-      workingday.setBreakminutes(0);
-      workingday.setStarttimehour(beginHour);
-      workingday.setStarttimeminute(beginMinute);
+      workingday.setBreakLength(Duration.ZERO);
+      workingday.setStartTime(LocalTime.of(beginHour, beginMinute));
     } else if (workingday.getType() == NOT_WORKED) {
-      workingday.setStarttimehour(beginHour);
-      workingday.setStarttimeminute(beginMinute);
+      workingday.setStartTime(LocalTime.of(beginHour, beginMinute));
     }
     workingday.setType(Workingday.WorkingDayType.WORKED);
     upsertWorkingday(workingday);

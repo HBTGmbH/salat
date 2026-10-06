@@ -241,8 +241,7 @@ public class AssignedBookingRepositoryTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday(entityManager, day));
-    timereport.setDurationhours(hours);
-    timereport.setDurationminutes(minutes);
+    timereport.setDuration(Duration.ofHours(hours).plusMinutes(minutes));
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription(taskDescription);
     timereport.setTraining(false);

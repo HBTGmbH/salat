@@ -10,6 +10,7 @@ import static de.hbt.salat.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalTime;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.time.LocalDate;
@@ -208,20 +209,16 @@ public class DailyController {
             model.addAttribute("renderWorkingdayForm", wasNotWorked != form.isNotWorked());
             if (form.isNotWorked()) {
                 workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
-                workingday.setStarttimehour(0);
-                workingday.setStarttimeminute(0);
-                workingday.setBreakhours(0);
-                workingday.setBreakminutes(0);
+                workingday.setStartTime(LocalTime.MIDNIGHT);
+                workingday.setBreakLength(Duration.ZERO);
             } else {
                 var beginTime = dailyPreferenceService.getForEmployeeContractId(effEmployeeContractId).workDayStart();
                 int[] start = parseTime(form.getStartTime(), beginTime.getHour(), beginTime.getMinute());
                 // the break is a duration, not a time of day — "30" means half an hour, not 30 o'clock
                 int[] brk   = parseBreak(form.getBreakTime());
                 workingday.setType(Workingday.WorkingDayType.WORKED);
-                workingday.setStarttimehour(start[0]);
-                workingday.setStarttimeminute(start[1]);
-                workingday.setBreakhours(brk[0]);
-                workingday.setBreakminutes(brk[1]);
+                workingday.setStartTime(LocalTime.of(start[0], start[1]));
+                workingday.setBreakLength(Duration.ofHours(brk[0]).plusMinutes(brk[1]));
             }
             workingdayService.upsertWorkingday(workingday);
             if ("true".equals(request.getHeader("HX-Request"))) {
@@ -321,8 +318,8 @@ public class DailyController {
             var tr = timereportService.getTimereportById(id);
             date = tr.getReferenceday();
             ecId = tr.getEmployeecontractId();
-            long hours = tr.getDurationhours();
-            long minutes = tr.getDurationminutes();
+            long hours = tr.getDuration().toHours();
+            long minutes = tr.getDuration().toMinutesPart();
             // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — an unparseable value is
             // reported back instead of being discarded silently (#825). The duration parameter is
             // absent when only the comment was edited; then the stored duration stays untouched.

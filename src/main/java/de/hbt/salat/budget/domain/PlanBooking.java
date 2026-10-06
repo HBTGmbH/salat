@@ -15,13 +15,4 @@ import java.time.LocalDate;
  */
 public record PlanBooking(long orderBudgetId, long suborderId, long employeeId, LocalDate day,
                           Duration duration) {
-
-    /** The shape the JPQL constructor expression builds. */
-    public PlanBooking(long orderBudgetId, long suborderId, long employeeId, LocalDate day,
-                       Integer durationHours, Integer durationMinutes) {
-        this(orderBudgetId, suborderId, employeeId, day,
-            Duration.ofHours(durationHours == null ? 0 : durationHours)
-                .plusMinutes(durationMinutes == null ? 0 : durationMinutes));
-    }
-
 }

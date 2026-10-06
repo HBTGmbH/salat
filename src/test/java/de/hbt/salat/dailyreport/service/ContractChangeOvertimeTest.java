@@ -12,6 +12,7 @@ import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -319,7 +320,7 @@ class ContractChangeOvertimeTest {
     var workingday = new Workingday();
     workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(contract));
     workingday.setRefday(day);
-    workingday.setStarttimehour(8);
+    workingday.setStartTime(LocalTime.of(8, 0));
     workingdayRepository.save(workingday);
   }
 

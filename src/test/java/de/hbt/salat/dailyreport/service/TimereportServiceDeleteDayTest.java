@@ -128,8 +128,7 @@ class TimereportServiceDeleteDayTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(onEmployeeorder);
     timereport.setReferenceday(referenceday);
-    timereport.setDurationhours(1);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(1));
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription("");
     timereport.setTraining(false);
