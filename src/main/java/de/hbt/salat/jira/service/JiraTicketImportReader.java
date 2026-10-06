@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.jira.domain.JiraImportColumn;
+import de.hbt.salat.jira.domain.JiraImportMappingEntry;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraTicketImportPreview;
 
@@ -38,7 +39,7 @@ import de.hbt.salat.jira.domain.JiraTicketImportPreview;
  * confirmed or changed in the preview. Only reads: what to create and what to update is the
  * service's business.
  */
-final class JiraTicketImport {
+final class JiraTicketImportReader {
 
   /** How many rows the preview shows. */
   static final int SAMPLE_ROWS = 5;
@@ -75,22 +76,39 @@ final class JiraTicketImport {
       String parentKey, LocalDateTime created, LocalDateTime updated, Map<String, String> customFields) {
   }
 
-  private JiraTicketImport() {
+  private JiraTicketImportReader() {
+  }
+
+  /** {@link #preview(JiraTicketFile, List)} without an earlier import to go by. */
+  static JiraTicketImportPreview preview(JiraTicketFile file) {
+    return preview(file, List.of());
   }
 
   /**
-   * What each heading suggests. A field that takes one column goes to the first heading naming it;
-   * a later one is left out, so that the suggestion never fails the import on its own.
+   * How each column would be read: as the latest import of the scope read the column of the same
+   * heading (#1386) — a repeated heading by its occurrence — otherwise as the heading suggests. A
+   * field that takes one column goes to the first column naming it; a later one is left out, so that
+   * the suggestion never fails the import on its own.
+   *
+   * @param previous the column reading of the latest import of the scope, empty if there was none
    */
-  static JiraTicketImportPreview preview(JiraTicketFile file) {
+  static JiraTicketImportPreview preview(JiraTicketFile file, List<JiraImportMappingEntry> previous) {
     var taken = EnumSet.noneOf(JiraImportTarget.class);
     var suggested = new ArrayList<JiraImportColumn>();
+    var seen = new HashMap<String, Integer>();
     for (var heading : file.headings()) {
-      var target = JiraImportTarget.suggestedFor(heading);
+      var normalised = normalised(heading);
+      int occurrence = seen.merge(normalised, 1, Integer::sum) - 1;
+      var earlier = previous.stream().filter(entry -> normalised(entry.heading()).equals(normalised))
+          .skip(occurrence).findFirst();
+      var column = earlier
+          .map(entry -> new JiraImportColumn(entry.target(), entry.fieldName(), entry.inherited()))
+          .orElseGet(() -> new JiraImportColumn(JiraImportTarget.suggestedFor(heading), null, false));
+      var target = column.target();
       if (!target.isMultiple() && target != JiraImportTarget.IGNORE && !taken.add(target)) {
-        target = JiraImportTarget.IGNORE;
+        column = JiraImportColumn.ignored();
       }
-      suggested.add(new JiraImportColumn(target, null, false));
+      suggested.add(column);
     }
     var samples = file.lines().stream().limit(SAMPLE_ROWS)
         .map(line -> IntStream.range(0, file.headings().size()).mapToObj(line::cell).toList())
@@ -275,6 +293,10 @@ final class JiraTicketImport {
 
   private static boolean longerThan(String value, int max) {
     return value != null && value.length() > max;
+  }
+
+  private static String normalised(String heading) {
+    return heading == null ? "" : heading.trim().toLowerCase(Locale.ROOT);
   }
 
   private static boolean isBlank(String value) {

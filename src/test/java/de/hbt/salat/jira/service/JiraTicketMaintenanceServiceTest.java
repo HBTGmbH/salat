@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -31,15 +32,18 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.jira.domain.JiraImportColumn;
+import de.hbt.salat.jira.domain.JiraImportMappingEntry;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.jira.domain.JiraTicketImport;
 import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.domain.JiraTicketParentLink;
 import de.hbt.salat.jira.domain.JiraTicketRow;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.JiraTicketImportRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.Customerorder;
@@ -65,6 +69,8 @@ class JiraTicketMaintenanceServiceTest {
   private CustomerorderService customerorderService;
   private JiraScopes scopes;
   private OrderReferences orderReferences;
+  private JiraTicketImportRepository importRepository;
+  private final List<JiraTicketImport> imports = new ArrayList<>();
   private JiraTicketMaintenanceService service;
 
   @BeforeEach
@@ -75,9 +81,16 @@ class JiraTicketMaintenanceServiceTest {
     customerorderService = mock(CustomerorderService.class);
     scopes = mock(JiraScopes.class);
     orderReferences = mock(OrderReferences.class);
+    importRepository = mock(JiraTicketImportRepository.class);
+    // The imports saved, the latest first — as the repository answers for the scope.
+    when(importRepository.save(any(JiraTicketImport.class))).thenAnswer(invocation -> {
+      imports.addFirst(invocation.getArgument(0));
+      return invocation.getArgument(0);
+    });
+    when(importRepository.findLatestInScope(anyLong(), any(), any())).thenAnswer(invocation -> List.copyOf(imports));
     var authorization = new JiraTicketAuthorization(authorizedUser, customerorderService);
     service = new JiraTicketMaintenanceService(ticketRepository, configRepository, authorization, scopes,
-        orderReferences);
+        orderReferences, importRepository);
 
     when(authorizedUser.isManager()).thenReturn(true);
     when(scopes.customerorderExists(ORDER)).thenReturn(true);
@@ -211,7 +224,7 @@ class JiraTicketMaintenanceServiceTest {
 
   @Test
   void a_file_creates_its_tickets_as_the_columns_are_assigned() {
-    int count = service.importTickets(ORDER, null, JIRA_EXPORT.getBytes(UTF_8), jiraExportMapping(false));
+    int count = service.importTickets(ORDER, null, "tickets.csv", JIRA_EXPORT.getBytes(UTF_8), jiraExportMapping(false));
 
     assertThat(count).isEqualTo(2);
     var saved = savedAll();
@@ -237,12 +250,71 @@ class JiraTicketMaintenanceServiceTest {
     });
     when(ticketRepository.findInScope(ORDER, null)).thenAnswer(invocation -> List.copyOf(saved));
 
-    service.importTickets(ORDER, null, JIRA_EXPORT.getBytes(UTF_8), jiraExportMapping(true));
+    service.importTickets(ORDER, null, "tickets.csv", JIRA_EXPORT.getBytes(UTF_8), jiraExportMapping(true));
 
     var story = saved.stream().filter(ticket -> ticket.getKey().equals("ABC-2")).findFirst().orElseThrow();
     assertThat(story.getCustomFieldsEffective())
         .containsEntry("customfield_10500", new ResolvedFieldValue("Blau", "ABC-1"));
     assertThat(story.getTopLevelKey()).isEqualTo("ABC-1");
+  }
+
+  /** The import is kept with its file, its column reading and what came of it; its tickets point at it. */
+  @Test
+  void an_import_is_kept_and_its_tickets_point_at_it() {
+    var stored = manual("ABC-1", 5L);
+    when(ticketRepository.findInScope(ORDER, null)).thenReturn(List.of(stored));
+
+    service.importTickets(ORDER, null, "tickets.csv", "Key;Team\nABC-1;Blau\nABC-2;Rot\n".getBytes(UTF_8),
+        List.of(column(JiraImportTarget.KEY), new JiraImportColumn(JiraImportTarget.ADDITIONAL, " team ", true)));
+
+    assertThat(imports).singleElement().satisfies(ticketImport -> {
+      assertThat(ticketImport.getFileName()).isEqualTo("tickets.csv");
+      assertThat(ticketImport.getCreatedCount()).isEqualTo(1);
+      assertThat(ticketImport.getUpdatedCount()).isEqualTo(1);
+      assertThat(ticketImport.getColumnMapping()).containsExactly(
+          new JiraImportMappingEntry("Key", JiraImportTarget.KEY, null, false),
+          new JiraImportMappingEntry("Team", JiraImportTarget.ADDITIONAL, "team", true));
+      assertThat(ticketImport.inheritedFields()).containsExactly("team");
+    });
+    assertThat(savedAll()).allSatisfy(ticket -> assertThat(ticket.getTicketImport()).isSameAs(imports.getFirst()));
+  }
+
+  /** The latest import of the scope decides the inheritance: importing again without the mark switches it off. */
+  @Test
+  void the_latest_import_switches_an_inheritance_off() {
+    var saved = new ArrayList<JiraTicket>();
+    when(ticketRepository.saveAll(anyIterable())).thenAnswer(invocation -> {
+      Iterable<JiraTicket> tickets = invocation.getArgument(0);
+      tickets.forEach(ticket -> { if (!saved.contains(ticket)) saved.add(ticket); });
+      return List.of();
+    });
+    when(ticketRepository.findInScope(ORDER, null)).thenAnswer(invocation -> List.copyOf(saved));
+    var file = "Key;Parent;Team\nABC-1;;Blau\nABC-2;ABC-1;\n".getBytes(UTF_8);
+    var child = (java.util.function.Supplier<JiraTicket>) () ->
+        saved.stream().filter(ticket -> ticket.getKey().equals("ABC-2")).findFirst().orElseThrow();
+
+    service.importTickets(ORDER, null, "a.csv", file, List.of(column(JiraImportTarget.KEY),
+        column(JiraImportTarget.PARENT), new JiraImportColumn(JiraImportTarget.ADDITIONAL, "team", true)));
+    assertThat(child.get().getCustomFieldsEffective()).containsEntry("team", new ResolvedFieldValue("Blau", "ABC-1"));
+
+    service.importTickets(ORDER, null, "b.csv", file, List.of(column(JiraImportTarget.KEY),
+        column(JiraImportTarget.PARENT), new JiraImportColumn(JiraImportTarget.ADDITIONAL, "team", false)));
+    assertThat(child.get().getCustomFieldsEffective()).isNull();
+  }
+
+  /** The preview proposes how the latest import of the scope read the columns of the same headings. */
+  @Test
+  void the_preview_proposes_the_reading_of_the_latest_import() {
+    var earlier = new JiraTicketImport();
+    earlier.setColumnMapping(List.of(new JiraImportMappingEntry("Issue key", JiraImportTarget.KEY, null, false),
+        new JiraImportMappingEntry("Custom field (Team)", JiraImportTarget.ADDITIONAL, "customfield_10500", true)));
+    imports.add(earlier);
+
+    var preview = service.preview(JIRA_EXPORT.getBytes(UTF_8), ORDER, null);
+
+    assertThat(preview.suggested().get(8))
+        .isEqualTo(new JiraImportColumn(JiraImportTarget.ADDITIONAL, "customfield_10500", true));
+    assertThat(preview.suggested().get(1).target()).isEqualTo(JiraImportTarget.KEY);
   }
 
   /** A key the scope already has is updated, not created a second time. */
@@ -251,7 +323,7 @@ class JiraTicketMaintenanceServiceTest {
     var stored = manual("ABC-1", 5L);
     when(ticketRepository.findInScope(ORDER, null)).thenReturn(List.of(stored));
 
-    service.importTickets(ORDER, null, "Key;Summary\nABC-1;Neuer Titel\n".getBytes(UTF_8),
+    service.importTickets(ORDER, null, "tickets.csv", "Key;Summary\nABC-1;Neuer Titel\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY), column(JiraImportTarget.SUMMARY)));
 
     assertThat(savedAll()).containsExactly(stored);
@@ -270,7 +342,7 @@ class JiraTicketMaintenanceServiceTest {
         """;
     var mapping = List.of(column(JiraImportTarget.KEY), column(JiraImportTarget.ID), column(JiraImportTarget.CREATED));
 
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, file.getBytes(UTF_8), mapping))
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", file.getBytes(UTF_8), mapping))
         .isInstanceOf(InvalidDataException.class)
         .satisfies(ex -> assertThat(((ErrorCodeException) ex).getMessages())
             .extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().get(0))
@@ -288,7 +360,7 @@ class JiraTicketMaintenanceServiceTest {
     other.setJiraId(1L);
     when(ticketRepository.findInScope(ORDER, null)).thenReturn(List.of(other));
 
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, "Key;Id\nABC-1;1\n".getBytes(UTF_8),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", "Key;Id\nABC-1;1\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY), column(JiraImportTarget.ID))))
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_ID_TAKEN));
   }
@@ -297,24 +369,24 @@ class JiraTicketMaintenanceServiceTest {
   void the_assignment_needs_a_key_column_and_one_column_per_single_field() {
     var file = "Key;Summary;Title;Extra\nABC-1;a;b;c\n".getBytes(UTF_8);
 
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, file, List.of(column(JiraImportTarget.SUMMARY),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", file, List.of(column(JiraImportTarget.SUMMARY),
         column(JiraImportTarget.IGNORE), column(JiraImportTarget.IGNORE), column(JiraImportTarget.IGNORE))))
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_NO_KEY_COLUMN));
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, file, List.of(column(JiraImportTarget.KEY),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", file, List.of(column(JiraImportTarget.KEY),
         column(JiraImportTarget.SUMMARY), column(JiraImportTarget.SUMMARY), column(JiraImportTarget.IGNORE))))
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_TARGET_TWICE));
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, file, List.of(column(JiraImportTarget.KEY),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", file, List.of(column(JiraImportTarget.KEY),
         column(JiraImportTarget.SUMMARY), column(JiraImportTarget.IGNORE),
         new JiraImportColumn(JiraImportTarget.ADDITIONAL, " ", false))))
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_FIELD_NAME_MISSING));
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, file, List.of(column(JiraImportTarget.KEY))))
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", file, List.of(column(JiraImportTarget.KEY))))
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_MAPPING_MISMATCH));
     verify(ticketRepository, never()).saveAll(anyIterable());
   }
 
   @Test
   void a_file_with_only_headings_contains_no_tickets() {
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, "Key;Summary\n".getBytes(UTF_8),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", "Key;Summary\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY), column(JiraImportTarget.SUMMARY))))
         .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_IMPORT_EMPTY));
   }
@@ -326,7 +398,7 @@ class JiraTicketMaintenanceServiceTest {
     replicated.setReplication(replication("Alpha-JIRA"));
     when(ticketRepository.findInScope(ORDER, null)).thenReturn(List.of(replicated));
 
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, "Key\nABC-2\nABC-1\n".getBytes(UTF_8),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", "Key\nABC-2\nABC-1\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY))))
         .satisfies(ex -> assertThat(((ErrorCodeException) ex).getMessages())
             .extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().get(0))
@@ -439,14 +511,14 @@ class JiraTicketMaintenanceServiceTest {
   void a_restricted_user_may_not_even_as_manager() {
     when(authorizedUser.isRestricted()).thenReturn(true);
 
-    assertThatThrownBy(() -> service.importTickets(ORDER, null, "Key\nABC-1\n".getBytes(UTF_8),
+    assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", "Key\nABC-1\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY))))
         .isInstanceOf(AuthorizationException.class);
   }
 
   /** The suggestion of the preview, with the team column as additional field. */
   private List<JiraImportColumn> jiraExportMapping(boolean inherited) {
-    var suggested = new ArrayList<>(service.preview(JIRA_EXPORT.getBytes(UTF_8)).suggested());
+    var suggested = new ArrayList<>(service.preview(JIRA_EXPORT.getBytes(UTF_8), null, null).suggested());
     suggested.set(8, new JiraImportColumn(JiraImportTarget.ADDITIONAL, "customfield_10500", inherited));
     return suggested;
   }

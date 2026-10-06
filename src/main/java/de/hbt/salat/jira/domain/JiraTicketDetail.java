@@ -15,6 +15,7 @@ import java.util.TreeSet;
  * @param customFields the additional fields as the ticket carries them itself
  * @param effectiveFields the inherited fields as resolved along the parent chain
  * @param children the tickets of the same scope that name it as parent
+ * @param importedFrom the file of the import that wrote the ticket last, {@code null} if none did
  */
 public record JiraTicketDetail(
     JiraTicketRow row,
@@ -26,7 +27,10 @@ public record JiraTicketDetail(
     String lastChangeBy,
     Map<String, String> customFields,
     Map<String, ResolvedFieldValue> effectiveFields,
-    List<JiraTicketRow> children
+    List<JiraTicketRow> children,
+    String importedFrom,
+    LocalDateTime importedAt,
+    String importedBy
 ) {
 
   /** The names of the own and the inherited fields together, sorted. */

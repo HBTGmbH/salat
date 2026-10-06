@@ -20,7 +20,7 @@ import de.hbt.salat.jira.domain.JiraImportTarget;
  * ways a parent and a date are written.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
-class JiraTicketImportTest {
+class JiraTicketImportReaderTest {
 
   @Test
   void the_headings_suggest_the_columns_of_jira_ticket() {
@@ -29,7 +29,7 @@ class JiraTicketImportTest {
         ABC-1,1,Eins,Epic,a,,,,,,,
         """.getBytes(UTF_8));
 
-    assertThat(JiraTicketImport.preview(file).suggested()).extracting(JiraImportColumn::target).containsExactly(
+    assertThat(JiraTicketImportReader.preview(file).suggested()).extracting(JiraImportColumn::target).containsExactly(
         JiraImportTarget.KEY, JiraImportTarget.ID, JiraImportTarget.SUMMARY, JiraImportTarget.ISSUE_TYPE,
         JiraImportTarget.LABELS, JiraImportTarget.LABELS, JiraImportTarget.PARENT, JiraImportTarget.PARENT,
         JiraImportTarget.IGNORE, JiraImportTarget.CREATED, JiraImportTarget.UPDATED, JiraImportTarget.IGNORE);
@@ -40,7 +40,7 @@ class JiraTicketImportTest {
   void a_second_heading_for_a_single_field_is_not_suggested() {
     var file = JiraTicketFile.read("Schlüssel;Key\nABC-1;ABC-1\n".getBytes(UTF_8));
 
-    assertThat(JiraTicketImport.preview(file).suggested()).extracting(JiraImportColumn::target)
+    assertThat(JiraTicketImportReader.preview(file).suggested()).extracting(JiraImportColumn::target)
         .containsExactly(JiraImportTarget.KEY, JiraImportTarget.IGNORE);
   }
 
@@ -49,11 +49,11 @@ class JiraTicketImportTest {
     var file = JiraTicketFile.read("\uFEFFKey;Summary\nA-1;eins\n\nA-2;zwei\nA-3;drei\nA-4;\nA-5;\nA-6;\n"
         .getBytes(UTF_8));
 
-    var preview = JiraTicketImport.preview(file);
+    var preview = JiraTicketImportReader.preview(file);
 
     assertThat(preview.headings()).containsExactly("Key", "Summary");
     assertThat(preview.rowCount()).isEqualTo(6);
-    assertThat(preview.sampleRows()).hasSize(JiraTicketImport.SAMPLE_ROWS);
+    assertThat(preview.sampleRows()).hasSize(JiraTicketImportReader.SAMPLE_ROWS);
     assertThat(preview.sampleRows().get(1)).containsExactly("A-2", "zwei");
   }
 
@@ -71,19 +71,19 @@ class JiraTicketImportTest {
     var mapping = List.of(column(JiraImportTarget.KEY), column(JiraImportTarget.ID),
         column(JiraImportTarget.PARENT), column(JiraImportTarget.PARENT));
 
-    var tickets = JiraTicketImport.read(file, mapping, Map.of(77L, "SCOPE-7"));
+    var tickets = JiraTicketImportReader.read(file, mapping, Map.of(77L, "SCOPE-7"));
 
-    assertThat(tickets).extracting(JiraTicketImport.Ticket::parentKey)
+    assertThat(tickets).extracting(JiraTicketImportReader.Ticket::parentKey)
         .containsExactly(null, "A-1", "A-2", null, "SCOPE-7");
   }
 
   @Test
   void dates_are_read_in_the_usual_ways() {
-    assertThat(JiraTicketImport.parseDate("2026-06-25T15:05")).contains(LocalDateTime.of(2026, 6, 25, 15, 5));
-    assertThat(JiraTicketImport.parseDate("25.06.2026 15:05")).contains(LocalDateTime.of(2026, 6, 25, 15, 5));
-    assertThat(JiraTicketImport.parseDate("25/jun/26 3:05 pm")).contains(LocalDateTime.of(2026, 6, 25, 15, 5));
-    assertThat(JiraTicketImport.parseDate("25.06.2026")).contains(LocalDateTime.of(2026, 6, 25, 0, 0));
-    assertThat(JiraTicketImport.parseDate("gestern")).isEmpty();
+    assertThat(JiraTicketImportReader.parseDate("2026-06-25T15:05")).contains(LocalDateTime.of(2026, 6, 25, 15, 5));
+    assertThat(JiraTicketImportReader.parseDate("25.06.2026 15:05")).contains(LocalDateTime.of(2026, 6, 25, 15, 5));
+    assertThat(JiraTicketImportReader.parseDate("25/jun/26 3:05 pm")).contains(LocalDateTime.of(2026, 6, 25, 15, 5));
+    assertThat(JiraTicketImportReader.parseDate("25.06.2026")).contains(LocalDateTime.of(2026, 6, 25, 0, 0));
+    assertThat(JiraTicketImportReader.parseDate("gestern")).isEmpty();
   }
 
   @Test
@@ -108,7 +108,7 @@ class JiraTicketImportTest {
     }
 
     var file = JiraTicketFile.read(content);
-    var tickets = JiraTicketImport.read(file, JiraTicketImport.preview(file).suggested(), Map.of());
+    var tickets = JiraTicketImportReader.read(file, JiraTicketImportReader.preview(file).suggested(), Map.of());
 
     assertThat(tickets).singleElement().satisfies(ticket -> {
       assertThat(ticket.key()).isEqualTo("ABC-1");
@@ -125,7 +125,7 @@ class JiraTicketImportTest {
         new JiraImportColumn(JiraImportTarget.ADDITIONAL, "sprint", false),
         new JiraImportColumn(JiraImportTarget.ADDITIONAL, "sprint", false));
 
-    assertThat(JiraTicketImport.read(file, mapping, Map.of())).singleElement()
+    assertThat(JiraTicketImportReader.read(file, mapping, Map.of())).singleElement()
         .satisfies(ticket -> assertThat(ticket.customFields()).containsEntry("sprint", "S1,S2"));
   }
 

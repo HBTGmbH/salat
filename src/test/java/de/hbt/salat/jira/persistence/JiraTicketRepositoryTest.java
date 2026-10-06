@@ -20,7 +20,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.jira.OrderTree;
+import de.hbt.salat.jira.domain.JiraImportMappingEntry;
+import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraTicket;
+import de.hbt.salat.jira.domain.JiraTicketImport;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 
@@ -253,6 +256,39 @@ class JiraTicketRepositoryTest {
                                 String title, boolean allTypes, List<String> types) {
     return jiraTicketRepository.findForTicketPage(false, List.of(ALPHA), allScopes, suborderIds, allKeys, keys, title, allTypes, types,
         PageRequest.of(0, 100, Sort.by("key")));
+  }
+
+  @Autowired
+  private JiraTicketImportRepository importRepository;
+
+  /** The latest import of exactly the scope, with its column reading stored as JSON (#1386). */
+  @Test
+  void the_latest_import_of_a_scope_is_found_with_its_column_reading() {
+    saveImport(alphaOrder, null, "alt.csv");
+    saveImport(alphaOrder, null, "neu.csv");
+    saveImport(alphaOrder, a01, "ast.csv");
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(importRepository.findLatestInScope(ALPHA, null, PageRequest.of(0, 1))).singleElement()
+        .satisfies(latest -> {
+          assertThat(latest.getFileName()).isEqualTo("neu.csv");
+          assertThat(latest.getColumnMapping()).containsExactly(
+              new JiraImportMappingEntry("Team", JiraImportTarget.ADDITIONAL, "team", true));
+          assertThat(latest.inheritedFields()).containsExactly("team");
+        });
+    assertThat(importRepository.findLatestInScope(ALPHA, A_01, PageRequest.of(0, 1)))
+        .extracting(JiraTicketImport::getFileName).containsExactly("ast.csv");
+    assertThat(importRepository.findLatestInScope(BETA, null, PageRequest.of(0, 1))).isEmpty();
+  }
+
+  private void saveImport(Customerorder customerorder, Suborder suborder, String fileName) {
+    var ticketImport = new JiraTicketImport();
+    ticketImport.setCustomerorder(customerorder);
+    ticketImport.setSuborder(suborder);
+    ticketImport.setFileName(fileName);
+    ticketImport.setColumnMapping(List.of(new JiraImportMappingEntry("Team", JiraImportTarget.ADDITIONAL, "team", true)));
+    importRepository.save(ticketImport);
   }
 
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */

@@ -25,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,17 +34,20 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraImportColumn;
+import de.hbt.salat.jira.domain.JiraImportMappingEntry;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraTicketDetail;
+import de.hbt.salat.jira.domain.JiraTicketImport;
 import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.domain.JiraTicketListResult;
 import de.hbt.salat.jira.domain.JiraTicketSort;
 import de.hbt.salat.jira.domain.JiraTicketImportPreview;
 import de.hbt.salat.jira.domain.JiraTicketRow;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.JiraTicketImportRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
 
@@ -73,6 +75,7 @@ public class JiraTicketMaintenanceService {
   private final JiraTicketAuthorization authorization;
   private final JiraScopes scopes;
   private final OrderReferences orderReferences;
+  private final JiraTicketImportRepository importRepository;
 
   /**
    * The ticket page (#1386): the tickets of the order, replicated and maintained by hand, as the
@@ -139,7 +142,9 @@ public class JiraTicketMaintenanceService {
         ticket.getLastupdate(), ticket.getLastupdatedby(),
         ticket.getCustomFields() == null ? Map.of() : new TreeMap<>(ticket.getCustomFields()),
         ticket.getCustomFieldsEffective() == null ? Map.of() : new TreeMap<>(ticket.getCustomFieldsEffective()),
-        children);
+        children, importOf(ticket).map(JiraTicketImport::getFileName).orElse(null),
+        importOf(ticket).map(JiraTicketImport::getCreated).orElse(null),
+        importOf(ticket).map(JiraTicketImport::getCreatedby).orElse(null));
   }
 
   /**
@@ -177,7 +182,7 @@ public class JiraTicketMaintenanceService {
     var ticket = newTicket(customerorderId, suborderId);
     apply(values, ticket);
     var id = ticketRepository.save(ticket).getId();
-    resolveParentChains(customerorderId, suborderId, Set.of());
+    resolveParentChains(customerorderId, suborderId);
     return id;
   }
 
@@ -188,7 +193,7 @@ public class JiraTicketMaintenanceService {
     checkKeyFree(ticket.getCustomerorderId(), ticket.getSuborderId(), values.key(), ticket.getId());
     apply(values, ticket);
     ticketRepository.save(ticket);
-    resolveParentChains(ticket.getCustomerorderId(), ticket.getSuborderId(), Set.of());
+    resolveParentChains(ticket.getCustomerorderId(), ticket.getSuborderId());
   }
 
   /** Bookings carrying the key keep it: their ticket reference is text, not a foreign key (#982). */
@@ -196,7 +201,7 @@ public class JiraTicketMaintenanceService {
     var ticket = loadMaintainedByHand(id);
     ticketRepository.delete(ticket);
     ticketRepository.flush();
-    resolveParentChains(ticket.getCustomerorderId(), ticket.getSuborderId(), Set.of());
+    resolveParentChains(ticket.getCustomerorderId(), ticket.getSuborderId());
   }
 
   /**
@@ -204,8 +209,13 @@ public class JiraTicketMaintenanceService {
    * again with the import; keeping it here in between would need a session (ADR-0013).
    */
   @Transactional(readOnly = true)
-  public JiraTicketImportPreview preview(byte[] content) {
-    return JiraTicketImport.preview(JiraTicketFile.read(content));
+  public JiraTicketImportPreview preview(byte[] content, Long customerorderId, Long suborderId) {
+    var file = JiraTicketFile.read(content);
+    if (customerorderId == null || !authorization.mayMaintain(customerorderId)) {
+      return JiraTicketImportReader.preview(file);
+    }
+    var previous = latestImport(customerorderId, suborderId).map(JiraTicketImport::getColumnMapping).orElse(List.of());
+    return JiraTicketImportReader.preview(file, previous);
   }
 
   /**
@@ -215,7 +225,8 @@ public class JiraTicketMaintenanceService {
    *
    * @return how many tickets the file named
    */
-  public int importTickets(long customerorderId, Long suborderId, byte[] content, List<JiraImportColumn> mapping) {
+  public int importTickets(long customerorderId, Long suborderId, String fileName, byte[] content,
+                           List<JiraImportColumn> mapping) {
     authorization.checkMayMaintain(customerorderId);
     checkScopeExists(customerorderId, suborderId);
     var file = JiraTicketFile.read(content);
@@ -228,7 +239,7 @@ public class JiraTicketMaintenanceService {
       if (ticket.getJiraId() != null) byJiraId.put(ticket.getJiraId(), ticket);
     });
     var keysByJiraId = byJiraId.values().stream().collect(Collectors.toMap(JiraTicket::getJiraId, JiraTicket::getKey));
-    var tickets = JiraTicketImport.read(file, mapping, keysByJiraId);
+    var tickets = JiraTicketImportReader.read(file, mapping, keysByJiraId);
 
     var findings = new ArrayList<ServiceFeedbackMessage>();
     for (var ticket : tickets) {
@@ -246,14 +257,27 @@ public class JiraTicketMaintenanceService {
       throw new InvalidDataException(findings);
     }
 
+    var ticketImport = new JiraTicketImport();
+    ticketImport.setCustomerorder(orderReferences.customerorder(customerorderId));
+    ticketImport.setSuborder(orderReferences.suborder(suborderId));
+    ticketImport.setFileName(fileName);
+    ticketImport.setColumnMapping(mappingEntries(file.headings(), mapping));
     var toSave = new ArrayList<JiraTicket>();
     for (var imported : tickets) {
-      var ticket = byKey.computeIfAbsent(imported.key(), key -> newTicket(customerorderId, suborderId));
+      var ticket = byKey.get(imported.key());
+      if (ticket == null) {
+        ticket = newTicket(customerorderId, suborderId);
+        ticketImport.setCreatedCount(ticketImport.getCreatedCount() + 1);
+      } else {
+        ticketImport.setUpdatedCount(ticketImport.getUpdatedCount() + 1);
+      }
       apply(imported, mapping, ticket);
+      ticket.setTicketImport(ticketImport);
       toSave.add(ticket);
     }
+    importRepository.save(ticketImport);
     ticketRepository.saveAll(toSave);
-    resolveParentChains(customerorderId, suborderId, inheritedFieldsOf(mapping));
+    resolveParentChains(customerorderId, suborderId);
     return toSave.size();
   }
 
@@ -302,9 +326,9 @@ public class JiraTicketMaintenanceService {
     if (values.key() == null) {
       throw new InvalidDataException(JI_TICKET_KEY_REQUIRED);
     }
-    if (longerThan(values.key(), JiraTicketImport.KEY_LENGTH) || longerThan(values.parentKey(), JiraTicketImport.KEY_LENGTH)
-        || longerThan(values.summary(), JiraTicketImport.SUMMARY_LENGTH)
-        || longerThan(values.issueType(), JiraTicketImport.ISSUE_TYPE_LENGTH)) {
+    if (longerThan(values.key(), JiraTicketImportReader.KEY_LENGTH) || longerThan(values.parentKey(), JiraTicketImportReader.KEY_LENGTH)
+        || longerThan(values.summary(), JiraTicketImportReader.SUMMARY_LENGTH)
+        || longerThan(values.issueType(), JiraTicketImportReader.ISSUE_TYPE_LENGTH)) {
       throw new InvalidDataException(JI_TICKET_VALUE_TOO_LONG);
     }
     return values;
@@ -340,7 +364,7 @@ public class JiraTicketMaintenanceService {
    * an empty cell included. The timestamps of the file win where it has them; otherwise a new ticket
    * was created now, and every imported one was updated now.
    */
-  private static void apply(JiraTicketImport.Ticket imported, List<JiraImportColumn> mapping, JiraTicket ticket) {
+  private static void apply(JiraTicketImportReader.Ticket imported, List<JiraImportColumn> mapping, JiraTicket ticket) {
     var assigned = mapping.stream().map(JiraImportColumn::target).collect(Collectors.toSet());
     ticket.setKey(imported.key());
     if (assigned.contains(JiraImportTarget.ID)) ticket.setJiraId(imported.jiraId());
@@ -364,25 +388,39 @@ public class JiraTicketMaintenanceService {
     }
   }
 
-  private static Set<String> inheritedFieldsOf(List<JiraImportColumn> mapping) {
-    return mapping.stream()
-        .filter(column -> column.target() == JiraImportTarget.ADDITIONAL && column.inherited())
-        .map(column -> column.fieldName().trim())
-        .collect(Collectors.toSet());
+  /** The reading of every column, by its heading, as the import keeps it. */
+  private static List<JiraImportMappingEntry> mappingEntries(List<String> headings, List<JiraImportColumn> mapping) {
+    var entries = new ArrayList<JiraImportMappingEntry>();
+    for (int column = 0; column < headings.size(); column++) {
+      var assigned = mapping.get(column);
+      var fieldName = assigned.target() == JiraImportTarget.ADDITIONAL ? assigned.fieldName().trim() : null;
+      entries.add(new JiraImportMappingEntry(headings.get(column), assigned.target(), fieldName,
+          assigned.target() == JiraImportTarget.ADDITIONAL && assigned.inherited()));
+    }
+    return entries;
   }
+
+  private static Optional<JiraTicketImport> importOf(JiraTicket ticket) {
+    return Optional.ofNullable(ticket.getTicketImport());
+  }
+
+  private Optional<JiraTicketImport> latestImport(long customerorderId, Long suborderId) {
+    return importRepository.findLatestInScope(customerorderId, suborderId, PageRequest.of(0, 1)).stream().findFirst();
+  }
+
 
   /**
    * Derives top-level key and inherited fields of every ticket of the scope (#881), as a replication
    * does after its run: they are never entered, and the reports group by the one and read the other.
-   *
-   * @param newlyInherited fields an import has just marked as inherited
+   * Inherited are the fields of the replications of the scope and of its latest import.
    */
-  private void resolveParentChains(long customerorderId, Long suborderId, Set<String> newlyInherited) {
+  private void resolveParentChains(long customerorderId, Long suborderId) {
     var tickets = ticketRepository.findInScope(customerorderId, suborderId);
-    var inherited = JiraTicketChains.inheritedFields(configRepository.findInScope(customerorderId, suborderId), tickets);
-    inherited.addAll(newlyInherited);
+    var inherited = JiraTicketChains.inheritedFields(configRepository.findInScope(customerorderId, suborderId),
+        latestImport(customerorderId, suborderId));
     ticketRepository.saveAll(JiraTicketChains.resolve(tickets, inherited));
   }
+
 
 
   private static String trimToNull(String value) {
