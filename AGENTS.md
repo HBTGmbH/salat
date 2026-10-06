@@ -374,11 +374,6 @@ stating why (currently: actuator `metrics` exposure, Azure auth).
   the code), the desired behaviour (*Wunsch*), and **acceptance criteria** as a checklist. An
   implementation proposal and notes on pitfalls are optional but usual. Acceptance criteria are
   mandatory — they are what "done" is measured against.
-- **Mockups and diagrams in issues**: an issue that changes something visible carries a mockup of
-  the desired state in its description — an ASCII or Markdown sketch in a code block, or an image
-  without real data. Where the code references are easier to follow with a picture, add a simple UML
-  class diagram, UML sequence diagram or ER diagram as a ` ```mermaid ` block (GitHub renders it).
-  Keep each one small: only the classes, calls or tables the issue touches.
 - **Issue type**: every issue must have its type set via the GitHub GraphQL API after creation. Use `Bug` for defects and `Feature` for new capabilities. Available type IDs:
   - `Task`:    `IT_kwDOAYn5ks4AV-6C`
   - `Bug`:     `IT_kwDOAYn5ks4AV-6D`
@@ -410,7 +405,8 @@ Before writing any code:
 
 - [ ] An issue exists and its type is set (`Bug`, `Feature`, `Task`) — the type belongs to the issue, not to the pull request, and is set before the branch is created
 - [ ] The issue describes the current behaviour (with references into the code), the desired behaviour, and acceptance criteria as a checklist
-- [ ] Visible changes come with a mockup in the issue; UML class, sequence or ER diagrams are there where they make the code references easier to follow
+- [ ] An issue that changes something visible carries a mockup of the desired state in its description — an ASCII or Markdown sketch in a code block, or an image without real data
+- [ ] Where the code references in the issue are easier to follow with a picture, it has a simple UML class diagram, UML sequence diagram or ER diagram as a ` ```mermaid ` block (GitHub renders it) — small, only the classes, calls or tables the issue touches
 - [ ] The acceptance criteria are reviewed: each one can be checked, and together they say when the issue is done. Gaps are closed in the issue before coding starts
 - [ ] `main` is checked out and up-to-date: `git checkout main && git pull`
 - [ ] A dedicated branch has been created: name must start with `feature/` (new capability) or `bug/` (defect fix), e.g. `feature/683-multiple-supervisors`
