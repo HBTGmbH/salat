@@ -260,6 +260,15 @@ public class CustomerorderService {
   }
 
   /**
+   * The orders a select for something new offers, as options (#1386, ADR-0029): neither hidden nor
+   * inactive today, plus the order {@code keepId} whatever it is.
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerorderOption> getCreatableCustomerorderOptions(Long keepId) {
+    return customerorderRepository.findCreatableOptions(keepId, DateUtils.today());
+  }
+
+  /**
    * The orders the login is responsible for, as options, hidden ones left out (#1386) — for a
    * module that grants its own rights over the responsibility and refers to the order by id.
    */

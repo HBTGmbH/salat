@@ -5,8 +5,8 @@ import lombok.Setter;
 import de.hbt.salat.jira.domain.JiraTicketRow;
 
 /**
- * The form of a ticket maintained by hand (#1386). Order and suborder are chosen with the filter of
- * the list before a ticket is created, and stay: they travel as hidden fields.
+ * The form of a ticket maintained by hand (#1386). A new ticket chooses its order and suborder in the
+ * form, starting with the scope of the filter; an existing one keeps them, as hidden fields.
  */
 @Getter
 @Setter

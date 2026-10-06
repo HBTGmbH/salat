@@ -19,7 +19,7 @@
 </style>
 
 <div th:if="${importErrors != null and not #lists.isEmpty(importErrors)}" class="alert alert-danger mb-3">
-  <p class="mb-1 fw-bold" th:text="#{main.jira.ticket.import.failed}">Die Datei wurde nicht importiert:</p>
+  <p class="mb-1 fw-medium" th:text="#{main.jira.ticket.import.failed}">Die Datei wurde nicht importiert:</p>
   <p th:each="e : ${importErrors}" th:text="${e}" class="mb-0"></p>
 </div>
 
@@ -54,8 +54,9 @@
           <option value="" th:text="#{main.jira.ticket.filter.suborder.all}">--- Alle Unteraufträge ---</option>
           <option th:each="so : ${suborders}"
                   th:value="${so.id}"
-                  th:attr="data-subtext=${so.shortdescription}"
-                  th:text="${so.completeOrderSign} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
+                  th:with="subtext=${@suborderLabelViewHelper.subtextOfOrder(selectedOrder)}"
+                  th:attr="data-subtext=${subtext}"
+                  th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
                   th:selected="${fJiraTicketSuborderId != null and fJiraTicketSuborderId == so.id}"></option>
         </select>
       </div>
@@ -78,7 +79,7 @@
       <div class="col-lg-auto">
         <label class="form-check form-switch mb-2">
           <input class="form-check-input" type="checkbox" id="children-switch" th:checked="${fJiraTicketChildren}"/>
-          <span class="form-check-label" th:text="#{main.jira.ticket.filter.children}">mit Unter-Tickets</span>
+          <span class="form-check-label" th:text="#{main.jira.ticket.filter.children}">mit untergeordneten Tickets</span>
         </label>
       </div>
       <div class="col-lg-3">
@@ -99,7 +100,7 @@
              th:href="@{/jira/tickets(fJiraTicketKeys='',fJiraTicketChildren='true',fJiraTicketTitle='',fJiraTicketTypes='',fJiraTicketSort='KEY')}"
              th:text="#{main.general.button.reset.text}">Zurücksetzen</a>
           <button type="submit" class="btn btn-primary">
-            <i class="ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
+            <i class="icon ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
           </button>
         </div>
       </div>
@@ -168,14 +169,14 @@
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.jira.ticket.table.title(${result.totalCount})}">Tickets</h3>
-      <!--/* Both choose their scope themselves and start with the one of the filter (#1386). */-->
+      <!--/* Both choose their scope themselves and start with the one of the filter (#1386): the form
+             falls back to the remembered filter, so the link carries none (ADR-0023). One coloured
+             button per card (style guide 5.2): creating is green, opening the import dialog grey. */-->
       <div class="card-actions btn-list">
-        <!--/* Filled like "Neuer Budgetplan" and "Neue Replikation": the two ways tickets come in. */-->
-        <a class="btn btn-success"
-           th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
+        <a class="btn btn-success" th:href="@{/jira/tickets/create}">
           <i class="icon ti ti-plus"></i><span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
         </a>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticket-import-modal">
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#ticket-import-modal">
           <i class="icon ti ti-file-import"></i><span th:text="#{main.jira.ticket.button.import}">Importieren</span>
         </button>
       </div>
@@ -193,15 +194,15 @@
         <!--/* Sorted in the query, not in the browser: the page shows only the first rows (#1386). */-->
         <thead>
           <tr>
-            <th th:replace="~{:: sortHeader('KEY', #{main.jira.ticket.field.key}, '')}"></th>
+            <th th:replace="~{fragments/sort-header :: sortHeader('KEY', #{main.jira.ticket.field.key}, '')}"></th>
             <th th:text="#{main.jira.ticket.field.summary}">Titel</th>
-            <th th:replace="~{:: sortHeader('TYPE', #{main.jira.ticket.field.issueType}, 'd-none d-md-table-cell')}"></th>
+            <th th:replace="~{fragments/sort-header :: sortHeader('TYPE', #{main.jira.ticket.field.issueType}, 'd-none d-md-table-cell')}"></th>
             <th class="d-none d-md-table-cell" th:text="#{main.jira.ticket.field.parentKey}">Parent</th>
             <th class="d-none d-xl-table-cell" th:text="#{main.jira.ticket.field.topLevelKey}">Top-Level</th>
             <th class="d-none d-lg-table-cell" th:text="#{main.jira.ticket.field.scope}">Bereich</th>
             <th th:text="#{main.jira.ticket.field.origin}">Herkunft</th>
-            <th th:replace="~{:: sortHeader('UPDATED', #{main.jira.ticket.field.updated}, 'd-none d-lg-table-cell')}"></th>
-            <th th:replace="~{:: sortHeader('IN_SYSTEM', #{main.jira.ticket.field.inSystemSince}, 'd-none d-xl-table-cell')}"></th>
+            <th th:replace="~{fragments/sort-header :: sortHeader('UPDATED', #{main.jira.ticket.field.updated}, 'd-none d-lg-table-cell')}"></th>
+            <th th:replace="~{fragments/sort-header :: sortHeader('IN_SYSTEM', #{main.jira.ticket.field.inSystemSince}, 'd-none d-xl-table-cell')}"></th>
             <th class="w-1"></th>
           </tr>
         </thead>
@@ -266,32 +267,27 @@
          maintain — tickets or not, so that the first tickets of an order can come in this way — and
          starts with the scope of the filter. The preview is swapped in when a file is chosen, and again
          when the scope changes: the proposed reading depends on it. */-->
-  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true"
+       aria-labelledby="ticket-import-title">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-      <form class="modal-content" th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data">
+      <!--/* data-submit-once: a second click would import the file a second time. */-->
+      <form class="modal-content" th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data"
+            data-submit-once>
         <div class="modal-header">
-          <h5 class="modal-title" th:text="#{main.jira.ticket.import.title}">Tickets importieren</h5>
+          <h5 class="modal-title" id="ticket-import-title" th:text="#{main.jira.ticket.import.title}">Tickets importieren</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
         </div>
         <div class="modal-body">
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label required" for="scopeOrderSelect" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
-              <select class="form-select" id="scopeOrderSelect" name="customerorderId" required
-                      th:hx-get="@{/jira/tickets/scope/suborders}" hx-target="#scopeSuborderSelect"
-                      hx-swap="outerHTML" hx-trigger="change">
-                <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
-                <option th:each="co : ${importOrders}" th:value="${co.id}"
-                        th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                        th:selected="${fJiraTicketCustomerorderId != null and fJiraTicketCustomerorderId == co.id}"></option>
-              </select>
+              <select th:replace="~{:: scopeOrderSelect(${importOrders}, ${fJiraTicketCustomerorderId})}"></select>
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="scopeSuborderSelect" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
-              <select th:replace="~{:: scopeSuborderSelect(${importSuborders}, ${fJiraTicketSuborderId})}"></select>
+              <div th:replace="~{:: scopeSuborderField(${importSuborders}, ${fJiraTicketSuborderId}, ${selectedOrder}, false)}"></div>
             </div>
           </div>
-          <label class="form-label" for="ticketImportFile" th:text="#{main.jira.ticket.import.file}">Datei</label>
+          <label class="form-label required" for="ticketImportFile" th:text="#{main.jira.ticket.import.file}">Datei</label>
           <input class="form-control" type="file" id="ticketImportFile" name="file" required
                  accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                  th:hx-post="@{/jira/tickets/import/preview}"
@@ -303,6 +299,7 @@
           <div class="form-text" th:text="#{main.jira.ticket.import.help}">CSV oder Excel (.xlsx) mit Kopfzeile.</div>
           <div th:replace="~{:: importPreview}"></div>
         </div>
+        <div th:replace="~{:: importFooter(false, null)}"></div>
       </form>
     </div>
   </div>
@@ -312,13 +309,20 @@
 
 <!--/* The details of a ticket (#1386), loaded into the dialog when a key is clicked; a parent, a child
        or an inherited value inside it loads that ticket in its place. */-->
-<div class="modal modal-blur fade" id="ticket-detail-modal" tabindex="-1" aria-hidden="true">
+<div class="modal modal-blur fade" id="ticket-detail-modal" tabindex="-1" aria-hidden="true"
+     aria-labelledby="ticket-detail-title">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content" id="ticket-detail-content">
-      <div class="modal-body text-center text-secondary py-5"><div class="spinner-border"></div></div>
+      <div th:replace="~{:: detailLoading}"></div>
     </div>
   </div>
 </div>
+
+<!--/* What the dialog shows while a ticket loads — also when it opens again, rather than the ticket
+       shown last. */-->
+<template id="ticket-detail-loading">
+  <div th:replace="~{:: detailLoading}"></div>
+</template>
 
 <script th:inline="none">
 /*<![CDATA[*/
@@ -361,12 +365,37 @@
     })));
   }, true);
 
-  // The proposed reading of an import depends on its scope: a change of order or suborder in the dialog
-  // previews the chosen file again. Delegated, the dialog comes with the results.
-  document.addEventListener('change', event => {
-    if (!event.target.matches('#scopeOrderSelect, #scopeSuborderSelect')) return;
+  // The proposed reading of an import depends on its scope: a new suborder previews the chosen file
+  // again, and so does a new order once its suborders are swapped in — the swapped field says so with
+  // data-preview-again, which only the answer to a change carries. Delegated, the dialog comes with
+  // the results.
+  function previewAgain() {
     const file = document.getElementById('ticketImportFile');
-    if (file && file.files.length > 0) setTimeout(() => file.dispatchEvent(new Event('change', {bubbles: true})), 300);
+    if (file && file.files.length > 0) file.dispatchEvent(new Event('change', {bubbles: true}));
+  }
+  document.addEventListener('change', event => {
+    if (event.target.matches('#ticket-import-modal #scopeSuborderSelect')) previewAgain();
+  });
+  document.addEventListener('htmx:after:swap', () => {
+    const swapped = document.querySelector('#ticket-import-modal [data-preview-again]');
+    if (!swapped) return;
+    swapped.removeAttribute('data-preview-again');
+    previewAgain();
+  });
+
+  // A ticket loaded in place of another takes the link that loaded it along; the focus goes to the
+  // title of the new one instead of falling back to the page.
+  document.addEventListener('htmx:after:swap', () => {
+    const modal = document.getElementById('ticket-detail-modal');
+    const title = document.getElementById('ticket-detail-title');
+    if (title && modal.classList.contains('show') && !modal.contains(document.activeElement)) title.focus();
+  });
+
+  // The details dialog starts with the loading state, not with the ticket shown last.
+  document.addEventListener('show.bs.modal', event => {
+    if (event.target.id !== 'ticket-detail-modal') return;
+    document.getElementById('ticket-detail-content')
+      .replaceChildren(document.getElementById('ticket-detail-loading').content.cloneNode(true));
   });
 
   // Sorting and the types of the figures: delegated, because the results are swapped on every change.
@@ -396,30 +425,58 @@
 
 </main>
 
-<!--/* The suborders of the order chosen in the import dialog or the form of a new ticket (#1386):
-       every visible one, the order itself standing for the whole order. Swapped in when the order
-       changes. */-->
-<select th:fragment="scopeSuborderSelect(suborders, selectedId)" class="form-select" id="scopeSuborderSelect"
-        name="suborderId">
-  <option value="" th:text="#{main.jira.ticket.import.wholeOrder}">--- Ganzer Auftrag ---</option>
-  <option th:each="so : ${suborders}" th:value="${so.id}"
-          th:text="${so.completeOrderSign} + ' – ' + ${so.shortdescription}"
-          th:selected="${selectedId != null and selectedId == so.id}"></option>
+<!--/* The order of the import dialog or the form of a new ticket (#1386): every order the user may
+       maintain that is neither hidden nor inactive. A change swaps in its suborders. A plain select
+       rather than salat:select, which does not forward the hx-* attributes. */-->
+<select th:fragment="scopeOrderSelect(orders, selectedId)" class="form-select tomselect" id="scopeOrderSelect"
+        name="customerorderId" required
+        th:hx-get="@{/jira/tickets/scope/suborders}" hx-target="#scopeSuborderField"
+        hx-swap="outerHTML" hx-trigger="change">
+  <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+  <option th:each="co : ${orders}" th:value="${co.id}"
+          th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+          th:attr="data-subtext=${subtext}"
+          th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+          th:selected="${selectedId != null and selectedId == co.id}"></option>
 </select>
 
-<!--/* The same as the answer of the swap, which a view name cannot hand parameters to. */-->
-<th:block th:fragment="scopeSuborderSwap"><select th:replace="~{:: scopeSuborderSelect(${importSuborders}, null)}"></select></th:block>
+<!--/* The suborders of that order (#1386): neither hidden nor inactive, the order itself standing for
+       the whole order. Swapped as a whole field with its label, so that TomSelect starts afresh on the
+       new select; previewAgain marks the answer to a change of order. */-->
+<div th:fragment="scopeSuborderField(suborders, selectedId, order, previewAgain)" id="scopeSuborderField"
+     th:attr="data-preview-again=${previewAgain} ? 'true' : null">
+  <label class="form-label" for="scopeSuborderSelect" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
+  <select class="form-select tomselect" id="scopeSuborderSelect" name="suborderId" autocomplete="off"
+          th:disabled="${#lists.isEmpty(suborders)}">
+    <option value="" th:text="#{main.jira.ticket.import.wholeOrder}">--- Ganzer Auftrag ---</option>
+    <option th:each="so : ${suborders}" th:value="${so.id}"
+            th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+            th:attr="data-subtext=${subtext}"
+            th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
+            th:selected="${selectedId != null and selectedId == so.id}"></option>
+  </select>
+</div>
 
-<!--/* A sortable column header, as in the booking list. */-->
-<th th:fragment="sortHeader(column, label, cssClass)" th:class="${cssClass}">
-  <a href="#" class="text-reset text-decoration-none text-nowrap"
-     th:data-sort="${sort == column and !sortDescending} ? '-' + ${column} : ${column}">
-    <span th:text="${label}">Spalte</span>
-    <i th:if="${sort != column}" class="ti ti-arrows-sort opacity-50"></i>
-    <i th:if="${sort == column and !sortDescending}" class="ti ti-sort-ascending"></i>
-    <i th:if="${sort == column and sortDescending}" class="ti ti-sort-descending"></i>
-  </a>
-</th>
+<!--/* The same as the answer of the swap, which a view name cannot hand parameters to. */-->
+<th:block th:fragment="scopeSuborderSwap"><div th:replace="~{:: scopeSuborderField(${importSuborders}, null, ${importOrder}, true)}"></div></th:block>
+
+<!--/* The loading state of the details dialog. */-->
+<div th:fragment="detailLoading" class="modal-body text-center text-secondary py-5">
+  <div class="spinner-border" role="status">
+    <span class="visually-hidden" th:text="#{main.jira.ticket.detail.loading}">Das Ticket wird geladen …</span>
+  </div>
+</div>
+
+<!--/* The footer of the import dialog (#1386): cancel on the left, import on the right. Importing waits
+       for a preview, whose answer swaps the footer in again, enabled. */-->
+<div th:fragment="importFooter(enabled, oob)" class="modal-footer" id="ticketImportFooter"
+     th:attr="hx-swap-oob=${oob}">
+  <button type="button" class="btn btn-link link-secondary me-auto" data-bs-dismiss="modal"
+          th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+  <button type="submit" class="btn btn-primary" th:disabled="${!enabled}">
+    <i class="icon ti ti-file-import"></i><span th:text="#{main.jira.ticket.button.import}">Importieren</span>
+  </button>
+</div>
 
 <!--/* A key that opens the details of a ticket in the dialog — of the ticket itself, or with
        {@code related} of the one that key names. Shared by the list and the dialog. */-->
@@ -444,14 +501,14 @@
   <th:block th:unless="${ticket.maintainedByHand}">
     <a th:if="${isManager}" th:href="@{/jira/replications/{id}/edit(id=${ticket.replicationId})}"
        th:title="#{main.jira.ticket.origin.replicated.link}"
-       th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">Replikation HC</a>
-    <span th:unless="${isManager}" th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">Replikation HC</span>
+       th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">Replikation ALPHA</a>
+    <span th:unless="${isManager}" th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">Replikation ALPHA</span>
   </th:block>
 </span>
 
 <!--/*
   The preview of a ticket file (#1386), swapped in when a file is chosen. One row per column of the
-  file: its heading, the first values, and how it is read. The fields travel by position, because a
+  file: its heading, a few different values, and how it is read. The fields travel by position, because a
   JIRA export repeats headings.
 */-->
 <div th:fragment="importPreview" id="ticketImportPreview" class="mt-3">
@@ -476,7 +533,7 @@
         <thead>
           <tr>
             <th th:text="#{main.jira.ticket.import.preview.heading}">Spalte</th>
-            <th th:text="#{main.jira.ticket.import.preview.values}">Erste Werte</th>
+            <th th:text="#{main.jira.ticket.import.preview.values}">Werte</th>
             <th th:text="#{main.jira.ticket.import.preview.target}">Lesen als</th>
             <th th:text="#{main.jira.ticket.import.preview.fieldname}">Feldname</th>
             <th th:text="#{main.jira.ticket.import.preview.inherited}">vererben</th>
@@ -484,7 +541,7 @@
         </thead>
         <tbody>
           <tr th:each="heading, it : ${preview.headings}">
-            <td class="text-nowrap fw-bold" th:text="${heading}">Issue key</td>
+            <td class="text-nowrap fw-medium" th:text="${heading}">Issue key</td>
             <!--/* One line of bounded width, so that the reading stays in view: a JIRA export carries whole
                    descriptions here. Each value is shortened and unbroken — a key must not wrap at its
                    hyphen — and the tooltip shows them in full. */-->
@@ -505,22 +562,26 @@
                      th:aria-label="#{main.jira.ticket.import.preview.fieldname} + ' ' + ${heading}"/>
             </td>
             <td>
-              <input class="form-check-input" type="checkbox" value="true" data-import-inherited
-                     th:checked="${importForm.columns[__${it.index}__].inherited}"
-                     th:aria-label="#{main.jira.ticket.import.preview.inherited} + ' ' + ${heading}"/>
+              <label class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" value="true" data-import-inherited
+                       th:checked="${importForm.columns[__${it.index}__].inherited}"
+                       th:aria-label="#{main.jira.ticket.import.preview.inherited} + ' ' + ${heading}"/>
+              </label>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="form-text mb-2" th:text="#{main.jira.ticket.import.preview.help}">
-      Feldname und vererben gelten nur für Zusatzfelder.
+      Feldname und Vererben gelten nur für Zusatzfelder.
     </div>
-    <button type="submit" class="btn btn-primary">
-      <i class="icon ti ti-file-import"></i>
-      <span th:text="#{main.jira.ticket.button.import}">Importieren</span>
-    </button>
   </th:block>
 </div>
+
+<!--/* The answer to a preview: the preview, and the footer out of band — importing waits for a preview. */-->
+<th:block th:fragment="importPreviewAnswer">
+  <div th:replace="~{:: importPreview}"></div>
+  <div th:replace="~{:: importFooter(${preview != null}, 'true')}"></div>
+</th:block>
 
 </html>

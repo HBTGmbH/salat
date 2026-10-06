@@ -1,9 +1,10 @@
-package de.hbt.salat.jira.service;
+package de.hbt.salat.jira.auth;
 
 import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
@@ -79,6 +80,18 @@ public class JiraTicketAuthorization {
     if (authorizedUser.isRestricted()) return List.of();
     if (authorizedUser.isManager()) return customerorderService.getSelectableCustomerorderOptions(selectedId);
     return responsibleCustomerorders();
+  }
+
+  /**
+   * The orders a new ticket or an import may go to (#1386, ADR-0029): those of
+   * {@link #selectableCustomerorders} that are not inactive today, plus {@code selectedId}.
+   */
+  public List<CustomerorderOption> creatableCustomerorders(Long selectedId) {
+    if (authorizedUser.isRestricted()) return List.of();
+    var creatable = customerorderService.getCreatableCustomerorderOptions(selectedId);
+    if (authorizedUser.isManager()) return creatable;
+    var responsibleIds = responsibleCustomerorders().stream().map(CustomerorderOption::id).collect(Collectors.toSet());
+    return creatable.stream().filter(order -> responsibleIds.contains(order.id())).toList();
   }
 
   private List<CustomerorderOption> responsibleCustomerorders() {

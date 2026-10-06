@@ -16,7 +16,7 @@ import de.hbt.salat.jira.domain.JiraImportTarget;
  * per column, by position, as the preview offered it.
  *
  * <p>The reading travels as one JSON field, {@link #mapping}, not as fields per column: Tomcat takes
- * at most 50 parts per multipart request ({@code server.tomcat.max-part-count}), and a JIRA export
+ * at most 100 parts per multipart request ({@code server.tomcat.max-part-count}), and a JIRA export
  * with all its fields has far more columns than that. {@link #columns} only fills the preview.
  */
 @Getter

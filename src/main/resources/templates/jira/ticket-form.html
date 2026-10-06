@@ -22,18 +22,10 @@
       <div class="row g-3 mb-3" th:if="${!isEdit}">
         <div class="col-md-6">
           <label class="form-label required" for="scopeOrderSelect" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
-          <select class="form-select" id="scopeOrderSelect" name="customerorderId" required
-                  th:hx-get="@{/jira/tickets/scope/suborders}" hx-target="#scopeSuborderSelect"
-                  hx-swap="outerHTML" hx-trigger="change">
-            <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
-            <option th:each="co : ${scopeOrders}" th:value="${co.id}"
-                    th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                    th:selected="${ticketForm.customerorderId != null and ticketForm.customerorderId == co.id}"></option>
-          </select>
+          <select th:replace="~{jira/ticket-list :: scopeOrderSelect(${scopeOrders}, ${ticketForm.customerorderId})}"></select>
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="scopeSuborderSelect" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
-          <select th:replace="~{jira/ticket-list :: scopeSuborderSelect(${scopeSuborders}, ${ticketForm.suborderId})}"></select>
+          <div th:replace="~{jira/ticket-list :: scopeSuborderField(${scopeSuborders}, ${ticketForm.suborderId}, ${scopeOrder}, false)}"></div>
         </div>
       </div>
       <th:block th:if="${isEdit}">

@@ -7,6 +7,7 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_KEY_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_KEY_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_REPLICATED;
+import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_SCOPE_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_VALUE_TOO_LONG;
 import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
 
@@ -21,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.jira.auth.JiraTicketAuthorization;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraImportColumn;
@@ -52,6 +55,11 @@ import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketImportRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
+import de.hbt.salat.jira.domain.JiraTicket_;
+import de.hbt.salat.order.domain.CustomerorderOption;
+import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderReadModel;
+import de.hbt.salat.order.service.SuborderService;
 
 /**
  * Tickets maintained by hand (#1386) — for a customer whose JIRA allows no API access or who has no
@@ -78,6 +86,7 @@ public class JiraTicketMaintenanceService {
   private final JiraScopes scopes;
   private final OrderReferences orderReferences;
   private final JiraTicketImportRepository importRepository;
+  private final SuborderService suborderService;
 
   /** The column {@code jira_ticket_import.file_name}. */
   static final int FILE_NAME_LENGTH = 255;
@@ -176,25 +185,78 @@ public class JiraTicketMaintenanceService {
     return toRow(ticket, scopes.signOf(ticket.getCustomerorderId(), ticket.getSuborderId()));
   }
 
-  /** The orders that have tickets, replicated or by hand (#1386) — the page offers no other. */
+  /**
+   * The orders the filter offers (#1386): those the user may see that have tickets — the list shows
+   * nothing else — and the one already chosen.
+   */
   @Transactional(readOnly = true)
-  public Set<Long> getCustomerorderIdsWithTickets() {
-    return Set.copyOf(ticketRepository.findCustomerorderIdsWithTickets());
+  public List<CustomerorderOption> getFilterCustomerorders(Long selectedId) {
+    var withTickets = Set.copyOf(ticketRepository.findCustomerorderIdsWithTickets());
+    return authorization.selectableCustomerorders(selectedId).stream()
+        .filter(order -> withTickets.contains(order.id()) || Objects.equals(order.id(), selectedId))
+        .toList();
   }
 
-  /** The suborders of the order that have tickets of their own (#1386). */
+  /**
+   * The suborders of the order the filter offers (#1386): visible ones with tickets of their own or
+   * below them — the filter narrows to a branch — and the one already chosen, by complete order sign.
+   * Empty for an order the user may not see.
+   */
   @Transactional(readOnly = true)
-  public Set<Long> getSuborderIdsWithTickets(long customerorderId) {
-    return Set.copyOf(ticketRepository.findSuborderIdsWithTickets(customerorderId));
+  public List<SuborderReadModel> getFilterSuborders(Long customerorderId, Long selectedId) {
+    if (customerorderId == null || !authorization.mayMaintain(customerorderId)) return List.of();
+    var withTickets = Set.copyOf(ticketRepository.findSuborderIdsWithTickets(customerorderId));
+    var readModels = suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId);
+    var onBranchWithTickets = new HashSet<Long>();
+    readModels.stream().filter(so -> withTickets.contains(so.id())).forEach(so -> onBranchWithTickets.addAll(so.path()));
+    return readModels.stream()
+        .filter(so -> isOffered(so, onBranchWithTickets) || Objects.equals(so.id(), selectedId))
+        .sorted(Comparator.comparing(SuborderReadModel::completeOrderSign))
+        .toList();
   }
 
-  /** The names of the replications that cover the scope; empty where tickets may be maintained here. */
+  private static boolean isOffered(SuborderReadModel suborder, Set<Long> onBranchWithTickets) {
+    return !suborder.hide() && onBranchWithTickets.contains(suborder.id());
+  }
+
+  /** The orders a new ticket or an import may go to (#1386): tickets or not, so that the first gets in. */
+  @Transactional(readOnly = true)
+  public List<CustomerorderOption> getScopeCustomerorders(Long selectedId) {
+    return authorization.creatableCustomerorders(selectedId);
+  }
+
+  /**
+   * The suborders a new ticket or an import may go to (#1386), by complete order sign: neither hidden
+   * nor inactive, and the one already chosen.
+   */
+  @Transactional(readOnly = true)
+  public List<Suborder> getScopeSuborders(Long customerorderId, Long selectedId) {
+    if (customerorderId == null) return List.of();
+    authorization.checkMayMaintain(customerorderId);
+    return suborderService.getCreatableSubordersByCustomerorderId(customerorderId, selectedId).stream()
+        .sorted(Comparator.comparing(Suborder::getCompleteOrderSign))
+        .toList();
+  }
+
+  /** The scope as the order tree names it now; {@code null} without an order. */
+  @Transactional(readOnly = true)
+  public String getScopeSign(Long customerorderId, Long suborderId) {
+    if (customerorderId == null) return null;
+    authorization.checkMayMaintain(customerorderId);
+    return scopes.signOf(customerorderId, suborderId);
+  }
+
+  /**
+   * The names of the replications that cover the scope (#1386); empty where none does. Tickets may be
+   * maintained by hand either way — a replication takes one over once it delivers its key.
+   */
   @Transactional(readOnly = true)
   public List<String> getCoveringReplications(long customerorderId, Long suborderId) {
     return coveringReplications(customerorderId, suborderId).stream().map(JiraReplicationConfig::getName).toList();
   }
 
-  public long create(long customerorderId, Long suborderId, JiraManualTicketData data) {
+  public long create(Long customerorderId, Long suborderId, JiraManualTicketData data) {
+    checkScopeChosen(customerorderId);
     authorization.checkMayMaintain(customerorderId);
     checkScopeExists(customerorderId, suborderId);
     var values = validated(data);
@@ -280,8 +342,9 @@ public class JiraTicketMaintenanceService {
    *
    * @return how many tickets the file named
    */
-  public int importTickets(long customerorderId, Long suborderId, String fileName, byte[] content,
+  public int importTickets(Long customerorderId, Long suborderId, String fileName, byte[] content,
                            List<JiraImportColumn> mapping) {
+    checkScopeChosen(customerorderId);
     authorization.checkMayMaintain(customerorderId);
     checkScopeExists(customerorderId, suborderId);
     var file = JiraTicketFile.read(content);
@@ -347,6 +410,12 @@ public class JiraTicketMaintenanceService {
       throw new InvalidDataException(JI_TICKET_REPLICATED);
     }
     return ticket;
+  }
+
+  private static void checkScopeChosen(Long customerorderId) {
+    if (customerorderId == null) {
+      throw new InvalidDataException(JI_TICKET_SCOPE_REQUIRED);
+    }
   }
 
   private void checkScopeExists(long customerorderId, Long suborderId) {
@@ -502,16 +571,15 @@ public class JiraTicketMaintenanceService {
   private static Sort sortOf(JiraTicketListFilter filter) {
     var direction = filter.descending() ? Sort.Direction.DESC : Sort.Direction.ASC;
     var order = new Sort.Order(direction, filter.sort().getAttribute()).nullsLast();
-    return filter.sort() == JiraTicketSort.KEY ? Sort.by(order) : Sort.by(order, Sort.Order.asc("key"));
+    return filter.sort() == JiraTicketSort.KEY ? Sort.by(order) : Sort.by(order, Sort.Order.asc(JiraTicket_.KEY));
   }
 
-  /** The scope signs are looked up once per scope, not per row. */
+  /** The scope signs of all rows are looked up at once (ADR-0036), not per row or per scope. */
   private List<JiraTicketRow> toRows(List<JiraTicket> tickets) {
-    var signs = new HashMap<List<Long>, String>();
-    return tickets.stream()
-        .map(ticket -> toRow(ticket, signs.computeIfAbsent(scopeOf(ticket),
-            scope -> scopes.signOf(ticket.getCustomerorderId(), ticket.getSuborderId()))))
-        .toList();
+    if (tickets.isEmpty()) return List.of();
+    var signs = scopes.signsOfScopes(tickets.stream().map(JiraTicketMaintenanceService::scopeOf)
+        .collect(Collectors.toSet()));
+    return tickets.stream().map(ticket -> toRow(ticket, signs.get(scopeOf(ticket)))).toList();
   }
 
   /** The keys and every ticket below them in these orders, level by level; comparison ignores case. */

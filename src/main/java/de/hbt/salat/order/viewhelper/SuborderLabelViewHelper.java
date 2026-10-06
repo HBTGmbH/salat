@@ -6,6 +6,9 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderReadModel;
+import de.hbt.salat.customer.viewhelper.CustomerLabelViewHelper;
+import de.hbt.salat.order.domain.CustomerorderOption;
 
 /**
  * Labels for a suborder in dropdowns (#1266, → ADR-0017): {@code Auftrag/Unterauftrag -
@@ -25,6 +28,21 @@ public class SuborderLabelViewHelper {
 
     public String label(Suborder suborder) {
         return suborder == null ? null : of(suborder.getCompleteOrderSign(), suborder.getShortdescription());
+    }
+
+    /** {@link #label(Suborder)} for a suborder read as {@link SuborderReadModel} (#1386). */
+    public String label(SuborderReadModel suborder) {
+        return suborder == null ? null : of(suborder.completeOrderSign(), suborder.shortdescription());
+    }
+
+    /**
+     * The second line of every suborder of this order, read as {@link CustomerorderOption} (#1386) —
+     * for a list of {@link SuborderReadModel}s, which do not carry their order.
+     */
+    public String subtextOfOrder(CustomerorderOption customerorder) {
+        return customerorder == null ? null
+            : subtextOf(customerorder.shortdescriptionOrDescription(),
+                CustomerLabelViewHelper.of(customerorder.customerShortname(), customerorder.customerName()));
     }
 
     public String subtext(Suborder suborder) {

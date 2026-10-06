@@ -20,13 +20,15 @@ import de.hbt.salat.order.domain.Suborder;
 
 /**
  * A ticket kept per scope — the pair of customer order and suborder: replicated from JIRA, or
- * maintained by hand where no replication covers the scope (#1386).
+ * maintained by hand, next to a replication too (#1386). {@link #replication} says who maintains it;
+ * without one it is maintained by hand.
  *
- * <p>Issue key and JIRA id are unique within a scope, and the run looks tickets up by scope and
+ * <p>The issue key is unique within a scope, and the run looks tickets up by scope and
  * {@code updated_ts}. Those keys live in the changelog only (changeset 150, #1372): a {@code null}
  * suborder means the whole order, and {@code NULL} is never equal to {@code NULL} in a unique key,
  * so the suborder enters them as {@code COALESCE(suborder_id, 0)} — a functional key part the
- * schema generator of the tests cannot express.
+ * schema generator of the tests cannot express. The JIRA id is unique per replication (changeset
+ * 159): two replications of one scope may read two JIRA instances with the same numeric ids.
  */
 @Entity
 @Table(name = "jira_ticket")

@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import de.hbt.salat.common.Validity;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
@@ -518,6 +519,16 @@ public class SuborderService {
   public List<Suborder> getSelectableSubordersByCustomerorderId(long customerorderId, Long keepId) {
     return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
         .filter(suborder -> !suborder.isHide() || Objects.equals(suborder.getId(), keepId))
+        .toList();
+  }
+
+  /**
+   * The suborders of the customer order a select for something new offers (#1386, ADR-0029): neither
+   * hidden nor inactive today, plus the suborder {@code keepId} whatever it is.
+   */
+  public List<Suborder> getCreatableSubordersByCustomerorderId(long customerorderId, Long keepId) {
+    return getSelectableSubordersByCustomerorderId(customerorderId, keepId).stream()
+        .filter(suborder -> !Validity.isInactive(suborder.getUntilDate()) || Objects.equals(suborder.getId(), keepId))
         .toList();
   }
 

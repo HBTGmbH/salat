@@ -9,7 +9,7 @@
 */-->
 <th:block th:fragment="detailBody" th:with="ticket=${detail.row}">
   <div class="modal-header">
-    <h5 class="modal-title">
+    <h5 class="modal-title" id="ticket-detail-title" tabindex="-1">
       <span class="issue-key" th:text="${ticket.key}">ABC-1</span>
       <span class="text-secondary fw-normal ms-2" th:text="${ticket.summary}">Titel</span>
     </h5>
@@ -75,29 +75,26 @@
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.created}">Erstellt</div>
         <div class="datagrid-content"
-             th:text="${detail.createdTs != null} ? ${#temporals.format(detail.createdTs, 'dd.MM.yyyy HH:mm')} : '–'">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(detail.createdTs, null)}">01.01.2026</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.updated}">Aktualisiert</div>
         <div class="datagrid-content"
-             th:text="${ticket.updatedTs != null} ? ${#temporals.format(ticket.updatedTs, 'dd.MM.yyyy HH:mm')} : '–'">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(ticket.updatedTs, null)}">01.01.2026</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.inSystemSince}">im System seit</div>
         <div class="datagrid-content"
-             th:text="${ticket.inSystemSince != null} ? ${#temporals.format(ticket.inSystemSince, 'dd.MM.yyyy HH:mm')} + (${detail.inSystemBy != null} ? ' (' + ${detail.inSystemBy} + ')' : '') : '–'">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(ticket.inSystemSince, detail.inSystemBy)}">01.01.2026</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.lastChange}">zuletzt geändert</div>
         <div class="datagrid-content"
-             th:text="${detail.lastChange != null} ? ${#temporals.format(detail.lastChange, 'dd.MM.yyyy HH:mm')} + (${detail.lastChangeBy != null} ? ' (' + ${detail.lastChangeBy} + ')' : '') : '–'">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(detail.lastChange, detail.lastChangeBy)}">01.01.2026</div>
       </div>
-      <div class="datagrid-item" th:if="${detail.importedFrom != null or detail.importedAt != null}">
+      <div class="datagrid-item" th:if="${detail.importedAt != null}">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.import}">Import</div>
-        <div class="datagrid-content"
-             th:text="${#temporals.format(detail.importedAt, 'dd.MM.yyyy HH:mm')}
-                      + (${detail.importedFrom != null} ? ' · ' + ${detail.importedFrom} : '')
-                      + (${detail.importedBy != null} ? ' (' + ${detail.importedBy} + ')' : '')">06.10.2026 17:40 · export.csv</div>
+        <div class="datagrid-content" th:text="${@jiraTicketViewHelper.importStamp(detail)}">06.10.2026 17:40 · export.csv</div>
       </div>
     </div>
 
@@ -127,7 +124,7 @@
       </table>
     </th:block>
 
-    <h4 class="subheader mt-3" th:text="#{main.jira.ticket.detail.children(${detail.children.size()})}">Unter-Tickets (0)</h4>
+    <h4 class="subheader mt-3" th:text="#{main.jira.ticket.detail.children(${detail.children.size()})}">Untergeordnete Tickets (0)</h4>
     <div th:if="${detail.children.isEmpty()}" class="text-secondary">–</div>
     <div class="list-group list-group-flush" th:unless="${detail.children.isEmpty()}">
       <div class="list-group-item d-flex gap-2 align-items-center px-0" th:each="child : ${detail.children}">
@@ -138,12 +135,14 @@
     </div>
   </div>
 
+  <!--/* Closing on the left, the action on the right (style guide 5.2). */-->
   <div class="modal-footer">
-    <a th:if="${ticket.maintainedByHand}" class="btn btn-outline-primary me-auto"
+    <button type="button" class="btn btn-link link-secondary me-auto" data-bs-dismiss="modal"
+            th:text="#{main.button.close}">Schließen</button>
+    <a th:if="${ticket.maintainedByHand}" class="btn btn-primary"
        th:href="@{/jira/tickets/{id}/edit(id=${ticket.id})}">
-      <i class="ti ti-pencil"></i><span th:text="#{main.button.label.edit.text}">Bearbeiten</span>
+      <i class="icon ti ti-pencil"></i><span th:text="#{main.button.label.edit.text}">Bearbeiten</span>
     </a>
-    <button type="button" class="btn" data-bs-dismiss="modal" th:text="#{main.button.close}">Schließen</button>
   </div>
 </th:block>
 
