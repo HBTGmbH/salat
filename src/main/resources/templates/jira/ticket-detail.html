@@ -10,7 +10,7 @@
 <th:block th:fragment="detailBody" th:with="ticket=${detail.row}">
   <div class="modal-header">
     <h5 class="modal-title">
-      <span th:text="${ticket.key}">ABC-1</span>
+      <span class="issue-key" th:text="${ticket.key}">ABC-1</span>
       <span class="text-secondary fw-normal ms-2" th:text="${ticket.summary}">Titel</span>
     </h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
@@ -23,7 +23,7 @@
     <div class="datagrid mb-3">
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.key}">Key</div>
-        <div class="datagrid-content fw-medium" th:text="${ticket.key}">ABC-1</div>
+        <div class="datagrid-content fw-medium issue-key" th:text="${ticket.key}">ABC-1</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.jiraId}">Id</div>

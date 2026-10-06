@@ -96,7 +96,7 @@
          th:style="'padding-left: ' + ${0.75 + row.level * 1.5} + 'rem'">
     <input class="form-check-input m-0" type="checkbox" th:data-pick="${row.ticket.key}"
            th:checked="${selectedTicketKeys.contains(row.ticket.key)}">
-    <span class="fw-medium text-nowrap" th:text="${row.ticket.key}">TICKET-1</span>
+    <span class="fw-medium issue-key" th:text="${row.ticket.key}">TICKET-1</span>
     <span class="text-secondary text-truncate" th:text="${row.ticket.summary}">Titel</span>
     <span th:if="${row.level == 0 and row.ticket.parentKey != null}" class="text-secondary small text-nowrap"
           th:text="#{main.timereportlist.tickets.dialog.under} + ' ' + ${row.ticket.parentKey}">unter X</span>

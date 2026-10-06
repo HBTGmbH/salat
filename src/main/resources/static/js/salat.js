@@ -258,14 +258,14 @@ const tomSelectConfig = (el) => {
       render: {
         option(data, escape) {
           return '<div class="d-flex flex-column py-1">'
-            + '<span class="text-nowrap">' + escape(data.value) + '</span>'
+            + '<span class="issue-key">' + escape(data.value) + '</span>'
             + (data.subtext
               ? '<small class="text-muted lh-1 mb-1 text-truncate">' + escape(data.subtext) + '</small>'
               : '')
             + '</div>';
         },
         item(data, escape) {
-          return '<div>' + escape(data.value) + '</div>';
+          return '<div class="issue-key">' + escape(data.value) + '</div>';
         },
         option_create(data, escape) {
           return '<div class="create">' + escape(createLabel) + ' <strong>'

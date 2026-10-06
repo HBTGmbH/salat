@@ -407,9 +407,9 @@
                     th:attr="data-comment=${rb.comment}"
                     onclick="applyRecentBooking(this)">
               <span style="white-space: pre-wrap" th:text="${rb.comment}"></span>
-              <small th:unless="${#lists.isEmpty(rb.ticketReferences)}"
-                     class="d-block text-muted text-truncate mt-1"
-                     th:text="${#strings.listJoin(rb.ticketReferences, ', ')}"></small>
+              <small th:unless="${#lists.isEmpty(rb.ticketReferences)}" class="d-block text-muted text-truncate mt-1"><th:block
+                     th:each="reference, it : ${rb.ticketReferences}"><span class="issue-key" th:text="${reference}">ABC-1</span><th:block
+                     th:unless="${it.last}">, </th:block></th:block></small>
               <span hidden th:each="reference : ${rb.ticketReferences}" data-ticket th:text="${reference}"></span>
             </button>
           </div>

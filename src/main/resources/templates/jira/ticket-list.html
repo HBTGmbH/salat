@@ -151,8 +151,15 @@
         <div class="subheader" th:text="#{main.jira.ticket.kpi.types}">je Typ</div>
         <div th:if="${result.countByType.isEmpty()}" class="h1 mb-0">–</div>
         <div class="d-flex flex-wrap gap-1 mt-1">
-          <span th:each="entry : ${result.countByType}" class="badge bg-blue-lt"
-                th:text="(${entry.key.isEmpty()} ? #{main.jira.ticket.type.none} : ${entry.key}) + ' ' + ${entry.value}">Story 12</span>
+          <!--/* A type filters the list to it, a second click lifts the filter again (#1386). Tickets
+                 without a type cannot be chosen in the type filter, so they stay a plain badge. */-->
+          <th:block th:each="entry : ${result.countByType}">
+            <span th:if="${entry.key.isEmpty()}" class="badge bg-secondary-lt"
+                  th:text="#{main.jira.ticket.type.none} + ' ' + ${entry.value}">ohne Typ 3</span>
+            <a th:unless="${entry.key.isEmpty()}" href="#" class="badge bg-blue-lt text-decoration-none"
+               th:data-filter-type="${entry.key}" th:title="#{main.jira.ticket.kpi.types.filter}"
+               th:text="${entry.key} + ' ' + ${entry.value}">Story 12</a>
+          </th:block>
         </div>
       </div></div>
     </div>
@@ -330,8 +337,20 @@
   ['suborder-select', 'type-select', 'limit-select', 'children-switch']
     .forEach(id => document.getElementById(id).addEventListener('change', () => form.requestSubmit()));
 
-  // Sorting: delegated, because the results are swapped on every change of the filter.
+  // Sorting and the types of the figures: delegated, because the results are swapped on every change.
   document.addEventListener('click', event => {
+    const typeLink = event.target.closest('[data-filter-type]');
+    if (typeLink) {
+      event.preventDefault();
+      const types = document.getElementById('type-select');
+      const type = typeLink.dataset.filterType;
+      const chosen = [...types.selectedOptions].map(o => o.value);
+      const next = chosen.length === 1 && chosen[0] === type ? [] : [type];
+      if (types.tomselect) types.tomselect.setValue(next, true);
+      else [...types.options].forEach(o => { o.selected = next.includes(o.value); });
+      form.requestSubmit();
+      return;
+    }
     const sortLink = event.target.closest('#tickets thead [data-sort]');
     if (sortLink) {
       event.preventDefault();
@@ -358,31 +377,29 @@
 
 <!--/* A key that opens the details of a ticket in the dialog — of the ticket itself, or with
        {@code related} of the one that key names. Shared by the list and the dialog. */-->
-<a th:fragment="detailLink(ticketId, related, label, cssClass)" href="#" th:class="${cssClass}"
+<a th:fragment="detailLink(ticketId, related, label, cssClass)" href="#" th:class="'issue-key ' + ${cssClass}"
    data-bs-toggle="modal" data-bs-target="#ticket-detail-modal"
    th:hx-get="@{/jira/tickets/{id}/details(id=${ticketId},related=${related})}"
    hx-target="#ticket-detail-content" hx-swap="innerHTML"
    th:text="${label}">ABC-1</a>
 
 <!--/* The same inside the open dialog: it only swaps the content — a toggle would close the dialog. */-->
-<a th:fragment="detailSwap(ticketId, related, label, cssClass)" href="#" th:class="${cssClass}"
+<a th:fragment="detailSwap(ticketId, related, label, cssClass)" href="#" th:class="'issue-key ' + ${cssClass}"
    th:hx-get="@{/jira/tickets/{id}/details(id=${ticketId},related=${related})}"
    hx-target="#ticket-detail-content" hx-swap="innerHTML"
    th:text="${label}">ABC-1</a>
 
 <!--/*
-  How a ticket came in (#1386): a replication maintains it — linked for managers, who alone may open
-  the replications — or it is maintained by hand. Shared by the list and the dialog.
+  How a ticket came in (#1386), as text: a replication maintains it — a link for managers, who alone may
+  open the replications — or it is maintained by hand. Shared by the list and the dialog.
 */-->
-<span th:fragment="originBadge(ticket)">
-  <span th:if="${ticket.maintainedByHand}" class="badge bg-secondary-lt" th:text="#{main.jira.ticket.origin.manual}">von Hand</span>
+<span th:fragment="originBadge(ticket)" class="text-nowrap">
+  <span th:if="${ticket.maintainedByHand}" class="text-secondary" th:text="#{main.jira.ticket.origin.manual}">von Hand</span>
   <th:block th:unless="${ticket.maintainedByHand}">
-    <a th:if="${isManager}" class="badge bg-azure-lt text-decoration-none"
-       th:href="@{/jira/replications/{id}/edit(id=${ticket.replicationId})}"
+    <a th:if="${isManager}" th:href="@{/jira/replications/{id}/edit(id=${ticket.replicationId})}"
        th:title="#{main.jira.ticket.origin.replicated.link}"
-       th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">repliziert</a>
-    <span th:unless="${isManager}" class="badge bg-azure-lt"
-          th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">repliziert</span>
+       th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">Replikation HC</a>
+    <span th:unless="${isManager}" th:text="#{main.jira.ticket.origin.replicated(${ticket.replicationName})}">Replikation HC</span>
   </th:block>
 </span>
 
@@ -419,8 +436,10 @@
         <tbody>
           <tr th:each="heading, it : ${preview.headings}">
             <td class="text-nowrap fw-bold" th:text="${heading}">Issue key</td>
-            <td class="small text-secondary text-break"
-                th:text="${#strings.listJoin(preview.sampleRows.![#this[__${it.index}__]].?[#this != null], ' · ')}">ABC-1 · ABC-2</td>
+            <!--/* Each value on its own, unbroken: a key among them must not wrap at its hyphen. */-->
+            <td class="small text-secondary"><th:block
+                th:each="sample, sampleIt : ${preview.sampleRows.![#this[__${it.index}__]].?[#this != null]}"><span
+                class="issue-key" th:text="${sample}">ABC-1</span><th:block th:unless="${sampleIt.last}"> · </th:block></th:block></td>
             <td>
               <select class="form-select form-select-sm" th:name="'columns[' + ${it.index} + '].target'"
                       th:aria-label="#{main.jira.ticket.import.preview.target} + ' ' + ${heading}">
