@@ -258,6 +258,14 @@ class JiraTicketRepositoryTest {
         PageRequest.of(0, 100, Sort.by("key")));
   }
 
+  /** The ticket page offers only orders and suborders that have tickets (#1386). */
+  @Test
+  void the_orders_and_suborders_with_tickets_are_found() {
+    assertThat(jiraTicketRepository.findCustomerorderIdsWithTickets()).containsExactlyInAnyOrder(ALPHA, BETA);
+    assertThat(jiraTicketRepository.findSuborderIdsWithTickets(ALPHA)).containsExactlyInAnyOrder(A_01, B_01);
+    assertThat(jiraTicketRepository.findSuborderIdsWithTickets(BETA)).isEmpty();
+  }
+
   @Autowired
   private JiraTicketImportRepository importRepository;
 

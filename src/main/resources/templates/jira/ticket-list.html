@@ -128,40 +128,38 @@
 
   <!-- ═══════════════════════════════ KENNZAHLEN ═══════════════════════════════ -->
   <div class="row row-cards mb-3">
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-4">
       <div class="card card-sm"><div class="card-body">
         <div class="subheader" th:text="#{main.jira.ticket.kpi.count}">Tickets</div>
         <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.totalCount, 1, 'DEFAULT')}">0</div>
       </div></div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-4">
       <div class="card card-sm"><div class="card-body">
         <div class="subheader" th:text="#{main.jira.ticket.kpi.replicated}">repliziert</div>
         <div class="h1 mb-0 text-azure" th:text="${#numbers.formatInteger(result.replicatedCount, 1, 'DEFAULT')}">0</div>
       </div></div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-4">
       <div class="card card-sm"><div class="card-body">
         <div class="subheader" th:text="#{main.jira.ticket.kpi.manual}">von Hand gepflegt</div>
         <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.manualCount, 1, 'DEFAULT')}">0</div>
       </div></div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <div class="card card-sm"><div class="card-body">
-        <div class="subheader" th:text="#{main.jira.ticket.kpi.types}">je Typ</div>
-        <div th:if="${result.countByType.isEmpty()}" class="h1 mb-0">–</div>
-        <div class="d-flex flex-wrap gap-1 mt-1">
-          <!--/* A type filters the list to it, a second click lifts the filter again (#1386). Tickets
-                 without a type cannot be chosen in the type filter, so they stay a plain badge. */-->
-          <th:block th:each="entry : ${result.countByType}">
-            <span th:if="${entry.key.isEmpty()}" class="badge bg-secondary-lt"
-                  th:text="#{main.jira.ticket.type.none} + ' ' + ${entry.value}">ohne Typ 3</span>
-            <a th:unless="${entry.key.isEmpty()}" href="#" class="badge bg-blue-lt text-decoration-none"
-               th:data-filter-type="${entry.key}" th:title="#{main.jira.ticket.kpi.types.filter}"
-               th:text="${entry.key} + ' ' + ${entry.value}">Story 12</a>
-          </th:block>
-        </div>
-      </div></div>
+  </div>
+
+  <!--/* The types in a row of their own (#1386): over every order there are many, and a tile cannot
+         hold them. A type filters the list to it, a second click lifts the filter again; tickets
+         without a type cannot be chosen in the type filter, so they stay a plain badge. */-->
+  <div class="card card-sm mb-3" th:unless="${result.countByType.isEmpty()}">
+    <div class="card-body d-flex flex-wrap align-items-center gap-2">
+      <th:block th:each="entry : ${result.countByType}">
+        <span th:if="${entry.key.isEmpty()}" class="badge bg-secondary-lt"
+              th:text="#{main.jira.ticket.type.none} + ' ' + ${#numbers.formatInteger(entry.value, 1, 'DEFAULT')}">ohne Typ 3</span>
+        <a th:unless="${entry.key.isEmpty()}" href="#" class="badge bg-blue-lt text-decoration-none"
+           th:data-filter-type="${entry.key}" th:title="#{main.jira.ticket.kpi.types.filter}"
+           th:text="${entry.key} + ' ' + ${#numbers.formatInteger(entry.value, 1, 'DEFAULT')}">Story 12</a>
+      </th:block>
     </div>
   </div>
 
@@ -169,11 +167,8 @@
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.jira.ticket.table.title(${result.totalCount})}">Tickets</h3>
-      <!--/* A ticket belongs to a scope, so creating and importing need the order (#1386). */-->
-      <div class="card-actions" th:if="${fJiraTicketCustomerorderId == null}">
-        <span class="text-secondary small" th:text="#{main.jira.ticket.list.chooseForCreate}">Für Neues Ticket und Import einen Auftrag wählen.</span>
-      </div>
-      <div class="card-actions btn-list" th:if="${fJiraTicketCustomerorderId != null}">
+      <!--/* Both choose their scope themselves and start with the one of the filter (#1386). */-->
+      <div class="card-actions btn-list">
         <a class="btn btn-outline-primary"
            th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
           <i class="ti ti-plus"></i><span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
@@ -265,10 +260,11 @@
          th:text="#{main.jira.ticket.list.count(${result.totalCount})}">12 Tickets</div>
   </div>
 
-  <!--/* The import as a dialog (#1386). It lives in the results, so that it always carries the scope
-         the filter shows; the preview is swapped in when a file is chosen. */-->
-  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true"
-       th:if="${fJiraTicketCustomerorderId != null}">
+  <!--/* The import as a dialog (#1386). It chooses its own scope among every order the user may
+         maintain — tickets or not, so that the first tickets of an order can come in this way — and
+         starts with the scope of the filter. The preview is swapped in when a file is chosen, and again
+         when the scope changes: the proposed reading depends on it. */-->
+  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <form class="modal-content" th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data">
         <div class="modal-header">
@@ -276,8 +272,23 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
         </div>
         <div class="modal-body">
-          <input type="hidden" name="customerorderId" th:value="${fJiraTicketCustomerorderId}"/>
-          <input type="hidden" name="suborderId" th:value="${fJiraTicketSuborderId}"/>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label required" for="scopeOrderSelect" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
+              <select class="form-select" id="scopeOrderSelect" name="customerorderId" required
+                      th:hx-get="@{/jira/tickets/scope/suborders}" hx-target="#scopeSuborderSelect"
+                      hx-swap="outerHTML" hx-trigger="change">
+                <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+                <option th:each="co : ${importOrders}" th:value="${co.id}"
+                        th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+                        th:selected="${fJiraTicketCustomerorderId != null and fJiraTicketCustomerorderId == co.id}"></option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="scopeSuborderSelect" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
+              <select th:replace="~{:: scopeSuborderSelect(${importSuborders}, ${fJiraTicketSuborderId})}"></select>
+            </div>
+          </div>
           <label class="form-label" for="ticketImportFile" th:text="#{main.jira.ticket.import.file}">Datei</label>
           <input class="form-control" type="file" id="ticketImportFile" name="file" required
                  accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -337,6 +348,14 @@
   ['suborder-select', 'type-select', 'limit-select', 'children-switch']
     .forEach(id => document.getElementById(id).addEventListener('change', () => form.requestSubmit()));
 
+  // The proposed reading of an import depends on its scope: a change of order or suborder in the dialog
+  // previews the chosen file again. Delegated, the dialog comes with the results.
+  document.addEventListener('change', event => {
+    if (!event.target.matches('#scopeOrderSelect, #scopeSuborderSelect')) return;
+    const file = document.getElementById('ticketImportFile');
+    if (file && file.files.length > 0) setTimeout(() => file.dispatchEvent(new Event('change', {bubbles: true})), 300);
+  });
+
   // Sorting and the types of the figures: delegated, because the results are swapped on every change.
   document.addEventListener('click', event => {
     const typeLink = event.target.closest('[data-filter-type]');
@@ -363,6 +382,20 @@
 </script>
 
 </main>
+
+<!--/* The suborders of the order chosen in the import dialog or the form of a new ticket (#1386):
+       every visible one, the order itself standing for the whole order. Swapped in when the order
+       changes. */-->
+<select th:fragment="scopeSuborderSelect(suborders, selectedId)" class="form-select" id="scopeSuborderSelect"
+        name="suborderId">
+  <option value="" th:text="#{main.jira.ticket.import.wholeOrder}">--- Ganzer Auftrag ---</option>
+  <option th:each="so : ${suborders}" th:value="${so.id}"
+          th:text="${so.completeOrderSign} + ' – ' + ${so.shortdescription}"
+          th:selected="${selectedId != null and selectedId == so.id}"></option>
+</select>
+
+<!--/* The same as the answer of the swap, which a view name cannot hand parameters to. */-->
+<th:block th:fragment="scopeSuborderSwap"><select th:replace="~{:: scopeSuborderSelect(${importSuborders}, null)}"></select></th:block>
 
 <!--/* A sortable column header, as in the booking list. */-->
 <th th:fragment="sortHeader(column, label, cssClass)" th:class="${cssClass}">
