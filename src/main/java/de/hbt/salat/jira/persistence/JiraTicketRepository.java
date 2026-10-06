@@ -43,18 +43,6 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
   @Query("select t from JiraTicket t where t.replication.id = :replicationId and t.key in :keys")
   List<JiraTicket> findMaintainedByKeyIn(long replicationId, Collection<String> keys);
 
-  /**
-   * The ticket maintained by hand under this key in the scope (#1386) — the one a replication
-   * covering the scope later takes over. Only without a JIRA id: one that has an id is found by it.
-   */
-  @Query("""
-      select t from JiraTicket t
-      where t.customerorder.id = :customerorderId
-        and (t.suborder.id = :suborderId or (t.suborder is null and :suborderId is null))
-        and t.key = :key and t.jiraId is null
-      """)
-  Optional<JiraTicket> findManualInScopeByKey(long customerorderId, Long suborderId, String key);
-
   /** The ticket with this key in the scope, replicated or not — a key is unique per scope. */
   @Query("""
       select t from JiraTicket t
