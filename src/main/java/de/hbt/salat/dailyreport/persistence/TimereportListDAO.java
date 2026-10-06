@@ -1,6 +1,5 @@
 package de.hbt.salat.dailyreport.persistence;
 
-import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
 
 import jakarta.persistence.EntityManager;

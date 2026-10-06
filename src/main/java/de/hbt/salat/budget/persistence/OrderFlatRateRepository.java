@@ -14,8 +14,10 @@ import de.hbt.salat.budget.domain.OrderFlatRate;
 public interface OrderFlatRateRepository
     extends CrudRepository<OrderFlatRate, Long>, PagingAndSortingRepository<OrderFlatRate, Long> {
 
-    /** The flat rates of a customer order, by its id (#1205). */
-    /** With order, suborder and plan: the flat rate list shows them (#1367). */
+    /**
+     * The flat rates of a customer order, by its id (#1205). With order, suborder and plan: the flat
+     * rate list shows them (#1367).
+     */
     @Query("""
         SELECT f FROM OrderFlatRate f JOIN FETCH f.customerorder LEFT JOIN FETCH f.suborder
           LEFT JOIN FETCH f.orderBudget
