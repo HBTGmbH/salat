@@ -2,6 +2,8 @@ package de.hbt.salat.jira.service;
 
 import static java.util.stream.Collectors.toSet;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_ALREADY_RUNNING;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_SCOPE_BUSY;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_NOT_RUNNING;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.MESSAGE_MAX_LENGTH;
@@ -32,9 +34,10 @@ import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 /**
  * The run history of the replications (#1282), modelled on the ETL's (→ ADR-0028).
  *
- * <p><b>The {@code RUNNING} row is the lock</b>, as with the ETL — but per replication, not for all
- * of them at once. Two replications write into different scopes and get along; the same one twice
- * would write the same tickets from two threads.
+ * <p><b>The {@code RUNNING} row is the lock</b>, as with the ETL — but per scope, not for all
+ * replications at once. Two replications of different scopes get along; the same one twice would
+ * write the same tickets from two threads, and so would two of the same scope (#1386): each derives
+ * top-level key and inherited fields of every ticket of the scope, whoever maintains it.
  *
  * <p>Management only, the scheduled run included: the job user is a manager
  * ({@code AuthorizedUser#initForJob}, → ADR-0006).
@@ -65,7 +68,8 @@ public class JiraReplicationRunService {
    * <p><b>Assumes a single instance of the application</b>, as the ETL lock and every
    * {@code @Scheduled} job of the application do already.
    *
-   * @throws BusinessRuleException when this replication is already running
+   * @throws BusinessRuleException when this replication is already running, or another one of the
+   *     same scope
    */
   public synchronized JiraReplicationRun startRun(long replicationId, Trigger trigger) {
     runRepository.findFirstByReplicationIdAndStatusOrderByStartedAtDesc(replicationId, RUNNING)
@@ -73,8 +77,17 @@ public class JiraReplicationRunService {
           throw new BusinessRuleException(JI_REPLICATION_RUN_ALREADY_RUNNING,
               running.getStartedAt().format(STARTED_AT_FORMAT));
         });
+    // Loaded, not a reference: without a surrounding transaction a proxy could not tell its scope.
+    var replication = configRepository.findById(replicationId)
+        .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_NOT_FOUND));
+    runRepository.findInScopeByStatus(replication.getCustomerorderId(), replication.getSuborderId(), RUNNING)
+        .stream().findFirst()
+        .ifPresent(running -> {
+          throw new BusinessRuleException(JI_REPLICATION_RUN_SCOPE_BUSY, running.getReplication().getName(),
+              running.getStartedAt().format(STARTED_AT_FORMAT));
+        });
     return runRepository.save(JiraReplicationRun.builder()
-        .replication(configRepository.getReferenceById(replicationId))
+        .replication(replication)
         .startedAt(DateTimeUtils.now())
         .status(RUNNING)
         .triggeredBy(trigger)

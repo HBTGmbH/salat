@@ -32,6 +32,22 @@ public interface JiraReplicationRunRepository extends JpaRepository<JiraReplicat
   Optional<JiraReplicationRun> findFirstByReplicationIdAndStatusOrderByStartedAtDesc(long replicationId,
                                                                                     Status status);
 
+  /**
+   * The running runs of every replication of exactly this scope (#1386), the latest first. Two
+   * replications of the same scope both write the derived values of all its tickets.
+   */
+  @EntityGraph(attributePaths = "replication")
+  @Query("""
+      SELECT r FROM JiraReplicationRun r
+      WHERE r.status = :status
+        AND r.replication.customerorder.id = :customerorderId
+        AND (r.replication.suborder.id = :suborderId OR (r.replication.suborder IS NULL AND :suborderId IS NULL))
+      ORDER BY r.startedAt DESC
+      """)
+  List<JiraReplicationRun> findInScopeByStatus(@Param("customerorderId") long customerorderId,
+                                               @Param("suborderId") Long suborderId,
+                                               @Param("status") Status status);
+
   @Transactional
   @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query("""
