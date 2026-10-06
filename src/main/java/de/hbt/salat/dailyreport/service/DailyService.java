@@ -92,7 +92,8 @@ public class DailyService {
         var effectiveStart = workingdayService.getEffectiveStart(workingday, employeeContractId);
         String startTime = String.format("%02d:%02d", effectiveStart.getHour(), effectiveStart.getMinute());
         String breakTime = workingday != null
-            ? String.format("%02d:%02d", workingday.getBreakhours(), workingday.getBreakminutes())
+            ? String.format("%02d:%02d", workingday.getBreakLength().toHours(),
+                workingday.getBreakLength().toMinutesPart())
             : "00:00";
         String dailyWorkingTimeFormatted = hasDayTarget
             ? DurationUtils.format(dayTarget)

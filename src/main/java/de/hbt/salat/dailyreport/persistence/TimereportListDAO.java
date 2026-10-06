@@ -95,9 +95,7 @@ public class TimereportListDAO {
       case EMPLOYEE -> sign;
       case ORDER -> joins.customerorder().get(Customerorder_.sign);
       case SUBORDER -> joins.suborder().get(Suborder_.sign);
-      case DURATION -> builder.sum(
-          builder.prod(root.get(Timereport_.durationhours).as(Long.class), (long) MINUTES_PER_HOUR),
-          root.get(Timereport_.durationminutes).as(Long.class));
+      case DURATION -> root.get(Timereport_.duration).as(Long.class);
     };
 
     var orders = new ArrayList<Order>();
@@ -122,9 +120,7 @@ public class TimereportListDAO {
     var root = query.from(Timereport.class);
     var joins = BookingJoins.of(root);
 
-    Expression<Long> minutes = builder.sum(
-        builder.prod(root.get(Timereport_.durationhours).as(Long.class), (long) MINUTES_PER_HOUR),
-        root.get(Timereport_.durationminutes).as(Long.class));
+    Expression<Long> minutes = root.get(Timereport_.duration).as(Long.class);
     Expression<Long> billableMinutes = builder.<Long>selectCase()
         .when(builder.equal(joins.suborder().get(Suborder_.invoice), YESNO_YES), minutes)
         .otherwise(0L);

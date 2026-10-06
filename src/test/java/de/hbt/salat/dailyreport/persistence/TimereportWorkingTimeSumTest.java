@@ -144,8 +144,7 @@ public class TimereportWorkingTimeSumTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday);
-    timereport.setDurationhours(hours);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(hours));
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription("");
     timereport.setTraining(false);

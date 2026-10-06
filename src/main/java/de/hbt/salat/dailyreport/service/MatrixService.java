@@ -107,9 +107,9 @@ public class MatrixService {
                 String breakString = null;
                 String endString = null;
                 if (wd != null && wd.getType() == Workingday.WorkingDayType.WORKED && !duration.isZero()) {
-                    beginString = "%02d:%02d".formatted(wd.getStarttimehour(), wd.getStarttimeminute());
+                    beginString = "%02d:%02d".formatted(wd.getStartTime().getHour(), wd.getStartTime().getMinute());
                     breakString = DurationUtils.format(wd.getBreakLength());
-                    LocalTime end = LocalTime.of(wd.getStarttimehour(), wd.getStarttimeminute())
+                    LocalTime end = wd.getStartTime()
                         .plus(wd.getBreakLength())
                         .plus(duration);
                     endString = "%02d:%02d".formatted(end.getHour(), end.getMinute());
@@ -228,10 +228,8 @@ public class MatrixService {
                     workingday.setRefday(day);
                 }
                 workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
-                workingday.setStarttimehour(0);
-                workingday.setStarttimeminute(0);
-                workingday.setBreakhours(0);
-                workingday.setBreakminutes(0);
+                workingday.setStartTime(LocalTime.MIDNIGHT);
+                workingday.setBreakLength(Duration.ZERO);
                 workingdayService.upsertWorkingday(workingday);
             });
     }

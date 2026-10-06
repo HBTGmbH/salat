@@ -97,8 +97,8 @@ public class MoveTimereportsService {
           dto.getReferenceday(),
           dto.getTaskdescription(),
           dto.isTraining(),
-          dto.getDurationhours(),
-          dto.getDurationminutes(),
+          dto.getDuration().toHours(),
+          dto.getDuration().toMinutesPart(),
           true);
     }
   }

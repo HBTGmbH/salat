@@ -31,12 +31,9 @@ public record AssignedBooking(
 
     /** The shape the JPQL constructor expression builds — still without the complete order sign. */
     public AssignedBooking(long id, LocalDate day, long suborderId, long employeeId,
-                           String employeeSign, String employeeName, Integer durationHours,
-                           Integer durationMinutes, String taskDescription) {
-        this(id, day, suborderId, null, employeeId, employeeSign, employeeName,
-            Duration.ofHours(durationHours == null ? 0 : durationHours)
-                .plusMinutes(durationMinutes == null ? 0 : durationMinutes),
-            taskDescription);
+                           String employeeSign, String employeeName, Duration duration,
+                           String taskDescription) {
+        this(id, day, suborderId, null, employeeId, employeeSign, employeeName, duration, taskDescription);
     }
 
     public AssignedBooking withSuborderSign(String suborderSign) {

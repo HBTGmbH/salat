@@ -316,8 +316,8 @@ public class TimereportService {
         shiftedDate,
         timereport.getTaskdescription(),
         timereport.isTraining(),
-        timereport.getDurationhours(),
-        timereport.getDurationminutes());
+        timereport.getDuration().toHours(),
+        timereport.getDuration().toMinutesPart());
   }
 
   public void deleteTimereportById(long timereportId) throws ErrorCodeException {
@@ -406,7 +406,7 @@ public class TimereportService {
     DataValidationUtils.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
     // a booking cannot be longer than the day it belongs to (#825). Enforced here so that every
     // caller is covered - the booking form, the inline edit of the daily view and the REST API.
-    // A minutes part of 60 or more is carried over into the hours instead of being stored as is.
+    // Hours and minutes are stored as one duration (#1381); a minutes part of 60 or more simply adds up.
     long totalDurationMinutes = durationHours * MINUTES_PER_HOUR + durationMinutes;
     DataValidationUtils.isTrue(totalDurationMinutes <= MINUTES_PER_DAY, TR_DURATION_EXCEEDS_ONE_DAY);
 
@@ -414,8 +414,7 @@ public class TimereportService {
     timereport.setReferenceday(referenceday);
     timereport.setTaskdescription(taskDescription.trim());
     timereport.setTraining(trainingFlag);
-    timereport.setDurationhours((int) (totalDurationMinutes / MINUTES_PER_HOUR));
-    timereport.setDurationminutes((int) (totalDurationMinutes % MINUTES_PER_HOUR));
+    timereport.setDuration(Duration.ofMinutes(totalDurationMinutes));
   }
 
   private static String contractLabel(Employeecontract employeecontract) {
@@ -531,7 +530,7 @@ public class TimereportService {
       case DEBITHOURS_UNIT_MONTH:
         Map<YearMonth, Long> minutesPerYearMonth = timereports.stream()
             .collect(groupingBy(t -> getYearMonth(t.getReferenceday().getRefdate()),
-                summingLong(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())));
+                summingLong(t -> t.getDuration().toMinutes())));
         minutesPerYearMonth.forEach((yearMonth, minutesSum) -> {
           long alreadyReportedMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(
               employeeorder.getId(),
@@ -545,7 +544,7 @@ public class TimereportService {
       case DEBITHOURS_UNIT_YEAR:
         Map<Year, Long> minutesPerYear = timereports.stream()
             .collect(groupingBy(t -> getYear(t.getReferenceday().getRefdate()),
-                summingLong(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())));
+                summingLong(t -> t.getDuration().toMinutes())));
         minutesPerYear.forEach((year, minutesSum) -> {
           long alreadyReportedMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(
               employeeorder.getId(),
@@ -558,7 +557,7 @@ public class TimereportService {
         break;
       case DEBITHOURS_UNIT_TOTALTIME:
         long minutesSum = timereports.stream()
-            .mapToLong(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())
+            .mapToLong(t -> t.getDuration().toMinutes())
             .sum();
         long alreadyReportedMinutes = timereportDAO
             .getTotalDurationMinutesForEmployeeOrder(employeeorder.getId());
@@ -579,7 +578,7 @@ public class TimereportService {
     // because this time is read from the database query, too. This is a trick to circumvent this special case.
     if(timereports.size() == 1 && !timereports.getFirst().isNew()) {
       Timereport timereport = timereports.getFirst();
-      debitMinutesTemp += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
+      debitMinutesTemp += timereport.getDuration().toMinutes();
     }
     final long debitMinutes = debitMinutesTemp;
     return debitMinutes;
@@ -659,9 +658,7 @@ public class TimereportService {
       BusinessRuleCheckUtils.isTrue(Math.abs(DateUtils.getCurrentYear() - reportedYear.getValue()) <= 1,
           TR_YEAR_OUT_OF_RANGE);
 
-      Integer durationHours = timereport.getDurationhours();
-      Integer durationMinutes = timereport.getDurationminutes();
-      DataValidationUtils.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
+      DataValidationUtils.isTrue(timereport.getDuration().isPositive(), TR_DURATION_INVALID);
     });
   }
 

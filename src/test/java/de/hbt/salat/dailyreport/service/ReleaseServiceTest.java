@@ -22,6 +22,7 @@ import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -237,7 +238,7 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            workingday.setStarttimehour(8);
+            workingday.setStartTime(LocalTime.of(8, 0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -269,7 +270,7 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            workingday.setStarttimehour(8);
+            workingday.setStartTime(LocalTime.of(8, 0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -301,7 +302,7 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(0);
+            workingday.setBreakLength(Duration.ofMinutes(0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -336,7 +337,7 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(25);
+            workingday.setBreakLength(Duration.ofMinutes(25));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -371,8 +372,8 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(30);
-            workingday.setStarttimehour(8);
+            workingday.setBreakLength(Duration.ofMinutes(30));
+            workingday.setStartTime(LocalTime.of(8, 0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -409,8 +410,8 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(30);
-            workingday.setStarttimehour(8);
+            workingday.setBreakLength(Duration.ofMinutes(30));
+            workingday.setStartTime(LocalTime.of(8, 0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -447,7 +448,7 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(0);
+            workingday.setBreakLength(Duration.ofMinutes(0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -487,7 +488,7 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(40);
+            workingday.setBreakLength(Duration.ofMinutes(40));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -529,8 +530,8 @@ class ReleaseServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
-            workingday.setBreakminutes(45);
-            workingday.setStarttimehour(8);
+            workingday.setBreakLength(Duration.ofMinutes(45));
+            workingday.setStartTime(LocalTime.of(8, 0));
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
@@ -569,11 +570,10 @@ class ReleaseServiceTest {
                 .build();
             final List<TimereportDTO> yesterdayDateResult = List.of(yesterdayTimeReport);
             final Workingday releaseDay = new Workingday();
-            releaseDay.setStarttimehour(6);
+            releaseDay.setStartTime(LocalTime.of(6, 0));
             releaseDay.setRefday(releaseDate);
             final Workingday yesterday = new Workingday();
-            yesterday.setStarttimehour(18);
-            yesterday.setStarttimeminute(1);
+            yesterday.setStartTime(LocalTime.of(18, 1));
             yesterday.setRefday(yesterdayDate);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(releaseDateResult);
@@ -611,10 +611,10 @@ class ReleaseServiceTest {
                 .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday releaseDay = new Workingday();
-            releaseDay.setStarttimehour(6);
+            releaseDay.setStartTime(LocalTime.of(6, 0));
             releaseDay.setRefday(releaseDate);
             final Workingday yesterday = new Workingday();
-            yesterday.setStarttimehour(19);
+            yesterday.setStartTime(LocalTime.of(19, 0));
             yesterday.setRefday(yesterdayDate);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
@@ -1771,8 +1771,7 @@ class ReleaseServiceTest {
         private Workingday workingday(LocalDate date, int startHour, int startMinute) {
             final var workingday = new Workingday();
             workingday.setRefday(date);
-            workingday.setStarttimehour(startHour);
-            workingday.setStarttimeminute(startMinute);
+            workingday.setStartTime(LocalTime.of(startHour, startMinute));
             return workingday;
         }
     }

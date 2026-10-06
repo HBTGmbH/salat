@@ -474,8 +474,6 @@ public class BudgetDashboardServiceTest {
           .suborderId(suborder.getId())
           .employeeId(employeeId)
           .referenceday(LocalDate.parse(day))
-          .durationhours(hours)
-          .durationminutes(minutes)
           .duration(Duration.ofHours(hours).plusMinutes(minutes))
           .build();
       bookings.add(new Booking(report, plan == null ? null : plan.getId()));

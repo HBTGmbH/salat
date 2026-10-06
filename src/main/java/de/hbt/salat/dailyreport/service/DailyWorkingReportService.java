@@ -9,6 +9,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_BOOKING_NO_CONTRACT;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -207,35 +208,27 @@ public class DailyWorkingReportService {
             return newWorkingDay;
         });
 
-        int oldStartHour = workingDay.getStarttimehour();
-        int oldStartMinute = workingDay.getStarttimeminute();
-        int oldBreakHour = workingDay.getBreakhours();
-        int oldBreakMinute = workingDay.getBreakminutes();
+        var oldStartTime = workingDay.getStartTime();
+        var oldBreakLength = workingDay.getBreakLength();
         var oldType = workingDay.getType();
 
         ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
-            workingDay.setBreakhours(bd.getHour());
-            workingDay.setBreakminutes(bd.getMinute());
+            workingDay.setBreakLength(Duration.ofHours(bd.getHour()).plusMinutes(bd.getMinute()));
         }, () -> {
-            workingDay.setBreakhours(0);
-            workingDay.setBreakminutes(0);
+            workingDay.setBreakLength(Duration.ZERO);
         });
         ofNullable(report.getStartTime()).ifPresentOrElse(st -> {
-            workingDay.setStarttimehour(st.getHour());
-            workingDay.setStarttimeminute(st.getMinute());
+            workingDay.setStartTime(LocalTime.of(st.getHour(), st.getMinute()));
         }, () -> {
-            workingDay.setStarttimehour(0);
-            workingDay.setStarttimeminute(0);
+            workingDay.setStartTime(LocalTime.MIDNIGHT);
         });
         workingDay.setType(report.getType());
         workingdayService.upsertWorkingday(workingDay);
 
         boolean dataChanged = !created && (
             oldType != workingDay.getType() ||
-            oldStartHour != workingDay.getStarttimehour() ||
-            oldStartMinute != workingDay.getStarttimeminute() ||
-            oldBreakHour != workingDay.getBreakhours() ||
-            oldBreakMinute != workingDay.getBreakminutes()
+            !oldStartTime.equals(workingDay.getStartTime()) ||
+            !oldBreakLength.equals(workingDay.getBreakLength())
         );
         boolean worked = workingDay.getType() != WorkingDayType.NOT_WORKED;
         LocalTime startTime = worked ? report.getStartTime() : null;

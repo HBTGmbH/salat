@@ -12,6 +12,7 @@ import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.List;
@@ -234,8 +235,8 @@ class MatrixServiceFillNotWorkedTest {
     var stored = storedWorkingday(day(9));
     assertThat(stored.getId()).isEqualTo(worked.getId());
     assertThat(stored.getType()).isEqualTo(NOT_WORKED);
-    assertThat(List.of(stored.getStarttimehour(), stored.getStarttimeminute(), stored.getBreakhours(),
-        stored.getBreakminutes())).containsOnly(0);
+    assertThat(stored.getStartTime()).isEqualTo(LocalTime.MIDNIGHT);
+    assertThat(stored.getBreakLength()).isZero();
   }
 
   @Test
@@ -262,8 +263,8 @@ class MatrixServiceFillNotWorkedTest {
 
     var stored = storedWorkingday(day(10));
     assertThat(stored.getUpdatecounter()).isEqualTo(notWorked.getUpdatecounter());
-    assertThat(List.of(stored.getStarttimehour(), stored.getStarttimeminute(), stored.getBreakhours(),
-        stored.getBreakminutes())).containsExactly(7, 15, 0, 30);
+    assertThat(List.of(stored.getStartTime(), stored.getBreakLength()))
+        .containsExactly(LocalTime.of(7, 15), Duration.ofHours(0).plusMinutes(30));
   }
 
   @Test
@@ -303,8 +304,8 @@ class MatrixServiceFillNotWorkedTest {
     for (var before : List.of(onTheFirst, onTheLast)) {
       var stored = storedWorkingday(before.getRefday());
       assertThat(stored.getUpdatecounter()).as("am %s", before.getRefday()).isEqualTo(before.getUpdatecounter());
-      assertThat(List.of(stored.getStarttimehour(), stored.getStarttimeminute(), stored.getBreakhours(),
-          stored.getBreakminutes())).as("am %s", before.getRefday()).containsExactly(7, 15, 0, 30);
+      assertThat(List.of(stored.getStartTime(), stored.getBreakLength())).as("am %s", before.getRefday())
+        .containsExactly(LocalTime.of(7, 15), Duration.ofHours(0).plusMinutes(30));
     }
   }
 
@@ -431,10 +432,8 @@ class MatrixServiceFillNotWorkedTest {
     workingday.setEmployeecontract(contract);
     workingday.setRefday(date);
     workingday.setType(type);
-    workingday.setStarttimehour(startHour);
-    workingday.setStarttimeminute(startMinute);
-    workingday.setBreakhours(breakHours);
-    workingday.setBreakminutes(breakMinutes);
+    workingday.setStartTime(LocalTime.of(startHour, startMinute));
+    workingday.setBreakLength(Duration.ofHours(breakHours).plusMinutes(breakMinutes));
     return workingdayRepository.save(workingday);
   }
 
@@ -449,8 +448,7 @@ class MatrixServiceFillNotWorkedTest {
     var timereport = new Timereport();
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday);
-    timereport.setDurationhours(1);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(1));
     timereport.setStatus(status);
     timereport.setTaskdescription("");
     timereport.setTraining(false);

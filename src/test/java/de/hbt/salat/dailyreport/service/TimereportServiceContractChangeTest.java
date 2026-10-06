@@ -12,8 +12,10 @@ import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_COMMITTED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Year;
 import java.util.Map;
 import java.util.Optional;
@@ -133,7 +135,7 @@ class TimereportServiceContractChangeTest {
     when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(any(), anyLong())).thenAnswer(call -> {
       var workingday = new Workingday();
       workingday.setRefday(call.getArgument(0));
-      workingday.setStarttimehour(8);
+      workingday.setStartTime(LocalTime.of(8, 0));
       return workingday;
     });
     when(timereportRepository.save(any())).thenAnswer(call -> call.getArgument(0));
@@ -209,8 +211,7 @@ class TimereportServiceContractChangeTest {
     timereport.setEmployeeorder(firstOrder);
     timereport.setReferenceday(referenceday(day));
     timereport.setTaskdescription("comment");
-    timereport.setDurationhours(1);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(1));
     timereport.setStatus(TIMEREPORT_STATUS_CLOSED);
     timereport.setReleasedby(EmployeeTestUtils.TESTY_SIGN);
     timereport.setReleased(RELEASED_AT);

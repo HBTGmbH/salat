@@ -6022,3 +6022,147 @@ databaseChangeLog:
         - dropColumn:
             tableName: favorite
             columnName: employeeId
+
+  - changeSet:
+      id: 161
+      author: kr
+      comment: Dauer einer Buchung in einer Spalte duration_minutes (#1381)
+      # Stunden und Minuten hatten keine Bedeutung fuer sich und liessen Minutenanteile ab 60 zu. Die
+      # Anwendung liest und schreibt nur noch duration_minutes. durationhours und durationminutes bleiben
+      # als berechnete Spalten (VIRTUAL) stehen, bis keine Report-, ETL- oder View-Definition sie mehr
+      # liest (Changeset 164); bis dahin liefern sie dieselben Summen, ein Minutenanteil ab 60 erscheint
+      # als volle Stunde. Die Summe aller Buchungen ist vorher und nachher gleich.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: timereport
+                columnName: duration_minutes
+      changes:
+        - sql:
+            sql: |-
+              ALTER TABLE timereport ADD COLUMN duration_minutes INT NOT NULL DEFAULT 0;
+              UPDATE timereport SET duration_minutes = COALESCE(durationhours, 0) * 60 + COALESCE(durationminutes, 0);
+              ALTER TABLE timereport
+                ALTER COLUMN duration_minutes DROP DEFAULT,
+                DROP COLUMN durationhours,
+                DROP COLUMN durationminutes;
+              ALTER TABLE timereport
+                ADD COLUMN durationhours INT GENERATED ALWAYS AS (duration_minutes DIV 60) VIRTUAL,
+                ADD COLUMN durationminutes INT GENERATED ALWAYS AS (duration_minutes MOD 60) VIRTUAL;
+
+  - changeSet:
+      id: 162
+      author: kr
+      comment: Beginn und Pause eines Arbeitstags je in einer Spalte start_time und break_minutes (#1382)
+      # Beginn als Uhrzeit (TIME), Pause in Minuten; die Aufteilung nach Stunden und Minuten hatte keine
+      # Bedeutung. Die alten Spalten bleiben wie in Changeset 161 als berechnete Spalten stehen, bis keine
+      # Definition sie mehr liest (Changeset 165).
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: workingday
+                columnName: start_time
+      changes:
+        - sql:
+            sql: |-
+              ALTER TABLE workingday
+                ADD COLUMN start_time TIME NOT NULL DEFAULT '00:00:00',
+                ADD COLUMN break_minutes INT NOT NULL DEFAULT 0;
+              UPDATE workingday
+                 SET start_time = MAKETIME(Starttimehour, Starttimeminute, 0),
+                     break_minutes = breakhours * 60 + breakminutes;
+              ALTER TABLE workingday
+                ALTER COLUMN start_time DROP DEFAULT,
+                ALTER COLUMN break_minutes DROP DEFAULT,
+                DROP COLUMN Starttimehour,
+                DROP COLUMN Starttimeminute,
+                DROP COLUMN breakhours,
+                DROP COLUMN breakminutes;
+              ALTER TABLE workingday
+                ADD COLUMN Starttimehour INT GENERATED ALWAYS AS (HOUR(start_time)) VIRTUAL,
+                ADD COLUMN Starttimeminute INT GENERATED ALWAYS AS (MINUTE(start_time)) VIRTUAL,
+                ADD COLUMN breakhours INT GENERATED ALWAYS AS (break_minutes DIV 60) VIRTUAL,
+                ADD COLUMN breakminutes INT GENERATED ALWAYS AS (break_minutes MOD 60) VIRTUAL;
+
+  - changeSet:
+      id: 163
+      author: kr
+      comment: Umsatz-View liest die Dauer aus duration_minutes (#1381)
+      # Wie Changeset 135, nur timereport_minutes aus der neuen Spalte; dieselben Zahlen.
+      changes:
+        - createView:
+            viewName: revenue_view
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT tr.id                                                AS timereport_id,
+                     co.id                                                AS customerorder_id,
+                     co.sign                                              AS customerorder_sign,
+                     so.id                                                AS suborder_id,
+                     op.suborder_sign                                     AS suborder_sign_fully_qualified,
+                     tr.EMPLOYEEORDER_ID                                  AS employeeorder_id,
+                     op.refdate                                           AS timereport_date,
+                     tr.duration_minutes                                  AS timereport_minutes,
+                     IFNULL(op.price_eur_per_hour, 0) * 100 / 60          AS price_cents_per_minute,
+                     op.price_eur_per_hour
+              FROM order_pricing_view2 op
+                       JOIN referenceday r ON r.refdate = op.refdate
+                       JOIN timereport tr ON tr.REFERENCEDAY_ID = r.id AND tr.deleted = 0
+                       JOIN employeeorder eo ON eo.id = tr.EMPLOYEEORDER_ID AND eo.SUBORDER_ID = op.SUBORDER_ID
+                       JOIN suborder so ON so.id = eo.SUBORDER_ID
+                       JOIN customerorder co ON co.id = so.CUSTOMERORDER_ID
+                       JOIN employee e ON e.sign = op.employee_sign
+                       JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID AND ec.EMPLOYEE_ID = e.id
+
+  - changeSet:
+      id: 164
+      author: kr
+      comment: Berechnete Spalten durationhours und durationminutes entfernen, sobald keine Definition sie liest (#1381)
+      # Report- und ETL-Definitionen pflegt die Anwendung nicht; sie werden nach dem Release in Produktion
+      # auf duration_minutes umgestellt. Solange eine Definition oder View die alten Namen noch nennt,
+      # ueberspringt CONTINUE den Changeset und prueft beim naechsten Start erneut.
+      preConditions:
+        - onFail: CONTINUE
+        - columnExists:
+            tableName: timereport
+            columnName: durationhours
+        - sqlCheck:
+            expectedResult: 0
+            sql: |-
+              SELECT (SELECT COUNT(*) FROM report_definition
+                       WHERE LOWER(`sql`) REGEXP 'durationhours|durationminutes')
+                   + (SELECT COUNT(*) FROM etl_definition
+                       WHERE LOWER(CONCAT_WS(' ', init, execute, cleanup)) REGEXP 'durationhours|durationminutes')
+                   + (SELECT COUNT(*) FROM information_schema.views
+                       WHERE table_schema = DATABASE()
+                         AND LOWER(view_definition) REGEXP 'durationhours|durationminutes')
+      changes:
+        - sql:
+            sql: ALTER TABLE timereport DROP COLUMN durationhours, DROP COLUMN durationminutes
+
+  - changeSet:
+      id: 165
+      author: kr
+      comment: Berechnete Spalten fuer Beginn und Pause des Arbeitstags entfernen, sobald keine Definition sie liest (#1382)
+      # Wie Changeset 164.
+      preConditions:
+        - onFail: CONTINUE
+        - columnExists:
+            tableName: workingday
+            columnName: Starttimehour
+        - sqlCheck:
+            expectedResult: 0
+            sql: |-
+              SELECT (SELECT COUNT(*) FROM report_definition
+                       WHERE LOWER(`sql`) REGEXP 'starttimehour|starttimeminute|breakhours|breakminutes')
+                   + (SELECT COUNT(*) FROM etl_definition
+                       WHERE LOWER(CONCAT_WS(' ', init, execute, cleanup)) REGEXP 'starttimehour|starttimeminute|breakhours|breakminutes')
+                   + (SELECT COUNT(*) FROM information_schema.views
+                       WHERE table_schema = DATABASE()
+                         AND LOWER(view_definition) REGEXP 'starttimehour|starttimeminute|breakhours|breakminutes')
+      changes:
+        - sql:
+            sql: >-
+              ALTER TABLE workingday DROP COLUMN Starttimehour, DROP COLUMN Starttimeminute,
+              DROP COLUMN breakhours, DROP COLUMN breakminutes

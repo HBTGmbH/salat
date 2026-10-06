@@ -101,7 +101,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   @Query("""
       select t from Timereport t where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
       and t.referenceday.refdate >= :releaseDate
-      and t.durationminutes = 0 and t.durationhours = 0
+      and t.duration = :#{T(java.time.Duration).ZERO}
       order by t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);
@@ -132,48 +132,48 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       """)
   List<LocalDate> findBookedDaysBetween(long employeecontractId, LocalDate from, LocalDate until);
 
-  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
+  @Query("select sum(tr.duration) from Timereport tr "
       + "where tr.deleted = false and tr.employeeorder.suborder.id = :suborderId and tr.employeeorder.employeecontract.id = :employeecontractId")
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);
 
-  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
+  @Query("select sum(tr.duration) from Timereport tr "
       + "where tr.deleted = false and tr.employeeorder.suborder.id = :suborderId and tr.employeeorder.employeecontract.id = :employeecontractId "
       + "and tr.referenceday.refdate > :after")
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContractAfter(long suborderId, long employeecontractId,
       LocalDate after);
 
-  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
+  @Query("select sum(tr.duration) from Timereport tr "
       + "where tr.deleted = false and tr.employeeorder.suborder.invoice = '" + INVOICE_YES + "' and tr.employeeorder.suborder.customerorder.id = :customerorderId")
   Optional<Long> getReportedMinutesForCustomerorder(long customerorderId);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.suborder.id in (:ids)
   """)
   Optional<Long> getReportedMinutesForSuborders(List<Long> ids);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
       and tr.employeeorder.suborder.id = :suborderId
   """)
   Optional<Long> getReportedMinutesForSuborderAndBetween(long suborderId, LocalDate begin, LocalDate end);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
       and tr.employeeorder.id = :employeeorderId
   """)
   Optional<Long> getReportedMinutesForEmployeeorderAndBetween(long employeeorderId, LocalDate begin, LocalDate end);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.id = :employeeorderId
   """)
   Optional<Long> getReportedMinutesForEmployeeorder(long employeeorderId);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
   """ + IS_WORKING_TIME)
@@ -183,7 +183,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       select new de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes(
              extract(year from tr.referenceday.refdate),
              extract(month from tr.referenceday.refdate),
-             sum(tr.durationminutes) + 60 * sum(tr.durationhours))
+             sum(tr.duration))
       from Timereport tr
       where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
@@ -202,19 +202,19 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Timereport> findAllByEmployeeorderIdAndReferencedayRefdate(long employeeorderId, LocalDate refDate);
 
   @Query("""
-      select tr.employeeorder.suborder.customerorder.id, sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select tr.employeeorder.suborder.customerorder.id, sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.suborder.customerorder.id in (:ids) group by tr.employeeorder.suborder.customerorder.id
   """)
   List<Long[]> getReportedMinutesForCustomerordersAsMap(List<Long> ids);
 
   @Query("""
-      select tr.employeeorder.suborder.id, sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select tr.employeeorder.suborder.id, sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.suborder.id in (:ids) group by tr.employeeorder.suborder.id
   """)
   List<Long[]> getReportedMinutesForSubordersAsMap(List<Long> ids);
 
   @Query("""
-      select tr.employeeorder.id, sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select tr.employeeorder.id, sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.id in (:ids) group by tr.employeeorder.id
   """)
   List<Long[]> getReportedMinutesForEmployeeordersAsMap(List<Long> ids);
@@ -244,8 +244,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
              tr.referenceday.refdate,
              index(ref),
              ref,
-             tr.durationhours,
-             tr.durationminutes)
+             tr.duration)
       from Timereport tr join tr.ticketReferences ref
       where tr.deleted = false
         and tr.employeeorder.suborder.id in (:suborderIds)
@@ -261,7 +260,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   int hardDeleteSoftDeletedByEmployeeorderId(long employeeorderId);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      select sum(tr.duration) from Timereport tr
       where tr.deleted = false and tr.employeeorder.id = :employeeorderId
       and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
   """)

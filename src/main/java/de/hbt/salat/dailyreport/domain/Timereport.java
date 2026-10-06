@@ -4,6 +4,7 @@ import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -33,7 +34,9 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.common.domain.DurationMinutesConverter;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -67,8 +70,14 @@ public class Timereport extends AuditedEntity implements Serializable {
     @JoinColumn(name = "EMPLOYEEORDER_ID", nullable = false)
     private Employeeorder employeeorder;
 
-    private Integer durationhours;
-    private Integer durationminutes;
+    /**
+     * The duration of the booking (#1381), stored in minutes in one column instead of hours and
+     * minutes, which had no meaning of their own and allowed a minute part of 60 and more. A
+     * {@code sum} over it in a query yields the minutes as a number.
+     */
+    @Convert(converter = DurationMinutesConverter.class)
+    @Column(name = "duration_minutes", nullable = false)
+    private Duration duration = Duration.ZERO;
     @Lob
     @Column(columnDefinition = "text")
     private String taskdescription;
@@ -136,8 +145,7 @@ public class Timereport extends AuditedEntity implements Serializable {
 
     public Timereport getTwin() {
         Timereport timereport = new Timereport();
-        timereport.setDurationhours(durationhours);
-        timereport.setDurationminutes(durationminutes);
+        timereport.setDuration(duration);
         timereport.setStatus(status);
         timereport.setTaskdescription(taskdescription);
         timereport.setTicketReferences(ticketReferences);
@@ -168,8 +176,8 @@ public class Timereport extends AuditedEntity implements Serializable {
         return "TR[" + getEmployeecontract().getEmployee().getSign() + " | "
                 + DateUtils.format(getReferenceday().getRefdate()) + " | "
                 + getSuborder().getCustomerorder().getSign() + " / "
-                + getSuborder().getCompleteOrderSign() + " | " + getDurationhours() + ":"
-                + getDurationminutes() + " | " + getTaskdescription() + " | "
+                + getSuborder().getCompleteOrderSign() + " | " + DurationUtils.format(getDuration())
+                + " | " + getTaskdescription() + " | "
                 + getStatus() + "]";
     }
 
@@ -189,10 +197,6 @@ public class Timereport extends AuditedEntity implements Serializable {
             return;
         }
         this.ticketReferences = new ArrayList<>(values);
-    }
-
-    public Duration getDuration() {
-        return Duration.ofHours(durationhours).plusMinutes(durationminutes);
     }
 
 }

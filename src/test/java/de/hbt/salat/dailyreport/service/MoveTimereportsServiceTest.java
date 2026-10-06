@@ -17,6 +17,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_ACCEPTED_REQ_ADMIN
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Nested;
@@ -78,6 +79,7 @@ class MoveTimereportsServiceTest {
                 .employeecontractId(ecId)
                 .employeeName(employeeName)
                 .referenceday(date)
+                .duration(Duration.ofHours(1))
                 .build();
     }
 
@@ -88,6 +90,7 @@ class MoveTimereportsServiceTest {
                 .employeeName(employeeName)
                 .referenceday(date)
                 .status(status)
+                .duration(Duration.ofHours(1))
                 .build();
     }
 

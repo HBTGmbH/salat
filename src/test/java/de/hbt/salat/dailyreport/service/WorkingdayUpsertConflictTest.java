@@ -15,6 +15,7 @@ import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORK
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,8 +103,7 @@ class WorkingdayUpsertConflictTest {
     var saved = ArgumentCaptor.forClass(Workingday.class);
     verify(workingdayRepository, atLeastOnce()).save(saved.capture());
     assertThat(saved.getValue()).isSameAs(existing);
-    assertThat(existing.getStarttimehour()).isEqualTo(9);
-    assertThat(existing.getStarttimeminute()).isEqualTo(30);
+    assertThat(existing.getStartTime()).isEqualTo(LocalTime.of(9, 30));
   }
 
   @Test
@@ -135,7 +135,7 @@ class WorkingdayUpsertConflictTest {
   @Test
   void an_already_stored_working_day_is_written_without_a_second_attempt() {
     var stored = storedWorkingday(8, 0);
-    stored.setStarttimehour(11);
+    stored.setStartTime(LocalTime.of(11, 0));
 
     workingdayService.upsertWorkingday(stored);
 
@@ -152,8 +152,7 @@ class WorkingdayUpsertConflictTest {
     var workingday = new Workingday();
     workingday.setEmployeecontract(contract);
     workingday.setRefday(DAY);
-    workingday.setStarttimehour(startHour);
-    workingday.setStarttimeminute(startMinute);
+    workingday.setStartTime(LocalTime.of(startHour, startMinute));
     workingday.setType(WORKED);
     return workingday;
   }

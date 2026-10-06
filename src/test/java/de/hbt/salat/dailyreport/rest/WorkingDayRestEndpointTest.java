@@ -8,7 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,10 +80,8 @@ class WorkingDayRestEndpointTest {
         verify(workingdayService, times(1)).upsertWorkingday(workingDayArgumentCaptor.capture());
         assertThat(workingDayArgumentCaptor.getValue())
                 .isNotNull()
-                .hasFieldOrPropertyWithValue("Starttimehour", 7)
-                .hasFieldOrPropertyWithValue("Starttimeminute", 8)
-                .hasFieldOrPropertyWithValue("Breakhours", 9)
-                .hasFieldOrPropertyWithValue("Breakminutes", 10)
+                .hasFieldOrPropertyWithValue("startTime", LocalTime.of(7, 8))
+                .hasFieldOrPropertyWithValue("breakLength", Duration.ofHours(9).plusMinutes(10))
                 .hasFieldOrPropertyWithValue("refday", DateUtils.parse("2024-07-06"))
                 .hasFieldOrPropertyWithValue("type", WORKED)
                 .hasFieldOrPropertyWithValue("employeecontract", employeeContract);
@@ -92,7 +92,7 @@ class WorkingDayRestEndpointTest {
         // given
         var employeeContract = employeeContract();
         var workingDay = new Workingday();
-        workingDay.setStarttimehour(7);
+        workingDay.setStartTime(LocalTime.of(7, 0));
         workingDay.setRefday(DateUtils.parse("2024-07-06"));
         when(employeecontractService.getEmployeeContractValidAt(anyLong(), any(LocalDate.class)))
                 .thenReturn(employeeContract);

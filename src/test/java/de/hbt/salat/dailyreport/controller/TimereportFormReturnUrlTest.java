@@ -198,8 +198,6 @@ class TimereportFormReturnUrlTest {
         .customerorderId(1L)
         .suborderId(SUBORDER_ID)
         .duration(Duration.ofMinutes(90))
-        .durationhours(1)
-        .durationminutes(30)
         .taskdescription("comment")
         .build();
   }

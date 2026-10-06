@@ -588,8 +588,6 @@ public class TimereportDAO {
             .id(timereport.getId())
             .referenceday(timereport.getReferenceday().getRefdate())
             .duration(timereport.getDuration())
-            .durationhours(timereport.getDurationhours())
-            .durationminutes(timereport.getDurationminutes())
             .taskdescription(timereport.getTaskdescription())
             .ticketReferences(timereport.getTicketReferences())
             .sequencenumber(timereport.getSequencenumber())

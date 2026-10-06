@@ -62,7 +62,7 @@ public interface TimereportBudgetAssignmentRepository
                eo.employeecontract.employee.id,
                eo.employeecontract.employee.sign,
                concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname),
-               t.durationhours, t.durationminutes, t.taskdescription)
+               t.duration, t.taskdescription)
         FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
@@ -84,7 +84,7 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT new de.hbt.salat.budget.domain.AssignedBookingTotals(
-               count(t), sum(t.durationhours * 60 + t.durationminutes))
+               count(t), sum(t.duration))
         FROM TimereportBudgetAssignment a, Timereport t
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
@@ -123,7 +123,7 @@ public interface TimereportBudgetAssignmentRepository
                eo.employeecontract.employee.sign,
                concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname),
                eo.suborder.id, t.referenceday.refdate,
-               count(t), sum(t.durationhours * 60 + t.durationminutes))
+               count(t), sum(t.duration))
         FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
@@ -203,7 +203,7 @@ public interface TimereportBudgetAssignmentRepository
     @Query("""
         SELECT new de.hbt.salat.budget.domain.PlanBooking(
                a.orderBudget.id, eo.suborder.id, eo.employeecontract.employee.id,
-               t.referenceday.refdate, t.durationhours, t.durationminutes)
+               t.referenceday.refdate, t.duration)
         FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id IN :budgetIds

@@ -15,6 +15,7 @@ import static de.hbt.salat.common.exception.ErrorCode.WD_SUCCEEDED_CONTRACT_NOT_
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -248,7 +249,7 @@ class WorkingdayReportPeriodTest {
     workingday.setEmployeecontract(contract);
     workingday.setRefday(day);
     workingday.setType(WORKED);
-    workingday.setStarttimehour(8);
+    workingday.setStartTime(LocalTime.of(8, 0));
     return workingday;
   }
 

@@ -16,8 +16,10 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_
 import static de.hbt.salat.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static de.hbt.salat.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Year;
 import java.util.Map;
 import java.util.Optional;
@@ -144,7 +146,7 @@ class TimereportServiceDateChangeTest {
     when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(any(), anyLong())).thenAnswer(call -> {
       var workingday = new Workingday();
       workingday.setRefday(call.getArgument(0));
-      workingday.setStarttimehour(8);
+      workingday.setStartTime(LocalTime.of(8, 0));
       return workingday;
     });
     when(timereportRepository.save(any())).thenAnswer(call -> call.getArgument(0));
@@ -332,7 +334,7 @@ class TimereportServiceDateChangeTest {
         "changed comment", false, 2, 0);
 
     assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_OPEN);
-    assertThat(timereport.getDurationhours()).isEqualTo(2);
+    assertThat(timereport.getDuration()).isEqualTo(Duration.ofHours(2));
     assertThat(publishedEvent().getPreviousReferencedays()).isEmpty();
   }
 
@@ -355,8 +357,7 @@ class TimereportServiceDateChangeTest {
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday(day));
     timereport.setTaskdescription("comment");
-    timereport.setDurationhours(1);
-    timereport.setDurationminutes(0);
+    timereport.setDuration(Duration.ofHours(1));
     timereport.setStatus(status);
     if (!TIMEREPORT_STATUS_OPEN.equals(status)) {
       timereport.setReleasedby(OWNER);

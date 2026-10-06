@@ -180,8 +180,6 @@ class DailyInlineTicketSuggestionTest {
         .referenceday(DATE)
         .employeecontractId(CONTRACT_ID)
         .employeeorderId(EMPLOYEE_ORDER_ID)
-        .durationhours(1)
-        .durationminutes(0)
         .duration(Duration.ofHours(1))
         .taskdescription("alt")
         .ticketReferences(List.of(references))
