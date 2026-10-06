@@ -42,6 +42,7 @@ import de.hbt.salat.reporting.domain.ReportResultColumnHeader;
 import de.hbt.salat.reporting.domain.ReportResultColumnValue;
 import de.hbt.salat.reporting.domain.ReportResultRow;
 import de.hbt.salat.reporting.persistence.ReportDefinitionRepository;
+import de.hbt.salat.reporting.persistence.OwnerReferences;
 
 @Slf4j
 @Service
@@ -54,6 +55,7 @@ public class ReportService {
   private final DataSource dataSource;
   private final ReportAuthorization reportAuthorization;
   private final AuthorizedUser authorizedUser;
+  private final OwnerReferences ownerReferences;
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
@@ -177,7 +179,7 @@ public class ReportService {
     var reportDefinition = new ReportDefinition();
     reportDefinition.setName(name);
     reportDefinition.setSql(sql);
-    reportDefinition.setOwnerUserId(authorizedUser.getEffectiveUserId());
+    reportDefinition.setOwner(ownerReferences.salatUser(authorizedUser.getEffectiveUserId()));
     reportDefinitionRepository.save(reportDefinition);
     return reportDefinition;
   }

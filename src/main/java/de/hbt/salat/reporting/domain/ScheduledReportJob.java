@@ -2,6 +2,7 @@ package de.hbt.salat.reporting.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -9,6 +10,7 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.common.domain.AuditedEntity;
 
 @Entity
@@ -46,19 +48,26 @@ public class ScheduledReportJob extends AuditedEntity implements Serializable {
   private String description;
 
   /**
-   * The login that owns the scheduled job (#1330): the id of a {@code SalatUser}, set from the login it was
-   * created under. Whoever is not a manager sees, changes and deletes only the jobs they own.
+   * The login that owns the scheduled job (#1330), set from the login it was created under. A
+   * reference to master data of auth (#1370, ADR-0036): read only, no cascade. Whoever is not a
+   * manager sees, changes and deletes only the jobs they own.
    *
    * <p>Not {@code createdby}: that is the login name, and a login name can be changed or
    * anonymized — the owner would lose the record, and whoever got the name next would inherit it
    * (the reason of #1204). {@code createdby} stays as the audit field it is. {@code null} when no
    * login could be assigned; then only a manager may change it.
    */
-  @Column(name = "owner_user_id")
-  private Long ownerUserId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_user_id")
+  private SalatUser owner;
 
   public ScheduledReportJob(long id) {
     super(id);
+  }
+
+  /** The id of {@link #owner}, read off the reference without loading the login. */
+  public Long getOwnerUserId() {
+    return owner != null ? owner.getId() : null;
   }
 
 }

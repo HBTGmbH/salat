@@ -19,6 +19,7 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.notification.domain.Notification;
 import de.hbt.salat.notification.persistence.NotificationRepository;
+import de.hbt.salat.notification.persistence.RecipientReferences;
 
 @Slf4j
 @Service
@@ -31,6 +32,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final SalatUserRepository salatUserRepository;
+    private final RecipientReferences recipientReferences;
     private final AuthorizedUser authorizedUser;
     private final MessageSource messageSource;
     private final SalatProperties salatProperties;
@@ -46,7 +48,7 @@ public class NotificationService {
         validateKey(titleKey);
         for (Long userId : recipientUserIds) {
             Notification n = new Notification();
-            n.setRecipientUserId(userId);
+            n.setRecipient(recipientReferences.salatUser(userId));
             n.setTitleKey(titleKey);
             n.setTitleParams(toJson(titleParams));
             n.setDescriptionKey(descriptionKey);
@@ -60,22 +62,22 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public List<Notification> getLatestForCurrentUser() {
-        return notificationRepository.findByRecipientUserIdOrderByCreatedDesc(
+        return notificationRepository.findByRecipientIdOrderByCreatedDesc(
                 currentUserId(), PageRequest.of(0, salatProperties.getNotifications().getBellLimit()));
     }
 
     @Transactional(readOnly = true)
     public List<Notification> getAllForCurrentUser() {
-        return notificationRepository.findByRecipientUserIdOrderByCreatedDesc(currentUserId());
+        return notificationRepository.findByRecipientIdOrderByCreatedDesc(currentUserId());
     }
 
     @Transactional(readOnly = true)
     public long countUnreadForCurrentUser() {
-        return notificationRepository.countByRecipientUserIdAndReadFalse(currentUserId());
+        return notificationRepository.countByRecipientIdAndReadFalse(currentUserId());
     }
 
     public void markAllReadForCurrentUser() {
-        notificationRepository.markAllReadByRecipientUserId(currentUserId());
+        notificationRepository.markAllReadByRecipientId(currentUserId());
     }
 
     public void deleteNotification(Long id) {
@@ -88,7 +90,7 @@ public class NotificationService {
     }
 
     public void deleteAllForCurrentUser() {
-        notificationRepository.deleteByRecipientUserId(currentUserId());
+        notificationRepository.deleteByRecipientId(currentUserId());
     }
 
     private Long currentUserId() {

@@ -10,6 +10,6 @@ public interface ScheduledReportJobRepository extends CrudRepository<ScheduledRe
 
   List<ScheduledReportJob> findByEnabledTrue();
 
-  List<ScheduledReportJob> findByOwnerUserId(long ownerUserId);
+  List<ScheduledReportJob> findByOwnerId(long ownerUserId);
 
 }

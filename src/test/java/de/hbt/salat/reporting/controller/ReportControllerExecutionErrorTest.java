@@ -26,6 +26,7 @@ import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.domain.ReportResult;
 import de.hbt.salat.reporting.persistence.ReportDefinitionRepository;
+import de.hbt.salat.reporting.persistence.OwnerReferences;
 import de.hbt.salat.reporting.service.ExcelExportService;
 import de.hbt.salat.reporting.service.ReportService;
 
@@ -54,7 +55,7 @@ class ReportControllerExecutionErrorTest {
     when(reportAuthorization.isAuthorized(any(), any())).thenReturn(true);
 
     var reportService = new ReportService(reportDefinitionRepository, database, reportAuthorization,
-        mock(AuthorizedUser.class));
+        mock(AuthorizedUser.class), mock(OwnerReferences.class));
     var reportController = new ReportController(reportService, reportAuthorization,
         mock(ExcelExportService.class), mock(FilterHintViewHelper.class));
 

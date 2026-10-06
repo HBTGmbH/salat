@@ -1,5 +1,6 @@
 package de.hbt.salat.reporting.auth;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.salatUserWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.auth.domain.AccessLevel.DELETE;
@@ -94,7 +95,7 @@ class ReportAuthorizationTest {
 
   private static ReportDefinition report(Long ownerUserId, String createdby) {
     var report = new ReportDefinition();
-    report.setOwnerUserId(ownerUserId);
+    report.setOwner(ownerUserId == null ? null : salatUserWithId(ownerUserId));
     ReflectionTestUtils.setField(report, "createdby", createdby);
     return report;
   }
