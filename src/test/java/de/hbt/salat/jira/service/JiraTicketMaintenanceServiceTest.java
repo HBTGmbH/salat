@@ -544,8 +544,80 @@ class JiraTicketMaintenanceServiceTest {
     assertThatThrownBy(() -> service.create(ORDER, null, new JiraManualTicketData("ABC-1", null, null, null)))
         .isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> service.search(filter(List.of(), List.of()))).isInstanceOf(AuthorizationException.class);
-    assertThatThrownBy(() -> service.getDetail(5L)).isInstanceOf(InvalidDataException.class);
     verify(ticketRepository, never()).save(any(JiraTicket.class));
+  }
+
+  /**
+   * Bookings store a ticket key in capitals, and JIRA writes it so; {@code abc-1} next to a replicated
+   * {@code ABC-1} would be two tickets for one key.
+   */
+  @Test
+  void a_key_is_stored_in_capitals() {
+    service.create(ORDER, null, new JiraManualTicketData("abc-1", null, null, "abc-0"));
+
+    assertThat(savedTicket().getKey()).isEqualTo("ABC-1");
+    assertThat(savedTicket().getParentKey()).isEqualTo("ABC-0");
+  }
+
+  @Test
+  void an_imported_key_is_stored_in_capitals() {
+    service.importTickets(ORDER, null, "tickets.csv", "Key,Parent\nabc-1,abc-0\n".getBytes(UTF_8),
+        List.of(column(JiraImportTarget.KEY), column(JiraImportTarget.PARENT)));
+
+    assertThat(savedAll()).singleElement().satisfies(ticket -> {
+      assertThat(ticket.getKey()).isEqualTo("ABC-1");
+      assertThat(ticket.getParentKey()).isEqualTo("ABC-0");
+    });
+  }
+
+  /** The text columns hold three bytes per character; an emoji would end in a database error. */
+  @Test
+  void characters_beyond_what_the_columns_hold_are_left_out() {
+    service.create(ORDER, null, new JiraManualTicketData("ABC-1", "Fertig \uD83D\uDE80 Größe", null, null));
+
+    assertThat(savedTicket().getSummary()).isEqualTo("Fertig  Größe");
+  }
+
+  @Test
+  void a_long_file_name_is_cut_to_its_column() {
+    service.importTickets(ORDER, null, "x".repeat(300) + ".csv", "Key\nABC-1\n".getBytes(UTF_8),
+        List.of(column(JiraImportTarget.KEY)));
+
+    assertThat(imports.getFirst().getFileName()).hasSize(255).endsWith(".csv");
+  }
+
+  /** The preview reads a file only for someone who may import — the page is not open to everyone. */
+  @Test
+  void the_preview_is_refused_to_anyone_without_the_ticket_page() {
+    givenResponsibleFor(OTHER_ORDER);
+    when(customerorderService.getResponsibleCustomerorderOptions(USER)).thenReturn(List.of());
+
+    assertThatThrownBy(() -> service.preview("Key\nABC-1\n".getBytes(UTF_8), null, null))
+        .isInstanceOf(AuthorizationException.class);
+  }
+
+  @Test
+  void the_preview_is_refused_for_another_order() {
+    givenResponsibleFor(OTHER_ORDER);
+
+    assertThatThrownBy(() -> service.preview("Key\nABC-1\n".getBytes(UTF_8), ORDER, null))
+        .isInstanceOf(AuthorizationException.class);
+  }
+
+  /** A ticket of another order is neither shown nor changed, whatever the way to it. */
+  @Test
+  void a_ticket_of_another_order_is_out_of_reach() {
+    givenResponsibleFor(OTHER_ORDER);
+    when(ticketRepository.findById(5L)).thenReturn(Optional.of(manual("ABC-1", 5L)));
+    var data = new JiraManualTicketData("ABC-1", null, null, null);
+
+    assertThatThrownBy(() -> service.getDetail(5L)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.getTicket(5L)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.findRelated(5L, "ABC-0")).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.update(5L, data)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.delete(5L)).isInstanceOf(AuthorizationException.class);
+    verify(ticketRepository, never()).save(any(JiraTicket.class));
+    verify(ticketRepository, never()).delete(any(JiraTicket.class));
   }
 
   @Test

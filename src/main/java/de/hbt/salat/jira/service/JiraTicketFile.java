@@ -4,12 +4,16 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_IMPORT_EMPTY;
 import static de.hbt.salat.common.exception.ErrorCode.JI_TICKET_IMPORT_UNREADABLE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.RFC4180ParserBuilder;
 import com.opencsv.exceptions.CsvException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,10 +34,14 @@ record JiraTicketFile(List<String> headings, List<JiraTicketFile.Line> lines) {
 
   record Line(int number, List<String> cells) {
 
-    /** The trimmed cell, {@code null} where the row is shorter or the cell blank. */
+    /**
+     * The trimmed cell, {@code null} where the row is shorter or the cell blank. Characters beyond
+     * what the text columns of {@code jira_ticket} hold — three bytes each, so no emoji — are left
+     * out, as the replication leaves out what its columns cannot hold.
+     */
     String cell(int column) {
       if (column >= cells.size() || cells.get(column) == null) return null;
-      var value = cells.get(column).trim();
+      var value = storable(cells.get(column)).trim();
       return value.isEmpty() ? null : value;
     }
   }
@@ -54,29 +62,36 @@ record JiraTicketFile(List<String> headings, List<JiraTicketFile.Line> lines) {
     return content.length > 3 && content[0] == 'P' && content[1] == 'K' && content[2] == 3 && content[3] == 4;
   }
 
+  /** What a spreadsheet in a German locale saves as CSV, where the file is no valid UTF-8. */
+  private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
+
   /**
    * The separator is taken from the heading: a semicolon where it has one — what a spreadsheet saves
    * in a German locale — a comma otherwise, as JIRA exports.
+   *
+   * <p>Read as RFC 4180 writes it: a quote is escaped by doubling it, and a backslash is a character
+   * like any other — a path in a summary keeps it, and one at the end of a cell does not swallow the
+   * closing quote. A row keeps the number of its first line, also below a cell spanning several.
    */
   private static JiraTicketFile readCsv(byte[] content) {
-    var text = new String(content, UTF_8);
+    var text = decode(content);
     if (text.startsWith("\uFEFF")) text = text.substring(1);
     var heading = text.lines().findFirst().orElse("");
     char separator = heading.contains(";") ? ';' : ',';
     var headings = new ArrayList<String>();
     var lines = new ArrayList<Line>();
     try (var reader = new CSVReaderBuilder(new StringReader(text))
-        .withCSVParser(new CSVParserBuilder().withSeparator(separator).build())
+        .withCSVParser(new RFC4180ParserBuilder().withSeparator(separator).build())
         .build()) {
       String[] columns;
-      int number = 0;
+      int firstLine = (int) reader.getLinesRead() + 1;
       while ((columns = reader.readNext()) != null) {
-        number++;
-        if (number == 1) {
+        if (headings.isEmpty()) {
           headings.addAll(Arrays.asList(columns));
         } else if (!isBlank(Arrays.asList(columns))) {
-          lines.add(new Line(number, Arrays.asList(columns)));
+          lines.add(new Line(firstLine, Arrays.asList(columns)));
         }
+        firstLine = (int) reader.getLinesRead() + 1;
       }
     } catch (IOException | CsvException ex) {
       throw new InvalidDataException(JI_TICKET_IMPORT_UNREADABLE, ex);
@@ -84,10 +99,25 @@ record JiraTicketFile(List<String> headings, List<JiraTicketFile.Line> lines) {
     return new JiraTicketFile(headings, lines);
   }
 
+  /** UTF-8 where the file is valid UTF-8 — JIRA exports it — and Windows-1252 otherwise. */
+  private static String decode(byte[] content) {
+    try {
+      return UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(content))
+          .toString();
+    } catch (CharacterCodingException ex) {
+      return new String(content, WINDOWS_1252);
+    }
+  }
+
   private static JiraTicketFile readWorkbook(byte[] content) {
     try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
       var sheet = workbook.getSheetAt(0);
       var formatter = new DataFormatter();
+      // A formula is read as the value the sheet shows, as last calculated by the program that saved it.
+      formatter.setUseCachedValuesForFormulaCells(true);
       var headings = new ArrayList<String>();
       var lines = new ArrayList<Line>();
       boolean headingRead = false;
@@ -125,6 +155,14 @@ record JiraTicketFile(List<String> headings, List<JiraTicketFile.Line> lines) {
       }
     }
     return cells;
+  }
+
+  /** The text without the characters outside the Basic Multilingual Plane, which take four bytes. */
+  static String storable(String value) {
+    if (value == null || value.codePoints().allMatch(Character::isBmpCodePoint)) return value;
+    var result = new StringBuilder(value.length());
+    value.codePoints().filter(Character::isBmpCodePoint).forEach(result::appendCodePoint);
+    return result.toString();
   }
 
   private static boolean isBlank(List<String> cells) {
