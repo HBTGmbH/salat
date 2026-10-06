@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,8 +42,8 @@ import de.hbt.salat.jira.domain.JiraTicketImportPreview;
  */
 final class JiraTicketImportReader {
 
-  /** How many rows the preview shows. */
-  static final int SAMPLE_ROWS = 5;
+  /** How many different values the preview shows of a column. */
+  static final int SAMPLE_VALUES = 5;
 
   /** The column widths of {@code jira_ticket}. */
   static final int KEY_LENGTH = 64;
@@ -110,9 +111,7 @@ final class JiraTicketImportReader {
       }
       suggested.add(column);
     }
-    var samples = file.lines().stream().limit(SAMPLE_ROWS)
-        .map(line -> IntStream.range(0, file.headings().size()).mapToObj(line::cell).toList())
-        .toList();
+    var samples = IntStream.range(0, file.headings().size()).mapToObj(column -> sampleValues(file, column)).toList();
     return new JiraTicketImportPreview(file.headings(), samples, suggested, file.lines().size(), null);
   }
 
@@ -293,6 +292,21 @@ final class JiraTicketImportReader {
 
   private static boolean longerThan(String value, int max) {
     return value != null && value.length() > max;
+  }
+
+  /**
+   * The first different values of a column, as far down the file as it takes: a repeated value says
+   * nothing more about what the column holds, and a column that is empty in its first rows may well
+   * be filled further down.
+   */
+  private static List<String> sampleValues(JiraTicketFile file, int column) {
+    var values = new LinkedHashSet<String>();
+    for (var line : file.lines()) {
+      var value = line.cell(column);
+      if (value != null) values.add(value);
+      if (values.size() == SAMPLE_VALUES) break;
+    }
+    return List.copyOf(values);
   }
 
   private static String normalised(String heading) {
