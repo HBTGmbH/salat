@@ -265,6 +265,9 @@ class JiraTicketRepositoryTest {
     assertThat(jiraTicketRepository.findCustomerorderIdsWithTickets()).containsExactlyInAnyOrder(ALPHA, BETA);
     assertThat(jiraTicketRepository.findSuborderIdsWithTickets(ALPHA)).containsExactlyInAnyOrder(A_01, B_01);
     assertThat(jiraTicketRepository.findSuborderIdsWithTickets(BETA)).isEmpty();
+    assertThat(jiraTicketRepository.existsInCustomerorder(BETA)).isTrue();
+    jiraTicketRepository.deleteByCustomerorderId(BETA);
+    assertThat(jiraTicketRepository.existsInCustomerorder(BETA)).isFalse();
   }
 
   @Autowired

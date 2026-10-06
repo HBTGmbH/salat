@@ -104,6 +104,10 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
   @Query("select distinct t.customerorder.id from JiraTicket t")
   List<Long> findCustomerorderIdsWithTickets();
 
+  /** Whether the order has tickets at all, in any of its scopes (#1386). */
+  @Query("select count(t) > 0 from JiraTicket t where t.customerorder.id = :customerorderId")
+  boolean existsInCustomerorder(long customerorderId);
+
   /** The suborders of an order that have tickets of their own (#1386). */
   @Query("select distinct t.suborder.id from JiraTicket t where t.customerorder.id = :customerorderId and t.suborder is not null")
   List<Long> findSuborderIdsWithTickets(long customerorderId);

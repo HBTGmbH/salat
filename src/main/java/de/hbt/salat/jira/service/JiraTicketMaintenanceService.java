@@ -212,6 +212,15 @@ public class JiraTicketMaintenanceService {
         .toList();
   }
 
+  /**
+   * Whether the order has tickets at all (#1386) — a remembered order may have none, and then the
+   * filter says so instead of "order level only".
+   */
+  @Transactional(readOnly = true)
+  public boolean hasTickets(long customerorderId) {
+    return authorization.mayMaintain(customerorderId) && ticketRepository.existsInCustomerorder(customerorderId);
+  }
+
   private static boolean isOffered(SuborderReadModel suborder, Set<Long> onBranchWithTickets) {
     return !suborder.hide() && onBranchWithTickets.contains(suborder.id());
   }

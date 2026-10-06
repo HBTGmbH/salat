@@ -108,6 +108,8 @@ public class JiraTicketController {
     model.addAttribute("importOrders", importOrders);
     model.addAttribute("importSuborders", maintenanceService.getScopeSuborders(customerorderId, suborderId));
     model.addAttribute("suborders", suborders);
+    // Without suborders to offer, the filter says why (#1386): an empty select alone looks broken.
+    model.addAttribute("orderHasTickets", customerorderId != null && maintenanceService.hasTickets(customerorderId));
     model.addAttribute("fJiraTicketCustomerorderId", customerorderId);
     model.addAttribute("fJiraTicketSuborderId", suborderId);
     model.addAttribute("fJiraTicketKeys", String.join(", ", keys));
