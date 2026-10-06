@@ -709,7 +709,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | `etl` | Data integration / extract-transform-load |
 | `favorites` | User favorites for quick access |
 | `invoice` | Invoice generation and settings |
-| `jira` | Jira integration and replication; may import `order` — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
+| `jira` | Jira integration and replication, and tickets maintained by hand or imported next to it (#1386, ADR-0037); may import `order` — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
 | `notification` | Notifications |
 | `palette` | Object search of the command palette (#1157, ADR-0031): collects every module's `PaletteProvider`; imports only `common` and `auth`, and no module imports it |
 | `order` | Customer orders, employee orders, suborders |
@@ -775,6 +775,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `ScheduledReportExecutionHistory` | Bewegungsdaten | — |
 | `StatisticValue` | Bewegungsdaten | — |
 | `JiraTicket` | Bewegungsdaten | — |
+| `JiraTicketImport` | Bewegungsdaten | — (geht mit seinem Geltungsbereich) |
 | `JiraWorklogSync` | Bewegungsdaten | — (gelöscht, sobald das Worklog in JIRA gelöscht wird) |
 | `Favorite` | Bewegungsdaten | — |
 
@@ -1438,8 +1439,9 @@ Rules:
 ### JSON Columns (→ ADR-0024)
 
 A column whose content is a set of values only the configuration knows is mapped as native `json`
-via `@JdbcTypeCode(SqlTypes.JSON)` on a `Map` attribute. So far exactly one place does this:
-`JiraTicket.customFields` / `customFieldsEffective` (#881).
+via `@JdbcTypeCode(SqlTypes.JSON)` on a `Map` or `List` attribute: `JiraTicket.customFields` /
+`customFieldsEffective` (#881) and the column reading of an import, `JiraTicketImport.columnMapping`
+(#1386).
 
 - **Reading a value out of the JSON is MySQL-specific and belongs in ETL/report SQL or in a view** —
   never in a JPQL query or a repository method. H2 2.4 knows neither `JSON_VALUE` nor `JSON_EXTRACT`,
