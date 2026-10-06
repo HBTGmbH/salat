@@ -411,6 +411,54 @@ Before writing any code:
 - [ ] `main` is checked out and up-to-date: `git checkout main && git pull`
 - [ ] A dedicated branch has been created: name must start with `feature/` (new capability) or `bug/` (defect fix), e.g. `feature/683-multiple-supervisors`
 
+### Mockups and diagrams in issues
+
+How to meet the two checklist items above.
+
+**Choosing the form**
+- ASCII or Markdown sketch in a code block: enough for a single field, a column, a changed label or
+  a small dialog.
+- Rendered image: for a new card, a changed table or anything whose layout matters. Build it as
+  HTML and render it to PNG (below).
+- Show every state the issue distinguishes, not just the full one: collapsed and expanded, with and
+  without data, before and after a selection.
+
+**Building an HTML mockup**
+- Use the application's real styles: `tabler.min.css` and `bootstrap-icons.min.css` from the
+  webjars (versions from `pom.xml`, the jars are in the local Maven repository) and
+  `src/main/resources/static/css/salat.css`. Start from the markup of the Thymeleaf template the
+  issue changes, so the mockup looks like the page it describes.
+- Mark everything new or changed the same way in every mockup: a dashed magenta outline
+  (`outline: 2px dashed #d63384`) and a small „neu“ badge. A caption line above each picture names
+  the issue and the state shown.
+- Invented data only — `Person A`, `ABC-12`, `Wartung und Betrieb`. The repository is public: no
+  customer, person, order or ticket title from the local database dump.
+- Numbers agree across all mockups of an issue: subtotals add up to the total, and the same booking
+  carries the same duration in every picture.
+
+**Rendering**
+- Headless Chrome, full-page screenshot, 1290 px wide, device scale factor 2, light colour scheme.
+- Look at every PNG before uploading it. Tabler's own padding easily swallows an indentation, and
+  a cut-off last row is easy to miss.
+
+**Storing and embedding**
+- GitHub strips inline `<svg>` and `data:` URLs from issue text, and the CLI cannot attach files to
+  an issue. Images therefore live on the orphan branch `issue-assets`, one folder per issue:
+  `issue-assets/<issue>/<name>.png`.
+- Commit them as an ordinary commit on that branch (`#<issue> - Mockup …`) from a separate
+  worktree, so the working checkout stays untouched, and push:
+  `git fetch origin issue-assets && git worktree add ../salat-issue-assets issue-assets`.
+  The branch is never merged into `main` and never deleted — issues link to it.
+- Embed with `![caption](https://github.com/HBTGmbH/salat/blob/issue-assets/<issue>/<name>.png?raw=true)`.
+- To change a mockup, overwrite the same file in a new commit; the URL in the issue stays valid.
+- The HTML sources stay local; only the PNG goes to GitHub.
+
+**Diagrams**
+- A ` ```mermaid ` block directly in the issue text: `classDiagram` for a new or changed model,
+  `sequenceDiagram` for a flow across several classes or modules, `erDiagram` for schema changes.
+- Only what the issue touches, roughly ten nodes at most. Mark new elements with „(neu)“ and new
+  module dependencies on the edge, e.g. `InvoiceService ..> JiraTicketService : neue Kante invoice → jira`.
+
 ---
 
 ## Definition of Done
