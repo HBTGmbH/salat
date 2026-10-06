@@ -15,6 +15,7 @@
     background-color: color-mix(in oklab, var(--tblr-primary) 8%, transparent);
   }
   .ticket-title { max-width: 26rem; }
+  .import-sample { max-width: 24rem; }
 </style>
 
 <div th:if="${importErrors != null and not #lists.isEmpty(importErrors)}" class="alert alert-danger mb-3">
@@ -484,10 +485,13 @@
         <tbody>
           <tr th:each="heading, it : ${preview.headings}">
             <td class="text-nowrap fw-bold" th:text="${heading}">Issue key</td>
-            <!--/* Each value on its own, unbroken: a key among them must not wrap at its hyphen. */-->
-            <td class="small text-secondary"><th:block
+            <!--/* One line of bounded width, so that the reading stays in view: a JIRA export carries whole
+                   descriptions here. Each value is shortened and unbroken — a key must not wrap at its
+                   hyphen — and the tooltip shows them in full. */-->
+            <td class="small text-secondary text-truncate import-sample"
+                th:title="${#strings.abbreviate(#strings.listJoin(preview.sampleValues[__${it.index}__], ' · '), 500)}"><th:block
                 th:each="sample, sampleIt : ${preview.sampleValues[__${it.index}__]}"><span
-                class="issue-key" th:text="${sample}">ABC-1</span><th:block th:unless="${sampleIt.last}"> · </th:block></th:block></td>
+                class="issue-key" th:text="${#strings.abbreviate(sample, 60)}">ABC-1</span><th:block th:unless="${sampleIt.last}"> · </th:block></th:block></td>
             <td>
               <select class="form-select form-select-sm" data-import-target
                       th:aria-label="#{main.jira.ticket.import.preview.target} + ' ' + ${heading}">
