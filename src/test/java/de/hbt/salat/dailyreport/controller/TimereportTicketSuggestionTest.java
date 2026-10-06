@@ -41,6 +41,7 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Customerorder;
@@ -78,6 +79,7 @@ class TimereportTicketSuggestionTest {
   @Mock private WorkingdayService workingdayService;
   @Mock private DailyService dailyService;
   @Mock private EmployeeService employeeService;
+  @Mock private AuthorizedEmployee authorizedEmployee;
   @Mock private MessageSourceAccessor messages;
   @Mock private DailyPreferenceService dailyPreferenceService;
   @Mock private TimereportPreferenceService timereportPreferenceService;
