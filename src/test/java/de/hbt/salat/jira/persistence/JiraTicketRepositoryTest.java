@@ -22,6 +22,7 @@ import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraImportMappingEntry;
 import de.hbt.salat.jira.domain.JiraImportTarget;
+import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraTicketImport;
 import de.hbt.salat.order.domain.Customerorder;
@@ -288,6 +289,61 @@ class JiraTicketRepositoryTest {
     assertThat(importRepository.findLatestInScope(ALPHA, A_01, PageRequest.of(0, 1)))
         .extracting(JiraTicketImport::getFileName).containsExactly("ast.csv");
     assertThat(importRepository.findLatestInScope(BETA, null, PageRequest.of(0, 1))).isEmpty();
+  }
+
+  /**
+   * The imports of a scope go with it (#1386): they refer to order and suborder by a foreign key, and
+   * left behind they would block the deletion of the order.
+   */
+  @Test
+  void an_order_with_an_import_can_be_deleted_once_its_scope_data_is_gone() {
+    saveImport(betaOrder, null, "beta.csv");
+    saveImport(alphaOrder, a01, "ast.csv");
+    entityManager.flush();
+
+    jiraTicketRepository.deleteByCustomerorderId(BETA);
+    assertThat(importRepository.deleteByCustomerorderId(BETA)).isEqualTo(1);
+    assertThat(importRepository.deleteBySuborderIdIn(List.of(A_01))).isEqualTo(1);
+    entityManager.clear();
+    entityManager.remove(entityManager.find(Customerorder.class, BETA));
+    entityManager.flush();
+
+    assertThat(importRepository.findAll()).isEmpty();
+  }
+
+  @Test
+  void a_suborder_moved_to_another_order_takes_its_imports_along() {
+    saveImport(alphaOrder, a01, "ast.csv");
+    saveImport(alphaOrder, null, "auftrag.csv");
+    entityManager.flush();
+
+    assertThat(importRepository.moveBranchToCustomerorder(List.of(A, A_01), betaOrder)).isEqualTo(1);
+    entityManager.clear();
+
+    assertThat(importRepository.findLatestInScope(BETA, A_01, PageRequest.of(0, 1)))
+        .extracting(JiraTicketImport::getFileName).containsExactly("ast.csv");
+    assertThat(importRepository.findLatestInScope(ALPHA, null, PageRequest.of(0, 1)))
+        .extracting(JiraTicketImport::getFileName).containsExactly("auftrag.csv");
+  }
+
+  /** A replication moved to another scope leaves its tickets to nobody (#1386). */
+  @Test
+  void the_tickets_of_a_replication_are_released() {
+    var replication = new JiraReplicationConfig();
+    replication.setName("Alpha");
+    replication.setCustomerorder(alphaOrder);
+    replication.setBaseUrl("https://jira.example.com");
+    replication.setUsername("user");
+    replication.setPassword("secret");
+    replication.setJql("project = ALPHA");
+    entityManager.persist(replication);
+    jiraTicketRepository.findAll().forEach(ticket -> ticket.setReplication(replication));
+    entityManager.flush();
+
+    assertThat(jiraTicketRepository.releaseFromReplication(replication.getId())).isEqualTo(4);
+    entityManager.clear();
+
+    assertThat(jiraTicketRepository.findAll()).allSatisfy(ticket -> assertThat(ticket.isReplicated()).isFalse());
   }
 
   private void saveImport(Customerorder customerorder, Suborder suborder, String fileName) {

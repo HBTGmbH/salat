@@ -4,9 +4,11 @@ import java.util.Collection;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.jira.domain.JiraTicketImport;
+import de.hbt.salat.order.domain.Customerorder;
 
 @Repository
 public interface JiraTicketImportRepository extends JpaRepository<JiraTicketImport, Long> {
@@ -34,4 +36,24 @@ public interface JiraTicketImportRepository extends JpaRepository<JiraTicketImpo
       order by i.id desc
       """)
   List<JiraTicketImport> findLatest(boolean allOrders, Collection<Long> customerorderIds, Pageable page);
+
+  /**
+   * Takes the imports of a suborder branch along to the customer order it was moved to, like its
+   * tickets (#1323): the latest import of a scope supplies inherited fields and the column reading
+   * the preview proposes, and is looked up by order and suborder.
+   */
+  @Modifying
+  @Query("""
+      update JiraTicketImport i set i.customerorder = :customerorder
+      where i.suborder.id in :suborderIds and i.customerorder <> :customerorder
+      """)
+  int moveBranchToCustomerorder(Collection<Long> suborderIds, Customerorder customerorder);
+
+  @Modifying
+  @Query("delete from JiraTicketImport i where i.customerorder.id = :customerorderId")
+  int deleteByCustomerorderId(long customerorderId);
+
+  @Modifying
+  @Query("delete from JiraTicketImport i where i.suborder.id in :suborderIds")
+  int deleteBySuborderIdIn(Collection<Long> suborderIds);
 }

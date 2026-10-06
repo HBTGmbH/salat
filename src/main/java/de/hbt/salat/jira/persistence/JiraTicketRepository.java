@@ -168,6 +168,15 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
       """)
   int moveBranchToCustomerorder(Collection<Long> suborderIds, Customerorder customerorder);
 
+  /**
+   * Releases the tickets of a replication that moves to another scope (#1386): they stay where they
+   * are, maintained by nobody, as if the replication had been deleted — editable by hand, and taken
+   * over by whichever replication of their scope delivers their key next.
+   */
+  @Modifying
+  @Query("update JiraTicket t set t.replication = null where t.replication.id = :replicationId")
+  int releaseFromReplication(long replicationId);
+
   @Modifying
   @Query("delete from JiraTicket t where t.customerorder.id = :customerorderId")
   int deleteByCustomerorderId(long customerorderId);

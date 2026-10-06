@@ -41,6 +41,7 @@ import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -99,11 +100,15 @@ class JiraReplicationConfigServiceTest {
   @Mock
   private OrderReferences orderReferences;
 
+  @Mock
+  private JiraTicketRepository ticketRepository;
+
   @BeforeEach
   void setUp() {
     // the real resolution against a mocked order module: what is tested is the reading by id
     classUnderTest = new JiraReplicationConfigService(configRepository, jiraReplicationRunService,
-        jiraSearchClients, new JiraScopes(customerorderService, suborderService), orderReferences, authorizedUser);
+        jiraSearchClients, new JiraScopes(customerorderService, suborderService), orderReferences, authorizedUser,
+        ticketRepository);
     when(authorizedUser.isManager()).thenReturn(true);
     when(orderReferences.customerorder(anyLong())).thenAnswer(invocation ->
         customerorderWithId(invocation.getArgument(0)));
@@ -644,6 +649,32 @@ class JiraReplicationConfigServiceTest {
 
     assertThat(saved().getSuborderId()).isEqualTo(A_01);
     assertThat(saved().getLastMaxUpdated()).isNull();
+  }
+
+  /**
+   * The tickets left in the old scope are released (#1386), as if the replication had been deleted:
+   * otherwise they stay locked against editing by hand, are never removed, and a replication of the
+   * old scope skips them as maintained by another one.
+   */
+  @Test
+  void moving_a_replication_to_another_scope_releases_its_tickets() {
+    var stored = existingConfig();
+    setId(stored, ID);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withScope(ALPHA, A_01, null));
+
+    verify(ticketRepository).releaseFromReplication(ID);
+  }
+
+  @Test
+  void an_edit_that_leaves_the_scope_alone_keeps_its_tickets() {
+    var stored = existingConfig();
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withScope(ALPHA, null, null));
+
+    verify(ticketRepository, never()).releaseFromReplication(anyLong());
   }
 
   @Test
