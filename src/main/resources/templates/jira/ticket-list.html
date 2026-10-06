@@ -472,7 +472,7 @@
             <td class="text-nowrap fw-bold" th:text="${heading}">Issue key</td>
             <!--/* Each value on its own, unbroken: a key among them must not wrap at its hyphen. */-->
             <td class="small text-secondary"><th:block
-                th:each="sample, sampleIt : ${preview.sampleRows.![#this[__${it.index}__]].?[#this != null]}"><span
+                th:each="sample, sampleIt : ${preview.sampleValues[__${it.index}__]}"><span
                 class="issue-key" th:text="${sample}">ABC-1</span><th:block th:unless="${sampleIt.last}"> · </th:block></th:block></td>
             <td>
               <select class="form-select form-select-sm" th:name="'columns[' + ${it.index} + '].target'"

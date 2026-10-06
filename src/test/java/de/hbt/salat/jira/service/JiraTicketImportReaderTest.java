@@ -44,18 +44,21 @@ class JiraTicketImportReaderTest {
         .containsExactly(JiraImportTarget.KEY, JiraImportTarget.IGNORE);
   }
 
+  /** Each column shows its first different values, as far down as it takes; all rows are counted. */
   @Test
-  void the_preview_shows_the_first_rows_and_counts_all() {
-    var file = JiraTicketFile.read("\uFEFFKey;Summary\nA-1;eins\n\nA-2;zwei\nA-3;drei\nA-4;\nA-5;\nA-6;\n"
+  void the_preview_shows_different_values_per_column_and_counts_all_rows() {
+    var file = JiraTicketFile.read("\uFEFFKey;Labels;Team\nA-1;alpha;\n\nA-2;alpha;\nA-3;beta;\nA-4;alpha;\nA-5;;\nA-6;gamma;Blau\nA-7;;\n"
         .getBytes(UTF_8));
 
     var preview = JiraTicketImportReader.preview(file);
 
-    assertThat(preview.headings()).containsExactly("Key", "Summary");
-    assertThat(preview.rowCount()).isEqualTo(6);
-    assertThat(preview.sampleRows()).hasSize(JiraTicketImportReader.SAMPLE_ROWS);
-    assertThat(preview.sampleRows().get(1)).containsExactly("A-2", "zwei");
+    assertThat(preview.headings()).containsExactly("Key", "Labels", "Team");
+    assertThat(preview.rowCount()).isEqualTo(7);
+    assertThat(preview.sampleValues().get(0)).containsExactly("A-1", "A-2", "A-3", "A-4", "A-5");
+    assertThat(preview.sampleValues().get(1)).containsExactly("alpha", "beta", "gamma");
+    assertThat(preview.sampleValues().get(2)).containsExactly("Blau");
   }
+
 
   /** JIRA names a parent by id or by key; the first parent column that names a known ticket counts. */
   @Test
