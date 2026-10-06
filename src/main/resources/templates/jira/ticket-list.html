@@ -169,12 +169,13 @@
       <h3 class="card-title" th:text="#{main.jira.ticket.table.title(${result.totalCount})}">Tickets</h3>
       <!--/* Both choose their scope themselves and start with the one of the filter (#1386). */-->
       <div class="card-actions btn-list">
-        <a class="btn btn-outline-primary"
+        <!--/* Filled like "Neuer Budgetplan" and "Neue Replikation": the two ways tickets come in. */-->
+        <a class="btn btn-success"
            th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
-          <i class="ti ti-plus"></i><span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
+          <i class="icon ti ti-plus"></i><span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
         </a>
-        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#ticket-import-modal">
-          <i class="ti ti-file-import"></i><span th:text="#{main.jira.ticket.button.import}">Importieren</span>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticket-import-modal">
+          <i class="icon ti ti-file-import"></i><span th:text="#{main.jira.ticket.button.import}">Importieren</span>
         </button>
       </div>
     </div>
