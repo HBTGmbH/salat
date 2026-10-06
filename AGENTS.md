@@ -1323,7 +1323,7 @@ RuntimeException
   - `VetoedException` — raised by an event listener to block a destructive operation
 - Error codes are defined in `ErrorCode` enum (`common/exception/ErrorCode.java`).
   - Format: two-letter module prefix + four-digit number, e.g. `CU-0001` for customer.
-  - Module prefixes in use: `AA` (auth), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `SO` (suborder), `TR` (time report), `RL` (release), `WD` (working day), `ETL`, `XX` (generic).
+  - Module prefixes in use: `AA` (auth), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `SO` (suborder), `TR` (time report), `RL` (release), `WD` (working day), `FA` (favorites), `ETL`, `XX` (generic).
   - When adding a new error code, append it to the enum; never reuse or renumber existing codes.
 - `ServiceFeedbackMessage` (`common/exception/ServiceFeedbackMessage.java`) wraps an `ErrorCode` + severity + optional positional arguments (`{0}`, `{1}`, …); used to accumulate messages when building veto responses.
   - Factory methods: `ServiceFeedbackMessage.error(errorCode, args…)` / `.warning(…)`.

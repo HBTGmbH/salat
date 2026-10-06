@@ -505,9 +505,9 @@ public class TimereportController {
                 timereportPreferenceService.rememberDurationMode(form.getDurationMode());
             }
 
-            // a favourite belongs to the person of its employee order (#1369); booking for somebody
-            // else offers none, see populateModel
-            if (form.isSaveAsFavorite() && favoriteService.isOwnEmployeeorder(employeeOrderId)) {
+            // a favourite belongs to the person of its employee order (#1369): booking for somebody
+            // else offers none (populateModel), and addFavorite refuses it
+            if (form.isSaveAsFavorite()) {
                 favoriteService.addFavorite(
                     favoriteFrom(employeeOrderId, durationHours, durationMinutes, form));
             }

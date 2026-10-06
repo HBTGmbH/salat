@@ -6003,12 +6003,34 @@ databaseChangeLog:
                  SET c.last_max_updated = NULL
 
   - changeSet:
+      id: 166
+      author: kr
+      comment: Favoriten auf dem Mitarbeiterauftrag einer anderen Person loeschen, bevor employeeId entfaellt (#1369)
+      # Steht vor Changeset 160, die Nummer folgt nur der Reihenfolge des Anlegens. Bis #1369 nahm die
+      # REST-Schnittstelle jeden Mitarbeiterauftrag an, und das Buchungsformular bot "Als Favorit speichern"
+      # auch beim Buchen fuer eine andere Person an. Ohne employeeId wanderte ein solcher Favorit samt
+      # Kommentar in die Liste der Person, der der Auftrag gehoert. Nach der neuen Regel gibt es ihn nicht;
+      # die Referenzen gehen per ON DELETE CASCADE mit.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: favorite
+            columnName: employeeId
+      changes:
+        - sql:
+            sql: |-
+              DELETE f FROM favorite f
+                JOIN employeeorder eo ON eo.id = f.employeeorderId
+                JOIN employeecontract ec ON ec.id = eo.EMPLOYEECONTRACT_ID
+               WHERE f.employeeId <> ec.EMPLOYEE_ID
+
+  - changeSet:
       id: 160
       author: kr
       comment: Spalte employeeId der Favoriten entfernen, die Person folgt aus dem Mitarbeiterauftrag (#1369)
       # Die Person eines Favoriten ist die Person seines Mitarbeiterauftrags (Mitarbeiterauftrag ->
       # Vertrag -> Person); employeeId war transitiv abhaengig und stimmte im Bestand bei jedem Favoriten
-      # mit ihr ueberein. Keine Report-, ETL- oder View-Definition liest die Spalte. Ein Release vor
+      # mit ihr ueberein, wo nicht, hat Changeset 166 den Favoriten geloescht. Keine Report-, ETL- oder View-Definition liest die Spalte. Ein Release vor
       # diesem startet danach nicht mehr, es mappt die Spalte.
       preConditions:
         - onFail: MARK_RAN

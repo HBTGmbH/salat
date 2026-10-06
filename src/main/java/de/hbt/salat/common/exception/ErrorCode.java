@@ -163,6 +163,9 @@ public enum ErrorCode {
 
   SE_USER_NOT_FOUND("SE-0001", "salat user not found for current login"),
 
+  FA_EMPLOYEE_ORDER_NOT_OWN("FA-0001", "a favourite can only be saved on an own employee order"),
+  FA_FAVORITE_NOT_OWN("FA-0002", "a favourite can only be deleted by the person it belongs to"),
+
   BU_BUDGET_NOT_FOUND("BU-0001", "order budget not found"),
   BU_ADJUSTMENT_NOT_FOUND("BU-0002", "order budget adjustment not found"),
   BU_PRICING_NOT_FOUND("BU-0003", "order pricing not found"),
