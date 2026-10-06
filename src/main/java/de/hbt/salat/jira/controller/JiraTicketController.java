@@ -238,7 +238,7 @@ public class JiraTicketController {
     try {
       int count = maintenanceService.importTickets(form.getCustomerorderId(), form.getSuborderId(),
           form.getFile() == null ? null : form.getFile().getOriginalFilename(),
-          form.getFile() == null ? null : form.getFile().getBytes(), form.mapping());
+          form.getFile() == null ? null : form.getFile().getBytes(), form.readMapping());
       redirectAttributes.addFlashAttribute("toastSuccess",
           messages.getMessage("main.jira.ticket.message.imported", new Object[] {count}));
     } catch (ErrorCodeException ex) {
