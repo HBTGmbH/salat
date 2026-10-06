@@ -20,16 +20,16 @@ class FavoriteTicketReferenceTest {
 
   @Test
   void a_booking_saved_as_a_favourite_takes_its_references_along() {
-    assertThat(favoriteFrom(7L, 1, 30, form("PROJ-123", "PROJ-130")).getTicketReferences())
+    assertThat(favoriteFrom(7L, 1, 30, form("PROJ-123", "PROJ-130")).ticketReferences())
         .containsExactly("PROJ-123", "PROJ-130");
   }
 
   @Test
   void a_booking_without_a_reference_makes_a_favourite_without_one() {
     // no blank entry: applying the favourite must not write an empty reference into the booking
-    assertThat(favoriteFrom(7L, 1, 30, form()).getTicketReferences()).isEmpty();
-    assertThat(favoriteFrom(7L, 1, 30, form("")).getTicketReferences()).isEmpty();
-    assertThat(favoriteFrom(7L, 1, 30, form("   ")).getTicketReferences()).isEmpty();
+    assertThat(favoriteFrom(7L, 1, 30, form()).ticketReferences()).isEmpty();
+    assertThat(favoriteFrom(7L, 1, 30, form("")).ticketReferences()).isEmpty();
+    assertThat(favoriteFrom(7L, 1, 30, form("   ")).ticketReferences()).isEmpty();
   }
 
   /**
@@ -38,7 +38,7 @@ class FavoriteTicketReferenceTest {
    */
   @Test
   void the_reference_is_stored_under_the_same_rule_as_on_the_booking() {
-    assertThat(favoriteFrom(7L, 1, 30, form("  proj-123 ")).getTicketReferences())
+    assertThat(favoriteFrom(7L, 1, 30, form("  proj-123 ")).ticketReferences())
         .containsExactly("PROJ-123");
 
     var tooLong = form("X".repeat(TICKET_REFERENCE_MAX_LENGTH + 1));
@@ -51,10 +51,10 @@ class FavoriteTicketReferenceTest {
   void the_rest_of_the_favourite_is_unchanged() {
     var favourite = favoriteFrom(7L, 1, 30, form("PROJ-123"));
 
-    assertThat(favourite.getEmployeeorderId()).isEqualTo(7L);
-    assertThat(favourite.getHours()).isEqualTo(1);
-    assertThat(favourite.getMinutes()).isEqualTo(30);
-    assertThat(favourite.getComment()).isEqualTo("Daily");
+    assertThat(favourite.employeeorderId()).isEqualTo(7L);
+    assertThat(favourite.hours()).isEqualTo(1);
+    assertThat(favourite.minutes()).isEqualTo(30);
+    assertThat(favourite.comment()).isEqualTo("Daily");
   }
 
   private static TimereportForm form(String... ticketReferences) {

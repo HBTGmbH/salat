@@ -51,7 +51,7 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
-import de.hbt.salat.favorites.domain.Favorite;
+import de.hbt.salat.favorites.domain.NewFavorite;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
@@ -506,7 +506,9 @@ public class TimereportController {
                 timereportPreferenceService.rememberDurationMode(form.getDurationMode());
             }
 
-            if (form.isSaveAsFavorite()) {
+            // a favourite belongs to the person of its employee order (#1369); booking for somebody
+            // else offers none, see populateModel
+            if (form.isSaveAsFavorite() && favoriteService.isOwnEmployeeorder(employeeOrderId)) {
                 favoriteService.addFavorite(
                     favoriteFrom(employeeOrderId, durationHours, durationMinutes, form));
             }
@@ -594,12 +596,17 @@ public class TimereportController {
                 && bookedUntil.isPresent() && bookedUntil.getAsLong() < nowInMinutes()) {
             model.addAttribute("liveBookingStartMinutes", bookedUntil.getAsLong());
         }
+        boolean ownContract = false;
         if (ecId > 0) {
             var ec = employeecontractService.getEmployeecontractById(ecId);
             if (ec != null) {
                 model.addAttribute("selectedEmployeeName", EmployeeLabelViewHelper.title(ec));
+                ownContract = ec.getEmployee().getId().equals(authorizedEmployee.getEmployeeId());
             }
         }
+        // a favourite belongs to the person of its employee order (#1369), and the list shows the
+        // login's own: booking for somebody else offers none
+        model.addAttribute("canSaveAsFavorite", ownContract);
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         boolean canShare = !isEdit || ecId == effectiveContractId(fEmployeeContractId);
         model.addAttribute("canShare", canShare);
@@ -656,15 +663,13 @@ public class TimereportController {
      * #1326). They go through the same normalisation as the booking itself, so a favourite can never
      * hold something the booking would have rejected.
      */
-    static Favorite favoriteFrom(long employeeOrderId, long durationHours, long durationMinutes,
+    static NewFavorite favoriteFrom(long employeeOrderId, long durationHours, long durationMinutes,
             TimereportForm form) {
-        return Favorite.builder()
-            .employeeorderId(employeeOrderId)
-            .hours(valueOf(durationHours).intValueExact())
-            .minutes(valueOf(durationMinutes).intValueExact())
-            .comment(form.getComment())
-            .ticketReferences(TicketReferences.normalize(form.getTicketReferences()))
-            .build();
+        return new NewFavorite(employeeOrderId,
+            valueOf(durationHours).intValueExact(),
+            valueOf(durationMinutes).intValueExact(),
+            form.getComment(),
+            TicketReferences.normalize(form.getTicketReferences()));
     }
 
     private List<RecentBooking> loadRecentBookings(Long fEmployeeContractId, TimereportForm form) {

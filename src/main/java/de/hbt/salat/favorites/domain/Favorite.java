@@ -7,12 +7,14 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import org.hibernate.annotations.ListIndexBase;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.domain.Persistable;
+import de.hbt.salat.order.domain.Employeeorder;
 
 @Builder
 @Entity
@@ -41,11 +44,13 @@ public class Favorite implements Persistable<Long> {
   @Setter(PRIVATE)
   private Long id;
 
-  @Column(nullable = false)
-  private Long employeeId;
-
-  @Column(nullable = false)
-  private Long employeeorderId;
+  /**
+   * The employee order the favourite books on — and through it the person it belongs to (#1369).
+   * A reference to master data of order (ADR-0036): read only, never cascaded.
+   */
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "employeeorderId", nullable = false)
+  private Employeeorder employeeorder;
 
   @Column(nullable = false)
   private Integer hours;
@@ -74,6 +79,11 @@ public class Favorite implements Persistable<Long> {
   @OnDelete(action = OnDeleteAction.CASCADE)
   @Builder.Default
   private List<String> ticketReferences = new ArrayList<>();
+
+  /** The id of the employee order; reading it does not load the employee order. */
+  public Long getEmployeeorderId() {
+    return employeeorder == null ? null : employeeorder.getId();
+  }
 
   @Override
   public boolean isNew() {

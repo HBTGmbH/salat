@@ -439,6 +439,15 @@ public class EmployeeorderService {
         .toList();
   }
 
+  /**
+   * The id of the person the employee order belongs to, empty for an unknown one (#1369). A plain
+   * value, so another module can ask whose an employee order is without taking the entity.
+   */
+  @Transactional(readOnly = true)
+  public Optional<Long> getEmployeeIdOfEmployeeorder(long employeeorderId) {
+    return employeeorderRepository.findEmployeeIdById(employeeorderId);
+  }
+
   public Employeeorder getEmployeeorderById(Long employeeOrderId) {
     return employeeorderDAO.getEmployeeorderById(employeeOrderId);
   }
