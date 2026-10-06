@@ -3893,10 +3893,13 @@ databaseChangeLog:
       comment: year_month erhaelt den Primaerschluessel (year, month) (#1208)
       # Der Tabellenname ist in MySQL ein reserviertes Wort (Intervall YEAR_MONTH), deshalb eigenes SQL
       # mit Backticks statt addPrimaryKey.
+      #
+      # Kein Changeset legt year_month an, die Tabelle kommt nur aus dem alten Bestand. Ohne sie gilt
+      # der Changeset als gelaufen (#1383); Duplikate kann es nach Changeset 101 nicht mehr geben.
       preConditions:
-        - onFail: HALT
-        - onFailMessage: >-
-            year_month enthaelt doppelte Monate; Changeset 101 haette sie entfernen muessen (#1208).
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: year_month
         - sqlCheck:
             expectedResult: 0
             sql: SELECT COUNT(*) FROM (SELECT 1 FROM `year_month` GROUP BY `year`, `month` HAVING COUNT(*) > 1) d
@@ -5791,3 +5794,18 @@ databaseChangeLog:
       changes:
         - sql:
             sql: DROP TABLE IF EXISTS statusreport
+
+  - changeSet:
+      id: 155
+      author: kr
+      comment: Tabelle user_access_token entfernen (#1383)
+      # Changeset 17 legte sie fuer die Token-Anmeldung an; #301 entfernte die Funktion, die Tabelle
+      # blieb stehen. Die Anwendung kennt sie nicht, und keine Report-, ETL- oder View-Definition
+      # liest sie.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: user_access_token
+      changes:
+        - sql:
+            sql: DROP TABLE IF EXISTS user_access_token
