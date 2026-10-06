@@ -138,6 +138,21 @@ class JiraServerWorklogClientTest {
     jira.verify();
   }
 
+  /** Server / Data Center takes a Personal Access Token only as bearer token (#1385). */
+  @Test
+  void testAPersonalAccessTokenIsSentAsBearerToken() {
+    jira.expect(requestTo(startsWith(WORKLOGS_URL + "?")))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer mockToken"))
+        .andRespond(withSuccess("""
+            {"id": "10101"}""", MediaType.APPLICATION_JSON));
+
+    client.create(new JiraWorklogTarget("https://mock-jira.com", JiraCredentials.personalAccessToken("mockToken"),
+        "MOCK-1"), new JiraWorklogEntry(LocalDate.of(2026, 3, 2), 90));
+
+    jira.verify();
+  }
+
   @Test
   void testDeleteOfAnAlreadyRemovedWorklogSaysSo() {
     jira.expect(requestTo(startsWith(WORKLOGS_URL + "/10101?")))
@@ -148,7 +163,7 @@ class JiraServerWorklogClientTest {
   }
 
   private static JiraWorklogTarget target() {
-    return new JiraWorklogTarget("https://mock-jira.com", "mockUser", "mockPassword", "MOCK-1");
+    return new JiraWorklogTarget("https://mock-jira.com", JiraCredentials.basic("mockUser", "mockPassword"), "MOCK-1");
   }
 
   private static String basicAuth(String username, String password) {

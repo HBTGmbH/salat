@@ -64,11 +64,25 @@ public class JiraReplicationConfig extends AuditedEntity {
   @Column(name = "api_flavor")
   private JiraApiFlavor apiFlavor;
 
-  /** On JIRA Cloud this is the Atlassian account e-mail — API tokens authenticate as that user. */
-  @Column(name = "username", nullable = false)
+  /**
+   * How the replication signs in (#1385). Not nullable: the changeset gave every config that existed
+   * before {@link JiraAuthMethod#BASIC}, the only method there was.
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "auth_method", nullable = false)
+  private JiraAuthMethod authMethod = JiraAuthMethod.BASIC;
+
+  /**
+   * On JIRA Cloud this is the Atlassian account e-mail — API tokens authenticate as that user.
+   * {@code null} with a Personal Access Token, which carries no user name (#1385).
+   */
+  @Column(name = "username")
   private String username;
 
-  /** On JIRA Cloud this is the API token, passed as the HTTP Basic password. */
+  /**
+   * On JIRA Cloud this is the API token, passed as the HTTP Basic password; with
+   * {@link JiraAuthMethod#PERSONAL_ACCESS_TOKEN} the token (#1385).
+   */
   @Column(name = "password", nullable = false)
   private String password;
 

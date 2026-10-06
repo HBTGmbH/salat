@@ -110,11 +110,28 @@ class JiraServerSearchClientTest {
                           "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect"}}
             ]""", MediaType.APPLICATION_JSON));
 
-    var fields = client.listFields(new JiraFieldsRequest("https://mock-jira.com", "mockUser", "mockPassword"));
+    var fields = client.listFields(new JiraFieldsRequest("https://mock-jira.com", JiraCredentials.basic("mockUser", "mockPassword")));
 
     assertEquals(List.of("summary", "customfield_10200"), fields.stream().map(JiraField::getId).toList());
     assertEquals("com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
         fields.get(1).getSchema().getCustom());
+    jira.verify();
+  }
+
+  /** Server / Data Center takes a Personal Access Token only as bearer token (#1385). */
+  @Test
+  void testAPersonalAccessTokenIsSentAsBearerToken() {
+    jira.expect(requestTo(startsWith(SEARCH_URL + "?")))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer mockToken"))
+        .andRespond(withSuccess(page(1, "MOCK-1"), MediaType.APPLICATION_JSON));
+    jira.expect(requestTo("https://mock-jira.com/rest/api/latest/field"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer mockToken"))
+        .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+
+    var token = JiraCredentials.personalAccessToken("mockToken");
+    keys(client.search(new JiraSearchRequest("https://mock-jira.com", token, "project = MOCK", List.of("summary"), 2)));
+    client.listFields(new JiraFieldsRequest("https://mock-jira.com", token));
+
     jira.verify();
   }
 
@@ -125,14 +142,14 @@ class JiraServerSearchClientTest {
         .andRespond(withSuccess("""
             [{"id": "thumbnail", "name": "Images", "custom": false}]""", MediaType.APPLICATION_JSON));
 
-    var fields = client.listFields(new JiraFieldsRequest("https://mock-jira.com", "mockUser", "mockPassword"));
+    var fields = client.listFields(new JiraFieldsRequest("https://mock-jira.com", JiraCredentials.basic("mockUser", "mockPassword")));
 
     assertEquals(1, fields.size());
     assertEquals(null, fields.get(0).getSchema());
   }
 
   private static JiraSearchRequest request() {
-    return new JiraSearchRequest("https://mock-jira.com", "mockUser", "mockPassword",
+    return new JiraSearchRequest("https://mock-jira.com", JiraCredentials.basic("mockUser", "mockPassword"),
         "project = MOCK", List.of("summary", "updated"), 2);
   }
 

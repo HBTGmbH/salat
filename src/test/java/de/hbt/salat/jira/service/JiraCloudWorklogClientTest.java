@@ -97,6 +97,6 @@ class JiraCloudWorklogClientTest {
   }
 
   private static JiraWorklogTarget target() {
-    return new JiraWorklogTarget("https://mock-jira.com", "mockUser", "mockPassword", "MOCK-1");
+    return new JiraWorklogTarget("https://mock-jira.com", JiraCredentials.basic("mockUser", "mockPassword"), "MOCK-1");
   }
 }

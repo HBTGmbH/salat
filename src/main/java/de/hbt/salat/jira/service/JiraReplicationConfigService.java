@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.service;
 
 import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_BASE_URL_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_BASE_URL_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_JQL_REQUIRED;
@@ -10,6 +11,7 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_PAGE_SIZE_I
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_PASSWORD_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SCOPE_REQUIRED;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_TOKEN_NEEDS_SERVER;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP;
 
@@ -33,6 +35,7 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldCatalog;
 import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
@@ -105,6 +108,11 @@ public class JiraReplicationConfigService {
     checkManager();
     var scopeSign = validate(id, data);
     var config = load(id);
+    if (authMethodOf(data) != config.getAuthMethod() && isBlank(data.password())) {
+      // Kept across the switch, the stored password would go out as a bearer token, or the token
+      // as a Basic password (#1385).
+      throw new InvalidDataException(JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET);
+    }
     apply(data, config, scopeSign);
     if (!isBlank(data.password())) {
       config.setPassword(data.password().trim());
@@ -160,7 +168,7 @@ public class JiraReplicationConfigService {
     checkManager();
     var config = load(id);
     try {
-      var request = new JiraFieldsRequest(config.getBaseUrl(), config.getUsername(), config.getPassword());
+      var request = new JiraFieldsRequest(config.getBaseUrl(), JiraCredentials.of(config));
       var fields = jiraSearchClients.forFlavor(config.getApiFlavor()).listFields(request);
       return JiraFieldCatalog.of(toOptions(fields));
     } catch (Exception ex) {
@@ -212,6 +220,15 @@ public class JiraReplicationConfigService {
     return schema.getType();
   }
 
+  private static JiraApiFlavor apiFlavorOf(JiraReplicationConfigData data) {
+    return data.apiFlavor() != null ? data.apiFlavor() : JiraApiFlavor.SERVER;
+  }
+
+  /** Without a choice HTTP Basic, the method every config used before #1385. */
+  private static JiraAuthMethod authMethodOf(JiraReplicationConfigData data) {
+    return data.authMethod() != null ? data.authMethod() : JiraAuthMethod.BASIC;
+  }
+
   private JiraReplicationConfig load(long id) {
     return configRepository.findById(id)
         .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_NOT_FOUND));
@@ -221,8 +238,10 @@ public class JiraReplicationConfigService {
     config.setName(data.name().trim());
     applyScope(data, config, scopeSign);
     config.setBaseUrl(data.baseUrl().trim());
-    config.setApiFlavor(data.apiFlavor() != null ? data.apiFlavor() : JiraApiFlavor.SERVER);
-    config.setUsername(data.username().trim());
+    config.setApiFlavor(apiFlavorOf(data));
+    config.setAuthMethod(authMethodOf(data));
+    // A Personal Access Token carries no user name (#1385); one left in the hidden field is dropped.
+    config.setUsername(authMethodOf(data) == JiraAuthMethod.BASIC ? data.username().trim() : null);
     applyJql(data, config);
     config.setParentFieldNames(trimToNull(data.parentFieldNames()));
     applyFieldNames(data, config);
@@ -317,7 +336,13 @@ public class JiraReplicationConfigService {
       throw new InvalidDataException(JI_REPLICATION_SCOPE_REQUIRED);
     }
     requireText(data.baseUrl(), JI_REPLICATION_BASE_URL_REQUIRED);
-    requireText(data.username(), JI_REPLICATION_USERNAME_REQUIRED);
+    if (authMethodOf(data) == JiraAuthMethod.PERSONAL_ACCESS_TOKEN && apiFlavorOf(data) != JiraApiFlavor.SERVER) {
+      // Atlassian Cloud accepts no bearer PAT; its API token is the Basic password (#1385).
+      throw new InvalidDataException(JI_REPLICATION_TOKEN_NEEDS_SERVER);
+    }
+    if (authMethodOf(data) == JiraAuthMethod.BASIC) {
+      requireText(data.username(), JI_REPLICATION_USERNAME_REQUIRED);
+    }
     // The replication insists on a JQL query, so a config without one can only ever fail.
     requireText(data.jql(), JI_REPLICATION_JQL_REQUIRED);
     var location = checkScopeExists(data);

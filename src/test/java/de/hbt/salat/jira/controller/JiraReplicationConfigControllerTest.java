@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.PostMapping;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 
 /**
@@ -81,7 +82,7 @@ class JiraReplicationConfigControllerTest {
 
   private static JiraReplicationConfigInfo info(long customerorderId, Long suborderId) {
     return new JiraReplicationConfigInfo(7L, "Alpha", customerorderId, suborderId, "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, false, null);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, false, null);
   }
 
   private static Authorized guardOf(Method method) {

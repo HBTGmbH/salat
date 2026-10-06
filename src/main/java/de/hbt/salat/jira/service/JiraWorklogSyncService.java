@@ -287,7 +287,7 @@ public class JiraWorklogSyncService {
   }
 
   private static JiraWorklogTarget targetFor(JiraReplicationConfig cfg, String issueKey) {
-    return new JiraWorklogTarget(cfg.getBaseUrl(), cfg.getUsername(), cfg.getPassword(), issueKey);
+    return new JiraWorklogTarget(cfg.getBaseUrl(), JiraCredentials.of(cfg), issueKey);
   }
 
   /** A typed reference and a ticket key mean the same issue whatever the case was written in. */

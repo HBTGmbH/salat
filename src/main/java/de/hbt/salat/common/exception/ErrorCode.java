@@ -227,6 +227,8 @@ public enum ErrorCode {
   JI_REPLICATION_RUN_EXECUTOR_BUSY("JI-0015", "every thread for manually started jira replications is occupied"),
   JI_ORDER_HAS_REPLICATIONS("JI-0016", "jira replications still refer to the customer order"),
   JI_SUBORDER_HAS_REPLICATIONS("JI-0017", "jira replications still refer to the suborder"),
+  JI_REPLICATION_TOKEN_NEEDS_SERVER("JI-0018", "a personal access token only works with jira server / data center"),
+  JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET("JI-0019", "changing the sign-in method needs the new password or token"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),

@@ -7,6 +7,6 @@ package de.hbt.salat.jira.service;
  * from a form. A caller that could name the target would turn the server into an authenticated HTTP
  * client for any address it can reach.
  */
-public record JiraFieldsRequest(String baseUrl, String username, String password) {
+public record JiraFieldsRequest(String baseUrl, JiraCredentials credentials) {
 
 }

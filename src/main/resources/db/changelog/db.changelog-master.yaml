@@ -5809,3 +5809,31 @@ databaseChangeLog:
       changes:
         - sql:
             sql: DROP TABLE IF EXISTS user_access_token
+
+  - changeSet:
+      id: 156
+      author: kr
+      comment: JIRA-Replikation meldet sich wahlweise per Personal Access Token an (#1385)
+      # JIRA Server / Data Center nimmt einen PAT nur als Bearer-Token an. Jede bestehende
+      # Konfiguration bleibt bei Basic, dem einzigen Verfahren bisher. Ein PAT traegt keinen
+      # Benutzernamen, deshalb wird username nullable.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: auth_method
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: auth_method
+                  type: varchar(30)
+                  defaultValue: BASIC
+                  constraints:
+                    nullable: false
+        - dropNotNullConstraint:
+            tableName: jira_replication_config
+            columnName: username
+            columnDataType: varchar(255)
