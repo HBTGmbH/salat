@@ -41,6 +41,7 @@ import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraTicketDetail;
 import de.hbt.salat.jira.domain.JiraTicketImport;
+import de.hbt.salat.jira.domain.JiraTicketImportOrigin;
 import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.domain.JiraTicketListResult;
 import de.hbt.salat.jira.domain.JiraTicketSort;
@@ -76,6 +77,9 @@ public class JiraTicketMaintenanceService {
   private final JiraScopes scopes;
   private final OrderReferences orderReferences;
   private final JiraTicketImportRepository importRepository;
+
+  /** How many recent imports are searched for a file of the same headings. */
+  static final int RECENT_IMPORTS = 200;
 
   /**
    * The ticket page (#1386): the tickets of the order, replicated and maintained by hand, as the
@@ -214,8 +218,36 @@ public class JiraTicketMaintenanceService {
     if (customerorderId == null || !authorization.mayMaintain(customerorderId)) {
       return JiraTicketImportReader.preview(file);
     }
-    var previous = latestImport(customerorderId, suborderId).map(JiraTicketImport::getColumnMapping).orElse(List.of());
-    return JiraTicketImportReader.preview(file, previous);
+    var previous = previousImportFor(file.headings(), customerorderId, suborderId);
+    var preview = JiraTicketImportReader.preview(file, previous.map(JiraTicketImport::getColumnMapping).orElse(List.of()));
+    return previous.map(earlier -> preview.withOrigin(new JiraTicketImportOrigin(earlier.getFileName(),
+            earlier.getCreated(), earlier.getCustomerorderId() == null ? null
+                : scopes.signOf(earlier.getCustomerorderId(), earlier.getSuborderId()))))
+        .orElse(preview);
+  }
+
+  /**
+   * The earlier import whose column reading the preview proposes: the latest of the scope, otherwise
+   * the latest of the order in any scope, otherwise the latest of a file with exactly these headings
+   * among the orders the user may see.
+   */
+  private Optional<JiraTicketImport> previousImportFor(List<String> headings, long customerorderId, Long suborderId) {
+    return latestImport(customerorderId, suborderId)
+        .or(() -> importRepository.findLatestInCustomerorder(customerorderId, PageRequest.of(0, 1)).stream().findFirst())
+        .or(() -> {
+          var maintainable = authorization.maintainableCustomerorderIds();
+          var recent = importRepository.findLatest(maintainable.isEmpty(), maintainable.orElse(List.of(-1L)),
+              PageRequest.of(0, RECENT_IMPORTS));
+          var wanted = normalised(headings);
+          return recent.stream()
+              .filter(earlier -> normalised(earlier.getColumnMapping().stream()
+                  .map(JiraImportMappingEntry::heading).toList()).equals(wanted))
+              .findFirst();
+        });
+  }
+
+  private static List<String> normalised(List<String> headings) {
+    return headings.stream().map(heading -> heading == null ? "" : heading.trim().toLowerCase(Locale.ROOT)).toList();
   }
 
   /**

@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -315,6 +316,46 @@ class JiraTicketMaintenanceServiceTest {
     assertThat(preview.suggested().get(8))
         .isEqualTo(new JiraImportColumn(JiraImportTarget.ADDITIONAL, "customfield_10500", true));
     assertThat(preview.suggested().get(1).target()).isEqualTo(JiraImportTarget.KEY);
+  }
+
+  /** Without an import in the scope, the latest of the order proposes the reading — and says so. */
+  @Test
+  void without_an_import_in_the_scope_the_latest_of_the_order_is_proposed() {
+    var ofOrder = new JiraTicketImport();
+    ofOrder.setFileName("alt.csv");
+    ofOrder.setColumnMapping(List.of(
+        new JiraImportMappingEntry("Custom field (Team)", JiraImportTarget.ADDITIONAL, "customfield_10500", true)));
+    when(importRepository.findLatestInCustomerorder(eq(ORDER), any())).thenReturn(List.of(ofOrder));
+    when(scopes.signOf(anyLong(), any())).thenReturn("ALPHA");
+
+    var preview = service.preview(JIRA_EXPORT.getBytes(UTF_8), ORDER, SUBORDER);
+
+    assertThat(preview.suggested().get(8))
+        .isEqualTo(new JiraImportColumn(JiraImportTarget.ADDITIONAL, "customfield_10500", true));
+    assertThat(preview.origin().fileName()).isEqualTo("alt.csv");
+  }
+
+  /** Without any import in the order, the latest file with exactly these headings is proposed. */
+  @Test
+  void without_an_import_in_the_order_a_file_with_the_same_headings_is_proposed() {
+    var otherShape = new JiraTicketImport();
+    otherShape.setFileName("anders.csv");
+    otherShape.setColumnMapping(List.of(new JiraImportMappingEntry("Key", JiraImportTarget.KEY, null, false)));
+    var sameShape = new JiraTicketImport();
+    sameShape.setFileName("gleich.csv");
+    var headings = List.of("Summary", "Issue key", "Issue id", "Issue Type", "Labels", "Labels", "Parent",
+        "Parent summary", "Custom field (Team)", "Created");
+    var entries = new ArrayList<JiraImportMappingEntry>();
+    headings.forEach(heading -> entries.add(new JiraImportMappingEntry(heading.toUpperCase(),
+        heading.startsWith("Custom") ? JiraImportTarget.ADDITIONAL : JiraImportTarget.IGNORE,
+        heading.startsWith("Custom") ? "team" : null, false)));
+    sameShape.setColumnMapping(entries);
+    when(importRepository.findLatest(eq(true), any(), any())).thenReturn(List.of(otherShape, sameShape));
+
+    var preview = service.preview(JIRA_EXPORT.getBytes(UTF_8), ORDER, null);
+
+    assertThat(preview.origin().fileName()).isEqualTo("gleich.csv");
+    assertThat(preview.suggested().get(8)).isEqualTo(new JiraImportColumn(JiraImportTarget.ADDITIONAL, "team", false));
   }
 
   /** A key the scope already has is updated, not created a second time. */

@@ -113,7 +113,7 @@ final class JiraTicketImportReader {
     var samples = file.lines().stream().limit(SAMPLE_ROWS)
         .map(line -> IntStream.range(0, file.headings().size()).mapToObj(line::cell).toList())
         .toList();
-    return new JiraTicketImportPreview(file.headings(), samples, suggested, file.lines().size());
+    return new JiraTicketImportPreview(file.headings(), samples, suggested, file.lines().size(), null);
   }
 
   /**

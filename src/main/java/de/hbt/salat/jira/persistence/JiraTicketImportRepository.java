@@ -1,5 +1,6 @@
 package de.hbt.salat.jira.persistence;
 
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,4 +19,19 @@ public interface JiraTicketImportRepository extends JpaRepository<JiraTicketImpo
       order by i.id desc
       """)
   List<JiraTicketImport> findLatestInScope(long customerorderId, Long suborderId, Pageable page);
+
+  /** The imports of an order in any of its scopes, the latest first (#1386). */
+  @Query("select i from JiraTicketImport i where i.customerorder.id = :customerorderId order by i.id desc")
+  List<JiraTicketImport> findLatestInCustomerorder(long customerorderId, Pageable page);
+
+  /**
+   * The imports of these orders — or of every order — the latest first (#1386), for a file of the same
+   * shape imported elsewhere before.
+   */
+  @Query("""
+      select i from JiraTicketImport i
+      where (:allOrders = true or i.customerorder.id in :customerorderIds)
+      order by i.id desc
+      """)
+  List<JiraTicketImport> findLatest(boolean allOrders, Collection<Long> customerorderIds, Pageable page);
 }

@@ -60,6 +60,16 @@ public class JiraTicketImport extends AuditedEntity {
   @Column(name = "updated_count", nullable = false)
   private int updatedCount;
 
+  /** The id of {@link #customerorder}, read off the reference without loading the order. */
+  public Long getCustomerorderId() {
+    return customerorder != null ? customerorder.getId() : null;
+  }
+
+  /** The id of {@link #suborder}, {@code null} for the whole order; the suborder is not loaded. */
+  public Long getSuborderId() {
+    return suborder != null ? suborder.getId() : null;
+  }
+
   /** The additional fields this import marked as inherited. */
   public Set<String> inheritedFields() {
     var fields = new LinkedHashSet<String>();
