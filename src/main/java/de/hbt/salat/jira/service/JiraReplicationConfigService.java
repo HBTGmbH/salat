@@ -42,6 +42,7 @@ import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 
@@ -71,6 +72,7 @@ public class JiraReplicationConfigService {
   private final JiraScopes scopes;
   private final OrderReferences orderReferences;
   private final AuthorizedUser authorizedUser;
+  private final JiraTicketRepository ticketRepository;
 
   @Transactional(readOnly = true)
   public List<JiraReplicationConfigInfo> getAll() {
@@ -274,7 +276,11 @@ public class JiraReplicationConfigService {
    * {@link #applyFieldNames} gives: the new scope has no tickets of its own yet, and with the
    * watermark in place the search would only ever find what JIRA has touched since. The tickets
    * already replicated stay where they are — under the old scope, no longer kept up to date, just as
-   * they stay when the config is deleted. The field help says so.
+   * they stay when the config is deleted. The field help says so. Like there, they are released
+   * (#1386): maintained by nobody, editable by hand, and taken over by a replication of the old scope
+   * that delivers their key; otherwise that one would skip them as maintained by another.
+   *
+   * <p>A config without an id is new and has no tickets yet.
    *
    * <p>The scope is compared by id (#1322): a renamed order is the same scope, a different order of
    * the same name is not. Order and suborder are set as references (#1368); the sign only goes into
@@ -287,6 +293,10 @@ public class JiraReplicationConfigService {
           + "watermark so the tickets of the new scope are fetched", config.getName(),
           config.getCustomerorderId(), config.getSuborderId(), scopeSign);
       config.setLastMaxUpdated(null);
+      if (config.getId() != null) {
+        var released = ticketRepository.releaseFromReplication(config.getId());
+        log.info("Released {} tickets of JIRA replication {} in its old scope", released, config.getName());
+      }
     }
     config.setCustomerorder(orderReferences.customerorder(data.customerorderId()));
     config.setSuborder(orderReferences.suborder(data.suborderId()));

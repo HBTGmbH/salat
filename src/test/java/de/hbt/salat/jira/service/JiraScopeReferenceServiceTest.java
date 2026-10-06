@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
+import de.hbt.salat.jira.persistence.JiraTicketImportRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
 import de.hbt.salat.order.domain.Customerorder;
@@ -43,6 +44,7 @@ class JiraScopeReferenceServiceTest {
   private JiraReplicationConfigRepository configRepository;
   private JiraTicketRepository ticketRepository;
   private JiraWorklogSyncRepository worklogSyncRepository;
+  private JiraTicketImportRepository importRepository;
   private SuborderService suborderService;
   private JiraScopeReferenceService classUnderTest;
 
@@ -72,8 +74,9 @@ class JiraScopeReferenceServiceTest {
     suborderService = mock(SuborderService.class);
     ticketRepository = mock(JiraTicketRepository.class);
     worklogSyncRepository = mock(JiraWorklogSyncRepository.class);
+    importRepository = mock(JiraTicketImportRepository.class);
     classUnderTest = new JiraScopeReferenceService(configRepository, ticketRepository, worklogSyncRepository,
-        new JiraScopes(mock(CustomerorderService.class), suborderService));
+        importRepository, new JiraScopes(mock(CustomerorderService.class), suborderService));
   }
 
   @Test
@@ -114,12 +117,34 @@ class JiraScopeReferenceServiceTest {
     verify(worklogSyncRepository).moveBranchToCustomerorder(Set.of(11L, 12L), otherOrder);
   }
 
+  /**
+   * The latest import of a scope is looked up by order and suborder (#1386): left behind, its
+   * inherited fields and its column reading would be lost to the moved suborder.
+   */
+  @Test
+  void a_suborder_moved_to_another_order_takes_its_imports_along() {
+    first.setCustomerorder(otherOrder);
+    below.setCustomerorder(otherOrder);
+
+    classUnderTest.followSuborder(first);
+
+    verify(importRepository).moveBranchToCustomerorder(Set.of(11L, 12L), otherOrder);
+  }
+
   @Test
   void the_tickets_and_worklogs_of_a_deleted_order_go_with_it() {
     classUnderTest.deleteScopeDataOfCustomerorder(1L);
 
     verify(ticketRepository).deleteByCustomerorderId(1L);
     verify(worklogSyncRepository).deleteByCustomerorderId(1L);
+  }
+
+  /** The imports refer to the order by a foreign key (#1386); left behind, they would block its deletion. */
+  @Test
+  void the_imports_of_a_deleted_order_go_with_it() {
+    classUnderTest.deleteScopeDataOfCustomerorder(1L);
+
+    verify(importRepository).deleteByCustomerorderId(1L);
   }
 
   @Test
@@ -130,6 +155,15 @@ class JiraScopeReferenceServiceTest {
 
     verify(ticketRepository).deleteBySuborderIdIn(List.of(11L, 12L));
     verify(worklogSyncRepository).deleteBySuborderIdIn(List.of(11L, 12L));
+  }
+
+  @Test
+  void the_imports_of_a_deleted_suborder_go_with_it_for_its_whole_branch() {
+    when(suborderService.getSubtreeIds(11L)).thenReturn(List.of(11L, 12L));
+
+    classUnderTest.deleteScopeDataOfSuborder(11L);
+
+    verify(importRepository).deleteBySuborderIdIn(List.of(11L, 12L));
   }
 
   @Test
