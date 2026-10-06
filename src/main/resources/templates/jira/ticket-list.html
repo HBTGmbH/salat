@@ -349,6 +349,17 @@
   ['suborder-select', 'type-select', 'limit-select', 'children-switch']
     .forEach(id => document.getElementById(id).addEventListener('change', () => form.requestSubmit()));
 
+  // The reading of the columns goes to the server as one JSON field, filled when the import is sent.
+  document.addEventListener('submit', event => {
+    const mapping = event.target.querySelector('#importMapping');
+    if (!mapping) return;
+    mapping.value = JSON.stringify([...event.target.querySelectorAll('#ticketImportPreview tbody tr')].map(row => ({
+      target: row.querySelector('[data-import-target]').value,
+      fieldName: row.querySelector('[data-import-field-name]').value,
+      inherited: row.querySelector('[data-import-inherited]').checked
+    })));
+  }, true);
+
   // The proposed reading of an import depends on its scope: a change of order or suborder in the dialog
   // previews the chosen file again. Delegated, the dialog comes with the results.
   document.addEventListener('change', event => {
@@ -443,6 +454,9 @@
   JIRA export repeats headings.
 */-->
 <div th:fragment="importPreview" id="ticketImportPreview" class="mt-3">
+  <!--/* The reading of all columns travels as this one field, filled on submit: one field per column
+         would exceed the parts Tomcat takes per multipart request (FileCountLimitExceededException). */-->
+  <input type="hidden" name="mapping" id="importMapping"/>
   <div th:if="${previewErrors != null}" class="alert alert-danger mb-0">
     <p th:each="e : ${previewErrors}" th:text="${e}" class="mb-0"></p>
   </div>
@@ -475,21 +489,19 @@
                 th:each="sample, sampleIt : ${preview.sampleValues[__${it.index}__]}"><span
                 class="issue-key" th:text="${sample}">ABC-1</span><th:block th:unless="${sampleIt.last}"> · </th:block></th:block></td>
             <td>
-              <select class="form-select form-select-sm" th:name="'columns[' + ${it.index} + '].target'"
+              <select class="form-select form-select-sm" data-import-target
                       th:aria-label="#{main.jira.ticket.import.preview.target} + ' ' + ${heading}">
                 <option th:each="target : ${importTargets}" th:value="${target.name()}" th:text="#{${target.label}}"
                         th:selected="${importForm.columns[__${it.index}__].target == target}">Key</option>
               </select>
             </td>
             <td>
-              <input class="form-control form-control-sm" type="text" maxlength="255"
-                     th:name="'columns[' + ${it.index} + '].fieldName'"
+              <input class="form-control form-control-sm" type="text" maxlength="255" data-import-field-name
                      th:value="${importForm.columns[__${it.index}__].fieldName}"
                      th:aria-label="#{main.jira.ticket.import.preview.fieldname} + ' ' + ${heading}"/>
             </td>
             <td>
-              <input class="form-check-input" type="checkbox" value="true"
-                     th:name="'columns[' + ${it.index} + '].inherited'"
+              <input class="form-check-input" type="checkbox" value="true" data-import-inherited
                      th:checked="${importForm.columns[__${it.index}__].inherited}"
                      th:aria-label="#{main.jira.ticket.import.preview.inherited} + ' ' + ${heading}"/>
             </td>
