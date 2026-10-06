@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
@@ -241,7 +242,7 @@ class JiraTicketRepositoryTest {
   private List<JiraTicket> page(boolean allScopes, List<Long> suborderIds, boolean allKeys, List<String> keys,
                                 String title, boolean allTypes, List<String> types) {
     return jiraTicketRepository.findForTicketPage(ALPHA, allScopes, suborderIds, allKeys, keys, title, allTypes, types,
-        PageRequest.of(0, 100));
+        PageRequest.of(0, 100, Sort.by("key")));
   }
 
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */

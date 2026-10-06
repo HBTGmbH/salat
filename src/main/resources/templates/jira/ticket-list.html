@@ -10,224 +10,235 @@
 ">
 <main layout:fragment="content">
 
-  <div th:if="${importErrors != null and not #lists.isEmpty(importErrors)}" class="alert alert-danger mb-3">
-    <p class="mb-1 fw-bold" th:text="#{main.jira.ticket.import.failed}">Die Datei wurde nicht importiert:</p>
-    <p th:each="e : ${importErrors}" th:text="${e}" class="mb-0"></p>
-  </div>
+<style>
+  #tickets tbody tr:hover td {
+    background-color: color-mix(in oklab, var(--tblr-primary) 8%, transparent);
+  }
+  .ticket-title { max-width: 26rem; }
+</style>
 
-  <!--/* Filters like the booking list (#1386): the selects filter on change, the text fields on Enter
-         or with the button. The types travel as one comma-separated parameter, so that UiState can
-         remember them. */-->
-  <form method="get" th:action="@{/jira/tickets}" data-filter-form="jira-tickets" id="ticketFilterForm"
-        class="card mb-3">
-    <div class="card-body">
-      <div class="row g-2 align-items-end">
-        <div class="col-md-6">
-          <label class="form-label" for="fJiraTicketCustomerorderId"
-                 th:text="#{main.suborder.customerorder.text}">Auftrag</label>
-          <select class="form-select tomselect" id="fJiraTicketCustomerorderId" name="fJiraTicketCustomerorderId"
-                  onchange="this.form.fJiraTicketSuborderId.value = ''; this.form.requestSubmit()">
-            <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
-            <option th:each="co : ${customerorders}"
-                    th:value="${co.id}"
-                    th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
-                    th:attr="data-subtext=${subtext}"
-                    th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                    th:selected="${fJiraTicketCustomerorderId != null and fJiraTicketCustomerorderId == co.id}"></option>
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label" for="fJiraTicketSuborderId"
-                 th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
-          <select class="form-select tomselect" id="fJiraTicketSuborderId" name="fJiraTicketSuborderId"
-                  th:disabled="${#lists.isEmpty(suborders)}" onchange="this.form.requestSubmit()">
-            <option value="" th:text="#{main.jira.ticket.filter.suborder.all}">--- Alle Unteraufträge ---</option>
-            <option th:each="so : ${suborders}"
-                    th:value="${so.id}"
-                    th:attr="data-subtext=${so.shortdescription}"
-                    th:text="${so.completeOrderSign} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
-                    th:selected="${fJiraTicketSuborderId != null and fJiraTicketSuborderId == so.id}"></option>
-          </select>
-        </div>
+<div th:if="${importErrors != null and not #lists.isEmpty(importErrors)}" class="alert alert-danger mb-3">
+  <p class="mb-1 fw-bold" th:text="#{main.jira.ticket.import.failed}">Die Datei wurde nicht importiert:</p>
+  <p th:each="e : ${importErrors}" th:text="${e}" class="mb-0"></p>
+</div>
+
+<!-- ═══════════════════════════════ FILTER ═══════════════════════════════ -->
+<!--/* Built like the booking list (#1386): the filter swaps the results, not the page. Changing the
+       order is the exception — suborders and types belong to the order, so it reloads the page.
+       Every choice travels as one parameter, which UiState remembers; the hidden fields are filled
+       on submit. */-->
+<form method="get" th:action="@{/jira/tickets}" id="ticket-filter-form" class="card mb-3" data-filter-form="jira-tickets"
+      th:hx-get="@{/jira/tickets}" hx-target="#results-container" hx-push-url="true">
+  <div class="card-body">
+
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <label class="form-label" for="order-select" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
+        <select class="form-select tomselect" id="order-select" autocomplete="off" data-allow-empty-option="true"
+                th:attr="placeholder=#{main.customerorder.select.please}">
+          <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+          <option th:each="co : ${customerorders}"
+                  th:value="${co.id}"
+                  th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                  th:attr="data-subtext=${subtext}"
+                  th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+                  th:selected="${fJiraTicketCustomerorderId != null and fJiraTicketCustomerorderId == co.id}"></option>
+        </select>
       </div>
-      <div class="row g-2 align-items-end mt-1" th:if="${fJiraTicketCustomerorderId != null}">
-        <div class="col-md-3">
-          <label class="form-label" for="fJiraTicketKeys" th:text="#{main.jira.ticket.filter.keys}">Key</label>
-          <input type="text" class="form-control" id="fJiraTicketKeys" name="fJiraTicketKeys"
-                 th:value="${fJiraTicketKeys}" th:placeholder="#{main.jira.ticket.filter.keys.placeholder}"
-                 autocomplete="off"/>
-          <label class="form-check form-switch mt-1 mb-0">
-            <input class="form-check-input" type="checkbox" name="fJiraTicketChildren" value="true"
-                   th:checked="${fJiraTicketChildren}" onchange="this.form.requestSubmit()"/>
-            <input type="hidden" name="fJiraTicketChildren" value="false"/>
-            <span class="form-check-label small" th:text="#{main.jira.ticket.filter.children}">mit Unter-Tickets</span>
-          </label>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label" for="fJiraTicketTitle" th:text="#{main.jira.ticket.field.summary}">Titel</label>
-          <input type="search" class="form-control" id="fJiraTicketTitle" name="fJiraTicketTitle"
-                 th:value="${fJiraTicketTitle}" th:placeholder="#{main.general.filter.text}" autocomplete="off"/>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label" for="ticketTypeSelect" th:text="#{main.jira.ticket.field.issueType}">Typ</label>
-          <select class="form-select tomselect tomselect-multi" id="ticketTypeSelect" multiple autocomplete="off"
-                  th:attr="placeholder=#{main.jira.ticket.filter.types.all}">
+      <div class="col-lg-4">
+        <label class="form-label" for="suborder-select" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
+        <select class="form-select tomselect" id="suborder-select" autocomplete="off" data-allow-empty-option="true"
+                th:attr="placeholder=#{main.jira.ticket.filter.suborder.all}"
+                th:disabled="${#lists.isEmpty(suborders)}">
+          <option value="" th:text="#{main.jira.ticket.filter.suborder.all}">--- Alle Unteraufträge ---</option>
+          <option th:each="so : ${suborders}"
+                  th:value="${so.id}"
+                  th:attr="data-subtext=${so.shortdescription}"
+                  th:text="${so.completeOrderSign} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
+                  th:selected="${fJiraTicketSuborderId != null and fJiraTicketSuborderId == so.id}"></option>
+        </select>
+      </div>
+      <div class="col-lg-4">
+        <label class="form-label" for="type-select" th:text="#{main.jira.ticket.field.issueType}">Typ</label>
+        <select class="form-select tomselect tomselect-multi" id="type-select" multiple autocomplete="off"
+                th:disabled="${result == null}"
+                th:attr="placeholder=#{main.jira.ticket.filter.types.all}">
+          <!--/* th:each runs before th:if on the same element, so the guard needs its own block. */-->
+          <th:block th:if="${result != null}">
             <option th:each="type : ${result.issueTypes}" th:value="${type}" th:text="${type}"
                     th:selected="${selectedTypes.contains(type)}"></option>
-          </select>
-          <input type="hidden" name="fJiraTicketTypes" id="fJiraTicketTypes" th:value="${#strings.listJoin(selectedTypes, ',')}"/>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label" for="fJiraTicketLimit" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
-          <select class="form-select" id="fJiraTicketLimit" name="fJiraTicketLimit" onchange="this.form.requestSubmit()">
-            <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
-                    th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
-          </select>
-        </div>
-        <div class="col-md-1">
-          <button type="submit" class="btn btn-outline-primary w-100" th:text="#{main.jira.ticket.filter.apply}">Filtern</button>
+          </th:block>
+        </select>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0 align-items-end">
+      <div class="col-lg-3">
+        <label class="form-label" for="key-input" th:text="#{main.jira.ticket.filter.keys}">Key</label>
+        <input type="search" class="form-control" id="key-input" autocomplete="off"
+               th:value="${fJiraTicketKeys}" th:placeholder="#{main.jira.ticket.filter.keys.placeholder}"/>
+      </div>
+      <div class="col-lg-auto">
+        <label class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" id="children-switch" th:checked="${fJiraTicketChildren}"/>
+          <span class="form-check-label" th:text="#{main.jira.ticket.filter.children}">mit Unter-Tickets</span>
+        </label>
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label" for="title-input" th:text="#{main.jira.ticket.field.summary}">Titel</label>
+        <input type="search" class="form-control" id="title-input" autocomplete="off"
+               th:value="${fJiraTicketTitle}" th:placeholder="#{main.general.filter.text}"/>
+      </div>
+      <div class="col-auto">
+        <label class="form-label" for="limit-select" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
+        <select class="form-select tomselect" id="limit-select" autocomplete="off" style="width: 10rem">
+          <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
+                  th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
+        </select>
+      </div>
+      <div class="col-auto ms-auto">
+        <div class="btn-list">
+          <a class="btn btn-link"
+             th:href="@{/jira/tickets(fJiraTicketKeys='',fJiraTicketChildren='true',fJiraTicketTitle='',fJiraTicketTypes='',fJiraTicketSort='KEY')}"
+             th:text="#{main.general.button.reset.text}">Zurücksetzen</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
+          </button>
         </div>
       </div>
     </div>
-  </form>
+
+    <input type="hidden" name="fJiraTicketCustomerorderId" id="f-order" th:value="${fJiraTicketCustomerorderId}"/>
+    <input type="hidden" name="fJiraTicketSuborderId" id="f-suborder" th:value="${fJiraTicketSuborderId}"/>
+    <input type="hidden" name="fJiraTicketKeys" id="f-keys" th:value="${fJiraTicketKeys}"/>
+    <input type="hidden" name="fJiraTicketChildren" id="f-children" th:value="${fJiraTicketChildren}"/>
+    <input type="hidden" name="fJiraTicketTitle" id="f-title" th:value="${fJiraTicketTitle}"/>
+    <input type="hidden" name="fJiraTicketTypes" id="f-types" th:value="${#strings.listJoin(selectedTypes, ',')}"/>
+    <input type="hidden" name="fJiraTicketLimit" id="f-limit" th:value="${limit}"/>
+    <input type="hidden" name="fJiraTicketSort" id="f-sort" th:value="${sortDescending} ? '-' + ${sort} : ${sort}"/>
+  </div>
+</form>
+
+<div id="results-container" th:fragment="results">
 
   <div th:if="${fJiraTicketCustomerorderId == null}" class="alert alert-info"
        th:text="#{main.jira.ticket.list.choose}">Bitte einen Auftrag wählen.</div>
 
   <th:block th:if="${fJiraTicketCustomerorderId != null}">
 
-    <!--/* Who maintains a ticket is decided per ticket (#1386): next to a replication, tickets may be
-           created by hand, and the replication takes one over once it delivers the same key. */-->
-    <div th:if="${not #lists.isEmpty(coveringReplications)}" class="alert alert-info mb-3"
-         th:text="#{main.jira.ticket.list.covered(${#strings.listJoin(coveringReplications, ', ')})}">
-      Diesen Bereich pflegt auch die Replikation …
-    </div>
+  <!--/* Who maintains a ticket is decided per ticket (#1386): next to a replication, tickets may be
+         created by hand, and the replication takes one over once it delivers the same key. */-->
+  <div th:if="${not #lists.isEmpty(coveringReplications)}" class="alert alert-info mb-3"
+       th:text="#{main.jira.ticket.list.covered(${#strings.listJoin(coveringReplications, ', ')})}">
+    Diesen Bereich pflegt auch die Replikation …
+  </div>
 
-    <!--/* Figures over every hit, not just the rows shown — as in the booking list. */-->
-    <div class="row row-cards mb-3">
-      <div class="col-sm-6 col-lg-3">
-        <div class="card card-sm"><div class="card-body">
-          <div class="subheader" th:text="#{main.jira.ticket.kpi.count}">Tickets</div>
-          <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.totalCount, 1, 'DEFAULT')}">0</div>
-        </div></div>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <div class="card card-sm"><div class="card-body">
-          <div class="subheader" th:text="#{main.jira.ticket.kpi.manual}">von Hand gepflegt</div>
-          <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.manualCount, 1, 'DEFAULT')}">0</div>
-        </div></div>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <div class="card card-sm"><div class="card-body">
-          <div class="subheader" th:text="#{main.jira.ticket.kpi.replicated}">repliziert</div>
-          <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.replicatedCount, 1, 'DEFAULT')}">0</div>
-        </div></div>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <div class="card card-sm"><div class="card-body">
-          <div class="subheader" th:text="#{main.jira.ticket.kpi.types}">je Typ</div>
-          <div th:if="${result.countByType.isEmpty()}" class="text-secondary">–</div>
-          <div class="d-flex flex-wrap gap-1 mt-1">
-            <span th:each="entry : ${result.countByType}" class="badge bg-blue-lt"
-                  th:text="(${entry.key.isEmpty()} ? #{main.jira.ticket.type.none} : ${entry.key}) + ' ' + ${entry.value}">Story 12</span>
-          </div>
-        </div></div>
-      </div>
+  <!-- ═══════════════════════════════ KENNZAHLEN ═══════════════════════════════ -->
+  <div class="row row-cards mb-3">
+    <div class="col-sm-6 col-lg-3">
+      <div class="card card-sm"><div class="card-body">
+        <div class="subheader" th:text="#{main.jira.ticket.kpi.count}">Tickets</div>
+        <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.totalCount, 1, 'DEFAULT')}">0</div>
+      </div></div>
     </div>
-
-    <div class="card mb-3">
-      <div class="card-body">
-        <div class="row g-2 align-items-end">
-          <div class="col-auto">
-            <a class="btn btn-success"
-               th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
-              <i class="icon ti ti-plus"></i>
-              <span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
-            </a>
-          </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card card-sm"><div class="card-body">
+        <div class="subheader" th:text="#{main.jira.ticket.kpi.replicated}">repliziert</div>
+        <div class="h1 mb-0 text-azure" th:text="${#numbers.formatInteger(result.replicatedCount, 1, 'DEFAULT')}">0</div>
+      </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card card-sm"><div class="card-body">
+        <div class="subheader" th:text="#{main.jira.ticket.kpi.manual}">von Hand gepflegt</div>
+        <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.manualCount, 1, 'DEFAULT')}">0</div>
+      </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card card-sm"><div class="card-body">
+        <div class="subheader" th:text="#{main.jira.ticket.kpi.types}">je Typ</div>
+        <div th:if="${result.countByType.isEmpty()}" class="h1 mb-0">–</div>
+        <div class="d-flex flex-wrap gap-1 mt-1">
+          <span th:each="entry : ${result.countByType}" class="badge bg-blue-lt"
+                th:text="(${entry.key.isEmpty()} ? #{main.jira.ticket.type.none} : ${entry.key}) + ' ' + ${entry.value}">Story 12</span>
         </div>
-        <!--/* The import (#1386): choosing a file loads the preview, where every column gets its
-               reading — suggested by its heading, changed by the user. The import button sends the
-               file again with that assignment; nothing waits on the server in between. */-->
-        <form th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data" class="mt-3">
-          <input type="hidden" name="customerorderId" th:value="${fJiraTicketCustomerorderId}"/>
-          <input type="hidden" name="suborderId" th:value="${fJiraTicketSuborderId}"/>
-          <label class="form-label" for="ticketImportFile" th:text="#{main.jira.ticket.import.file}">Datei</label>
-          <input class="form-control" type="file" id="ticketImportFile" name="file" required
-                 accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                 th:hx-post="@{/jira/tickets/import/preview}"
-                 hx-encoding="multipart/form-data"
-                 hx-include="closest form"
-                 hx-target="#ticketImportPreview"
-                 hx-swap="outerHTML"
-                 hx-trigger="change"/>
-          <div class="form-text" th:text="#{main.jira.ticket.import.help}">
-            CSV oder Excel (.xlsx) mit Kopfzeile.
-          </div>
-          <div th:replace="~{:: importPreview}"></div>
-        </form>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ TABELLE ═══════════════════════════════ -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.jira.ticket.table.title(${result.totalCount})}">Tickets</h3>
+      <div class="card-actions btn-list">
+        <a class="btn btn-outline-primary"
+           th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
+          <i class="ti ti-plus"></i><span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
+        </a>
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#ticket-import-modal">
+          <i class="ti ti-file-import"></i><span th:text="#{main.jira.ticket.button.import}">Importieren</span>
+        </button>
       </div>
     </div>
 
-    <div class="card">
-      <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert">
+    <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert">
+      <div>
         <i class="ti ti-alert-triangle me-2"></i><span
-           th:text="#{main.jira.ticket.list.truncated(${result.rows.size()},${result.totalCount})}">…</span>
+           th:text="#{main.jira.ticket.list.truncated(${result.rows.size()},${result.totalCount})}">Die Anzeige ist begrenzt.</span>
       </div>
-      <div class="table-responsive">
-        <table class="table table-vcenter card-table">
-          <thead>
-            <tr>
-              <th th:text="#{main.jira.ticket.field.key}">Key</th>
-              <th th:text="#{main.jira.ticket.field.summary}">Titel</th>
-              <th class="d-none d-md-table-cell" th:text="#{main.jira.ticket.field.issueType}">Typ</th>
-              <th class="d-none d-md-table-cell" th:text="#{main.jira.ticket.field.parentKey}">Parent</th>
-              <th class="d-none d-xl-table-cell" th:text="#{main.jira.ticket.field.topLevelKey}">Top-Level</th>
-              <th class="d-none d-lg-table-cell" th:text="#{main.jira.ticket.field.scope}">Bereich</th>
-              <th th:text="#{main.jira.ticket.field.origin}">Herkunft</th>
-              <th class="d-none d-lg-table-cell" th:text="#{main.jira.ticket.field.updated}">Aktualisiert</th>
-              <th class="d-none d-xl-table-cell" th:text="#{main.jira.ticket.field.inSystemSince}">im System seit</th>
-              <th class="w-1"></th>
-              <th class="w-1"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr th:if="${result.rows.isEmpty()}">
-              <td colspan="11" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
-                Keine Einträge vorhanden
-              </td>
-            </tr>
-            <tr th:each="ticket : ${result.rows}">
-              <td class="text-nowrap font-monospace">
-                <a th:href="@{/jira/tickets/{id}(id=${ticket.id})}" th:text="${ticket.key}">ABC-1</a>
-              </td>
-              <td class="text-truncate" style="max-width: 26rem" th:text="${ticket.summary}" th:title="${ticket.summary}">Titel</td>
-              <td class="d-none d-md-table-cell" th:text="${ticket.issueType}">Story</td>
-              <td class="d-none d-md-table-cell text-nowrap font-monospace">
-                <a th:if="${ticket.parentKey != null}" th:href="@{/jira/tickets/{id}/related(id=${ticket.id},key=${ticket.parentKey})}"
-                   th:text="${ticket.parentKey}">ABC-0</a>
-              </td>
-              <td class="d-none d-xl-table-cell text-nowrap font-monospace">
-                <a th:if="${ticket.topLevelKey != null and ticket.topLevelKey != ticket.key}"
-                   th:href="@{/jira/tickets/{id}/related(id=${ticket.id},key=${ticket.topLevelKey})}"
-                   th:text="${ticket.topLevelKey}">ABC-0</a>
-              </td>
-              <td class="d-none d-lg-table-cell text-nowrap font-monospace small" th:text="${ticket.scopeSign}">ALPHA/01</td>
-              <td><span th:replace="~{:: originBadge(${ticket})}"></span></td>
-              <td class="d-none d-lg-table-cell text-nowrap"
-                  th:text="${ticket.updatedTs != null} ? ${#temporals.format(ticket.updatedTs, 'dd.MM.yyyy')}">01.01.2026</td>
-              <td class="d-none d-xl-table-cell text-nowrap"
-                  th:text="${ticket.inSystemSince != null} ? ${#temporals.format(ticket.inSystemSince, 'dd.MM.yyyy')}">01.01.2026</td>
-              <td>
-                <a th:if="${ticket.maintainedByHand}" class="btn btn-outline-primary btn-sm"
-                   th:href="@{/jira/tickets/{id}/edit(id=${ticket.id})}"
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-vcenter table-sm card-table" id="tickets">
+        <!--/* Sorted in the query, not in the browser: the page shows only the first rows (#1386). */-->
+        <thead>
+          <tr>
+            <th th:replace="~{:: sortHeader('KEY', #{main.jira.ticket.field.key}, '')}"></th>
+            <th th:text="#{main.jira.ticket.field.summary}">Titel</th>
+            <th th:replace="~{:: sortHeader('TYPE', #{main.jira.ticket.field.issueType}, 'd-none d-md-table-cell')}"></th>
+            <th class="d-none d-md-table-cell" th:text="#{main.jira.ticket.field.parentKey}">Parent</th>
+            <th class="d-none d-xl-table-cell" th:text="#{main.jira.ticket.field.topLevelKey}">Top-Level</th>
+            <th class="d-none d-lg-table-cell" th:text="#{main.jira.ticket.field.scope}">Bereich</th>
+            <th th:text="#{main.jira.ticket.field.origin}">Herkunft</th>
+            <th th:replace="~{:: sortHeader('UPDATED', #{main.jira.ticket.field.updated}, 'd-none d-lg-table-cell')}"></th>
+            <th th:replace="~{:: sortHeader('IN_SYSTEM', #{main.jira.ticket.field.inSystemSince}, 'd-none d-xl-table-cell')}"></th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${result.rows.isEmpty()}">
+            <td colspan="10" class="text-center text-secondary py-4" th:text="#{main.jira.ticket.table.empty}">Keine Tickets gefunden.</td>
+          </tr>
+          <tr th:each="ticket : ${result.rows}">
+            <td class="text-nowrap">
+              <a th:replace="~{:: detailLink(${ticket.id}, null, ${ticket.key}, 'fw-medium')}"></a>
+            </td>
+            <td class="ticket-title text-truncate" th:title="${ticket.summary}" th:text="${ticket.summary}">Titel</td>
+            <td class="d-none d-md-table-cell">
+              <span th:if="${ticket.issueType != null}" class="badge bg-blue-lt" th:text="${ticket.issueType}">Story</span>
+            </td>
+            <td class="d-none d-md-table-cell text-nowrap">
+              <th:block th:if="${ticket.parentKey != null}">
+                <a th:replace="~{:: detailLink(${ticket.id}, ${ticket.parentKey}, ${ticket.parentKey}, '')}"></a>
+              </th:block>
+            </td>
+            <td class="d-none d-xl-table-cell text-nowrap">
+              <th:block th:if="${ticket.topLevelKey != null and ticket.topLevelKey != ticket.key}">
+                <a th:replace="~{:: detailLink(${ticket.id}, ${ticket.topLevelKey}, ${ticket.topLevelKey}, '')}"></a>
+              </th:block>
+            </td>
+            <td class="d-none d-lg-table-cell text-nowrap small" th:text="${ticket.scopeSign}">ALPHA/01</td>
+            <td><span th:replace="~{:: originBadge(${ticket})}"></span></td>
+            <td class="d-none d-lg-table-cell text-nowrap"
+                th:text="${ticket.updatedTs != null} ? ${#temporals.format(ticket.updatedTs, 'dd.MM.yyyy')}">01.01.2026</td>
+            <td class="d-none d-xl-table-cell text-nowrap"
+                th:text="${ticket.inSystemSince != null} ? ${#temporals.format(ticket.inSystemSince, 'dd.MM.yyyy')}">01.01.2026</td>
+            <td class="text-nowrap">
+              <th:block th:if="${ticket.maintainedByHand}">
+                <a class="btn btn-outline-primary btn-sm" th:href="@{/jira/tickets/{id}/edit(id=${ticket.id})}"
                    th:title="#{main.button.label.edit.text}" th:aria-label="#{main.button.label.edit.text}">
                   <i class="icon ti ti-pencil m-0"></i>
                 </a>
-              </td>
-              <td>
-                <form th:if="${ticket.maintainedByHand}" th:action="@{/jira/tickets/{id}/delete(id=${ticket.id})}"
-                      method="post"
+                <form class="d-inline" th:action="@{/jira/tickets/{id}/delete(id=${ticket.id})}" method="post"
                       data-confirm
                       th:data-confirm-title="#{main.jira.ticket.delete.confirm.title}"
                       th:data-confirm-text="#{main.jira.ticket.delete.confirm.text}"
@@ -240,36 +251,130 @@
                     <i class="icon ti ti-trash m-0"></i>
                   </button>
                 </form>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card-footer text-secondary" th:if="${result.totalCount > 0}"
-           th:text="#{main.jira.ticket.list.count(${result.totalCount})}">12 Tickets</div>
+              </th:block>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+    <div class="card-footer text-secondary" th:if="${result.totalCount > 0}"
+         th:text="#{main.jira.ticket.list.count(${result.totalCount})}">12 Tickets</div>
+  </div>
+
+  <!--/* The import as a dialog (#1386). It lives in the results, so that it always carries the scope
+         the filter shows; the preview is swapped in when a file is chosen. */-->
+  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content" th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{main.jira.ticket.import.title}">Tickets importieren</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="customerorderId" th:value="${fJiraTicketCustomerorderId}"/>
+          <input type="hidden" name="suborderId" th:value="${fJiraTicketSuborderId}"/>
+          <label class="form-label" for="ticketImportFile" th:text="#{main.jira.ticket.import.file}">Datei</label>
+          <input class="form-control" type="file" id="ticketImportFile" name="file" required
+                 accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 th:hx-post="@{/jira/tickets/import/preview}"
+                 hx-encoding="multipart/form-data"
+                 hx-include="closest form"
+                 hx-target="#ticketImportPreview"
+                 hx-swap="outerHTML"
+                 hx-trigger="change"/>
+          <div class="form-text" th:text="#{main.jira.ticket.import.help}">CSV oder Excel (.xlsx) mit Kopfzeile.</div>
+          <div th:replace="~{:: importPreview}"></div>
+        </div>
+      </form>
+    </div>
+  </div>
 
   </th:block>
+</div>
 
-  <script th:inline="none">
-    // The type filter has no name of its own (#1386): its values travel as one comma-separated
-    // parameter, which UiState remembers like the other filters. A change filters at once.
-    (function () {
-      const form = document.getElementById('ticketFilterForm');
-      const types = document.getElementById('ticketTypeSelect');
-      const hidden = document.getElementById('fJiraTicketTypes');
-      if (!form || !types || !hidden) return;
-      const sync = () => { hidden.value = Array.from(types.selectedOptions).map(o => o.value).join(','); };
-      types.addEventListener('change', () => { sync(); form.requestSubmit(); });
-      form.addEventListener('submit', sync);
-    })();
-  </script>
+<!--/* The details of a ticket (#1386), loaded into the dialog when a key is clicked; a parent, a child
+       or an inherited value inside it loads that ticket in its place. */-->
+<div class="modal modal-blur fade" id="ticket-detail-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" id="ticket-detail-content">
+      <div class="modal-body text-center text-secondary py-5"><div class="spinner-border"></div></div>
+    </div>
+  </div>
+</div>
+
+<script th:inline="none">
+/*<![CDATA[*/
+(function () {
+  const form = document.getElementById('ticket-filter-form');
+  if (!form) return;
+  const hidden = id => document.getElementById(id);
+  const value = id => document.getElementById(id).value;
+
+  // Filled in the submit event, as in the booking list: it fires before the browser collects the form.
+  function fillHiddenFields() {
+    hidden('f-suborder').value = value('suborder-select');
+    hidden('f-keys').value = value('key-input');
+    hidden('f-children').value = document.getElementById('children-switch').checked;
+    hidden('f-title').value = value('title-input');
+    hidden('f-types').value = [...document.getElementById('type-select').selectedOptions].map(o => o.value).join(',');
+    hidden('f-limit').value = value('limit-select');
+  }
+  form.addEventListener('submit', fillHiddenFields);
+
+  // The suborders and the types belong to the order: a new order reloads the page instead of the results.
+  document.getElementById('order-select').addEventListener('change', () => {
+    fillHiddenFields();
+    hidden('f-order').value = value('order-select');
+    hidden('f-suborder').value = '';
+    hidden('f-types').value = '';
+    form.submit();
+  });
+  ['suborder-select', 'type-select', 'limit-select', 'children-switch']
+    .forEach(id => document.getElementById(id).addEventListener('change', () => form.requestSubmit()));
+
+  // Sorting: delegated, because the results are swapped on every change of the filter.
+  document.addEventListener('click', event => {
+    const sortLink = event.target.closest('#tickets thead [data-sort]');
+    if (sortLink) {
+      event.preventDefault();
+      hidden('f-sort').value = sortLink.dataset.sort;
+      form.requestSubmit();
+    }
+  });
+}());
+/*]]>*/
+</script>
 
 </main>
 
+<!--/* A sortable column header, as in the booking list. */-->
+<th th:fragment="sortHeader(column, label, cssClass)" th:class="${cssClass}">
+  <a href="#" class="text-reset text-decoration-none text-nowrap"
+     th:data-sort="${sort == column and !sortDescending} ? '-' + ${column} : ${column}">
+    <span th:text="${label}">Spalte</span>
+    <i th:if="${sort != column}" class="ti ti-arrows-sort opacity-50"></i>
+    <i th:if="${sort == column and !sortDescending}" class="ti ti-sort-ascending"></i>
+    <i th:if="${sort == column and sortDescending}" class="ti ti-sort-descending"></i>
+  </a>
+</th>
+
+<!--/* A key that opens the details of a ticket in the dialog — of the ticket itself, or with
+       {@code related} of the one that key names. Shared by the list and the dialog. */-->
+<a th:fragment="detailLink(ticketId, related, label, cssClass)" href="#" th:class="${cssClass}"
+   data-bs-toggle="modal" data-bs-target="#ticket-detail-modal"
+   th:hx-get="@{/jira/tickets/{id}/details(id=${ticketId},related=${related})}"
+   hx-target="#ticket-detail-content" hx-swap="innerHTML"
+   th:text="${label}">ABC-1</a>
+
+<!--/* The same inside the open dialog: it only swaps the content — a toggle would close the dialog. */-->
+<a th:fragment="detailSwap(ticketId, related, label, cssClass)" href="#" th:class="${cssClass}"
+   th:hx-get="@{/jira/tickets/{id}/details(id=${ticketId},related=${related})}"
+   hx-target="#ticket-detail-content" hx-swap="innerHTML"
+   th:text="${label}">ABC-1</a>
+
 <!--/*
   How a ticket came in (#1386): a replication maintains it — linked for managers, who alone may open
-  the replications — or it is maintained by hand. Shared by the list and the detail page.
+  the replications — or it is maintained by hand. Shared by the list and the dialog.
 */-->
 <span th:fragment="originBadge(ticket)">
   <span th:if="${ticket.maintainedByHand}" class="badge bg-secondary-lt" th:text="#{main.jira.ticket.origin.manual}">von Hand</span>
