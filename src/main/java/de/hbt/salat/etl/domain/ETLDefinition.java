@@ -1,13 +1,13 @@
 package de.hbt.salat.etl.domain;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -25,7 +25,7 @@ import de.hbt.salat.common.domain.AuditedEntity;
  *
  * <p>The definitions are maintained in the database by hand; the application has no way to write
  * them. Since #1207 a dependency is a row in {@code etl_definition_dependency} naming both
- * definitions by id — see {@code docs/etl-definitionen.md} for how to maintain them. The name is
+ * definitions by id; since #1350 the entity holds it as a reference to the other definition — see {@code docs/etl-definitionen.md} for how to maintain them. The name is
  * unique and what people and the REST interface address a definition by, but nothing refers to it
  * any more: renaming a definition changes neither the order of a run nor whether it runs.
  */
@@ -57,12 +57,18 @@ public class ETLDefinition extends AuditedEntity implements Serializable {
   private SqlStatements cleanup;
 
   /**
-   * The ids of the definitions this one depends on — they run before it (#1207). A database foreign
-   * key makes sure each of them exists.
+   * The definitions this one depends on — they run before it (#1207, #1350). A database foreign key
+   * makes sure each of them exists.
+   *
+   * <p>{@code LAZY} on purpose: the association points back at this entity, and {@code EAGER} would
+   * pull in the whole dependency graph, recursively, wherever a single definition is loaded — the
+   * selection list, the authorization check by name. The run needs the graph of all definitions and
+   * gets it in one query with a fetch join ({@code ETLDefinitionRepository.findAllWithDependencies}).
    */
-  @ElementCollection(fetch = FetchType.EAGER)
-  @CollectionTable(name = "etl_definition_dependency", joinColumns = @JoinColumn(name = "etl_definition_id"))
-  @Column(name = "depends_on_id")
-  private Set<Long> dependencyIds = new HashSet<>();
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name = "etl_definition_dependency",
+      joinColumns = @JoinColumn(name = "etl_definition_id"),
+      inverseJoinColumns = @JoinColumn(name = "depends_on_id"))
+  private Set<ETLDefinition> dependencies = new HashSet<>();
 
 }

@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
@@ -171,7 +172,7 @@ public class ETLService {
   /** Alle Definitionen nach id — sortiert, damit eine Reihenfolge nicht vom Zufall einer Hash-Map abhängt. */
   private Map<Long, ETLDefinition> definitionsById() {
     var byId = new TreeMap<Long, ETLDefinition>();
-    definitionRepo.findAll().forEach(definition -> byId.put(definition.getId(), definition));
+    definitionRepo.findAllWithDependencies().forEach(definition -> byId.put(definition.getId(), definition));
     return byId;
   }
 
@@ -182,7 +183,9 @@ public class ETLService {
   private static Map<Long, Set<Long>> dependencyGraph(Collection<ETLDefinition> definitions) {
     Map<Long, Set<Long>> graph = new TreeMap<>();
     for (ETLDefinition definition : definitions) {
-      graph.put(definition.getId(), definition.getDependencyIds());
+      graph.put(definition.getId(), definition.getDependencies().stream()
+          .map(ETLDefinition::getId)
+          .collect(Collectors.toSet()));
     }
     return graph;
   }

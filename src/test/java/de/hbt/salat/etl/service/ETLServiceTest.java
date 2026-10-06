@@ -248,7 +248,7 @@ public class ETLServiceTest {
   @Test
   void a_run_that_cannot_even_determine_its_order_is_recorded_as_failed() {
     var cyclic = definition("a", "a");
-    when(definitionRepo.findAll()).thenReturn(List.of(cyclic));
+    when(definitionRepo.findAllWithDependencies()).thenReturn(List.of(cyclic));
 
     assertThatThrownBy(() -> etlService.executeAll(ONE_MONTH, SCHEDULED))
         .isInstanceOf(IllegalStateException.class);
@@ -581,7 +581,7 @@ public class ETLServiceTest {
   void a_cycle_is_reported_to_the_requester_instead_of_ending_on_an_error_page() {
     var a = definition("a", "b");
     var b = definition("b", "a");
-    when(definitionRepo.findAll()).thenReturn(List.of(a, b));
+    when(definitionRepo.findAllWithDependencies()).thenReturn(List.of(a, b));
     when(definitionRepo.findByName("a")).thenReturn(Optional.of(a));
     when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
     when(authorization.isAuthorized(any(), any())).thenReturn(true);
@@ -720,7 +720,7 @@ public class ETLServiceTest {
         .toList();
   }
 
-  /** Die ids der Definitionen dieser Tests — Abhängigkeiten nennen sie über die id (#1207). */
+  /** Die ids der Definitionen dieser Tests — der Graph der Reihenfolge läuft über die id (#1207). */
   private static final Map<String, Long> IDS = Map.of(
       "base", 1L, "hours", 2L, "costs", 3L, "report", 4L, "a", 11L, "b", 12L);
 
@@ -741,16 +741,31 @@ public class ETLServiceTest {
     var report = definition("report", "hours", "costs");
     var all = List.of(base, costs, hours, report);
     lenient().when(definitionRepo.findAll()).thenReturn(all);
+    lenient().when(definitionRepo.findAllWithDependencies()).thenReturn(all);
     all.forEach(def ->
         lenient().when(definitionRepo.findByName(def.getName())).thenReturn(Optional.of(def)));
   }
 
-  private static ETLDefinition definition(String name, String... dependencies) {
+  /** Die Definitionen eines Tests nach Namen — eine Abhängigkeit ist dieselbe Entität (#1350). */
+  private final Map<String, ETLDefinition> definitions = new HashMap<>();
+
+  /**
+   * Die Definition {@code name}, abhängig von den genannten. Eine Abhängigkeit, die noch nicht
+   * angelegt ist, entsteht hier schon — so lässt sich auch ein Zyklus beschreiben.
+   */
+  private ETLDefinition definition(String name, String... dependencies) {
+    var definition = definitions.computeIfAbsent(name, ETLServiceTest::newDefinition);
+    Arrays.stream(dependencies)
+        .map(dependency -> definitions.computeIfAbsent(dependency, ETLServiceTest::newDefinition))
+        .forEach(definition.getDependencies()::add);
+    return definition;
+  }
+
+  private static ETLDefinition newDefinition(String name) {
     var definition = new ETLDefinition();
     ReflectionTestUtils.setField(definition, "id", IDS.get(name));
     definition.setName(name);
     definition.setDescription(name + " description");
-    definition.setDependencyIds(Set.copyOf(Arrays.stream(dependencies).map(IDS::get).toList()));
     return definition;
   }
 
@@ -764,6 +779,7 @@ public class ETLServiceTest {
     definition.setCleanup(new SqlStatements(List.of()));
     lenient().when(definitionRepo.findByName(name)).thenReturn(Optional.of(definition));
     lenient().when(definitionRepo.findAll()).thenReturn(List.of(definition));
+    lenient().when(definitionRepo.findAllWithDependencies()).thenReturn(List.of(definition));
     // Seit #1071 prüft jeder öffentliche Einstieg die Berechtigung selbst — executeETL tut es
     // nicht mehr. Vorher übersprang scheduled=true die Prüfung, und die Tests kamen ohne aus.
     lenient().when(authorization.isAuthorized(any(), any())).thenReturn(true);
