@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -117,8 +118,8 @@ public class WorkingDayRestEndpoint {
         var wd = ofNullable(workingdayService.getWorkingday(employeecontract.getId(), date)).orElseGet(Workingday::new);
         wd.setEmployeecontract(employeecontract);
         wd.setRefday(date);
-        wd.setStartTime(LocalTime.of(data.getStarthour(), data.getStartminute()));
-        wd.setBreakLength(Duration.ofHours(data.getBreakhours()).plusMinutes(data.getBreakminutes()));
+        wd.setStartTime(startTimeOf(data));
+        wd.setBreakLength(breakLengthOf(data));
         if(data.getType() != null) {
             wd.setType(data.getType());
         }
@@ -129,6 +130,23 @@ public class WorkingDayRestEndpoint {
         } catch(InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, e.toString());
         }
+    }
+
+    /** Plain numbers from the client: what is no time of day is its mistake, answered with 400. */
+    private static LocalTime startTimeOf(WorkingDayData data) {
+        try {
+            return LocalTime.of(data.getStarthour(), data.getStartminute());
+        } catch (DateTimeException e) {
+            throw new ResponseStatusException(BAD_REQUEST, "invalid start of the working day: " + e.getMessage());
+        }
+    }
+
+    /** As documented in {@link WorkingDayData}: no negative hours, minutes from 0 to 59. */
+    private static Duration breakLengthOf(WorkingDayData data) {
+        if (data.getBreakhours() < 0 || data.getBreakminutes() < 0 || data.getBreakminutes() > 59) {
+            throw new ResponseStatusException(BAD_REQUEST, "invalid break: hours must not be negative, minutes from 0 to 59");
+        }
+        return Duration.ofHours(data.getBreakhours()).plusMinutes(data.getBreakminutes());
     }
 
     @GetMapping(path = { "/.me", "/{employeeSign}" }, produces = APPLICATION_JSON_VALUE)
