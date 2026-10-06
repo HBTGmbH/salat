@@ -3,6 +3,7 @@ package de.hbt.salat.jira.service;
 import static org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes;
 import static org.springframework.web.context.request.RequestContextHolder.setRequestAttributes;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_ALREADY_RUNNING;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_SCOPE_BUSY;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.SCHEDULED;
 
 import java.util.List;
@@ -71,15 +72,20 @@ public class JiraReplicationScheduler {
     } catch (BusinessRuleException ex) {
       boolean stillRunning = ex.getMessages().stream()
           .anyMatch(m -> m.getErrorCode() == JI_REPLICATION_RUN_ALREADY_RUNNING);
-      if (!stillRunning) {
+      boolean scopeBusy = ex.getMessages().stream()
+          .anyMatch(m -> m.getErrorCode() == JI_REPLICATION_RUN_SCOPE_BUSY);
+      if (!stillRunning && !scopeBusy) {
         log.error("JIRA replication {} failed", cfg.getName(), ex);
         return;
       }
-      // A run started by hand is still going. The same replication twice would write the same
-      // tickets from two threads; the gap belongs where it is looked for, in the list.
-      log.warn("JIRA replication {} skipped, it is still running", cfg.getName());
-      runService.recordSkippedRun(cfg.getId(), trigger,
-          "Übersprungen: zum Startzeitpunkt lief diese Replikation noch.");
+      // A run started by hand is still going, of this replication or of another one of its scope
+      // (#1386). Either would write the same tickets from two threads; the gap belongs where it is
+      // looked for, in the list.
+      log.warn("JIRA replication {} skipped, {} is still running", cfg.getName(),
+          stillRunning ? "it" : "another replication of its scope");
+      runService.recordSkippedRun(cfg.getId(), trigger, stillRunning
+          ? "Übersprungen: zum Startzeitpunkt lief diese Replikation noch."
+          : "Übersprungen: zum Startzeitpunkt lief eine andere Replikation desselben Bereichs.");
     } catch (Exception ex) {
       // already written into the run's row by JiraReplicationService.continueRun
       log.error("JIRA replication {} failed", cfg.getName(), ex);

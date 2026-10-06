@@ -32,6 +32,7 @@ import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 /**
  * The run history of the replications and the lock it is at the same time (#1282).
@@ -42,6 +43,8 @@ class JiraReplicationRunServiceTest {
 
   private long ALPHA;
   private long BETA;
+  /** In the scope of ALPHA, the whole order; BETA is narrowed to a suborder of it. */
+  private long ALPHA_TOO;
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
@@ -72,16 +75,21 @@ class JiraReplicationRunServiceTest {
     when(authorizedUser.getLoginSign()).thenReturn("mgr");
     orderTree = new OrderTree(entityManager, "JIRA-RUN");
     customerorder = new TransactionTemplate(transactionManager).execute(status -> orderTree.customerorder("JIRA-RUN"));
-    ALPHA = replication("Alpha").getId();
-    BETA = replication("Beta").getId();
+    var suborder = new TransactionTemplate(transactionManager).execute(status ->
+        orderTree.suborder(customerorder, null, "01"));
+    ALPHA = replication("Alpha", null).getId();
+    BETA = replication("Beta", suborder).getId();
+    ALPHA_TOO = replication("Alpha auch", null).getId();
   }
 
   @AfterEach
   void tearDown() {
     runRepository.deleteByReplicationId(ALPHA);
     runRepository.deleteByReplicationId(BETA);
+    runRepository.deleteByReplicationId(ALPHA_TOO);
     configRepository.deleteById(ALPHA);
     configRepository.deleteById(BETA);
+    configRepository.deleteById(ALPHA_TOO);
     new TransactionTemplate(transactionManager).executeWithoutResult(status -> orderTree.remove(customerorder));
   }
 
@@ -97,12 +105,30 @@ class JiraReplicationRunServiceTest {
   }
 
   @Test
-  void another_replication_starts_meanwhile() {
-    // two replications write into different scopes and get along
+  void a_replication_of_another_scope_starts_meanwhile() {
+    // two replications write into different scopes and get along, even where one lies within the other
     runService.startRun(ALPHA, MANUAL);
 
     assertThat(runService.startRun(BETA, MANUAL).getStatus()).isEqualTo(RUNNING);
     assertThat(runService.getRunningReplicationIds()).contains(ALPHA, BETA);
+  }
+
+  /**
+   * Two replications of the same scope both derive the values of every ticket of the scope (#1386);
+   * running side by side, one of them would fail on the version of a ticket the other just wrote.
+   */
+  @Test
+  void a_replication_of_the_same_scope_waits_for_the_running_one() {
+    runService.startRun(ALPHA, MANUAL);
+
+    assertThatThrownBy(() -> runService.startRun(ALPHA_TOO, SCHEDULED))
+        .isInstanceOf(BusinessRuleException.class)
+        .satisfies(ex -> assertThat(((BusinessRuleException) ex).getMessages())
+            .singleElement()
+            .satisfies(message -> {
+              assertThat(message.getErrorCode()).isEqualTo(ErrorCode.JI_REPLICATION_RUN_SCOPE_BUSY);
+              assertThat(message.getArguments()).first().isEqualTo("Alpha");
+            }));
   }
 
   @Test
@@ -167,10 +193,11 @@ class JiraReplicationRunServiceTest {
     assertThatThrownBy(() -> runService.startRun(ALPHA, MANUAL)).isInstanceOf(AuthorizationException.class);
   }
 
-  private JiraReplicationConfig replication(String name) {
+  private JiraReplicationConfig replication(String name, Suborder suborder) {
     var config = new JiraReplicationConfig();
     config.setName(name);
     config.setCustomerorder(customerorder);
+    config.setSuborder(suborder);
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
     config.setUsername("user");

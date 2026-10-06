@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.service;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -63,6 +64,18 @@ class JiraReplicationSchedulerTest {
     scheduler.runScheduled();
 
     verify(runService).recordSkippedRun(eq(1L), eq(SCHEDULED), anyString());
+  }
+
+  /** A run started by hand of another replication of the same scope holds this one back (#1386). */
+  @Test
+  void a_replication_whose_scope_is_busy_is_recorded_as_skipped() {
+    when(replicationService.getEnabledReplications()).thenReturn(List.of(config(1L, "Alpha")));
+    when(replicationService.runRecorded(1L, SCHEDULED))
+        .thenThrow(new BusinessRuleException(ErrorCode.JI_REPLICATION_RUN_SCOPE_BUSY, "Beta", "01.10.2026 10:15:00"));
+
+    scheduler.runScheduled();
+
+    verify(runService).recordSkippedRun(eq(1L), eq(SCHEDULED), contains("desselben Bereichs"));
   }
 
   @Test
