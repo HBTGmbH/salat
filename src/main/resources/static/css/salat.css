@@ -1609,3 +1609,9 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   height: 3px;
   border-radius: 2px;
 }
+
+/* A ticket key never breaks (#1386): browsers would otherwise wrap ABC-123 after its hyphen, and a
+   key split over two lines reads as two. */
+.issue-key {
+  white-space: nowrap;
+}
