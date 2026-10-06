@@ -33,12 +33,13 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.ReportParameter;
+import de.hbt.salat.reporting.persistence.OwnerReferences;
 import de.hbt.salat.testutils.WebContextTestExecutionListener;
 
 @DataJpaTest
 @Import({ReportService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class,
     ReportAuthorization.class, UiState.class,
-    AuthUiStateKeyContributor.class})
+    AuthUiStateKeyContributor.class, OwnerReferences.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration
