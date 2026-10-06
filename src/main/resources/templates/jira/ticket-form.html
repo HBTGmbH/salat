@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='orders',
+        subSection='jira-tickets',
+        title=${isEdit} ? #{main.jira.ticket.form.title.edit} : #{main.jira.ticket.form.title.create},
+        pageTitle=${isEdit} ? #{main.jira.ticket.form.title.edit} : #{main.jira.ticket.form.title.create},
+        sectionTitle=#{main.general.mainmenu.orders.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/jira/tickets/store}" th:object="${ticketForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <!--/* The scope is chosen with the filter of the list and stays with the ticket (#1386). */-->
+      <input type="hidden" th:field="*{customerorderId}"/>
+      <input type="hidden" th:field="*{suborderId}"/>
+      <input type="hidden" th:field="*{scopeSign}"/>
+      <div class="mb-3">
+        <span class="form-label" th:text="#{main.jira.ticket.field.scope}">Bereich</span>
+        <div class="font-monospace" th:text="${scopeSign}">ALPHA/01</div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <salat:textInput th:field="*{key}" th:label="#{main.jira.ticket.field.key}" required="true" maxlength="64" />
+        </div>
+        <div class="col-md-8">
+          <salat:textInput th:field="*{summary}" th:label="#{main.jira.ticket.field.summary}" maxlength="1024" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <salat:textInput th:field="*{issueType}" th:label="#{main.jira.ticket.field.issueType}" maxlength="128" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{parentKey}" th:label="#{main.jira.ticket.field.parentKey}" maxlength="64"
+                           th:helpText="#{main.jira.ticket.field.parentKey.help}" />
+        </div>
+      </div>
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="#{main.button.label.save.text}" th:cancelHref="@{/jira/tickets}" />
+    </salat:buttons>
+  </salat:form>
+
+</main>
+</html>

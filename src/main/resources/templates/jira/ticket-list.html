@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='orders',
+        subSection='jira-tickets',
+        title=#{main.jira.ticket.list.title},
+        pageTitle=#{main.jira.ticket.list.title},
+        sectionTitle=#{main.general.mainmenu.orders.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${importErrors != null and not #lists.isEmpty(importErrors)}" class="alert alert-danger mb-3">
+    <p class="mb-1 fw-bold" th:text="#{main.jira.ticket.import.failed}">Die Datei wurde nicht importiert:</p>
+    <p th:each="e : ${importErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <!--/* No submit button: both selects filter on change, like the budget list (#952). */-->
+      <form method="get" th:action="@{/jira/tickets}" data-filter-form="jira-tickets">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label" for="fJiraTicketCustomerorderId"
+                   th:text="#{main.suborder.customerorder.text}">Auftrag</label>
+            <select class="form-select tomselect" id="fJiraTicketCustomerorderId" name="fJiraTicketCustomerorderId"
+                    onchange="this.form.fJiraTicketSuborderId.value = ''; this.form.requestSubmit()">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="co : ${customerorders}"
+                      th:value="${co.id}"
+                      th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+                      th:selected="${fJiraTicketCustomerorderId != null and fJiraTicketCustomerorderId == co.id}"></option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="fJiraTicketSuborderId"
+                   th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
+            <select class="form-select tomselect" id="fJiraTicketSuborderId" name="fJiraTicketSuborderId"
+                    th:disabled="${#lists.isEmpty(suborders)}" onchange="this.form.requestSubmit()">
+              <option value="" th:text="#{main.jira.ticket.filter.suborder.all}">--- Alle Unteraufträge ---</option>
+              <option th:each="so : ${suborders}"
+                      th:value="${so.id}"
+                      th:attr="data-subtext=${so.shortdescription}"
+                      th:text="${so.completeOrderSign} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
+                      th:selected="${fJiraTicketSuborderId != null and fJiraTicketSuborderId == so.id}"></option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div th:if="${fJiraTicketCustomerorderId == null}" class="alert alert-info"
+       th:text="#{main.jira.ticket.list.choose}">Bitte einen Auftrag wählen.</div>
+
+  <th:block th:if="${fJiraTicketCustomerorderId != null}">
+
+    <!--/* A replication covering the scope is the source of its tickets (#1386): creating or importing
+           by hand would only be overwritten, or taken over, on its next run. */-->
+    <div th:if="${not #lists.isEmpty(coveringReplications)}" class="alert alert-info mb-3"
+         th:text="#{main.jira.ticket.list.covered(${#strings.listJoin(coveringReplications, ', ')})}">
+      Die Tickets dieses Bereichs pflegt die Replikation …
+    </div>
+
+    <div th:if="${#lists.isEmpty(coveringReplications)}" class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-auto">
+            <a class="btn btn-success"
+               th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
+              <i class="icon ti ti-plus"></i>
+              <span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
+            </a>
+          </div>
+        </div>
+        <!--/* The import (#1386): choosing a file loads the preview, where every column gets its
+               reading — suggested by its heading, changed by the user. The import button sends the
+               file again with that assignment; nothing waits on the server in between. */-->
+        <form th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data" class="mt-3">
+          <input type="hidden" name="customerorderId" th:value="${fJiraTicketCustomerorderId}"/>
+          <input type="hidden" name="suborderId" th:value="${fJiraTicketSuborderId}"/>
+          <label class="form-label" for="ticketImportFile" th:text="#{main.jira.ticket.import.file}">Datei</label>
+          <input class="form-control" type="file" id="ticketImportFile" name="file" required
+                 accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 th:hx-post="@{/jira/tickets/import/preview}"
+                 hx-encoding="multipart/form-data"
+                 hx-include="closest form"
+                 hx-target="#ticketImportPreview"
+                 hx-swap="outerHTML"
+                 hx-trigger="change"/>
+          <div class="form-text" th:text="#{main.jira.ticket.import.help}">
+            CSV oder Excel (.xlsx) mit Kopfzeile.
+          </div>
+          <div th:replace="~{:: importPreview}"></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="table-responsive card">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.jira.ticket.field.key}">Schlüssel</th>
+            <th th:text="#{main.jira.ticket.field.summary}">Titel</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.jira.ticket.field.issueType}">Typ</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.jira.ticket.field.parentKey}">Eltern-Ticket</th>
+            <th class="d-none d-lg-table-cell" th:text="#{main.jira.ticket.field.scope}">Bereich</th>
+            <th th:text="#{main.jira.ticket.field.origin}">Herkunft</th>
+            <th class="w-1"></th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(tickets)}">
+            <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+              Keine Einträge vorhanden
+            </td>
+          </tr>
+          <tr th:each="ticket : ${tickets}">
+            <td class="text-nowrap font-monospace" th:text="${ticket.key}">ABC-1</td>
+            <td class="text-break" th:text="${ticket.summary}">Titel</td>
+            <td class="d-none d-md-table-cell" th:text="${ticket.issueType}">Story</td>
+            <td class="d-none d-md-table-cell text-nowrap font-monospace" th:text="${ticket.parentKey}">ABC-0</td>
+            <td class="d-none d-lg-table-cell text-nowrap font-monospace small" th:text="${ticket.scopeSign}">ALPHA/01</td>
+            <td th:text="${ticket.maintainedByHand} ? #{main.jira.ticket.origin.manual}
+                                                   : #{main.jira.ticket.origin.replicated(${ticket.replicationName})}">
+              manuell
+            </td>
+            <td>
+              <a th:if="${ticket.maintainedByHand}" class="btn btn-outline-primary btn-sm"
+                 th:href="@{/jira/tickets/{id}/edit(id=${ticket.id})}"
+                 th:title="#{main.button.label.edit.text}" th:aria-label="#{main.button.label.edit.text}">
+                <i class="icon ti ti-pencil m-0"></i>
+              </a>
+            </td>
+            <td>
+              <form th:if="${ticket.maintainedByHand}" th:action="@{/jira/tickets/{id}/delete(id=${ticket.id})}"
+                    method="post"
+                    data-confirm
+                    th:data-confirm-title="#{main.jira.ticket.delete.confirm.title}"
+                    th:data-confirm-text="#{main.jira.ticket.delete.confirm.text}"
+                    th:data-confirm-detail="${ticket.key}"
+                    th:data-confirm-detail-secondary="${ticket.scopeSign}"
+                    th:data-confirm-label="#{main.general.button.delete.text}"
+                    data-confirm-variant="danger">
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        th:title="#{main.button.label.delete.text}" th:aria-label="#{main.button.label.delete.text}">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </th:block>
+
+</main>
+<!--/*
+  The preview of a ticket file (#1386), swapped in when a file is chosen. One row per column of the
+  file: its heading, the first values, and how it is read. The fields travel by position, because a
+  JIRA export repeats headings.
+*/-->
+<div th:fragment="importPreview" id="ticketImportPreview" class="mt-3">
+  <div th:if="${previewErrors != null}" class="alert alert-danger mb-0">
+    <p th:each="e : ${previewErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+  <th:block th:if="${preview != null}">
+    <p class="text-secondary" th:text="#{main.jira.ticket.import.preview.rows(${preview.rowCount})}">12 Zeilen</p>
+    <div class="table-responsive">
+      <table class="table table-vcenter table-sm">
+        <thead>
+          <tr>
+            <th th:text="#{main.jira.ticket.import.preview.heading}">Spalte</th>
+            <th th:text="#{main.jira.ticket.import.preview.values}">Erste Werte</th>
+            <th th:text="#{main.jira.ticket.import.preview.target}">Lesen als</th>
+            <th th:text="#{main.jira.ticket.import.preview.fieldname}">Feldname</th>
+            <th th:text="#{main.jira.ticket.import.preview.inherited}">vererben</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="heading, it : ${preview.headings}">
+            <td class="text-nowrap fw-bold" th:text="${heading}">Issue key</td>
+            <td class="small text-secondary text-break"
+                th:text="${#strings.listJoin(preview.sampleRows.![#this[__${it.index}__]].?[#this != null], ' · ')}">ABC-1 · ABC-2</td>
+            <td>
+              <select class="form-select form-select-sm" th:name="'columns[' + ${it.index} + '].target'"
+                      th:aria-label="#{main.jira.ticket.import.preview.target} + ' ' + ${heading}">
+                <option th:each="target : ${importTargets}" th:value="${target.name()}" th:text="#{${target.label}}"
+                        th:selected="${importForm.columns[__${it.index}__].target == target}">Key</option>
+              </select>
+            </td>
+            <td>
+              <input class="form-control form-control-sm" type="text" maxlength="255"
+                     th:name="'columns[' + ${it.index} + '].fieldName'"
+                     th:value="${importForm.columns[__${it.index}__].fieldName}"
+                     th:aria-label="#{main.jira.ticket.import.preview.fieldname} + ' ' + ${heading}"/>
+            </td>
+            <td>
+              <input class="form-check-input" type="checkbox" value="true"
+                     th:name="'columns[' + ${it.index} + '].inherited'"
+                     th:checked="${importForm.columns[__${it.index}__].inherited}"
+                     th:aria-label="#{main.jira.ticket.import.preview.inherited} + ' ' + ${heading}"/>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="form-text mb-2" th:text="#{main.jira.ticket.import.preview.help}">
+      Feldname und vererben gelten nur für Zusatzfelder.
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <i class="icon ti ti-file-import"></i>
+      <span th:text="#{main.jira.ticket.button.import}">Importieren</span>
+    </button>
+  </th:block>
+</div>
+
+</html>

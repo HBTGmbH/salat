@@ -332,6 +332,14 @@
                      th:text="#{main.general.mainmenu.suborders.text}">
                     Unteraufträge
                   </a>
+                  <!--/* Managers and order responsibles (#1386): the tickets of an order, maintained by
+                         hand where no replication covers it. */-->
+                  <a class="dropdown-item" th:href="@{/jira/tickets}"
+                     th:if="${@jiraTicketMenuViewHelper.isTicketPageAvailable()}"
+                     th:classappend="${subSection == 'jira-tickets'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.jiratickets.text}">
+                    Tickets
+                  </a>
                   <a class="dropdown-item" th:href="@{/orders/employeeorders}"
                      th:classappend="${subSection == 'employeeorders'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.employeeorders.text}">

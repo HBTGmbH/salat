@@ -231,8 +231,10 @@ public class JiraReplicationService {
           cfg.getName(), failed, scopeSign);
       return;
     }
+    // A ticket without a JIRA id was maintained by hand (#1386): JIRA never sends it, so not seeing
+    // it says nothing. It stays until somebody deletes it.
     var unseen = tickets.stream()
-        .filter(ticket -> !seenJiraIds.contains(ticket.getJiraId()))
+        .filter(ticket -> ticket.getJiraId() != null && !seenJiraIds.contains(ticket.getJiraId()))
         .toList();
     if (!unseen.isEmpty()) {
       ticketRepo.deleteAll(unseen);
@@ -409,13 +411,19 @@ public class JiraReplicationService {
 
   private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
                                   JiraIssue issue) {
+    // A ticket maintained by hand under the same key is taken over (#1386): the replication that now
+    // covers the scope fills in its JIRA id and keeps it from here on.
     var existing = ticketRepo.findInScopeByJiraId(cfg.getCustomerorderId(), cfg.getSuborderId(), jiraId)
+        .or(() -> ticketRepo.findManualInScopeByKey(cfg.getCustomerorderId(), cfg.getSuborderId(), issue.getKey()))
         .orElse(null);
     var fields = issue.getFields();
     var updatedTs = toDateTime(getString(fields, "updated"));
 
-    // Global baseline filter per requirement
-    if (existing != null && Objects.equals(existing.getFieldConfigHash(), fieldConfig.hash())) {
+    // Global baseline filter per requirement. A ticket this replication does not maintain yet — one
+    // taken over, or left behind by a deleted replication — is written even when JIRA reports it as
+    // unchanged, or it would never point at the replication that keeps it now.
+    if (existing != null && isMaintainedBy(existing, cfg)
+        && Objects.equals(existing.getFieldConfigHash(), fieldConfig.hash())) {
       // Only while the ticket was written with the field list that is configured now. After a change
       // to that list JIRA still reports the ticket as unchanged - its `updated` has not moved - so
       // this is the point where the new fields would never reach an already replicated ticket.
@@ -428,6 +436,7 @@ public class JiraReplicationService {
     var t = existing != null ? existing : new JiraTicket();
     t.setCustomerorder(cfg.getCustomerorder());
     t.setSuborder(cfg.getSuborder());
+    t.setReplication(cfg);
     t.setJiraId(jiraId);
     t.setKey(issue.getKey());
     t.setSummary(safe(getString(fields, "summary"), 1024));
@@ -444,6 +453,10 @@ public class JiraReplicationService {
 
     ticketRepo.save(t);
     return true;
+  }
+
+  private static boolean isMaintainedBy(JiraTicket ticket, JiraReplicationConfig cfg) {
+    return ticket.getReplication() != null && Objects.equals(ticket.getReplication().getId(), cfg.getId());
   }
 
   /**

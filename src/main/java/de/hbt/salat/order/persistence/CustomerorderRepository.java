@@ -23,6 +23,19 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   List<Customerorder> findAllByResponsibleHbt(long responsibleHbtId);
 
   /**
+   * The orders a login is responsible for, through the employees it belongs to (#1386), as options.
+   * Hidden ones are left out: a hidden order grants nothing.
+   */
+  @Query("""
+      select distinct new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,
+          c.description, cu.shortname, cu.name, c.hide)
+      from Customerorder c join c.responsibleHbt e left join c.customer cu
+      where e.salatUser.id = :salatUserId and (c.hide is null or c.hide = false)
+      order by c.sign
+      """)
+  List<CustomerorderOption> findResponsibleOptionsBySalatUserId(long salatUserId);
+
+  /**
    * The ids of every order this employee is responsible for — in either of the two roles an order knows (#1092).
    * {@code responsibleHbt} is a list, {@code respEmpHbtContract} a single employee, and whoever reads a booking
    * because of a responsibility is entitled through both alike.

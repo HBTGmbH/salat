@@ -19,7 +19,8 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 
 /**
- * A ticket replicated from JIRA, kept per scope — the pair of customer order and suborder.
+ * A ticket kept per scope — the pair of customer order and suborder: replicated from JIRA, or
+ * maintained by hand where no replication covers the scope (#1386).
  *
  * <p>Issue key and JIRA id are unique within a scope, and the run looks tickets up by scope and
  * {@code updated_ts}. Those keys live in the changelog only (changeset 150, #1372): a {@code null}
@@ -55,7 +56,17 @@ public class JiraTicket extends AuditedEntity {
   @JoinColumn(name = "suborder_id", foreignKey = @ForeignKey(name = "fk_jira_ticket_suborder"))
   private Suborder suborder;
 
-  @Column(name = "jira_id", nullable = false)
+  /**
+   * The replication that maintains this ticket (#1386); {@code null} for a ticket maintained by hand,
+   * and for one whose replication was deleted — the ticket outlives it (#1025), and so does its
+   * {@link #jiraId}. A later replication of the same scope takes such a ticket over by its key.
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "replication_id", foreignKey = @ForeignKey(name = "fk_jira_ticket_replication"))
+  private JiraReplicationConfig replication;
+
+  /** The id JIRA gave the issue; {@code null} for a ticket maintained by hand (#1386). */
+  @Column(name = "jira_id")
   private Long jiraId;
 
   @Column(name = "issue_key", nullable = false)
@@ -110,6 +121,11 @@ public class JiraTicket extends AuditedEntity {
    */
   @Column(name = "field_config_hash", length = 64)
   private String fieldConfigHash;
+
+  /** Whether a replication maintains this ticket; only one that none maintains may be changed by hand. */
+  public boolean isReplicated() {
+    return replication != null;
+  }
 
   /** The id of {@link #customerorder}, read off the reference without loading the order. */
   public Long getCustomerorderId() {

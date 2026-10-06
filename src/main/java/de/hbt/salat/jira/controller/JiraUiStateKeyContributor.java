@@ -11,9 +11,13 @@ import de.hbt.salat.common.web.UiStateKeyContributor;
 public class JiraUiStateKeyContributor implements UiStateKeyContributor {
 
   public static final UiStateKey JIRA_RUN_FAILED_ONLY = new UiStateKey("jira.Run.FailedOnly");
+  public static final UiStateKey JIRA_TICKET_CUSTOMERORDER = new UiStateKey("jira.Ticket.CustomerorderId");
+  public static final UiStateKey JIRA_TICKET_SUBORDER = new UiStateKey("jira.Ticket.SuborderId");
 
   @Override
   public Map<String, UiStateKey> getParamToKeyMappings() {
-    return of("fJiraRunFailedOnly", JIRA_RUN_FAILED_ONLY);
+    return of("fJiraRunFailedOnly", JIRA_RUN_FAILED_ONLY,
+        "fJiraTicketCustomerorderId", JIRA_TICKET_CUSTOMERORDER,
+        "fJiraTicketSuborderId", JIRA_TICKET_SUBORDER);
   }
 }
