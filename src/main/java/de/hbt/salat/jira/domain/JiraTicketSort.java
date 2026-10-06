@@ -1,15 +1,19 @@
 package de.hbt.salat.jira.domain;
 
 import lombok.Getter;
+import de.hbt.salat.common.domain.AuditedEntity_;
 
-/** The columns the ticket page sorts by (#1386), with the attribute of {@code JiraTicket} behind each. */
+/**
+ * The columns the ticket page sorts by (#1386), with the attribute of {@code JiraTicket} behind each —
+ * named by the metamodel, so that a renamed attribute fails the build rather than the query.
+ */
 @Getter
 public enum JiraTicketSort {
 
-  KEY("key"),
-  TYPE("issueType"),
-  UPDATED("updatedTs"),
-  IN_SYSTEM("created");
+  KEY(JiraTicket_.KEY),
+  TYPE(JiraTicket_.ISSUE_TYPE),
+  UPDATED(JiraTicket_.UPDATED_TS),
+  IN_SYSTEM(AuditedEntity_.CREATED);
 
   private final String attribute;
 

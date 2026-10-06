@@ -52,13 +52,20 @@ public enum JiraImportTarget {
    */
   public static JiraImportTarget suggestedFor(String heading) {
     var normalised = heading == null ? "" : heading.trim().toLowerCase(Locale.ROOT);
-    if ((normalised.contains("parent") || normalised.contains("eltern"))
-        && !normalised.contains("summary") && !normalised.contains("titel") && !normalised.contains("zusammenfassung")) {
+    if (namesParent(normalised) && !namesTitle(normalised)) {
       return PARENT;
     }
     for (var target : values()) {
       if (target.headings.contains(normalised)) return target;
     }
     return IGNORE;
+  }
+
+  private static boolean namesParent(String heading) {
+    return heading.contains("parent") || heading.contains("eltern") || heading.contains("übergeordnet");
+  }
+
+  private static boolean namesTitle(String heading) {
+    return heading.contains("summary") || heading.contains("titel") || heading.contains("zusammenfassung");
   }
 }

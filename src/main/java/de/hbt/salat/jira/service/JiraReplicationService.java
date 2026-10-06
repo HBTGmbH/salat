@@ -401,8 +401,8 @@ public class JiraReplicationService {
       }
       // By hand, left behind, or a stale one of its own: the same issue under the key JIRA gives it
       // now. It gives way before the rename, which would otherwise hit the unique key on every run.
-      log.info("Replication {} replaces ticket {} (id {}) by the renamed issue {}", cfg.getName(),
-          keyHolder.getKey(), keyHolder.getId(), existing.getKey());
+      log.info("Replication {} replaces ticket {} (id {}) by its issue {}, renamed to that key in JIRA",
+          cfg.getName(), keyHolder.getKey(), keyHolder.getId(), existing.getKey());
       ticketRepo.delete(keyHolder);
       ticketRepo.flush();
     }
@@ -412,15 +412,13 @@ public class JiraReplicationService {
     // Global baseline filter per requirement. A ticket this replication does not maintain yet — one
     // taken over, or left behind by a deleted replication — is written even when JIRA reports it as
     // unchanged, or it would never point at the replication that keeps it now.
-    if (existing != null && isMaintainedBy(existing, cfg)
-        && Objects.equals(existing.getFieldConfigHash(), fieldConfig.hash())) {
-      // Only while the ticket was written with the field list that is configured now. After a change
-      // to that list JIRA still reports the ticket as unchanged - its `updated` has not moved - so
-      // this is the point where the new fields would never reach an already replicated ticket.
-      if (existing.getUpdatedTs() != null && (updatedTs == null || !updatedTs.isAfter(existing.getUpdatedTs()))) {
-        // no change
-        return Upsert.UNCHANGED;
-      }
+    // Only while the ticket was written with the field list that is configured now. After a change
+    // to that list JIRA still reports the ticket as unchanged - its `updated` has not moved - so
+    // this is the point where the new fields would never reach an already replicated ticket.
+    boolean ownWithCurrentFields = existing != null && isMaintainedBy(existing, cfg)
+        && Objects.equals(existing.getFieldConfigHash(), fieldConfig.hash());
+    if (ownWithCurrentFields && notUpdatedSince(existing, updatedTs)) {
+      return Upsert.UNCHANGED;
     }
 
     var t = existing != null ? existing : new JiraTicket();
@@ -443,6 +441,11 @@ public class JiraReplicationService {
 
     ticketRepo.save(t);
     return Upsert.WRITTEN;
+  }
+
+  /** Whether JIRA reports nothing newer than what the ticket was last written with. */
+  private static boolean notUpdatedSince(JiraTicket ticket, LocalDateTime updatedTs) {
+    return ticket.getUpdatedTs() != null && (updatedTs == null || !updatedTs.isAfter(ticket.getUpdatedTs()));
   }
 
   private static boolean maintainedByAnotherReplication(JiraTicket ticket, JiraReplicationConfig cfg) {

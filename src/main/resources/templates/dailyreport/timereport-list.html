@@ -394,13 +394,13 @@
              das Formular ab. */-->
       <thead>
         <tr>
-          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('DATE', #{main.timereportlist.column.date}, '')}"></th>
-          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('EMPLOYEE', #{main.timereportlist.column.employee}, '')}"></th>
-          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('ORDER', #{main.timereportlist.column.order}, '')}"></th>
-          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('SUBORDER', #{main.timereportlist.column.suborder}, '')}"></th>
+          <th th:replace="~{fragments/sort-header :: sortHeader('DATE', #{main.timereportlist.column.date}, '')}"></th>
+          <th th:replace="~{fragments/sort-header :: sortHeader('EMPLOYEE', #{main.timereportlist.column.employee}, '')}"></th>
+          <th th:replace="~{fragments/sort-header :: sortHeader('ORDER', #{main.timereportlist.column.order}, '')}"></th>
+          <th th:replace="~{fragments/sort-header :: sortHeader('SUBORDER', #{main.timereportlist.column.suborder}, '')}"></th>
           <th th:text="#{main.timereportlist.column.task}">Tätigkeit</th>
           <th class="d-none d-xl-table-cell" th:text="#{main.timereportlist.column.ticket}">Ticket</th>
-          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('DURATION', #{main.timereportlist.column.duration}, 'text-end')}"></th>
+          <th th:replace="~{fragments/sort-header :: sortHeader('DURATION', #{main.timereportlist.column.duration}, 'text-end')}"></th>
           <th class="text-center" th:text="#{main.timereportlist.column.billable.short}">Fakt.</th>
           <th class="text-center d-none d-lg-table-cell" th:text="#{main.timereportlist.column.status}">Status</th>
           <th class="w-1 d-print-none"></th>

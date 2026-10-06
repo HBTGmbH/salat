@@ -1,12 +1,15 @@
 package de.hbt.salat.jira.controller;
 
-import static java.util.Comparator.comparing;
+import static de.hbt.salat.jira.controller.JiraUiStateKeyContributor.JIRA_TICKET_CUSTOMERORDER;
+import static de.hbt.salat.jira.controller.JiraUiStateKeyContributor.JIRA_TICKET_KEYS;
+import static de.hbt.salat.jira.controller.JiraUiStateKeyContributor.JIRA_TICKET_SUBORDER;
+import static de.hbt.salat.jira.controller.JiraUiStateKeyContributor.JIRA_TICKET_TITLE;
+import static de.hbt.salat.jira.controller.JiraUiStateKeyContributor.JIRA_TICKET_TYPES;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -24,26 +27,25 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.SalatProperties;
-import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
-import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.web.UiStateKey;
+import de.hbt.salat.jira.auth.JiraTicketAuthorization;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
 import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.domain.JiraTicketSort;
-import de.hbt.salat.jira.service.JiraTicketAuthorization;
 import de.hbt.salat.jira.service.JiraTicketMaintenanceService;
-import de.hbt.salat.order.domain.CustomerorderOption;
-import de.hbt.salat.order.domain.SuborderReadModel;
-import de.hbt.salat.order.service.SuborderService;
 
 /**
  * The ticket page (#1386): the tickets of a customer order, replicated and maintained by hand, and
- * the maintenance of the latter where no replication covers the scope — one by one or by CSV import.
+ * the maintenance of the latter — one by one or by import from a file, next to a replication too.
  *
- * <p>Managers and the people responsible for an order ({@link JiraTicketAuthorization}); the service
- * checks every order again, the class-level guard only keeps restricted users out.
+ * <p>Managers and the people responsible for an order ({@link JiraTicketAuthorization}). That is no
+ * role, so the guards here — on the class and on every writing method — only keep restricted users
+ * out; the service checks the order of every call.
  */
 @Controller
 @RequestMapping("/jira/tickets")
@@ -55,9 +57,13 @@ public class JiraTicketController {
   private final JiraTicketAuthorization authorization;
   private final AuthorizedUser authorizedUser;
   private final SalatProperties salatProperties;
-  private final SuborderService suborderService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
+  private final FilterHintViewHelper filterHintViewHelper;
   private final MessageSourceAccessor messages;
+
+  /** The filters that can leave out a ticket just saved — not the limit, the sort or the switch. */
+  private static final UiStateKey[] TICKET_FILTERS = {JIRA_TICKET_CUSTOMERORDER, JIRA_TICKET_SUBORDER,
+      JIRA_TICKET_KEYS, JIRA_TICKET_TITLE, JIRA_TICKET_TYPES};
 
   /** The limit steps of the list, as in the booking list; 0 is "all", capped like there (#1153). */
   static final List<Integer> LIMITS = List.of(50, 100, 500, 1000, 0);
@@ -81,7 +87,7 @@ public class JiraTicketController {
                      Model model, HttpServletRequest request) {
     var customerorderId = fJiraTicketCustomerorderId != null && authorization.mayMaintain(fJiraTicketCustomerorderId)
         ? fJiraTicketCustomerorderId : null;
-    var suborders = suborderOptions(customerorderId, fJiraTicketSuborderId);
+    var suborders = maintenanceService.getFilterSuborders(customerorderId, fJiraTicketSuborderId);
     var suborderId = suborders.stream().anyMatch(so -> Objects.equals(so.id(), fJiraTicketSuborderId))
         ? fJiraTicketSuborderId : null;
     var keys = csv(fJiraTicketKeys);
@@ -93,10 +99,14 @@ public class JiraTicketController {
     var sort = JiraTicketSort.parse(fJiraTicketSort);
     boolean descending = JiraTicketSort.descending(fJiraTicketSort);
 
-    model.addAttribute("customerorders", ticketOrders(customerorderId));
+    var customerorders = maintenanceService.getFilterCustomerorders(customerorderId);
+    model.addAttribute("customerorders", customerorders);
+    model.addAttribute("selectedOrder", customerorders.stream()
+        .filter(order -> Objects.equals(order.id(), customerorderId)).findFirst().orElse(null));
     // The import chooses its own scope among every order the user may maintain, tickets or not (#1386).
-    model.addAttribute("importOrders", authorization.selectableCustomerorders(customerorderId));
-    model.addAttribute("importSuborders", visibleSuborders(customerorderId, suborderId));
+    var importOrders = maintenanceService.getScopeCustomerorders(customerorderId);
+    model.addAttribute("importOrders", importOrders);
+    model.addAttribute("importSuborders", maintenanceService.getScopeSuborders(customerorderId, suborderId));
     model.addAttribute("suborders", suborders);
     model.addAttribute("fJiraTicketCustomerorderId", customerorderId);
     model.addAttribute("fJiraTicketSuborderId", suborderId);
@@ -141,17 +151,22 @@ public class JiraTicketController {
     return "jira/ticket-detail :: detailBody";
   }
 
-  /** The scope of the filter is a start; the form chooses its own (#1386). */
+  /**
+   * The form starts with the scope of the filter, as remembered (ADR-0023), and chooses its own
+   * (#1386). A link that wants another start names the form fields instead.
+   */
   @GetMapping("/create")
   public String create(@RequestParam(required = false) Long customerorderId,
-                       @RequestParam(required = false) Long suborderId, Model model) {
-    if (customerorderId != null && !authorization.mayMaintain(customerorderId)) {
-      customerorderId = null;
-      suborderId = null;
-    }
+                       @RequestParam(required = false) Long suborderId,
+                       @RequestParam(required = false) Long fJiraTicketCustomerorderId,
+                       @RequestParam(required = false) Long fJiraTicketSuborderId, Model model) {
+    var orderId = customerorderId != null ? customerorderId : fJiraTicketCustomerorderId;
+    var startSuborderId = customerorderId != null ? suborderId : fJiraTicketSuborderId;
     var form = new JiraTicketForm();
-    form.setCustomerorderId(customerorderId);
-    form.setSuborderId(suborderId);
+    if (orderId != null && authorization.mayMaintain(orderId)) {
+      form.setCustomerorderId(orderId);
+      form.setSuborderId(startSuborderId);
+    }
     return showForm(form, model);
   }
 
@@ -160,29 +175,35 @@ public class JiraTicketController {
     return showForm(JiraTicketForm.of(maintenanceService.getTicket(id)), model);
   }
 
+  /**
+   * The filter stays as it is (ADR-0023); where it may hide the ticket just saved — the form chooses
+   * its scope itself — the message says so. A refused order is no finding for the form: showing it
+   * again would show that order's suborders.
+   */
   @PostMapping("/store")
+  @Authorized(requireUnrestricted = true)
   public String store(@ModelAttribute("ticketForm") JiraTicketForm form, Model model,
                       RedirectAttributes redirectAttributes) {
     var data = new JiraManualTicketData(form.getKey(), form.getSummary(), form.getIssueType(), form.getParentKey());
     try {
       if (form.isNew()) {
-        if (form.getCustomerorderId() == null) {
-          throw new InvalidDataException(ErrorCode.JI_TICKET_SCOPE_REQUIRED);
-        }
         maintenanceService.create(form.getCustomerorderId(), form.getSuborderId(), data);
-        redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.jira.ticket.message.created"));
       } else {
         maintenanceService.update(form.getId(), data);
-        redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.jira.ticket.message.updated"));
       }
+    } catch (AuthorizationException ex) {
+      throw ex;
     } catch (ErrorCodeException ex) {
       model.addAttribute("formErrors", toMessages(ex));
       return showForm(form, model);
     }
+    filterHintViewHelper.addSuccess(redirectAttributes, messages.getMessage(form.isNew()
+        ? "main.jira.ticket.message.created" : "main.jira.ticket.message.updated"), TICKET_FILTERS);
     return "redirect:/jira/tickets";
   }
 
   @PostMapping("/{id}/delete")
+  @Authorized(requireUnrestricted = true)
   public String delete(@PathVariable long id, RedirectAttributes redirectAttributes) {
     try {
       maintenanceService.delete(id);
@@ -196,15 +217,16 @@ public class JiraTicketController {
   /** The suborders the import dialog and the form of a new ticket offer once their order changes (#1386). */
   @GetMapping("/scope/suborders")
   public String scopeSuborders(@RequestParam(required = false) Long customerorderId, Model model) {
-    if (customerorderId != null) authorization.checkMayMaintain(customerorderId);
-    model.addAttribute("importSuborders", visibleSuborders(customerorderId, null));
+    model.addAttribute("importSuborders", maintenanceService.getScopeSuborders(customerorderId, null));
+    model.addAttribute("importOrder", maintenanceService.getScopeCustomerorders(customerorderId).stream()
+        .filter(order -> Objects.equals(order.id(), customerorderId)).findFirst().orElse(null));
     return "jira/ticket-list :: scopeSuborderSwap";
   }
 
   /**
-   * The preview of a ticket file (#1386): its headings and first rows, each column with the reading
-   * its heading suggests, for the user to confirm or change. Nothing is kept — the import sends the
-   * file again together with the assignment.
+   * The preview of a ticket file (#1386): its headings and a few different values per column, each
+   * column with the reading its heading suggests, for the user to confirm or change. Nothing is kept —
+   * the import sends the file again together with the assignment.
    */
   @PostMapping(path = "/import/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public String importPreview(@ModelAttribute("importForm") JiraTicketImportForm form, Model model) throws IOException {
@@ -221,26 +243,26 @@ public class JiraTicketController {
     } catch (ErrorCodeException ex) {
       model.addAttribute("previewErrors", toMessages(ex));
     }
-    return "jira/ticket-list :: importPreview";
+    return "jira/ticket-list :: importPreviewAnswer";
   }
 
   /**
-   * Imports into the scope the filter shows, reading the columns as assigned in the preview. The
+   * Imports into the scope the dialog chose, reading the columns as assigned in the preview. The
    * findings of a refused file can be one per row, so they come back as a list above the table
-   * rather than as a toast.
+   * rather than as a toast. The filter stays; where it may hide what came in, the message says so.
    */
   @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Authorized(requireUnrestricted = true)
   public String importTickets(@ModelAttribute("importForm") JiraTicketImportForm form,
                               RedirectAttributes redirectAttributes) throws IOException {
-    if (form.getCustomerorderId() == null) {
-      return "redirect:/jira/tickets";
-    }
     try {
       int count = maintenanceService.importTickets(form.getCustomerorderId(), form.getSuborderId(),
           form.getFile() == null ? null : form.getFile().getOriginalFilename(),
           form.getFile() == null ? null : form.getFile().getBytes(), form.readMapping());
-      redirectAttributes.addFlashAttribute("toastSuccess",
-          messages.getMessage("main.jira.ticket.message.imported", new Object[] {count}));
+      filterHintViewHelper.addSuccess(redirectAttributes,
+          messages.getMessage("main.jira.ticket.message.imported", new Object[] {count}), TICKET_FILTERS);
+    } catch (AuthorizationException ex) {
+      throw ex;
     } catch (ErrorCodeException ex) {
       redirectAttributes.addFlashAttribute("importErrors", toMessages(ex));
     }
@@ -250,58 +272,14 @@ public class JiraTicketController {
   private String showForm(JiraTicketForm form, Model model) {
     model.addAttribute("ticketForm", form);
     model.addAttribute("isEdit", !form.isNew());
-    model.addAttribute("scopeOrders", authorization.selectableCustomerorders(form.getCustomerorderId()));
-    model.addAttribute("scopeSuborders", visibleSuborders(form.getCustomerorderId(), form.getSuborderId()));
+    var scopeOrders = maintenanceService.getScopeCustomerorders(form.getCustomerorderId());
+    model.addAttribute("scopeOrders", scopeOrders);
+    model.addAttribute("scopeOrder", scopeOrders.stream()
+        .filter(order -> Objects.equals(order.id(), form.getCustomerorderId())).findFirst().orElse(null));
+    model.addAttribute("scopeSuborders", maintenanceService.getScopeSuborders(form.getCustomerorderId(), form.getSuborderId()));
     model.addAttribute("scopeSign", form.getScopeSign() != null ? form.getScopeSign()
-        : scopeSignOf(form.getCustomerorderId(), form.getSuborderId()));
+        : maintenanceService.getScopeSign(form.getCustomerorderId(), form.getSuborderId()));
     return "jira/ticket-form";
-  }
-
-  /** The scope a new ticket is created in, as the filter chose it. */
-  private String scopeSignOf(Long customerorderId, Long suborderId) {
-    if (customerorderId == null) return null;
-    var orders = authorization.selectableCustomerorders(customerorderId);
-    var orderSign = orders.stream().filter(order -> order.id() == customerorderId).findFirst()
-        .map(order -> order.sign()).orElse(null);
-    if (suborderId == null) return orderSign;
-    return suborderOptions(customerorderId, suborderId).stream().filter(so -> so.id() == suborderId).findFirst()
-        .map(SuborderReadModel::completeOrderSign).orElse(orderSign);
-  }
-
-  /**
-   * The orders the filter offers (#1386): those the user may see that have tickets — the list shows
-   * nothing else — and the one already chosen.
-   */
-  private List<CustomerorderOption> ticketOrders(Long selectedId) {
-    var withTickets = maintenanceService.getCustomerorderIdsWithTickets();
-    return authorization.selectableCustomerorders(selectedId).stream()
-        .filter(order -> withTickets.contains(order.id()) || Objects.equals(order.id(), selectedId))
-        .toList();
-  }
-
-  /** Every visible suborder of the order, and the one already chosen, by complete order sign. */
-  private List<SuborderReadModel> visibleSuborders(Long customerorderId, Long selectedId) {
-    if (customerorderId == null) return List.of();
-    return suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId).stream()
-        .filter(so -> !so.hide() || Objects.equals(so.id(), selectedId))
-        .sorted(comparing(SuborderReadModel::completeOrderSign))
-        .toList();
-  }
-
-  /**
-   * The suborders of the order the filter offers (#1386): visible ones with tickets of their own or
-   * below them — the filter narrows to a branch — and the one already chosen, by complete order sign.
-   */
-  private List<SuborderReadModel> suborderOptions(Long customerorderId, Long selectedId) {
-    if (customerorderId == null) return List.of();
-    var withTickets = maintenanceService.getSuborderIdsWithTickets(customerorderId);
-    var readModels = suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId);
-    var offered = new HashSet<Long>();
-    readModels.stream().filter(so -> withTickets.contains(so.id())).forEach(so -> offered.addAll(so.path()));
-    return readModels.stream()
-        .filter(so -> (!so.hide() && offered.contains(so.id())) || Objects.equals(so.id(), selectedId))
-        .sorted(comparing(SuborderReadModel::completeOrderSign))
-        .toList();
   }
 
   private static List<String> csv(String value) {

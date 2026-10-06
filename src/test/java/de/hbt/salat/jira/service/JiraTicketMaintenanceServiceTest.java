@@ -31,6 +31,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.jira.auth.JiraTicketAuthorization;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.jira.domain.JiraImportColumn;
 import de.hbt.salat.jira.domain.JiraImportMappingEntry;
@@ -51,6 +52,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.SuborderService;
 
 /**
  * Tickets maintained by hand (#1386): one by one and by CSV import, only where no replication covers
@@ -71,6 +73,7 @@ class JiraTicketMaintenanceServiceTest {
   private JiraScopes scopes;
   private OrderReferences orderReferences;
   private JiraTicketImportRepository importRepository;
+  private SuborderService suborderService;
   private final List<JiraTicketImport> imports = new ArrayList<>();
   private JiraTicketMaintenanceService service;
 
@@ -83,6 +86,7 @@ class JiraTicketMaintenanceServiceTest {
     scopes = mock(JiraScopes.class);
     orderReferences = mock(OrderReferences.class);
     importRepository = mock(JiraTicketImportRepository.class);
+    suborderService = mock(SuborderService.class);
     // The imports saved, the latest first — as the repository answers for the scope.
     when(importRepository.save(any(JiraTicketImport.class))).thenAnswer(invocation -> {
       imports.addFirst(invocation.getArgument(0));
@@ -91,7 +95,7 @@ class JiraTicketMaintenanceServiceTest {
     when(importRepository.findLatestInScope(anyLong(), any(), any())).thenAnswer(invocation -> List.copyOf(imports));
     var authorization = new JiraTicketAuthorization(authorizedUser, customerorderService);
     service = new JiraTicketMaintenanceService(ticketRepository, configRepository, authorization, scopes,
-        orderReferences, importRepository);
+        orderReferences, importRepository, suborderService);
 
     when(authorizedUser.isManager()).thenReturn(true);
     when(scopes.customerorderExists(ORDER)).thenReturn(true);
@@ -627,6 +631,58 @@ class JiraTicketMaintenanceServiceTest {
     assertThatThrownBy(() -> service.importTickets(ORDER, null, "tickets.csv", "Key\nABC-1\n".getBytes(UTF_8),
         List.of(column(JiraImportTarget.KEY))))
         .isInstanceOf(AuthorizationException.class);
+  }
+
+  /** A ticket needs an order; without one it is refused before anything is looked up (#1386). */
+  @Test
+  void a_ticket_and_an_import_need_an_order() {
+    assertThatThrownBy(() -> service.create(null, null, new JiraManualTicketData("ABC-1", null, null, null)))
+        .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_SCOPE_REQUIRED));
+    assertThatThrownBy(() -> service.importTickets(null, null, "tickets.csv", "Key\nABC-1\n".getBytes(UTF_8),
+        List.of(column(JiraImportTarget.KEY))))
+        .satisfies(ex -> assertThat(firstCode(ex)).isEqualTo(ErrorCode.JI_TICKET_SCOPE_REQUIRED));
+  }
+
+  /**
+   * The filter offers the orders the user may see that have tickets, and the one chosen; a new ticket
+   * may go to every order the user may maintain that is neither hidden nor inactive (#1386, ADR-0029).
+   */
+  @Test
+  void the_filter_offers_orders_with_tickets_and_a_new_ticket_the_creatable_ones() {
+    givenResponsibleFor(ORDER);
+    when(customerorderService.getResponsibleCustomerorderOptions(USER)).thenReturn(List.of(
+        option(ORDER), option(OTHER_ORDER)));
+    when(ticketRepository.findCustomerorderIdsWithTickets()).thenReturn(List.of(ORDER, 99L));
+    when(customerorderService.getCreatableCustomerorderOptions(null)).thenReturn(List.of(option(OTHER_ORDER), option(99L)));
+
+    assertThat(service.getFilterCustomerorders(null)).extracting(CustomerorderOption::id).containsExactly(ORDER);
+    assertThat(service.getScopeCustomerorders(null)).extracting(CustomerorderOption::id).containsExactly(OTHER_ORDER);
+  }
+
+  /** The suborders of another order are not offered — not even their signs (#1386). */
+  @Test
+  void the_suborders_of_another_order_are_out_of_reach() {
+    givenResponsibleFor(OTHER_ORDER);
+
+    assertThat(service.getFilterSuborders(ORDER, null)).isEmpty();
+    assertThatThrownBy(() -> service.getScopeSuborders(ORDER, null)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> service.getScopeSign(ORDER, null)).isInstanceOf(AuthorizationException.class);
+  }
+
+  @Test
+  void the_ticket_page_is_open_to_managers_and_to_the_responsible_only() {
+    var authorization = new JiraTicketAuthorization(authorizedUser, customerorderService);
+    assertThat(authorization.isTicketPageAvailable()).isTrue();
+
+    givenResponsibleFor(ORDER);
+    assertThat(new JiraTicketAuthorization(authorizedUser, customerorderService).isTicketPageAvailable()).isTrue();
+
+    when(customerorderService.getResponsibleCustomerorderOptions(USER)).thenReturn(List.of());
+    assertThat(new JiraTicketAuthorization(authorizedUser, customerorderService).isTicketPageAvailable()).isFalse();
+  }
+
+  private static CustomerorderOption option(long id) {
+    return new CustomerorderOption(id, "ORDER" + id, null, null, null, null, false);
   }
 
   /** The suggestion of the preview, with the team column as additional field. */

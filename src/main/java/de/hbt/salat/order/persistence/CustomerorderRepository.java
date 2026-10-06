@@ -150,6 +150,21 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       """)
   List<CustomerorderOption> findSelectableOptions(Long keepId);
 
+  /**
+   * The orders a select for something new offers, as options (#1386, ADR-0029): neither hidden nor
+   * inactive on {@code today}, plus the order {@code keepId} whatever it is. {@code keepId} may be
+   * {@code null}.
+   */
+  @Query("""
+      select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,
+          c.description, cu.shortname, cu.name, c.hide)
+      from Customerorder c left join c.customer cu
+      where ((c.hide is null or c.hide = false) and (c.untilDate is null or c.untilDate >= :today))
+         or c.id = :keepId
+      order by c.sign
+      """)
+  List<CustomerorderOption> findCreatableOptions(Long keepId, LocalDate today);
+
   /** Like {@link #findOptionsByIdIn}, for a caller that knows the orders by sign (#1334). */
   @Query("""
       select new de.hbt.salat.order.domain.CustomerorderOption(c.id, c.sign, c.shortdescription,

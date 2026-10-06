@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.service;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,6 +81,23 @@ class JiraScopes {
         .filter(config -> signFrom(config, orderSigns, suborderSigns) != null)
         .collect(Collectors.toMap(JiraReplicationConfig::getId,
             config -> signFrom(config, orderSigns, suborderSigns), (one, other) -> one));
+  }
+
+  /**
+   * {@link #signOf} for several scopes at once (#1386) — one query for orders and one for suborders.
+   * A scope is the pair of order id and suborder id, the latter {@code null} for the whole order.
+   */
+  Map<List<Long>, String> signsOfScopes(Collection<List<Long>> scopePairs) {
+    var orderSigns = customerorderService.getCustomerorderSignsByIds(
+        scopePairs.stream().map(List::getFirst).collect(Collectors.toSet()));
+    var suborderSigns = suborderService.getCompleteOrderSignsByIds(
+        scopePairs.stream().map(List::getLast).filter(Objects::nonNull).collect(Collectors.toSet()));
+    var signs = new HashMap<List<Long>, String>();
+    for (var scope : scopePairs) {
+      var sign = scope.getLast() == null ? orderSigns.get(scope.getFirst()) : suborderSigns.get(scope.getLast());
+      if (sign != null) signs.put(scope, sign);
+    }
+    return signs;
   }
 
   private static String signFrom(JiraReplicationConfig config, Map<Long, String> orderSigns,
