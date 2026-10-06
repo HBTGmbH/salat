@@ -1,7 +1,6 @@
 package de.hbt.salat.dailyreport.persistence;
 
 import static de.hbt.salat.common.GlobalConstants.INVOICE_YES;
-import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import jakarta.persistence.QueryHint;
 import java.time.LocalDate;

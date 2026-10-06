@@ -15,8 +15,10 @@ import de.hbt.salat.budget.domain.OrderBudget;
 public interface OrderBudgetRepository
     extends CrudRepository<OrderBudget, Long>, PagingAndSortingRepository<OrderBudget, Long> {
 
-    /** The plans of a customer order, by its id (#1205). */
-    /** With order and suborder: the plan list shows their signs (#1367). */
+    /**
+     * The plans of a customer order, by its id (#1205). With order and suborder: the plan list shows
+     * their signs (#1367).
+     */
     @Query("""
         SELECT b FROM OrderBudget b JOIN FETCH b.customerorder LEFT JOIN FETCH b.suborder
         WHERE b.customerorder.id = :customerorderId
@@ -38,9 +40,8 @@ public interface OrderBudgetRepository
 
     /**
      * Every plan, by start of validity. A view that lists plans by order sorts by the sign of the
-     * order itself (#1212).
+     * order itself (#1212). With order and suborder, like {@link #findByCustomerorderId}.
      */
-    /** With order and suborder, like {@link #findByCustomerorderId}. */
     @Query("""
         SELECT b FROM OrderBudget b JOIN FETCH b.customerorder LEFT JOIN FETCH b.suborder
         ORDER BY b.validFrom ASC, b.id ASC

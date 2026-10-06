@@ -103,7 +103,7 @@ public class OrderPricingService {
     }
 
     /** The sign a rate is shown with: the person's, or {@code null} for a rate for everyone (#968). */
-    public static String employeeSignOf(OrderPricing pricing) {
+    private static String employeeSignOf(OrderPricing pricing) {
         return pricing.getEmployee() == null ? null : pricing.getEmployee().getSign();
     }
 
