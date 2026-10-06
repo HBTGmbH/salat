@@ -4,6 +4,7 @@ import static java.util.Comparator.comparing;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
+import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.service.JiraTicketAuthorization;
 import de.hbt.salat.jira.service.JiraTicketMaintenanceService;
 import de.hbt.salat.order.domain.SuborderReadModel;
@@ -43,35 +47,86 @@ public class JiraTicketController {
 
   private final JiraTicketMaintenanceService maintenanceService;
   private final JiraTicketAuthorization authorization;
+  private final AuthorizedUser authorizedUser;
+  private final SalatProperties salatProperties;
   private final SuborderService suborderService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final MessageSourceAccessor messages;
 
+  /** The limit steps of the list, as in the booking list; 0 is "all", capped like there (#1153). */
+  static final List<Integer> LIMITS = List.of(50, 100, 500, 1000, 0);
+  static final int DEFAULT_LIMIT = 500;
+
   /**
-   * The order filters, the suborder narrows to its branch. Both are remembered (UiState); a
-   * remembered suborder of another order, or an order the user may not see, is dropped rather than
-   * refused — the selection may be older than the user's responsibilities.
+   * The order filters, the suborder narrows to its branch; key, title and type narrow further, and
+   * keys bring their children along unless switched off, as in the booking list. Everything is
+   * remembered (UiState). A remembered suborder of another order, or an order the user may not see,
+   * is dropped rather than refused — the selection may be older than the user's responsibilities.
    */
   @GetMapping
   public String list(@RequestParam(required = false) Long fJiraTicketCustomerorderId,
                      @RequestParam(required = false) Long fJiraTicketSuborderId,
+                     @RequestParam(required = false) String fJiraTicketKeys,
+                     @RequestParam(required = false) String fJiraTicketChildren,
+                     @RequestParam(required = false) String fJiraTicketTitle,
+                     @RequestParam(required = false) String fJiraTicketTypes,
+                     @RequestParam(required = false) String fJiraTicketLimit,
                      Model model) {
     var customerorderId = fJiraTicketCustomerorderId != null && authorization.mayMaintain(fJiraTicketCustomerorderId)
         ? fJiraTicketCustomerorderId : null;
     var suborders = suborderOptions(customerorderId, fJiraTicketSuborderId);
     var suborderId = suborders.stream().anyMatch(so -> Objects.equals(so.id(), fJiraTicketSuborderId))
         ? fJiraTicketSuborderId : null;
+    var keys = csv(fJiraTicketKeys);
+    var types = csv(fJiraTicketTypes);
+    // Checked, the switch sends "true" next to the hidden "false", which arrive as "true,false".
+    boolean withChildren = fJiraTicketChildren == null || fJiraTicketChildren.isBlank()
+        || fJiraTicketChildren.contains("true");
+    int limit = limit(fJiraTicketLimit);
 
     model.addAttribute("customerorders", authorization.selectableCustomerorders(customerorderId));
     model.addAttribute("suborders", suborders);
     model.addAttribute("fJiraTicketCustomerorderId", customerorderId);
     model.addAttribute("fJiraTicketSuborderId", suborderId);
+    model.addAttribute("fJiraTicketKeys", String.join(", ", keys));
+    model.addAttribute("fJiraTicketChildren", withChildren);
+    model.addAttribute("fJiraTicketTitle", fJiraTicketTitle == null ? "" : fJiraTicketTitle.trim());
+    model.addAttribute("selectedTypes", types);
+    model.addAttribute("limits", LIMITS);
+    model.addAttribute("limit", limit);
+    model.addAttribute("isManager", authorizedUser.isManager());
     if (customerorderId != null) {
-      model.addAttribute("tickets", maintenanceService.getTickets(customerorderId, suborderId));
+      int maxResults = limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit;
+      model.addAttribute("result", maintenanceService.search(new JiraTicketListFilter(customerorderId, suborderId,
+          keys, withChildren, fJiraTicketTitle, types, maxResults)));
       model.addAttribute("coveringReplications",
           maintenanceService.getCoveringReplications(customerorderId, suborderId));
     }
     return "jira/ticket-list";
+  }
+
+  /** Everything about one ticket (#1386). */
+  @GetMapping("/{id}")
+  public String detail(@PathVariable long id, Model model) {
+    model.addAttribute("detail", maintenanceService.getDetail(id));
+    model.addAttribute("isManager", authorizedUser.isManager());
+    return "jira/ticket-detail";
+  }
+
+  /**
+   * Jumps from a ticket to the one its parent or top-level key names. Where the order has no ticket
+   * with that key — a JIRA reference may name one that is not maintained here — the page stays and
+   * says so.
+   */
+  @GetMapping("/{id}/related")
+  public String related(@PathVariable long id, @RequestParam String key, RedirectAttributes redirectAttributes) {
+    return maintenanceService.findRelated(id, key)
+        .map(relatedId -> "redirect:/jira/tickets/" + relatedId)
+        .orElseGet(() -> {
+          redirectAttributes.addFlashAttribute("toastError",
+              messages.getMessage("main.jira.ticket.related.missing", new Object[] {key}));
+          return "redirect:/jira/tickets/" + id;
+        });
   }
 
   @GetMapping("/create")
@@ -189,6 +244,20 @@ public class JiraTicketController {
         .filter(so -> !so.hide() || Objects.equals(so.id(), selectedId))
         .sorted(comparing(SuborderReadModel::completeOrderSign))
         .toList();
+  }
+
+  private static List<String> csv(String value) {
+    if (value == null || value.isBlank()) return List.of();
+    return Arrays.stream(value.split(",")).map(String::trim).filter(part -> !part.isEmpty()).distinct().toList();
+  }
+
+  private static int limit(String value) {
+    try {
+      int parsed = Integer.parseInt(value == null ? "" : value.trim());
+      return LIMITS.contains(parsed) ? parsed : DEFAULT_LIMIT;
+    } catch (NumberFormatException ex) {
+      return DEFAULT_LIMIT;
+    }
   }
 
   private List<String> toMessages(ErrorCodeException ex) {

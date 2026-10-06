@@ -233,7 +233,7 @@ public enum ErrorCode {
   JI_TICKET_NOT_FOUND("JI-0021", "ticket not found"),
   JI_TICKET_KEY_REQUIRED("JI-0022", "a ticket needs a key"),
   JI_TICKET_KEY_TAKEN("JI-0023", "the scope already has a ticket with this key"),
-  JI_TICKET_SCOPE_COVERED("JI-0024", "a jira replication maintains the tickets of this scope"),
+  JI_TICKET_IMPORT_KEY_REPLICATED("JI-0024", "a jira replication maintains the ticket with this key"),
   JI_TICKET_REPLICATED("JI-0025", "a replicated ticket cannot be changed by hand"),
   JI_TICKET_VALUE_TOO_LONG("JI-0026", "a value of the ticket is too long"),
   JI_TICKET_IMPORT_UNREADABLE("JI-0027", "the ticket file could not be read"),

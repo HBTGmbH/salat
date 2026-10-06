@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityManager;
@@ -204,10 +205,43 @@ class JiraTicketRepositoryTest {
   /** The ticket page lists the whole order, or only the branch the filter narrows to (#1386). */
   @Test
   void the_ticket_page_lists_an_order_or_a_branch() {
-    assertThat(jiraTicketRepository.findAllOfCustomerorder(ALPHA)).extracting(JiraTicket::getKey)
+    assertThat(page(true, List.of(-1L), true, List.of(""), null, true, List.of(""))).extracting(JiraTicket::getKey)
         .containsExactly("ALPHA-1", "ALPHA-2", "ALPHA-3");
-    assertThat(jiraTicketRepository.findAllOfSuborders(List.of(A, A_01))).extracting(JiraTicket::getKey)
+    assertThat(page(false, List.of(A, A_01), true, List.of(""), null, true, List.of(""))).extracting(JiraTicket::getKey)
         .containsExactly("ALPHA-2");
+  }
+
+  /** Key ignoring case, a part of the title ignoring case, and the type; counted per type (#1386). */
+  @Test
+  void the_ticket_page_filters_by_key_title_and_type_and_counts_per_type() {
+    jiraTicketRepository.findAll().forEach(ticket -> {
+      ticket.setIssueType(ticket.getKey().equals("ALPHA-2") ? "Bug" : "Story");
+      jiraTicketRepository.save(ticket);
+    });
+    entityManager.flush();
+
+    assertThat(page(true, List.of(-1L), false, List.of("ALPHA-3"), null, true, List.of("")))
+        .extracting(JiraTicket::getKey).containsExactly("ALPHA-3");
+    assertThat(page(true, List.of(-1L), true, List.of(""), "LOGIN", true, List.of("")))
+        .extracting(JiraTicket::getKey).containsExactly("ALPHA-1", "ALPHA-3");
+    assertThat(page(true, List.of(-1L), true, List.of(""), null, false, List.of("Bug")))
+        .extracting(JiraTicket::getKey).containsExactly("ALPHA-2");
+    assertThat(jiraTicketRepository.countForTicketPage(ALPHA, true, List.of(-1L), true, List.of(""), null, true,
+        List.of(""))).extracting(row -> row[0], row -> row[1], row -> row[2])
+        .containsExactlyInAnyOrder(tuple("Story", 2L, 0L), tuple("Bug", 1L, 0L));
+    assertThat(jiraTicketRepository.findIssueTypesOfCustomerorder(ALPHA)).containsExactly("Bug", "Story");
+  }
+
+  @Test
+  void the_ticket_page_honours_its_limit() {
+    assertThat(jiraTicketRepository.findForTicketPage(ALPHA, true, List.of(-1L), true, List.of(""), null, true,
+        List.of(""), PageRequest.of(0, 2))).hasSize(2);
+  }
+
+  private List<JiraTicket> page(boolean allScopes, List<Long> suborderIds, boolean allKeys, List<String> keys,
+                                String title, boolean allTypes, List<String> types) {
+    return jiraTicketRepository.findForTicketPage(ALPHA, allScopes, suborderIds, allKeys, keys, title, allTypes, types,
+        PageRequest.of(0, 100));
   }
 
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */
