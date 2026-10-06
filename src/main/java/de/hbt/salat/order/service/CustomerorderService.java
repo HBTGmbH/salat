@@ -259,6 +259,15 @@ public class CustomerorderService {
     return customerorderRepository.findSelectableOptions(keepId);
   }
 
+  /**
+   * The orders the login is responsible for, as options, hidden ones left out (#1386) — for a
+   * module that grants its own rights over the responsibility and refers to the order by id.
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerorderOption> getResponsibleCustomerorderOptions(long salatUserId) {
+    return customerorderRepository.findResponsibleOptionsBySalatUserId(salatUserId);
+  }
+
   public List<CustomerorderOption> getInvoiceableCustomerorders() {
     return customerorderDAO.getInvoiceableCustomerorders();
   }

@@ -73,6 +73,20 @@ class JiraReplicationConfigRepositoryTest {
     assertThat(configRepository.countBySuborderIdIn(List.of(a.getId()))).isZero();
   }
 
+  /**
+   * The replications that cover a scope (#1386): the order-wide one of the order and those of the
+   * suborders on the path down to it — not one of a suborder below, and not one of another order.
+   */
+  @Test
+  void the_replications_covering_a_scope_are_those_on_its_path() {
+    assertThat(configRepository.findCovering(alpha.getId(), List.of()))
+        .extracting(JiraReplicationConfig::getName).containsExactly("Ganzer Auftrag");
+    assertThat(configRepository.findCovering(alpha.getId(), List.of(a.getId(), a01.getId())))
+        .extracting(JiraReplicationConfig::getName).containsExactly("Ganzer Auftrag", "Unterauftrag");
+    assertThat(configRepository.findCovering(alpha.getId(), List.of(a.getId())))
+        .extracting(JiraReplicationConfig::getName).containsExactly("Ganzer Auftrag");
+  }
+
   /** The ids come off the references without a query per row (#1368, ADR-0036 rule 5). */
   @Test
   void reading_the_ids_of_the_scope_loads_neither_order_nor_suborder() {

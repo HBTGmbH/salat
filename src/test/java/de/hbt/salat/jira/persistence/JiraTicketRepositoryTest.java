@@ -184,12 +184,38 @@ class JiraTicketRepositoryTest {
         .containsExactlyInAnyOrder("ALPHA-1", "ALPHA-3");
   }
 
+  /**
+   * Tickets maintained by hand have no JIRA id (#1386) — several in a scope — and a replication set
+   * up later finds them by their key, but never one that has an id.
+   */
+  @Test
+  void a_ticket_maintained_by_hand_is_found_by_its_key() {
+    save(alphaOrder, null, null, "HAND-1", "von Hand", null);
+    save(alphaOrder, null, null, "HAND-2", "auch von Hand", null);
+    entityManager.flush();
+
+    assertThat(jiraTicketRepository.findManualInScopeByKey(ALPHA, null, "HAND-1"))
+        .hasValueSatisfying(ticket -> assertThat(ticket.getSummary()).isEqualTo("von Hand"));
+    assertThat(jiraTicketRepository.findManualInScopeByKey(ALPHA, null, "ALPHA-1")).isEmpty();
+    assertThat(jiraTicketRepository.findManualInScopeByKey(ALPHA, A_01, "HAND-1")).isEmpty();
+    assertThat(jiraTicketRepository.findInScopeByKey(ALPHA, null, "ALPHA-1")).isPresent();
+  }
+
+  /** The ticket page lists the whole order, or only the branch the filter narrows to (#1386). */
+  @Test
+  void the_ticket_page_lists_an_order_or_a_branch() {
+    assertThat(jiraTicketRepository.findAllOfCustomerorder(ALPHA)).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-1", "ALPHA-2", "ALPHA-3");
+    assertThat(jiraTicketRepository.findAllOfSuborders(List.of(A, A_01))).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-2");
+  }
+
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */
   private List<JiraTicket> searchBranchA(String term) {
     return jiraTicketRepository.search(ALPHA, List.of(A, A_01), term, PageRequest.of(0, 20));
   }
 
-  private void save(Customerorder customerorder, Suborder suborder, long jiraId, String key, String summary,
+  private void save(Customerorder customerorder, Suborder suborder, Long jiraId, String key, String summary,
                     LocalDateTime updated) {
     var ticket = new JiraTicket();
     ticket.setCustomerorder(customerorder);

@@ -530,6 +530,7 @@ class JiraReplicationServiceTest {
     var stored = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash(JiraFieldConfig.from(config).hash());
+    stored.setReplication(config);
     when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
@@ -574,6 +575,57 @@ class JiraReplicationServiceTest {
     jiraReplicationService.runReplication(config.getId());
 
     assertThat(removedTickets()).containsExactly(gone);
+  }
+
+  /** A ticket maintained by hand has no JIRA id (#1386): JIRA never sends it, so it stays. */
+  @Test
+  void aRunWithoutWatermarkLeavesTheTicketsMaintainedByHand() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var seen = stored(1001L, "MOCK-1");
+    var byHand = ticket("HAND-1", null);
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(seen, byHand));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    verifyNothingRemoved();
+  }
+
+  /** A replication set up later takes a ticket maintained by hand over by its key (#1386). */
+  @Test
+  void aTicketMaintainedByHandIsTakenOverByItsKey() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var byHand = ticket("MOCK-1", null);
+    when(ticketRepo.findManualInScopeByKey(ORDER, null, "MOCK-1")).thenReturn(Optional.of(byHand));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket()).isSameAs(byHand);
+    assertThat(byHand.getJiraId()).isEqualTo(1001L);
+    assertThat(byHand.getReplication()).isSameAs(config);
+  }
+
+  /**
+   * A ticket left behind by a deleted replication is written even though JIRA reports it unchanged,
+   * so that it points at the replication that keeps it now (#1386).
+   */
+  @Test
+  void anUnchangedTicketOfADeletedReplicationIsTakenOver() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var orphan = stored(1001L, "MOCK-1");
+    orphan.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
+    orphan.setFieldConfigHash(JiraFieldConfig.from(config).hash());
+    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L)).thenReturn(Optional.of(orphan));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket()).isSameAs(orphan);
+    assertThat(orphan.getReplication()).isSameAs(config);
   }
 
   @Test

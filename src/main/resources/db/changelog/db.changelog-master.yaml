@@ -5837,3 +5837,46 @@ databaseChangeLog:
             tableName: jira_replication_config
             columnName: username
             columnDataType: varchar(255)
+
+  - changeSet:
+      id: 157
+      author: kr
+      comment: Tickets lassen sich manuell pflegen, ein Ticket kennt seine Replikation (#1386)
+      # Ein manuell gepflegtes Ticket hat keine JIRA-ID, deshalb wird jira_id nullable; der eindeutige
+      # Schluessel je Bereich ueber die JIRA-ID laesst NULL mehrfach zu. replication_id nennt die
+      # Replikation, die ein Ticket pflegt, NULL bei einem manuellen. Wird eine Replikation geloescht,
+      # bleiben ihre Tickets stehen (#1025) und verlieren nur den Verweis. Der Bestand bekommt die
+      # Replikation seines Bereichs, wo es genau eine gibt.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_ticket
+                columnName: replication_id
+      changes:
+        - dropNotNullConstraint:
+            tableName: jira_ticket
+            columnName: jira_id
+            columnDataType: bigint
+        - addColumn:
+            tableName: jira_ticket
+            columns:
+              - column:
+                  name: replication_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: jira_ticket
+            baseColumnNames: replication_id
+            constraintName: fk_jira_ticket_replication
+            referencedTableName: jira_replication_config
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - sql:
+            sql: |-
+              UPDATE jira_ticket t
+                JOIN (SELECT customerorder_id, COALESCE(suborder_id, 0) AS so, MIN(id) AS id
+                        FROM jira_replication_config
+                       GROUP BY customerorder_id, COALESCE(suborder_id, 0)
+                      HAVING COUNT(*) = 1) c
+                  ON c.customerorder_id = t.customerorder_id AND c.so = COALESCE(t.suborder_id, 0)
+                 SET t.replication_id = c.id
