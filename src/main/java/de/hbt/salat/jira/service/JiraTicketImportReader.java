@@ -132,7 +132,7 @@ final class JiraTicketImportReader {
 
     for (var line : file.lines()) {
       int findingsBefore = findings.size();
-      var key = single(line, mapping, JiraImportTarget.KEY);
+      var key = keyOf(single(line, mapping, JiraImportTarget.KEY));
       var id = id(line, mapping, findings);
       var created = date(line, mapping, JiraImportTarget.CREATED, findings);
       var updated = date(line, mapping, JiraImportTarget.UPDATED, findings);
@@ -261,12 +261,20 @@ final class JiraTicketImportReader {
   }
 
   /**
+   * A ticket key as bookings and JIRA write it, in capitals: {@code abc-1} next to a replicated
+   * {@code ABC-1} would be two tickets for one key.
+   */
+  static String keyOf(String value) {
+    return value == null ? null : value.toUpperCase(Locale.ROOT);
+  }
+
+  /**
    * The first parent column that answers. A number is an id and is looked up; anything without a
    * blank in it is taken as a key. A value with blanks is a title rather than a reference, and a
    * parent that is the ticket itself is none.
    */
   private static String parentOf(JiraTicketFile.Line line, List<JiraImportColumn> mapping, Map<Long, String> keysById) {
-    var key = single(line, mapping, JiraImportTarget.KEY);
+    var key = keyOf(single(line, mapping, JiraImportTarget.KEY));
     for (var column : columnsOf(mapping, JiraImportTarget.PARENT)) {
       var value = line.cell(column);
       if (value == null) continue;
@@ -274,7 +282,7 @@ final class JiraTicketImportReader {
       if (value.chars().allMatch(Character::isDigit)) {
         parent = value.length() <= 18 ? keysById.get(Long.parseLong(value)) : null;
       } else {
-        parent = value.chars().anyMatch(Character::isWhitespace) || value.length() > KEY_LENGTH ? null : value;
+        parent = value.chars().anyMatch(Character::isWhitespace) || value.length() > KEY_LENGTH ? null : keyOf(value);
       }
       if (parent != null && !parent.equals(key)) return parent;
     }

@@ -79,6 +79,9 @@ public class JiraTicketMaintenanceService {
   private final OrderReferences orderReferences;
   private final JiraTicketImportRepository importRepository;
 
+  /** The column {@code jira_ticket_import.file_name}. */
+  static final int FILE_NAME_LENGTH = 255;
+
   /** How many recent imports are searched for a file of the same headings. */
   static final int RECENT_IMPORTS = 200;
 
@@ -227,8 +230,15 @@ public class JiraTicketMaintenanceService {
    */
   @Transactional(readOnly = true)
   public JiraTicketImportPreview preview(byte[] content, Long customerorderId, Long suborderId) {
+    // Checked before the file is read: reading a workbook takes memory, and only someone who may
+    // import has any business with it.
+    if (customerorderId != null) {
+      authorization.checkMayMaintain(customerorderId);
+    } else {
+      authorization.checkTicketPageAvailable();
+    }
     var file = JiraTicketFile.read(content);
-    if (customerorderId == null || !authorization.mayMaintain(customerorderId)) {
+    if (customerorderId == null) {
       return JiraTicketImportReader.preview(file);
     }
     var previous = previousImportFor(file.headings(), customerorderId, suborderId);
@@ -305,7 +315,7 @@ public class JiraTicketMaintenanceService {
     var ticketImport = new JiraTicketImport();
     ticketImport.setCustomerorder(orderReferences.customerorder(customerorderId));
     ticketImport.setSuborder(orderReferences.suborder(suborderId));
-    ticketImport.setFileName(fileName);
+    ticketImport.setFileName(fileNameOf(fileName));
     ticketImport.setColumnMapping(mappingEntries(file.headings(), mapping));
     var toSave = new ArrayList<JiraTicket>();
     for (var imported : tickets) {
@@ -366,8 +376,9 @@ public class JiraTicketMaintenanceService {
   }
 
   private static JiraManualTicketData validated(JiraManualTicketData data) {
-    var values = new JiraManualTicketData(trimToNull(data.key()), trimToNull(data.summary()),
-        trimToNull(data.issueType()), trimToNull(data.parentKey()));
+    var values = new JiraManualTicketData(JiraTicketImportReader.keyOf(trimToNull(data.key())),
+        trimToNull(data.summary()), trimToNull(data.issueType()),
+        JiraTicketImportReader.keyOf(trimToNull(data.parentKey())));
     if (values.key() == null) {
       throw new InvalidDataException(JI_TICKET_KEY_REQUIRED);
     }
@@ -445,6 +456,14 @@ public class JiraTicketMaintenanceService {
     return entries;
   }
 
+  /** The name of the file, cut to its column where it is longer; the extension stays. */
+  private static String fileNameOf(String fileName) {
+    if (fileName == null || fileName.length() <= FILE_NAME_LENGTH) return fileName;
+    int dot = fileName.lastIndexOf('.');
+    var extension = dot > 0 && fileName.length() - dot <= 10 ? fileName.substring(dot) : "";
+    return fileName.substring(0, FILE_NAME_LENGTH - extension.length()) + extension;
+  }
+
   private static Optional<JiraTicketImport> importOf(JiraTicket ticket) {
     return Optional.ofNullable(ticket.getTicketImport());
   }
@@ -468,9 +487,10 @@ public class JiraTicketMaintenanceService {
 
 
 
+  /** Trimmed, without what the text columns cannot hold, {@code null} where nothing is left. */
   private static String trimToNull(String value) {
     if (value == null) return null;
-    var trimmed = value.trim();
+    var trimmed = JiraTicketFile.storable(value).trim();
     return trimmed.isEmpty() ? null : trimmed;
   }
 

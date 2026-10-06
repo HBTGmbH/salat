@@ -42,6 +42,12 @@ public class JiraTicketAuthorization {
     return authorizedUser.isManager() || !responsibleCustomerorders().isEmpty();
   }
 
+  public void checkTicketPageAvailable() {
+    if (!isTicketPageAvailable()) {
+      throw new AuthorizationException(ErrorCode.JI_TICKET_ORDER_NOT_AUTHORIZED);
+    }
+  }
+
   public boolean mayMaintain(long customerorderId) {
     if (authorizedUser.isRestricted()) return false;
     if (authorizedUser.isManager()) return true;
