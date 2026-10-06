@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import java.util.Collection;
 import java.util.Optional;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
@@ -847,8 +849,8 @@ public class TimereportBudgetAssignmentServiceTest {
                                 LocalDate validFrom, LocalDate validUntil, boolean active) {
     var plan = new OrderBudget();
     plan.setName("plan-" + id);
-    plan.setCustomerorderId(ORDER_IDS.get(customerorderSign));
-    plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
+    plan.setCustomerorder(customerorderWithId(ORDER_IDS.get(customerorderSign)));
+    plan.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign)));
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
     plan.setActive(active);

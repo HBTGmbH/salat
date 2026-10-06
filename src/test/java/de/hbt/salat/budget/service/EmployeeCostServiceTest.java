@@ -1,6 +1,8 @@
 package de.hbt.salat.budget.service;
 
-import static java.util.stream.Collectors.toMap;
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,6 +33,7 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.EmployeeCostAssignmentData;
 import de.hbt.salat.budget.domain.EmployeeCostCategory;
 import de.hbt.salat.budget.domain.EmployeeCostData;
+import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.CostCategoryRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
@@ -94,11 +97,6 @@ public class EmployeeCostServiceTest {
     suborderService = mock(SuborderService.class);
     // The people of PEOPLE exist, nobody else does.
     when(employeeService.getEmployeeById(anyLong())).thenAnswer(invocation -> employee(invocation.getArgument(0)));
-    when(employeeService.getSignsByIds(any())).thenAnswer(invocation -> {
-      Collection<Long> ids = invocation.getArgument(0);
-      return PEOPLE.entrySet().stream().filter(person -> ids.contains(person.getValue()))
-          .collect(toMap(Map.Entry::getValue, Map.Entry::getKey));
-    });
     // The suborders of SUBORDERS exist, nothing else does (#1205: referenced by id).
     when(suborderService.getSuborderById(anyLong())).thenAnswer(invocation -> suborder(invocation.getArgument(0)));
     // The order "co" exists, nothing else does (#1343: referenced by id).
@@ -111,7 +109,7 @@ public class EmployeeCostServiceTest {
     stubAssignmentRepository();
     stubCategoryRepository();
     service = new EmployeeCostService(costRepository, assignmentRepository, categoryRepository, employeeService,
-        suborderService, customerorderService);
+        suborderService, customerorderService, TestMasterDataReferences.create());
   }
 
   // --- editing an assignment -------------------------------------------------------------------
@@ -151,7 +149,7 @@ public class EmployeeCostServiceTest {
     var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
     givenAssignment("junior", "emp", null, JAN, DEC, 2L);
     // id 2 now holds the general scope, so the edited one has to move out of it
-    assignments.get(0).setSuborderId(SUBORDERS.get("co/01"));
+    assignments.get(0).setSuborder(suborderWithId(SUBORDERS.get("co/01")));
 
     service.updateAssignment(edited.getId(), assignmentData("senior", "emp", "co/01", JAN, DEC));
 
@@ -299,7 +297,7 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_check_overlaps_against_the_suborder_where_order_and_suborder_are_named() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setCustomerorderId(CUSTOMERORDER);
+    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setCustomerorder(customerorderWithId(CUSTOMERORDER));
 
     assertThatCode(() -> service.createAssignment(new EmployeeCostAssignmentData("senior", PEOPLE.get("emp"),
         CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC))).doesNotThrowAnyException();
@@ -309,7 +307,7 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_narrow_an_assignment_from_the_whole_order_down_to_a_suborder() {
     var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
-    edited.setCustomerorderId(CUSTOMERORDER);
+    edited.setCustomerorder(customerorderWithId(CUSTOMERORDER));
 
     service.updateAssignment(edited.getId(), new EmployeeCostAssignmentData("senior", PEOPLE.get("emp"),
         CUSTOMERORDER, SUBORDERS.get("co/01"), JAN, DEC));
@@ -332,7 +330,7 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_reject_an_order_assignment_overlapping_another_one_to_the_same_order() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    givenAssignment("senior", "emp", null, JAN, JUN, 1L).setCustomerorderId(CUSTOMERORDER);
+    givenAssignment("senior", "emp", null, JAN, JUN, 1L).setCustomerorder(customerorderWithId(CUSTOMERORDER));
 
     assertThatThrownBy(() -> service.createAssignment(orderAssignmentData("senior", "emp", CUSTOMERORDER, JUN, DEC)))
         .isInstanceOf(BusinessRuleException.class)
@@ -354,7 +352,7 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_accept_a_general_assignment_next_to_an_order_one() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setCustomerorderId(CUSTOMERORDER);
+    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setCustomerorder(customerorderWithId(CUSTOMERORDER));
 
     assertThatCode(() -> service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC)))
         .doesNotThrowAnyException();
@@ -368,7 +366,7 @@ public class EmployeeCostServiceTest {
     givenCost("order", 300, JAN, OPEN_END, 2L);
     givenCost("specific", 200, JAN, OPEN_END, 3L);
     givenAssignment("general", "emp", null, JAN, DEC, 1L);
-    givenAssignment("order", "emp", null, JAN, DEC, 2L).setCustomerorderId(CUSTOMERORDER);
+    givenAssignment("order", "emp", null, JAN, DEC, 2L).setCustomerorder(customerorderWithId(CUSTOMERORDER));
     givenAssignment("specific", "emp", "co/01", JAN, DEC, 3L);
 
     assertThat(effectiveCents(CUSTOMERORDER, SUBORDERS.get("co/01"))).isEqualTo(200);
@@ -389,7 +387,7 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_resolve_nothing_without_any_assignment() {
     givenCost("order", 300, JAN, OPEN_END, 1L);
-    givenAssignment("order", "emp", null, JAN, DEC, 1L).setCustomerorderId(NO_CUSTOMERORDER);
+    givenAssignment("order", "emp", null, JAN, DEC, 1L).setCustomerorder(customerorderWithId(NO_CUSTOMERORDER));
 
     assertThat(service.findEffectiveCost(PEOPLE.get("emp"), CUSTOMERORDER, SUBORDERS.get("co/01"), JUL)).isEmpty();
   }
@@ -844,8 +842,11 @@ public class EmployeeCostServiceTest {
                                                  LocalDate from, LocalDate until, long id) {
     var assignment = new EmployeeCostAssignment();
     assignment.setCategory(category(costName));
-    assignment.setEmployeeId(idOf(employeeSign));
-    assignment.setSuborderId(suborderSign == null ? null : SUBORDERS.get(suborderSign));
+    // the person comes with the assignment, its sign included (#1367)
+    var employee = employeeWithId(idOf(employeeSign));
+    employee.setSign(employeeSign);
+    assignment.setEmployee(employee);
+    assignment.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDERS.get(suborderSign)));
     assignment.setValidFrom(from);
     assignment.setValidUntil(until);
     setId(assignment, id);
@@ -974,6 +975,8 @@ public class EmployeeCostServiceTest {
             .sorted(Comparator.comparing(EmployeeCostAssignment::getEmployeeCostName)
                 .thenComparing(EmployeeCostAssignment::getId))
             .toList());
+    when(assignmentRepository.findAllWithEmployeeOrderByCategoryName()).thenAnswer(invocation ->
+        assignmentRepository.findAllByOrderByCategoryNameAscIdAsc());
     when(assignmentRepository.findByCategoryId(anyLong())).thenAnswer(invocation ->
         assignments.stream()
             .filter(a -> a.getCategory().getId().equals(invocation.<Long>getArgument(0)))

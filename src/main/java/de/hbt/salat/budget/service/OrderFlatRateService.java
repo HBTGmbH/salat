@@ -2,18 +2,13 @@ package de.hbt.salat.budget.service;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +25,7 @@ import de.hbt.salat.budget.domain.OrderFlatRateLookup;
 import de.hbt.salat.budget.domain.OrderFlatRateRow;
 import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.SelectablePlans;
+import de.hbt.salat.budget.persistence.MasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.OrderFlatRateRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -69,10 +65,11 @@ public class OrderFlatRateService {
     private final CustomerorderService customerorderService;
     private final BudgetAuthorization budgetAuthorization;
     private final OrderPositions orderPositions;
+    private final MasterDataReferences masterDataReferences;
 
     @Transactional(readOnly = true)
     public List<OrderFlatRate> getAll() {
-        return StreamSupport.stream(orderFlatRateRepository.findAll().spliterator(), false).toList();
+        return orderFlatRateRepository.findAllWithReferences();
     }
 
     /**
@@ -91,41 +88,17 @@ public class OrderFlatRateService {
         var flatRates = customerorderId == null
             ? getAll()
             : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
-        var ordersById = ordersOf(flatRates);
-        var suborderSigns = suborderSignsOf(flatRates);
-        var planNames = planNamesOf(flatRates);
+        // order, suborder and plan come with the flat rate: the list queries fetch them (#1367)
         return flatRates.stream()
             .filter(flatRate -> showInactive || flatRate.getCurrentlyValid())
-            // Most flat rates name no plan at all, and an immutable map refuses a null key outright.
             .map(flatRate -> new OrderFlatRateRow(flatRate,
-                ordersById.get(flatRate.getCustomerorderId()),
-                flatRate.getSuborderId() == null ? null : suborderSigns.get(flatRate.getSuborderId()),
+                flatRate.getCustomerorder(),
+                flatRate.getSuborder() == null ? null : flatRate.getSuborder().getCompleteOrderSign(),
                 flatRate.dueAmountsWithin(flatRate.getValidFrom(), flatRate.getValidUntil()),
-                flatRate.getOrderBudgetId() == null ? null : planNames.get(flatRate.getOrderBudgetId())))
+                flatRate.getOrderBudget() == null ? null : flatRate.getOrderBudget().getName()))
             .filter(row -> showInactiveOrders || orderStillValid(row))
             .sorted(BY_ORDER_SIGN_THEN_VALID_FROM)
             .toList();
-    }
-
-    /**
-     * The complete signs of the suborders of the given flat rates, by id — the list names them as
-     * they are called today (#1212).
-     */
-    private Map<Long, String> suborderSignsOf(List<OrderFlatRate> flatRates) {
-        var ids = flatRates.stream().map(OrderFlatRate::getSuborderId).filter(Objects::nonNull)
-            .distinct().toList();
-        return suborderService.getCompleteOrderSignsByIds(ids);
-    }
-
-    /** The names of the plans the given flat rates are booked against, by id — one query for all. */
-    private Map<Long, String> planNamesOf(List<OrderFlatRate> flatRates) {
-        var ids = flatRates.stream().map(OrderFlatRate::getOrderBudgetId).filter(Objects::nonNull)
-            .distinct().toList();
-        if (ids.isEmpty()) {
-            return Map.of();
-        }
-        return StreamSupport.stream(orderBudgetRepository.findAllById(ids).spliterator(), false)
-            .collect(toMap(OrderBudget::getId, OrderBudget::getName, (first, second) -> first));
     }
 
     /**
@@ -163,18 +136,7 @@ public class OrderFlatRateService {
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
         var selectable = SelectablePlans.of(fitting, authorized, keepPlanId);
-        return selectable.withScopeSigns(
-            customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId),
-            suborderService.getCompleteOrderSignsByIds(selectable.suborderIds()));
-    }
-
-    private Map<Long, Customerorder> ordersOf(List<OrderFlatRate> flatRates) {
-        var ids = flatRates.stream().map(OrderFlatRate::getCustomerorderId).distinct().toList();
-        if (ids.isEmpty()) {
-            return Map.of();
-        }
-        return customerorderService.getCustomerordersByIds(ids).stream()
-            .collect(toMap(Customerorder::getId, identity(), (first, second) -> first));
+        return selectable.withScopeSigns();
     }
 
     private static boolean orderStillValid(OrderFlatRateRow row) {
@@ -189,7 +151,7 @@ public class OrderFlatRateService {
 
     @Transactional(readOnly = true)
     public OrderFlatRate getById(long id) {
-        return orderFlatRateRepository.findById(id)
+        return orderFlatRateRepository.findWithScopeById(id)
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_FLAT_RATE_NOT_FOUND, id));
     }
 
@@ -340,8 +302,8 @@ public class OrderFlatRateService {
     }
 
     private void apply(OrderFlatRate flatRate, OrderFlatRateData data, FlatRateScope scope, OrderBudget plan) {
-        flatRate.setCustomerorderId(scope.customerorder().getId());
-        flatRate.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
+        flatRate.setCustomerorder(masterDataReferences.customerorder(scope.customerorder().getId()));
+        flatRate.setSuborder(masterDataReferences.suborder(scope.suborder() == null ? null : scope.suborder().getId()));
         flatRate.setOrderBudget(plan);
         flatRate.setDescription(data.description());
         flatRate.setRhythm(data.rhythm());

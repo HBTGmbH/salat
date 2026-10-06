@@ -104,13 +104,6 @@ public class OrderFlatRateController {
         model.addAttribute("dueTotal", dueAmounts.stream().map(FlatRateDueAmount::amount)
             .reduce(BigDecimal.ZERO, BigDecimal::add));
         model.addAttribute("instalmentForm", new OrderFlatRateInstalmentForm());
-        // The signs order and suborder have today, read by id (#1212).
-        var customerorderId = flatRate.getCustomerorderId();
-        model.addAttribute("customerorderSign",
-            customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId));
-        var suborderId = flatRate.getSuborderId();
-        model.addAttribute("suborderSign", suborderId == null ? null
-            : suborderService.getCompleteOrderSignsByIds(List.of(suborderId)).get(suborderId));
         return "budget/flat-rate-detail";
     }
 

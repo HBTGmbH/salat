@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,7 +12,6 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -60,8 +60,6 @@ public class BudgetAlertServiceTest {
     when(messages.getMessage("main.budget.alert.email.subject")).thenReturn("Alert {0}");
     when(messages.getMessage("main.budget.alert.email.body")).thenReturn("{0} of {1}");
 
-    when(customerorderService.getCustomerorderSignsByIds(List.of(CUSTOMERORDER_ID)))
-        .thenReturn(Map.of(CUSTOMERORDER_ID, "co"));
     when(customerorderService.getResponsiblesByCustomerorderId(CUSTOMERORDER_ID)).thenReturn(List.of(
         new CustomerorderResponsible(RESPONSIBLE_EMPLOYEE_ID, "Responsible Person", RESPONSIBLE_USER_ID)));
     when(employeePreferenceService.getNotificationEmailForEmployeeId(RESPONSIBLE_EMPLOYEE_ID))
@@ -119,7 +117,9 @@ public class BudgetAlertServiceTest {
     var plan = new OrderBudget();
     ReflectionTestUtils.setField(plan, "id", 1L);
     plan.setName("plan");
-    plan.setCustomerorderId(customerorderId);
+    var customerorder = customerorderWithId(customerorderId);
+    customerorder.setSign("co");
+    plan.setCustomerorder(customerorder);
     plan.setAlertThresholdPercent(80);
     return plan;
   }

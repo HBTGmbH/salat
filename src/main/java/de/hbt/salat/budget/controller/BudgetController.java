@@ -1,17 +1,13 @@
 package de.hbt.salat.budget.controller;
 
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -32,7 +28,6 @@ import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetEmployeeSign;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustmentData;
-import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderBudgetData;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
 import de.hbt.salat.budget.domain.ProgressMode;
@@ -96,17 +91,11 @@ public class BudgetController {
                 budgets = budgets.stream().filter(b -> Boolean.TRUE.equals(b.getActive())).toList();
             }
         }
-        var orders = ordersOf(budgets);
-        model.addAttribute("budgets", byOrderSignThenValidFrom(budgets, orders));
+        model.addAttribute("budgets", byOrderSignThenValidFrom(budgets));
         model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
         model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
         model.addAttribute("customerorders", budgetAuthorization.selectableCustomerorders(fBudgetCustomerOrderId));
-        // The rows show their order and suborder by the sign the record has today (#1205);
-        // description and customer hang off those. Both maps are built once per page instead of one
-        // lookup per row.
-        model.addAttribute("orders", orders);
-        model.addAttribute("suborders", subordersOf(budgets));
         model.addAttribute("employeesByBudget", employeeSignsOf(budgets));
         return "budget/budget-list";
     }
@@ -114,9 +103,8 @@ public class BudgetController {
     /**
      * By the sign the order has today, then by start of validity (#1212).
      */
-    static List<OrderBudget> byOrderSignThenValidFrom(List<OrderBudget> budgets, Map<Long, Customerorder> orders) {
-        Function<OrderBudget, String> orderSign = budget ->
-            Optional.ofNullable(orders.get(budget.getCustomerorderId())).map(Customerorder::getSign).orElse(null);
+    static List<OrderBudget> byOrderSignThenValidFrom(List<OrderBudget> budgets) {
+        Function<OrderBudget, String> orderSign = budget -> budget.getCustomerorder().getSign();
         return budgets.stream()
             .sorted(Comparator.comparing(orderSign, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(OrderBudget::getValidFrom, Comparator.nullsLast(Comparator.naturalOrder())))
@@ -146,24 +134,6 @@ public class BudgetController {
         return budgets.stream().collect(toMap(OrderBudget::getId,
             budget -> byBudget.getOrDefault(budget.getId(), List.of()),
             (first, second) -> first));
-    }
-
-    private Map<Long, Customerorder> ordersOf(List<OrderBudget> budgets) {
-        var ids = budgets.stream().map(OrderBudget::getCustomerorderId).filter(Objects::nonNull).distinct().toList();
-        if (ids.isEmpty()) {
-            return Map.of();
-        }
-        return customerorderService.getCustomerordersByIds(ids).stream()
-            .collect(toMap(Customerorder::getId, identity(), (a, b) -> a));
-    }
-
-    private Map<Long, Suborder> subordersOf(List<OrderBudget> budgets) {
-        var ids = budgets.stream().map(OrderBudget::getSuborderId).filter(Objects::nonNull).distinct().toList();
-        if (ids.isEmpty()) {
-            return Map.of();
-        }
-        return suborderService.getSubordersByIds(ids).stream()
-            .collect(toMap(Suborder::getId, identity(), (a, b) -> a));
     }
 
     @Authorized(requiresManager = true)
@@ -282,30 +252,10 @@ public class BudgetController {
         // managers, which is where the links lead.
         var boundPricings = orderPricingService.getByOrderBudgetId(id);
         model.addAttribute("boundPricings", boundPricings);
-        // The signs are read off the people, not the rates (#968).
-        model.addAttribute("boundPricingSigns", orderPricingService.employeeSignsOf(boundPricings));
         var boundFlatRates = orderFlatRateService.getByOrderBudgetId(id);
         model.addAttribute("boundFlatRates", boundFlatRates);
-        addSigns(budget, boundFlatRates, model);
         addAssignedTimereports(budget, from, until, model);
         return "budget/budget-detail";
-    }
-
-    /**
-     * The signs order and suborders have today, read by id (#1212).
-     */
-    private void addSigns(OrderBudget budget, List<OrderFlatRate> boundFlatRates, Model model) {
-        var customerorderId = budget.getCustomerorderId();
-        model.addAttribute("customerorderSign",
-            customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId));
-        var suborderIds = new ArrayList<Long>();
-        if (budget.getSuborderId() != null) {
-            suborderIds.add(budget.getSuborderId());
-        }
-        boundFlatRates.stream().map(OrderFlatRate::getSuborderId).filter(Objects::nonNull).forEach(suborderIds::add);
-        var suborderSigns = suborderService.getCompleteOrderSignsByIds(suborderIds);
-        model.addAttribute("suborderSign", budget.getSuborderId() == null ? null : suborderSigns.get(budget.getSuborderId()));
-        model.addAttribute("flatRateSuborderSigns", suborderSigns);
     }
 
     /**

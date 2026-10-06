@@ -1,5 +1,8 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -234,7 +237,7 @@ public class BudgetDashboardServiceTest {
       planBound.setOrderBudget(p1);
       rates.add(planBound);
       var personal = rate("A", null, 15000);
-      personal.setEmployeeId(OTHER_EMPLOYEE);
+      personal.setEmployee(employeeWithId(OTHER_EMPLOYEE));
       rates.add(personal);
       rates.add(rate("B", null, 10000));
       rates.add(rate("C", null, 10000));
@@ -431,9 +434,9 @@ public class BudgetDashboardServiceTest {
       setId(plan, id);
       plan.setName("plan " + id);
       // by id, as the services store it (#1205)
-      plan.setCustomerorderId(orderIdOf(orderSign));
-      plan.setSuborderId(suborderSign == null ? null : suborders.stream()
-          .filter(so -> so.getCompleteOrderSign().equals(suborderSign)).findFirst().orElseThrow().getId());
+      plan.setCustomerorder(customerorderWithId(orderIdOf(orderSign)));
+      plan.setSuborder(suborderWithId(suborderSign == null ? null : suborders.stream()
+          .filter(so -> so.getCompleteOrderSign().equals(suborderSign)).findFirst().orElseThrow().getId()));
       plan.setActive(true);
       plan.setValidFrom(LocalDate.parse(from));
       plan.setValidUntil(LocalDate.parse(until));
@@ -480,7 +483,7 @@ public class BudgetDashboardServiceTest {
 
     private OrderPricing rate(String orderSign, String suborderSign, int centsPerHour) {
       var rate = new OrderPricing();
-      rate.setCustomerorderId(orderIdOf(orderSign));
+      rate.setCustomerorder(customerorderWithId(orderIdOf(orderSign)));
       rate.setSuborderSign(suborderSign);
       rate.setPriceCentsPerHour(centsPerHour);
       rate.setValidFrom(LocalDate.of(2026, 1, 1));
@@ -492,7 +495,7 @@ public class BudgetDashboardServiceTest {
                                    String amount) {
       var rate = new OrderFlatRate();
       setId(rate, nextId++);
-      rate.setCustomerorderId(orderIdOf(orderSign));
+      rate.setCustomerorder(customerorderWithId(orderIdOf(orderSign)));
       rate.setDescription(rhythm + " " + orderSign);
       rate.setRhythm(rhythm);
       rate.setAmount(new BigDecimal(amount));

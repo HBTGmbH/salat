@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.auth;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -251,7 +252,7 @@ public class BudgetAuthorizationTest {
 
   private static OrderBudget budgetOn(String customerorderSign) {
     var budget = new OrderBudget();
-    budget.setCustomerorderId(idOf(customerorderSign));
+    budget.setCustomerorder(customerorderWithId(idOf(customerorderSign)));
     return budget;
   }
 

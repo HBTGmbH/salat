@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -93,7 +95,7 @@ public class OrderPricingDeviationTest {
   @Test
   public void reports_no_gap_on_an_employee_specific_rate() {
     var pricing = pricing(JAN, JUN);
-    pricing.setEmployeeId(1L);
+    pricing.setEmployee(employeeWithId(1L));
 
     assertThat(deviationOf(pricing, order(JAN, DEC), pricing).uncoveredOrderPeriod()).isFalse();
   }
@@ -114,7 +116,7 @@ public class OrderPricingDeviationTest {
 
   private static OrderPricing pricing(LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(ORDER_ID);
+    pricing.setCustomerorder(customerorderWithId(ORDER_ID));
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);

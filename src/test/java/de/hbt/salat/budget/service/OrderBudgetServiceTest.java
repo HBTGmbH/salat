@@ -27,6 +27,7 @@ import de.hbt.salat.budget.domain.BudgetLevel;
 import de.hbt.salat.budget.domain.BudgetMode;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetData;
+import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.exception.AuthorizationException;
@@ -69,7 +70,7 @@ public class OrderBudgetServiceTest {
     budgetAuthorization = permissiveAuthorization();
     assignmentService = mock(TimereportBudgetAssignmentService.class);
     service = new OrderBudgetService(orderBudgetRepository, customerorderService, suborderService,
-        new OrderPositions(suborderService), budgetAuthorization, assignmentService);
+        new OrderPositions(suborderService), budgetAuthorization, assignmentService, TestMasterDataReferences.create());
   }
 
   /** These tests are about the budget rules, so authorization lets everything through. */
@@ -522,8 +523,8 @@ public class OrderBudgetServiceTest {
 
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until, Long id) {
     var budget = new OrderBudget();
-    budget.setCustomerorderId(TREE.orderId("co"));
-    budget.setSuborderId(TREE.suborderId(suborderSign));
+    budget.setCustomerorder(TREE.order("co"));
+    budget.setSuborder(TREE.suborderReference(suborderSign));
     budget.setActive(true);
     budget.setValidFrom(from);
     budget.setValidUntil(until);

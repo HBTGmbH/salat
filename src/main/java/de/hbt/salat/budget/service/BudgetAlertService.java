@@ -53,7 +53,7 @@ public class BudgetAlertService {
                 if (utilization >= threshold) {
                     if (budget.getAlertSentAt() == null) {
                         sendAlert(budget.getId(), budget.getName(), budget.getCustomerorderId(),
-                            utilization, threshold, today);
+                            budget.getCustomerorder().getSign(), utilization, threshold, today);
                         orderBudgetService.updateAlertSentAt(budget.getId(), today);
                         log.info("Budget alert sent for budget {} ({}): {}% >= {}%",
                             budget.getId(), budget.getName(), String.format("%.1f", utilization), threshold);
@@ -72,20 +72,12 @@ public class BudgetAlertService {
     }
 
     /**
-     * The sign the plan's order has today, read by the plan's id (#1212).
+     * The responsibles of the order come as values from the module {@code order} — no entity of
+     * another module crosses into budget through a service (#1340, ADR-0021). The text names the
+     * order by the sign it has today, read through the plan's reference (#1367).
      */
-    private String customerorderSignOf(long customerorderId) {
-        return customerorderService.getCustomerorderSignsByIds(List.of(customerorderId)).get(customerorderId);
-    }
-
-    /**
-     * The order is read by the id of the plan, its responsibles come as values from the module
-     * {@code order} — no entity of another module crosses into budget (#1340, ADR-0021). The text
-     * still names the order by the sign it has today.
-     */
-    private void sendAlert(long budgetId, String budgetName, long customerorderId,
+    private void sendAlert(long budgetId, String budgetName, long customerorderId, String coSign,
                            double utilization, int threshold, LocalDate today) {
-        var coSign = customerorderSignOf(customerorderId);
         var responsibleEmployees = customerorderService.getResponsiblesByCustomerorderId(customerorderId);
         if (responsibleEmployees.isEmpty()) {
             log.warn("No responsible employees for customerorder {} — skipping alert for budget {}", coSign, budgetId);

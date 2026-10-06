@@ -16,18 +16,35 @@ public interface OrderBudgetRepository
     extends CrudRepository<OrderBudget, Long>, PagingAndSortingRepository<OrderBudget, Long> {
 
     /** The plans of a customer order, by its id (#1205). */
+    /** With order and suborder: the plan list shows their signs (#1367). */
+    @Query("""
+        SELECT b FROM OrderBudget b JOIN FETCH b.customerorder LEFT JOIN FETCH b.suborder
+        WHERE b.customerorder.id = :customerorderId
+        """)
     List<OrderBudget> findByCustomerorderId(Long customerorderId);
 
+    /** With order and suborder, like {@link #findByCustomerorderId}. */
+    @Query("""
+        SELECT b FROM OrderBudget b JOIN FETCH b.customerorder LEFT JOIN FETCH b.suborder
+        WHERE b.customerorder.id = :customerorderId AND b.active = :active
+        """)
     List<OrderBudget> findByCustomerorderIdAndActive(Long customerorderId, Boolean active);
 
+    @Query("SELECT COUNT(b) FROM OrderBudget b WHERE b.customerorder.id = :customerorderId")
     long countByCustomerorderId(Long customerorderId);
 
+    @Query("SELECT COUNT(b) FROM OrderBudget b WHERE b.suborder.id = :suborderId")
     long countBySuborderId(Long suborderId);
 
     /**
      * Every plan, by start of validity. A view that lists plans by order sorts by the sign of the
      * order itself (#1212).
      */
+    /** With order and suborder, like {@link #findByCustomerorderId}. */
+    @Query("""
+        SELECT b FROM OrderBudget b JOIN FETCH b.customerorder LEFT JOIN FETCH b.suborder
+        ORDER BY b.validFrom ASC, b.id ASC
+        """)
     List<OrderBudget> findAllByOrderByValidFromAscIdAsc();
 
     /**
@@ -50,7 +67,7 @@ public interface OrderBudgetRepository
      */
     @Query("""
         SELECT DISTINCT b FROM OrderBudget b LEFT JOIN FETCH b.adjustments
-        WHERE b.active = true AND b.customerorderId IN :ids
+        WHERE b.active = true AND b.customerorder.id IN :ids
         ORDER BY b.validFrom ASC, b.id ASC
         """)
     List<OrderBudget> findAllActiveWithAdjustmentsByCustomerorderIds(@Param("ids") Collection<Long> customerorderIds);
@@ -59,6 +76,7 @@ public interface OrderBudgetRepository
      * The plans of several customer orders at once, for the dashboard (#1222). Callers must not pass
      * an empty collection.
      */
+    @Query("SELECT b FROM OrderBudget b WHERE b.customerorder.id IN :customerorderIds AND b.active = :active")
     List<OrderBudget> findByCustomerorderIdInAndActive(Collection<Long> customerorderIds, Boolean active);
 
     /**
@@ -82,11 +100,11 @@ public interface OrderBudgetRepository
      * empty collection.
      */
     @Query("""
-        SELECT new de.hbt.salat.budget.domain.BudgetPlanPresence(b.customerorderId,
+        SELECT new de.hbt.salat.budget.domain.BudgetPlanPresence(b.customerorder.id,
             max(case when b.active = true then 1 else 0 end))
         FROM OrderBudget b
-        WHERE b.customerorderId IN :ids
-        GROUP BY b.customerorderId
+        WHERE b.customerorder.id IN :ids
+        GROUP BY b.customerorder.id
         """)
     List<BudgetPlanPresence> findPlanPresenceByCustomerorderIds(@Param("ids") Collection<Long> customerorderIds);
 
@@ -96,7 +114,7 @@ public interface OrderBudgetRepository
      * loading every plan of the installation just to learn which orders to visit.
      */
     @Query("""
-        SELECT DISTINCT b.customerorderId FROM OrderBudget b
+        SELECT DISTINCT b.customerorder.id FROM OrderBudget b
         WHERE b.active = true
         """)
     List<Long> findActiveCustomerorderIds();
@@ -108,7 +126,7 @@ public interface OrderBudgetRepository
      */
     @Query("""
         SELECT b FROM OrderBudget b
-        WHERE b.customerorderId = :co
+        WHERE b.customerorder.id = :co
           AND b.active = true
           AND b.validFrom <= :until AND b.validUntil >= :from
           AND (:excludeId IS NULL OR b.id != :excludeId)

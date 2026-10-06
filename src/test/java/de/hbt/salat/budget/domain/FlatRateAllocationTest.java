@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
@@ -133,7 +135,7 @@ public class FlatRateAllocationTest {
   @Test
   public void a_plan_of_another_customer_order_holds_nothing() {
     var plan = plan("other", null, JAN, DEC, true);
-    plan.setCustomerorderId(OTHER_CO_ID);
+    plan.setCustomerorder(customerorderWithId(OTHER_CO_ID));
 
     assertThat(FlatRateAllocation.uniquePlanFor(dueAmount(null, IN_H1), List.of(plan), POSITIONS)).isEmpty();
   }
@@ -222,8 +224,8 @@ public class FlatRateAllocationTest {
 
   private static FlatRateDueAmount dueAmount(String suborderSign, LocalDate due) {
     var rate = new OrderFlatRate();
-    rate.setCustomerorderId(CO_ID);
-    rate.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
+    rate.setCustomerorder(customerorderWithId(CO_ID));
+    rate.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign)));
     rate.setRhythm(FlatRateRhythm.ONCE);
     rate.setValidFrom(due);
     rate.setValidUntil(due);
@@ -247,8 +249,8 @@ public class FlatRateAllocationTest {
                                   boolean active) {
     var plan = new OrderBudget();
     plan.setName(name);
-    plan.setCustomerorderId(CO_ID);
-    plan.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
+    plan.setCustomerorder(customerorderWithId(CO_ID));
+    plan.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign)));
     plan.setValidFrom(from);
     plan.setValidUntil(until);
     plan.setActive(active);

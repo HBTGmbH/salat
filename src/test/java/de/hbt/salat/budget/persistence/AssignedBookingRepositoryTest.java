@@ -259,7 +259,7 @@ public class AssignedBookingRepositoryTest {
   private OrderBudget plan(String name) {
     var budget = new OrderBudget();
     budget.setName(name);
-    budget.setCustomerorderId(customerorder.getId());
+    budget.setCustomerorder(customerorder);
     budget.setValidFrom(FROM);
     budget.setValidUntil(UNTIL);
     budget.setActive(true);

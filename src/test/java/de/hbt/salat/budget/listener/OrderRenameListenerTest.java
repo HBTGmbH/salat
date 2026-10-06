@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.listener;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -111,7 +112,7 @@ class OrderRenameListenerTest {
 
   private static OrderPricing pricing(String suborderPattern) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(1L);
+    pricing.setCustomerorder(customerorderWithId(1L));
     pricing.setSuborderSign(suborderPattern);
     return pricing;
   }

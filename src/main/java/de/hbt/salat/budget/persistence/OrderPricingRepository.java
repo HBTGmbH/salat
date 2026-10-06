@@ -14,7 +14,21 @@ import de.hbt.salat.budget.domain.OrderPricing;
 public interface OrderPricingRepository
     extends CrudRepository<OrderPricing, Long>, PagingAndSortingRepository<OrderPricing, Long> {
 
+    /** With order, person and plan: the rate list shows them (#1367). */
+    @Query("""
+        SELECT p FROM OrderPricing p JOIN FETCH p.customerorder LEFT JOIN FETCH p.employee
+          LEFT JOIN FETCH p.orderBudget
+        WHERE p.customerorder.id = :customerorderId
+        ORDER BY p.validFrom ASC
+        """)
     List<OrderPricing> findByCustomerorderIdOrderByValidFromAsc(long customerorderId);
+
+    /** All rates with order, person and plan, like {@link #findByCustomerorderIdOrderByValidFromAsc}. */
+    @Query("""
+        SELECT p FROM OrderPricing p JOIN FETCH p.customerorder LEFT JOIN FETCH p.employee
+          LEFT JOIN FETCH p.orderBudget
+        """)
+    List<OrderPricing> findAllWithReferences();
 
     /**
      * The customer orders the list view offers for filtering (#949). Taken from the pricings
@@ -22,11 +36,13 @@ public interface OrderPricingRepository
      * so an order that has been hidden or has expired still needs to be reachable — those are the
      * rows one is looking for when tidying up. By id (#1212).
      */
-    @Query("SELECT DISTINCT p.customerorderId FROM OrderPricing p")
+    @Query("SELECT DISTINCT p.customerorder.id FROM OrderPricing p")
     List<Long> findDistinctCustomerorderIds();
 
+    @Query("SELECT p FROM OrderPricing p WHERE p.customerorder.id IN :customerorderIds ORDER BY p.id ASC")
     List<OrderPricing> findByCustomerorderIdInOrderByIdAsc(Collection<Long> customerorderIds);
 
+    @Query("SELECT COUNT(p) FROM OrderPricing p WHERE p.customerorder.id = :customerorderId")
     long countByCustomerorderId(long customerorderId);
 
     /**
@@ -43,9 +59,9 @@ public interface OrderPricingRepository
      */
     @Query("""
         SELECT p FROM OrderPricing p
-        WHERE p.customerorderId = :co
+        WHERE p.customerorder.id = :co
           AND COALESCE(p.suborderSign, '') = COALESCE(:so, '')
-          AND ((:emp IS NULL AND p.employeeId IS NULL) OR p.employeeId = :emp)
+          AND ((:emp IS NULL AND p.employee.id IS NULL) OR p.employee.id = :emp)
           AND ((:budgetId IS NULL AND p.orderBudget.id IS NULL) OR p.orderBudget.id = :budgetId)
           AND p.validFrom <= :until AND p.validUntil >= :from
           AND (:excludeId IS NULL OR p.id != :excludeId)
@@ -61,7 +77,7 @@ public interface OrderPricingRepository
 
     /** The rates bound to one budget plan — what its detail page lists (#1065). */
     @Query("""
-        SELECT p FROM OrderPricing p
+        SELECT p FROM OrderPricing p LEFT JOIN FETCH p.employee
         WHERE p.orderBudget.id = :budgetId
         ORDER BY p.validFrom ASC, p.id ASC
         """)

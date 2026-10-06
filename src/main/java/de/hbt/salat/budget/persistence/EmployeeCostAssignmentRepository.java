@@ -17,18 +17,35 @@ public interface EmployeeCostAssignmentRepository
     /** Every assignment, by the name of its category (#1209). */
     List<EmployeeCostAssignment> findAllByOrderByCategoryNameAscIdAsc();
 
+    /** Like {@link #findAllByOrderByCategoryNameAscIdAsc}, with the person: the overview names the people (#1367). */
+    @Query("""
+        SELECT a FROM EmployeeCostAssignment a JOIN FETCH a.category JOIN FETCH a.employee
+        ORDER BY a.category.name ASC, a.id ASC
+        """)
+    List<EmployeeCostAssignment> findAllWithEmployeeOrderByCategoryName();
+
+    /** With person, order and suborder: the category page shows their signs (#1367). */
+    @Query("""
+        SELECT a FROM EmployeeCostAssignment a JOIN FETCH a.employee LEFT JOIN FETCH a.customerorder
+          LEFT JOIN FETCH a.suborder
+        WHERE a.category.id = :categoryId
+        """)
     List<EmployeeCostAssignment> findByCategoryId(long categoryId);
 
     long countByCategoryId(long categoryId);
 
     /** The assignments specific to one of these suborders (#1205). Callers must not pass an empty collection. */
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.suborder.id IN :suborderIds")
     List<EmployeeCostAssignment> findBySuborderIdIn(Collection<Long> suborderIds);
 
+    @Query("SELECT COUNT(a) FROM EmployeeCostAssignment a WHERE a.suborder.id = :suborderId")
     long countBySuborderId(Long suborderId);
 
     /** The assignments to the whole customer order (#1343). */
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.customerorder.id = :customerorderId")
     List<EmployeeCostAssignment> findByCustomerorderId(long customerorderId);
 
+    @Query("SELECT COUNT(a) FROM EmployeeCostAssignment a WHERE a.customerorder.id = :customerorderId")
     long countByCustomerorderId(long customerorderId);
 
     /**
@@ -37,10 +54,10 @@ public interface EmployeeCostAssignmentRepository
      */
     @Query("""
         SELECT a FROM EmployeeCostAssignment a
-        WHERE a.employeeId = :emp
-          AND ((:co IS NULL AND :so IS NULL AND a.customerorderId IS NULL AND a.suborderId IS NULL)
-               OR a.customerorderId = :co
-               OR a.suborderId = :so)
+        WHERE a.employee.id = :emp
+          AND ((:co IS NULL AND :so IS NULL AND a.customerorder.id IS NULL AND a.suborder.id IS NULL)
+               OR a.customerorder.id = :co
+               OR a.suborder.id = :so)
           AND a.validFrom <= :until AND a.validUntil >= :from
           AND (:excludeId IS NULL OR a.id != :excludeId)
         """)
@@ -52,24 +69,24 @@ public interface EmployeeCostAssignmentRepository
         @Param("until") LocalDate validUntil,
         @Param("excludeId") Long excludeId);
 
-    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
-        + " AND a.suborderId = :so"
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employee.id = :emp"
+        + " AND a.suborder.id = :so"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveSuborderSpecific(
         @Param("emp") long employeeId,
         @Param("so") long suborderId,
         @Param("date") LocalDate date);
 
-    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
-        + " AND a.customerorderId = :co"
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employee.id = :emp"
+        + " AND a.customerorder.id = :co"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveCustomerorderSpecific(
         @Param("emp") long employeeId,
         @Param("co") long customerorderId,
         @Param("date") LocalDate date);
 
-    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
-        + " AND a.customerorderId IS NULL AND a.suborderId IS NULL"
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employee.id = :emp"
+        + " AND a.customerorder.id IS NULL AND a.suborder.id IS NULL"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveGeneral(
         @Param("emp") long employeeId,

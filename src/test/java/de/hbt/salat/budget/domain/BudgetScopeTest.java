@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -110,8 +112,8 @@ public class BudgetScopeTest {
   /** A plan as the services store it: order and suborder by id. */
   private static OrderBudget plan(Long customerorderId, Long suborderId) {
     var plan = new OrderBudget();
-    plan.setCustomerorderId(customerorderId);
-    plan.setSuborderId(suborderId);
+    plan.setCustomerorder(customerorderWithId(customerorderId));
+    plan.setSuborder(suborderWithId(suborderId));
     return plan;
   }
 
