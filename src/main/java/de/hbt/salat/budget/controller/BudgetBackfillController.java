@@ -33,7 +33,7 @@ public class BudgetBackfillController {
     @GetMapping
     @Authorized(requiresManager = true)
     public String show(@ModelAttribute("form") BudgetBackfillForm form, Model model) {
-        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        model.addAttribute("customerorders", budgetAuthorization.selectableCustomerorders(form.getCustomerorderId()));
         return "budget/backfill";
     }
 
@@ -45,7 +45,7 @@ public class BudgetBackfillController {
     @PostMapping("/run")
     @Authorized(requiresManager = true)
     public String run(@ModelAttribute("form") BudgetBackfillForm form, Model model) {
-        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        model.addAttribute("customerorders", budgetAuthorization.selectableCustomerorders(form.getCustomerorderId()));
         try {
             var result = backfillService.backfill(form.getCustomerorderId());
             model.addAttribute("result", result);

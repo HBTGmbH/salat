@@ -15,6 +15,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
@@ -101,11 +102,16 @@ public class BudgetAuthorization {
         }
     }
 
-    /** The customer orders the user may pick in the budget filters. */
-    public List<Customerorder> authorizedCustomerorders() {
+    /**
+     * The customer orders the budget selections offer — list, controlling, backfill and bulk
+     * assignment (#1379). Like every select, none that is hidden, except {@code selectedId}: the
+     * order a link or the remembered filter already names stays pickable. For a responsible that
+     * exception does not apply, a hidden order grants them nothing.
+     */
+    public List<CustomerorderOption> selectableCustomerorders(Long selectedId) {
         if (authorizedUser.isRestricted()) return List.of();
-        if (seesAllCustomerorders()) return customerorderService.getAllCustomerorders();
-        return responsibleCustomerorders();
+        if (seesAllCustomerorders()) return customerorderService.getSelectableCustomerorderOptions(selectedId);
+        return customerorderService.getCustomerorderOptionsByIds(responsibleCustomerorderIds());
     }
 
     /**

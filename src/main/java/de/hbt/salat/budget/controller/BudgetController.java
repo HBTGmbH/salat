@@ -101,7 +101,7 @@ public class BudgetController {
         model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
         model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
-        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        model.addAttribute("customerorders", budgetAuthorization.selectableCustomerorders(fBudgetCustomerOrderId));
         // The rows show their order and suborder by the sign the record has today (#1205);
         // description and customer hang off those. Both maps are built once per page instead of one
         // lookup per row.
