@@ -62,8 +62,9 @@ See also README.md
   other module's entity, writing stays with events (ADR-0003) — and navigation stays within master
   data. Lists fetch it with `join fetch` or `@BatchSize`, never per row. When a module is extracted,
   master data becomes a read copy in the module and the reference points at that copy. Entities in
-  service signatures across the boundary stay forbidden (ADR-0021, #1244). Several modules still hold
-  `Long` ids from before this rule; their conversion has its own issues (#1367–#1370).
+  service signatures across the boundary stay forbidden (ADR-0021, #1244). A reference is written from
+  an id through `EntityManager.getReference` in a small component of the writing module
+  (`MasterDataReferences`, `OrderReferences`), never through a service of the owning module.
 
 ## Controller and View Guidelines (target stack)
 - Controllers:
