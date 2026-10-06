@@ -22,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.server.ResponseStatusException;
+import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.favorites.domain.Favorite;
 import de.hbt.salat.favorites.domain.NewFavorite;
@@ -63,7 +63,7 @@ class FavoriteServiceTest {
     when(employeeorderService.getEmployeeIdOfEmployeeorder(FOREIGN_ORDER)).thenReturn(Optional.of(SOMEBODY_ELSE));
     when(employeeorderReferences.employeeorder(any(Long.class)))
         .thenAnswer(invocation -> employeeorderWithId(invocation.<Long>getArgument(0)));
-    when(favoriteRepository.save(any())).thenAnswer(invocation -> {
+    when(favoriteRepository.saveAndFlush(any())).thenAnswer(invocation -> {
       Favorite favorite = invocation.getArgument(0);
       ReflectionTestUtils.setField(favorite, "id", 99L);
       return favorite;
@@ -75,7 +75,7 @@ class FavoriteServiceTest {
     var id = favoriteService.addFavorite(new NewFavorite(MY_ORDER, 1, 30, "Daily", List.of("abc-1")));
 
     var saved = ArgumentCaptor.forClass(Favorite.class);
-    verify(favoriteRepository).save(saved.capture());
+    verify(favoriteRepository).saveAndFlush(saved.capture());
     assertThat(id).isEqualTo(99L);
     assertThat(saved.getValue().getEmployeeorderId()).isEqualTo(MY_ORDER);
     assertThat(saved.getValue().getTicketReferences()).containsExactly("ABC-1");
@@ -85,15 +85,15 @@ class FavoriteServiceTest {
   @Test
   void a_favourite_on_the_employee_order_of_somebody_else_is_refused() {
     assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(FOREIGN_ORDER, 1, 0, null, null)))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(AuthorizationException.class);
 
-    verify(favoriteRepository, never()).save(any());
+    verify(favoriteRepository, never()).saveAndFlush(any());
   }
 
   @Test
   void an_unknown_employee_order_is_refused() {
     assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(404L, 1, 0, null, null)))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(AuthorizationException.class);
   }
 
   @Test
@@ -102,7 +102,7 @@ class FavoriteServiceTest {
     when(favoriteRepository.findById(6L)).thenReturn(Optional.of(favoriteOn(FOREIGN_ORDER)));
 
     favoriteService.deleteFavorite(5L);
-    assertThatThrownBy(() -> favoriteService.deleteFavorite(6L)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> favoriteService.deleteFavorite(6L)).isInstanceOf(AuthorizationException.class);
 
     verify(favoriteRepository).deleteById(5L);
     verify(favoriteRepository, never()).deleteById(6L);
