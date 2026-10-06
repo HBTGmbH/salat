@@ -6001,3 +6001,24 @@ databaseChangeLog:
                       HAVING COUNT(*) > 1) m
                   ON m.customerorder_id = c.customerorder_id AND m.so = COALESCE(c.suborder_id, 0)
                  SET c.last_max_updated = NULL
+
+  - changeSet:
+      id: 160
+      author: kr
+      comment: Spalte employeeId der Favoriten entfernen, die Person folgt aus dem Mitarbeiterauftrag (#1369)
+      # Die Person eines Favoriten ist die Person seines Mitarbeiterauftrags (Mitarbeiterauftrag ->
+      # Vertrag -> Person); employeeId war transitiv abhaengig und stimmte im Bestand bei jedem Favoriten
+      # mit ihr ueberein. Keine Report-, ETL- oder View-Definition liest die Spalte. Ein Release vor
+      # diesem startet danach nicht mehr, es mappt die Spalte.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: favorite
+            columnName: employeeId
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: favorite
+            constraintName: fk_favorite_employee
+        - dropColumn:
+            tableName: favorite
+            columnName: employeeId

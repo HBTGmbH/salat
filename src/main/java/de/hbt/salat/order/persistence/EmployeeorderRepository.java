@@ -3,9 +3,11 @@ package de.hbt.salat.order.persistence;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.order.domain.Employeeorder;
 
@@ -33,6 +35,10 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
   List<Employeeorder> findAllByEmployeecontractIdAndSuborderId(long employeeContractId, long suborderId);
 
   List<Employeeorder> findAllByEmployeecontractIdAndSuborderCustomerorderId(long employeecontractId, long customerorderId);
+
+  /** The person of the employee order, by way of its contract (#1369). */
+  @Query("select eo.employeecontract.employee.id from Employeeorder eo where eo.id = :employeeorderId")
+  Optional<Long> findEmployeeIdById(@Param("employeeorderId") long employeeorderId);
 
   @Query("select eo from Employeeorder eo where eo.suborder.customerorder.id = :customerorderId and eo.employeecontract.id = :employeecontractId")
   List<Employeeorder> findAllByCustomerorderIdAndEmployeecontractId(long customerorderId, long employeecontractId);

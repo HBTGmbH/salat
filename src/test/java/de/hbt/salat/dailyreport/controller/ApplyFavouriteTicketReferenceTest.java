@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.controller;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeorderWithId;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -108,7 +109,7 @@ class ApplyFavouriteTicketReferenceTest {
 
   private static Favorite favourite(String... ticketReferences) {
     return Favorite.builder()
-        .employeeorderId(EMPLOYEE_ORDER_ID)
+        .employeeorder(employeeorderWithId(EMPLOYEE_ORDER_ID))
         .hours(1)
         .minutes(30)
         .comment("Daily")

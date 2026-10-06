@@ -1,12 +1,14 @@
 package de.hbt.salat.favorites.rest;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.ReportingPolicy;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import de.hbt.salat.favorites.domain.Favorite;
+import de.hbt.salat.favorites.domain.NewFavorite;
 
 @Mapper(collectionMappingStrategy = CollectionMappingStrategy.ADDER_PREFERRED,
     nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
@@ -30,21 +32,22 @@ public interface FavoriteDTOMapper {
             .build();
     }
 
-    /** By hand: without a list, the single {@code ticketReference} of an older client is the only one. */
-    default Favorite map(FavoriteDTO favorite) {
+    /**
+     * By hand: without a list, the single {@code ticketReference} of an older client is the only one.
+     * An id in the request is not taken over — a favourite is always added (#1369).
+     */
+    default NewFavorite map(FavoriteDTO favorite) {
         if (favorite == null) {
             return null;
+        }
+        if (favorite.getEmployeeorderId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "employeeorderId is required");
         }
         List<String> references = favorite.getTicketReferences() != null ? favorite.getTicketReferences()
             : favorite.getTicketReference() != null ? List.of(favorite.getTicketReference())
             : List.of();
-        return Favorite.builder()
-            .employeeorderId(favorite.getEmployeeorderId())
-            .hours(favorite.getHours())
-            .minutes(favorite.getMinutes())
-            .comment(favorite.getComment())
-            .ticketReferences(new ArrayList<>(references))
-            .build();
+        return new NewFavorite(favorite.getEmployeeorderId(), favorite.getHours(), favorite.getMinutes(),
+            favorite.getComment(), references);
     }
 
     List<FavoriteDTO> map(List<Favorite> favorites);

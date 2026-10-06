@@ -172,18 +172,22 @@ public class ArchitectureTest {
           "de.hbt.salat.common.", "de.hbt.salat.dailyreport.", "de.hbt.salat.order.", "de.hbt.salat.statistic."));
 
   /**
-   * favorites stores which suborder a person books on most, keyed by employee. It deliberately does
-   * <em>not</em> know dailyreport — the booking screens reach into favorites, not the other way
-   * round (see {@link #dailyreportShouldAccessOnlyItsKnownDependencies}). It happens to need nothing
-   * from common either; the rule lists it anyway, because needing a utility later is no
-   * architectural event.
+   * favorites stores which suborder a person books on most. It deliberately does <em>not</em> know
+   * dailyreport — the booking screens reach into favorites, not the other way round (see
+   * {@link #dailyreportShouldAccessOnlyItsKnownDependencies}). It happens to need nothing from common
+   * either; the rule lists it anyway, because needing a utility later is no architectural event.
+   *
+   * <p>{@code order} because a favourite refers to its employee order (#1369, ADR-0036) and finds
+   * its person through it — a column of its own for the person was redundant. order does not import
+   * favorites, so the edge closes no cycle.
    */
   @ArchTest
-  static final ArchRule favoritesShouldAccessCommonAuthEmployeeOnly = priority(HIGH).noClasses().that()
+  static final ArchRule favoritesShouldAccessCommonAuthEmployeeOrderOnly = priority(HIGH).noClasses().that()
       .resideInAPackage("de.hbt.salat.favorites..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "favorites must only import common, auth, employee",
-          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.favorites."));
+          "favorites must only import common, auth, employee, order",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.order.",
+          "de.hbt.salat.favorites."));
 
   /**
    * etl imports data from outside and needs the employee behind a record to attribute it. Nothing

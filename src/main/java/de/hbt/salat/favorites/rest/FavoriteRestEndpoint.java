@@ -64,7 +64,8 @@ public class FavoriteRestEndpoint {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
-    return mapper.map(favoriteService.addFavorite(mapper.map(favorite)));
+    var id = favoriteService.addFavorite(mapper.map(favorite));
+    return mapper.map(favoriteService.getFavorite(id).orElseThrow());
   }
 
   @Operation(summary = "Löscht einen Favoriten",
