@@ -378,6 +378,10 @@ public class JiraReplicationConfigService {
    *
    * <p>Only within one instance: two configs pointing at different JIRA installations share no
    * issue keys and cannot collide, however much their scopes overlap.
+   *
+   * <p>Nor in exactly the same scope (#1386): each replication writes to the tickets it maintains,
+   * and a key belongs to one ticket of the scope, so no ticket and day gets a worklog from both.
+   * Overlapping scopes are different: there the same issue is a ticket in each of them.
    */
   private void checkWorklogScopeIsExclusive(Long id, JiraReplicationConfigData data,
                                             Optional<SuborderLocation> location) {
@@ -391,7 +395,8 @@ public class JiraReplicationConfigService {
       if (!baseUrl.equals(normalizedBaseUrl(other.getBaseUrl()))) continue;
       // Different customer orders never share a suborder, so their branches cannot overlap.
       if (!data.customerorderId().equals(other.getCustomerorderId())) continue;
-      if (scopesOverlap(location, other.getSuborderId())) {
+      boolean sameScope = Objects.equals(data.suborderId(), other.getSuborderId());
+      if (!sameScope && scopesOverlap(location, other.getSuborderId())) {
         log.info("Worklog sync of JIRA replication {} refused: it overlaps with the replication {} "
             + "at the same JIRA instance", data.name(), other.getName());
         throw new InvalidDataException(JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);

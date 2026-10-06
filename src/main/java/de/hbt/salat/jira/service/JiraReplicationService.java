@@ -379,20 +379,32 @@ public class JiraReplicationService {
    */
   private Upsert upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
                                  JiraIssue issue, List<String> skippedTickets) {
-    // Found by its JIRA id, otherwise by its key (#1386). A ticket nobody maintains — entered by hand,
-    // or left behind by a deleted replication — is taken over: this replication fills in its JIRA id
-    // and keeps it from here on. One another replication maintains is skipped and stays with it.
-    var existing = ticketRepo.findInScopeByJiraId(cfg.getCustomerorderId(), cfg.getSuborderId(), jiraId)
+    // Its own ticket by the JIRA id, otherwise the ticket of the scope with the key, otherwise one
+    // nobody maintains with the JIRA id (#1386). A JIRA id is unique per replication, not per scope:
+    // another replication of the scope may read another JIRA instance with the same numeric ids. A
+    // ticket nobody maintains — entered by hand, or left behind by a deleted replication — is taken
+    // over: this replication fills in its JIRA id and keeps it from here on. One another replication
+    // maintains is skipped and stays with it.
+    var existing = ticketRepo.findMaintainedByJiraId(cfg.getId(), jiraId)
         .or(() -> ticketRepo.findInScopeByKey(cfg.getCustomerorderId(), cfg.getSuborderId(), issue.getKey()))
+        .or(() -> ticketRepo.findUnmaintainedInScopeByJiraId(cfg.getCustomerorderId(), cfg.getSuborderId(), jiraId)
+            .stream().findFirst())
         .orElse(null);
-    if (existing != null && existing.isReplicated() && !isMaintainedBy(existing, cfg)) {
-      log.warn("Replication {} skips ticket {}: replication {} maintains it in the same scope - "
-              + "the JQL of the two overlaps",
-          cfg.getName(), issue.getKey(), existing.getReplication().getName());
-      if (skippedTickets.size() < JiraReplicationResult.SKIPPED_NAMED) {
-        skippedTickets.add(issue.getKey() + " (" + existing.getReplication().getName() + ")");
+    if (maintainedByAnotherReplication(existing, cfg)) {
+      return skip(cfg, issue.getKey(), existing, skippedTickets);
+    }
+    // Renamed in JIRA — moved to another project — to a key another ticket of the scope carries.
+    var keyHolder = keyTakenByAnotherTicket(cfg, existing, issue.getKey());
+    if (keyHolder != null) {
+      if (maintainedByAnotherReplication(keyHolder, cfg)) {
+        return skip(cfg, issue.getKey(), keyHolder, skippedTickets);
       }
-      return Upsert.SKIPPED;
+      // By hand, left behind, or a stale one of its own: the same issue under the key JIRA gives it
+      // now. It gives way before the rename, which would otherwise hit the unique key on every run.
+      log.info("Replication {} replaces ticket {} (id {}) by the renamed issue {}", cfg.getName(),
+          keyHolder.getKey(), keyHolder.getId(), existing.getKey());
+      ticketRepo.delete(keyHolder);
+      ticketRepo.flush();
     }
     var fields = issue.getFields();
     var updatedTs = toDateTime(getString(fields, "updated"));
@@ -431,6 +443,28 @@ public class JiraReplicationService {
 
     ticketRepo.save(t);
     return Upsert.WRITTEN;
+  }
+
+  private static boolean maintainedByAnotherReplication(JiraTicket ticket, JiraReplicationConfig cfg) {
+    return ticket != null && ticket.isReplicated() && !isMaintainedBy(ticket, cfg);
+  }
+
+  /** The other ticket of the scope carrying {@code key}, where {@code existing} is about to take it. */
+  private JiraTicket keyTakenByAnotherTicket(JiraReplicationConfig cfg, JiraTicket existing, String key) {
+    if (existing == null || Objects.equals(existing.getKey(), key)) return null;
+    return ticketRepo.findInScopeByKey(cfg.getCustomerorderId(), cfg.getSuborderId(), key)
+        .filter(holder -> !Objects.equals(holder.getId(), existing.getId()))
+        .orElse(null);
+  }
+
+  private Upsert skip(JiraReplicationConfig cfg, String key, JiraTicket maintained, List<String> skippedTickets) {
+    log.warn("Replication {} skips ticket {}: replication {} maintains it in the same scope - "
+            + "the two deliver the same key",
+        cfg.getName(), key, maintained.getReplication().getName());
+    if (skippedTickets.size() < JiraReplicationResult.SKIPPED_NAMED) {
+      skippedTickets.add(key + " (" + maintained.getReplication().getName() + ")");
+    }
+    return Upsert.SKIPPED;
   }
 
   private static boolean isMaintainedBy(JiraTicket ticket, JiraReplicationConfig cfg) {

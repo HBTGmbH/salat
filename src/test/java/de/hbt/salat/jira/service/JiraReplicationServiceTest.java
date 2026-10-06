@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Timeout.ThreadMode.SEPARATE_THREAD;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyIterable;
 import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -338,7 +339,9 @@ class JiraReplicationServiceTest {
     assertThat(savedTicket().getSuborder()).isSameAs(SUBORDER_A_01_REFERENCE);
     assertEquals(ORDER, savedTicket().getCustomerorderId());
     assertEquals(SUBORDER_A_01, savedTicket().getSuborderId());
-    verify(ticketRepo).findInScopeByJiraId(ORDER, SUBORDER_A_01, 1001L);
+    verify(ticketRepo).findMaintainedByJiraId(config.getId(), 1001L);
+    verify(ticketRepo).findInScopeByKey(ORDER, SUBORDER_A_01, "MOCK-1");
+    verify(ticketRepo).findUnmaintainedInScopeByJiraId(ORDER, SUBORDER_A_01, 1001L);
     verify(ticketRepo).findInScope(ORDER, SUBORDER_A_01);
     verify(ticketRepo, never()).findInScope(ORDER, null);
   }
@@ -509,7 +512,7 @@ class JiraReplicationServiceTest {
     var stored = ticket("MOCK-1", null, Map.of());
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash("the hash of an earlier field list");
-    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L))
+    when(ticketRepo.findMaintainedByJiraId(1L, 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
         .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
@@ -531,7 +534,7 @@ class JiraReplicationServiceTest {
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash(JiraFieldConfig.from(config).hash());
     stored.setReplication(config);
-    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L))
+    when(ticketRepo.findMaintainedByJiraId(1L, 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
         .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
@@ -626,7 +629,7 @@ class JiraReplicationServiceTest {
     other.setName("Andere");
     var byId = stored(1001L, "MOCK-1");
     byId.setReplication(other);
-    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L)).thenReturn(Optional.of(byId));
+    when(ticketRepo.findInScopeByKey(ORDER, null, "MOCK-1")).thenReturn(Optional.of(byId));
     var byKey = stored(9003L, "MOCK-3");
     byKey.setReplication(other);
     when(ticketRepo.findInScopeByKey(ORDER, null, "MOCK-3")).thenReturn(Optional.of(byKey));
@@ -671,6 +674,79 @@ class JiraReplicationServiceTest {
   }
 
 
+  /**
+   * JIRA gave a replicated issue a new key — moved to another project — that a ticket by hand in the
+   * scope already carries (#1386). It is the same issue: the ticket by hand gives way, rather than
+   * the key failing the run on every attempt.
+   */
+  @Test
+  void aRenamedIssueReplacesTheTicketByHandWithItsNewKey() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var own = stored(1001L, "OLD-7");
+    when(ticketRepo.findMaintainedByJiraId(1L, 1001L)).thenReturn(Optional.of(own));
+    var byHand = byHand("MOCK-1");
+    setField(findField(AuditedEntity.class, "id"), byHand, 55L);
+    setField(findField(AuditedEntity.class, "id"), own, 54L);
+    when(ticketRepo.findInScopeByKey(ORDER, null, "MOCK-1")).thenReturn(Optional.of(byHand));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    var order = inOrder(ticketRepo);
+    order.verify(ticketRepo).delete(byHand);
+    order.verify(ticketRepo).flush();
+    order.verify(ticketRepo).save(own);
+    assertThat(own.getKey()).isEqualTo("MOCK-1");
+  }
+
+  /** The new key belongs to another replication of the scope: the issue is skipped, nothing is lost. */
+  @Test
+  void aRenamedIssueWhoseNewKeyAnotherReplicationMaintainsIsSkipped() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var own = stored(1001L, "OLD-7");
+    setField(findField(AuditedEntity.class, "id"), own, 54L);
+    when(ticketRepo.findMaintainedByJiraId(1L, 1001L)).thenReturn(Optional.of(own));
+    var others = stored(2002L, "MOCK-1");
+    setField(findField(AuditedEntity.class, "id"), others, 55L);
+    var other = replicationWithId(2L);
+    other.setName("Andere");
+    others.setReplication(other);
+    when(ticketRepo.findInScopeByKey(ORDER, null, "MOCK-1")).thenReturn(Optional.of(others));
+
+    var result = jiraReplicationService.runReplication(config.getId());
+
+    verify(ticketRepo, never()).delete(any(JiraTicket.class));
+    verify(ticketRepo, never()).save(any(JiraTicket.class));
+    assertThat(own.getKey()).isEqualTo("OLD-7");
+    assertThat(result.skipped()).isEqualTo(1);
+    assertThat(result.summary()).contains("MOCK-1 (Andere)");
+  }
+
+  /**
+   * A JIRA id is unique per replication, not per scope (#1386): another replication of the scope may
+   * read another JIRA instance, which hands out the same numeric ids for other issues. Its ticket
+   * stays, and this one is stored next to it.
+   */
+  @Test
+  void theSameJiraIdOfAnotherReplicationIsAnotherIssue() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var others = stored(1001L, "OTHER-4");
+    others.setReplication(replicationWithId(2L));
+
+    var result = jiraReplicationService.runReplication(config.getId());
+
+    assertThat(result.skipped()).isZero();
+    assertThat(savedTicket()).isNotSameAs(others);
+    assertThat(savedTicket().getKey()).isEqualTo("MOCK-1");
+    assertThat(savedTicket().getReplication()).isSameAs(config);
+    assertThat(others.getKey()).isEqualTo("OTHER-4");
+  }
+
   /** A replication set up later takes a ticket maintained by hand over by its key (#1386). */
   @Test
   void aTicketMaintainedByHandIsTakenOverByItsKey() {
@@ -699,7 +775,7 @@ class JiraReplicationServiceTest {
     orphan.setReplication(null);
     orphan.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     orphan.setFieldConfigHash(JiraFieldConfig.from(config).hash());
-    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L)).thenReturn(Optional.of(orphan));
+    when(ticketRepo.findUnmaintainedInScopeByJiraId(ORDER, null, 1001L)).thenReturn(List.of(orphan));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
 
     jiraReplicationService.runReplication(config.getId());

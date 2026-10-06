@@ -125,7 +125,7 @@ class JiraTicketRepositoryTest {
         .containsExactly("ALPHA-1");
     assertThat(jiraTicketRepository.findInScope(ALPHA, A_01)).extracting(JiraTicket::getKey)
         .containsExactly("ALPHA-2");
-    assertThat(jiraTicketRepository.findInScopeByJiraId(ALPHA, null, 2L)).isEmpty();
+    assertThat(jiraTicketRepository.findUnmaintainedInScopeByJiraId(ALPHA, null, 2L)).isEmpty();
     assertThat(jiraTicketRepository.findInScopeByKey(ALPHA, A_01, "ALPHA-1")).isEmpty();
   }
 
@@ -326,17 +326,29 @@ class JiraTicketRepositoryTest {
         .extracting(JiraTicketImport::getFileName).containsExactly("auftrag.csv");
   }
 
+  /**
+   * A JIRA id is unique per replication, not per scope (#1386): two replications of one scope may read
+   * two JIRA instances. A ticket nobody maintains is found by its id within the scope only.
+   */
+  @Test
+  void a_jira_id_is_found_per_replication_or_among_the_tickets_nobody_maintains() {
+    var alpha = replication("Alpha");
+    var beta = replication("Beta");
+    jiraTicketRepository.findAll().forEach(ticket -> ticket.setReplication(
+        ticket.getKey().equals("ALPHA-1") ? alpha : ticket.getKey().equals("ALPHA-2") ? beta : null));
+    entityManager.flush();
+
+    assertThat(jiraTicketRepository.findMaintainedByJiraId(alpha.getId(), 1L)).map(JiraTicket::getKey).hasValue("ALPHA-1");
+    assertThat(jiraTicketRepository.findMaintainedByJiraId(beta.getId(), 1L)).isEmpty();
+    assertThat(jiraTicketRepository.findUnmaintainedInScopeByJiraId(ALPHA, null, 1L)).isEmpty();
+    assertThat(jiraTicketRepository.findUnmaintainedInScopeByJiraId(ALPHA, B_01, 3L)).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-3");
+  }
+
   /** A replication moved to another scope leaves its tickets to nobody (#1386). */
   @Test
   void the_tickets_of_a_replication_are_released() {
-    var replication = new JiraReplicationConfig();
-    replication.setName("Alpha");
-    replication.setCustomerorder(alphaOrder);
-    replication.setBaseUrl("https://jira.example.com");
-    replication.setUsername("user");
-    replication.setPassword("secret");
-    replication.setJql("project = ALPHA");
-    entityManager.persist(replication);
+    var replication = replication("Alpha");
     jiraTicketRepository.findAll().forEach(ticket -> ticket.setReplication(replication));
     entityManager.flush();
 
@@ -344,6 +356,18 @@ class JiraTicketRepositoryTest {
     entityManager.clear();
 
     assertThat(jiraTicketRepository.findAll()).allSatisfy(ticket -> assertThat(ticket.isReplicated()).isFalse());
+  }
+
+  private JiraReplicationConfig replication(String name) {
+    var replication = new JiraReplicationConfig();
+    replication.setName(name);
+    replication.setCustomerorder(alphaOrder);
+    replication.setBaseUrl("https://jira.example.com");
+    replication.setUsername("user");
+    replication.setPassword("secret");
+    replication.setJql("project = ALPHA");
+    entityManager.persist(replication);
+    return replication;
   }
 
   private void saveImport(Customerorder customerorder, Suborder suborder, String fileName) {

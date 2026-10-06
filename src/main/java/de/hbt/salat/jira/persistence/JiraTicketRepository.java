@@ -20,13 +20,26 @@ import de.hbt.salat.order.domain.Customerorder;
 @Repository
 public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
 
+  /**
+   * The ticket this replication maintains under the JIRA id (#1386). A JIRA id is unique per
+   * replication, not per scope: two replications of one scope may read two JIRA instances, which hand
+   * out the same numeric ids.
+   */
+  @Query("select t from JiraTicket t where t.replication.id = :replicationId and t.jiraId = :jiraId")
+  Optional<JiraTicket> findMaintainedByJiraId(long replicationId, long jiraId);
+
+  /**
+   * The ticket of the scope that nobody maintains and carries the JIRA id (#1386) — imported with its
+   * id, or left behind by a deleted replication. The first if several do.
+   */
   @Query("""
       select t from JiraTicket t
       where t.customerorder.id = :customerorderId
         and (t.suborder.id = :suborderId or (t.suborder is null and :suborderId is null))
-        and t.jiraId = :jiraId
+        and t.replication is null and t.jiraId = :jiraId
+      order by t.id
       """)
-  Optional<JiraTicket> findInScopeByJiraId(long customerorderId, Long suborderId, long jiraId);
+  List<JiraTicket> findUnmaintainedInScopeByJiraId(long customerorderId, Long suborderId, long jiraId);
 
   @Query("""
       select t from JiraTicket t
