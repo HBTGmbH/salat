@@ -50,3 +50,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0034](0034-auftragskuerzel-bleiben-aenderbar-verweise-ziehen-nach.md) | Auftrags- und Unterauftragskürzel bleiben änderbar, was sie nennt, zieht nach | Accepted | 2026-10-04 |
 | [0035](0035-sonderauftraege-per-konfiguration-ueber-das-kuerzel.md) | Sonderaufträge per Konfiguration über das Kürzel, ihre Kürzel gesperrt | Accepted | 2026-10-04 |
 | [0036](0036-stammdaten-ueber-modulgrenzen-als-referenz.md) | Bezüge über Modulgrenzen: Stammdaten als Referenz, Bewegungsdaten über die id | Accepted | 2026-10-06 |
+| [0037](0037-hoheit-je-ticket-ueber-die-replikation.md) | Hoheit je Ticket: die Replikation am Ticket sagt, wer es pflegt | Accepted | 2026-10-06 |

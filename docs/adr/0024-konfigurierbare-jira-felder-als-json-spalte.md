@@ -3,6 +3,15 @@
 Date: 2026-09-15
 Status: Accepted
 
+> **Nachtrag 2026-10-06 (#1386): Zusatzfelder kommen auch aus einem Import.** Tickets lassen sich
+> aus einer Datei importieren (ADR-0037). Eine Spalte kann dabei als Zusatzfeld unter einem frei
+> wählbaren Namen in `custom_fields` landen, vorbelegt mit ihrer Überschrift; der Name ist dann
+> kein Response-Key von JIRA, und eine View muss ihn kennen wie einen Response-Key. Vererbt werden
+> zusätzlich die Felder, die der **letzte Import des Bereichs** als „vererben“ markiert hat — ein
+> neuer Import ohne das Häkchen schaltet sie ab. Der leere Zustand bleibt `NULL`. Die
+> Spaltenzuordnung eines Imports steht als zweite JSON-Spalte in `jira_ticket_import.column_mapping`,
+> eine Liste statt einer Map, nach denselben Regeln.
+
 ## Context and Problem Statement
 
 Die Jira-Replikation liest eine feste Feldliste und schreibt sie in benannte Spalten von

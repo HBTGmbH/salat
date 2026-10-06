@@ -14,6 +14,16 @@ Status: Accepted
 > Warteschlange bleibt bei null. Anlass war ein Versionskonflikt beim Lauf im Request-Thread, die
 > Begründung steht an `JiraReplicationLauncher`.
 
+> **Nachtrag 2026-10-06 (#1386): Die Sperre gilt je Geltungsbereich.** Die Annahme des Nachtrags
+> #1282, zwei Replikationen schrieben in verschiedene Bereiche, trägt nicht mehr: Ein Bereich darf
+> mehrere Replikationen haben (ADR-0037), und jede berechnet nach ihrem Lauf `top_level_key` und
+> die vererbten Felder aller Tickets des Bereichs. Nebeneinander scheiterte eine von beiden am
+> Versionskonflikt. `JiraReplicationRunService.startRun` weist deshalb auch einen Start ab, solange
+> eine andere Replikation **desselben** Bereichs läuft (`JI-0041`); der geplante Lauf vermerkt das
+> als `SKIPPED`. Der Scheduler startet ohnehin eine nach der anderen, es verhungert also keine.
+> Replikationen über- und untergeordneter Bereiche schreiben verschiedene Zeilen und laufen weiter
+> nebeneinander.
+
 > **Nachtrag 2026-10-03 (#1300): „Ende nicht schreibbar" ist nicht „Prozess gestorben".** **D**
 > ist für einen Lauf gedacht, dessen Prozess gestorben ist. Niemand kennt dann seinen Ausgang, und
 > die Person am Knopf trifft die Aussage, die die Anwendung nicht treffen kann. Es gibt aber einen

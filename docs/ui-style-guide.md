@@ -406,8 +406,21 @@ beide als `form-check form-switch`.
 eine eigene Karte mit Tabelle; die Gruppenspalte entfällt dafür in der Tabelle. Leere Gruppen
 werden ausgeblendet. Beispiele: Mitarbeiterliste (nach Status), Vertragsliste (Intern/Freelancer).
 
-**Nicht vorhanden:** Paginierung, sortierbare Spaltenköpfe, Mehrfachauswahl/Bulk-Aktionen,
-Spaltenkonfiguration, Export direkt aus der Liste. Listen werden vollständig gerendert.
+**Listen mit Trefferbegrenzung** (Buchungsliste, Ticketseite #1386): Wo eine Liste zu groß wird, um
+sie vollständig zu rendern, folgt sie der Buchungsliste statt dem kanonischen Aufbau:
+
+- Die Filterkarte tauscht per HTMX nur den Ergebnisbereich, die Adresse wandert mit (`hx-push-url`);
+  jede Auswahl ist ein `f`-Parameter und wird gemerkt.
+- Eine Zeile **Kennzahlen** über alle Treffer steht über der Tabelle, berechnet in der Datenbank.
+- Die **Begrenzung** (50/100/500/1000/Alle) ist ein Filter; ist die Liste gekürzt, sagt ein
+  `alert-warning` am Kopf der Tabellenkarte, wie viele Treffer es insgesamt sind.
+- **Sortierbare Spaltenköpfe** kommen aus `fragments/sort-header`; sortiert wird in der Abfrage,
+  nicht im Browser.
+- Anlegen und weitere Aktionen stehen in den `card-actions` der Tabellenkarte, weil rechts in der
+  Filterzeile Zurücksetzen und Filtern stehen.
+
+**Sonst nicht vorhanden:** Paginierung, Mehrfachauswahl/Bulk-Aktionen, Spaltenkonfiguration. Die
+übrigen Listen werden vollständig gerendert.
 
 ### 4.2 Formular
 

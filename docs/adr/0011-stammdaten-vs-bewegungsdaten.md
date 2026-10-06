@@ -98,7 +98,8 @@ Bewegungsdaten halten *Ereignisse* und *Aktivitäten* fest, die die Anwendung ü
 | `ETLExecutionHistory` | etl | Systemprotokoll von ETL-Läufen |
 | `ScheduledReportExecutionHistory` | reporting | Systemprotokoll von Report-Ausführungen |
 | `StatisticValue` | statistic | Berechnete Aggregation |
-| `JiraTicket` | jira | Replizierte externe Ticketdaten |
+| `JiraTicket` | jira | Externe Ticketdaten, repliziert oder von Hand gepflegt (#1386, ADR-0037) |
+| `JiraTicketImport` | jira | Protokoll eines Ticketimports mit seiner Spaltenzuordnung (#1386) |
 | `Favorite` | favorites | Benutzer-Schnellzugriff |
 
 > **Hinweis zu `Employeeorder`**: Die Entität wird unter Stammdaten geführt, da sie Konfigurationscharakter hat
