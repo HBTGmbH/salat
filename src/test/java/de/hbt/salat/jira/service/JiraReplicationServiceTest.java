@@ -584,7 +584,7 @@ class JiraReplicationServiceTest {
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
     var seen = stored(1001L, "MOCK-1");
-    var byHand = ticket("HAND-1", null);
+    var byHand = byHand("HAND-1");
     when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(seen, byHand));
 
     jiraReplicationService.runReplication(config.getId());
@@ -613,14 +613,65 @@ class JiraReplicationServiceTest {
     assertThat(removedTickets()).containsExactly(own);
   }
 
+  /**
+   * A ticket another replication maintains in the same scope is skipped and stays with it (#1386) —
+   * found by its JIRA id or by its key. The run says which, so that the JQL can be corrected.
+   */
+  @Test
+  void aTicketOfAnotherReplicationIsSkippedAndNamedInTheRun() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(), otherIssue()));
+    var other = replicationWithId(2L);
+    other.setName("Andere");
+    var byId = stored(1001L, "MOCK-1");
+    byId.setReplication(other);
+    when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L)).thenReturn(Optional.of(byId));
+    var byKey = stored(9003L, "MOCK-3");
+    byKey.setReplication(other);
+    when(ticketRepo.findInScopeByKey(ORDER, null, "MOCK-3")).thenReturn(Optional.of(byKey));
+
+    var result = jiraReplicationService.runReplication(config.getId());
+
+    verify(ticketRepo, never()).save(any(JiraTicket.class));
+    assertThat(byId.getReplication()).isSameAs(other);
+    assertThat(byKey.getJiraId()).isEqualTo(9003L);
+    assertThat(result.skipped()).isEqualTo(2);
+    assertThat(result.written()).isZero();
+    assertThat(result.succeeded()).isTrue();
+    assertThat(result.summary()).contains("2 übersprungen").contains("MOCK-1 (Andere)").contains("MOCK-3 (Andere)");
+  }
+
+  /** The chains are walked over every ticket of the scope, but only the run's own are written (#1386). */
+  @Test
+  void theParentChainsWriteOnlyTheRunsOwnTickets() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var parentByHand = byHand("HAND-1");
+    var own = stored(1001L, "MOCK-1");
+    own.setParentKey("HAND-1");
+    var otherChild = stored(1002L, "MOCK-2");
+    otherChild.setParentKey("HAND-1");
+    otherChild.setReplication(replicationWithId(2L));
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(new ArrayList<>(List.of(parentByHand, own, otherChild)));
+    config.setLastMaxUpdated(LocalDateTime.of(2026, 1, 1, 0, 0));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(own.getTopLevelKey()).isEqualTo("HAND-1");
+    assertThat(otherChild.getTopLevelKey()).isNull();
+    assertThat(parentByHand.getTopLevelKey()).isNull();
+  }
+
   /** A replication set up later takes a ticket maintained by hand over by its key (#1386). */
   @Test
   void aTicketMaintainedByHandIsTakenOverByItsKey() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
-    var byHand = ticket("MOCK-1", null);
-    when(ticketRepo.findManualInScopeByKey(ORDER, null, "MOCK-1")).thenReturn(Optional.of(byHand));
+    var byHand = byHand("MOCK-1");
+    when(ticketRepo.findInScopeByKey(ORDER, null, "MOCK-1")).thenReturn(Optional.of(byHand));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -803,7 +854,6 @@ class JiraReplicationServiceTest {
   private static JiraTicket stored(long jiraId, String key) {
     var ticket = ticket(key, null);
     ticket.setJiraId(jiraId);
-    ticket.setReplication(replicationWithId(1L));
     return ticket;
   }
 
@@ -830,11 +880,20 @@ class JiraReplicationServiceTest {
     return ticket.getValue();
   }
 
+  /** A ticket of the default scope, maintained by the replication of {@link #createMockReplicationConfig()}. */
   private static JiraTicket ticket(String key, String parentKey) {
     var ticket = new JiraTicket();
     ticket.setCustomerorder(ORDER_REFERENCE);
     ticket.setKey(key);
     ticket.setParentKey(parentKey);
+    ticket.setReplication(replicationWithId(1L));
+    return ticket;
+  }
+
+  /** A ticket of the default scope maintained by hand (#1386). */
+  private static JiraTicket byHand(String key) {
+    var ticket = ticket(key, null);
+    ticket.setReplication(null);
     return ticket;
   }
 

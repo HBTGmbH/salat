@@ -124,6 +124,10 @@ public class JiraReplicationService {
     // What the run could not store (#841). The oldest of those timestamps caps the watermark below,
     // and an issue that did not even carry a readable one holds it where it was.
     int failed = 0;
+    // Tickets another replication maintains (#1386): left alone, but counted, because two replications
+    // delivering the same tickets into one scope is a JQL to correct.
+    int skipped = 0;
+    var skippedTickets = new ArrayList<String>();
     LocalDateTime oldestFailure = null;
     boolean failureWithoutTimestamp = false;
 
@@ -153,9 +157,11 @@ public class JiraReplicationService {
         if (issue.getFields() != null) answeredFields.addAll(issue.getFields().keySet());
         long jiraId = Long.parseLong(issue.getId());
         if (seenJiraIds != null) seenJiraIds.add(jiraId);
-        var changed = upsertIfChanged(cfg, fieldConfig, jiraId, issue);
-        if (changed) {
+        var upsert = upsertIfChanged(cfg, fieldConfig, jiraId, issue, skippedTickets);
+        if (upsert == Upsert.WRITTEN) {
           processed++;
+        } else if (upsert == Upsert.SKIPPED) {
+          skipped++;
         }
         var updated = toDateTime(getString(issue.getFields(), "updated"));
         if (updated != null && (newMax == null || updated.isAfter(newMax))) newMax = updated;
@@ -179,7 +185,7 @@ public class JiraReplicationService {
     var tickets = new ArrayList<>(ticketRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
     if (seenJiraIds != null) removeUnseenTickets(cfg, scopeSign, tickets, seenJiraIds, failed);
 
-    resolveParentChains(scopeSign, fieldConfig, tickets);
+    resolveParentChains(cfg, scopeSign, fieldConfig, tickets);
 
     // Update last_max_updated if progressed - but never past an issue this run failed to store
     newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
@@ -202,7 +208,7 @@ public class JiraReplicationService {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
       worklogSyncError = redacted(ex, cfg.getPassword());
     }
-    return new JiraReplicationResult(fetched, processed, failed, worklogSyncError);
+    return new JiraReplicationResult(fetched, processed, failed, skipped, skippedTickets, worklogSyncError);
   }
 
   /**
@@ -255,12 +261,16 @@ public class JiraReplicationService {
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
    */
-  private void resolveParentChains(String scopeSign, JiraFieldConfig fieldConfig, List<JiraTicket> tickets) {
+  private void resolveParentChains(JiraReplicationConfig cfg, String scopeSign, JiraFieldConfig fieldConfig,
+                                   List<JiraTicket> tickets) {
     var ticketsByKey = tickets.stream()
         .collect(Collectors.toMap(JiraTicket::getKey, identity()));
     var updatedChildren = new LinkedList<JiraTicket>();
 
     for(var ticket : ticketsByKey.values()) {
+      // Every ticket of the scope may be a link in the chain, but only its own are written (#1386):
+      // one maintained by hand or by another replication is resolved there, with its own rules.
+      if (!isMaintainedBy(ticket, cfg)) continue;
       var effective = ownValuesOf(ticket, fieldConfig);
 
       // A chain is data from a foreign system and nothing there rules out a cycle - parent_field_names
@@ -409,13 +419,30 @@ public class JiraReplicationService {
     return fields;
   }
 
-  private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
-                                  JiraIssue issue) {
-    // A ticket maintained by hand under the same key is taken over (#1386): the replication that now
-    // covers the scope fills in its JIRA id and keeps it from here on.
+  /** What became of one issue. */
+  private enum Upsert { WRITTEN, UNCHANGED, SKIPPED }
+
+  /**
+   * @param skippedTickets collects the first skipped tickets with the replication that maintains them,
+   *     for the message of the run
+   */
+  private Upsert upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
+                                 JiraIssue issue, List<String> skippedTickets) {
+    // Found by its JIRA id, otherwise by its key (#1386). A ticket nobody maintains — entered by hand,
+    // or left behind by a deleted replication — is taken over: this replication fills in its JIRA id
+    // and keeps it from here on. One another replication maintains is skipped and stays with it.
     var existing = ticketRepo.findInScopeByJiraId(cfg.getCustomerorderId(), cfg.getSuborderId(), jiraId)
-        .or(() -> ticketRepo.findManualInScopeByKey(cfg.getCustomerorderId(), cfg.getSuborderId(), issue.getKey()))
+        .or(() -> ticketRepo.findInScopeByKey(cfg.getCustomerorderId(), cfg.getSuborderId(), issue.getKey()))
         .orElse(null);
+    if (existing != null && existing.isReplicated() && !isMaintainedBy(existing, cfg)) {
+      log.warn("Replication {} skips ticket {}: replication {} maintains it in the same scope - "
+              + "the JQL of the two overlaps",
+          cfg.getName(), issue.getKey(), existing.getReplication().getName());
+      if (skippedTickets.size() < JiraReplicationResult.SKIPPED_NAMED) {
+        skippedTickets.add(issue.getKey() + " (" + existing.getReplication().getName() + ")");
+      }
+      return Upsert.SKIPPED;
+    }
     var fields = issue.getFields();
     var updatedTs = toDateTime(getString(fields, "updated"));
 
@@ -429,7 +456,7 @@ public class JiraReplicationService {
       // this is the point where the new fields would never reach an already replicated ticket.
       if (existing.getUpdatedTs() != null && (updatedTs == null || !updatedTs.isAfter(existing.getUpdatedTs()))) {
         // no change
-        return false;
+        return Upsert.UNCHANGED;
       }
     }
 
@@ -452,7 +479,7 @@ public class JiraReplicationService {
     t.setFieldConfigHash(fieldConfig.hash());
 
     ticketRepo.save(t);
-    return true;
+    return Upsert.WRITTEN;
   }
 
   private static boolean isMaintainedBy(JiraTicket ticket, JiraReplicationConfig cfg) {

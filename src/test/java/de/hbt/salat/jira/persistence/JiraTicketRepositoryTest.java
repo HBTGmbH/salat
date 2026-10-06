@@ -187,7 +187,7 @@ class JiraTicketRepositoryTest {
 
   /**
    * Tickets maintained by hand have no JIRA id (#1386) — several in a scope — and a replication set
-   * up later finds them by their key, but never one that has an id.
+   * up later finds them by their key within the scope.
    */
   @Test
   void a_ticket_maintained_by_hand_is_found_by_its_key() {
@@ -195,10 +195,9 @@ class JiraTicketRepositoryTest {
     save(alphaOrder, null, null, "HAND-2", "auch von Hand", null);
     entityManager.flush();
 
-    assertThat(jiraTicketRepository.findManualInScopeByKey(ALPHA, null, "HAND-1"))
+    assertThat(jiraTicketRepository.findInScopeByKey(ALPHA, null, "HAND-1"))
         .hasValueSatisfying(ticket -> assertThat(ticket.getSummary()).isEqualTo("von Hand"));
-    assertThat(jiraTicketRepository.findManualInScopeByKey(ALPHA, null, "ALPHA-1")).isEmpty();
-    assertThat(jiraTicketRepository.findManualInScopeByKey(ALPHA, A_01, "HAND-1")).isEmpty();
+    assertThat(jiraTicketRepository.findInScopeByKey(ALPHA, A_01, "HAND-1")).isEmpty();
     assertThat(jiraTicketRepository.findInScopeByKey(ALPHA, null, "ALPHA-1")).isPresent();
   }
 
