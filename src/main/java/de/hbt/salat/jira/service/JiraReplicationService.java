@@ -231,10 +231,10 @@ public class JiraReplicationService {
           cfg.getName(), failed, scopeSign);
       return;
     }
-    // A ticket without a JIRA id was maintained by hand (#1386): JIRA never sends it, so not seeing
-    // it says nothing. It stays until somebody deletes it.
+    // Only its own tickets (#1386): who maintains a ticket is its foreign key. One maintained by hand,
+    // by another replication, or left behind by a deleted one is not this run's to remove.
     var unseen = tickets.stream()
-        .filter(ticket -> ticket.getJiraId() != null && !seenJiraIds.contains(ticket.getJiraId()))
+        .filter(ticket -> isMaintainedBy(ticket, cfg) && !seenJiraIds.contains(ticket.getJiraId()))
         .toList();
     if (!unseen.isEmpty()) {
       ticketRepo.deleteAll(unseen);

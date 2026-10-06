@@ -592,6 +592,27 @@ class JiraReplicationServiceTest {
     verifyNothingRemoved();
   }
 
+  /**
+   * Who maintains a ticket is its foreign key (#1386): a run removes only its own tickets — not one of
+   * another replication of the same scope, and not one a deleted replication left behind.
+   */
+  @Test
+  void aRunWithoutWatermarkRemovesOnlyItsOwnTickets() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var own = stored(1001L, "MOCK-1");
+    var ofAnother = stored(1002L, "MOCK-2");
+    ofAnother.setReplication(replicationWithId(2L));
+    var orphan = stored(1003L, "MOCK-3");
+    orphan.setReplication(null);
+    when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(own, ofAnother, orphan));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(removedTickets()).containsExactly(own);
+  }
+
   /** A replication set up later takes a ticket maintained by hand over by its key (#1386). */
   @Test
   void aTicketMaintainedByHandIsTakenOverByItsKey() {
@@ -617,6 +638,7 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     var orphan = stored(1001L, "MOCK-1");
+    orphan.setReplication(null);
     orphan.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     orphan.setFieldConfigHash(JiraFieldConfig.from(config).hash());
     when(ticketRepo.findInScopeByJiraId(ORDER, null, 1001L)).thenReturn(Optional.of(orphan));
@@ -727,8 +749,10 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues(mockIssue()));
     var parent = ticket("MOCK-9", null, Map.of("customfield_10123", "Wartung"));
     parent.setJiraId(1009L);
+    parent.setReplication(config);
     var child = ticket("MOCK-1", "MOCK-9", Map.of());
     child.setJiraId(1001L);
+    child.setReplication(config);
     when(ticketRepo.findInScope(ORDER, null)).thenReturn(List.of(parent, child));
 
     jiraReplicationService.runReplication(config.getId());
@@ -772,11 +796,23 @@ class JiraReplicationServiceTest {
     verify(ticketRepo, never()).delete(any(JiraTicket.class));
   }
 
-  /** A ticket already stored in the default scope, as the replication finds it before the chains. */
+  /**
+   * A ticket already stored in the default scope, as the replication finds it before the chains —
+   * maintained by the replication of {@link #createMockReplicationConfig()} (#1386).
+   */
   private static JiraTicket stored(long jiraId, String key) {
     var ticket = ticket(key, null);
     ticket.setJiraId(jiraId);
+    ticket.setReplication(replicationWithId(1L));
     return ticket;
+  }
+
+  private static JiraReplicationConfig replicationWithId(long id) {
+    var config = new JiraReplicationConfig();
+    var idField = findField(AuditedEntity.class, "id");
+    makeAccessible(idField);
+    setField(idField, config, id);
+    return config;
   }
 
   /** Collects what the service under test logs for the rest of the test method. */

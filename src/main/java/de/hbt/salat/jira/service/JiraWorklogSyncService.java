@@ -116,7 +116,7 @@ public class JiraWorklogSyncService {
   }
 
   /**
-   * Which of these worklogs are on a ticket that is still replicated in this scope (#1167). Only on
+   * Which of these worklogs are on a ticket this replication still maintains (#1167, #1386). Only on
    * those does a missing sum mean the bookings are gone. A ticket the replication has removed —
    * moved away, or no longer matched by the JQL — says nothing about the bookings; its worklogs stay
    * in JIRA, and so does their row here. Should the ticket come back, the sync picks up at that row
@@ -127,7 +127,7 @@ public class JiraWorklogSyncService {
       return Set.of();
     }
     var issueKeys = worklogs.stream().map(WorklogKey::issueKey).distinct().toList();
-    return ticketRepository.findInScopeByKeyIn(cfg.getCustomerorderId(), cfg.getSuborderId(), issueKeys).stream()
+    return ticketRepository.findMaintainedByKeyIn(cfg.getId(), issueKeys).stream()
         .map(ticket -> normalized(ticket.getKey()))
         .collect(Collectors.toSet());
   }
@@ -188,15 +188,18 @@ public class JiraWorklogSyncService {
     return wanted;
   }
 
-  /** Every referenced ticket that exists in this scope, found by its normalised key. */
+  /**
+   * Every referenced ticket this replication maintains, found by its normalised key (#1386): only its
+   * own tickets are written back to, not one of the scope maintained by hand or by another
+   * replication.
+   */
   private Map<String, String> ticketKeysByReference(JiraReplicationConfig cfg, List<TicketDaySum> sums) {
     var references = sums.stream().map(TicketDaySum::ticketReference).distinct().toList();
     if (references.isEmpty()) {
       return Map.of();
     }
     var byNormalizedKey = new LinkedHashMap<String, String>();
-    for (JiraTicket ticket : ticketRepository.findInScopeByKeyIn(cfg.getCustomerorderId(), cfg.getSuborderId(),
-        references)) {
+    for (JiraTicket ticket : ticketRepository.findMaintainedByKeyIn(cfg.getId(), references)) {
       byNormalizedKey.putIfAbsent(normalized(ticket.getKey()), ticket.getKey());
     }
     return byNormalizedKey;
