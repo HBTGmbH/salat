@@ -1,20 +1,19 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -25,6 +24,7 @@ import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderPricing;
 import de.hbt.salat.budget.domain.OrderPricingData;
 import de.hbt.salat.budget.domain.OrderPricingRow;
+import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -76,7 +76,7 @@ public class OrderPricingServiceTest {
     budgetAuthorization = mock(BudgetAuthorization.class);
     when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
     service = new OrderPricingService(orderPricingRepository, orderBudgetRepository, suborderService,
-        customerorderService, employeeService, budgetAuthorization);
+        customerorderService, employeeService, budgetAuthorization, TestMasterDataReferences.create());
   }
 
   @Test
@@ -293,8 +293,8 @@ public class OrderPricingServiceTest {
   /** The list shows the person's current sign. */
   @Test
   public void shows_the_current_sign_of_the_person() {
-    when(employeeService.getSignsByIds(Set.of(EMP))).thenReturn(Map.of(EMP, "emp"));
-    var pricing = pricingFor(EMP);
+    var pricing = pricingFor(null);
+    pricing.setEmployee(employee(EMP, "emp"));
     given(pricing);
 
     assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
@@ -314,7 +314,7 @@ public class OrderPricingServiceTest {
 
   private static OrderPricing pricingFor(Long employeeId) {
     var pricing = pricing("co", TODAY.minusYears(1), OPEN_END);
-    pricing.setEmployeeId(employeeId);
+    pricing.setEmployee(employeeWithId(employeeId));
     return pricing;
   }
 
@@ -341,23 +341,30 @@ public class OrderPricingServiceTest {
     }
   }
 
-  /** The order of the rates with its validity — a copy, so that the shared tree stays as it is. */
+  /**
+   * The order of the rates with its validity — a copy, so that the shared tree stays as it is. The
+   * rates given so far refer to it from now on, as the fetched reference would (#1367).
+   */
   private void givenOrder(String sign, LocalDate fromDate, LocalDate untilDate) {
     var order = new Customerorder();
     setId(order, TREE.orderId(sign));
     order.setSign(sign);
     order.setFromDate(fromDate);
     order.setUntilDate(untilDate);
-    // doReturn: when(...) would call the tree's answer with a null argument first.
-    doReturn(List.of(order)).when(customerorderService).getCustomerordersByIds(any());
+    givenPricings.stream()
+        .filter(pricing -> pricing.getCustomerorderId().equals(order.getId()))
+        .forEach(pricing -> pricing.setCustomerorder(order));
   }
+
+  private final List<OrderPricing> givenPricings = new ArrayList<>();
 
   private static List<OrderPricing> pricingsOf(List<OrderPricingRow> rows) {
     return rows.stream().map(OrderPricingRow::pricing).toList();
   }
 
   private void given(OrderPricing... pricings) {
-    when(orderPricingRepository.findAll()).thenReturn(List.of(pricings));
+    givenPricings.addAll(List.of(pricings));
+    when(orderPricingRepository.findAllWithReferences()).thenReturn(List.of(pricings));
   }
 
   /** The filter names the order by sign; the rates are read by the id behind it (#1212). */
@@ -368,7 +375,7 @@ public class OrderPricingServiceTest {
 
   private static OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(TREE.orderId(customerorderSign));
+    pricing.setCustomerorder(TREE.order(customerorderSign));
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);
@@ -631,8 +638,8 @@ public class OrderPricingServiceTest {
     var plan = new OrderBudget();
     setId(plan, id);
     plan.setName("plan " + id);
-    plan.setCustomerorderId(TREE.orderId(customerorderSign));
-    plan.setSuborderId(TREE.suborderId(suborderSign));
+    plan.setCustomerorder(TREE.order(customerorderSign));
+    plan.setSuborder(TREE.suborderReference(suborderSign));
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
     plan.setActive(active);

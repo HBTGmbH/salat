@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,7 +64,7 @@ public class BudgetQueryServiceTest {
     var plan = new OrderBudget();
     ReflectionTestUtils.setField(plan, "id", id);
     plan.setName(name);
-    plan.setCustomerorderId(CUSTOMERORDER_ID);
+    plan.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     return plan;
   }
 }

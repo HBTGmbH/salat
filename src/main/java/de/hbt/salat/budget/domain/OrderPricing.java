@@ -13,6 +13,8 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import de.hbt.salat.common.Validity;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.order.domain.Customerorder;
 
 @Entity
 @Table(name = "order_pricing")
@@ -23,9 +25,12 @@ public class OrderPricing extends AuditedEntity {
 
     /**
      * The customer order the rate prices (#1212); required since Changeset 119.
+     *
+     * <p>A reference to master data of another module (#1367, ADR-0036): read only, no cascade.
      */
-    @Column(name = "customerorder_id", nullable = false)
-    private Long customerorderId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "customerorder_id", nullable = false)
+    private Customerorder customerorder;
 
     /**
      * A {@code LIKE} pattern over the complete order sign of the suborder ({@code
@@ -47,8 +52,9 @@ public class OrderPricing extends AuditedEntity {
     private String suborderSign;
 
     /** The person the rate applies to (#968); {@code null} means everyone on the order. */
-    @Column(name = "employee_id")
-    private Long employeeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
 
     /**
      * The budget plan this rate is bound to; {@code null} means it applies whatever plan a booking
@@ -110,11 +116,21 @@ public class OrderPricing extends AuditedEntity {
 
     /** Whether the rate applies to every person on the order — it names no person at all. */
     public boolean isForEveryone() {
-        return employeeId == null;
+        return employee == null;
     }
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    /** The id of {@link #customerorder}, read off the reference without loading the order. */
+    public Long getCustomerorderId() {
+        return customerorder != null ? customerorder.getId() : null;
+    }
+
+    /** The id of {@link #employee}, read off the reference without loading the person. */
+    public Long getEmployeeId() {
+        return employee != null ? employee.getId() : null;
     }
 
 }

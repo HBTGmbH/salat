@@ -1,5 +1,8 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -238,8 +241,8 @@ public class EmployeeCostLookupTest {
 
   private static EmployeeCostAssignment assignment(long employeeId, String suborderSign, String costName) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeId(employeeId);
-    assignment.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
+    assignment.setEmployee(employeeWithId(employeeId));
+    assignment.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign)));
     assignment.setCategory(CostCategoryTestUtils.named(costName));
     assignment.setValidFrom(LocalDate.of(2026, 1, 1));
     assignment.setValidUntil(LocalDate.of(2026, 12, 31));
@@ -249,7 +252,7 @@ public class EmployeeCostLookupTest {
   /** An assignment to the whole order (#1343). */
   private static EmployeeCostAssignment toOrder(long employeeId, long customerorderId, String costName) {
     var assignment = assignment(employeeId, null, costName);
-    assignment.setCustomerorderId(customerorderId);
+    assignment.setCustomerorder(customerorderWithId(customerorderId));
     return assignment;
   }
 

@@ -1,6 +1,5 @@
 package de.hbt.salat.budget.controller;
 
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
@@ -8,7 +7,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletRequest;
@@ -336,27 +334,18 @@ public class EmployeeCostController {
         return employeeCostService.getAssignmentsByName(name);
     }
 
-    /** The signs are read off the people (#968), so they follow a rename. */
+    /**
+     * The signs are read off the people (#968), the order and the suborder through the references
+     * (#1367), so they follow a rename; the assignments come with them in one query.
+     */
     private void addCategoryModel(Model model, String name, List<EmployeeCost> rates,
                                   List<EmployeeCostAssignment> assignments) {
-        var signs = employeeService.getSignsByIds(assignments.stream()
-            .map(EmployeeCostAssignment::getEmployeeId)
-            .collect(toSet()));
-        Function<EmployeeCostAssignment, String> signOf = assignment -> signs.get(assignment.getEmployeeId());
-        // The suborders by id as well (#1212).
-        var suborderSigns = suborderService.getCompleteOrderSignsByIds(assignments.stream()
-            .map(EmployeeCostAssignment::getSuborderId)
-            .filter(Objects::nonNull)
-            .collect(toSet()));
-        Function<EmployeeCostAssignment, String> suborderSignOf = assignment -> assignment.getSuborderId() == null
+        Function<EmployeeCostAssignment, String> signOf = assignment -> assignment.getEmployee().getSign();
+        Function<EmployeeCostAssignment, String> suborderSignOf = assignment -> assignment.getSuborder() == null
             ? null
-            : suborderSigns.get(assignment.getSuborderId());
-        var customerorderSigns = customerorderService.getCustomerorderSignsByIds(assignments.stream()
-            .map(EmployeeCostAssignment::getCustomerorderId)
-            .filter(Objects::nonNull)
-            .collect(toSet()));
+            : assignment.getSuborder().getCompleteOrderSign();
         Function<EmployeeCostAssignment, String> customerorderSignOf = assignment ->
-            assignment.getCustomerorderId() == null ? null : customerorderSigns.get(assignment.getCustomerorderId());
+            assignment.getCustomerorder() == null ? null : assignment.getCustomerorder().getSign();
         model.addAttribute("categoryName", name);
         model.addAttribute("rates", rates);
         model.addAttribute("assignments", assignments.stream()

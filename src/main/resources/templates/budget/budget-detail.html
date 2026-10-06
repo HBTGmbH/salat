@@ -34,13 +34,13 @@
         <div class="col-md-6">
           <dl class="row">
             <dt class="col-sm-5" th:text="#{main.budget.field.customerorderSign}">Auftrag</dt>
-            <!--/* Read from the referenced records by id (#1205, #1212). */-->
+            <!--/* Read through the references to order and suborder (#1205, #1212, #1367). */-->
             <dd class="col-sm-7">
-              <span th:text="${customerorderSign}"></span>
+              <span th:text="${budget.customerorder.sign}"></span>
             </dd>
             <dt class="col-sm-5" th:text="#{main.budget.field.suborderSign}">Unterauftrag</dt>
             <dd class="col-sm-7">
-              <span th:text="${suborderSign} ?: '-'"></span>
+              <span th:text="${budget.suborder?.completeOrderSign} ?: '-'"></span>
             </dd>
             <dt class="col-sm-5" th:text="#{main.budget.field.progressMode}">Fortschritt</dt>
             <dd class="col-sm-7"
@@ -218,7 +218,7 @@
         <tbody>
           <tr th:each="p : ${boundPricings}">
             <td th:text="${p.suborderSign} ?: '-'"></td>
-            <td th:text="${p.employeeId} != null ? ${boundPricingSigns.get(p.employeeId)} : '-'"></td>
+            <td th:text="${p.employee?.sign} ?: '-'"></td>
             <td th:text="${p.description} ?: '-'"></td>
             <td class="text-end" th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
             <td class="d-none d-md-table-cell small text-muted">
@@ -256,7 +256,7 @@
         <tbody>
           <tr th:each="f : ${boundFlatRates}">
             <!--/* The complete sign of the suborder, read by id (#1212). */-->
-            <td th:text="${f.suborderId != null ? flatRateSuborderSigns.get(f.suborderId) : '-'}"></td>
+            <td th:text="${f.suborder?.completeOrderSign} ?: '-'"></td>
             <td>
               <a th:href="@{/budget/flat-rate/{id}(id=${f.id})}" th:text="${f.description} ?: '-'">Beschreibung</a>
             </td>

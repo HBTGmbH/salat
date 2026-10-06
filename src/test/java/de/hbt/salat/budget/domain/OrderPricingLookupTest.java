@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -281,7 +283,7 @@ public class OrderPricingLookupTest {
     var suborderRate = rate("co", JAN, JUN);
     suborderRate.setSuborderSign("co/01/");
     var employeeRate = rate("co", JAN, JUN);
-    employeeRate.setEmployeeId(EMP);
+    employeeRate.setEmployee(employeeWithId(EMP));
 
     var lookup = OrderPricingLookup.of(List.of(suborderRate, employeeRate));
 
@@ -355,9 +357,9 @@ public class OrderPricingLookupTest {
 
   private static OrderPricing pricing(String co, String so, Long employeeId, int cents) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(idOf(co));
+    pricing.setCustomerorder(customerorderWithId(idOf(co)));
     pricing.setSuborderSign(so);
-    pricing.setEmployeeId(employeeId);
+    pricing.setEmployee(employeeWithId(employeeId));
     pricing.setPriceCentsPerHour(cents);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));
     pricing.setValidUntil(LocalDate.of(2026, 12, 31));

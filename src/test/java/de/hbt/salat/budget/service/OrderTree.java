@@ -64,6 +64,22 @@ class OrderTree {
     return suborders.get(completeOrderSign);
   }
 
+  /**
+   * What a plan, a flat rate or a cost assignment refers to as its suborder (#1367): {@code null}
+   * for none, the suborder of the tree, or one that carries {@link #UNKNOWN_ID} and nothing else.
+   */
+  Suborder suborderReference(String completeOrderSign) {
+    if (completeOrderSign == null) {
+      return null;
+    }
+    var suborder = suborders.get(completeOrderSign);
+    if (suborder == null) {
+      suborder = new Suborder();
+      setId(suborder, UNKNOWN_ID);
+    }
+    return suborder;
+  }
+
   /** Lets the mocked services answer from this tree. */
   OrderTree stub(CustomerorderService customerorderService, SuborderService suborderService) {
     when(customerorderService.getCustomerorderById(anyLong())).thenAnswer(i -> byId(i.getArgument(0)));

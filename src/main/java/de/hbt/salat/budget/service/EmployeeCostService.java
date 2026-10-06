@@ -1,7 +1,6 @@
 package de.hbt.salat.budget.service;
 
 import static java.util.Comparator.naturalOrder;
-import static java.util.stream.Collectors.toSet;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +19,7 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignmentData;
 import de.hbt.salat.budget.domain.EmployeeCostCategory;
 import de.hbt.salat.budget.domain.EmployeeCostData;
 import de.hbt.salat.budget.domain.EmployeeCostLookup;
+import de.hbt.salat.budget.persistence.MasterDataReferences;
 import de.hbt.salat.budget.persistence.CostCategoryRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostAssignmentRepository;
 import de.hbt.salat.budget.persistence.EmployeeCostRepository;
@@ -47,6 +47,7 @@ public class EmployeeCostService {
     private final EmployeeService employeeService;
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
+    private final MasterDataReferences masterDataReferences;
 
     @Transactional(readOnly = true)
     public EmployeeCost getById(long id) {
@@ -62,26 +63,22 @@ public class EmployeeCostService {
      * at all. A category neither rates nor assignments refer to goes away with the last of them
      * ({@link #dropIfUnused}).
      *
-     * <p>The signs are read off the people (#968), so they follow a rename by themselves. An
-     * assignment the migration could not resolve costs nobody and names nobody here; the category
-     * page lists and marks it.
+     * <p>The signs are read off the people (#968) through the reference (#1367), so they follow a
+     * rename by themselves. An assignment the migration could not resolve costs nobody and names
+     * nobody here; the category page lists and marks it.
      */
     @Transactional(readOnly = true)
     public List<EmployeeCostCategory> getCategories() {
-        var assignments = assignmentRepository.findAllByOrderByCategoryNameAscIdAsc();
+        var assignments = assignmentRepository.findAllWithEmployeeOrderByCategoryName();
         var names = new TreeSet<String>();
         categoryRepository.findAllByOrderByNameAsc().forEach(category -> names.add(category.getName()));
-        var signs = employeeService.getSignsByIds(assignments.stream()
-            .map(EmployeeCostAssignment::getEmployeeId)
-            .filter(Objects::nonNull)
-            .collect(toSet()));
 
         var today = DateUtils.today();
         return names.stream()
             .map(name -> new EmployeeCostCategory(name, assignments.stream()
                 .filter(assignment -> assignment.getEmployeeCostName().equals(name))
                 .filter(assignment -> !assignment.getValidUntil().isBefore(today))
-                .map(assignment -> signs.get(assignment.getEmployeeId()))
+                .map(assignment -> assignment.getEmployee().getSign())
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
@@ -469,9 +466,9 @@ public class EmployeeCostService {
                                  CostCategory category, Employee employee, CustomerorderOption customerorder,
                                  Suborder suborder) {
         assignment.setCategory(category);
-        assignment.setEmployeeId(employee.getId());
-        assignment.setCustomerorderId(customerorder == null ? null : customerorder.id());
-        assignment.setSuborderId(suborder == null ? null : suborder.getId());
+        assignment.setEmployee(masterDataReferences.employee(employee.getId()));
+        assignment.setCustomerorder(masterDataReferences.customerorder(customerorder == null ? null : customerorder.id()));
+        assignment.setSuborder(masterDataReferences.suborder(suborder == null ? null : suborder.getId()));
         assignment.setValidFrom(data.validFrom());
         assignment.setValidUntil(endOfValidity(data.validUntil()));
     }

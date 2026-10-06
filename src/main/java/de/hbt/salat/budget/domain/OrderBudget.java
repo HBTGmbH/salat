@@ -5,6 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
@@ -15,6 +18,8 @@ import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 @Entity
 @Table(name = "order_budget")
@@ -29,16 +34,20 @@ public class OrderBudget extends AuditedEntity {
     /**
      * The customer order of the plan (#1205). Required since Changeset 119 (#1212): the migration
      * could resolve every stored sign.
+     *
+     * <p>A reference to master data of another module (#1367, ADR-0036): read only, no cascade.
      */
-    @Column(name = "customerorder_id", nullable = false)
-    private Long customerorderId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "customerorder_id", nullable = false)
+    private Customerorder customerorder;
 
     /**
      * The suborder the plan lives on; it covers that suborder and everything below it
      * (→ {@link BudgetScope}). {@code null} means the budget applies to the whole customer order.
      */
-    @Column(name = "suborder_id")
-    private Long suborderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suborder_id")
+    private Suborder suborder;
 
     @Column(name = "valid_from", nullable = false)
     private LocalDate validFrom;
@@ -69,7 +78,17 @@ public class OrderBudget extends AuditedEntity {
 
     /** Whether the plan applies to the customer order as a whole. */
     public boolean isOrderWide() {
-        return suborderId == null;
+        return suborder == null;
+    }
+
+    /** The id of {@link #customerorder}, read off the reference without loading the order. */
+    public Long getCustomerorderId() {
+        return customerorder != null ? customerorder.getId() : null;
+    }
+
+    /** The id of {@link #suborder}, read off the reference without loading the suborder. */
+    public Long getSuborderId() {
+        return suborder != null ? suborder.getId() : null;
     }
 
 }

@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
@@ -118,7 +119,7 @@ public class OrderFlatRateTest {
   @Test
   public void a_flat_rate_on_a_suborder_is_not_order_wide() {
     var rate = flatRate(FlatRateRhythm.ONCE, JAN, JAN, "100");
-    rate.setSuborderId(11L);
+    rate.setSuborder(suborderWithId(11L));
 
     assertThat(rate.isOrderWide()).isFalse();
   }

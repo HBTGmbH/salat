@@ -2,6 +2,7 @@ package de.hbt.salat.budget.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -12,6 +13,9 @@ import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 /**
  * The cost category that applies to the work of a person — for one suborder, for a whole customer order,
@@ -36,23 +40,30 @@ public class EmployeeCostAssignment extends AuditedEntity {
         foreignKey = @ForeignKey(name = "fk_employee_cost_employee_category"))
     private CostCategory category;
 
-    /** The person the cost applies to (#968). */
-    @Column(name = "employee_id", nullable = false)
-    private Long employeeId;
+    /**
+     * The person the cost applies to (#968).
+     *
+     * <p>A reference to master data of another module (#1367, ADR-0036): read only, no cascade.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "employee_id", nullable = false)
+    private Employee employee;
 
     /**
      * The customer order the assignment is specific to (#1343): it covers every suborder of the order,
      * also one created later. {@code null} for an assignment to a suborder and for a general one.
      */
-    @Column(name = "customerorder_id")
-    private Long customerorderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customerorder_id")
+    private Customerorder customerorder;
 
     /**
      * The suborder the assignment is specific to (#1205). {@code null} for an assignment to a customer
      * order and for a general one.
      */
-    @Column(name = "suborder_id")
-    private Long suborderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suborder_id")
+    private Suborder suborder;
 
     @Column(name = "valid_from", nullable = false)
     private LocalDate validFrom;
@@ -67,12 +78,27 @@ public class EmployeeCostAssignment extends AuditedEntity {
 
     /** Whether the assignment is specific to a suborder. */
     public boolean isSuborderSpecific() {
-        return suborderId != null;
+        return suborder != null;
     }
 
     /** Whether the assignment is specific to a whole customer order (#1343). */
     public boolean isCustomerorderSpecific() {
-        return customerorderId != null;
+        return customerorder != null;
+    }
+
+    /** The id of {@link #employee}, read off the reference without loading the person. */
+    public Long getEmployeeId() {
+        return employee != null ? employee.getId() : null;
+    }
+
+    /** The id of {@link #customerorder}, read off the reference without loading the order. */
+    public Long getCustomerorderId() {
+        return customerorder != null ? customerorder.getId() : null;
+    }
+
+    /** The id of {@link #suborder}, read off the reference without loading the suborder. */
+    public Long getSuborderId() {
+        return suborder != null ? suborder.getId() : null;
     }
 
 }

@@ -220,7 +220,7 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT a.timereportId FROM TimereportBudgetAssignment a
-        WHERE a.orderBudget.customerorderId = :customerorderId
+        WHERE a.orderBudget.customerorder.id = :customerorderId
         """)
     List<Long> findTimereportIdsByCustomerorderId(@Param("customerorderId") long customerorderId);
 
@@ -233,7 +233,7 @@ public interface TimereportBudgetAssignmentRepository
     @Query("""
         SELECT new de.hbt.salat.budget.domain.TimereportBudgetLink(a.timereportId, a.orderBudget.id)
         FROM TimereportBudgetAssignment a
-        WHERE a.orderBudget.customerorderId = :customerorderId
+        WHERE a.orderBudget.customerorder.id = :customerorderId
         """)
     List<TimereportBudgetLink> findLinksByCustomerorderId(@Param("customerorderId") long customerorderId);
 

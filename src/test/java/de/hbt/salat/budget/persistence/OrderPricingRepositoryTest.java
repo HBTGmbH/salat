@@ -3,6 +3,7 @@ package de.hbt.salat.budget.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderPricing;
+import de.hbt.salat.testutils.MasterDataTestTree;
 
 /**
  * The customer orders offered in the filter of the rate list (#949). They come from the pricings
@@ -37,13 +39,19 @@ public class OrderPricingRepositoryTest {
   @Autowired
   private OrderBudgetRepository orderBudgetRepository;
 
+  @Autowired
+  private EntityManager entityManager;
+
   @MockitoBean
   private AuthorizedUser authorizedUser;
+
+  private MasterDataTestTree tree;
 
   @BeforeEach
   public void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.getLoginSign()).thenReturn("test");
+    tree = new MasterDataTestTree(entityManager);
   }
 
   /** Several rates on one order must not multiply its entry in the select. */
@@ -117,14 +125,14 @@ public class OrderPricingRepositoryTest {
   }
 
   /** The tests name the order by its sign; the rates refer to it by id (#1212). */
-  private static long idOf(String customerorderSign) {
-    return customerorderSign.hashCode();
+  private long idOf(String customerorderSign) {
+    return tree.customerorder(customerorderSign).getId();
   }
 
   private OrderBudget plan(String name) {
     var plan = new OrderBudget();
     plan.setName(name);
-    plan.setCustomerorderId(idOf("co"));
+    plan.setCustomerorder(tree.customerorder("co"));
     plan.setValidFrom(FROM);
     plan.setValidUntil(UNTIL);
     plan.setActive(true);
@@ -134,7 +142,7 @@ public class OrderPricingRepositoryTest {
   private OrderPricing boundPricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil,
                                     OrderBudget plan) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(idOf(customerorderSign));
+    pricing.setCustomerorder(tree.customerorder(customerorderSign));
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);
@@ -144,7 +152,7 @@ public class OrderPricingRepositoryTest {
 
   private OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(idOf(customerorderSign));
+    pricing.setCustomerorder(tree.customerorder(customerorderSign));
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);

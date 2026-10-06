@@ -1,9 +1,6 @@
 package de.hbt.salat.budget.service;
 
 import static java.util.Comparator.comparing;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import static java.lang.Boolean.TRUE;
@@ -12,9 +9,6 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +24,7 @@ import de.hbt.salat.budget.domain.OrderPricingDeviation;
 import de.hbt.salat.budget.domain.OrderPricingLookup;
 import de.hbt.salat.budget.domain.OrderPricingRow;
 import de.hbt.salat.budget.domain.SelectablePlans;
+import de.hbt.salat.budget.persistence.MasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -64,10 +59,11 @@ public class OrderPricingService {
     private final CustomerorderService customerorderService;
     private final EmployeeService employeeService;
     private final BudgetAuthorization budgetAuthorization;
+    private final MasterDataReferences masterDataReferences;
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
-        return StreamSupport.stream(orderPricingRepository.findAll().spliterator(), false).toList();
+        return orderPricingRepository.findAllWithReferences();
     }
 
     /**
@@ -87,63 +83,28 @@ public class OrderPricingService {
         var pricings = customerorderId == null
             ? getAll()
             : orderPricingRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
-        var ordersById = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
-        var employeeSigns = employeeSignsOf(pricings);
-        var planNames = planNamesOf(pricings);
         return pricings.stream()
             .filter(pricing -> showInactive || pricing.getCurrentlyValid())
-            .map(pricing -> row(pricing, ordersById.get(pricing.getCustomerorderId()), coverage,
-                employeeSigns, planNames))
+            .map(pricing -> row(pricing, coverage))
             .filter(row -> showInactiveOrders || orderStillValid(row))
             .sorted(BY_ORDER_SIGN_THEN_VALID_FROM)
             .toList();
     }
 
-    private static OrderPricingRow row(OrderPricing pricing, Customerorder order,
-                                       OrderPricingLookup coverage, Map<Long, String> employeeSigns,
-                                       Map<Long, String> planNames) {
-        // Most rates carry no plan at all, and an immutable map refuses a null key outright.
-        var planId = pricing.getOrderBudgetId();
+    /**
+     * Order, person and plan come with the rate (#1367): the list queries fetch them, so a row reads
+     * them off the references instead of looking them up.
+     */
+    private static OrderPricingRow row(OrderPricing pricing, OrderPricingLookup coverage) {
+        var order = pricing.getCustomerorder();
         return new OrderPricingRow(pricing, order, OrderPricingDeviation.of(pricing, order, coverage),
-            employeeSignOf(pricing, employeeSigns), planId == null ? null : planNames.get(planId));
+            employeeSignOf(pricing), pricing.getOrderBudget() == null ? null : pricing.getOrderBudget().getName());
     }
 
-    /**
-     * The current signs of the people the given rates are for, by id (#968) — one query for the
-     * whole list.
-     */
-    @Transactional(readOnly = true)
-    public Map<Long, String> employeeSignsOf(Collection<OrderPricing> pricings) {
-        var ids = pricings.stream().map(OrderPricing::getEmployeeId).filter(Objects::nonNull)
-            .collect(toSet());
-        return ids.isEmpty() ? Map.of() : employeeService.getSignsByIds(ids);
-    }
-
-    /** The sign a rate is shown with: the person's, or {@code null} for a rate for everyone. */
-    private static String employeeSignOf(OrderPricing pricing, Map<Long, String> employeeSigns) {
-        return pricing.getEmployeeId() == null ? null : employeeSigns.get(pricing.getEmployeeId());
-    }
-
-    /**
-     * The names of the plans the given rates are bound to, by id. One query for the whole list
-     * rather than a lazy load per row (#1065).
-     */
-    private Map<Long, String> planNamesOf(List<OrderPricing> pricings) {
-        var ids = pricings.stream().map(OrderPricing::getOrderBudgetId).filter(Objects::nonNull)
-            .distinct().toList();
-        if (ids.isEmpty()) {
-            return Map.of();
-        }
-        return StreamSupport.stream(orderBudgetRepository.findAllById(ids).spliterator(), false)
-            .collect(toMap(OrderBudget::getId, OrderBudget::getName, (first, second) -> first));
-    }
-
-    /** The orders of the given rates, by id — one query for the whole list (#1212). */
-    private Map<Long, Customerorder> ordersOf(List<OrderPricing> pricings) {
-        var ids = pricings.stream().map(OrderPricing::getCustomerorderId).distinct().toList();
-        return customerorderService.getCustomerordersByIds(ids).stream()
-            .collect(toMap(Customerorder::getId, identity()));
+    /** The sign a rate is shown with: the person's, or {@code null} for a rate for everyone (#968). */
+    public static String employeeSignOf(OrderPricing pricing) {
+        return pricing.getEmployee() == null ? null : pricing.getEmployee().getSign();
     }
 
     private static boolean orderStillValid(OrderPricingRow row) {
@@ -233,9 +194,7 @@ public class OrderPricingService {
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
         var selectable = SelectablePlans.of(fitting, authorized, keepPlanId);
-        return selectable.withScopeSigns(
-            customerorderService.getCustomerorderSignsByIds(List.of(order.customerorderId())).get(order.customerorderId()),
-            suborderService.getCompleteOrderSignsByIds(selectable.suborderIds()));
+        return selectable.withScopeSigns();
     }
 
 
@@ -372,9 +331,9 @@ public class OrderPricingService {
 
     private void apply(OrderPricing pricing, OrderPricingData data, Customerorder customerorder, Employee employee,
                        OrderBudget plan) {
-        pricing.setCustomerorderId(customerorder.getId());
+        pricing.setCustomerorder(masterDataReferences.customerorder(customerorder.getId()));
         pricing.setSuborderSign(data.suborderSign());
-        pricing.setEmployeeId(employee == null ? null : employee.getId());
+        pricing.setEmployee(masterDataReferences.employee(employee == null ? null : employee.getId()));
         pricing.setOrderBudget(plan);
         pricing.setDescription(data.description());
         pricing.setPriceCentsPerHour(data.priceCentsPerHour());

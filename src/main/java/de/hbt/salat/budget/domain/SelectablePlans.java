@@ -3,7 +3,6 @@ package de.hbt.salat.budget.domain;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -62,22 +61,17 @@ public record SelectablePlans(List<OrderBudget> plans, Long notFittingId, Map<Lo
 
     /**
      * The same options with the sign of each plan's scope: the suborder's where the plan has one,
-     * the order's otherwise.
-     *
-     * @param orderSign     the sign of the order all these plans belong to
-     * @param suborderSigns the complete signs of their suborders, by suborder id
+     * the order's otherwise — read through the plan's references (#1367), so the plans must come
+     * with order and suborder fetched.
      */
-    public SelectablePlans withScopeSigns(String orderSign, Map<Long, String> suborderSigns) {
+    public SelectablePlans withScopeSigns() {
         var signs = new HashMap<Long, String>();
         for (var plan : plans) {
-            signs.put(plan.getId(), plan.isOrderWide() ? orderSign : suborderSigns.get(plan.getSuborderId()));
+            signs.put(plan.getId(), plan.isOrderWide()
+                ? plan.getCustomerorder().getSign()
+                : plan.getSuborder().getCompleteOrderSign());
         }
         return new SelectablePlans(plans, notFittingId, signs);
-    }
-
-    /** The suborder ids of the offered plans — what {@link #withScopeSigns} needs the signs of. */
-    public List<Long> suborderIds() {
-        return plans.stream().map(OrderBudget::getSuborderId).filter(Objects::nonNull).distinct().toList();
     }
 
     public boolean isEmpty() {

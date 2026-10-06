@@ -21,6 +21,8 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import de.hbt.salat.common.Validity;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 
 /**
  * A flat rate agreed for an order: an amount that falls due on a date rather than being earned by
@@ -44,16 +46,20 @@ public class OrderFlatRate extends AuditedEntity {
 
     /**
      * The customer order of the flat rate (#1205); required — see {@code OrderBudget#getCustomerorderId()}.
+     *
+     * <p>A reference to master data of another module (#1367, ADR-0036): read only, no cascade.
      */
-    @Column(name = "customerorder_id", nullable = false)
-    private Long customerorderId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "customerorder_id", nullable = false)
+    private Customerorder customerorder;
 
     /**
      * The suborder the flat rate applies to, with its subtree. {@code null} means the flat rate
      * applies to the whole customer order.
      */
-    @Column(name = "suborder_id")
-    private Long suborderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suborder_id")
+    private Suborder suborder;
 
     /**
      * The budget plan this amount counts against; {@code null} leaves the allocation to be derived
@@ -105,7 +111,7 @@ public class OrderFlatRate extends AuditedEntity {
 
     /** Whether this flat rate applies to the customer order as a whole. */
     public boolean isOrderWide() {
-        return suborderId == null;
+        return suborder == null;
     }
 
     /** The id of the bound plan without loading it — see {@code OrderPricing#getOrderBudgetId()}. */
@@ -158,6 +164,16 @@ public class OrderFlatRate extends AuditedEntity {
 
     private static boolean within(LocalDate day, LocalDate from, LocalDate until) {
         return !day.isBefore(from) && !day.isAfter(until);
+    }
+
+    /** The id of {@link #customerorder}, read off the reference without loading the order. */
+    public Long getCustomerorderId() {
+        return customerorder != null ? customerorder.getId() : null;
+    }
+
+    /** The id of {@link #suborder}, read off the reference without loading the suborder. */
+    public Long getSuborderId() {
+        return suborder != null ? suborder.getId() : null;
     }
 
 }

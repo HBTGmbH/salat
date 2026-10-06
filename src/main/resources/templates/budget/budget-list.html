@@ -71,12 +71,12 @@
           <td th:colspan="${isManager} ? 8 : 6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
         <tr th:each="b : ${budgets}"
-            th:with="order=${b.customerorderId != null ? orders.get(b.customerorderId) : null},suborder=${b.suborderId != null ? suborders.get(b.suborderId) : null},employees=${employeesByBudget.get(b.id)}">
+            th:with="order=${b.customerorder},suborder=${b.suborder},employees=${employeesByBudget.get(b.id)}">
           <td>
             <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a><span th:replace="~{fragments/inactive-badge :: badge(${b.active != true})}"></span>
           </td>
           <td class="d-none d-md-table-cell">
-            <!--/* The sign of the record the plan refers to by id (#1205, #1212). */-->
+            <!--/* The sign the referenced order has today (#1205, #1212, #1367). */-->
             <div>
               <span th:text="${order.sign}"></span>
               <span class="ms-1 small" th:text="${order?.shortdescription}"></span>

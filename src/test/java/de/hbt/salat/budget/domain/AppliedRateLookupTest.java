@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.domain;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Field;
@@ -136,7 +138,7 @@ public class AppliedRateLookupTest {
   @Test
   public void takes_the_cost_assignment_to_the_order_of_the_suborder() {
     var toOrder = costAssignment("Standby", 750);
-    toOrder.setCustomerorderId(CUSTOMERORDER_ID);
+    toOrder.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     var costs = EmployeeCostLookup.of(List.of(costAssignment("Senior", 9500), toOrder),
         List.of(cost("Senior", 9500), cost("Standby", 750)));
 
@@ -168,7 +170,7 @@ public class AppliedRateLookupTest {
   public void resolves_by_the_complete_order_sign_of_the_suborder() {
     var suborder = suborder(true, OrderType.STANDARD);
     var onOtherSign = new OrderPricing();
-    onOtherSign.setCustomerorderId(CUSTOMERORDER_ID);
+    onOtherSign.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     onOtherSign.setSuborderSign("co/99");
     onOtherSign.setPriceCentsPerHour(99900);
     onOtherSign.setValidFrom(FROM);
@@ -193,7 +195,7 @@ public class AppliedRateLookupTest {
   /** The general assignment of the person to the category of that name. */
   private static EmployeeCostAssignment costAssignment(String name, int centsPerHour) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeId(EMPLOYEE_ID);
+    assignment.setEmployee(employeeWithId(EMPLOYEE_ID));
     assignment.setCategory(CostCategoryTestUtils.named(name));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
@@ -211,7 +213,7 @@ public class AppliedRateLookupTest {
 
   private static OrderPricingLookup pricingLookup(int centsPerHour) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(CUSTOMERORDER_ID);
+    pricing.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     pricing.setPriceCentsPerHour(centsPerHour);
     pricing.setValidFrom(FROM);
     pricing.setValidUntil(UNTIL);

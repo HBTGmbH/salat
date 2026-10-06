@@ -1,5 +1,8 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -202,11 +205,11 @@ public class BudgetControllingServiceTest {
   public void should_value_the_work_of_an_anonymized_person_unchanged() {
     var personalRate = orderWideRate();
     personalRate.setPriceCentsPerHour(15000);
-    personalRate.setEmployeeId(EMPLOYEE_ID);
+    personalRate.setEmployee(employeeWithId(EMPLOYEE_ID));
     when(orderPricingService.lookupFor(any()))
         .thenReturn(OrderPricingLookup.of(List.of(orderWideRate(), personalRate)));
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeId(EMPLOYEE_ID);
+    assignment.setEmployee(employeeWithId(EMPLOYEE_ID));
     assignment.setCategory(CostCategoryTestUtils.named("senior"));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
@@ -269,8 +272,8 @@ public class BudgetControllingServiceTest {
   /** @param customerorderId the order the assignment is for, {@code null} for the general one */
   private static EmployeeCostAssignment costAssignment(String category, Long customerorderId) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeId(EMPLOYEE_ID);
-    assignment.setCustomerorderId(customerorderId);
+    assignment.setEmployee(employeeWithId(EMPLOYEE_ID));
+    assignment.setCustomerorder(customerorderWithId(customerorderId));
     assignment.setCategory(CostCategoryTestUtils.named(category));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
@@ -1509,8 +1512,8 @@ public class BudgetControllingServiceTest {
     var budget = new OrderBudget();
     setId(budget, nextId++);
     budget.setName(name);
-    budget.setCustomerorderId(CUSTOMERORDER_ID);
-    budget.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
+    budget.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
+    budget.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign)));
     budget.setActive(true);
     budget.setValidFrom(from);
     budget.setValidUntil(until);
@@ -1695,8 +1698,8 @@ public class BudgetControllingServiceTest {
                                         LocalDate from, LocalDate until, String amount) {
     var rate = new OrderFlatRate();
     setId(rate, nextId++);
-    rate.setCustomerorderId(CUSTOMERORDER_ID);
-    rate.setSuborderId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign));
+    rate.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
+    rate.setSuborder(suborderWithId(suborderSign == null ? null : SUBORDER_IDS.get(suborderSign)));
     rate.setDescription(description);
     rate.setRhythm(rhythm);
     rate.setAmount(amount == null ? null : new BigDecimal(amount));
@@ -1707,7 +1710,7 @@ public class BudgetControllingServiceTest {
 
   private static OrderPricing orderWideRate() {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(CUSTOMERORDER_ID);
+    pricing.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));
     pricing.setValidUntil(LocalDate.of(2026, 12, 31));

@@ -27,13 +27,13 @@
         <div class="col-md-6">
           <dl class="row">
             <dt class="col-sm-5" th:text="#{main.flatrate.field.customerorderSign}">Auftrag</dt>
-            <!--/* Read by id (#1212). */-->
+            <!--/* Read through the references to order and suborder (#1212, #1367). */-->
             <dd class="col-sm-7">
-              <span th:text="${customerorderSign}"></span>
+              <span th:text="${flatRate.customerorder.sign}"></span>
             </dd>
             <dt class="col-sm-5" th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</dt>
             <dd class="col-sm-7">
-              <span th:text="${suborderSign} ?: #{main.flatrate.field.suborderSign.wholeorder}"></span>
+              <span th:text="${flatRate.suborder?.completeOrderSign} ?: #{main.flatrate.field.suborderSign.wholeorder}"></span>
             </dd>
             <dt class="col-sm-5" th:text="#{main.flatrate.field.rhythm}">Abrechnung</dt>
             <dd class="col-sm-7" th:text="#{${flatRate.rhythm.label}}"></dd>

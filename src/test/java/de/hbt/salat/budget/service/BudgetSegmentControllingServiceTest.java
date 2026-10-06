@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -350,7 +351,7 @@ public class BudgetSegmentControllingServiceTest {
     setId(plan, nextId++);
     var customerorderId = idOf(customerorderSign);
     SIGNS_BY_ID.put(customerorderId, customerorderSign);
-    plan.setCustomerorderId(customerorderId);
+    plan.setCustomerorder(customerorderWithId(customerorderId));
     plan.setActive(true);
     return plan;
   }

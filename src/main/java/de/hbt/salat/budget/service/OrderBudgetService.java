@@ -20,6 +20,7 @@ import de.hbt.salat.budget.domain.OrderBudgetData;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
 import de.hbt.salat.budget.domain.OrderPosition;
+import de.hbt.salat.budget.persistence.MasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
@@ -42,6 +43,7 @@ public class OrderBudgetService {
     private final OrderPositions orderPositions;
     private final BudgetAuthorization budgetAuthorization;
     private final TimereportBudgetAssignmentService assignmentService;
+    private final MasterDataReferences masterDataReferences;
 
     /**
      * Every caller goes through here, so this is where the customer order of the plan is checked —
@@ -293,8 +295,8 @@ public class OrderBudgetService {
 
     private void apply(OrderBudget budget, OrderBudgetData data, Scope scope) {
         budget.setName(data.name());
-        budget.setCustomerorderId(scope.customerorder().getId());
-        budget.setSuborderId(scope.suborder() == null ? null : scope.suborder().getId());
+        budget.setCustomerorder(masterDataReferences.customerorder(scope.customerorder().getId()));
+        budget.setSuborder(masterDataReferences.suborder(scope.suborder() == null ? null : scope.suborder().getId()));
         budget.setValidFrom(data.validFrom());
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));

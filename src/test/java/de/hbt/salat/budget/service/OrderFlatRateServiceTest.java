@@ -28,6 +28,7 @@ import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderFlatRateData;
 import de.hbt.salat.budget.domain.OrderFlatRateInstalmentData;
 import de.hbt.salat.budget.domain.OrderFlatRateRow;
+import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.OrderFlatRateRepository;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -83,7 +84,7 @@ public class OrderFlatRateServiceTest {
     budgetAuthorization = mock(BudgetAuthorization.class);
     when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
     service = new OrderFlatRateService(repository, orderBudgetRepository, suborderService,
-        customerorderService, budgetAuthorization, new OrderPositions(suborderService));
+        customerorderService, budgetAuthorization, new OrderPositions(suborderService), TestMasterDataReferences.create());
   }
 
   // --- writing ---------------------------------------------------------------------------------
@@ -190,7 +191,7 @@ public class OrderFlatRateServiceTest {
   @Test
   public void adds_an_instalment_inside_the_validity() {
     var existing = flatRate("co", null, FlatRateRhythm.INSTALMENTS, TODAY, TODAY.plusYears(1));
-    when(repository.findById(1L)).thenReturn(Optional.of(existing));
+    when(repository.findWithScopeById(1L)).thenReturn(Optional.of(existing));
 
     service.addInstalment(1L, new OrderFlatRateInstalmentData(new BigDecimal("500"), TOMORROW, "first"));
 
@@ -205,7 +206,7 @@ public class OrderFlatRateServiceTest {
   @Test
   public void refuses_an_instalment_outside_the_validity() {
     var existing = flatRate("co", null, FlatRateRhythm.INSTALMENTS, TODAY, TODAY.plusMonths(1));
-    when(repository.findById(1L)).thenReturn(Optional.of(existing));
+    when(repository.findWithScopeById(1L)).thenReturn(Optional.of(existing));
 
     assertThatThrownBy(() -> service.addInstalment(1L,
         new OrderFlatRateInstalmentData(new BigDecimal("500"), YESTERDAY, null)))
@@ -217,7 +218,7 @@ public class OrderFlatRateServiceTest {
   @Test
   public void refuses_an_instalment_on_a_monthly_flat_rate() {
     var existing = flatRate("co", null, FlatRateRhythm.MONTHLY, TODAY, TODAY.plusYears(1));
-    when(repository.findById(1L)).thenReturn(Optional.of(existing));
+    when(repository.findWithScopeById(1L)).thenReturn(Optional.of(existing));
 
     assertThatThrownBy(() -> service.addInstalment(1L,
         new OrderFlatRateInstalmentData(new BigDecimal("500"), TOMORROW, null)))
@@ -229,7 +230,7 @@ public class OrderFlatRateServiceTest {
   @Test
   public void refuses_to_remove_an_instalment_that_does_not_exist() {
     var existing = flatRate("co", null, FlatRateRhythm.INSTALMENTS, TODAY, TODAY.plusYears(1));
-    when(repository.findById(1L)).thenReturn(Optional.of(existing));
+    when(repository.findWithScopeById(1L)).thenReturn(Optional.of(existing));
 
     assertThatThrownBy(() -> service.removeInstalment(1L, 99L))
         .isInstanceOf(ErrorCodeException.class)
@@ -309,7 +310,7 @@ public class OrderFlatRateServiceTest {
   // --- helpers ---------------------------------------------------------------------------------
 
   private void given(OrderFlatRate... flatRates) {
-    when(repository.findAll()).thenReturn(List.of(flatRates));
+    when(repository.findAllWithReferences()).thenReturn(List.of(flatRates));
   }
 
   private OrderFlatRate savedFlatRate() {
@@ -337,8 +338,8 @@ public class OrderFlatRateServiceTest {
                                         String amount) {
     var flatRate = new OrderFlatRate();
     setId(flatRate, 1L);
-    flatRate.setCustomerorderId(TREE.orderId(customerorderSign));
-    flatRate.setSuborderId(TREE.suborderId(suborderSign));
+    flatRate.setCustomerorder(TREE.order(customerorderSign));
+    flatRate.setSuborder(TREE.suborderReference(suborderSign));
     flatRate.setRhythm(rhythm);
     flatRate.setValidFrom(from);
     flatRate.setValidUntil(until);
@@ -481,8 +482,8 @@ public class OrderFlatRateServiceTest {
     var plan = new OrderBudget();
     setId(plan, id);
     plan.setName("plan " + id);
-    plan.setCustomerorderId(TREE.orderId(customerorderSign));
-    plan.setSuborderId(TREE.suborderId(suborderSign));
+    plan.setCustomerorder(TREE.order(customerorderSign));
+    plan.setSuborder(TREE.suborderReference(suborderSign));
     plan.setValidFrom(validFrom);
     plan.setValidUntil(validUntil);
     plan.setActive(active);

@@ -1,5 +1,8 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
+import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -380,9 +383,9 @@ public class BudgetEmployeeServiceTest {
 
   private void costAssignment(String employeeSign, String suborderSign, String costName) {
     var assignment = new EmployeeCostAssignment();
-    assignment.setEmployeeId(idOf(employeeSign));
+    assignment.setEmployee(employeeWithId(idOf(employeeSign)));
     // by id since #1205; the fixture's suborders are co/01 and co/02
-    assignment.setSuborderId(suborderSign == null ? null : "co/01".equals(suborderSign) ? BILLED : NOT_INVOICEABLE);
+    assignment.setSuborder(suborderWithId(suborderSign == null ? null : "co/01".equals(suborderSign) ? BILLED : NOT_INVOICEABLE));
     assignment.setCategory(CostCategoryTestUtils.named(costName));
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
@@ -401,9 +404,9 @@ public class BudgetEmployeeServiceTest {
   private void pricing(String suborderSign, String employeeSign, int centsPerHour,
                        LocalDate from, LocalDate until) {
     var pricing = new OrderPricing();
-    pricing.setCustomerorderId(CUSTOMERORDER_ID);
+    pricing.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     pricing.setSuborderSign(suborderSign);
-    pricing.setEmployeeId(employeeSign == null ? null : idOf(employeeSign));
+    pricing.setEmployee(employeeWithId(employeeSign == null ? null : idOf(employeeSign)));
     pricing.setPriceCentsPerHour(centsPerHour);
     pricing.setValidFrom(from);
     pricing.setValidUntil(until);
@@ -413,7 +416,7 @@ public class BudgetEmployeeServiceTest {
   private static OrderBudget plan(long id) {
     var budget = new OrderBudget();
     budget.setName("plan " + id);
-    budget.setCustomerorderId(CUSTOMERORDER_ID);
+    budget.setCustomerorder(customerorderWithId(CUSTOMERORDER_ID));
     budget.setValidFrom(FROM);
     budget.setValidUntil(UNTIL);
     budget.setActive(true);
