@@ -1,7 +1,6 @@
 package de.hbt.salat.jira.service;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.FAILED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
 import static de.hbt.salat.jira.service.JiraCredentialRedaction.redacted;
@@ -9,8 +8,6 @@ import static de.hbt.salat.jira.service.JiraCredentialRedaction.redacted;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,7 +23,6 @@ import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
 import de.hbt.salat.jira.domain.JiraTicket;
-import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 
@@ -185,7 +181,7 @@ public class JiraReplicationService {
     var tickets = new ArrayList<>(ticketRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
     if (seenJiraIds != null) removeUnseenTickets(cfg, scopeSign, tickets, seenJiraIds, failed);
 
-    resolveParentChains(cfg, scopeSign, fieldConfig, tickets);
+    resolveParentChains(cfg, scopeSign, tickets);
 
     // Update last_max_updated if progressed - but never past an issue this run failed to store
     newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
@@ -261,69 +257,19 @@ public class JiraReplicationService {
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
    */
-  private void resolveParentChains(JiraReplicationConfig cfg, String scopeSign, JiraFieldConfig fieldConfig,
-                                   List<JiraTicket> tickets) {
-    var ticketsByKey = tickets.stream()
-        .collect(Collectors.toMap(JiraTicket::getKey, identity()));
-    var updatedChildren = new LinkedList<JiraTicket>();
-
-    for(var ticket : ticketsByKey.values()) {
-      // Every ticket of the scope may be a link in the chain, but only its own are written (#1386):
-      // one maintained by hand or by another replication is resolved there, with its own rules.
-      if (!isMaintainedBy(ticket, cfg)) continue;
-      var effective = ownValuesOf(ticket, fieldConfig);
-
-      // A chain is data from a foreign system and nothing there rules out a cycle - parent_field_names
-      // even allows any field to act as the parent source. Without the visited set an issue pointing
-      // back at one of its own ancestors would spin here forever.
-      var visited = new HashSet<String>();
-      visited.add(ticket.getKey());
-      var parent = ticket;
-      while (parent.getParentKey() != null && visited.add(parent.getParentKey())
-          && ticketsByKey.containsKey(parent.getParentKey())) {
-        parent = ticketsByKey.get(parent.getParentKey());
-        inheritMissingValues(effective, parent, fieldConfig);
-      }
-
-      // Absent rather than empty: a json column cannot hold an empty string, and JSON_EXTRACT on
-      // NULL answers NULL instead of aborting the statement around it.
-      var resolved = effective.isEmpty() ? null : effective;
-      if (Objects.equals(parent.getKey(), ticket.getTopLevelKey())
-          && Objects.equals(resolved, ticket.getCustomFieldsEffective())) continue;
-      ticket.setTopLevelKey(parent.getKey());
-      ticket.setCustomFieldsEffective(resolved);
-      updatedChildren.add(ticket);
-    }
-
-    log.info("Resolved parent chains for {} changed tickets of scope {}",
-        updatedChildren.size(), scopeSign);
-    ticketRepo.saveAll(updatedChildren);
+  private void resolveParentChains(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets) {
+    // Every ticket of the scope, whoever maintains it (#1386): these values are derived, never entered,
+    // and the page writing a ticket by hand derives them the same way.
+    var configs = new ArrayList<>(configRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
+    configs.removeIf(other -> Objects.equals(other.getId(), cfg.getId()));
+    configs.add(cfg);
+    var inherited = JiraTicketChains.inheritedFields(configs, tickets);
+    var changed = JiraTicketChains.resolve(tickets, inherited);
+    log.info("Resolved parent chains for {} changed tickets of scope {} with inherited fields {}",
+        changed.size(), scopeSign, inherited);
+    ticketRepo.saveAll(changed);
   }
 
-  /** What the ticket carries itself — an own value beats an inherited one, so it is filled first. */
-  private static Map<String, ResolvedFieldValue> ownValuesOf(JiraTicket ticket, JiraFieldConfig fieldConfig) {
-    var effective = new LinkedHashMap<String, ResolvedFieldValue>();
-    for (var field : fieldConfig.inheritedFieldPaths()) {
-      var own = storedValue(ticket, field);
-      if (own != null) effective.put(field, new ResolvedFieldValue(own, null));
-    }
-    return effective;
-  }
-
-  /** Fills the fields still open from this ancestor, so the nearest one that has a value wins. */
-  private static void inheritMissingValues(Map<String, ResolvedFieldValue> effective,
-                                           JiraTicket ancestor, JiraFieldConfig fieldConfig) {
-    for (var field : fieldConfig.inheritedFieldPaths()) {
-      if (effective.containsKey(field)) continue;
-      var value = storedValue(ancestor, field);
-      if (value != null) effective.put(field, new ResolvedFieldValue(value, ancestor.getKey()));
-    }
-  }
-
-  private static String storedValue(JiraTicket ticket, String field) {
-    var customFields = ticket.getCustomFields();
-    return customFields != null ? customFields.get(field) : null;
-  }
 
   /**
    * The watermark must not move past an issue the run could not store (#841). The next run asks JIRA

@@ -102,13 +102,13 @@ public class JiraTicketController {
     model.addAttribute("sort", sort.name());
     model.addAttribute("sortDescending", descending);
     model.addAttribute("isManager", authorizedUser.isManager());
-    if (customerorderId != null) {
-      int maxResults = limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit;
-      model.addAttribute("result", maintenanceService.search(new JiraTicketListFilter(customerorderId, suborderId,
-          keys, withChildren, fJiraTicketTitle, types, maxResults, sort, descending)));
-      model.addAttribute("coveringReplications",
-          maintenanceService.getCoveringReplications(customerorderId, suborderId));
-    }
+    // Like the booking list, the page lists tickets right away: without an order, those of every order
+    // the user may see (#1386).
+    int maxResults = limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit;
+    model.addAttribute("result", maintenanceService.search(new JiraTicketListFilter(customerorderId, suborderId,
+        keys, withChildren, fJiraTicketTitle, types, maxResults, sort, descending)));
+    model.addAttribute("coveringReplications", customerorderId == null ? List.of()
+        : maintenanceService.getCoveringReplications(customerorderId, suborderId));
     // Like the booking list: a change of the filter swaps the results, not the page.
     return "true".equals(request.getHeader("HX-Request")) ? "jira/ticket-list :: results" : "jira/ticket-list";
   }

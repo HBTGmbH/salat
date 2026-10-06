@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +45,6 @@ import de.hbt.salat.jira.domain.JiraTicketListResult;
 import de.hbt.salat.jira.domain.JiraTicketSort;
 import de.hbt.salat.jira.domain.JiraTicketImportPreview;
 import de.hbt.salat.jira.domain.JiraTicketRow;
-import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
@@ -83,14 +81,25 @@ public class JiraTicketMaintenanceService {
    */
   @Transactional(readOnly = true)
   public JiraTicketListResult search(JiraTicketListFilter filter) {
-    long customerorderId = filter.customerorderId();
-    authorization.checkMayMaintain(customerorderId);
-    var issueTypes = ticketRepository.findIssueTypesOfCustomerorder(customerorderId);
+    // Without an order, as the page opens, every order the user may see — like the booking list.
+    boolean allOrders;
+    List<Long> customerorderIds;
+    if (filter.customerorderId() != null) {
+      authorization.checkMayMaintain(filter.customerorderId());
+      allOrders = false;
+      customerorderIds = List.of(filter.customerorderId());
+    } else {
+      var maintainable = authorization.maintainableCustomerorderIds();
+      allOrders = maintainable.isEmpty();
+      customerorderIds = maintainable.orElse(List.of(-1L));
+      if (!allOrders && customerorderIds.isEmpty()) return JiraTicketListResult.empty(List.of());
+    }
+    var issueTypes = ticketRepository.findIssueTypes(allOrders, customerorderIds);
 
-    boolean allScopes = filter.suborderId() == null;
+    boolean allScopes = filter.suborderId() == null || filter.customerorderId() == null;
     List<Long> suborderIds = allScopes ? List.of(-1L) : scopes.branchOf(filter.suborderId());
     if (suborderIds.isEmpty()) return JiraTicketListResult.empty(issueTypes);
-    var keys = filter.withChildren() ? withChildren(customerorderId, filter.keys()) : filter.keys();
+    var keys = filter.withChildren() ? withChildren(allOrders, customerorderIds, filter.keys()) : filter.keys();
     boolean allKeys = keys.isEmpty();
     boolean allTypes = filter.issueTypes().isEmpty();
     Collection<String> keyList = allKeys ? List.of("") : keys;
@@ -99,8 +108,8 @@ public class JiraTicketMaintenanceService {
     var countByType = new LinkedHashMap<String, Long>();
     long total = 0;
     long replicated = 0;
-    var counts = new ArrayList<>(ticketRepository.countForTicketPage(customerorderId, allScopes, suborderIds, allKeys,
-        keyList, filter.title(), allTypes, typeList));
+    var counts = new ArrayList<>(ticketRepository.countForTicketPage(allOrders, customerorderIds, allScopes,
+        suborderIds, allKeys, keyList, filter.title(), allTypes, typeList));
     counts.sort(Comparator.comparing((Object[] row) -> (Long) row[1]).reversed()
         .thenComparing(row -> row[0] == null ? "" : (String) row[0]));
     for (var row : counts) {
@@ -110,10 +119,11 @@ public class JiraTicketMaintenanceService {
     }
     if (total == 0) return JiraTicketListResult.empty(issueTypes);
 
-    var tickets = ticketRepository.findForTicketPage(customerorderId, allScopes, suborderIds, allKeys, keyList,
-        filter.title(), allTypes, typeList, PageRequest.of(0, filter.maxResults(), sortOf(filter)));
+    var tickets = ticketRepository.findForTicketPage(allOrders, customerorderIds, allScopes, suborderIds, allKeys,
+        keyList, filter.title(), allTypes, typeList, PageRequest.of(0, filter.maxResults(), sortOf(filter)));
     return new JiraTicketListResult(toRows(tickets), total, replicated, countByType, issueTypes);
   }
+
 
   /** Everything about one ticket, with the tickets that name it as parent. */
   @Transactional(readOnly = true)
@@ -362,52 +372,18 @@ public class JiraTicketMaintenanceService {
   }
 
   /**
-   * Writes the top-level key and the inherited fields of the tickets maintained by hand in the scope,
-   * as a replication does for its own (#881): the reports group by the one and read the other.
+   * Derives top-level key and inherited fields of every ticket of the scope (#881), as a replication
+   * does after its run: they are never entered, and the reports group by the one and read the other.
    *
-   * <p>Which fields are inherited is not stored anywhere apart from the result: a field the import
-   * marked as inherited appears in {@code custom_fields_effective}. That is what a later change of a
-   * single ticket goes by. The chain stays within the scope and stops at a cycle, which nothing in a
-   * hand-written parent column rules out.
+   * @param newlyInherited fields an import has just marked as inherited
    */
   private void resolveParentChains(long customerorderId, Long suborderId, Set<String> newlyInherited) {
     var tickets = ticketRepository.findInScope(customerorderId, suborderId);
-    var byKey = new HashMap<String, JiraTicket>();
-    tickets.forEach(ticket -> byKey.putIfAbsent(ticket.getKey(), ticket));
-    var inherited = new HashSet<>(newlyInherited);
-    tickets.stream().filter(ticket -> !ticket.isReplicated() && ticket.getCustomFieldsEffective() != null)
-        .forEach(ticket -> inherited.addAll(ticket.getCustomFieldsEffective().keySet()));
-
-    var changed = new ArrayList<JiraTicket>();
-    for (var ticket : tickets) {
-      if (ticket.isReplicated()) continue;
-      var effective = new LinkedHashMap<String, ResolvedFieldValue>();
-      inherited.forEach(field -> ownValue(ticket, field)
-          .ifPresent(value -> effective.put(field, new ResolvedFieldValue(value, null))));
-      var visited = new HashSet<String>();
-      visited.add(ticket.getKey());
-      var top = ticket;
-      while (top.getParentKey() != null && visited.add(top.getParentKey()) && byKey.containsKey(top.getParentKey())) {
-        top = byKey.get(top.getParentKey());
-        var ancestor = top;
-        inherited.stream().filter(field -> !effective.containsKey(field))
-            .forEach(field -> ownValue(ancestor, field)
-                .ifPresent(value -> effective.put(field, new ResolvedFieldValue(value, ancestor.getKey()))));
-      }
-      var resolved = effective.isEmpty() ? null : effective;
-      if (!Objects.equals(top.getKey(), ticket.getTopLevelKey())
-          || !Objects.equals(resolved, ticket.getCustomFieldsEffective())) {
-        ticket.setTopLevelKey(top.getKey());
-        ticket.setCustomFieldsEffective(resolved);
-        changed.add(ticket);
-      }
-    }
-    ticketRepository.saveAll(changed);
+    var inherited = JiraTicketChains.inheritedFields(configRepository.findInScope(customerorderId, suborderId), tickets);
+    inherited.addAll(newlyInherited);
+    ticketRepository.saveAll(JiraTicketChains.resolve(tickets, inherited));
   }
 
-  private static Optional<String> ownValue(JiraTicket ticket, String field) {
-    return Optional.ofNullable(ticket.getCustomFields()).map(fields -> fields.get(field));
-  }
 
   private static String trimToNull(String value) {
     if (value == null) return null;
@@ -435,11 +411,11 @@ public class JiraTicketMaintenanceService {
         .toList();
   }
 
-  /** The keys and every ticket below them in the order, level by level; comparison ignores case. */
-  private List<String> withChildren(long customerorderId, List<String> keys) {
+  /** The keys and every ticket below them in these orders, level by level; comparison ignores case. */
+  private List<String> withChildren(boolean allOrders, List<Long> customerorderIds, List<String> keys) {
     if (keys.isEmpty()) return keys;
     var result = new LinkedHashSet<>(keys);
-    var links = ticketRepository.findParentLinksOfCustomerorder(customerorderId);
+    var links = ticketRepository.findParentLinks(allOrders, customerorderIds);
     boolean grown = true;
     while (grown) {
       grown = false;

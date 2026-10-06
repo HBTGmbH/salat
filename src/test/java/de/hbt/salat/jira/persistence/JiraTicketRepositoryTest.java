@@ -225,21 +225,33 @@ class JiraTicketRepositoryTest {
         .extracting(JiraTicket::getKey).containsExactly("ALPHA-1", "ALPHA-3");
     assertThat(page(true, List.of(-1L), true, List.of(""), null, false, List.of("Bug")))
         .extracting(JiraTicket::getKey).containsExactly("ALPHA-2");
-    assertThat(jiraTicketRepository.countForTicketPage(ALPHA, true, List.of(-1L), true, List.of(""), null, true,
+    assertThat(jiraTicketRepository.countForTicketPage(false, List.of(ALPHA), true, List.of(-1L), true, List.of(""), null, true,
         List.of(""))).extracting(row -> row[0], row -> row[1], row -> row[2])
         .containsExactlyInAnyOrder(tuple("Story", 2L, 0L), tuple("Bug", 1L, 0L));
-    assertThat(jiraTicketRepository.findIssueTypesOfCustomerorder(ALPHA)).containsExactly("Bug", "Story");
+    assertThat(jiraTicketRepository.findIssueTypes(false, List.of(ALPHA))).containsExactly("Bug", "Story");
+  }
+
+  /** Without an order, as the page opens: every order, or the ones the user may see (#1386). */
+  @Test
+  void the_ticket_page_lists_every_order_or_the_given_ones() {
+    assertThat(jiraTicketRepository.findForTicketPage(true, List.of(-1L), true, List.of(-1L), true, List.of(""), null,
+        true, List.of(""), PageRequest.of(0, 100, Sort.by("key")))).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-1", "ALPHA-2", "ALPHA-3", "BETA-1");
+    assertThat(jiraTicketRepository.findForTicketPage(false, List.of(BETA), true, List.of(-1L), true, List.of(""), null,
+        true, List.of(""), PageRequest.of(0, 100, Sort.by("key")))).extracting(JiraTicket::getKey)
+        .containsExactly("BETA-1");
+    assertThat(jiraTicketRepository.findParentLinks(true, List.of(-1L))).hasSize(4);
   }
 
   @Test
   void the_ticket_page_honours_its_limit() {
-    assertThat(jiraTicketRepository.findForTicketPage(ALPHA, true, List.of(-1L), true, List.of(""), null, true,
+    assertThat(jiraTicketRepository.findForTicketPage(false, List.of(ALPHA), true, List.of(-1L), true, List.of(""), null, true,
         List.of(""), PageRequest.of(0, 2))).hasSize(2);
   }
 
   private List<JiraTicket> page(boolean allScopes, List<Long> suborderIds, boolean allKeys, List<String> keys,
                                 String title, boolean allTypes, List<String> types) {
-    return jiraTicketRepository.findForTicketPage(ALPHA, allScopes, suborderIds, allKeys, keys, title, allTypes, types,
+    return jiraTicketRepository.findForTicketPage(false, List.of(ALPHA), allScopes, suborderIds, allKeys, keys, title, allTypes, types,
         PageRequest.of(0, 100, Sort.by("key")));
   }
 

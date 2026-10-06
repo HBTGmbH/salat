@@ -61,13 +61,9 @@
       <div class="col-lg-4">
         <label class="form-label" for="type-select" th:text="#{main.jira.ticket.field.issueType}">Typ</label>
         <select class="form-select tomselect tomselect-multi" id="type-select" multiple autocomplete="off"
-                th:disabled="${result == null}"
                 th:attr="placeholder=#{main.jira.ticket.filter.types.all}">
-          <!--/* th:each runs before th:if on the same element, so the guard needs its own block. */-->
-          <th:block th:if="${result != null}">
-            <option th:each="type : ${result.issueTypes}" th:value="${type}" th:text="${type}"
-                    th:selected="${selectedTypes.contains(type)}"></option>
-          </th:block>
+          <option th:each="type : ${result.issueTypes}" th:value="${type}" th:text="${type}"
+                  th:selected="${selectedTypes.contains(type)}"></option>
         </select>
       </div>
     </div>
@@ -121,10 +117,7 @@
 
 <div id="results-container" th:fragment="results">
 
-  <div th:if="${fJiraTicketCustomerorderId == null}" class="alert alert-info"
-       th:text="#{main.jira.ticket.list.choose}">Bitte einen Auftrag wählen.</div>
-
-  <th:block th:if="${fJiraTicketCustomerorderId != null}">
+  <th:block>
 
   <!--/* Who maintains a ticket is decided per ticket (#1386): next to a replication, tickets may be
          created by hand, and the replication takes one over once it delivers the same key. */-->
@@ -169,7 +162,11 @@
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.jira.ticket.table.title(${result.totalCount})}">Tickets</h3>
-      <div class="card-actions btn-list">
+      <!--/* A ticket belongs to a scope, so creating and importing need the order (#1386). */-->
+      <div class="card-actions" th:if="${fJiraTicketCustomerorderId == null}">
+        <span class="text-secondary small" th:text="#{main.jira.ticket.list.chooseForCreate}">Für Neues Ticket und Import einen Auftrag wählen.</span>
+      </div>
+      <div class="card-actions btn-list" th:if="${fJiraTicketCustomerorderId != null}">
         <a class="btn btn-outline-primary"
            th:href="@{/jira/tickets/create(customerorderId=${fJiraTicketCustomerorderId},suborderId=${fJiraTicketSuborderId})}">
           <i class="ti ti-plus"></i><span th:text="#{main.jira.ticket.button.create}">Neues Ticket</span>
@@ -263,7 +260,8 @@
 
   <!--/* The import as a dialog (#1386). It lives in the results, so that it always carries the scope
          the filter shows; the preview is swapped in when a file is chosen. */-->
-  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal modal-blur fade" id="ticket-import-modal" tabindex="-1" aria-hidden="true"
+       th:if="${fJiraTicketCustomerorderId != null}">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <form class="modal-content" th:action="@{/jira/tickets/import}" method="post" enctype="multipart/form-data">
         <div class="modal-header">

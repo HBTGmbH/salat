@@ -3,6 +3,7 @@ package de.hbt.salat.jira.service;
 import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
@@ -45,6 +46,17 @@ public class JiraTicketAuthorization {
     if (authorizedUser.isRestricted()) return false;
     if (authorizedUser.isManager()) return true;
     return responsibleCustomerorders().stream().anyMatch(order -> order.id() == customerorderId);
+  }
+
+  /**
+   * The orders whose tickets the page lists when no order is chosen (#1386): empty for a manager,
+   * who sees every order, otherwise the ids of the user's own orders — none at all for a restricted
+   * user.
+   */
+  public Optional<List<Long>> maintainableCustomerorderIds() {
+    if (authorizedUser.isRestricted()) return Optional.of(List.of());
+    if (authorizedUser.isManager()) return Optional.empty();
+    return Optional.of(responsibleCustomerorders().stream().map(CustomerorderOption::id).toList());
   }
 
   public void checkMayMaintain(long customerorderId) {

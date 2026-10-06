@@ -7,7 +7,6 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -338,12 +337,12 @@ class JiraTicketMaintenanceServiceTest {
   /** Figures over every hit; the rows up to the limit (#1386). */
   @Test
   void the_list_counts_every_hit_per_type_and_lists_up_to_the_limit() {
-    when(ticketRepository.findIssueTypesOfCustomerorder(ORDER)).thenReturn(List.of("Bug", "Story"));
-    when(ticketRepository.countForTicketPage(ORDER, true, List.of(-1L), true, List.of(""), null, true, List.of("")))
+    when(ticketRepository.findIssueTypes(false, List.of(ORDER))).thenReturn(List.of("Bug", "Story"));
+    when(ticketRepository.countForTicketPage(false, List.of(ORDER), true, List.of(-1L), true, List.of(""), null, true, List.of("")))
         .thenReturn(new ArrayList<>(List.of(new Object[] {"Bug", 1L, 0L}, new Object[] {"Story", 3L, 2L})));
     var listed = List.of(manual("ABC-1", 1L), manual("ABC-2", 2L));
-    when(ticketRepository.findForTicketPage(anyLong(), anyBoolean(), any(), anyBoolean(), any(), any(), anyBoolean(),
-        any(), any(Pageable.class))).thenReturn(listed);
+    when(ticketRepository.findForTicketPage(anyBoolean(), any(), anyBoolean(), any(), anyBoolean(), any(), any(),
+        anyBoolean(), any(), any(Pageable.class))).thenReturn(listed);
 
     var result = service.search(new JiraTicketListFilter(ORDER, null, List.of(), true, null, List.of(), 2));
 
@@ -356,19 +355,30 @@ class JiraTicketMaintenanceServiceTest {
     assertThat(result.issueTypes()).containsExactly("Bug", "Story");
   }
 
+  /** Without an order, as the page opens: a manager sees every order, a responsible their own (#1386). */
+  @Test
+  void without_an_order_the_list_covers_every_order_the_user_may_see() {
+    service.search(new JiraTicketListFilter(null, null, List.of(), true, null, List.of(), 50));
+    verify(ticketRepository).findIssueTypes(true, List.of(-1L));
+
+    givenResponsibleFor(ORDER);
+    service.search(new JiraTicketListFilter(null, null, List.of(), true, null, List.of(), 50));
+    verify(ticketRepository).findIssueTypes(false, List.of(ORDER));
+  }
+
   /** As the ticket filter of the booking list: a key brings the tickets below it along, ignoring case. */
   @Test
   void a_key_filter_takes_the_tickets_below_along() {
-    when(ticketRepository.findParentLinksOfCustomerorder(ORDER)).thenReturn(List.of(
+    when(ticketRepository.findParentLinks(false, List.of(ORDER))).thenReturn(List.of(
         new JiraTicketParentLink("ABC-2", "abc-1"), new JiraTicketParentLink("ABC-3", "ABC-2"),
         new JiraTicketParentLink("XYZ-1", null)));
 
     service.search(new JiraTicketListFilter(ORDER, null, List.of("abc-1"), true, null, List.of(), 50));
     service.search(new JiraTicketListFilter(ORDER, null, List.of("abc-1"), false, null, List.of(), 50));
 
-    verify(ticketRepository).countForTicketPage(ORDER, true, List.of(-1L), false, List.of("ABC-1", "ABC-2", "ABC-3"),
+    verify(ticketRepository).countForTicketPage(false, List.of(ORDER), true, List.of(-1L), false, List.of("ABC-1", "ABC-2", "ABC-3"),
         null, true, List.of(""));
-    verify(ticketRepository).countForTicketPage(ORDER, true, List.of(-1L), false, List.of("ABC-1"),
+    verify(ticketRepository).countForTicketPage(false, List.of(ORDER), true, List.of(-1L), false, List.of("ABC-1"),
         null, true, List.of(""));
   }
 
