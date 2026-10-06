@@ -31,6 +31,7 @@ import de.hbt.salat.reporting.event.ReportScheduledEvent;
 import de.hbt.salat.reporting.event.ReportUnscheduledEvent;
 import de.hbt.salat.reporting.persistence.ScheduledReportExecutionHistoryRepository;
 import de.hbt.salat.reporting.persistence.ScheduledReportJobRepository;
+import de.hbt.salat.reporting.persistence.OwnerReferences;
 
 @Service
 @RequiredArgsConstructor
@@ -46,13 +47,14 @@ public class ScheduledReportJobService {
   private final ApplicationEventPublisher applicationEventPublisher;
   private final AuthorizedUser authorizedUser;
   private final ReportAuthorization reportAuthorization;
+  private final OwnerReferences ownerReferences;
 
   public List<ScheduledReportJob> getAllJobs() {
     if (authorizedUser.isManager()) {
       return (List<ScheduledReportJob>) scheduledReportJobRepository.findAll();
     }
     var userId = authorizedUser.getEffectiveUserId();
-    return userId == null ? List.of() : scheduledReportJobRepository.findByOwnerUserId(userId);
+    return userId == null ? List.of() : scheduledReportJobRepository.findByOwnerId(userId);
   }
 
   public ScheduledReportJob getJob(Long id) {
@@ -62,7 +64,7 @@ public class ScheduledReportJobService {
   }
 
   public ScheduledReportJob createJob(ScheduledReportJob job) {
-    job.setOwnerUserId(authorizedUser.getEffectiveUserId());
+    job.setOwner(ownerReferences.salatUser(authorizedUser.getEffectiveUserId()));
     ScheduledReportJob saved = scheduledReportJobRepository.save(job);
     applicationEventPublisher.publishEvent(new ReportScheduledEvent(this, saved));
     return saved;

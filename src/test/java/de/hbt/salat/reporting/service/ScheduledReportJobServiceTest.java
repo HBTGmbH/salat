@@ -1,5 +1,6 @@
 package de.hbt.salat.reporting.service;
 
+import static de.hbt.salat.testutils.ReferenceTestUtils.salatUserWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +27,7 @@ import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.ScheduledReportJob;
 import de.hbt.salat.reporting.persistence.ScheduledReportExecutionHistoryRepository;
 import de.hbt.salat.reporting.persistence.ScheduledReportJobRepository;
+import de.hbt.salat.reporting.persistence.OwnerReferences;
 
 /**
  * A scheduled job belongs to the login it was created under, by the id of that login (#1330).
@@ -50,6 +52,8 @@ class ScheduledReportJobServiceTest {
   private AuthorizedUser authorizedUser;
   @Mock
   private ReportAuthorization reportAuthorization;
+  @Mock
+  private OwnerReferences ownerReferences;
 
   @InjectMocks
   private ScheduledReportJobService scheduledReportJobService;
@@ -58,7 +62,7 @@ class ScheduledReportJobServiceTest {
   void a_people_lead_sees_the_jobs_of_their_login() {
     when(authorizedUser.getEffectiveUserId()).thenReturn(OWNER);
     var own = job(1L, OWNER);
-    when(scheduledReportJobRepository.findByOwnerUserId(OWNER)).thenReturn(List.of(own));
+    when(scheduledReportJobRepository.findByOwnerId(OWNER)).thenReturn(List.of(own));
 
     assertThat(scheduledReportJobService.getAllJobs()).containsExactly(own);
   }
@@ -73,6 +77,7 @@ class ScheduledReportJobServiceTest {
   @Test
   void a_new_job_belongs_to_the_login_it_is_created_under() {
     when(authorizedUser.getEffectiveUserId()).thenReturn(OWNER);
+    when(ownerReferences.salatUser(OWNER)).thenReturn(salatUserWithId(OWNER));
     when(scheduledReportJobRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     var saved = scheduledReportJobService.createJob(new ScheduledReportJob());
@@ -115,7 +120,7 @@ class ScheduledReportJobServiceTest {
 
   private static ScheduledReportJob job(long id, Long ownerUserId) {
     var job = new ScheduledReportJob(id);
-    job.setOwnerUserId(ownerUserId);
+    job.setOwner(ownerUserId == null ? null : salatUserWithId(ownerUserId));
     return job;
   }
 }

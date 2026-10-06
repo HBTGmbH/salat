@@ -14,6 +14,7 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.persistence.ReportDefinitionRepository;
+import de.hbt.salat.reporting.persistence.OwnerReferences;
 import de.hbt.salat.reporting.service.ReportService;
 
 /** A renamed order or suborder names the report definitions that still carry the old sign (#1206). */
@@ -22,7 +23,8 @@ class ReportSignReferenceListenerTest {
 
   private final ReportDefinitionRepository repository = mock(ReportDefinitionRepository.class);
   private final ReportSignReferenceListener listener = new ReportSignReferenceListener(
-      new ReportService(repository, null, mock(ReportAuthorization.class), mock(AuthorizedUser.class)));
+      new ReportService(repository, null, mock(ReportAuthorization.class), mock(AuthorizedUser.class),
+          mock(OwnerReferences.class)));
 
   @Test
   void the_definitions_naming_the_old_sign_are_named_once() {

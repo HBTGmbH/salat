@@ -11,17 +11,17 @@ import de.hbt.salat.notification.domain.Notification;
 
 public interface NotificationRepository extends PagingAndSortingRepository<Notification, Long>, CrudRepository<Notification, Long> {
 
-    List<Notification> findByRecipientUserIdOrderByCreatedDesc(Long recipientUserId, Pageable pageable);
+    List<Notification> findByRecipientIdOrderByCreatedDesc(Long recipientUserId, Pageable pageable);
 
-    List<Notification> findByRecipientUserIdOrderByCreatedDesc(Long recipientUserId);
+    List<Notification> findByRecipientIdOrderByCreatedDesc(Long recipientUserId);
 
-    long countByRecipientUserIdAndReadFalse(Long recipientUserId);
+    long countByRecipientIdAndReadFalse(Long recipientUserId);
 
     @Modifying
-    @Query("UPDATE Notification n SET n.read = true WHERE n.recipientUserId = :userId")
-    void markAllReadByRecipientUserId(Long userId);
+    @Query("UPDATE Notification n SET n.read = true WHERE n.recipient.id = :userId")
+    void markAllReadByRecipientId(Long userId);
 
-    void deleteByRecipientUserId(Long userId);
+    void deleteByRecipientId(Long userId);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.created < :before")
