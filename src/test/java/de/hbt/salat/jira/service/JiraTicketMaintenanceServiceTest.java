@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -21,7 +23,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.AuthorizationException;
@@ -340,8 +342,8 @@ class JiraTicketMaintenanceServiceTest {
     when(ticketRepository.countForTicketPage(ORDER, true, List.of(-1L), true, List.of(""), null, true, List.of("")))
         .thenReturn(new ArrayList<>(List.of(new Object[] {"Bug", 1L, 0L}, new Object[] {"Story", 3L, 2L})));
     var listed = List.of(manual("ABC-1", 1L), manual("ABC-2", 2L));
-    when(ticketRepository.findForTicketPage(ORDER, true, List.of(-1L), true, List.of(""), null, true, List.of(""),
-        PageRequest.of(0, 2))).thenReturn(listed);
+    when(ticketRepository.findForTicketPage(anyLong(), anyBoolean(), any(), anyBoolean(), any(), any(), anyBoolean(),
+        any(), any(Pageable.class))).thenReturn(listed);
 
     var result = service.search(new JiraTicketListFilter(ORDER, null, List.of(), true, null, List.of(), 2));
 

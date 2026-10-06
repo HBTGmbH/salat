@@ -58,7 +58,7 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
 
   /**
    * The rows of the ticket page (#1386): the tickets of an order — of every scope, or of the given
-   * suborders — narrowed by key, title and type, by key. A flag stands for "no restriction", because
+   * suborders — narrowed by key, title and type, sorted as the page asks. A flag stands for "no restriction", because
    * an empty {@code in} list is no portable way of saying so; the list next to it is then ignored.
    */
   @Query("""
@@ -68,7 +68,6 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
         and (:allKeys = true or upper(t.key) in :keys)
         and (:title is null or lower(t.summary) like lower(concat('%', :title, '%')))
         and (:allTypes = true or t.issueType in :issueTypes)
-      order by t.key
       """)
   List<JiraTicket> findForTicketPage(long customerorderId, boolean allScopes, Collection<Long> suborderIds,
       boolean allKeys, Collection<String> keys, String title, boolean allTypes, Collection<String> issueTypes,

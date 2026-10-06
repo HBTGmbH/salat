@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraTicketDetail;
 import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.domain.JiraTicketListResult;
+import de.hbt.salat.jira.domain.JiraTicketSort;
 import de.hbt.salat.jira.domain.JiraTicketImportPreview;
 import de.hbt.salat.jira.domain.JiraTicketRow;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
@@ -109,7 +111,7 @@ public class JiraTicketMaintenanceService {
     if (total == 0) return JiraTicketListResult.empty(issueTypes);
 
     var tickets = ticketRepository.findForTicketPage(customerorderId, allScopes, suborderIds, allKeys, keyList,
-        filter.title(), allTypes, typeList, PageRequest.of(0, filter.maxResults()));
+        filter.title(), allTypes, typeList, PageRequest.of(0, filter.maxResults(), sortOf(filter)));
     return new JiraTicketListResult(toRows(tickets), total, replicated, countByType, issueTypes);
   }
 
@@ -415,6 +417,13 @@ public class JiraTicketMaintenanceService {
 
   private static List<Long> scopeOf(JiraTicket ticket) {
     return Arrays.asList(ticket.getCustomerorderId(), ticket.getSuborderId());
+  }
+
+  /** The column asked for, nulls last, ties by key — so that equal values keep a stable order. */
+  private static Sort sortOf(JiraTicketListFilter filter) {
+    var direction = filter.descending() ? Sort.Direction.DESC : Sort.Direction.ASC;
+    var order = new Sort.Order(direction, filter.sort().getAttribute()).nullsLast();
+    return filter.sort() == JiraTicketSort.KEY ? Sort.by(order) : Sort.by(order, Sort.Order.asc("key"));
   }
 
   /** The scope signs are looked up once per scope, not per row. */

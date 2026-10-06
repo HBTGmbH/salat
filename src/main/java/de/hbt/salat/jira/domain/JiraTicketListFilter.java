@@ -12,14 +12,22 @@ import java.util.Locale;
  * @param title a part of the title, compared ignoring case; {@code null} for any
  * @param issueTypes the types asked for; empty for all
  * @param maxResults how many rows are listed at most; counted are all hits
+ * @param sort the column the rows are sorted by; ties go by key
  */
 public record JiraTicketListFilter(long customerorderId, Long suborderId, List<String> keys, boolean withChildren,
-    String title, List<String> issueTypes, int maxResults) {
+    String title, List<String> issueTypes, int maxResults, JiraTicketSort sort, boolean descending) {
 
   public JiraTicketListFilter {
     keys = keys == null ? List.of()
         : keys.stream().map(key -> key.trim().toUpperCase(Locale.ROOT)).filter(key -> !key.isEmpty()).distinct().toList();
     title = title == null || title.isBlank() ? null : title.trim();
     issueTypes = issueTypes == null ? List.of() : issueTypes.stream().filter(type -> !type.isBlank()).distinct().toList();
+    sort = sort == null ? JiraTicketSort.KEY : sort;
+  }
+
+  /** Sorted by key ascending, the way the page opens. */
+  public JiraTicketListFilter(long customerorderId, Long suborderId, List<String> keys, boolean withChildren,
+                              String title, List<String> issueTypes, int maxResults) {
+    this(customerorderId, suborderId, keys, withChildren, title, issueTypes, maxResults, JiraTicketSort.KEY, false);
   }
 }

@@ -2,6 +2,7 @@ package de.hbt.salat.jira.controller;
 
 import static java.util.Comparator.comparing;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +28,7 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
 import de.hbt.salat.jira.domain.JiraTicketListFilter;
+import de.hbt.salat.jira.domain.JiraTicketSort;
 import de.hbt.salat.jira.service.JiraTicketAuthorization;
 import de.hbt.salat.jira.service.JiraTicketMaintenanceService;
 import de.hbt.salat.order.domain.SuborderReadModel;
@@ -71,7 +73,8 @@ public class JiraTicketController {
                      @RequestParam(required = false) String fJiraTicketTitle,
                      @RequestParam(required = false) String fJiraTicketTypes,
                      @RequestParam(required = false) String fJiraTicketLimit,
-                     Model model) {
+                     @RequestParam(required = false) String fJiraTicketSort,
+                     Model model, HttpServletRequest request) {
     var customerorderId = fJiraTicketCustomerorderId != null && authorization.mayMaintain(fJiraTicketCustomerorderId)
         ? fJiraTicketCustomerorderId : null;
     var suborders = suborderOptions(customerorderId, fJiraTicketSuborderId);
@@ -83,6 +86,8 @@ public class JiraTicketController {
     boolean withChildren = fJiraTicketChildren == null || fJiraTicketChildren.isBlank()
         || fJiraTicketChildren.contains("true");
     int limit = limit(fJiraTicketLimit);
+    var sort = JiraTicketSort.parse(fJiraTicketSort);
+    boolean descending = JiraTicketSort.descending(fJiraTicketSort);
 
     model.addAttribute("customerorders", authorization.selectableCustomerorders(customerorderId));
     model.addAttribute("suborders", suborders);
@@ -94,39 +99,39 @@ public class JiraTicketController {
     model.addAttribute("selectedTypes", types);
     model.addAttribute("limits", LIMITS);
     model.addAttribute("limit", limit);
+    model.addAttribute("sort", sort.name());
+    model.addAttribute("sortDescending", descending);
     model.addAttribute("isManager", authorizedUser.isManager());
     if (customerorderId != null) {
       int maxResults = limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit;
       model.addAttribute("result", maintenanceService.search(new JiraTicketListFilter(customerorderId, suborderId,
-          keys, withChildren, fJiraTicketTitle, types, maxResults)));
+          keys, withChildren, fJiraTicketTitle, types, maxResults, sort, descending)));
       model.addAttribute("coveringReplications",
           maintenanceService.getCoveringReplications(customerorderId, suborderId));
     }
-    return "jira/ticket-list";
-  }
-
-  /** Everything about one ticket (#1386). */
-  @GetMapping("/{id}")
-  public String detail(@PathVariable long id, Model model) {
-    model.addAttribute("detail", maintenanceService.getDetail(id));
-    model.addAttribute("isManager", authorizedUser.isManager());
-    return "jira/ticket-detail";
+    // Like the booking list: a change of the filter swaps the results, not the page.
+    return "true".equals(request.getHeader("HX-Request")) ? "jira/ticket-list :: results" : "jira/ticket-list";
   }
 
   /**
-   * Jumps from a ticket to the one its parent or top-level key names. Where the order has no ticket
-   * with that key — a JIRA reference may name one that is not maintained here — the page stays and
-   * says so.
+   * The details of a ticket, as the body of the dialog the list opens (#1386). With {@code related},
+   * the ticket a parent, top-level or inherited key names instead — in the ticket's own scope first,
+   * then in the order; where there is none, the dialog stays on the ticket and says so.
    */
-  @GetMapping("/{id}/related")
-  public String related(@PathVariable long id, @RequestParam String key, RedirectAttributes redirectAttributes) {
-    return maintenanceService.findRelated(id, key)
-        .map(relatedId -> "redirect:/jira/tickets/" + relatedId)
-        .orElseGet(() -> {
-          redirectAttributes.addFlashAttribute("toastError",
-              messages.getMessage("main.jira.ticket.related.missing", new Object[] {key}));
-          return "redirect:/jira/tickets/" + id;
-        });
+  @GetMapping("/{id}/details")
+  public String details(@PathVariable long id, @RequestParam(required = false) String related, Model model) {
+    long shown = id;
+    if (related != null && !related.isBlank()) {
+      var found = maintenanceService.findRelated(id, related.trim());
+      if (found.isPresent()) {
+        shown = found.get();
+      } else {
+        model.addAttribute("relatedMissing", related.trim());
+      }
+    }
+    model.addAttribute("detail", maintenanceService.getDetail(shown));
+    model.addAttribute("isManager", authorizedUser.isManager());
+    return "jira/ticket-detail :: detailBody";
   }
 
   @GetMapping("/create")

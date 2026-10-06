@@ -18,6 +18,7 @@ public class JiraUiStateKeyContributor implements UiStateKeyContributor {
   public static final UiStateKey JIRA_TICKET_TITLE = new UiStateKey("jira.Ticket.Title");
   public static final UiStateKey JIRA_TICKET_TYPES = new UiStateKey("jira.Ticket.Types");
   public static final UiStateKey JIRA_TICKET_LIMIT = new UiStateKey("jira.Ticket.Limit");
+  public static final UiStateKey JIRA_TICKET_SORT = new UiStateKey("jira.Ticket.Sort");
 
   @Override
   public Map<String, UiStateKey> getParamToKeyMappings() {
@@ -29,6 +30,7 @@ public class JiraUiStateKeyContributor implements UiStateKeyContributor {
         entry("fJiraTicketChildren", JIRA_TICKET_CHILDREN),
         entry("fJiraTicketTitle", JIRA_TICKET_TITLE),
         entry("fJiraTicketTypes", JIRA_TICKET_TYPES),
-        entry("fJiraTicketLimit", JIRA_TICKET_LIMIT));
+        entry("fJiraTicketLimit", JIRA_TICKET_LIMIT),
+        entry("fJiraTicketSort", JIRA_TICKET_SORT));
   }
 }
