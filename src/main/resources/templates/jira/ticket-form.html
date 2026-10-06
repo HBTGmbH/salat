@@ -17,14 +17,34 @@
 
   <salat:form th:action="@{/jira/tickets/store}" th:object="${ticketForm}" th:id-property="*{id}">
     <salat:inputs>
-      <!--/* The scope is chosen with the filter of the list and stays with the ticket (#1386). */-->
-      <input type="hidden" th:field="*{customerorderId}"/>
-      <input type="hidden" th:field="*{suborderId}"/>
-      <input type="hidden" th:field="*{scopeSign}"/>
-      <div class="mb-3">
-        <span class="form-label" th:text="#{main.jira.ticket.field.scope}">Bereich</span>
-        <div class="font-monospace" th:text="${scopeSign}">ALPHA/01</div>
+      <!--/* A new ticket chooses its scope among every order the user may maintain, starting with the
+             one of the filter; an existing one keeps it (#1386). */-->
+      <div class="row g-3 mb-3" th:if="${!isEdit}">
+        <div class="col-md-6">
+          <label class="form-label required" for="scopeOrderSelect" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
+          <select class="form-select" id="scopeOrderSelect" name="customerorderId" required
+                  th:hx-get="@{/jira/tickets/scope/suborders}" hx-target="#scopeSuborderSelect"
+                  hx-swap="outerHTML" hx-trigger="change">
+            <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+            <option th:each="co : ${scopeOrders}" th:value="${co.id}"
+                    th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+                    th:selected="${ticketForm.customerorderId != null and ticketForm.customerorderId == co.id}"></option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="scopeSuborderSelect" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
+          <select th:replace="~{jira/ticket-list :: scopeSuborderSelect(${scopeSuborders}, ${ticketForm.suborderId})}"></select>
+        </div>
       </div>
+      <th:block th:if="${isEdit}">
+        <input type="hidden" th:field="*{customerorderId}"/>
+        <input type="hidden" th:field="*{suborderId}"/>
+        <input type="hidden" th:field="*{scopeSign}"/>
+        <div class="mb-3">
+          <span class="form-label" th:text="#{main.jira.ticket.field.scope}">Bereich</span>
+          <div th:text="${scopeSign}">ALPHA/01</div>
+        </div>
+      </th:block>
 
       <div class="row">
         <div class="col-md-4">

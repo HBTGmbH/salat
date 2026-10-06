@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -170,6 +171,18 @@ public class JiraTicketMaintenanceService {
     var ticket = load(id);
     authorization.checkMayMaintain(ticket.getCustomerorderId());
     return toRow(ticket, scopes.signOf(ticket.getCustomerorderId(), ticket.getSuborderId()));
+  }
+
+  /** The orders that have tickets, replicated or by hand (#1386) — the page offers no other. */
+  @Transactional(readOnly = true)
+  public Set<Long> getCustomerorderIdsWithTickets() {
+    return Set.copyOf(ticketRepository.findCustomerorderIdsWithTickets());
+  }
+
+  /** The suborders of the order that have tickets of their own (#1386). */
+  @Transactional(readOnly = true)
+  public Set<Long> getSuborderIdsWithTickets(long customerorderId) {
+    return Set.copyOf(ticketRepository.findSuborderIdsWithTickets(customerorderId));
   }
 
   /** The names of the replications that cover the scope; empty where tickets may be maintained here. */

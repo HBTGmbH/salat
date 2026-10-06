@@ -249,6 +249,7 @@ public enum ErrorCode {
   JI_TICKET_IMPORT_TARGET_TWICE("JI-0037", "a field that takes one column is assigned to several"),
   JI_TICKET_IMPORT_FIELD_NAME_MISSING("JI-0038", "an additional field needs a name"),
   JI_TICKET_IMPORT_MAPPING_MISMATCH("JI-0039", "the column assignment does not fit the ticket file"),
+  JI_TICKET_SCOPE_REQUIRED("JI-0040", "a ticket needs a customer order"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),

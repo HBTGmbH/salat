@@ -87,6 +87,14 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
       Collection<Long> suborderIds, boolean allKeys, Collection<String> keys, String title, boolean allTypes,
       Collection<String> issueTypes);
 
+  /** The orders that have tickets at all, replicated or by hand — what the ticket page offers (#1386). */
+  @Query("select distinct t.customerorder.id from JiraTicket t")
+  List<Long> findCustomerorderIdsWithTickets();
+
+  /** The suborders of an order that have tickets of their own (#1386). */
+  @Query("select distinct t.suborder.id from JiraTicket t where t.customerorder.id = :customerorderId and t.suborder is not null")
+  List<Long> findSuborderIdsWithTickets(long customerorderId);
+
   /** Every type the tickets of these orders — or of every order — carry, for the type filter. */
   @Query("""
       select distinct t.issueType from JiraTicket t

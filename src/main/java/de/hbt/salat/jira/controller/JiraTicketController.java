@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.SalatProperties;
+import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraImportTarget;
 import de.hbt.salat.jira.domain.JiraManualTicketData;
@@ -31,6 +34,7 @@ import de.hbt.salat.jira.domain.JiraTicketListFilter;
 import de.hbt.salat.jira.domain.JiraTicketSort;
 import de.hbt.salat.jira.service.JiraTicketAuthorization;
 import de.hbt.salat.jira.service.JiraTicketMaintenanceService;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -89,7 +93,10 @@ public class JiraTicketController {
     var sort = JiraTicketSort.parse(fJiraTicketSort);
     boolean descending = JiraTicketSort.descending(fJiraTicketSort);
 
-    model.addAttribute("customerorders", authorization.selectableCustomerorders(customerorderId));
+    model.addAttribute("customerorders", ticketOrders(customerorderId));
+    // The import chooses its own scope among every order the user may maintain, tickets or not (#1386).
+    model.addAttribute("importOrders", authorization.selectableCustomerorders(customerorderId));
+    model.addAttribute("importSuborders", visibleSuborders(customerorderId, suborderId));
     model.addAttribute("suborders", suborders);
     model.addAttribute("fJiraTicketCustomerorderId", customerorderId);
     model.addAttribute("fJiraTicketSuborderId", suborderId);
@@ -134,10 +141,14 @@ public class JiraTicketController {
     return "jira/ticket-detail :: detailBody";
   }
 
+  /** The scope of the filter is a start; the form chooses its own (#1386). */
   @GetMapping("/create")
-  public String create(@RequestParam long customerorderId, @RequestParam(required = false) Long suborderId,
-                       Model model) {
-    authorization.checkMayMaintain(customerorderId);
+  public String create(@RequestParam(required = false) Long customerorderId,
+                       @RequestParam(required = false) Long suborderId, Model model) {
+    if (customerorderId != null && !authorization.mayMaintain(customerorderId)) {
+      customerorderId = null;
+      suborderId = null;
+    }
     var form = new JiraTicketForm();
     form.setCustomerorderId(customerorderId);
     form.setSuborderId(suborderId);
@@ -155,6 +166,9 @@ public class JiraTicketController {
     var data = new JiraManualTicketData(form.getKey(), form.getSummary(), form.getIssueType(), form.getParentKey());
     try {
       if (form.isNew()) {
+        if (form.getCustomerorderId() == null) {
+          throw new InvalidDataException(ErrorCode.JI_TICKET_SCOPE_REQUIRED);
+        }
         maintenanceService.create(form.getCustomerorderId(), form.getSuborderId(), data);
         redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.jira.ticket.message.created"));
       } else {
@@ -177,6 +191,14 @@ public class JiraTicketController {
       redirectAttributes.addFlashAttribute("toastError", String.join(" ", toMessages(ex)));
     }
     return "redirect:/jira/tickets";
+  }
+
+  /** The suborders the import dialog and the form of a new ticket offer once their order changes (#1386). */
+  @GetMapping("/scope/suborders")
+  public String scopeSuborders(@RequestParam(required = false) Long customerorderId, Model model) {
+    if (customerorderId != null) authorization.checkMayMaintain(customerorderId);
+    model.addAttribute("importSuborders", visibleSuborders(customerorderId, null));
+    return "jira/ticket-list :: scopeSuborderSwap";
   }
 
   /**
@@ -228,6 +250,8 @@ public class JiraTicketController {
   private String showForm(JiraTicketForm form, Model model) {
     model.addAttribute("ticketForm", form);
     model.addAttribute("isEdit", !form.isNew());
+    model.addAttribute("scopeOrders", authorization.selectableCustomerorders(form.getCustomerorderId()));
+    model.addAttribute("scopeSuborders", visibleSuborders(form.getCustomerorderId(), form.getSuborderId()));
     model.addAttribute("scopeSign", form.getScopeSign() != null ? form.getScopeSign()
         : scopeSignOf(form.getCustomerorderId(), form.getSuborderId()));
     return "jira/ticket-form";
@@ -244,11 +268,38 @@ public class JiraTicketController {
         .map(SuborderReadModel::completeOrderSign).orElse(orderSign);
   }
 
-  /** The suborders of the order, the visible ones and the selected one, by complete order sign. */
-  private List<SuborderReadModel> suborderOptions(Long customerorderId, Long selectedId) {
+  /**
+   * The orders the filter offers (#1386): those the user may see that have tickets — the list shows
+   * nothing else — and the one already chosen.
+   */
+  private List<CustomerorderOption> ticketOrders(Long selectedId) {
+    var withTickets = maintenanceService.getCustomerorderIdsWithTickets();
+    return authorization.selectableCustomerorders(selectedId).stream()
+        .filter(order -> withTickets.contains(order.id()) || Objects.equals(order.id(), selectedId))
+        .toList();
+  }
+
+  /** Every visible suborder of the order, and the one already chosen, by complete order sign. */
+  private List<SuborderReadModel> visibleSuborders(Long customerorderId, Long selectedId) {
     if (customerorderId == null) return List.of();
     return suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId).stream()
         .filter(so -> !so.hide() || Objects.equals(so.id(), selectedId))
+        .sorted(comparing(SuborderReadModel::completeOrderSign))
+        .toList();
+  }
+
+  /**
+   * The suborders of the order the filter offers (#1386): visible ones with tickets of their own or
+   * below them — the filter narrows to a branch — and the one already chosen, by complete order sign.
+   */
+  private List<SuborderReadModel> suborderOptions(Long customerorderId, Long selectedId) {
+    if (customerorderId == null) return List.of();
+    var withTickets = maintenanceService.getSuborderIdsWithTickets(customerorderId);
+    var readModels = suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId);
+    var offered = new HashSet<Long>();
+    readModels.stream().filter(so -> withTickets.contains(so.id())).forEach(so -> offered.addAll(so.path()));
+    return readModels.stream()
+        .filter(so -> (!so.hide() && offered.contains(so.id())) || Objects.equals(so.id(), selectedId))
         .sorted(comparing(SuborderReadModel::completeOrderSign))
         .toList();
   }
