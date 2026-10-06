@@ -18,20 +18,19 @@ class JiraTicketViewHelperTest {
   private final JiraTicketViewHelper helper = new JiraTicketViewHelper();
 
   @Test
-  void a_moment_names_who_where_that_is_known() {
-    assertThat(helper.stamp(WHEN, "kr")).isEqualTo("06.10.2026 17:40 (kr)");
-    assertThat(helper.stamp(WHEN, null)).isEqualTo("06.10.2026 17:40");
-    assertThat(helper.stamp(null, "kr")).isEqualTo("–");
+  void a_moment_is_date_and_time() {
+    assertThat(helper.stamp(WHEN)).isEqualTo("06.10.2026 17:40");
+    assertThat(helper.stamp(null)).isEqualTo("–");
   }
 
   @Test
-  void an_import_names_its_file_between_moment_and_person() {
-    assertThat(helper.importStamp(detail("export.csv", WHEN, "kr"))).isEqualTo("06.10.2026 17:40 · export.csv (kr)");
-    assertThat(helper.importStamp(detail(null, WHEN, null))).isEqualTo("06.10.2026 17:40");
-    assertThat(helper.importStamp(detail(null, null, null))).isEqualTo("–");
+  void an_import_names_its_file() {
+    assertThat(helper.importStamp(detail("export.csv", WHEN))).isEqualTo("06.10.2026 17:40 · export.csv");
+    assertThat(helper.importStamp(detail(null, WHEN))).isEqualTo("06.10.2026 17:40");
+    assertThat(helper.importStamp(detail(null, null))).isEqualTo("–");
   }
 
-  private static JiraTicketDetail detail(String file, LocalDateTime at, String by) {
-    return new JiraTicketDetail(null, null, List.of(), null, null, null, null, Map.of(), Map.of(), List.of(), file, at, by);
+  private static JiraTicketDetail detail(String file, LocalDateTime at) {
+    return new JiraTicketDetail(null, null, List.of(), null, null, Map.of(), Map.of(), List.of(), file, at);
   }
 }

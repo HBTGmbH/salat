@@ -75,22 +75,22 @@
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.created}">Erstellt</div>
         <div class="datagrid-content"
-             th:text="${@jiraTicketViewHelper.stamp(detail.createdTs, null)}">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(detail.createdTs)}">01.01.2026</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.updated}">Aktualisiert</div>
         <div class="datagrid-content"
-             th:text="${@jiraTicketViewHelper.stamp(ticket.updatedTs, null)}">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(ticket.updatedTs)}">01.01.2026</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.inSystemSince}">im System seit</div>
         <div class="datagrid-content"
-             th:text="${@jiraTicketViewHelper.stamp(ticket.inSystemSince, detail.inSystemBy)}">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(ticket.inSystemSince)}">01.01.2026</div>
       </div>
       <div class="datagrid-item">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.lastChange}">zuletzt geändert</div>
         <div class="datagrid-content"
-             th:text="${@jiraTicketViewHelper.stamp(detail.lastChange, detail.lastChangeBy)}">01.01.2026</div>
+             th:text="${@jiraTicketViewHelper.stamp(detail.lastChange)}">01.01.2026</div>
       </div>
       <div class="datagrid-item" th:if="${detail.importedAt != null}">
         <div class="datagrid-title" th:text="#{main.jira.ticket.field.import}">Import</div>

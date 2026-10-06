@@ -11,7 +11,7 @@ import java.util.TreeSet;
  * @param row what the list shows of it
  * @param labels the labels one by one
  * @param createdTs created in JIRA, or when created by hand or named by an import
- * @param lastChange when the row was last written, and by whom
+ * @param lastChange when the row was last written
  * @param customFields the additional fields as the ticket carries them itself
  * @param effectiveFields the inherited fields as resolved along the parent chain
  * @param children the tickets of the same scope that name it as parent
@@ -22,15 +22,12 @@ public record JiraTicketDetail(
     Long jiraId,
     List<String> labels,
     LocalDateTime createdTs,
-    String inSystemBy,
     LocalDateTime lastChange,
-    String lastChangeBy,
     Map<String, String> customFields,
     Map<String, ResolvedFieldValue> effectiveFields,
     List<JiraTicketRow> children,
     String importedFrom,
-    LocalDateTime importedAt,
-    String importedBy
+    LocalDateTime importedAt
 ) {
 
   /** The names of the own and the inherited fields together, sorted. */

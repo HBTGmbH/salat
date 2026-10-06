@@ -155,13 +155,11 @@ public class JiraTicketMaintenanceService {
         : Arrays.stream(ticket.getLabels().split(",")).map(String::trim).filter(label -> !label.isEmpty()).toList();
     var children = toRows(ticketRepository.findChildrenInScope(ticket.getCustomerorderId(), ticket.getSuborderId(),
         ticket.getKey()));
-    return new JiraTicketDetail(row, ticket.getJiraId(), labels, ticket.getCreatedTs(), ticket.getCreatedby(),
-        ticket.getLastupdate(), ticket.getLastupdatedby(),
+    return new JiraTicketDetail(row, ticket.getJiraId(), labels, ticket.getCreatedTs(), ticket.getLastupdate(),
         ticket.getCustomFields() == null ? Map.of() : new TreeMap<>(ticket.getCustomFields()),
         ticket.getCustomFieldsEffective() == null ? Map.of() : new TreeMap<>(ticket.getCustomFieldsEffective()),
         children, importOf(ticket).map(JiraTicketImport::getFileName).orElse(null),
-        importOf(ticket).map(JiraTicketImport::getCreated).orElse(null),
-        importOf(ticket).map(JiraTicketImport::getCreatedby).orElse(null));
+        importOf(ticket).map(JiraTicketImport::getCreated).orElse(null));
   }
 
   /**
