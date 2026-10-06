@@ -57,7 +57,6 @@ import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.jira.domain.JiraTicket_;
 import de.hbt.salat.order.domain.CustomerorderOption;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -228,11 +227,11 @@ public class JiraTicketMaintenanceService {
    * nor inactive, and the one already chosen.
    */
   @Transactional(readOnly = true)
-  public List<Suborder> getScopeSuborders(Long customerorderId, Long selectedId) {
+  public List<SuborderReadModel> getScopeSuborders(Long customerorderId, Long selectedId) {
     if (customerorderId == null) return List.of();
     authorization.checkMayMaintain(customerorderId);
-    return suborderService.getCreatableSubordersByCustomerorderId(customerorderId, selectedId).stream()
-        .sorted(Comparator.comparing(Suborder::getCompleteOrderSign))
+    return suborderService.getCreatableSuborderReadModelsByCustomerorderId(customerorderId, selectedId).stream()
+        .sorted(Comparator.comparing(SuborderReadModel::completeOrderSign))
         .toList();
   }
 

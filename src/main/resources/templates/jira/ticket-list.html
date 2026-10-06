@@ -450,7 +450,7 @@
           th:disabled="${#lists.isEmpty(suborders)}">
     <option value="" th:text="#{main.jira.ticket.import.wholeOrder}">--- Ganzer Auftrag ---</option>
     <option th:each="so : ${suborders}" th:value="${so.id}"
-            th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+            th:with="subtext=${@suborderLabelViewHelper.subtextOfOrder(order)}"
             th:attr="data-subtext=${subtext}"
             th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
             th:selected="${selectedId != null and selectedId == so.id}"></option>

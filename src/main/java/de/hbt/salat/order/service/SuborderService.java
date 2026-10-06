@@ -523,13 +523,22 @@ public class SuborderService {
   }
 
   /**
-   * The suborders of the customer order a select for something new offers (#1386, ADR-0029): neither
-   * hidden nor inactive today, plus the suborder {@code keepId} whatever it is.
+   * The suborders of the customer order a select for something new offers, as read models for another
+   * module (#1386, ADR-0021, ADR-0029): neither hidden nor inactive today, plus the suborder
+   * {@code keepId} whatever it is.
    */
-  public List<Suborder> getCreatableSubordersByCustomerorderId(long customerorderId, Long keepId) {
-    return getSelectableSubordersByCustomerorderId(customerorderId, keepId).stream()
-        .filter(suborder -> !Validity.isInactive(suborder.getUntilDate()) || Objects.equals(suborder.getId(), keepId))
+  public List<SuborderReadModel> getCreatableSuborderReadModelsByCustomerorderId(long customerorderId, Long keepId) {
+    var all = suborderDAO.getSubordersByCustomerorderId(customerorderId);
+    var byId = new HashMap<Long, Suborder>();
+    all.forEach(suborder -> byId.put(suborder.getId(), suborder));
+    return all.stream()
+        .filter(suborder -> isCreatable(suborder) || Objects.equals(suborder.getId(), keepId))
+        .map(suborder -> SuborderReadModel.of(suborder, byId))
         .toList();
+  }
+
+  private static boolean isCreatable(Suborder suborder) {
+    return !suborder.isHide() && !Validity.isInactive(suborder.getUntilDate());
   }
 
   /**
