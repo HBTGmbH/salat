@@ -9,8 +9,10 @@ import java.time.LocalDate;
  * itself, and a date entered by hand would permanently skip every ticket updated before it. The one
  * sensible operation on it is resetting it, which is its own service method.
  *
- * @param password the new password, or {@code null}/blank to keep the stored one. The form never
- *     shows what is stored, so an empty field means "unchanged", not "clear it".
+ * @param authMethod how the replication signs in (#1385); a Personal Access Token only on Server
+ * @param username the user name for HTTP Basic, ignored with a Personal Access Token
+ * @param password the new password or token, or {@code null}/blank to keep the stored one. The form
+ *     never shows what is stored, so an empty field means "unchanged", not "clear it".
  * @param customerorderId the customer order the replication applies to (#1322)
  * @param suborderId the suborder it is narrowed to, together with the branch below it, or
  *     {@code null} for the whole order (#1025, #1322)
@@ -27,6 +29,7 @@ public record JiraReplicationConfigData(
     Long suborderId,
     String baseUrl,
     JiraApiFlavor apiFlavor,
+    JiraAuthMethod authMethod,
     String username,
     String password,
     String jql,

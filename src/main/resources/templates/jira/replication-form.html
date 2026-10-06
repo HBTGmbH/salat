@@ -59,20 +59,45 @@
         </div>
       </div>
 
-      <div class="row">
-        <div class="col-md-6">
+      <!--/* The sign-in method (#1385) is a choice on Server / Data Center only: Cloud takes its API
+             token as the Basic password and accepts no bearer token. salatApplyAuthMethod() below
+             keeps rows, the required user name and the wording of the secret field in step. */-->
+      <div class="row" id="authMethodRow"
+           th:classappend="${replicationForm.apiFlavor.name() == 'CLOUD'} ? 'd-none'">
+        <div class="col-md-4">
+          <salat:select th:field="*{authMethod}" th:label="#{main.jira.replication.field.authMethod}" required="true">
+            <option th:each="method : ${authMethods}" th:value="${method.name()}"
+                    th:text="#{${method.label}}">Benutzername und Passwort</option>
+          </salat:select>
+        </div>
+      </div>
+
+      <div class="row" th:with="token=${replicationForm.authMethod.name() == 'PERSONAL_ACCESS_TOKEN'}">
+        <div class="col-md-6" id="usernameColumn" th:classappend="${token} ? 'd-none'">
           <salat:textInput th:field="*{username}" th:label="#{main.jira.replication.field.username}"
                            required="true" maxlength="255"
                            th:helpText="#{main.jira.replication.field.username.help}" />
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6" id="secretColumn"
+             th:data-label-basic="#{main.jira.replication.field.password}"
+             th:data-label-token="#{main.jira.replication.field.token}"
+             th:data-help-basic="${isEdit}
+                 ? #{main.jira.replication.field.password.help.edit}
+                 : #{main.jira.replication.field.password.help.create}"
+             th:data-help-token="${isEdit}
+                 ? #{main.jira.replication.field.token.help.edit}
+                 : #{main.jira.replication.field.token.help.create}">
           <!--/* Never prefilled: the stored password does not leave the service. An empty field keeps
                  it, a filled one replaces it. */-->
           <salat:textInput th:field="*{password}" type="password"
-                           th:label="#{main.jira.replication.field.password}" maxlength="255"
-                           th:helpText="${isEdit}
-                               ? #{main.jira.replication.field.password.help.edit}
-                               : #{main.jira.replication.field.password.help.create}" />
+                           th:label="${token}
+                               ? #{main.jira.replication.field.token}
+                               : #{main.jira.replication.field.password}" maxlength="255"
+                           th:helpText="${token}
+                               ? (${isEdit} ? #{main.jira.replication.field.token.help.edit}
+                                            : #{main.jira.replication.field.token.help.create})
+                               : (${isEdit} ? #{main.jira.replication.field.password.help.edit}
+                                            : #{main.jira.replication.field.password.help.create})" />
         </div>
       </div>
 
@@ -251,6 +276,30 @@
       if (!toggle || !section) return;
       section.classList.toggle('d-none', !toggle.checked);
     }
+
+    // The sign-in method (#1385): Cloud offers no choice and falls back to Basic; a Personal Access
+    // Token needs no user name, and the secret field names what it holds. Hidden, the user name
+    // must not stay required, or the browser would refuse to submit.
+    function salatApplyAuthMethod() {
+      const flavor = document.getElementById('apiFlavor');
+      const method = document.getElementById('authMethod');
+      if (!flavor || !method) return;
+      const cloud = flavor.value === 'CLOUD';
+      if (cloud && method.value !== 'BASIC') {
+        if (method.tomselect) method.tomselect.setValue('BASIC', true); else method.value = 'BASIC';
+      }
+      document.getElementById('authMethodRow').classList.toggle('d-none', cloud);
+      const token = method.value === 'PERSONAL_ACCESS_TOKEN';
+      const username = document.getElementById('username');
+      username.required = !token;
+      document.getElementById('usernameColumn').classList.toggle('d-none', token);
+      const secret = document.getElementById('secretColumn');
+      secret.querySelector('label').textContent = token ? secret.dataset.labelToken : secret.dataset.labelBasic;
+      secret.querySelector('.form-text').textContent = token ? secret.dataset.helpToken : secret.dataset.helpBasic;
+    }
+    document.getElementById('apiFlavor')?.addEventListener('change', salatApplyAuthMethod);
+    document.getElementById('authMethod')?.addEventListener('change', salatApplyAuthMethod);
+    salatApplyAuthMethod();
   </script>
 
 </main>

@@ -18,7 +18,7 @@ abstract class AbstractJiraSearchClient extends AbstractJiraRestClient implement
    * differ in where it lives, so the request itself is shared and each client passes its own path.
    */
   protected List<JiraField> fetchFields(JiraFieldsRequest request, String path) {
-    var fields = clientFor(request.username(), request.password())
+    var fields = clientFor(request.credentials())
         .get()
         .uri(endpointUrl(request.baseUrl(), path))
         .retrieve()

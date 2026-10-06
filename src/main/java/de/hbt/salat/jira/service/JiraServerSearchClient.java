@@ -61,7 +61,7 @@ public class JiraServerSearchClient extends AbstractJiraSearchClient {
 
     private StartAtIterator(JiraSearchRequest request) {
       this.request = request;
-      this.client = clientFor(request.username(), request.password());
+      this.client = clientFor(request.credentials());
     }
 
     @Override

@@ -69,7 +69,7 @@ public class JiraCloudSearchClient extends AbstractJiraSearchClient {
 
     private NextPageTokenIterator(JiraSearchRequest request) {
       this.request = request;
-      this.client = clientFor(request.username(), request.password());
+      this.client = clientFor(request.credentials());
       this.url = endpointUrl(request.baseUrl(), SEARCH_PATH);
     }
 

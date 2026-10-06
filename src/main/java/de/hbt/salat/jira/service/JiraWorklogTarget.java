@@ -9,8 +9,7 @@ package de.hbt.salat.jira.service;
  */
 public record JiraWorklogTarget(
     String baseUrl,
-    String username,
-    String password,
+    JiraCredentials credentials,
     String issueKey
 ) {
 

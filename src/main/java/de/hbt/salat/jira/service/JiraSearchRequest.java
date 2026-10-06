@@ -8,8 +8,7 @@ import java.util.List;
  */
 public record JiraSearchRequest(
     String baseUrl,
-    String username,
-    String password,
+    JiraCredentials credentials,
     String jql,
     List<String> fields,
     int pageSize

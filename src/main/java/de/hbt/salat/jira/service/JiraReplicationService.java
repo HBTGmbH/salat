@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
@@ -94,7 +95,9 @@ public class JiraReplicationService {
 
   public JiraReplicationResult runReplication(JiraReplicationConfig cfg) {
     requireNonNull(cfg.getBaseUrl(), "baseUrl");
-    requireNonNull(cfg.getUsername(), "username");
+    if (cfg.getAuthMethod() == JiraAuthMethod.BASIC) {
+      requireNonNull(cfg.getUsername(), "username");
+    }
     requireNonNull(cfg.getPassword(), "password");
     requireNonNull(cfg.getJql(), "jql");
 
@@ -127,7 +130,7 @@ public class JiraReplicationService {
     var fields = buildFieldList(cfg, fieldConfig);
     var jql = appendMaxUpdated(cfg.getJql(), baseline);
     var request = new JiraSearchRequest(
-        cfg.getBaseUrl(), cfg.getUsername(), cfg.getPassword(), jql, fields, pageSize);
+        cfg.getBaseUrl(), JiraCredentials.of(cfg), jql, fields, pageSize);
 
     // Which of the configured fields any answer actually carried. JIRA either rejects an unknown
     // field id with HTTP 400 — the run then fails visibly — or drops it silently, and that second

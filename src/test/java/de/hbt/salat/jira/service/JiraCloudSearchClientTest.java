@@ -125,14 +125,14 @@ class JiraCloudSearchClientTest {
             MediaType.APPLICATION_JSON));
 
     var fields = client.listFields(
-        new JiraFieldsRequest("https://mock.atlassian.net", EMAIL, API_TOKEN));
+        new JiraFieldsRequest("https://mock.atlassian.net", JiraCredentials.basic(EMAIL, API_TOKEN)));
 
     assertEquals(List.of("customfield_10123"), fields.stream().map(JiraField::getId).toList());
     jira.verify();
   }
 
   private static JiraSearchRequest request() {
-    return new JiraSearchRequest("https://mock.atlassian.net", EMAIL, API_TOKEN,
+    return new JiraSearchRequest("https://mock.atlassian.net", JiraCredentials.basic(EMAIL, API_TOKEN),
         "project = MOCK", List.of("summary", "updated"), 2);
   }
 

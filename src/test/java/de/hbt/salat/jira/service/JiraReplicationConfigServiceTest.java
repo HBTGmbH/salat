@@ -36,6 +36,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
@@ -158,6 +159,86 @@ class JiraReplicationConfigServiceTest {
     verify(configRepository, never()).save(any());
   }
 
+  /** A Personal Access Token carries no user name (#1385); one left in the hidden field is dropped. */
+  @Test
+  void a_personal_access_token_on_server_is_stored_without_a_user_name() {
+    classUnderTest.create(withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, "jira-user", "pat"));
+
+    assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
+    assertThat(saved().getUsername()).isNull();
+    assertThat(saved().getPassword()).isEqualTo("pat");
+  }
+
+  @Test
+  void a_personal_access_token_needs_no_user_name() {
+    classUnderTest.create(withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, "  ", "pat"));
+
+    assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
+  }
+
+  @Test
+  void basic_still_needs_a_user_name() {
+    assertThatThrownBy(() -> classUnderTest.create(withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "  ", "pw")))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_USERNAME_REQUIRED);
+  }
+
+  /** Atlassian Cloud accepts no bearer PAT; the form does not offer it, and the service refuses it. */
+  @Test
+  void a_personal_access_token_is_refused_on_cloud() {
+    var data = withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, null, "pat");
+
+    assertThatThrownBy(() -> classUnderTest.create(data))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_TOKEN_NEEDS_SERVER);
+    verify(configRepository, never()).save(any());
+  }
+
+  /** Kept across the switch, the stored password would go out as a bearer token. */
+  @Test
+  void switching_the_sign_in_method_needs_the_new_secret() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+    var data = withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, null, null);
+
+    assertThatThrownBy(() -> classUnderTest.update(ID, data))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET);
+    verify(configRepository, never()).save(any());
+  }
+
+  @Test
+  void switching_the_sign_in_method_with_the_new_secret_succeeds() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+
+    classUnderTest.update(ID, withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, null, "pat"));
+
+    assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
+    assertThat(saved().getPassword()).isEqualTo("pat");
+  }
+
+  @Test
+  void an_existing_token_is_kept_when_the_field_stays_empty() {
+    var stored = existingConfig();
+    stored.setAuthMethod(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
+    stored.setUsername(null);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, null, null));
+
+    assertThat(saved().getPassword()).isEqualTo(STORED_PASSWORD);
+  }
+
+  /** A config without a choice keeps HTTP Basic, the method every config used before #1385. */
+  @Test
+  void without_a_choice_the_sign_in_method_is_basic() {
+    classUnderTest.create(withAuth(JiraApiFlavor.SERVER, null, "jira-user", "pw"));
+
+    assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.BASIC);
+  }
+
   @Test
   void what_the_user_interface_gets_to_see_carries_no_password() {
     var stored = existingConfig();
@@ -211,7 +292,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_replication_without_a_jql_query_could_only_ever_fail() {
     var withoutJql = new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true, false, null, false);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "token", "  ", null, null, null, null, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(withoutJql))
         .isInstanceOf(InvalidDataException.class)
@@ -222,7 +303,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_base_url_without_a_scheme_is_rejected() {
     var badUrl = new JiraReplicationConfigData("Alpha", ALPHA, null, "jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(badUrl))
         .isInstanceOf(InvalidDataException.class)
@@ -233,7 +314,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_page_size_of_zero_or_less_is_rejected() {
     var zeroPageSize = new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true, false, null, false);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "token", "project = ALPHA", null, null, null, 0, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(zeroPageSize))
         .isInstanceOf(InvalidDataException.class)
@@ -245,7 +326,7 @@ class JiraReplicationConfigServiceTest {
   void a_missing_flavor_is_stored_as_server() {
     // What a row without an explicit flavor has always meant.
     classUnderTest.create(new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        null, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false));
+        null, null, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false));
 
     assertThat(saved().getApiFlavor()).isEqualTo(JiraApiFlavor.SERVER);
   }
@@ -621,8 +702,8 @@ class JiraReplicationConfigServiceTest {
     var request = ArgumentCaptor.forClass(JiraFieldsRequest.class);
     verify(jiraSearchClient).listFields(request.capture());
     assertThat(request.getValue().baseUrl()).isEqualTo("https://jira.example.com");
-    assertThat(request.getValue().username()).isEqualTo("jira-user");
-    assertThat(request.getValue().password()).isEqualTo(STORED_PASSWORD);
+    assertThat(request.getValue().credentials().username()).isEqualTo("jira-user");
+    assertThat(request.getValue().credentials().secret()).isEqualTo(STORED_PASSWORD);
   }
 
   @Test
@@ -698,12 +779,12 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData withJql(String jql) {
     return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", null, jql, null, null, null, 100, true, false, null, false);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", null, jql, null, null, null, 100, true, false, null, false);
   }
 
   private static JiraReplicationConfigData withFields(String additional, String inherited) {
     return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", null, "project = ALPHA", null, additional, inherited,
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", null, "project = ALPHA", null, additional, inherited,
         100, true, false, null, false);
   }
 
@@ -722,19 +803,19 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData withScope(Long customerorderId, Long suborderId, String password) {
     return new JiraReplicationConfigData("Alpha", customerorderId, suborderId, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
   }
 
   private static JiraReplicationConfigData withWorklogSync(long customerorderId, Long suborderId,
                                                            boolean enabled, LocalDate from) {
     return new JiraReplicationConfigData("Alpha", customerorderId, suborderId, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
         enabled, from, false);
   }
 
   private static JiraReplicationConfigData withInvoiceableOnly(boolean invoiceableOnly) {
     return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
         true, LocalDate.of(2026, 1, 1), invoiceableOnly);
   }
 
@@ -752,7 +833,13 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData data(String password) {
     return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
+  }
+
+  private static JiraReplicationConfigData withAuth(JiraApiFlavor apiFlavor, JiraAuthMethod authMethod,
+                                                    String username, String password) {
+    return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com", apiFlavor,
+        authMethod, username, password, "project = ALPHA", null, null, null, 100, true, false, null, false);
   }
 
   private JiraReplicationConfig saved() {

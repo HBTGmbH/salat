@@ -1,7 +1,5 @@
 package de.hbt.salat.jira.service;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
@@ -21,25 +19,19 @@ abstract class AbstractJiraRestClient {
   }
 
   /**
-   * An authenticated client. JIRA expects HTTP Basic; on Cloud that is also how API tokens are
-   * passed — the account e-mail as user, the token as password. Whatever this client writes is
-   * authored by that account, which is why a worklog never carries the person who booked.
+   * An authenticated client: HTTP Basic, on Cloud with the account e-mail as user and the API token
+   * as password, or on Server a Personal Access Token as bearer token (#1385). Whatever this client
+   * writes is authored by that account, which is why a worklog never carries the person who booked.
    */
-  protected RestClient clientFor(String username, String password) {
+  protected RestClient clientFor(JiraCredentials credentials) {
     return restClientBuilder.clone()
-        .defaultHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))
+        .defaultHeader(HttpHeaders.AUTHORIZATION, credentials.authorizationHeader())
         .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
         .build();
   }
 
   protected static String endpointUrl(String baseUrl, String path) {
     return (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + path;
-  }
-
-  private static String basicAuth(String username, String password) {
-    String token = username + ":" + password;
-    String encoded = Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
-    return "Basic " + encoded;
   }
 
   protected static String abbreviate(@Nullable String s, int max) {

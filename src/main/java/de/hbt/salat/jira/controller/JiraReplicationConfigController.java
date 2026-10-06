@@ -18,6 +18,7 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.service.JiraReplicationConfigService;
 import de.hbt.salat.jira.service.JiraReplicationLauncher;
@@ -112,6 +113,7 @@ public class JiraReplicationConfigController {
         form.getSuborderId(),
         form.getBaseUrl(),
         form.getApiFlavor(),
+        form.getAuthMethod(),
         form.getUsername(),
         form.getPassword(),
         form.getJql(),
@@ -237,6 +239,7 @@ public class JiraReplicationConfigController {
   private void addFormModel(Model model, JiraReplicationConfigForm form) {
     model.addAttribute("replicationForm", form);
     model.addAttribute("apiFlavors", JiraApiFlavor.values());
+    model.addAttribute("authMethods", JiraAuthMethod.values());
     model.addAttribute("isEdit", !form.isNew());
     model.addAttribute("customerorders",
         customerorderService.getSelectableCustomerorders(customerorderSignOf(form)));

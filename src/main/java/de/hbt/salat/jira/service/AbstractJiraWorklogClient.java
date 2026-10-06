@@ -59,7 +59,7 @@ abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implemen
 
     JiraWorklogResponse response;
     try {
-      response = clientFor(target.username(), target.password())
+      response = clientFor(target.credentials())
           .post().uri(url)
           .contentType(MediaType.APPLICATION_JSON)
           .body(body(entry))
@@ -86,7 +86,7 @@ abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implemen
     log.info("JIRA worklog update: baseUrl={}, issue={}, worklogId={}, date={}, minutes={}",
         target.baseUrl(), target.issueKey(), worklogId, entry.workDate(), entry.minutes());
     try {
-      clientFor(target.username(), target.password())
+      clientFor(target.credentials())
           .put().uri(url)
           .contentType(MediaType.APPLICATION_JSON)
           .body(body(entry))
@@ -107,7 +107,7 @@ abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implemen
     log.info("JIRA worklog delete: baseUrl={}, issue={}, worklogId={}",
         target.baseUrl(), target.issueKey(), worklogId);
     try {
-      clientFor(target.username(), target.password())
+      clientFor(target.credentials())
           .delete().uri(url)
           .retrieve()
           .toBodilessEntity();

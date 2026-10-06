@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 
 /**
@@ -34,6 +35,9 @@ public class JiraReplicationConfigForm {
 
   /** Preselected as Server: that is what a config without an explicit flavor has always meant. */
   private JiraApiFlavor apiFlavor = JiraApiFlavor.SERVER;
+
+  /** Preselected as HTTP Basic, the method every replication used before #1385. */
+  private JiraAuthMethod authMethod = JiraAuthMethod.BASIC;
 
   private String username;
   private String password;
@@ -74,6 +78,7 @@ public class JiraReplicationConfigForm {
     form.setSuborderId(info.suborderId());
     form.setBaseUrl(info.baseUrl());
     form.setApiFlavor(info.apiFlavor());
+    form.setAuthMethod(info.authMethod());
     form.setUsername(info.username());
     form.setJql(info.jql());
     form.setParentFieldNames(info.parentFieldNames());
