@@ -5972,3 +5972,32 @@ databaseChangeLog:
             referencedTableName: jira_ticket_import
             referencedColumnNames: id
             onDelete: SET NULL
+
+  - changeSet:
+      id: 159
+      author: kr
+      comment: JIRA-ID eindeutig je Replikation statt je Bereich; Bereiche mit mehreren Replikationen holen ihren Bestand neu (#1386)
+      # Zwei Replikationen eines Bereichs duerfen nebeneinander bestehen, auch gegen zwei JIRA-Instanzen,
+      # die dieselben numerischen ids vergeben. Eindeutig ist eine JIRA-ID deshalb je Replikation, der Key
+      # bleibt eindeutig je Bereich. Fuer replication_id NULL gilt der Schluessel nicht: Tickets von Hand
+      # und Tickets geloeschter Replikationen pruefen ihre id beim Import selbst.
+      # Changeset 157 konnte die Tickets eines Bereichs mit mehreren Replikationen keiner zuordnen. Ohne
+      # Wasserstand holt jede beim naechsten Lauf alles, was ihre JQL findet, und uebernimmt es.
+      preConditions:
+        - onFail: MARK_RAN
+        - indexExists:
+            tableName: jira_ticket
+            indexName: uq_jira_ticket_scope_jira_id
+      changes:
+        - sql:
+            sql: |-
+              ALTER TABLE jira_ticket
+                ADD UNIQUE KEY uq_jira_ticket_replication_jira_id (replication_id, jira_id),
+                DROP INDEX uq_jira_ticket_scope_jira_id;
+              UPDATE jira_replication_config c
+                JOIN (SELECT customerorder_id, COALESCE(suborder_id, 0) AS so
+                        FROM jira_replication_config
+                       GROUP BY customerorder_id, COALESCE(suborder_id, 0)
+                      HAVING COUNT(*) > 1) m
+                  ON m.customerorder_id = c.customerorder_id AND m.so = COALESCE(c.suborder_id, 0)
+                 SET c.last_max_updated = NULL

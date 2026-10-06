@@ -436,6 +436,28 @@ class JiraReplicationConfigServiceTest {
         .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
   }
 
+  /**
+   * Two replications of exactly the same scope each write to the tickets they maintain (#1386), and a
+   * key belongs to one ticket of the scope: no ticket and day gets a worklog from both.
+   */
+  @Test
+  void a_second_worklog_sync_of_exactly_the_same_scope_is_allowed() {
+    givenOtherReplication(ALPHA, A, "https://jira.example.com", true);
+
+    classUnderTest.create(withWorklogSync(ALPHA, A, true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
+  }
+
+  @Test
+  void a_second_order_wide_worklog_sync_of_the_same_order_is_allowed() {
+    givenOtherReplication(ALPHA, null, "https://jira.example.com", true);
+
+    classUnderTest.create(withWorklogSync(ALPHA, null, true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
+  }
+
   @Test
   void two_sibling_branches_do_not_overlap() {
     givenOtherReplication(ALPHA, A_01, "https://jira.example.com", true);
