@@ -18,8 +18,8 @@ import de.hbt.salat.budget.domain.BudgetDashboardRow;
 import de.hbt.salat.budget.service.BudgetDashboardService;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.customer.service.CustomerSegmentService;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.order.domain.CustomerorderOption;
+import de.hbt.salat.order.domain.ResponsibleOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 @Controller
@@ -73,11 +73,11 @@ public class BudgetDashboardController {
     }
 
     /** Package-private for the test: the rule matters and the controller has no other seam. */
-    static Long offeredResponsibleId(Long responsibleId, List<Employee> responsibles) {
+    static Long offeredResponsibleId(Long responsibleId, List<ResponsibleOption> responsibles) {
         if (responsibleId == null) {
             return null;
         }
-        return responsibles.stream().anyMatch(e -> e.getId().equals(responsibleId)) ? responsibleId : null;
+        return responsibles.stream().anyMatch(e -> e.id() == responsibleId) ? responsibleId : null;
     }
 
     /**

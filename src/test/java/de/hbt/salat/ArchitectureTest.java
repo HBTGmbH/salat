@@ -8,6 +8,7 @@ import static com.tngtech.archunit.library.freeze.FreezingArchRule.freeze;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeGradleTestFixtures;
@@ -349,6 +350,36 @@ public class ArchitectureTest {
           }
         }
       }));
+
+  /**
+   * Ein Repository fragt nach seinem eigenen Aggregat (#1369): keine Methode eines Repositorys gibt
+   * eine Entity eines anderen Moduls zurück, auch nicht als Typargument eines {@code Optional} oder
+   * einer Liste. Ein Join über die Referenz in ein anderes Modul bleibt erlaubt (ADR-0021, ADR-0036),
+   * solange die Abfrage bei der eigenen Entity beginnt oder Werte liefert. Wer eine Frage allein über
+   * fremde Stammdaten hat — gibt es sie, wem gehören sie —, fragt das besitzende Modul; braucht er
+   * die Entity als Referenz, holt er sie per {@code EntityManager.getReference}.
+   *
+   * <p>Was die Regel nicht sieht: die Wurzel eines {@code @Query}, das nur einen Wert liefert. Das
+   * bleibt Sache des Reviews.
+   */
+  @ArchTest
+  static final ArchRule noRepositoryReturnsAnEntityOfAnotherModule = priority(HIGH).classes()
+      .that().areAssignableTo(org.springframework.data.repository.Repository.class)
+      .or().areAnnotatedWith(Repository.class)
+      .should(new ArchCondition<JavaClass>("return no JPA entity of another module") {
+        @Override
+        public void check(JavaClass repository, ConditionEvents events) {
+          for (JavaMethod method : repository.getMethods()) {
+            method.getReturnType().getAllInvolvedRawTypes().stream()
+                .filter(ArchitectureTest::isEntity)
+                .filter(entity -> !moduleOf(entity).equals(moduleOf(repository)))
+                .distinct()
+                .forEach(entity -> events.add(SimpleConditionEvent.violated(method,
+                    "%s returns entity %s of module %s from module %s".formatted(
+                        method.getFullName(), entity.getName(), moduleOf(entity), moduleOf(repository)))));
+          }
+        }
+      });
 
   /** The module of a class: the first package below {@code de.hbt.salat}. */
   private static String moduleOf(JavaClass javaClass) {

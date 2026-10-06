@@ -65,6 +65,15 @@ See also README.md
   service signatures across the boundary stay forbidden (ADR-0021, #1244). A reference is written from
   an id through `EntityManager.getReference` in a small component of the writing module
   (`MasterDataReferences`, `OrderReferences`), never through a service of the owning module.
+- **A repository asks about its own aggregate** (#1369): every query of `XRepository` starts at its
+  own entity or yields values, and no method returns an entity of another module — not even inside an
+  `Optional` or a list (`ArchitectureTest.noRepositoryReturnsAnEntityOfAnotherModule`). A join along a
+  reference into another module stays allowed; a query rooted in the other module's entity does not
+  belong there.
+- **A question about another module's master data alone is answered by the owning module, as a value**:
+  does it exist, whose is it, is it valid — `EmployeeorderService.getEmployeeIdOfEmployeeorder`, not a
+  join rebuilt in the asking module's repository. Where the asking module needs the entity as a
+  reference, it takes it with `getReference` (see above).
 
 ## Controller and View Guidelines (target stack)
 - Controllers:

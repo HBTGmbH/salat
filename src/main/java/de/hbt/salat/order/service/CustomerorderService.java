@@ -31,7 +31,6 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.customer.event.CustomerDeleteEvent;
 import de.hbt.salat.customer.persistence.CustomerDAO;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Customerorder;
@@ -40,6 +39,7 @@ import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
+import de.hbt.salat.order.domain.ResponsibleOption;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
@@ -351,7 +351,7 @@ public class CustomerorderService {
    * The employees offered by a "responsible" filter: everyone responsible for at least one visible
    * order, narrowed to one customer segment when {@code customerSegmentId} is given (#952).
    */
-  public List<Employee> getVisibleResponsibleEmployees(Long customerSegmentId) {
+  public List<ResponsibleOption> getVisibleResponsibleEmployees(Long customerSegmentId) {
     return customerSegmentId == null
         ? customerorderRepository.findAllVisibleResponsibleHbt()
         : customerorderRepository.findVisibleResponsibleHbtByCustomerSegmentId(customerSegmentId);
