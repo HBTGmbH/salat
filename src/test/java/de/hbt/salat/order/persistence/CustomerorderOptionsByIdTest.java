@@ -92,6 +92,24 @@ class CustomerorderOptionsByIdTest {
         .containsExactly(tuple(alpha.getId(), "ALPHA"), tuple(zeta.getId(), "ZETA"));
   }
 
+  /**
+   * A select offers no hidden order, except the one the record or filter already names (#1343,
+   * #1379). A hidden order is null-safe: {@code hide} may be unset.
+   */
+  @Test
+  void offers_no_hidden_order_but_keeps_the_selected_one() {
+    var visible = order("SICHTBAR", false);
+    var unset = order("OHNE-FLAG", null);
+    var hidden = order("VERSTECKT", true);
+    var selected = order("GEWAEHLT", true);
+
+    assertThat(customerorderRepository.findSelectableOptions(null))
+        .extracting(CustomerorderOption::id).containsExactly(unset.getId(), visible.getId());
+    assertThat(customerorderRepository.findSelectableOptions(selected.getId()))
+        .extracting(CustomerorderOption::id).containsExactly(selected.getId(), unset.getId(), visible.getId())
+        .doesNotContain(hidden.getId());
+  }
+
   private Customer customer() {
     var created = new Customer();
     created.setShortname("BSP");

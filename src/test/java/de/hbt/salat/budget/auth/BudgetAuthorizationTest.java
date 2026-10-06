@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -21,6 +22,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
@@ -102,7 +104,7 @@ public class BudgetAuthorizationTest {
     givenResponsibleFor();
 
     assertThat(authorization.isAuthorizedForAnyBudget()).isFalse();
-    assertThat(authorization.authorizedCustomerorders()).isEmpty();
+    assertThat(authorization.selectableCustomerorders(null)).isEmpty();
   }
 
   /**
@@ -118,7 +120,8 @@ public class BudgetAuthorizationTest {
     assertThat(authorization.seesAllCustomerorders()).isFalse();
     assertThat(authorization.isAuthorizedForCustomerorder(OWN)).isFalse();
     assertThat(authorization.isAuthorizedForAnyBudget()).isFalse();
-    assertThat(authorization.authorizedCustomerorders()).isEmpty();
+    assertThat(authorization.selectableCustomerorders(idOf(OWN))).isEmpty();
+    verify(customerorderService, never()).getSelectableCustomerorderOptions(idOf(OWN));
   }
 
   /** Admins are not employees, so the lookup must not be attempted for them. */
@@ -167,7 +170,34 @@ public class BudgetAuthorizationTest {
 
     assertThat(authorization.isAuthorizedForCustomerorder(OWN)).isFalse();
     assertThat(authorization.isAuthorizedForAnyBudget()).isFalse();
-    assertThat(authorization.authorizedCustomerorders()).isEmpty();
+    assertThat(authorization.selectableCustomerorders(idOf(OWN))).isEmpty();
+    verify(customerorderService).getCustomerorderOptionsByIds(Set.of());
+  }
+
+  /**
+   * The selection offers no hidden order, whoever asks — a manager as little as a responsible
+   * (#1379). For a manager that is the rule of every select, which keeps the order already
+   * selected; the filtering itself is the query's ({@code CustomerorderOptionsByIdTest}).
+   */
+  @Test
+  public void a_manager_is_offered_the_selectable_orders_not_all_of_them() {
+    when(authorizedUser.isManager()).thenReturn(true);
+    var selectable = List.of(optionOf(OWN));
+    when(customerorderService.getSelectableCustomerorderOptions(idOf(FOREIGN))).thenReturn(selectable);
+
+    assertThat(authorization.selectableCustomerorders(idOf(FOREIGN))).isEqualTo(selectable);
+    verify(customerorderService, never()).getAllCustomerorders();
+  }
+
+  /** A responsible is offered their visible orders, and nothing else even when it is selected. */
+  @Test
+  public void a_responsible_is_offered_the_own_orders_only() {
+    givenResponsibleFor(OWN);
+    var own = List.of(optionOf(OWN));
+    when(customerorderService.getCustomerorderOptionsByIds(Set.of(idOf(OWN)))).thenReturn(own);
+
+    assertThat(authorization.selectableCustomerorders(idOf(FOREIGN))).isEqualTo(own);
+    verify(customerorderService, never()).getSelectableCustomerorderOptions(idOf(FOREIGN));
   }
 
   @Test
@@ -213,6 +243,10 @@ public class BudgetAuthorizationTest {
     var customerorder = orderWithSign(sign);
     customerorder.setHide(true);
     return customerorder;
+  }
+
+  private static CustomerorderOption optionOf(String sign) {
+    return new CustomerorderOption(idOf(sign), sign, null, null, null, null, false);
   }
 
   private static OrderBudget budgetOn(String customerorderSign) {

@@ -43,7 +43,7 @@ public class BudgetControllingController {
                        @RequestParam(defaultValue = "false") boolean evaluate,
                        @ModelAttribute("filter") ControllingFilterForm filter,
                        Model model) {
-        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        model.addAttribute("customerorders", budgetAuthorization.selectableCustomerorders(fBudgetCustomerOrderId));
         model.addAttribute("isManager", authorizedUser.isManager());
         model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
 

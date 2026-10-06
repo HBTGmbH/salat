@@ -119,7 +119,7 @@ public class BudgetBulkAssignmentController {
      * Returns the people so a caller that has to prune the choice does not query them twice.
      */
     private List<BulkAssignmentEmployee> addSelectionLists(BulkAssignmentForm form, Model model) {
-        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        model.addAttribute("customerorders", budgetAuthorization.selectableCustomerorders(form.getCustomerorderId()));
         var customerorderId = form.getCustomerorderId();
         if (customerorderId == null) {
             model.addAttribute("suborders", List.of());
