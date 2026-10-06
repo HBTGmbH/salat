@@ -388,7 +388,8 @@
   document.addEventListener('htmx:after:swap', () => {
     const modal = document.getElementById('ticket-detail-modal');
     const title = document.getElementById('ticket-detail-title');
-    if (title && modal.classList.contains('show') && !modal.contains(document.activeElement)) title.focus();
+    const focusLost = document.activeElement === modal || !modal.contains(document.activeElement);
+    if (title && modal.classList.contains('show') && focusLost) title.focus();
   });
 
   // The details dialog starts with the loading state, not with the ticket shown last.
