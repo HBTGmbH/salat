@@ -5,7 +5,7 @@ Stand: 01.10.2026 · Status: **Entwurf**. Einzelentscheidungen sind getroffen (�
 Dieses Dokument beschreibt eine GraphQL-Schnittstelle, über die Daten gelesen, geändert und gelöscht
 werden. Alle Aufrufe gehen an die bestehenden Services, und es gelten dieselben Sichtbarkeits- und
 Schreibregeln wie in der Oberfläche. Am Ende stehen drei Wege der technischen Umsetzung mit einer
-Empfehlung. Die Entscheidung kommt erst in ein ADR (nächste Nummer: 0034), wenn das Konzept als Ganzes bestätigt ist.
+Empfehlung. Die Entscheidung kommt erst in ein neues ADR, wenn das Konzept als Ganzes bestätigt ist.
 
 ---
 
@@ -1010,7 +1010,7 @@ Resolver-Schicht, nicht das Schema und nicht die Services.
 
 | Stufe | Inhalt | Voraussetzung |
 |---|---|---|
-| 0 Spike | Endpunkt, ein Lesefeld (`me`), Nachweis 6.4 (Request-Scope, Open-in-View, Aspekte), Fehlerabbildung, Grenzwerte, Introspection, Baustein für Idempotenz (6.5) | Konzept als Ganzes bestätigt, ADR-0034 |
+| 0 Spike | Endpunkt, ein Lesefeld (`me`), Nachweis 6.4 (Request-Scope, Open-in-View, Aspekte), Fehlerabbildung, Grenzwerte, Introspection, Baustein für Idempotenz (6.5) | Konzept als Ganzes bestätigt, neues ADR |
 | 1 Eigene Daten lesen | `me`, `bookableSuborders`, eigene Buchungen und Arbeitstage. Deckt ab, was `EmployeeOrderRestEndpoint` (seit #1253 der einzige für Mitarbeiteraufträge), `DailyReportRestEndpoint` und `WorkingDayRestEndpoint` heute bieten | Stufe 0 |
 | 2 Buchen | Buchung anlegen, ändern und löschen, Arbeitstag, „Nicht gearbeitet" | Stufe 1 |
 | 3a Zuständigkeit (eigenes Vorhaben, ohne GraphQL) | Baustein nach `order`, auflösende Lesemethoden in `*Lookup`-Bohnen, anzeigende Lesemethoden filtern, `ArchitectureTest` gegen `*Lookup` aus Controllern, Oberfläche zieht mit (5.3), Konsistenztests, Messung | — |
@@ -1027,7 +1027,7 @@ der Produktionsbericht je Endpunkt zeigt.
 ## 9. Offene Fragen und Entscheidungen
 
 Offen ist keine Einzelfrage mehr. Offen ist die Bestätigung des Konzepts als Ganzes. Erst danach
-entsteht ADR-0034.
+entsteht das neue ADR.
 
 Entschieden am 01.10.2026:
 
