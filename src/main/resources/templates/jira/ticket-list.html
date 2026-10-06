@@ -49,6 +49,7 @@
       <div class="col-lg-4">
         <label class="form-label" for="suborder-select" th:text="#{main.jira.ticket.filter.suborder}">Unterauftrag</label>
         <select class="form-select tomselect" id="suborder-select" autocomplete="off" data-allow-empty-option="true"
+                th:aria-describedby="${fJiraTicketCustomerorderId != null and #lists.isEmpty(suborders)} ? 'suborder-hint' : null"
                 th:attr="placeholder=#{main.jira.ticket.filter.suborder.all}"
                 th:disabled="${#lists.isEmpty(suborders)}">
           <option value="" th:text="#{main.jira.ticket.filter.suborder.all}">--- Alle Unteraufträge ---</option>
@@ -61,9 +62,12 @@
         </select>
         <!--/* Why the select is locked once an order is chosen: its tickets are all order-wide, or a
                remembered order has none at all. */-->
-        <div class="form-text" th:if="${fJiraTicketCustomerorderId != null and #lists.isEmpty(suborders)}"
-             th:text="${orderHasTickets} ? #{main.jira.ticket.filter.suborder.orderOnly} : #{main.jira.ticket.filter.suborder.noTickets}">
-          Tickets nur auf Auftragsebene
+        <!--/* A warning rather than a help text: the filter cannot narrow here, and that should catch the
+               eye. text-warning is darkened in salat.css to hold WCAG AA in both themes (ADR-0025). */-->
+        <div class="form-text text-warning" id="suborder-hint"
+             th:if="${fJiraTicketCustomerorderId != null and #lists.isEmpty(suborders)}">
+          <i class="ti ti-alert-triangle me-1"></i><span
+             th:text="${orderHasTickets} ? #{main.jira.ticket.filter.suborder.orderOnly} : #{main.jira.ticket.filter.suborder.noTickets}">Tickets nur auf Auftragsebene</span>
         </div>
       </div>
       <div class="col-lg-4">
