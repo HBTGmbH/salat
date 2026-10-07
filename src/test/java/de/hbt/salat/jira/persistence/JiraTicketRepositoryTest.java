@@ -118,6 +118,44 @@ class JiraTicketRepositoryTest {
         .containsExactly("ALPHA-2", "ALPHA-1");
   }
 
+  /**
+   * The suggestions of a branch are one list across its scopes (#1402): the order-wide tickets, those
+   * of the parent suborder and those of the suborder booked on, most recently updated first, a tie
+   * broken by the key, and the limit applied to the list as a whole. Newer tickets of the sibling
+   * branch and of another order stay out.
+   */
+  @Test
+  void the_suggestions_of_a_branch_are_one_list_across_its_scopes_and_the_limit_applies_to_it() {
+    var a = entityManager.getReference(Suborder.class, A);
+    var b01 = entityManager.getReference(Suborder.class, B_01);
+    for (int n = 1; n <= 12; n++) {
+      save(alphaOrder, null, null, "ORD-" + n, "auftragsweit", LocalDateTime.of(2026, 6, 2 * n, 10, 0));
+      save(alphaOrder, a01, null, "SUB-" + n, "am Unterauftrag", LocalDateTime.of(2026, 6, 2 * n + 1, 10, 0));
+    }
+    save(alphaOrder, a, null, "PAR-1", "am übergeordneten Unterauftrag", LocalDateTime.parse("2026-06-26T10:00"));
+    save(alphaOrder, a01, null, "TIE-B", "gleicher Zeitpunkt", LocalDateTime.parse("2026-06-28T10:00"));
+    save(alphaOrder, null, null, "TIE-A", "gleicher Zeitpunkt", LocalDateTime.parse("2026-06-28T10:00"));
+    save(alphaOrder, b01, null, "SIB-1", "Nachbarast", LocalDateTime.parse("2026-07-01T10:00"));
+    save(betaOrder, null, null, "OTH-1", "anderer Auftrag", LocalDateTime.parse("2026-07-01T10:00"));
+
+    assertThat(searchBranchA("")).extracting(JiraTicket::getKey).containsExactly(
+        "TIE-A", "TIE-B", "PAR-1",
+        "SUB-12", "ORD-12", "SUB-11", "ORD-11", "SUB-10", "ORD-10", "SUB-9", "ORD-9",
+        "SUB-8", "ORD-8", "SUB-7", "ORD-7", "SUB-6", "ORD-6", "SUB-5", "ORD-5", "SUB-4");
+  }
+
+  /** A ticket without an update timestamp comes after every dated one, in each of the scopes (#1402). */
+  @Test
+  void a_ticket_without_an_update_timestamp_is_suggested_last() {
+    save(alphaOrder, a01, null, "UND-2", "Zeitstempel fehlt", null);
+    save(alphaOrder, null, null, "UND-1", "Zeitstempel fehlt", null);
+    save(alphaOrder, null, null, "DAT-1", "Zeitstempel gesetzt", LocalDateTime.parse("2025-01-01T10:00"));
+    save(alphaOrder, a01, null, "DAT-2", "Zeitstempel gesetzt", LocalDateTime.parse("2025-02-01T10:00"));
+
+    assertThat(searchBranchA("zeitstempel")).extracting(JiraTicket::getKey)
+        .containsExactly("DAT-2", "DAT-1", "UND-1", "UND-2");
+  }
+
   @Test
   void the_whole_order_is_a_scope_of_its_own_and_not_every_ticket_of_the_order() {
     // a null suborder is compared as such, not left out of the comparison
@@ -384,7 +422,7 @@ class JiraTicketRepositoryTest {
 
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */
   private List<JiraTicket> searchBranchA(String term) {
-    return jiraTicketRepository.search(ALPHA, List.of(A, A_01), term, PageRequest.of(0, 20));
+    return jiraTicketRepository.search(ALPHA, List.of(A, A_01), term, 20);
   }
 
   private void save(Customerorder customerorder, Suborder suborder, Long jiraId, String key, String summary,
