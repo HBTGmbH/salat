@@ -206,6 +206,14 @@
       <groupId>org.webjars.npm</groupId>
       <artifactId>tabler__icons-webfont</artifactId>
       <version>${webjars-tabler-io-icons.version}</version>
+      <exclusions>
+        <!-- only CSS and fonts are served; the npm dependencies (svgtofont etc.) are build tools
+             whose commander version ranges Maven cannot reconcile -->
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.webjars.npm</groupId>
