@@ -1,5 +1,7 @@
 package de.hbt.salat.employee.controller;
 
+import static de.hbt.salat.common.exception.ErrorCode.EM_NOT_FOUND;
+
 import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -51,14 +53,16 @@ public class EmployeeController {
     }
 
     @GetMapping("/view")
-    public String view(@RequestParam Long id, Model model) {
+    public String view(@RequestParam Long id, Model model, RedirectAttributes redirectAttributes) {
         Employee employee;
         try {
             employee = employeeService.getEmployeeForView(id);
         } catch (AuthorizationException e) {
             throw new ErrorResponseException(HttpStatus.FORBIDDEN);
         }
-        if (employee == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
+        if (employee == null) {
+            return redirectToListBecauseEmployeeNotFound(redirectAttributes);
+        }
         model.addAttribute("employee", employee);
         model.addAttribute("section", "employees");
         model.addAttribute("subSection", "employees");
@@ -80,8 +84,11 @@ public class EmployeeController {
 
     @Authorized(requiresManager = true)
     @GetMapping("/edit")
-    public String editForm(@RequestParam Long id, Model model) {
+    public String editForm(@RequestParam Long id, Model model, RedirectAttributes redirectAttributes) {
         Employee employee = employeeService.getEmployeeById(id);
+        if (employee == null) {
+            return redirectToListBecauseEmployeeNotFound(redirectAttributes);
+        }
         var form = toForm(employee);
         model.addAttribute("employeeForm", form);
         addFormModel(model, true);
@@ -94,6 +101,9 @@ public class EmployeeController {
                         BindingResult bindingResult,
                         Model model,
                         RedirectAttributes redirectAttributes) {
+        if (isUpdateOfMissingEmployee(form)) {
+            return redirectToListBecauseEmployeeNotFound(redirectAttributes);
+        }
         validateForm(form, bindingResult);
 
         boolean isCreate = form.getId() == null;
@@ -153,6 +163,10 @@ public class EmployeeController {
     public String anonymize(@PathVariable Long id,
                             @RequestParam String confirmSign,
                             RedirectAttributes redirectAttributes) {
+        // an error leads back to the edit form, and without the employee there is none
+        if (employeeService.getEmployeeById(id) == null) {
+            return redirectToListBecauseEmployeeNotFound(redirectAttributes);
+        }
         try {
             employeeService.anonymizeEmployee(id, confirmSign);
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -184,6 +198,21 @@ public class EmployeeController {
                     errorCodeViewHelper.toViewMessages(ex).stream()
                             .map(Object::toString).findFirst().orElse("Error deleting employee"));
         }
+        return "redirect:/employees";
+    }
+
+    private boolean isUpdateOfMissingEmployee(EmployeeForm form) {
+        boolean isUpdate = form.getId() != null;
+        return isUpdate && employeeService.getEmployeeById(form.getId()) == null;
+    }
+
+    /**
+     * Eine Mitarbeiternummer aus der Anfrage, zu der es keinen Mitarbeiter gibt — ein veralteter Link, ein Lesezeichen,
+     * ein Formular, dessen Mitarbeiter inzwischen gelöscht ist —, beantwortet jeder Handler gleich: zurück zur Liste mit
+     * einer Meldung (#1401).
+     */
+    private String redirectToListBecauseEmployeeNotFound(RedirectAttributes redirectAttributes) {
+        errorCodeViewHelper.addToastError(redirectAttributes, EM_NOT_FOUND);
         return "redirect:/employees";
     }
 

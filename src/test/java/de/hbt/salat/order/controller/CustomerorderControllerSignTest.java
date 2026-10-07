@@ -65,7 +65,12 @@ class CustomerorderControllerSignTest {
     var holder = new Customerorder();
     setField(holder, "id", HOLDER_ID);
     holder.setSign("4711");
-    when(customerorderService.getAllCustomerorders()).thenReturn(List.of(holder));
+    var other = new Customerorder();
+    setField(other, "id", OTHER_ID);
+    other.setSign("0815");
+    when(customerorderService.getAllCustomerorders()).thenReturn(List.of(holder, other));
+    when(customerorderService.getCustomerorderById(HOLDER_ID)).thenReturn(holder);
+    when(customerorderService.getCustomerorderById(OTHER_ID)).thenReturn(other);
   }
 
   @Test

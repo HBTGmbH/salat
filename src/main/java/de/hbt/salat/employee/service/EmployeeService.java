@@ -201,6 +201,7 @@ public class EmployeeService {
   @Authorized(requiresManager = true)
   public void deleteEmployeeById(long employeeId) {
     var employee = employeeDAO.getEmployeeById(employeeId);
+    if (employee == null) throw new InvalidDataException(EM_NOT_FOUND);
 
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.DELETE)) {
       throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getLoginSign());
@@ -235,6 +236,7 @@ public class EmployeeService {
   public void anonymizeEmployee(long employeeId, String confirmSign) {
     if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
     var employee = employeeDAO.getEmployeeById(employeeId);
+    if (employee == null) throw new InvalidDataException(EM_NOT_FOUND);
     if (!employee.getSign().equals(confirmSign)) {
       throw new InvalidDataException(EM_ANONYMIZE_WRONG_SIGN, employee.getSign());
     }

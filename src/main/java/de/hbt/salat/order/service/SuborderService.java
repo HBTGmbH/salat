@@ -570,6 +570,7 @@ public class SuborderService {
   public void deleteSuborderById(long suborderId) {
     var event = new SuborderDeleteEvent(suborderId);
     var suborder = suborderDAO.getSuborderById(suborderId);
+    if (suborder == null) throw new InvalidDataException(ErrorCode.SO_NOT_FOUND);
     if (specialOrders.isLockedSuborder(suborderId)) {
       throw new BusinessRuleException(ErrorCode.SO_SPECIAL_ORDER_LOCKED, suborder.getCompleteOrderSign());
     }
@@ -601,6 +602,7 @@ public class SuborderService {
   @Authorized(requiresManager = true)
   public void createCopy(long suborederId) {
     var suborder = getSuborderById(suborederId);
+    if (suborder == null) throw new InvalidDataException(ErrorCode.SO_NOT_FOUND);
     var copy = createCopy(suborder, true);
     suborderRepository.save(copy);
   }
