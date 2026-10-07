@@ -289,6 +289,17 @@ public class EmployeecontractService {
     return info;
   }
 
+  /**
+   * The id of the person the contract belongs to, empty for an unknown one (#1414). A plain value,
+   * so another module can ask whose a contract is without taking the entity. Open to every login:
+   * the daily view asks it for the own day too, not only managers.
+   */
+  @Authorized
+  @Transactional(readOnly = true)
+  public Optional<Long> getEmployeeIdOfEmployeecontract(long employeecontractId) {
+    return employeecontractRepository.findEmployeeIdById(employeecontractId);
+  }
+
   @Authorized
   @Transactional(readOnly = true)
   public Duration getEffectiveVacationEntitlement(long employeecontractId, Year year) {

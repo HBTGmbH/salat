@@ -31,6 +31,10 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
 
   List<Employeecontract> findAllByEmployeeId(Long employeeId);
 
+  /** Die Person des Vertrags (#1414). */
+  @Query("select e.employee.id from Employeecontract e where e.id = :employeecontractId")
+  Optional<Long> findEmployeeIdById(long employeecontractId);
+
   /** Ob die Person nach {@code validUntil} einen Vertrag hat, für den schon freigegeben wurde (#1215). */
   @Query("""
       select count(e) > 0 from Employeecontract e

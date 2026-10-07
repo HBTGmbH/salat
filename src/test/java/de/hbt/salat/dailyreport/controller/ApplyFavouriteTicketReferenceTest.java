@@ -31,6 +31,7 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.favorites.domain.FavoriteEntry;
 import de.hbt.salat.favorites.domain.RecentFavorites;
 import de.hbt.salat.favorites.service.FavoriteService;
@@ -61,6 +62,8 @@ class ApplyFavouriteTicketReferenceTest {
   private EmployeeService employeeService;
   @Mock
   private FavoriteService favoriteService;
+  @Mock
+  private EmployeecontractService employeecontractService;
   @Mock
   private DailyPreferenceService dailyPreferenceService;
 
