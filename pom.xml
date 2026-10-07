@@ -340,9 +340,31 @@
               Context-Refresh tun, sonst bricht der Trainingslauf und mit ihm der Image-Build ab.
               Passt der Cache nicht zur JVM oder zum Klassenpfad, startet die JVM mit einer Warnung
               ohne ihn.
+
+              Nur Klassen, keine Adapter (#1365). JDK 25 legt im Cache zusätzlich die i2c/c2i-Adapter
+              als Maschinencode ab (AOTAdapterCaching, ergonomisch an, sobald ein Cache benutzt wird)
+              und prüft beim Laden nicht, ob die CPU die Instruktionen kann, mit denen er erzeugt
+              wurde. Der Trainingslauf läuft im CI auf wechselnden Runnern, manche mit AVX-512. Ein
+              dort erzeugter Adapter endet auf einem Rechner ohne AVX-512 mit SIGILL in ~AdapterBlob:
+              JDK-8388703, behoben in 25.0.5 (Adapter-Caching dort standardmäßig aus); die Prüfung
+              der CPU-Merkmale kommt erst mit JDK 27 (JDK-8377507, JDK-8381975). Die Warnungen
+              "Saved blob's name … is different" und "Failed to link AdapterHandlerEntry" sind ein
+              eigener, harmloser Fehler (JDK-8364929, Hash-Kollision der Adapter-IDs, behoben in 26):
+              Die JVM erzeugt den betroffenen Adapter dann neu. Ohne Adapter im Cache fallen beide weg.
+
+              Deshalb -XX:-AOTAdapterCaching beim Erzeugen des Caches (keine Adapter im Image) und zur
+              Laufzeit (ein Cache aus einem älteren Image wird nicht für Adapter gelesen). Die Option
+              ist diagnostisch; -XX:+UnlockDiagnosticVMOptions muss davor stehen, sonst startet die
+              JVM nicht. Die Laufzeitoption hängt BPE_APPEND_* an JAVA_TOOL_OPTIONS an, auch an einen
+              von außen gesetzten Wert; ohne BPE_DELIM_* hängte der Buildpack sie ohne Leerzeichen an.
+              Ab 25.0.5 im Buildpack können die Optionen entfallen. Der Klassenteil des Caches bleibt
+              und bringt den Startzeitgewinn; die Adapter tragen dazu nichts Messbares bei. Lokal im
+              Image gemessen (n = 7): 6,3 ± 0,2 s mit Cache, 8,5 ± 0,1 s ohne.
               -->
               <BP_JVM_AOTCACHE_ENABLED>true</BP_JVM_AOTCACHE_ENABLED>
-              <TRAINING_RUN_JAVA_TOOL_OPTIONS>-Dspring.liquibase.enabled=false -Dspring.jpa.hibernate.ddl-auto=none -Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false -Dspring.jpa.database-platform=org.hibernate.dialect.MySQLDialect</TRAINING_RUN_JAVA_TOOL_OPTIONS>
+              <TRAINING_RUN_JAVA_TOOL_OPTIONS>-XX:+UnlockDiagnosticVMOptions -XX:-AOTAdapterCaching -Dspring.liquibase.enabled=false -Dspring.jpa.hibernate.ddl-auto=none -Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false -Dspring.jpa.database-platform=org.hibernate.dialect.MySQLDialect</TRAINING_RUN_JAVA_TOOL_OPTIONS>
+              <BPE_APPEND_JAVA_TOOL_OPTIONS>-XX:+UnlockDiagnosticVMOptions -XX:-AOTAdapterCaching</BPE_APPEND_JAVA_TOOL_OPTIONS>
+              <BPE_DELIM_JAVA_TOOL_OPTIONS xml:space="preserve"> </BPE_DELIM_JAVA_TOOL_OPTIONS>
             </env>
           </image>
         </configuration>
