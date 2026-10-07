@@ -1,5 +1,7 @@
 package de.hbt.salat.budget.service;
 
+import static de.hbt.salat.common.exception.ServiceFeedbackMessage.info;
+
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetLevel;
+import de.hbt.salat.budget.domain.BudgetScope;
 import de.hbt.salat.budget.domain.BudgetPlanPresence;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
@@ -26,6 +29,7 @@ import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -180,16 +184,42 @@ public class OrderBudgetService {
      * assignment, so those edits are not worth the queries.
      */
     @Authorized(requiresManager = true)
-    public void update(long id, OrderBudgetData data) {
+    public List<ServiceFeedbackMessage> update(long id, OrderBudgetData data) {
         var budget = getById(id);
         var scope = scopeOf(data);
         checkLevelNotMixed(scope, data.validFrom(), data.validUntil(), data.active(), id);
         var coverageBefore = coverageOf(budget);
         apply(budget, data, scope);
+        var notices = removeOrphanedCalculationLines(budget);
         orderBudgetRepository.save(budget);
         if (!coverageOf(budget).equals(coverageBefore)) {
             assignmentService.revalidateAssignmentsOf(id);
         }
+        return notices;
+    }
+
+    /**
+     * The lines of the calculation the edit left without a place (#1404): all of them once the plan
+     * is no longer a fixed price, otherwise those whose suborder no longer lies in the plan's scope.
+     * Kept, they would sit in the database without being shown anywhere and come back unannounced
+     * when the flag or the scope changes again. The saving removes them and says how many.
+     */
+    private List<ServiceFeedbackMessage> removeOrphanedCalculationLines(OrderBudget budget) {
+        var lines = budget.getCalculations();
+        if (lines.isEmpty()) {
+            return List.of();
+        }
+        if (!budget.isFixedPrice()) {
+            var count = lines.size();
+            lines.clear();
+            return List.of(info(ErrorCode.BU_CALCULATION_REMOVED_NOT_FIXED_PRICE, budget.getName(), count));
+        }
+        var positions = orderPositions.ofSubordersOf(budget.getCustomerorderId());
+        var before = lines.size();
+        lines.removeIf(line -> !BudgetScope.covers(budget, positions.get(line.getSuborderId())));
+        var removed = before - lines.size();
+        return removed == 0 ? List.of()
+            : List.of(info(ErrorCode.BU_CALCULATION_REMOVED_OUT_OF_SCOPE, budget.getName(), removed));
     }
 
     /**

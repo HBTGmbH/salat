@@ -78,8 +78,10 @@
           </td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.coveredRevenueEuro()})} : '—'"></td>
+          <!--/* A fixed price shows the share of its calculated hours and says so (#1404): next to the
+                 euro budget, a bare percentage would read as a share of it. */-->
           <td style="min-width: 160px;">
-            <div th:if="${row.hasBudget()}">
+            <div th:if="${row.hasUtilization()}">
               <div class="progress" style="height: 8px;">
                 <!--/* Red once the budget is exceeded; the warning level is the plan's own
                        alertThresholdPercent, and without one there is simply no warning. */-->
@@ -91,18 +93,22 @@
               </div>
               <!--/* th:class, not classappend: text-muted would otherwise override text-danger. */-->
               <small th:class="${row.isOverBudget()} ? 'text-danger fw-bold' : 'text-muted'"
-                     th:text="${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)} + ' %'"></small>
+                     th:text="${row.fixedPrice()}
+                              ? #{main.budget.dashboard.utilization.hours(${#numbers.formatDecimal(row.shownUtilizationPercent(), 1, 1)})}
+                              : ${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)} + ' %'"></small>
               <!--/* The warning for a plan that is behind its own progress: it has spent more of its
                      budget than it has come along. A case of its own, next to the utilization rather
                      than in the status column — that column judges the budget alone, and a plan can be
                      behind plan while still being well inside its budget. */-->
               <small th:if="${row.isBehindPlan()}" class="text-danger ms-1"
-                     th:title="#{main.budget.dashboard.progress.behind.hint(${#numbers.formatDecimal(row.progressPercent(), 1, 1)},${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)})}">
+                     th:title="${row.fixedPrice()}
+                               ? #{main.budget.dashboard.progress.behind.hint.hours(${#numbers.formatDecimal(row.progressPercent(), 1, 1)},${#numbers.formatDecimal(row.shownUtilizationPercent(), 1, 1)})}
+                               : #{main.budget.dashboard.progress.behind.hint(${#numbers.formatDecimal(row.progressPercent(), 1, 1)},${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)})}">
                 <i class="ti ti-alert-triangle"></i>
                 <span th:text="#{main.budget.dashboard.progress.behind}">Hinter Plan</span>
               </small>
             </div>
-            <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
+            <span th:unless="${row.hasUtilization()}" class="text-muted">—</span>
           </td>
           <td class="text-center">
             <!--/* text-white is needed: on the solid red the inherited text colour is unreadable. */-->
@@ -110,8 +116,8 @@
             <span th:if="${!row.isOverBudget() and row.isAboveThreshold()}" class="badge bg-warning-lt" th:text="#{main.budget.dashboard.status.alert}">Alert</span>
             <!--/* OK does not require a configured threshold: every plan with a budget amount is
                    judged against 100 %, the threshold only adds the amber step in between. */-->
-            <span th:if="${row.hasBudget() and !row.isOverBudget() and !row.isAboveThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
-            <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
+            <span th:if="${row.hasUtilization() and !row.isOverBudget() and !row.isAboveThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
+            <span th:unless="${row.hasUtilization()}" class="text-muted">—</span>
           </td>
           <td>
             <a class="btn btn-sm btn-outline-secondary"

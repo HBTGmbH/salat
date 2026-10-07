@@ -14,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +27,9 @@ import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetLevel;
 import de.hbt.salat.budget.domain.BudgetMode;
 import de.hbt.salat.budget.domain.OrderBudget;
+import de.hbt.salat.budget.domain.OrderBudgetCalculation;
 import de.hbt.salat.budget.domain.OrderBudgetData;
+import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
@@ -37,7 +40,9 @@ import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
  * All active plans of a customer order that are valid at the same time sit on the same level
@@ -68,6 +73,14 @@ public class OrderBudgetServiceTest {
     var customerorderService = mock(CustomerorderService.class);
     var suborderService = mock(SuborderService.class);
     TREE.stub(customerorderService, suborderService);
+    // The suborders of "co" as the order module hands them over by value (#1338).
+    when(suborderService.getAllSuborderReadModelsByCustomerorderId(TREE.orderId("co"))).thenAnswer(i ->
+        List.of("co/01", "co/01/A", "co/01/B", "co/01/02", "co/02", "co/02/B").stream()
+            .map(TREE::suborder)
+            .map(so -> new SuborderReadModel(so.getId(), so.getCustomerorder().getId(),
+                OrderPosition.of(so).suborderPath(), so.getCompleteOrderSign(), so.getShortdescription(),
+                Duration.ZERO, true, false))
+            .toList());
     budgetAuthorization = permissiveAuthorization();
     assignmentService = mock(TimereportBudgetAssignmentService.class);
     service = new OrderBudgetService(orderBudgetRepository, customerorderService, suborderService,
@@ -434,6 +447,71 @@ public class OrderBudgetServiceTest {
    * covered them. The controlling kept counting those bookings against it while the dashboard did
    * not — two numbers for one plan.
    */
+  // --- calculation lines the edit leaves without a place (#1404) ---------------------------------
+
+  @Test
+  public void removes_every_calculation_line_of_a_plan_that_is_no_longer_a_fixed_price() {
+    givenExisting();
+    var stored = fixedPricePlan(null, "co/01/A", "co/02/B");
+    givenStored(7L, stored);
+
+    var notices = service.update(7L, data(null, JAN, DEC, true));
+
+    assertThat(stored.getCalculations()).isEmpty();
+    assertThat(notices).singleElement().satisfies(notice -> {
+      assertThat(notice.getErrorCode()).isEqualTo(ErrorCode.BU_CALCULATION_REMOVED_NOT_FIXED_PRICE);
+      assertThat(notice.getArguments()).containsExactly("plan", 2);
+    });
+  }
+
+  @Test
+  public void removes_the_calculation_lines_whose_suborder_left_the_scope_of_the_plan() {
+    givenExisting();
+    var stored = fixedPricePlan(null, "co/01/A", "co/02/B");
+    givenStored(7L, stored);
+
+    var notices = service.update(7L, fixedPriceData("co/01"));
+
+    assertThat(stored.getCalculations()).extracting(OrderBudgetCalculation::getSuborderId)
+        .containsExactly(TREE.suborderId("co/01/A"));
+    assertThat(notices).singleElement().satisfies(notice -> {
+      assertThat(notice.getErrorCode()).isEqualTo(ErrorCode.BU_CALCULATION_REMOVED_OUT_OF_SCOPE);
+      assertThat(notice.getArguments()).containsExactly("plan", 1);
+    });
+  }
+
+  @Test
+  public void keeps_the_calculation_and_says_nothing_while_every_line_stays_in_scope() {
+    givenExisting();
+    var stored = fixedPricePlan("co/01", "co/01/A", "co/01/B");
+    givenStored(7L, stored);
+
+    var notices = service.update(7L, fixedPriceData("co/01"));
+
+    assertThat(stored.getCalculations()).hasSize(2);
+    assertThat(notices).isEmpty();
+  }
+
+  private static OrderBudget fixedPricePlan(String suborderSign, String... lineSuborders) {
+    var plan = plan(suborderSign, JAN, DEC);
+    plan.setName("plan");
+    plan.setFixedPrice(true);
+    for (var sign : lineSuborders) {
+      var line = new OrderBudgetCalculation();
+      line.setOrderBudget(plan);
+      line.setSuborder(TREE.suborder(sign));
+      line.setCategory(CostCategoryTestUtils.named("Senior"));
+      line.setCalculatedHours(Duration.ofHours(10));
+      plan.getCalculations().add(line);
+    }
+    return plan;
+  }
+
+  private static OrderBudgetData fixedPriceData(String suborderSign) {
+    return new OrderBudgetData("plan", TREE.orderId("co"), TREE.suborderId(suborderSign), JAN, DEC, true,
+        null, ProgressMode.SCOPE, true);
+  }
+
   @Test
   public void revalidates_the_assignments_when_the_period_changed() {
     givenExisting();

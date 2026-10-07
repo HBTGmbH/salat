@@ -22,6 +22,7 @@ public class BudgetDashboardService {
     private final OrderBudgetService orderBudgetService;
     private final BudgetControllingService budgetControllingService;
     private final CustomerorderService customerorderService;
+    private final FixedPriceCalculationService fixedPriceCalculationService;
 
     /**
      * @param customerSegmentId    only plans of orders whose customer belongs to this segment,
@@ -38,11 +39,15 @@ public class BudgetDashboardService {
         // How far each plan has come, judged by the same rule the controlling evaluation uses — a
         // plan that has spent more of its budget than of its progress is behind its plan.
         var progressPercents = budgetControllingService.computeProgressPercents(budgets);
+        // A fixed price is judged by the consumption of its calculated hours (#1404), with the
+        // calculation the controlling and the plan's page use.
+        var hoursConsumed = fixedPriceCalculationService.getHoursConsumedPercents(budgets);
         return budgets.stream()
             .map(b -> {
                 var utilization = utilizations.get(b.getId());
                 var info = utilization.info();
                 var progressPercent = progressPercents.get(b.getId());
+                var consumed = hoursConsumed.get(b.getId());
                 return new BudgetDashboardRow(
                     b.getId(),
                     b.getName(),
@@ -61,7 +66,9 @@ public class BudgetDashboardService {
                     // Without a budget amount there is no share of it that could be compared to the
                     // progress, so such a plan has no status either.
                     BudgetControllingService.computeProgressStatus(progressPercent,
-                        hasBudget(info) ? info.percent() : null)
+                        b.isFixedPrice() ? consumed : (hasBudget(info) ? info.percent() : null)),
+                    b.isFixedPrice(),
+                    consumed
                 );
             })
             // By order sign, then by start of validity — sorted here, because the plans come by

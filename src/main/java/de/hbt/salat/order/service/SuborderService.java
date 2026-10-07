@@ -163,7 +163,6 @@ public class SuborderService {
     so.setInvoice(data.invoice());
     so.setStandard(data.standard());
     so.setCommentnecessary(data.commentnecessary());
-    so.setFixedPrice(data.fixedPrice());
     so.setTrainingFlag(data.trainingFlag());
     so.setOrderType(data.orderType());
     so.setTicketReferencePolicy(ticketReferencePolicyOf(data.ticketReferenceMode(), data.ticketReferenceLimit()));
@@ -309,7 +308,6 @@ public class SuborderService {
         so.getInvoice(),
         so.getStandard(),
         so.getCommentnecessary(),
-        so.getFixedPrice(),
         so.isTrainingFlag(),
         so.getOrderType(),
         DateUtils.format(newFrom),
@@ -411,17 +409,6 @@ public class SuborderService {
       return List.of();
     }
     return suborderDAO.getSubordersByIds(suborderIds);
-  }
-
-  /**
-   * Whether the suborder is offered as a fixed price ({@code fixedPrice}) — as a value for another
-   * module (ADR-0021): a budget plan on it is preset to a fixed price (#1404). {@code false} for an
-   * id without a suborder.
-   */
-  @Transactional(readOnly = true)
-  public boolean isOfferedAtFixedPrice(long suborderId) {
-    var suborder = suborderDAO.getSuborderById(suborderId);
-    return suborder != null && Boolean.TRUE.equals(suborder.getFixedPrice());
   }
 
   /**
@@ -728,7 +715,6 @@ public class SuborderService {
     copy.setUntilDate(suborder.getUntilDate());
     copy.setSign(suborder.getSign());
     copy.setSuborder_customer(suborder.getSuborder_customer());
-    copy.setFixedPrice(suborder.getFixedPrice());
     copy.setTrainingFlag(suborder.isTrainingFlag());
     copy.setOrderType(suborder.getOrderType());
     copy.setTicketReferencePolicy(suborder.getTicketReferencePolicy());

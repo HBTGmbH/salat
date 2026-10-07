@@ -12,7 +12,6 @@ public record SuborderDTO(
     char invoice,
     Boolean standard,
     Boolean commentnecessary,
-    Boolean fixedPrice,
     boolean trainingFlag,
     OrderType orderType,
     String validFrom,

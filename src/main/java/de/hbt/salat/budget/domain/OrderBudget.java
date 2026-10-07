@@ -78,10 +78,8 @@ public class OrderBudget extends AuditedEntity {
     private List<OrderBudgetScopeEntry> scopeEntries = new ArrayList<>();
 
     /**
-     * Whether the plan is a fixed price (#1404). A feature of the plan of its own rather than a copy
-     * of {@code Suborder#getFixedPrice()}: a plan may be order-wide and then has no suborder to take
-     * it from. Where the plan's suborder carries the flag, the form presets it on creation, and a
-     * contradiction between the two is shown as a hint, never resolved.
+     * Whether the plan is a fixed price (#1404) — a feature of the plan itself; a plan may be
+     * order-wide. The suborder's former "fixed price offer" flag is gone (Changeset 171).
      *
      * <p>A fixed-price plan earns through flat rates only, measures its progress by hand
      * ({@link ProgressMode#SCOPE}) and carries a {@link #calculations calculation} its consumption
