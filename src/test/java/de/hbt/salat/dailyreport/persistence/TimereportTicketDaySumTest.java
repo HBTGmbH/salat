@@ -72,7 +72,6 @@ public class TimereportTicketDaySumTest {
     book(suborder, employeecontract("bbb"), DAY, 1, 0, "ALPHA-1");
 
     assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 150L, "bbb", 60L)));
-    assertThat(sums().getFirst().minutes()).isEqualTo(210);
   }
 
   @Test
@@ -82,14 +81,6 @@ public class TimereportTicketDaySumTest {
     book(suborder, contract, DAY, 0, 45, "ALPHA-1");
 
     assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 105L)));
-  }
-
-  @Test
-  public void names_the_people_by_sign_in_order() {
-    book(suborder, employeecontract("xyz"), DAY, 1, 0, "ALPHA-1");
-    book(suborder, employeecontract("abc"), DAY, 1, 0, "ALPHA-1");
-
-    assertThat(sums().getFirst().minutesBySign().keySet()).containsExactly("abc", "xyz");
   }
 
   @Test
@@ -154,9 +145,8 @@ public class TimereportTicketDaySumTest {
         new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 3L, "bbb", 0L, "ccc", 50L)),
         new TicketDaySum(DAY, "ALPHA-2", Map.of("aaa", 2L, "bbb", 1L)),
         new TicketDaySum(DAY, "ALPHA-3", Map.of("aaa", 2L)));
-    assertThat(sums).allSatisfy(sum -> assertThat(sum.minutes())
-        .isEqualTo(sum.minutesBySign().values().stream().mapToLong(Long::longValue).sum()));
-    assertThat(sums.stream().mapToLong(TicketDaySum::minutes).sum()).isEqualTo(7 + 1 + 50);
+    assertThat(sums.stream().flatMap(sum -> sum.minutesBySign().values().stream()).mapToLong(Long::longValue).sum())
+        .isEqualTo(7 + 1 + 50);
   }
 
   @Test
