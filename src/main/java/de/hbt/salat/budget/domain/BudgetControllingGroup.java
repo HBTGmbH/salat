@@ -29,8 +29,25 @@ public record BudgetControllingGroup(
      * through the section total.
      */
     Double progressPercent,
-    ProgressStatus progressStatus
+    ProgressStatus progressStatus,
+    /**
+     * The calculation and the hourly rates of a fixed-price plan (#1405); {@code null} for every
+     * other plan and for the group of an {@link SectionKind#UNPLANNED} section.
+     */
+    FixedPriceEvaluation fixedPrice
 ) {
+
+    /** A group without a fixed price — every plan that is not one, and the unplanned section. */
+    public BudgetControllingGroup(String sign, String label, Long budgetId, List<BudgetControllingRow> rows,
+                                  BudgetControllingRow subtotal, Double progressPercent,
+                                  ProgressStatus progressStatus) {
+        this(sign, label, budgetId, rows, subtotal, progressPercent, progressStatus, null);
+    }
+
+    public boolean hasFixedPrice() {
+        return fixedPrice != null;
+    }
+
     public boolean hasSubtotal() {
         return subtotal != null;
     }

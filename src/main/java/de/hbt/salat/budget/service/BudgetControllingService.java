@@ -32,11 +32,11 @@ import de.hbt.salat.budget.domain.BudgetControllingRow;
 import de.hbt.salat.budget.domain.BudgetControllingSection;
 import de.hbt.salat.budget.domain.BudgetScope;
 import de.hbt.salat.budget.domain.EmployeeCostLookup;
+import de.hbt.salat.budget.domain.FixedPriceEvaluation;
 import de.hbt.salat.budget.domain.FlatRateAllocation;
 import de.hbt.salat.budget.domain.FlatRateDueAmount;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
-import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
 import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
@@ -76,6 +76,7 @@ public class BudgetControllingService {
     private final PublicholidayService publicholidayService;
     private final BudgetAuthorization budgetAuthorization;
     private final OrderPositions orderPositions;
+    private final FixedPriceCalculationService fixedPriceCalculationService;
 
     /**
      * The controlling of one customer order, empty when there is no such order (#1338).
@@ -179,7 +180,7 @@ public class BudgetControllingService {
      * evaluated window. Everything of a report that lies before it contributes to one figure only:
      * the revenue earned before the window (#779).
      */
-    private record ScoredReport(long timereportId, LocalDate day, Duration duration,
+    private record ScoredReport(long timereportId, LocalDate day, Duration duration, boolean invoiceable,
                                 BigDecimal revenue, BigDecimal cost, boolean beforeWindow) {}
 
     /**
@@ -198,7 +199,7 @@ public class BudgetControllingService {
             var soSign = suborder.completeOrderSign();
             var invoiceable = suborder.invoiceable();
             scored.put(suborder.id(), bySuborder.getOrDefault(suborder.id(), List.<TimereportDTO>of()).stream()
-                .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDuration(),
+                .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDuration(), invoiceable,
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
                     invoiceable
                         ? rateOf(r, customerorderId, soSign, planOfBooking.get(r.getId()), pricingLookup)
@@ -332,6 +333,7 @@ public class BudgetControllingService {
             // period counts against the budget, but it is not what this period earned (#779).
             .revenueBeforeWindowEuro(flatRateAmount(dueAmounts, due -> due.isBefore(windowStart)))
             .bookedHours(Duration.ZERO)
+            .billableHours(Duration.ZERO)
             .revenueEuro(BigDecimal.ZERO)
             .flatRateRevenueEuro(flatRateAmount(dueAmounts, due -> !due.isBefore(windowStart)))
             .costEuro(includeCosts ? BigDecimal.ZERO : null)
@@ -491,12 +493,17 @@ public class BudgetControllingService {
             // can act on (#1217).
             var progress = deactivated ? null
                 : computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
+            // A fixed price is judged against its calculation, not against the euro budget the
+            // instalments fill up (#1404), and shows what an hour of it is worth (#1405). Its
+            // consumption is cumulative to the end of the window, like the budget columns.
+            var fixedPrice = deactivated ? null
+                : fixedPriceCalculationService.evaluate(plan, window.getUntil(), includeCosts).orElse(null);
             // An order-wide plan is the whole section, so its figures belong on the section total.
             // The complete sign its suborder has today, like the rows below it (#1205, #1212).
             var sign = scopeSigns.ofPlan(plan);
             var subtotal = orderWide ? null
                 : aggregate(sign, plan.getName(), rows, budget, includeCosts);
-            collected.add(new CollectedPlan(plan.getId(), sign, plan.getName(), rows, subtotal, progress));
+            collected.add(new CollectedPlan(plan.getId(), sign, plan.getName(), rows, subtotal, progress, fixedPrice));
         }
 
         var allRows = collected.stream().flatMap(c -> c.rows().stream()).toList();
@@ -510,8 +517,10 @@ public class BudgetControllingService {
         var groups = collected.stream()
             .map(c -> new BudgetControllingGroup(c.sign(), c.label(), c.budgetId(), c.rows(), c.subtotal(),
                 c.progressPercent(),
-                computeProgressStatus(c.progressPercent(),
-                    budgetUsedPercentOf(orderWide ? total : c.subtotal()))))
+                c.fixedPrice() != null
+                    ? c.fixedPrice().progressStatus()
+                    : computeProgressStatus(c.progressPercent(), budgetUsedPercentOf(orderWide ? total : c.subtotal())),
+                c.fixedPrice()))
             .toList();
 
         return new BudgetControllingSection(
@@ -603,6 +612,8 @@ public class BudgetControllingService {
             .plannedHours(suborder.debithours() != null ? suborder.debithours() : Duration.ZERO)
             .revenueBeforeWindowEuro(amountOf(reports, ScoredReport::beforeWindow, ScoredReport::revenue))
             .bookedHours(hoursOf(reports, report -> !report.beforeWindow()))
+            // The hours a rate can be agreed for at all (#1406): the work on invoiceable suborders.
+            .billableHours(hoursOf(reports, report -> !report.beforeWindow() && report.invoiceable()))
             .revenueEuro(amountOf(reports, report -> !report.beforeWindow(), ScoredReport::revenue))
             .flatRateRevenueEuro(BigDecimal.ZERO)
             .costEuro(includeCosts
@@ -624,7 +635,7 @@ public class BudgetControllingService {
     /** One plan of a section before its group is assembled (→ {@link #plannedSection}). */
     private record CollectedPlan(Long budgetId, String sign, String label,
                                  List<BudgetControllingRow> rows, BudgetControllingRow subtotal,
-                                 Double progressPercent) {}
+                                 Double progressPercent, FixedPriceEvaluation fixedPrice) {}
 
     /** The share of its budget a line has consumed, or {@code null} where there is no budget. */
     private static Double budgetUsedPercentOf(BudgetControllingRow row) {
@@ -839,11 +850,7 @@ public class BudgetControllingService {
     }
 
     private Double computeScopeProgress(OrderBudget budget, LocalDate today) {
-        return budget.getScopeEntries().stream()
-            .filter(e -> !e.getRefdate().isAfter(today))
-            .max(Comparator.comparing(OrderBudgetScopeEntry::getRefdate))
-            .map(e -> (double) e.getPercent())
-            .orElse(null);
+        return budget.scopeProgressPercentOn(today);
     }
 
     /**

@@ -13,6 +13,15 @@
   <div class="card mb-3">
     <div class="card-header d-flex align-items-center">
       <h3 class="card-title me-auto" th:text="${budget.name}">Budgetplan</h3>
+      <span class="badge bg-blue-lt ms-2" th:if="${budget.fixedPrice}"
+            th:text="#{main.budget.fixedprice.badge}">Festpreis</span>
+      <!--/* Ein Kundenstundensatz über 0 € im Geltungsbereich zählt den Umsatz doppelt (#1404). Der
+             Satz bleibt gespeichert; die Plakette nennt ihn, solange er gilt. */-->
+      <span class="badge bg-warning-lt ms-2" th:if="${conflictingRates != null and not #lists.isEmpty(conflictingRates)}"
+            th:title="#{main.budget.fixedprice.ratewarning.title}">
+        <i class="icon ti ti-alert-triangle m-0 me-1"></i>
+        <span th:text="#{main.budget.fixedprice.ratewarning.badge}">Kundenstundensatz trotz Festpreis</span>
+      </span>
       <span class="badge ms-2" th:classappend="${budget.active == true} ? 'bg-success-lt' : 'bg-secondary-lt'"
             th:text="${budget.active == true} ? #{main.general.active.text} : #{main.general.inactive.text}">Aktiv</span>
       <div class="ms-3" th:if="${isManager}">
@@ -45,6 +54,16 @@
             <dt class="col-sm-5" th:text="#{main.budget.field.progressMode}">Fortschritt</dt>
             <dd class="col-sm-7"
                 th:text="${budget.progressMode != null} ? #{|main.budget.field.progressMode.${budget.progressMode.name()}|} : #{main.budget.field.progressMode.none}"></dd>
+            <dt class="col-sm-5" th:text="#{main.budget.field.fixedPrice}">Festpreis</dt>
+            <dd class="col-sm-7">
+              <span th:text="${budget.fixedPrice} ? #{main.general.yes} : #{main.general.no}">Nein</span>
+              <!--/* Es gilt das Kennzeichen des Plans; der Widerspruch zum Unterauftrag ist nur ein Hinweis. */-->
+              <div class="small text-warning" th:if="${fixedPriceMismatch}">
+                <i class="icon ti ti-alert-triangle"></i>
+                <span th:text="${budget.fixedPrice} ? #{main.budget.fixedprice.mismatch.planfixed}
+                                                    : #{main.budget.fixedprice.mismatch.suborderfixed}"></span>
+              </div>
+            </dd>
           </dl>
         </div>
         <div class="col-md-6">
@@ -190,6 +209,68 @@
             <i class="icon ti ti-plus"></i>
             <span th:text="#{main.budget.scope.button.add}">Eintrag hinzufügen</span>
           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!--/*
+    Kalkulation eines Festpreis-Plans (#1404): Stunden je Unterauftrag und Kostensatz, daneben was
+    darauf gebucht wurde. Die Kundenstundensätze, die im Geltungsbereich zugleich Umsatz zählen,
+    stehen darunter. Pflegen dürfen die Zeilen nur Manager.
+  */-->
+  <div class="card mb-3" id="calculation" th:if="${fixedPrice != null}">
+    <div th:replace="~{budget/fixed-price :: evaluation(${fixedPrice}, null, ${budget.id}, ${isManager})}"></div>
+
+    <div class="card-body border-top" th:if="${not #lists.isEmpty(conflictingRates)}">
+      <div class="text-warning mb-1">
+        <i class="icon ti ti-alert-triangle"></i>
+        <span th:text="#{main.budget.fixedprice.ratewarning.title}"></span>
+      </div>
+      <ul class="small mb-0">
+        <li th:each="rate : ${conflictingRates}"
+            th:text="#{main.budget.fixedprice.ratewarning.item(${rate.suborderSign ?: budget.customerorder.sign},
+                     ${#messages.msg('main.budget.format.amount', rate.priceCentsPerHour / 100.0)},
+                     ${#temporals.format(rate.validFrom, 'dd.MM.yyyy')})}">4711/02: 95,00 € ab 01.03.2026</li>
+      </ul>
+    </div>
+
+    <div class="card-footer" id="calculation-form" th:if="${isManager}">
+      <form th:action="@{/budget/{id}/calculations/store(id=${budget.id})}" method="post"
+            th:object="${calculationForm}" class="row g-2 align-items-end">
+        <input type="hidden" th:field="*{id}"/>
+        <div class="col-md-5">
+          <label class="form-label" for="calculationSuborderId" th:text="#{main.budget.calculation.field.suborder}">Unterauftrag</label>
+          <select class="form-select tomselect" id="calculationSuborderId" name="suborderId" required>
+            <option value="" th:text="#{main.budget.calculation.field.suborder.select}">--- Unterauftrag ---</option>
+            <option th:each="so : ${calculationSuborders}" th:value="${so.id()}"
+                    th:selected="${calculationForm.suborderId != null and calculationForm.suborderId == so.id()}"
+                    th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide())}"></option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="calculationCategoryId" th:text="#{main.budget.calculation.field.category}">Kostensatz</label>
+          <select class="form-select tomselect" id="calculationCategoryId" name="categoryId" required>
+            <option value="" th:text="#{main.budget.calculation.field.category.select}">--- Kostensatz ---</option>
+            <option th:each="c : ${calculationCategories}" th:value="${c.id}"
+                    th:selected="${calculationForm.categoryId != null and calculationForm.categoryId == c.id}"
+                    th:text="${c.name}"></option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="calculationHours" th:text="#{main.budget.calculation.field.hours}">Stunden</label>
+          <input type="number" min="0.25" step="0.25" class="form-control" id="calculationHours"
+                 th:field="*{hours}" required/>
+        </div>
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti" th:classappend="${calculationForm.id == null} ? 'ti-plus' : 'ti-device-floppy'"></i>
+            <span th:text="${calculationForm.id == null} ? #{main.budget.calculation.button.add}
+                                                         : #{main.budget.calculation.button.save}">Zeile hinzufügen</span>
+          </button>
+          <a class="btn btn-outline-secondary ms-1" th:if="${calculationForm.id != null}"
+             th:href="@{/budget/{id}(id=${budget.id})} + '#calculation'"
+             th:text="#{main.budget.calculation.button.cancel}">Abbrechen</a>
         </div>
       </form>
     </div>

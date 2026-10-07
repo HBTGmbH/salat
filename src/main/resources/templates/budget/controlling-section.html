@@ -71,6 +71,27 @@
         enough of them to fit already.
       */-->
       <th class="text-end" th:if="${columns.flatRate()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
+      <!--/*
+        Mittlerer vereinbarter und effektiver Stundensatz (#1406). Die Formeln stehen hinter dem
+        Info-Icon; der Text dazu steht einmal je Seite (Fragment rateHelp), weil dieser Kopf mehrfach
+        auf einer Seite steht.
+      */-->
+      <th class="text-end text-nowrap" th:if="${columns.hourlyRate()}">
+        <span th:text="#{main.controlling.col.agreedrate}">Satz Ø (€/h)</span>
+        <button type="button" class="info-popover-toggle" data-info-popover="#agreedRateHelp"
+                th:title="#{main.controlling.col.rate.help.toggle}"
+                th:aria-label="#{main.controlling.col.rate.help.toggle}">
+          <i class="bi bi-info-circle"></i>
+        </button>
+      </th>
+      <th class="text-end text-nowrap" th:if="${columns.hourlyRate()}">
+        <span th:text="#{main.controlling.col.effectiverate}">Satz eff. (€/h)</span>
+        <button type="button" class="info-popover-toggle" data-info-popover="#effectiveRateHelp"
+                th:title="#{main.controlling.col.rate.help.toggle}"
+                th:aria-label="#{main.controlling.col.rate.help.toggle}">
+          <i class="bi bi-info-circle"></i>
+        </button>
+      </th>
       <th class="text-end" th:if="${columns.budget()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
       <!--/* Two lines, like the column before it: the label is wider than the numbers below it. */-->
       <th class="text-end" th:if="${columns.budget()}">
@@ -123,6 +144,10 @@
       th:text="${row.hasTotalRevenue()} ? #{main.budget.format.amount(${row.totalRevenueEuro()})} : '—'"></td>
   <td class="text-end" th:if="${columns.flatRate()}" th:classappend="${cellClass}"
       th:text="${row.hasFlatRateRevenue()} ? #{main.budget.format.amount(${row.flatRateRevenueEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${columns.hourlyRate()}" th:classappend="${cellClass}"
+      th:text="${row.hasAgreedHourlyRate()} ? #{main.budget.format.amount(${row.agreedHourlyRateEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${columns.hourlyRate()}" th:classappend="${cellClass}"
+      th:text="${row.hasEffectiveHourlyRate()} ? #{main.budget.format.amount(${row.effectiveHourlyRateEuro()})} : '—'"></td>
   <td class="text-end" th:if="${columns.budget()}" th:classappend="${cellClass}"
       th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
   <td class="text-end" th:if="${columns.budget()}"
@@ -147,6 +172,19 @@
     </a>
   </td>
 </tr>
+
+<!--/*
+  Der Text hinter den Info-Icons der beiden Satzspalten (#1406). Einmal je Seite einbinden: der
+  Tabellenkopf steht mehrfach auf einer Seite, und die Icons verweisen über die id hierher.
+*/-->
+<div th:fragment="rateHelp" class="d-none">
+  <div id="agreedRateHelp" th:text="#{main.controlling.col.agreedrate.help}">
+    Umsatz aus Stunden ÷ fakturierbare Stunden
+  </div>
+  <div id="effectiveRateHelp" th:text="#{main.controlling.col.effectiverate.help}">
+    (Umsatz aus Stunden + Pauschalen) ÷ alle gebuchten Stunden
+  </div>
+</div>
 
 </body>
 </html>

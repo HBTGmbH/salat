@@ -134,6 +134,12 @@ public class BudgetSegmentControllingService {
             : new SegmentKey(segment.getId(), segment.getName());
     }
 
+    /**
+     * The orders without revenue, hours or cost in the window are left out of the table and only
+     * counted (#1407): internal orders, plans nobody booked on yet. The total still runs over every
+     * order — the ones left out contribute zeros, so the line reads the same either way, and it is
+     * not tied to the rule that decides what the table shows.
+     */
     private static SegmentControllingGroup group(SegmentKey key, List<SegmentControllingOrder> orders) {
         var sorted = orders.stream()
             .sorted(Comparator.comparing(SegmentControllingOrder::customerorderSign))
@@ -143,7 +149,8 @@ public class BudgetSegmentControllingService {
         // reports them as well. No budget: the orders of a segment answer to different plans, and
         // some to none at all (→ BudgetControllingColumns#withoutBudget).
         var total = BudgetControllingRow.sum(null, null, totals, null, true);
-        return new SegmentControllingGroup(key.id(), key.name(), sorted, total);
+        var listed = sorted.stream().filter(order -> !order.hasNoRevenueHoursOrCost()).toList();
+        return new SegmentControllingGroup(key.id(), key.name(), listed, sorted.size() - listed.size(), total);
     }
 
     /**

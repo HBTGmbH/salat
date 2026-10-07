@@ -12,6 +12,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -75,6 +76,37 @@ public class OrderBudget extends AuditedEntity {
     @OneToMany(mappedBy = "orderBudget", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<OrderBudgetScopeEntry> scopeEntries = new ArrayList<>();
+
+    /**
+     * Whether the plan is a fixed price (#1404). A feature of the plan of its own rather than a copy
+     * of {@code Suborder#getFixedPrice()}: a plan may be order-wide and then has no suborder to take
+     * it from. Where the plan's suborder carries the flag, the form presets it on creation, and a
+     * contradiction between the two is shown as a hint, never resolved.
+     *
+     * <p>A fixed-price plan earns through flat rates only, measures its progress by hand
+     * ({@link ProgressMode#SCOPE}) and carries a {@link #calculations calculation} its consumption
+     * is judged against.
+     */
+    @Column(name = "fixed_price", nullable = false)
+    private boolean fixedPrice;
+
+    /** The hours a fixed price was calculated with, per suborder and cost category (#1404). */
+    @OneToMany(mappedBy = "orderBudget", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private List<OrderBudgetCalculation> calculations = new ArrayList<>();
+
+    /**
+     * The progress entered by hand that is in force on that day: the latest entry not after it, or
+     * {@code null} where none has been entered yet. The controlling and the calculation of a fixed
+     * price read it through here, so both name the same figure.
+     */
+    public Double scopeProgressPercentOn(LocalDate day) {
+        return scopeEntries.stream()
+            .filter(e -> !e.getRefdate().isAfter(day))
+            .max(Comparator.comparing(OrderBudgetScopeEntry::getRefdate))
+            .map(e -> (double) e.getPercent())
+            .orElse(null);
+    }
 
     /** Whether the plan applies to the customer order as a whole. */
     public boolean isOrderWide() {

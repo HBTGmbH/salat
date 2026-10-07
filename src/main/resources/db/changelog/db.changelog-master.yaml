@@ -6209,3 +6209,107 @@ databaseChangeLog:
               - column:
                   name: comment
                   type: varchar(2000)
+
+  - changeSet:
+      id: 167
+      author: kr
+      comment: Budgetplan als Festpreis kennzeichnen (#1404)
+      # Ein eigenes Merkmal am Plan, unabhaengig von suborder.fixedPrice: ein Plan kann auftragsweit
+      # sein und hat dann keinen Unterauftrag, dessen Kennzeichen er uebernehmen koennte. Alle
+      # bestehenden Plaene bleiben Dienstleistungsbudgets.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_budget
+                columnName: fixed_price
+      changes:
+        - addColumn:
+            tableName: order_budget
+            columns:
+              - column:
+                  name: fixed_price
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 168
+      author: kr
+      comment: Kalkulation eines Festpreis-Plans - Stunden je Unterauftrag und Kostenkategorie (#1404)
+      # Eine Zeile je Kombination aus Unterauftrag und Kostenkategorie; die Kombination ist je Plan
+      # eindeutig. Die Stunden stehen in Minuten wie timereport.duration_minutes.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: order_budget_calculation
+      changes:
+        - createTable:
+            tableName: order_budget_calculation
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_order_budget_calculation
+              - column:
+                  name: order_budget_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_budget_calculation_budget
+                    references: order_budget(id)
+              - column:
+                  name: suborder_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_budget_calculation_suborder
+                    references: suborder(id)
+              - column:
+                  name: cost_category_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_budget_calculation_category
+                    references: employee_cost_category(id)
+              - column:
+                  name: calculated_minutes
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
+  - changeSet:
+      id: 169
+      author: kr
+      comment: Kalkulationszeile je Plan, Unterauftrag und Kostenkategorie eindeutig (#1404)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                tableName: order_budget_calculation
+                indexName: uk_order_budget_calculation_budget_suborder_category
+      changes:
+        - addUniqueConstraint:
+            tableName: order_budget_calculation
+            columnNames: order_budget_id, suborder_id, cost_category_id
+            constraintName: uk_order_budget_calculation_budget_suborder_category

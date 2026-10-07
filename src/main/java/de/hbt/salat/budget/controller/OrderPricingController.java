@@ -20,11 +20,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.budget.domain.OrderPricingData;
+import de.hbt.salat.budget.domain.OrderPricingRow;
+import de.hbt.salat.budget.service.FixedPriceCalculationService;
 import de.hbt.salat.budget.service.OrderPricingService;
 import de.hbt.salat.budget.viewhelper.CustomerorderFilterOption;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.viewhelper.NoticeViewHelper;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -47,6 +50,8 @@ public class OrderPricingController {
     private final AuthorizedUser authorizedUser;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final FilterHintViewHelper filterHintViewHelper;
+    private final NoticeViewHelper noticeViewHelper;
+    private final FixedPriceCalculationService fixedPriceCalculationService;
     private final MessageSourceAccessor messages;
 
     /**
@@ -66,7 +71,11 @@ public class OrderPricingController {
         var inactive = Boolean.TRUE.equals(fPricingShowInactive);
         var inactiveOrders = Boolean.TRUE.equals(fPricingShowInactiveOrders);
         // The rows name their order by sign; description, customer and validity hang off the order.
-        model.addAttribute("rows", orderPricingService.getRows(fBudgetCustomerOrderId, inactive, inactiveOrders));
+        var rows = orderPricingService.getRows(fBudgetCustomerOrderId, inactive, inactiveOrders);
+        model.addAttribute("rows", rows);
+        // Rates above 0 EUR in the scope of a fixed-price plan count revenue twice (#1404).
+        model.addAttribute("fixedPricePlansByRate", fixedPriceCalculationService.getFixedPricePlanNamesByRateId(
+            rows.stream().map(OrderPricingRow::pricing).toList()));
         model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
         model.addAttribute("showInactive", inactive);
@@ -165,6 +174,8 @@ public class OrderPricingController {
                 filterHintViewHelper.addSuccess(redirectAttributes,
                     messages.getMessage("main.pricing.message.updated"), CUSTOMER_ORDER_ID);
             }
+            // Saved all the same: the rate may be meant for work outside the fixed price (#1404).
+            noticeViewHelper.addNotices(redirectAttributes, fixedPriceCalculationService.noticesForRate(data));
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",
                 errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).toList());

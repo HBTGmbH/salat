@@ -65,30 +65,39 @@ public class BudgetControllingColumnsTest {
    */
   @Test
   public void should_drop_the_columns_a_plan_answers_for() {
-    var all = new BudgetControllingColumns(true, true, true, true, true, true);
+    var all = new BudgetControllingColumns(true, true, true, true, true, true, true);
 
     assertThat(all.withoutBudget())
-        .isEqualTo(new BudgetControllingColumns(false, true, true, false, false, true));
+        .isEqualTo(new BudgetControllingColumns(false, true, true, false, false, true, true));
     assertThat(all.withoutPlan())
-        .isEqualTo(new BudgetControllingColumns(false, false, true, false, false, true));
+        .isEqualTo(new BudgetControllingColumns(false, false, true, false, false, true, true));
   }
 
   @Test
   public void should_take_over_every_column_of_the_sets_it_is_merged_with() {
-    var withBudget = new BudgetControllingColumns(false, false, false, true, true, false);
-    var withPlanned = new BudgetControllingColumns(false, true, false, false, false, false);
+    var withBudget = new BudgetControllingColumns(false, false, false, true, true, false, false);
+    var withPlanned = new BudgetControllingColumns(false, true, false, false, false, false, true);
 
     var merged = withBudget.merge(withPlanned);
 
-    assertThat(merged).isEqualTo(new BudgetControllingColumns(false, true, false, true, true, false));
+    assertThat(merged).isEqualTo(new BudgetControllingColumns(false, true, false, true, true, false, true));
   }
 
   @Test
   public void should_survive_being_merged_with_nothing() {
-    var columns = new BudgetControllingColumns(true, false, false, false, false, false);
+    var columns = new BudgetControllingColumns(true, false, false, false, false, false, false);
 
     assertThat(columns.merge(null)).isEqualTo(columns);
     assertThat(BudgetControllingColumns.NONE.merge(columns)).isEqualTo(columns);
+  }
+
+  /** The hourly rates need hours to divide by (#1406), and they stay in every aggregate. */
+  @Test
+  public void should_show_the_hourly_rates_only_where_hours_were_booked() {
+    var booked = row().bookedHours(Duration.ofHours(8)).build();
+
+    assertThat(BudgetControllingColumns.of(List.of(booked)).hourlyRate()).isTrue();
+    assertThat(BudgetControllingColumns.of(List.of(row().build())).hourlyRate()).isFalse();
   }
 
   private static BudgetControllingRow.BudgetControllingRowBuilder row() {

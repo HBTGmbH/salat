@@ -824,6 +824,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `OrderRevenueExcelMapping` | Stammdaten | — |
 | `OrderFlatRate` | Stammdaten | `validFrom`/`validUntil` |
 | `OrderFlatRateInstalment` | Stammdaten | inherits the validity of its `OrderFlatRate` |
+| `OrderBudgetCalculation` | Stammdaten | goes with its `OrderBudget` |
 | `Timereport` | Bewegungsdaten | soft-delete (`deleted` + `@SQLRestriction`) |
 | `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |

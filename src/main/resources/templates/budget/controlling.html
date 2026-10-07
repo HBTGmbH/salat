@@ -51,6 +51,9 @@
     </div>
   </div>
 
+  <!--/* Die Formeln hinter den Info-Icons der Satzspalten (#1406), einmal je Seite. */-->
+  <div th:replace="~{budget/controlling-section :: rateHelp}"></div>
+
   <!-- Error -->
   <div class="alert alert-danger" th:if="${controllingError != null}" th:text="${controllingError}"></div>
 
@@ -132,6 +135,16 @@
       </a>
     </div>
     <div th:replace="~{budget/controlling-section :: table(${section}, ${isManager}, ${result.filter().getFrom()})}"></div>
+    <!--/*
+      Die Kalkulation eines Festpreis-Plans steht im Abschnitt des Plans, unter seiner Tabelle, und
+      nicht auf einer Seite daneben (#1405). Bei mehreren Plänen im Abschnitt trägt sie den Plannamen.
+    */-->
+    <th:block th:each="group : ${section.groups()}">
+      <th:block th:if="${group.hasFixedPrice()}">
+        <div th:replace="~{budget/fixed-price :: evaluation(${group.fixedPrice()},
+                           ${#lists.size(section.groups()) > 1 ? group.label() : null}, ${group.budgetId()}, false)}"></div>
+      </th:block>
+    </th:block>
   </div>
 
   <!--/*

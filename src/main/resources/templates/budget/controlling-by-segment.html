@@ -42,6 +42,9 @@
     </div>
   </div>
 
+  <!--/* Die Formeln hinter den Info-Icons der Satzspalten (#1406), einmal je Seite. */-->
+  <div th:replace="~{budget/controlling-section :: rateHelp}"></div>
+
   <div class="card" th:if="${result.isEmpty()}">
     <div class="card-body text-center text-muted py-3"
          th:text="#{main.controlling.empty}">Keine Daten im gewählten Zeitraum</div>
@@ -53,10 +56,12 @@
           th:text="${segment.hasSegment()} ? ${segment.segmentName()} : #{main.controlling.bysegment.nosegment}">
         Segment
       </h3>
-      <div class="text-muted small ms-auto"
+      <!--/* Gezählt werden die Aufträge, die die Tabelle zeigt (#1407); die ausgeblendeten nennt der
+             Hinweis unter ihr. */-->
+      <div class="text-muted small ms-auto" th:if="${segment.hasOrders()}"
            th:text="#{main.controlling.bysegment.ordercount(${#lists.size(segment.orders())})}">5 Aufträge</div>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive" th:if="${segment.hasOrders()}">
       <table class="table table-vcenter card-table">
         <thead th:replace="~{budget/controlling-section :: headers(${result.columns()}, true, ${result.filter().getFrom()}, #{main.controlling.bysegment.col.order}, true)}"></thead>
         <tbody>
@@ -73,6 +78,15 @@
           <tr th:replace="~{budget/controlling-section :: row(${result.columns()}, ${segment.total()}, true, 'fw-bold', 'table-active fw-bold', '')}"></tr>
         </tbody>
       </table>
+    </div>
+    <!--/*
+      Aufträge ohne Stunden, Umsatz und Kosten im Zeitraum stehen nicht als Zeile da, sondern nur mit
+      ihrer Anzahl (#1407). Sie tragen nur Nullen bei, die Summenzeile bleibt also dieselbe. Hat ein
+      Segment nur solche Aufträge, steht der Hinweis an Stelle der Tabelle.
+    */-->
+    <div class="card-footer text-muted small" th:if="${segment.hasHiddenOrders()}"
+         th:text="#{main.controlling.bysegment.hidden(${segment.hiddenOrderCount()})}">
+      + 5 Aufträge ohne Stunden, Umsatz und Kosten ausgeblendet
     </div>
   </div>
 

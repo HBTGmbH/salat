@@ -33,6 +33,12 @@ public record BudgetControllingRow(
      */
     BigDecimal revenueBeforeWindowEuro,
     Duration bookedHours,
+    /**
+     * The part of {@code bookedHours} worked on invoiceable suborders (#1406) — the hours a rate can
+     * be agreed for at all. Work on a suborder that is not invoiceable is never billed, whatever rate
+     * matches, so it earns nothing however its person is priced.
+     */
+    Duration billableHours,
     /** The budget of the plan this line stands for; {@code null} on lines that carry none. */
     BigDecimal budgetEuro,
     /**
@@ -85,6 +91,7 @@ public record BudgetControllingRow(
             .plannedHours(sumHours(rows, BudgetControllingRow::plannedHours))
             .revenueBeforeWindowEuro(sumAmount(rows, BudgetControllingRow::revenueBeforeWindowEuro))
             .bookedHours(sumHours(rows, BudgetControllingRow::bookedHours))
+            .billableHours(sumHours(rows, BudgetControllingRow::billableHours))
             .budgetEuro(budgetEuro)
             .revenueEuro(sumAmount(rows, BudgetControllingRow::revenueEuro))
             .flatRateRevenueEuro(sumAmount(rows, BudgetControllingRow::flatRateRevenueEuro))
@@ -153,6 +160,47 @@ public record BudgetControllingRow(
 
     private static BigDecimal orZero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    /**
+     * What an hour booked in the window earned on average (#1406): revenue from hours and flat rates
+     * together, over every hour booked — the ones on suborders that are not invoiceable included,
+     * because they were worked for the same order. {@code null} without booked hours, so that the
+     * view shows a dash instead of dividing by zero.
+     *
+     * <p>A flat rate line has no hours and therefore no rate; a subtotal or total over it does, and
+     * that is where the flat rates raise the figure. Which plan a flat rate amount counts against
+     * follows {@link FlatRateAllocation} like every other figure here.
+     */
+    public BigDecimal effectiveHourlyRateEuro() {
+        if (!hasBooked()) {
+            return null;
+        }
+        return orZero(totalRevenueEuro()).divide(hoursOf(bookedHours), 2, RoundingMode.HALF_UP);
+    }
+
+    public boolean hasEffectiveHourlyRate() {
+        return effectiveHourlyRateEuro() != null;
+    }
+
+    /**
+     * The rate agreed on average (#1406): revenue from hours over the hours that can be billed at all.
+     * Set next to {@link #effectiveHourlyRateEuro()}, the gap between the two is what unbilled work
+     * costs the order per hour. {@code null} without billable hours.
+     */
+    public BigDecimal agreedHourlyRateEuro() {
+        if (billableHours == null || billableHours.isZero()) {
+            return null;
+        }
+        return orZero(revenueEuro).divide(hoursOf(billableHours), 2, RoundingMode.HALF_UP);
+    }
+
+    public boolean hasAgreedHourlyRate() {
+        return agreedHourlyRateEuro() != null;
+    }
+
+    private static BigDecimal hoursOf(Duration duration) {
+        return BigDecimal.valueOf(duration.toMinutes()).divide(BigDecimal.valueOf(60), 6, RoundingMode.HALF_UP);
     }
 
     public boolean hasCost() {

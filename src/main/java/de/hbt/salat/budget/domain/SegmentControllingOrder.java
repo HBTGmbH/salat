@@ -35,6 +35,16 @@ public record SegmentControllingOrder(
                 .build());
     }
 
+    /**
+     * Whether the order has nothing to report in the window (#1407): no revenue — neither from hours
+     * nor from flat rates —, no booked hours and no cost. Such a line is a row of dashes and zeros;
+     * the listing leaves it out and only counts it. Because every figure of it is zero, leaving it out
+     * changes no total.
+     */
+    public boolean hasNoRevenueHoursOrCost() {
+        return !total.hasTotalRevenue() && !total.hasBooked() && !total.hasCost();
+    }
+
     private static String label(String description, String customerShortname) {
         if (customerShortname == null || customerShortname.isBlank()) {
             return description;

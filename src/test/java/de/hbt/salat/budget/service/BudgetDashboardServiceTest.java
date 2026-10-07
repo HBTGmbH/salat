@@ -391,7 +391,7 @@ public class BudgetDashboardServiceTest {
       return new BudgetControllingService(customerorderService, suborderService, timereportService,
           orderBudgetRepository, assignmentRepository, orderPricingService, orderFlatRateService,
           mock(EmployeeCostService.class), publicholidayService, budgetAuthorization,
-          new OrderPositions(suborderService));
+          new OrderPositions(suborderService), mock(FixedPriceCalculationService.class));
     }
 
     private <T> T ask(T value) {
