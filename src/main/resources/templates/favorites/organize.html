@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  The dialog "Favoriten ordnen" (#1414). A page with a favourites list includes the shell once and
+  opens it with a link that loads the body (openAttributes below); FavoriteOrganizeController answers
+  every action with the body again.
+
+  data-reload-on-close: the page behind shows the favourites as well. After a change the dialog
+  reloads it when it closes, rather than every page offering a second way to refresh its list.
+*/-->
+<div th:fragment="modal" class="modal modal-blur fade" id="favoritesOrganizeModal" tabindex="-1"
+     aria-hidden="true" aria-labelledby="favoritesOrganizeTitle" data-reload-on-close>
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="favoritesOrganizeTitle"
+            th:text="#{main.favorites.organize.title}">Favoriten ordnen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                th:aria-label="#{main.favorites.organize.close}"></button>
+      </div>
+      <!--/* settle:0 - htmx would otherwise hand the old attributes of every element with the same id to
+             the new one until it settles, and the radio the person just clicked loses its checked state */-->
+      <div class="modal-body" id="favoritesOrganizeBody" hx-swap="innerHTML settle:0">
+        <div class="text-center text-secondary py-4">
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          <span th:text="#{main.favorites.organize.loading}">Favoriten werden geladen …</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary ms-auto" data-bs-dismiss="modal"
+                th:text="#{main.favorites.organize.done}">Fertig</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--/*
+  The body. Its order is the order of the page: the hidden inputs name="layout" belong to the empty
+  form favoritesLayoutForm through form=, wherever they stand, and FormData collects them in
+  document order. A drag and drop or an arrow button rearranges the page and submits that form
+  (salat.js, sortable lists) - the browser keeps no second model of the arrangement.
+*/-->
+<div th:fragment="organizeBody" class="favorites-organize" th:attr="data-changed=${changed}">
+
+  <div th:if="${errors != null and not #lists.isEmpty(errors)}" class="alert alert-danger" role="alert">
+    <div th:each="error : ${errors}" th:text="${error.resolved}"></div>
+  </div>
+
+  <form th:action="@{/favorites/organize/sort-order}" method="post" class="mb-3"
+        th:attr="hx-post=@{/favorites/organize/sort-order}" hx-trigger="change"
+        hx-target="#favoritesOrganizeBody">
+    <div class="form-label" id="favoritesSortLabel" th:text="#{main.favorites.organize.sort.label}">
+      Reihenfolge in den Gruppen</div>
+    <div class="btn-group w-100" role="radiogroup" aria-labelledby="favoritesSortLabel">
+      <input type="radio" class="btn-check" name="sortOrder" id="favoritesSortRecent" value="recent"
+             th:checked="${!customOrder}"/>
+      <label class="btn" for="favoritesSortRecent">
+        <i class="ti ti-history me-1"></i><span th:text="#{main.favorites.organize.sort.recent}">Zuletzt benutzt</span>
+      </label>
+      <input type="radio" class="btn-check" name="sortOrder" id="favoritesSortCustom" value="custom"
+             th:checked="${customOrder}"/>
+      <label class="btn" for="favoritesSortCustom">
+        <i class="ti ti-arrows-sort me-1"></i><span th:text="#{main.favorites.organize.sort.custom}">Eigene Reihenfolge</span>
+      </label>
+    </div>
+    <div class="form-text"
+         th:text="${customOrder} ? #{main.favorites.organize.sort.custom.help} : #{main.favorites.organize.sort.recent.help}">
+    </div>
+  </form>
+
+  <form th:action="@{/favorites/organize/groups}" method="post" class="mb-4"
+        th:attr="hx-post=@{/favorites/organize/groups}" hx-target="#favoritesOrganizeBody">
+    <label class="form-label" for="favoritesNewGroupName" th:text="#{main.favorites.organize.group.new.label}">
+      Neue Gruppe</label>
+    <div class="input-group">
+      <input type="text" class="form-control" id="favoritesNewGroupName" name="name" maxlength="64" required
+             autocomplete="off" th:placeholder="#{main.favorites.organize.group.new.placeholder}"/>
+      <button type="submit" class="btn btn-outline-primary">
+        <i class="ti ti-plus me-1"></i><span th:text="#{main.favorites.organize.group.new.button}">Anlegen</span>
+      </button>
+    </div>
+  </form>
+
+  <form id="favoritesLayoutForm" th:action="@{/favorites/organize/arrange}" method="post"
+        th:attr="hx-post=@{/favorites/organize/arrange}" hx-target="#favoritesOrganizeBody"></form>
+
+  <!-- Without a group -->
+  <section class="mb-3">
+    <input type="hidden" name="layout" value="group:" form="favoritesLayoutForm"/>
+    <h4 class="subheader mb-2" id="favoritesUngroupedTitle" th:text="#{main.favorites.organize.ungrouped}">Ohne Gruppe</h4>
+    <ul class="list-group favorites-organize-list" aria-labelledby="favoritesUngroupedTitle"
+        data-sortable data-sortable-group="favorites" data-sortable-handle=".favorites-organize-handle"
+        data-sortable-form="favoritesLayoutForm" th:attr="data-sortable-sort=${customOrder},
+        data-empty-text=#{main.favorites.organize.drop.here}">
+      <th:block th:each="fav : ${ungrouped.favorites}"><li th:replace="~{:: favoriteItem(${fav})}"></li></th:block>
+    </ul>
+  </section>
+
+  <!-- Groups -->
+  <div class="favorites-organize-groups" data-sortable data-sortable-handle=".favorites-organize-group-handle"
+       data-sortable-form="favoritesLayoutForm">
+    <section th:each="group : ${groups}" class="card mb-3 favorites-organize-group" data-sortable-item
+             th:with="titleId=|favoritesGroupTitle${group.groupId}|">
+      <input type="hidden" name="layout" th:value="|group:${group.groupId}|" form="favoritesLayoutForm"/>
+      <div class="card-header gap-2 py-2 px-2 flex-nowrap">
+        <span class="favorites-organize-handle favorites-organize-group-handle"
+              th:title="#{main.favorites.organize.group.handle}" aria-hidden="true">
+          <i class="ti ti-grip-vertical"></i>
+        </span>
+        <form class="d-flex gap-1 flex-fill" style="min-width:0" method="post"
+              th:action="@{/favorites/organize/groups/{id}/rename(id=${group.groupId})}"
+              th:attr="hx-post=@{/favorites/organize/groups/{id}/rename(id=${group.groupId})}"
+              hx-target="#favoritesOrganizeBody">
+          <input type="text" class="form-control form-control-sm fw-medium" name="name" maxlength="64" required
+                 autocomplete="off" th:id="${titleId}" th:value="${group.groupName}"
+                 th:aria-label="#{main.favorites.organize.group.name.label}"/>
+          <button type="submit" class="btn btn-sm btn-ghost-secondary"
+                  th:title="#{main.favorites.organize.group.rename.button}"
+                  th:aria-label="#{main.favorites.organize.group.rename.button}">
+            <i class="ti ti-check m-0"></i>
+          </button>
+        </form>
+        <div class="btn-group btn-group-sm flex-shrink-0">
+          <button type="button" class="btn btn-ghost-secondary" data-sortable-move="up"
+                  th:id="|favoritesGroupUp${group.groupId}|"
+                  th:title="#{main.favorites.organize.group.move.up(${group.groupName})}"
+                  th:aria-label="#{main.favorites.organize.group.move.up(${group.groupName})}">
+            <i class="ti ti-chevron-up m-0"></i>
+          </button>
+          <button type="button" class="btn btn-ghost-secondary" data-sortable-move="down"
+                  th:id="|favoritesGroupDown${group.groupId}|"
+                  th:title="#{main.favorites.organize.group.move.down(${group.groupName})}"
+                  th:aria-label="#{main.favorites.organize.group.move.down(${group.groupName})}">
+            <i class="ti ti-chevron-down m-0"></i>
+          </button>
+        </div>
+        <form method="post" class="flex-shrink-0"
+              th:action="@{/favorites/organize/groups/{id}/delete(id=${group.groupId})}"
+              th:attr="hx-post=@{/favorites/organize/groups/{id}/delete(id=${group.groupId})}"
+              hx-target="#favoritesOrganizeBody"
+              data-confirm
+              th:data-confirm-title="#{main.favorites.organize.group.delete.confirm.title}"
+              th:data-confirm-text="#{main.favorites.organize.group.delete.confirm.text}"
+              th:data-confirm-detail="${group.groupName}"
+              th:data-confirm-detail-secondary="#{main.favorites.organize.group.count(${group.favorites.size()})}"
+              th:data-confirm-label="#{main.favorites.organize.group.delete.button}"
+              data-confirm-variant="danger">
+          <button type="submit" class="btn btn-sm btn-ghost-danger"
+                  th:title="#{main.favorites.organize.group.delete.button}"
+                  th:aria-label="#{main.favorites.organize.group.delete.button}">
+            <i class="ti ti-trash m-0"></i>
+          </button>
+        </form>
+      </div>
+      <ul class="list-group list-group-flush favorites-organize-list" th:aria-labelledby="${titleId}"
+          data-sortable data-sortable-group="favorites" data-sortable-handle=".favorites-organize-handle"
+          data-sortable-form="favoritesLayoutForm" th:attr="data-sortable-sort=${customOrder},
+          data-empty-text=#{main.favorites.organize.drop.here}">
+        <th:block th:each="fav : ${group.favorites}"><li th:replace="~{:: favoriteItem(${fav})}"></li></th:block>
+      </ul>
+    </section>
+  </div>
+
+  <p th:if="${favoriteList.isEmpty()}" class="text-secondary"
+     th:text="#{main.favorites.organize.empty}">Noch keine Favoriten.</p>
+</div>
+
+<!--/*
+  A favourite in the dialog: built like the lists on the booking pages (comment, then suborder and
+  tickets) so that it is recognised. Ordered by use the arrows jump to the neighbouring group - within
+  a group the order is the order of use and nothing to arrange.
+*/-->
+<li th:fragment="favoriteItem(fav)" class="list-group-item d-flex align-items-center gap-2 py-2 px-2"
+    data-sortable-item th:with="hasComment=${fav.comment != null and !fav.comment.isBlank()},
+                                 name=${hasComment ? fav.comment : fav.suborderLabel}">
+  <input type="hidden" name="layout" th:value="|favorite:${fav.id}|" form="favoritesLayoutForm"/>
+  <span class="favorites-organize-handle" th:title="#{main.favorites.organize.handle}" aria-hidden="true">
+    <i class="ti ti-grip-vertical"></i>
+  </span>
+  <div class="flex-fill overflow-hidden">
+    <div th:if="${hasComment}" class="fw-medium text-truncate" th:title="${fav.comment}" th:text="${fav.comment}"></div>
+    <div class="d-flex align-items-center gap-2 overflow-hidden">
+      <span class="text-truncate" th:classappend="${hasComment} ? 'text-muted small' : 'fw-medium'"
+            th:title="${fav.suborderLabel}" th:text="${fav.suborderLabel}"></span>
+      <span th:each="reference : ${fav.ticketReferences}"
+            class="badge bg-secondary-lt flex-shrink-0 d-inline-block text-truncate" style="max-width:120px"
+            th:text="${reference}"></span>
+    </div>
+  </div>
+  <span class="badge bg-blue-lt flex-shrink-0" th:text="${@durationUtils.format(fav.duration)}"></span>
+  <div class="btn-group btn-group-sm flex-shrink-0">
+    <button type="button" class="btn btn-ghost-secondary" data-sortable-move="up"
+            th:id="|favoritesUp${fav.id}|"
+            th:title="${customOrder} ? #{main.favorites.organize.move.up(${name})} : #{main.favorites.organize.move.groupup(${name})}"
+            th:aria-label="${customOrder} ? #{main.favorites.organize.move.up(${name})} : #{main.favorites.organize.move.groupup(${name})}">
+      <i class="ti m-0" th:classappend="${customOrder} ? 'ti-chevron-up' : 'ti-chevrons-up'"></i>
+    </button>
+    <button type="button" class="btn btn-ghost-secondary" data-sortable-move="down"
+            th:id="|favoritesDown${fav.id}|"
+            th:title="${customOrder} ? #{main.favorites.organize.move.down(${name})} : #{main.favorites.organize.move.groupdown(${name})}"
+            th:aria-label="${customOrder} ? #{main.favorites.organize.move.down(${name})} : #{main.favorites.organize.move.groupdown(${name})}">
+      <i class="ti m-0" th:classappend="${customOrder} ? 'ti-chevron-down' : 'ti-chevrons-down'"></i>
+    </button>
+  </div>
+</li>
+
+</body>
+</html>

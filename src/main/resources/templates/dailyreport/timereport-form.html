@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
       layout:decorate="~{layout/base}"
       th:with="title=${pageTitle}">
 <section layout:fragment="content">
@@ -336,9 +337,18 @@
 
           <!-- Save as favourite panel (hidden by default) -->
           <div class="card-footer d-none" id="saveAsFavSection" th:if="${canSaveAsFavorite}">
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
               <i class="ti ti-star text-yellow me-1"></i>
               <span class="text-muted small" th:text="#{main.timereport.form.savefav.label}">Favorit speichern?</span>
+              <!--/* #1414: only with groups to choose from; without a choice the favourite stands at the
+                     top of those without a group, which is also what the empty option means */-->
+              <div th:if="${not #lists.isEmpty(favoriteGroups)}" class="save-fav-group">
+                <salat:select th:field="*{favoriteGroupId}" th:label="#{main.timereport.form.savefav.group.label}"
+                              allowEmptyOption="true">
+                  <option value="" th:text="#{main.timereport.form.savefav.group.none}">Ohne Gruppe</option>
+                  <option th:each="group : ${favoriteGroups}" th:value="${group.id}" th:text="${group.name}"></option>
+                </salat:select>
+              </div>
               <button type="submit" class="btn btn-primary text-nowrap ms-auto"
                       onclick="document.getElementById('saveAsFavField').value='true'">
                 <i class="ti ti-star me-1"></i>

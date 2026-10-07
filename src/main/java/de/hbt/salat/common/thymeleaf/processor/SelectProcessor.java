@@ -23,6 +23,9 @@ public class SelectProcessor extends AbstractElementModelProcessor {
         var label = openTag.getAttributeValue("th:label");
         var required = Boolean.parseBoolean(openTag.getAttributeValue("required"));
         var multiple = openTag.getAttribute("multiple") != null;
+        // an option with the empty value that means something ("Ohne Gruppe") must stay selectable;
+        // TomSelect drops it by default (#1414)
+        var allowEmptyOption = Boolean.parseBoolean(openTag.getAttributeValue("allowEmptyOption"));
         var fieldName = extractFieldName(field);
 
         var mf = context.getModelFactory();
@@ -43,6 +46,9 @@ public class SelectProcessor extends AbstractElementModelProcessor {
         selectAttrs.put("th:errorclass", "is-invalid");
         if (multiple) {
             selectAttrs.put("multiple", "multiple");
+        }
+        if (allowEmptyOption) {
+            selectAttrs.put("data-allow-empty-option", "true");
         }
         newModel.add(mf.createOpenElementTag("select", selectAttrs, AttributeValueQuotes.DOUBLE, false));
 

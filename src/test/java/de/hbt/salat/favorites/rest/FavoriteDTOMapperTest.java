@@ -2,14 +2,12 @@ package de.hbt.salat.favorites.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static de.hbt.salat.testutils.ReferenceTestUtils.employeeorderWithId;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.server.ResponseStatusException;
-import de.hbt.salat.favorites.domain.Favorite;
+import de.hbt.salat.favorites.domain.FavoriteEntry;
 
 /**
  * A favourite carries several ticket references (#1326); a client from before that knows one
@@ -21,8 +19,8 @@ class FavoriteDTOMapperTest {
 
   @Test
   void reading_gives_all_references_and_the_first_one_alone() {
-    var favorite = Favorite.builder().employeeorder(employeeorderWithId(7L)).hours(1).minutes(30).comment("Daily")
-        .ticketReferences(new ArrayList<>(List.of("ABC-1", "ABC-2"))).build();
+    var favorite = new FavoriteEntry(5L, 7L, "ABC/01 - Wartung", 1, 30, "Daily", List.of("ABC-1", "ABC-2"),
+        null, null, null);
 
     var dto = mapper.map(favorite);
 
@@ -36,10 +34,18 @@ class FavoriteDTOMapperTest {
 
   @Test
   void a_favourite_without_references_reads_as_none_in_both_fields() {
-    var dto = mapper.map(Favorite.builder().employeeorder(employeeorderWithId(7L)).hours(1).minutes(0).build());
+    var dto = mapper.map(new FavoriteEntry(5L, 7L, "ABC/01 - Wartung", 1, 0, null, null, null, null, null));
 
     assertThat(dto.getTicketReferences()).isEmpty();
     assertThat(dto.getTicketReference()).isNull();
+  }
+
+  /** Read only (#1414): a client can show the groups, it does not arrange them. */
+  @Test
+  void reading_names_the_group() {
+    var dto = mapper.map(new FavoriteEntry(5L, 7L, "ABC/01 - Wartung", 1, 0, null, null, 3L, "Wartung", null));
+
+    assertThat(dto.getGroupName()).isEqualTo("Wartung");
   }
 
   @Test

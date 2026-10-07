@@ -17,6 +17,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -79,6 +80,33 @@ public class Favorite implements Persistable<Long> {
   @OnDelete(action = OnDeleteAction.CASCADE)
   @Builder.Default
   private List<String> ticketReferences = new ArrayList<>();
+
+  /**
+   * The group the person sorted the favourite into (#1414), {@code null} without one. A favourite
+   * without a group stands above the groups.
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "favorite_group_id", foreignKey = @ForeignKey(name = "fk_favorite_favorite_group"))
+  private FavoriteGroup group;
+
+  /**
+   * The place within its group in the person's own order (#1414), from the top. {@code null} for a
+   * favourite that was never placed by hand — it stands behind the placed ones.
+   */
+  @Column(name = "position")
+  private Integer position;
+
+  /**
+   * When the favourite was last applied, or created (#1414). {@code null} for a favourite not applied
+   * since the column exists. The list orders by it unless the person chose an order of their own.
+   */
+  @Column(name = "last_used")
+  private LocalDateTime lastUsed;
+
+  /** The id of the group, {@code null} without one; reading it does not load the group. */
+  public Long getGroupId() {
+    return group == null ? null : group.getId();
+  }
 
   /** The id of the employee order; reading it does not load the employee order. */
   public Long getEmployeeorderId() {

@@ -388,11 +388,18 @@
             <i class="ti ti-star me-1"></i><span th:text="#{main.daily.favourites.apply.button}">Favorit anwenden</span>
           </button>
           <ul class="dropdown-menu w-100">
-            <li th:each="fav : ${favorites}">
-              <div class="d-flex align-items-stretch">
-                <form th:replace="~{:: favoriteApplyForm(${fav}, true)}"></form>
-                <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
-              </div>
+            <th:block th:each="section : ${favorites}">
+              <li th:if="${section.groupName != null}"><h6 class="dropdown-header text-truncate" th:text="${section.groupName}"></h6></li>
+              <li th:each="fav : ${section.favorites}">
+                <div class="d-flex align-items-stretch">
+                  <form th:replace="~{:: favoriteApplyForm(${fav}, true)}"></form>
+                  <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
+                </div>
+              </li>
+            </th:block>
+            <li><hr class="dropdown-divider"/></li>
+            <li>
+              <button type="button" th:replace="~{:: favouritesOrganizeOpener('dropdown-item')}"></button>
             </li>
           </ul>
         </div>
@@ -687,15 +694,7 @@
            id="daily-favourites-panel"
            hx-swap-oob="outerHTML:#daily-favourites-panel"
            class="card mb-3">
-        <div class="card-header">
-          <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
-        </div>
-        <div class="list-group list-group-flush">
-          <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
-            <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
-            <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
-          </div>
-        </div>
+        <th:block th:replace="~{:: favouritesPanelContent}"></th:block>
       </div>
 
       </div><!-- end daily-bookings-area -->
@@ -752,19 +751,13 @@
       <!-- Favourites -->
       <div class="card mb-3" id="daily-favourites-panel"
            th:if="${favorites != null and not #lists.isEmpty(favorites)}">
-        <div class="card-header">
-          <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
-        </div>
-        <div class="list-group list-group-flush">
-          <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
-            <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
-            <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
-          </div>
-        </div>
+        <th:block th:replace="~{:: favouritesPanelContent}"></th:block>
       </div>
 
     </div><!-- end sidebar -->
   </div>
+  <!--/* Outside the areas HTMX swaps, so that applying a favourite does not take the open dialog with it */-->
+  <div th:replace="~{favorites/organize :: modal}"></div>
 </div><!-- end daily mode -->
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -1098,6 +1091,40 @@
 
 
 </section>
+
+<!--/*
+  The favourites panel beside the day (#834), for the page and for its OOB refresh: the favourites
+  without a group first, then each group under its name (#1414). The card header opens the dialog
+  that arranges them.
+*/-->
+<th:block th:fragment="favouritesPanelContent">
+  <div class="card-header">
+    <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
+    <div class="card-actions">
+      <button type="button" th:replace="~{:: favouritesOrganizeOpener('btn btn-sm btn-ghost-secondary')}"></button>
+    </div>
+  </div>
+  <div class="list-group list-group-flush">
+    <th:block th:each="section : ${favorites}">
+      <div th:if="${section.groupName != null}" class="list-group-header text-truncate"
+           th:text="${section.groupName}"></div>
+      <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${section.favorites}">
+        <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
+        <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
+      </div>
+    </th:block>
+  </div>
+</th:block>
+
+<!--/*
+  Opens the dialog that arranges the favourites (#1414): loads its body into the shell that the page
+  includes once (favorites/organize :: modal).
+*/-->
+<button th:fragment="favouritesOrganizeOpener(classes)" type="button" th:class="${classes}"
+        data-bs-toggle="modal" data-bs-target="#favoritesOrganizeModal"
+        th:attr="hx-get=@{/favorites/organize}" hx-target="#favoritesOrganizeBody">
+  <i class="ti ti-arrows-sort me-1"></i><span th:text="#{main.favorites.organize.link}">Favoriten ordnen</span>
+</button>
 
 <!--/*
   Applying a favourite (#834, #835). Used by the dropdown, by the sidebar panel and by its OOB

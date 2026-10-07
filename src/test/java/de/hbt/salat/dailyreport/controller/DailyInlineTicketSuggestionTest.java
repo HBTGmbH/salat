@@ -38,6 +38,9 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.favorites.domain.FavoriteList;
+import de.hbt.salat.favorites.domain.FavoriteSection;
+import de.hbt.salat.favorites.domain.FavoriteSortOrder;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
@@ -83,7 +86,7 @@ class DailyInlineTicketSuggestionTest {
     var employee = mock(Employee.class);
     when(employee.getId()).thenReturn(1L);
     when(employeeService.getLoginEmployee()).thenReturn(employee);
-    when(favoriteService.getFavorites(anyLong())).thenReturn(List.of());
+    when(favoriteService.getOwnFavoriteList()).thenReturn(new FavoriteList(FavoriteSortOrder.RECENT, List.of(new FavoriteSection(null, null, List.of()))));
     when(ticketReferencePolicyViewHelper.label(any())).thenReturn("höchstens 2");
     givenBooking("OPS-1");
     when(timereportService.getTicketReferencePolicy(TIMEREPORT_ID))

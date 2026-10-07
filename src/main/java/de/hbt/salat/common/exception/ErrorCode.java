@@ -165,6 +165,11 @@ public enum ErrorCode {
 
   FA_EMPLOYEE_ORDER_NOT_OWN("FA-0001", "a favourite can only be saved on an own employee order"),
   FA_FAVORITE_NOT_OWN("FA-0002", "a favourite can only be deleted by the person it belongs to"),
+  FA_GROUP_NOT_OWN("FA-0003", "a favourite group can only be used by the person it belongs to"),
+  FA_GROUP_NAME_TAKEN("FA-0004", "the person already has a favourite group of that name"),
+  FA_GROUP_NAME_INVALID("FA-0005", "the name of a favourite group must be given and at most 64 characters long"),
+  FA_FAVORITE_NOT_OWN_USE("FA-0006", "a favourite can only be applied or arranged by the person it belongs to"),
+  FA_LAYOUT_INVALID("FA-0007", "the arrangement or sort order of the favourites is not valid"),
 
   BU_BUDGET_NOT_FOUND("BU-0001", "order budget not found"),
   BU_ADJUSTMENT_NOT_FOUND("BU-0002", "order budget adjustment not found"),

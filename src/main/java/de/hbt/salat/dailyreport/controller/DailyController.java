@@ -47,7 +47,7 @@ import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 import java.time.Duration;
-import de.hbt.salat.favorites.domain.Favorite;
+import de.hbt.salat.favorites.domain.FavoriteEntry;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.viewhelper.TicketReferencePolicyViewHelper;
@@ -416,14 +416,16 @@ public class DailyController {
             Model model) {
         long ecId = effectiveContractId(fEmployeeContractId);
         try {
-            var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
+            var fav = favoriteService.getOwnFavorite(favoriteId).orElseThrow();
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
             // the overload with the references (#1029): without it the favourite would hand back
             // everything but the tickets it was made for. More than the suborder allows by now is
             // refused with a message, not cut short (#1326).
-            timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
-                fav.getComment(), fav.getTicketReferences(), false, fav.getHours(), fav.getMinutes(), 1);
+            timereportService.createTimereports(ecId, fav.employeeorderId(), date,
+                fav.comment(), fav.ticketReferences(), false, fav.hours(), fav.minutes(), 1);
+            // only a booking that was created counts as a use (#1414)
+            favoriteService.markUsed(favoriteId);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
@@ -560,20 +562,20 @@ public class DailyController {
             booking.comment(), booking.ticketReferences(), booking.duration());
     }
 
-    private List<FavoriteView> buildFavoriteViews() {
-        long empId = employeeService.getLoginEmployee().getId();
-        return favoriteService.getFavorites(empId).stream()
-            .map(this::buildFavoriteView)
-            .filter(Objects::nonNull)
+    /**
+     * The favourites by section (#1414): those without a group first, then the groups in the person's
+     * order. A section without favourites is left out — the list offers favourites, not groups.
+     */
+    private List<FavoriteSectionView> buildFavoriteViews() {
+        return favoriteService.getOwnFavoriteList().sections().stream()
+            .filter(section -> !section.favorites().isEmpty())
+            .map(section -> new FavoriteSectionView(section.groupName(),
+                section.favorites().stream().map(DailyController::buildFavoriteView).toList()))
             .toList();
     }
 
-    private FavoriteView buildFavoriteView(Favorite f) {
-        var eo = employeeorderService.getEmployeeorderById(f.getEmployeeorderId());
-        if (eo == null) return null;
-        String label = eo.getSuborder().getCompleteOrderSignAndDescription();
-        Duration duration = Duration.ofHours(f.getHours()).plusMinutes(f.getMinutes());
-        return new FavoriteView(f.getId(), label, f.getComment(), List.copyOf(f.getTicketReferences()), duration);
+    private static FavoriteView buildFavoriteView(FavoriteEntry f) {
+        return new FavoriteView(f.id(), f.suborderLabel(), f.comment(), f.ticketReferences(), f.duration());
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {

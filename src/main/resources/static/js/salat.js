@@ -447,6 +447,133 @@ function initInfoPopovers() {
 initInfoPopovers();
 document.addEventListener('htmx:after:swap', initInfoPopovers);
 
+/* ─── Sortable lists (#1414) ─────────────────────────────────────────────────
+ *
+ * A list whose order the person sets: dragged by a grip with the mouse or a finger (SortableJS), or
+ * moved one step with an arrow button — the way for the keyboard and for anyone who cannot drag.
+ * Both rearrange the page and then submit a form, and the server reads the new order off the page
+ * (the dialog "Favoriten ordnen": hidden inputs in document order). The browser keeps no second
+ * model of the arrangement.
+ *
+ *   data-sortable          on the container; its direct children are the items
+ *   data-sortable-item     on every item; an arrow button finds its item through it
+ *   data-sortable-handle   CSS selector of the grip an item is dragged by
+ *   data-sortable-group    containers of the same name exchange items
+ *   data-sortable-sort     "false": no order within the container, items only move between containers
+ *   data-sortable-form     id of the form submitted after every change
+ *   data-sortable-move     "up" or "down", on a button inside an item
+ *
+ * An arrow moves an item one place; at the edge of its container it continues into the neighbouring
+ * container of the same group. Where the container has no order of its own, the arrow goes straight
+ * to the neighbouring container. An arrow that cannot move anything is disabled.
+ * -------------------------------------------------------------------------- */
+
+let sortableFocusAfterSwap = null;
+
+function sortableItems(container) {
+  return Array.from(container.children).filter(el => el.hasAttribute('data-sortable-item'));
+}
+
+function sortableNeighbour(container, direction) {
+  const group = container.dataset.sortableGroup;
+  if (!group) return null;
+  const all = Array.from(document.querySelectorAll('[data-sortable]'))
+    .filter(el => el.dataset.sortableGroup === group);
+  return all[all.indexOf(container) + (direction === 'up' ? -1 : 1)] || null;
+}
+
+/** Where an arrow takes the item - the container and the element to insert before - or null. */
+function sortableTarget(item, direction) {
+  const container = item.parentElement;
+  if (container.dataset.sortableSort !== 'false') {
+    const items = sortableItems(container);
+    const index = items.indexOf(item);
+    if (direction === 'up' && index > 0) return { container, before: items[index - 1] };
+    if (direction === 'down' && index < items.length - 1) return { container, before: items[index + 1].nextElementSibling };
+  }
+  const neighbour = sortableNeighbour(container, direction);
+  if (!neighbour) return null;
+  // coming from below it lands at the end of the container above, coming from above at the start
+  return direction === 'up'
+    ? { container: neighbour, before: null }
+    : { container: neighbour, before: sortableItems(neighbour)[0] || null };
+}
+
+function sortableChanged(container) {
+  const form = document.getElementById(container.dataset.sortableForm || '');
+  if (form) form.requestSubmit();
+}
+
+function sortableUpdateArrows() {
+  document.querySelectorAll('[data-sortable-move]').forEach(function (button) {
+    const item = button.closest('[data-sortable-item]');
+    if (!item || !item.parentElement.hasAttribute('data-sortable')) return;
+    button.disabled = !sortableTarget(item, button.dataset.sortableMove);
+  });
+}
+
+function initSortables() {
+  if (typeof Sortable !== 'undefined') {
+    document.querySelectorAll('[data-sortable]').forEach(function (container) {
+      if (container.salatSortable) return;
+      container.salatSortable = Sortable.create(container, {
+        group: container.dataset.sortableGroup || undefined,
+        sort: container.dataset.sortableSort !== 'false',
+        handle: container.dataset.sortableHandle || undefined,
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        // a list without items still takes a drop near it
+        emptyInsertThreshold: 24,
+        onEnd: function (event) {
+          if (event.from === event.to && event.oldIndex === event.newIndex) return;
+          sortableChanged(event.from);
+        }
+      });
+    });
+  }
+  sortableUpdateArrows();
+  if (sortableFocusAfterSwap) {
+    let target = document.getElementById(sortableFocusAfterSwap);
+    sortableFocusAfterSwap = null;
+    // the arrow that moved the item to the edge is disabled now; its sibling still points the way back
+    if (target && target.disabled) target = target.parentElement.querySelector('button:not([disabled])');
+    if (target) target.focus();
+  }
+}
+
+document.addEventListener('click', function (event) {
+  const button = event.target.closest('[data-sortable-move]');
+  if (!button) return;
+  const item = button.closest('[data-sortable-item]');
+  if (!item || !item.parentElement.hasAttribute('data-sortable')) return;
+  const origin = item.parentElement;
+  const target = sortableTarget(item, button.dataset.sortableMove);
+  if (!target) return;
+  target.container.insertBefore(item, target.before);
+  sortableFocusAfterSwap = button.id || null;
+  sortableChanged(origin);
+});
+
+initSortables();
+document.addEventListener('htmx:after:swap', initSortables);
+
+/* A dialog with data-reload-on-close stands in front of a page that shows the same data. After a
+   change - its body carries data-changed="true" from the server then - closing it reloads the page. */
+/* The confirmation dialog can stand in front of another dialog (deleting a group in "Favoriten ordnen").
+   Bootstrap knows one dialog at a time and, closing the front one, frees the page as if none were left. */
+document.addEventListener('hidden.bs.modal', function () {
+  if (!document.querySelector('.modal.show')) return;
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = 'hidden';
+});
+
+document.addEventListener('hidden.bs.modal', function (event) {
+  const modal = event.target;
+  if (!modal.hasAttribute('data-reload-on-close')) return;
+  if (modal.querySelector('[data-changed="true"]')) window.location.reload();
+});
+
 /* ─── Confirmation dialog (#1032, ADR-0027) ──────────────────────────────────
  *
  * One dialog for the whole application (fragments/confirm-dialog.html, included once by

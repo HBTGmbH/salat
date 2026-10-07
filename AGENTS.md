@@ -196,6 +196,14 @@ deren eigene Wirkung). Das Verhalten steht in `static/js/salat.js`.
   `Ctrl+M` minimiert je nach System das Fenster). Auf macOS gilt `⌘` statt `Ctrl`, und die andere
   Belegung bleibt frei; die Beschriftung setzt `data-platform-label`.
 
+## Sortierbare Listen (#1414)
+
+Eine Reihenfolge, die eine Person selbst festlegt, wird über die Attribute `data-sortable*` in
+`static/js/salat.js` gezogen (SortableJS, Maus und Touch) **und** mit Pfeilknöpfen verschoben —
+ohne die Pfeile ist sie mit der Tastatur nicht bedienbar. Der Server liest die neue Ordnung aus den
+versteckten Feldern der Seite in Dokumentreihenfolge und zeichnet den Bereich neu; der Browser führt
+kein eigenes Modell. Attribute und Regeln in [`docs/ui-style-guide.md` §5.9](docs/ui-style-guide.md).
+
 ## Farben und Kontrast (→ ADR-0025)
 
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene
@@ -720,7 +728,7 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 | `<salat:textInput />` | `th:field` (field), `th:label` (expr), `required`, `maxlength`, `th:helpText` (optional expr) | `<div class="mb-3">` with label, `<input class="form-control">`, optional `form-text` and `invalid-feedback` div (the old fragments are gone, #1247) |
 | `<salat:textarea />` | `th:field` (field), `th:label` (expr), `required`, `rows` (default 3), `monospace`, `th:helpText` (optional expr) | `<div class="mb-3">` with label, `<textarea class="form-control">` (monospace via `style`), optional `form-text` and `invalid-feedback` div |
 | `<salat:checkboxSwitch />` | `th:field` (field), `th:label` (expr) | `fragments/form-fields :: checkboxSwitch` |
-| `<salat:select>` | `th:field` (field), `th:label` (expr), `required` (optional) | `<div class="mb-3">` with stacked label, `<select class="form-select tomselect">`, auto `<small id="{field}-subtext">` for subtext, and `invalid-feedback` div; body is the `<option>` elements |
+| `<salat:select>` | `th:field` (field), `th:label` (expr), `required` (optional), `allowEmptyOption` (optional, keeps an option with the empty value selectable in TomSelect) | `<div class="mb-3">` with stacked label, `<select class="form-select tomselect">`, auto `<small id="{field}-subtext">` for subtext, and `invalid-feedback` div; body is the `<option>` elements |
 | `<salat:formButtons />` | `th:saveLabel` (expr), `th:cancelHref` (expr) | `fragments/form-fields :: formButtons` |
 
 ### Usage
