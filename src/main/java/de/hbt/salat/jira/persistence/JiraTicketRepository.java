@@ -163,35 +163,15 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
    * so the caller passes the order and the suborders from the top level down to the one booked on.
    * The limit applies to the branch as a whole, not per scope, and the same key may well arrive from
    * two of them — de-duplicating is the caller's job.
-   *
-   * <p>The order-wide tickets and those of the suborders are two reads, joined with {@code union all}
-   * (#1402). One condition with {@code or} over both kinds of scope reads no index, and MySQL scanned
-   * the whole table for it; each half on its own reads an index — the order-wide half one that starts
-   * with the order, the suborder half the one of its foreign key. Each half brings the ids of its own
-   * first {@code :limit} rows, which together contain the first {@code :limit} of the branch; the
-   * outer query loads only those, puts them in order once more and cuts them to the limit.
    */
   @Query("""
       select t from JiraTicket t
-      join (
-        (select orderWide.id as id from JiraTicket orderWide
-         where orderWide.suborder is null and orderWide.customerorder.id = :customerorderId
-           and (lower(orderWide.key) like lower(concat('%', :searchTerm, '%'))
-                or lower(orderWide.summary) like lower(concat('%', :searchTerm, '%')))
-         order by orderWide.updatedTs desc nulls last, orderWide.key asc
-         limit :limit)
-        union all
-        (select ofSuborder.id as id from JiraTicket ofSuborder
-         where ofSuborder.suborder.id in :suborderIds
-           and (lower(ofSuborder.key) like lower(concat('%', :searchTerm, '%'))
-                or lower(ofSuborder.summary) like lower(concat('%', :searchTerm, '%')))
-         order by ofSuborder.updatedTs desc nulls last, ofSuborder.key asc
-         limit :limit)
-      ) hit on hit.id = t.id
+      where ((t.suborder is null and t.customerorder.id = :customerorderId) or t.suborder.id in :suborderIds)
+        and (lower(t.key) like lower(concat('%', :searchTerm, '%'))
+             or lower(t.summary) like lower(concat('%', :searchTerm, '%')))
       order by t.updatedTs desc nulls last, t.key asc
-      limit :limit
       """)
-  List<JiraTicket> search(long customerorderId, Collection<Long> suborderIds, String searchTerm, int limit);
+  List<JiraTicket> search(long customerorderId, Collection<Long> suborderIds, String searchTerm, Pageable pageable);
 
   /**
    * Takes the tickets of a suborder branch along to the customer order it was moved to (#1323).

@@ -2,7 +2,6 @@ package de.hbt.salat.jira.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -17,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.order.domain.SuborderLocation;
@@ -46,7 +46,7 @@ class JiraTicketSuggestionServiceTest {
   @Test
   void a_suggestion_carries_the_key_and_the_title() {
     givenBranch(SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), eq("log"), anyInt()))
+    when(jiraTicketRepository.search(anyLong(), any(), eq("log"), any()))
         .thenReturn(List.of(ticket("PROJ-123", "Login schlägt fehl")));
 
     var suggestions = classUnderTest.search(SUBORDER_ID, "log");
@@ -78,7 +78,7 @@ class JiraTicketSuggestionServiceTest {
     // a replication may sit on any level of the path — the order-wide one, an ancestor, or the
     // suborder itself — and all of them are the branch that is being booked on
     givenBranch(A, SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), any(), anyInt())).thenReturn(List.of());
+    when(jiraTicketRepository.search(anyLong(), any(), any(), any())).thenReturn(List.of());
 
     classUnderTest.search(SUBORDER_ID, "log");
 
@@ -89,7 +89,7 @@ class JiraTicketSuggestionServiceTest {
   void a_sibling_branch_with_the_same_suborder_sign_is_not_searched() {
     // ALPHA/A/01 and ALPHA/B/01 may both exist — what identifies a scope is the id, not the sign
     givenBranch(B, SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), any(), anyInt())).thenReturn(List.of());
+    when(jiraTicketRepository.search(anyLong(), any(), any(), any())).thenReturn(List.of());
 
     classUnderTest.search(SUBORDER_ID, "");
 
@@ -99,7 +99,7 @@ class JiraTicketSuggestionServiceTest {
   @Test
   void a_ticket_replicated_in_two_scopes_of_the_branch_is_offered_once() {
     givenBranch(SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), any(), anyInt())).thenReturn(List.of(
+    when(jiraTicketRepository.search(anyLong(), any(), any(), any())).thenReturn(List.of(
         ticket("PROJ-1", "Aus dem Unterauftrag"),
         ticket("PROJ-1", "Aus dem ganzen Auftrag"),
         ticket("PROJ-2", "Ein anderes")));
@@ -112,7 +112,7 @@ class JiraTicketSuggestionServiceTest {
   @Test
   void the_first_occurrence_wins_so_the_most_recently_updated_title_is_shown() {
     givenBranch(SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), any(), anyInt())).thenReturn(List.of(
+    when(jiraTicketRepository.search(anyLong(), any(), any(), any())).thenReturn(List.of(
         ticket("PROJ-1", "Zuletzt aktualisiert"),
         ticket("PROJ-1", "Aelter")));
 
@@ -124,7 +124,7 @@ class JiraTicketSuggestionServiceTest {
   void an_empty_search_term_offers_the_tickets_of_the_branch() {
     // opening the dropdown without typing is a legitimate way to browse the branch's tickets
     givenBranch(SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), eq(""), anyInt()))
+    when(jiraTicketRepository.search(anyLong(), any(), eq(""), any()))
         .thenReturn(List.of(ticket("PROJ-1", "Erstes Ticket")));
 
     assertThat(classUnderTest.search(SUBORDER_ID, null)).hasSize(1);
@@ -134,18 +134,21 @@ class JiraTicketSuggestionServiceTest {
   void the_list_stays_short_enough_to_be_scanned() {
     // the limit covers the branch as a whole, not each of its scopes
     givenBranch(SUBORDER_ID);
-    when(jiraTicketRepository.search(anyLong(), any(), any(), anyInt())).thenReturn(List.of());
+    when(jiraTicketRepository.search(anyLong(), any(), any(), any())).thenReturn(List.of());
 
     classUnderTest.search(SUBORDER_ID, "log");
 
-    verify(jiraTicketRepository).search(anyLong(), any(), eq("log"), eq(JiraTicketSuggestionService.MAX_SUGGESTIONS));
+    var pageable = ArgumentCaptor.forClass(Pageable.class);
+    verify(jiraTicketRepository).search(anyLong(), any(), eq("log"), pageable.capture());
+    assertThat(pageable.getValue().getPageSize())
+        .isEqualTo(JiraTicketSuggestionService.MAX_SUGGESTIONS);
   }
 
   /** The suborders searched; the order-wide scope is always the order of the branch. */
   @SuppressWarnings("unchecked")
   private List<Long> capturedSuborders() {
     var suborders = ArgumentCaptor.forClass(java.util.Collection.class);
-    verify(jiraTicketRepository).search(eq(ORDER_ID), suborders.capture(), any(), anyInt());
+    verify(jiraTicketRepository).search(eq(ORDER_ID), suborders.capture(), any(), any());
     return List.copyOf(suborders.getValue());
   }
 
