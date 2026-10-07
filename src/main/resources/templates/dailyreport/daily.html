@@ -66,6 +66,12 @@
     #daily-list .daily-card-text {
       contain: inline-size;
     }
+    /* Dasselbe in der Tagesansicht (#1414): die Auftragszeilen in der Textzelle zaehlten mit ihrer vollen
+       Laenge, die Tabelle wurde breiter als das Smartphone, und Teilen und Loeschen lagen hinter dem Rand.
+       An den Kindern, nicht an der Zelle: eine Tabellenzelle selbst kennt keine Groessenbegrenzung. */
+    .daily-booking-text > * {
+      contain: inline-size;
+    }
   }
   .daily-day-badges {
     display: flex;
@@ -366,7 +372,10 @@
                       : |/dailyreport/daily?mode=daily&date=${date}|">
 
       <!-- Add booking + Apply previous + Apply favourite -->
-      <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
+      <!--/* flex-wrap (#1414): side by side the three buttons are wider than a phone, and without
+             wrapping they widened the whole page - a full screen dialog then reached beyond the
+             visible area. They break into a second row instead, each still filling its row. */-->
+      <div class="d-flex flex-wrap gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
         <a th:href="@{/dailyreport/timereports/new(date=${date},returnUrl=${dayReturnUrl})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
@@ -429,7 +438,7 @@
                 <td class="d-none d-md-table-cell daily-order-col">
                   <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
                 </td>
-                <td th:with="hasText=${not #strings.isEmpty(tr.taskdescription)}">
+                <td class="daily-booking-text" th:with="hasText=${not #strings.isEmpty(tr.taskdescription)}">
                   <!--/* below md the order has no column of its own and rides along here, still as
                          the secondary line */-->
                   <div class="d-md-none mb-1">
