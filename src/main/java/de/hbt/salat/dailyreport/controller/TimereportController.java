@@ -448,16 +448,20 @@ public class TimereportController {
         }
 
         // #1326: ticket keys in the comment that are no reference yet are proposed before anything is
-        // saved - once; the answer comes back with ticketSuggestionChoice
-        var suborders = suborderOptions(ecId, date);
-        var ticketSuggestions = ticketSuggestionsFor(form, suborders);
-        if (!ticketSuggestions.isEmpty()) {
-            populateModel(fEmployeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
-            model.addAttribute("ticketSuggestions", ticketSuggestions);
-            model.addAttribute("pendingSaveAndNew", Boolean.TRUE.equals(saveAndNew));
-            model.addAttribute("pendingShareRecipientIds",
-                Boolean.TRUE.equals(shareWithColleagues) && recipientUserIds != null ? recipientUserIds : List.of());
-            return "dailyreport/timereport-form";
+        // saved - once; the answer comes back with ticketSuggestionChoice. Whether the suborder has
+        // room for them is told by the bookable suborders, which cost a query per order - so they are
+        // read only when there is a key to propose (#1402)
+        if (hasTicketKeysToPropose(form)) {
+            var suborders = suborderOptions(ecId, date);
+            var ticketSuggestions = ticketSuggestionsFor(form, suborders);
+            if (!ticketSuggestions.isEmpty()) {
+                populateModel(fEmployeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
+                model.addAttribute("ticketSuggestions", ticketSuggestions);
+                model.addAttribute("pendingSaveAndNew", Boolean.TRUE.equals(saveAndNew));
+                model.addAttribute("pendingShareRecipientIds",
+                    Boolean.TRUE.equals(shareWithColleagues) && recipientUserIds != null ? recipientUserIds : List.of());
+                return "dailyreport/timereport-form";
+            }
         }
         if ("adopt".equals(form.getTicketSuggestionChoice())) {
             form.setTicketReferences(withAdoptedKeys(form.getTicketReferences(), form.getAdoptedTicketKeys()));
@@ -549,7 +553,7 @@ public class TimereportController {
             return "redirect:" + ReturnUrls.orElse(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
 
         } catch (ErrorCodeException ex) {
-            populateModel(fEmployeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
+            populateModel(fEmployeeContractId, model, form, suborderOptions(ecId, date), ecId, date, isEdit, returnUrl);
             model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
             return "dailyreport/timereport-form";
         }
@@ -623,12 +627,21 @@ public class TimereportController {
     }
 
     /**
+     * Whether the comment names keys that are no reference yet, on a first submit — the part of
+     * {@link #ticketSuggestionsFor} that needs no suborder (#1402).
+     */
+    static boolean hasTicketKeysToPropose(TimereportForm form) {
+        boolean answered = form.getTicketSuggestionChoice() != null && !form.getTicketSuggestionChoice().isBlank();
+        return !answered && !TicketReferences.keysNotReferenced(form.getComment(), form.getTicketReferences()).isEmpty();
+    }
+
+    /**
      * The keys of the comment to propose as references before saving (#1326): those that are no
      * reference yet, and only on a first submit, while the suborder still has room for one. Empty
      * otherwise — also where the suborder is not one the form offers, which saving refuses anyway.
      */
     static List<String> ticketSuggestionsFor(TimereportForm form, List<SuborderOption> suborders) {
-        if (form.getTicketSuggestionChoice() != null && !form.getTicketSuggestionChoice().isBlank()) {
+        if (!hasTicketKeysToPropose(form)) {
             return List.of();
         }
         var policy = suborders.stream()

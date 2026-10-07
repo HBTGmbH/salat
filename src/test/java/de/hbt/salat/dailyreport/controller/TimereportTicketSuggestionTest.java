@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -180,6 +181,27 @@ class TimereportTicketSuggestionTest {
     controller.create(null, form, null, null, null, null, redirectAttributes, new ExtendedModelMap());
 
     verifyCreatedWith(List.of("OPS-1"));
+  }
+
+  /**
+   * The suborders the contract may book on are read only where the comment names a key that is no
+   * reference yet (#1402): they are a query per order, and saving read them every time since #1326.
+   */
+  @Test
+  void a_save_with_nothing_to_offer_does_not_read_the_bookable_suborders() {
+    var referenced = booking("Analyse ABC-12");
+    referenced.setTicketReferences(new ArrayList<>(List.of("ABC-12")));
+    var answered = booking("Analyse ABC-13");
+    answered.setTicketSuggestionChoice("skip");
+
+    controller.create(null, booking("Analyse ohne Ticket"), null, null, null, null, redirectAttributes,
+        new ExtendedModelMap());
+    controller.create(null, referenced, null, null, null, null, redirectAttributes, new ExtendedModelMap());
+    controller.create(null, answered, null, null, null, null, redirectAttributes, new ExtendedModelMap());
+
+    verify(timereportService, times(3)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(),
+        anyLong(), anyLong(), anyInt());
+    verify(customerorderService, never()).getCustomerordersWithValidEmployeeOrders(anyLong(), any());
   }
 
   /** "Speichern und neu" is a request parameter; the held form hands it on to the answer. */
