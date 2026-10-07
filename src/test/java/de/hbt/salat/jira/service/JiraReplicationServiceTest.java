@@ -37,6 +37,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -915,6 +917,199 @@ class JiraReplicationServiceTest {
             && message.contains("MOCK_ORDER") && message.contains("Mock replication"));
   }
 
+  @Test
+  void aParentFieldNamingAKeyGivesThatKey() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of("customfield_10014", "ABC-1"))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket().getParentKey()).isEqualTo("ABC-1");
+  }
+
+  /** The standard field comes first, the configured ones follow in their order (#1392). */
+  @Test
+  void theStandardParentComesBeforeTheConfiguredFields() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of(
+        "parent", Map.of("id", "2002", "key", "ABC-2"),
+        "customfield_10014", "ABC-1"))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket().getParentKey()).isEqualTo("ABC-2");
+  }
+
+  /**
+   * A parent field naming the issue id of the parent (#1392): translated into the key of the ticket
+   * with that JIRA id, after the run, and the chain follows the key.
+   */
+  @Test
+  void aParentFieldNamingAnIdGivesTheKeyOfTheTicketWithThatJiraId() {
+    JiraReplicationConfig config = createIncrementalReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of("customfield_10014", 2001))));
+    var parent = stored(2001L, "ABC-1");
+    scopeOfWrittenTicketsAnd(parent);
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket().getParentKey()).isEqualTo("ABC-1");
+    assertThat(savedTicket().getTopLevelKey()).isEqualTo("ABC-1");
+  }
+
+  /**
+   * The parent arrives later in the same run than the child naming it by id: the ids are translated
+   * once every ticket of the run is stored, and the inherited fields follow the chain (#1392).
+   */
+  @Test
+  void anIdIsTranslatedOnceTheParentOfTheSameRunIsStored() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    config.setInheritedFieldNames("team");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var child = issue(1002L, "MOCK-2", Map.of("customfield_10014", "1001"));
+    var parent = issue(1001L, "MOCK-1", Map.of("team", "Blau"));
+    when(searchClient.search(any())).thenReturn(issues(child, parent));
+    var scope = scopeOfWrittenTicketsAnd();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    var storedChild = scope.stream().filter(ticket -> ticket.getKey().equals("MOCK-2")).findFirst().orElseThrow();
+    assertThat(storedChild.getParentKey()).isEqualTo("MOCK-1");
+    assertThat(storedChild.getTopLevelKey()).isEqualTo("MOCK-1");
+    assertThat(storedChild.getCustomFieldsEffective())
+        .containsEntry("team", new ResolvedFieldValue("Blau", "MOCK-1"));
+  }
+
+  /** An object is unpacked: its key, otherwise its id (#1392). */
+  @Test
+  void aParentFieldWithAnObjectGivesItsKeyOrItsId() {
+    JiraReplicationConfig config = createIncrementalReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var byKey = issue(1002L, "MOCK-2", Map.of("customfield_10014", Map.of("id", "2001", "key", "ABC-1")));
+    var byId = issue(1003L, "MOCK-3", Map.of("customfield_10014", Map.of("id", 2001)));
+    when(searchClient.search(any())).thenReturn(issues(byKey, byId));
+    var scope = scopeOfWrittenTicketsAnd(stored(2001L, "ABC-1"));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(scope).filteredOn(ticket -> ticket.getKey().startsWith("MOCK"))
+        .extracting(JiraTicket::getParentKey)
+        .containsExactly("ABC-1", "ABC-1");
+  }
+
+  /** An id no ticket of the scope carries is skipped, and the next field counts (#1392). */
+  @Test
+  void anIdWithoutATicketIsSkippedForTheNextField() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014, customfield_10015");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of(
+        "customfield_10014", 9999,
+        "customfield_10015", "ABC-2"))));
+    scopeOfWrittenTicketsAnd();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket().getParentKey()).isEqualTo("ABC-2");
+  }
+
+  /**
+   * A JIRA id is unique per replication, not per scope: another replication of the scope may read
+   * another JIRA instance with the same numeric ids, so its tickets do not translate an id (#1392).
+   */
+  @Test
+  void anIdIsNotTranslatedByTheTicketOfAnotherReplication() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of("customfield_10014", 2001))));
+    var others = stored(2001L, "OTHER-1");
+    others.setReplication(replicationWithId(2L));
+    scopeOfWrittenTicketsAnd(others);
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket().getParentKey()).isNull();
+    assertThat(savedTicket().getTopLevelKey()).isEqualTo("MOCK-1");
+  }
+
+  /** A ticket by hand carrying the JIRA id translates it — the run would take it over by that id too. */
+  @Test
+  void anIdIsTranslatedByATicketMaintainedByHand() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of("customfield_10014", 2001))));
+    var parentByHand = byHand("ABC-1");
+    parentByHand.setJiraId(2001L);
+    scopeOfWrittenTicketsAnd(parentByHand);
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(savedTicket().getParentKey()).isEqualTo("ABC-1");
+  }
+
+  /**
+   * A ticket stored before #1392 with an id or the text of an object as its parent is written again
+   * even though JIRA reports it unchanged — a run without watermark therefore corrects every one.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"2001", "{id=2001, key=ABC-1}"})
+  void aStoredParentThatIsNoKeyIsCorrectedEvenThoughTheTicketIsUnchanged(String storedParent) {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setParentFieldNames("customfield_10014");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var own = unchangedSince(LocalDateTime.of(2026, 6, 25, 15, 5, 0), stored(1001L, "MOCK-1"), config);
+    own.setParentKey(storedParent);
+    var parent = unchangedSince(LocalDateTime.of(2026, 6, 25, 15, 5, 0), stored(2001L, "ABC-1"), config);
+    when(ticketRepo.findMaintainedByJiraId(1L, 1001L)).thenReturn(Optional.of(own));
+    when(ticketRepo.findMaintainedByJiraId(1L, 2001L)).thenReturn(Optional.of(parent));
+    // a run without watermark: JIRA hands over both, and reports both as unchanged
+    when(searchClient.search(any())).thenReturn(issues(
+        mockIssue(Map.of("customfield_10014", 2001)),
+        issue(2001L, "ABC-1", Map.of())));
+    scopeOfWrittenTicketsAnd(own, parent);
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(own.getParentKey()).isEqualTo("ABC-1");
+    assertThat(own.getTopLevelKey()).isEqualTo("ABC-1");
+    verify(ticketRepo).save(own);
+    verify(ticketRepo, never()).save(parent);
+    verifyNothingRemoved();
+  }
+
+  /** A ticket as the replication stored it, with the field list of {@code config} and JIRA's {@code updated}. */
+  private static JiraTicket unchangedSince(LocalDateTime updated, JiraTicket ticket, JiraReplicationConfig config) {
+    ticket.setUpdatedTs(updated);
+    ticket.setFieldConfigHash(JiraFieldConfig.from(config).hash());
+    ticket.setReplication(config);
+    return ticket;
+  }
+
+  /**
+   * The scope as the database answers after the loop: {@code alreadyStored} and every ticket the run
+   * wrote, the same instances.
+   */
+  private List<JiraTicket> scopeOfWrittenTicketsAnd(JiraTicket... alreadyStored) {
+    var scope = new ArrayList<>(List.of(alreadyStored));
+    when(ticketRepo.save(any(JiraTicket.class))).thenAnswer(invocation -> {
+      JiraTicket written = invocation.getArgument(0);
+      if (scope.stream().noneMatch(ticket -> ticket == written)) scope.add(written);
+      return written;
+    });
+    when(ticketRepo.findInScope(ORDER, null)).thenAnswer(invocation -> new ArrayList<>(scope));
+    return scope;
+  }
+
   /** The tickets the run deleted, in one call. */
   @SuppressWarnings("unchecked")
   private List<JiraTicket> removedTickets() {
@@ -1041,6 +1236,13 @@ class JiraReplicationServiceTest {
     ));
     fields.putAll(additionalFields);
     issue.setFields(fields);
+    return issue;
+  }
+
+  private static JiraIssue issue(long jiraId, String key, Map<String, Object> additionalFields) {
+    var issue = mockIssue(additionalFields);
+    issue.setId(String.valueOf(jiraId));
+    issue.setKey(key);
     return issue;
   }
 

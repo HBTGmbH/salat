@@ -269,24 +269,16 @@ final class JiraTicketImportReader {
   }
 
   /**
-   * The first parent column that answers. A number is an id and is looked up; anything without a
-   * blank in it is taken as a key. A value with blanks is a title rather than a reference, and a
-   * parent that is the ticket itself is none.
+   * The first parent column that answers, read as {@link JiraParentReference} reads it: a number is
+   * an id and is looked up, anything else without a blank in it is a key.
    */
   private static String parentOf(JiraTicketFile.Line line, List<JiraImportColumn> mapping, Map<Long, String> keysById) {
     var key = keyOf(single(line, mapping, JiraImportTarget.KEY));
-    for (var column : columnsOf(mapping, JiraImportTarget.PARENT)) {
-      var value = line.cell(column);
-      if (value == null) continue;
-      String parent;
-      if (value.chars().allMatch(Character::isDigit)) {
-        parent = value.length() <= 18 ? keysById.get(Long.parseLong(value)) : null;
-      } else {
-        parent = value.chars().anyMatch(Character::isWhitespace) || value.length() > KEY_LENGTH ? null : keyOf(value);
-      }
-      if (parent != null && !parent.equals(key)) return parent;
-    }
-    return null;
+    var references = columnsOf(mapping, JiraImportTarget.PARENT).stream()
+        .map(line::cell)
+        .flatMap(value -> JiraParentReference.of(value).stream())
+        .toList();
+    return JiraParentReference.firstParentKey(references, key, keysById);
   }
 
   private static Ticket withParent(Ticket ticket, String parentKey) {

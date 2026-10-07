@@ -7,7 +7,9 @@ import static de.hbt.salat.jira.service.JiraCredentialRedaction.redacted;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -127,6 +129,9 @@ public class JiraReplicationService {
     // delivering the same tickets into one scope is a JQL to correct.
     int skipped = 0;
     var skippedTickets = new ArrayList<String>();
+    // The parents the tickets of this run name by id (#1392), by ticket key: translated once the run
+    // has stored every ticket an id may name.
+    var parentIdsToTranslate = new HashMap<String, List<JiraParentReference>>();
     LocalDateTime oldestFailure = null;
     boolean failureWithoutTimestamp = false;
 
@@ -156,7 +161,7 @@ public class JiraReplicationService {
         if (issue.getFields() != null) answeredFields.addAll(issue.getFields().keySet());
         long jiraId = Long.parseLong(issue.getId());
         if (seenJiraIds != null) seenJiraIds.add(jiraId);
-        var upsert = upsertIfChanged(cfg, fieldConfig, jiraId, issue, skippedTickets);
+        var upsert = upsertIfChanged(cfg, fieldConfig, jiraId, issue, skippedTickets, parentIdsToTranslate);
         if (upsert == Upsert.WRITTEN) {
           processed++;
         } else if (upsert == Upsert.SKIPPED) {
@@ -184,7 +189,8 @@ public class JiraReplicationService {
     var tickets = new ArrayList<>(ticketRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
     if (seenJiraIds != null) removeUnseenTickets(cfg, scopeSign, tickets, seenJiraIds, failed);
 
-    resolveParentChains(cfg, scopeSign, tickets);
+    var reparented = translateParentIds(cfg, tickets, parentIdsToTranslate);
+    resolveParentChains(cfg, scopeSign, tickets, reparented);
 
     // Update last_max_updated if progressed - but never past an issue this run failed to store
     newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
@@ -260,7 +266,8 @@ public class JiraReplicationService {
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
    */
-  private void resolveParentChains(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets) {
+  private void resolveParentChains(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets,
+                                   List<JiraTicket> reparented) {
     // Every ticket of the scope, whoever maintains it (#1386): these values are derived, never entered,
     // and the page writing a ticket by hand derives them the same way.
     var configs = new ArrayList<>(configRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
@@ -269,10 +276,52 @@ public class JiraReplicationService {
     var latestImport = importRepo.findLatestInScope(cfg.getCustomerorderId(), cfg.getSuborderId(), PageRequest.of(0, 1))
         .stream().findFirst();
     var inherited = JiraTicketChains.inheritedFields(configs, latestImport);
-    var changed = JiraTicketChains.resolve(tickets, inherited);
+    var changed = new LinkedHashSet<>(reparented);
+    changed.addAll(JiraTicketChains.resolve(tickets, inherited));
     log.info("Resolved parent chains for {} changed tickets of scope {} with inherited fields {}",
         changed.size(), scopeSign, inherited);
-    ticketRepo.saveAll(changed);
+    ticketRepo.saveAll(new ArrayList<>(changed));
+  }
+
+  /**
+   * Translates the parents the tickets of this run name by id into keys (#1392). Only now: the parent
+   * may come later in the same run than the child naming it. An id that names no ticket is skipped,
+   * and the next reference counts.
+   *
+   * @return the tickets whose parent changed, to be saved
+   */
+  private static List<JiraTicket> translateParentIds(JiraReplicationConfig cfg, List<JiraTicket> tickets,
+                                                     Map<String, List<JiraParentReference>> parentIdsToTranslate) {
+    if (parentIdsToTranslate.isEmpty()) return List.of();
+    var keysByJiraId = keysByJiraId(cfg, tickets);
+    var reparented = new ArrayList<JiraTicket>();
+    for (var ticket : tickets) {
+      var references = parentIdsToTranslate.get(ticket.getKey());
+      if (references == null) continue;
+      var parentKey = JiraParentReference.firstParentKey(references, ticket.getKey(), keysByJiraId);
+      if (Objects.equals(parentKey, ticket.getParentKey())) continue;
+      ticket.setParentKey(parentKey);
+      reparented.add(ticket);
+    }
+    return reparented;
+  }
+
+  /**
+   * The keys an id of this replication translates into. Not every JIRA id of the scope: an id is unique
+   * per replication only, and another replication of the scope may read another JIRA instance with
+   * the same numeric ids. So its own tickets count, and after them those nobody maintains — the same
+   * order in which {@link #upsertIfChanged} finds the ticket of an issue by its id, which takes a
+   * ticket nobody maintains over as the same issue. The tickets of other replications do not count.
+   */
+  private static Map<Long, String> keysByJiraId(JiraReplicationConfig cfg, List<JiraTicket> tickets) {
+    var keys = new HashMap<Long, String>();
+    for (var ticket : tickets) {
+      if (ticket.getJiraId() != null && !ticket.isReplicated()) keys.putIfAbsent(ticket.getJiraId(), ticket.getKey());
+    }
+    for (var ticket : tickets) {
+      if (ticket.getJiraId() != null && isMaintainedBy(ticket, cfg)) keys.put(ticket.getJiraId(), ticket.getKey());
+    }
+    return keys;
   }
 
 
@@ -376,9 +425,12 @@ public class JiraReplicationService {
   /**
    * @param skippedTickets collects the first skipped tickets with the replication that maintains them,
    *     for the message of the run
+   * @param parentIdsToTranslate collects the parent references of a written ticket that names a parent
+   *     by id, by the ticket's key
    */
   private Upsert upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
-                                 JiraIssue issue, List<String> skippedTickets) {
+                                 JiraIssue issue, List<String> skippedTickets,
+                                 Map<String, List<JiraParentReference>> parentIdsToTranslate) {
     // Its own ticket by the JIRA id, otherwise the ticket of the scope with the key, otherwise one
     // nobody maintains with the JIRA id (#1386). A JIRA id is unique per replication, not per scope:
     // another replication of the scope may read another JIRA instance with the same numeric ids. A
@@ -417,7 +469,7 @@ public class JiraReplicationService {
     // this is the point where the new fields would never reach an already replicated ticket.
     boolean ownWithCurrentFields = existing != null && isMaintainedBy(existing, cfg)
         && Objects.equals(existing.getFieldConfigHash(), fieldConfig.hash());
-    if (ownWithCurrentFields && notUpdatedSince(existing, updatedTs)) {
+    if (ownWithCurrentFields && notUpdatedSince(existing, updatedTs) && parentIsKeyOrNone(existing)) {
       return Upsert.UNCHANGED;
     }
 
@@ -433,14 +485,29 @@ public class JiraReplicationService {
     t.setCreatedTs(toDateTime(getString(fields, "created")));
     t.setUpdatedTs(updatedTs);
 
-    String parentKey = extractParentKey(cfg, fields);
-    t.setParentKey(parentKey);
+    // A key is final. An id waits for the end of the run, and until then the column holds the id: a
+    // run aborted in between leaves a parent that is no key, and the next run writes the ticket again.
+    var parentReferences = extractParentReferences(cfg, fields);
+    t.setParentKey(untranslatedParent(parentReferences, issue.getKey()));
+    if (parentReferences.stream().anyMatch(reference -> !reference.isByKey())) {
+      parentIdsToTranslate.put(issue.getKey(), parentReferences);
+    }
 
     t.setCustomFields(extractCustomFields(fieldConfig, fields));
     t.setFieldConfigHash(fieldConfig.hash());
 
     ticketRepo.save(t);
     return Upsert.WRITTEN;
+  }
+
+  /**
+   * Whether the stored parent is a key, or there is none. Not so for one stored before #1392 — an id,
+   * the text form of an object — nor for an id an aborted run left untranslated: such a ticket is
+   * written again even though JIRA reports it unchanged, so a run without watermark corrects them all.
+   */
+  private static boolean parentIsKeyOrNone(JiraTicket ticket) {
+    return ticket.getParentKey() == null
+        || JiraParentReference.of(ticket.getParentKey()).filter(JiraParentReference::isByKey).isPresent();
   }
 
   /** Whether JIRA reports nothing newer than what the ticket was last written with. */
@@ -488,26 +555,31 @@ public class JiraReplicationService {
     return values.isEmpty() ? null : values;
   }
 
-  private String extractParentKey(JiraReplicationConfig cfg, Map<String, Object> fields) {
-    String result = null;
-
-    // Standard parent
-    Object parentObj = fields.get("parent");
-    if (parentObj instanceof Map<?, ?> pm) {
-      result = getString(pm, "key");
-    }
-    if(result != null && !result.isBlank()) return result;
-
-    // Custom fields by names that contain a key string
+  /**
+   * How the issue names its parent, in the order that counts (#1392): the standard {@code parent}
+   * first, then the configured parent fields in their order. Each is read as
+   * {@link JiraParentReference#of} reads it — a key, an id, or an object with either.
+   */
+  private static List<JiraParentReference> extractParentReferences(JiraReplicationConfig cfg, Map<String, Object> fields) {
+    var references = new ArrayList<JiraParentReference>();
+    JiraParentReference.of(fields.get("parent")).ifPresent(references::add);
     if (cfg.getParentFieldNames() != null && !cfg.getParentFieldNames().isBlank()) {
       for (String f : cfg.getParentFieldNames().split(",")) {
         String trimmed = f.trim();
         if (trimmed.isEmpty()) continue;
-        result = getString(fields, trimmed);
-        if(result != null && !result.isBlank()) return result;
+        JiraParentReference.of(fields.get(trimmed)).ifPresent(references::add);
       }
     }
-    return null;
+    return references;
+  }
+
+  /** The first parent the issue names, an id as it is until the end of the run translates it. */
+  private static String untranslatedParent(List<JiraParentReference> references, String ownKey) {
+    return references.stream()
+        .map(JiraParentReference::asStored)
+        .filter(parent -> !parent.equals(ownKey))
+        .findFirst()
+        .orElse(null);
   }
 
   private static String safe(String s, int max) {
