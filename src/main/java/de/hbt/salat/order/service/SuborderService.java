@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import de.hbt.salat.common.Validity;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +34,14 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.common.palette.PaletteQuery;
+import de.hbt.salat.common.util.ContainsPattern;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.util.SqlLikePattern;
 import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.SuborderDTO;
+import de.hbt.salat.order.domain.SuborderTreeRow;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
@@ -484,6 +489,82 @@ public class SuborderService {
     return suborderDAO.getSuborders().stream()
         .filter(not(Suborder::isHide))
         .toList();
+  }
+
+  /**
+   * The suborders a search dialog over existing bookings offers (#1331), searched, ordered and cut in the database:
+   * not hidden — inactive ones included, as in {@link #getNotHiddenSuborders()} —, ordered by complete sign, the first
+   * {@code limit} of them with their place in the tree, and how many there are.
+   *
+   * @param term        found in the complete sign or the short description as shown, case aside; blank for every
+   *                    suborder
+   * @param customerIds the customers the suborders belong to, through an order that is not hidden; empty for all
+   * @param suborderIds the suborders to search among, {@code null} for all — the caller decides what its reader may
+   *                    see
+   */
+  @Transactional(readOnly = true)
+  public SearchHits<SuborderTreeRow> searchNotHiddenSuborders(String term, Collection<Long> customerIds,
+      Collection<Long> suborderIds, int limit) {
+    var everySuborder = suborderIds == null;
+    var noSuborderToSearchAmong = !everySuborder && suborderIds.isEmpty();
+    if (noSuborderToSearchAmong || !ContainsPattern.canOccurInUtf8mb3(term)) {
+      return SearchHits.none();
+    }
+    var pattern = ContainsPattern.of(term);
+    var everyCustomer = customerIds.isEmpty();
+    var amongIds = everySuborder ? List.<Long>of() : suborderIds;
+    var rows = limit > 0
+        ? suborderRepository.findDialogSuborders(pattern, everyCustomer, customerIds, everySuborder, amongIds,
+            Limit.of(limit))
+        : List.<SuborderTreeRow>of();
+    // fewer rows than the limit are all there are; only a full page needs counting
+    var total = rows.size() < limit ? rows.size()
+        : suborderRepository.countDialogSuborders(pattern, everyCustomer, customerIds, everySuborder, amongIds);
+    return new SearchHits<>(placedInTree(rows), total);
+  }
+
+  /**
+   * Adds level and descendant count from the edges of the orders the rows belong to — one statement for all of them,
+   * hidden suborders included, because a pick takes the whole branch along.
+   */
+  private List<SuborderTreeRow> placedInTree(List<SuborderTreeRow> rows) {
+    if (rows.isEmpty()) {
+      return rows;
+    }
+    var customerorderIds = rows.stream().map(SuborderTreeRow::customerorderId).collect(Collectors.toSet());
+    var parents = new HashMap<Long, Long>();
+    var children = new HashMap<Long, List<Long>>();
+    for (var edge : suborderRepository.findEdgesByCustomerorderIds(customerorderIds)) {
+      if (edge.parentId() != null) {
+        parents.put(edge.id(), edge.parentId());
+        children.computeIfAbsent(edge.parentId(), parent -> new ArrayList<>()).add(edge.id());
+      }
+    }
+    return rows.stream()
+        .map(row -> row.placed(levelOf(row.id(), parents), descendantCountOf(row.id(), children)))
+        .toList();
+  }
+
+  /** How many parents lie above the suborder; a parent met twice would be a cycle, and the walk ends there. */
+  private static int levelOf(long suborderId, Map<Long, Long> parents) {
+    var above = new HashSet<Long>();
+    var parent = parents.get(suborderId);
+    while (parent != null && above.add(parent)) {
+      parent = parents.get(parent);
+    }
+    return above.size();
+  }
+
+  private static int descendantCountOf(long suborderId, Map<Long, List<Long>> children) {
+    var below = new HashSet<Long>();
+    var open = new ArrayList<>(children.getOrDefault(suborderId, List.of()));
+    while (!open.isEmpty()) {
+      var next = open.removeLast();
+      if (next != suborderId && below.add(next)) {
+        open.addAll(children.getOrDefault(next, List.of()));
+      }
+    }
+    return below.size();
   }
 
   /**

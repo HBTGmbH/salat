@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -13,9 +14,64 @@ import org.springframework.stereotype.Repository;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
 import de.hbt.salat.order.domain.SuborderCompleteSign;
+import de.hbt.salat.order.domain.SuborderEdge;
+import de.hbt.salat.order.domain.SuborderTreeRow;
 
 @Repository
 public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaSpecificationExecutor<Suborder> {
+
+  /**
+   * {@link Suborder#getShortdescription()} in JPQL (#1331): the short description, or else the description, cut to
+   * twenty characters. The description is a {@code @Lob}, and Hibernate passes one to neither {@code lower} nor
+   * {@code substring} (#665). {@code concat(s.description, '')} makes a string of it and keeps the collation of the
+   * column ({@code utf8mb3_bin}); a {@code cast} would take that of the connection, which ignores case and accents.
+   * {@code length(...) = 0} rather than {@code = ''}: MySQL pads with blanks when comparing, and a short description
+   * of blanks would count as empty.
+   */
+  String SHORTDESCRIPTION_AS_SHOWN = """
+      case when s.shortdescription is null or length(s.shortdescription) = 0 then
+          case when length(concat(s.description, '')) > 20
+              then concat(substring(concat(s.description, ''), 1, 17), '...')
+              else coalesce(concat(s.description, ''), '') end
+          else s.shortdescription end""";
+
+  /**
+   * The suborders the order dialog of the booking list offers (#1331): not hidden; with customers chosen, below an
+   * order of theirs that is not hidden either — the dialog offers no suborder of an order it leaves out; among the
+   * given ids unless {@code everySuborder}; containing the pattern in the complete sign or the short description
+   * unless it is {@code null}.
+   */
+  String DIALOG_SUBORDERS = """
+      from Suborder s join s.customerorder c
+      where (s.hide is null or s.hide = false)
+      and (:everyCustomer = true or (c.customer.id in :customerIds and (c.hide is null or c.hide = false)))
+      and (:everySuborder = true or s.id in :suborderIds)
+      and (:pattern is null or lower(s.completeOrderSign) like :pattern escape '!'
+          or lower(""" + SHORTDESCRIPTION_AS_SHOWN + ") like :pattern escape '!')";
+
+  /**
+   * {@link #DIALOG_SUBORDERS}, ordered by complete sign and cut to the limit. The column compares binary
+   * ({@code utf8mb3_bin}), so upper case comes before lower case, as in Java.
+   */
+  @Query("select new de.hbt.salat.order.domain.SuborderTreeRow(s.id, s.completeOrderSign, "
+      + SHORTDESCRIPTION_AS_SHOWN + ", c.id, s.parentorder.id) " + DIALOG_SUBORDERS + " order by s.completeOrderSign")
+  List<SuborderTreeRow> findDialogSuborders(String pattern, boolean everyCustomer, Collection<Long> customerIds,
+      boolean everySuborder, Collection<Long> suborderIds, Limit limit);
+
+  @Query("select count(s) " + DIALOG_SUBORDERS)
+  long countDialogSuborders(String pattern, boolean everyCustomer, Collection<Long> customerIds,
+      boolean everySuborder, Collection<Long> suborderIds);
+
+  /**
+   * The edges of the trees of these customer orders, hidden suborders included (#1331). Callers must not pass an empty
+   * collection — {@code IN ()} is not valid SQL.
+   */
+  @Query("""
+      select new de.hbt.salat.order.domain.SuborderEdge(s.id, s.parentorder.id)
+      from Suborder s
+      where s.customerorder.id in :customerorderIds
+      """)
+  List<SuborderEdge> findEdgesByCustomerorderIds(Collection<Long> customerorderIds);
 
   @Query("""
     select distinct so from Suborder so
