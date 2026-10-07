@@ -170,6 +170,7 @@ public enum ErrorCode {
   FA_GROUP_NAME_INVALID("FA-0005", "the name of a favourite group must be given and at most 64 characters long"),
   FA_FAVORITE_NOT_OWN_USE("FA-0006", "a favourite can only be applied or arranged by the person it belongs to"),
   FA_LAYOUT_INVALID("FA-0007", "the arrangement or sort order of the favourites is not valid"),
+  FA_LIST_SIZE_INVALID("FA-0008", "the number of favourites in the short list is out of range"),
 
   BU_BUDGET_NOT_FOUND("BU-0001", "order budget not found"),
   BU_ADJUSTMENT_NOT_FOUND("BU-0002", "order budget adjustment not found"),

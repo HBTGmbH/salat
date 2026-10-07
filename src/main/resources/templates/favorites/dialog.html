@@ -3,26 +3,31 @@
 <body>
 
 <!--/*
-  The dialog "Favoriten ordnen" (#1414). A page with a favourites list includes the shell once and
-  opens it with a link that loads the body (openAttributes below); FavoriteOrganizeController answers
-  every action with the body again.
+  The dialog "Favoriten" (#1414): every favourite to search and pick from, and behind the switch
+  "Ordnen" the place where they are grouped and arranged. A page with a favourites list includes the
+  shell once and opens it with a button that loads the body (FavoriteDialogController).
+
+  Picking applies the favourite through the form with the id favoritesApplyForm, which the page
+  provides: the page knows the day and what to refresh. Without such a form a favourite cannot be
+  picked here, only arranged.
 
   data-reload-on-close: the page behind shows the favourites as well. After a change the dialog
-  reloads it when it closes, rather than every page offering a second way to refresh its list.
+  reloads it when it closes, rather than every page offering a second way to refresh its list. A pick
+  closes the dialog without that: its own answer refreshes the page.
 */-->
-<div th:fragment="modal" class="modal modal-blur fade" id="favoritesOrganizeModal" tabindex="-1"
-     aria-hidden="true" aria-labelledby="favoritesOrganizeTitle" data-reload-on-close>
+<div th:fragment="modal" class="modal modal-blur fade" id="favoritesDialog" tabindex="-1"
+     aria-hidden="true" aria-labelledby="favoritesDialogTitle" data-reload-on-close>
   <div class="modal-dialog modal-lg modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="favoritesOrganizeTitle"
-            th:text="#{main.favorites.organize.title}">Favoriten ordnen</h5>
+        <h5 class="modal-title" id="favoritesDialogTitle"
+            th:text="#{main.favorites.dialog.title}">Favoriten</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"
                 th:aria-label="#{main.favorites.organize.close}"></button>
       </div>
       <!--/* settle:0 - htmx would otherwise hand the old attributes of every element with the same id to
              the new one until it settles, and the radio the person just clicked loses its checked state */-->
-      <div class="modal-body" id="favoritesOrganizeBody" hx-swap="innerHTML settle:0">
+      <div class="modal-body" id="favoritesDialogBody" hx-swap="innerHTML settle:0">
         <div class="text-center text-secondary py-4">
           <span class="spinner-border spinner-border-sm me-2" role="status"></span>
           <span th:text="#{main.favorites.organize.loading}">Favoriten werden geladen …</span>
@@ -37,20 +42,76 @@
 </div>
 
 <!--/*
-  The body. Its order is the order of the page: the hidden inputs name="layout" belong to the empty
-  form favoritesLayoutForm through form=, wherever they stand, and FormData collects them in
-  document order. A drag and drop or an arrow button rearranges the page and submits that form
-  (salat.js, sortable lists) - the browser keeps no second model of the arrangement.
+  The body, in one of two modes. Picking: a search field and every favourite by group, each one a
+  button of the page's form favoritesApplyForm. Arranging: the order of the page is the order that is
+  stored - the hidden inputs name="layout" belong to the empty form favoritesLayoutForm through form=,
+  wherever they stand, and FormData collects them in document order. A drag and drop or an arrow button
+  rearranges the page and submits that form (salat.js, sortable lists); the browser keeps no second
+  model of the arrangement.
 */-->
-<div th:fragment="organizeBody" class="favorites-organize" th:attr="data-changed=${changed}">
+<div th:fragment="dialogBody" class="favorites-dialog" th:attr="data-changed=${changed}">
 
   <div th:if="${errors != null and not #lists.isEmpty(errors)}" class="alert alert-danger" role="alert">
     <div th:each="error : ${errors}" th:text="${error.resolved}"></div>
   </div>
 
+  <!-- PICK MODE -->
+  <th:block th:unless="${organize}">
+    <div class="d-flex gap-2 mb-3">
+      <!--/* autofocus: picking starts with typing; salat.js focuses it once the dialog is shown */-->
+      <div class="input-icon flex-fill">
+        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+        <input type="search" class="form-control" id="favoritesSearch" autocomplete="off" autofocus
+               data-list-filter="#favoritesPickList"
+               th:aria-label="#{main.favorites.search.label}"
+               th:placeholder="#{main.favorites.search.placeholder}"/>
+      </div>
+      <!--/* Arranging a filtered list would store an order nobody saw, so the switch rests while the
+             search holds a term (data-filter-disables). */-->
+      <button type="button" class="btn btn-outline-secondary flex-shrink-0" data-filter-disables="#favoritesSearch"
+              th:attr="hx-get=@{/favorites/dialog(organize=true)}" hx-target="#favoritesDialogBody"
+              th:title="#{main.favorites.organize.toggle.title}">
+        <i class="ti ti-arrows-sort me-1"></i><span th:text="#{main.favorites.organize.toggle}">Ordnen</span>
+      </button>
+    </div>
+
+    <div id="favoritesPickList">
+      <div class="mb-3" th:unless="${#lists.isEmpty(ungrouped.favorites)}" data-filter-group>
+        <div th:if="${favoriteList.hasGroups()}" class="list-group-header"
+             th:text="#{main.favorites.organize.ungrouped}">Ohne Gruppe</div>
+        <div class="list-group">
+          <th:block th:each="fav : ${ungrouped.favorites}"><button th:replace="~{:: favoritePick(${fav})}"></button></th:block>
+        </div>
+      </div>
+      <!--/* a group folds; the search opens the ones it finds something in and hides the others */-->
+      <details th:each="group : ${groups}" th:unless="${#lists.isEmpty(group.favorites)}"
+               class="favorites-pick-group mb-3" open data-filter-group>
+        <summary class="list-group-header d-flex align-items-center gap-2">
+          <i class="ti ti-chevron-down favorites-pick-chevron" aria-hidden="true"></i>
+          <span class="text-truncate" th:text="${group.groupName}"></span>
+          <span class="badge bg-secondary-lt" th:text="${group.favorites.size()}"></span>
+        </summary>
+        <div class="list-group">
+          <th:block th:each="fav : ${group.favorites}"><button th:replace="~{:: favoritePick(${fav})}"></button></th:block>
+        </div>
+      </details>
+      <p class="text-secondary d-none" data-filter-empty th:text="#{main.favorites.search.empty}">
+        Kein Favorit passt zur Suche.</p>
+    </div>
+  </th:block>
+
+  <!-- ARRANGE MODE -->
+  <th:block th:if="${organize}">
+  <div class="mb-3">
+    <button type="button" class="btn btn-outline-secondary"
+            th:attr="hx-get=@{/favorites/dialog}" hx-target="#favoritesDialogBody">
+      <i class="ti ti-arrow-left me-1"></i><span th:text="#{main.favorites.organize.back}">Zur Auswahl</span>
+    </button>
+  </div>
+
   <form th:action="@{/favorites/organize/sort-order}" method="post" class="mb-3"
         th:attr="hx-post=@{/favorites/organize/sort-order}" hx-trigger="change"
-        hx-target="#favoritesOrganizeBody">
+        hx-target="#favoritesDialogBody">
     <div class="form-label" id="favoritesSortLabel" th:text="#{main.favorites.organize.sort.label}">
       Reihenfolge in den Gruppen</div>
     <div class="btn-group w-100" role="radiogroup" aria-labelledby="favoritesSortLabel">
@@ -71,7 +132,7 @@
   </form>
 
   <form th:action="@{/favorites/organize/groups}" method="post" class="mb-4"
-        th:attr="hx-post=@{/favorites/organize/groups}" hx-target="#favoritesOrganizeBody">
+        th:attr="hx-post=@{/favorites/organize/groups}" hx-target="#favoritesDialogBody">
     <label class="form-label" for="favoritesNewGroupName" th:text="#{main.favorites.organize.group.new.label}">
       Neue Gruppe</label>
     <div class="input-group">
@@ -84,7 +145,7 @@
   </form>
 
   <form id="favoritesLayoutForm" th:action="@{/favorites/organize/arrange}" method="post"
-        th:attr="hx-post=@{/favorites/organize/arrange}" hx-target="#favoritesOrganizeBody"></form>
+        th:attr="hx-post=@{/favorites/organize/arrange}" hx-target="#favoritesDialogBody"></form>
 
   <!-- Without a group -->
   <section class="mb-3">
@@ -112,7 +173,7 @@
         <form class="d-flex gap-1 flex-fill" style="min-width:0" method="post"
               th:action="@{/favorites/organize/groups/{id}/rename(id=${group.groupId})}"
               th:attr="hx-post=@{/favorites/organize/groups/{id}/rename(id=${group.groupId})}"
-              hx-target="#favoritesOrganizeBody">
+              hx-target="#favoritesDialogBody">
           <input type="text" class="form-control form-control-sm fw-medium" name="name" maxlength="64" required
                  autocomplete="off" th:id="${titleId}" th:value="${group.groupName}"
                  th:aria-label="#{main.favorites.organize.group.name.label}"/>
@@ -139,7 +200,7 @@
         <form method="post" class="flex-shrink-0"
               th:action="@{/favorites/organize/groups/{id}/delete(id=${group.groupId})}"
               th:attr="hx-post=@{/favorites/organize/groups/{id}/delete(id=${group.groupId})}"
-              hx-target="#favoritesOrganizeBody"
+              hx-target="#favoritesDialogBody"
               data-confirm
               th:data-confirm-title="#{main.favorites.organize.group.delete.confirm.title}"
               th:data-confirm-text="#{main.favorites.organize.group.delete.confirm.text}"
@@ -163,9 +224,34 @@
     </section>
   </div>
 
+  </th:block>
+
   <p th:if="${favoriteList.isEmpty()}" class="text-secondary"
      th:text="#{main.favorites.organize.empty}">Noch keine Favoriten.</p>
 </div>
+
+<!--/*
+  A favourite to pick (#1414): a button of the page's form favoritesApplyForm, so picking here is the
+  same request as picking from the short list. It closes the dialog; the answer refreshes the day.
+  data-filter-text is what the search looks through - order, comment and tickets.
+*/-->
+<button th:fragment="favoritePick(fav)" type="submit" form="favoritesApplyForm" name="favoriteId"
+        th:value="${fav.id}" data-bs-dismiss="modal" data-favorite-pick
+        class="list-group-item list-group-item-action d-flex align-items-center gap-2 py-2 text-start"
+        th:with="hasComment=${fav.comment != null and !fav.comment.isBlank()}"
+        th:attr="data-filter-text=|${fav.suborderLabel} ${fav.comment != null ? fav.comment : ''} ${#strings.listJoin(fav.ticketReferences, ' ')}|">
+  <div class="flex-fill overflow-hidden">
+    <div th:if="${hasComment}" class="fw-medium text-truncate" th:title="${fav.comment}" th:text="${fav.comment}"></div>
+    <div class="d-flex align-items-center gap-2 overflow-hidden">
+      <span class="text-truncate" th:classappend="${hasComment} ? 'text-muted small' : 'fw-medium'"
+            th:title="${fav.suborderLabel}" th:text="${fav.suborderLabel}"></span>
+      <span th:each="reference : ${fav.ticketReferences}"
+            class="badge bg-secondary-lt flex-shrink-0 d-inline-block text-truncate" style="max-width:120px"
+            th:text="${reference}"></span>
+    </div>
+  </div>
+  <span class="badge bg-blue-lt flex-shrink-0" th:text="${@durationUtils.format(fav.duration)}"></span>
+</button>
 
 <!--/*
   A favourite in the dialog: built like the lists on the booking pages (comment, then suborder and

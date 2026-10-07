@@ -956,7 +956,7 @@ umgebende Element das Mittel der Wahl, wo die Felder bleiben, aber `salat:`-Tags
 (#1414). htmx gibt jedem neuen Element mit derselben id bis zum Abklingen die Attribute des alten
 und stellt danach die neuen her. Ein Optionsfeld, das die Person gerade angeklickt hat, trug das
 Attribut `checked` vorher nicht — nach dem Tausch ist dann keine Option mehr gewählt. Der Dialog
-„Favoriten ordnen" setzt deshalb `hx-swap="innerHTML settle:0"` an seinen Rumpf; es muss die Zahl
+„Favoriten" setzt deshalb `hx-swap="innerHTML settle:0"` an seinen Rumpf; es muss die Zahl
 sein, `settle:0ms` ist für htmx eine Zeichenkette und damit wahr.
 
 ### 5.8 Diagramme
@@ -1065,6 +1065,24 @@ einmal in `salat.js`, kein Template bringt eigenes Skript mit:
 - Ein Pfeil, der nichts verschieben kann, ist gesperrt. Am Rand eines Behälters setzt er im
   Nachbarbehälter derselben Gruppe fort; der Fokus bleibt nach dem Neuzeichnen auf ihm.
 - Ein leerer Behälter bleibt Ablageziel und sagt es (`data-empty-text`).
+
+### 5.10 Liste beim Tippen filtern (#1414)
+
+Eine lange Auswahlliste in einem Dialog (heute „Favoriten") filtert im Browser, solange alle Einträge
+in der Seite stehen; ein Suchfeld mit Anfrage an den Server lohnt erst, wenn sie das nicht mehr tun.
+Das Verhalten steht in `salat.js`:
+
+| Attribut | Bedeutung |
+|---|---|
+| `data-list-filter` | am Suchfeld, Selektor der Liste |
+| `data-filter-text` | an jedem Eintrag, der durchsuchte Text (Auftrag, Kommentar, Tickets) |
+| `data-filter-group` | an einer Gruppe; ohne Treffer ausgeblendet, eine `<details>`-Gruppe öffnet sich bei einem Treffer und kehrt nach dem Leeren in ihren Zustand zurück |
+| `data-filter-empty` | Hinweis, wenn nichts übrig bleibt |
+| `data-filter-disables` | an einem Bedienelement, das ruht, solange das genannte Suchfeld einen Begriff hält (Ordnen) |
+
+Jedes Wort muss vorkommen, Groß- und Kleinschreibung und Akzente zählen nicht. Enter im Suchfeld nimmt
+den einzigen übrigen Treffer. Das Suchfeld trägt `autofocus`; `salat.js` setzt den Fokus, sobald der
+Dialog gezeigt und sein Inhalt geladen ist.
 
 ## 6. Eingabekomponenten nach Datentyp
 

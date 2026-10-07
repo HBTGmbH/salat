@@ -1675,3 +1675,17 @@ body:not(.salat-confirm-ready) button[data-confirm] {
     height: 100dvh;
   }
 }
+
+/* A group in the dialog "Favoriten" folds (#1414); the chevron says which way. */
+.favorites-pick-group > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.favorites-pick-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.favorites-pick-group:not([open]) > summary .favorites-pick-chevron {
+  transform: rotate(-90deg);
+}

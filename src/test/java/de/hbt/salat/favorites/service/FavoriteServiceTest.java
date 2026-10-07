@@ -43,6 +43,7 @@ import de.hbt.salat.favorites.domain.Favorite;
 import de.hbt.salat.favorites.domain.FavoriteEntry;
 import de.hbt.salat.favorites.domain.FavoriteGroup;
 import de.hbt.salat.favorites.domain.FavoriteLayout;
+import de.hbt.salat.favorites.domain.FavoritePreferences;
 import de.hbt.salat.favorites.domain.FavoriteSection;
 import de.hbt.salat.favorites.domain.NewFavorite;
 import de.hbt.salat.favorites.persistence.EmployeeReferences;
@@ -219,7 +220,7 @@ class FavoriteServiceTest {
     /** Placed by hand first, the rest behind them by use. */
     @Test
     void in_the_own_order_the_places_count_and_unplaced_favourites_follow() {
-      preferences.put(FavoriteService.PREFERENCES_MODULE, Map.of(FavoriteService.PREFERENCE_SORT_ORDER, "custom"));
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
       givenFavorites(favorite(1L, null, 1, MONDAY), favorite(2L, null, 0, null),
           favorite(3L, null, null, MONDAY.plusDays(2)), favorite(4L, null, null, MONDAY));
 
@@ -380,7 +381,7 @@ class FavoriteServiceTest {
 
     @Test
     void in_the_own_order_every_favourite_takes_its_section_and_place_and_the_groups_their_order() {
-      preferences.put(FavoriteService.PREFERENCES_MODULE, Map.of(FavoriteService.PREFERENCE_SORT_ORDER, "custom"));
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
 
       favoriteService.arrange(layout("group:", "favorite:3", "group:6", "favorite:1", "group:5", "favorite:2"));
 
@@ -426,7 +427,7 @@ class FavoriteServiceTest {
     /** Deleted in another window meanwhile: nothing to arrange, nothing to refuse. */
     @Test
     void what_no_longer_exists_is_skipped() {
-      preferences.put(FavoriteService.PREFERENCES_MODULE, Map.of(FavoriteService.PREFERENCE_SORT_ORDER, "custom"));
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
 
       favoriteService.arrange(layout("group:", "favorite:404", "favorite:2", "group:404", "favorite:1"));
 
@@ -442,16 +443,73 @@ class FavoriteServiceTest {
     }
   }
 
-  @Test
-  void the_sort_order_is_a_preference_of_the_login_and_the_default_leaves_nothing_behind() {
-    assertThat(favoriteService.getSortOrder()).isEqualTo(RECENT);
+  @Nested
+  class Preferences {
 
-    favoriteService.setSortOrder(CUSTOM);
-    favoriteService.setSortOrder(RECENT);
+    @Test
+    void the_sort_order_is_a_preference_of_the_login_and_the_default_leaves_nothing_behind() {
+      assertThat(favoriteService.getSortOrder()).isEqualTo(RECENT);
 
-    verify(userPreferenceService).saveModuleSettings(FavoriteService.PREFERENCES_MODULE,
-        Map.of(FavoriteService.PREFERENCE_SORT_ORDER, "custom"));
-    verify(userPreferenceService).saveModuleSettings(eq(FavoriteService.PREFERENCES_MODULE), eq(Map.of()));
+      favoriteService.setSortOrder(CUSTOM);
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
+      favoriteService.setSortOrder(RECENT);
+
+      verify(userPreferenceService).saveModuleSettings(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
+      verify(userPreferenceService).saveModuleSettings(eq(FavoritePreferences.MODULE_KEY), eq(Map.of()));
+    }
+
+    /** Ten until the person chooses (#1414). */
+    @Test
+    void the_short_list_shows_ten_until_the_person_chooses() {
+      assertThat(favoriteService.getListSize()).isEqualTo(10);
+    }
+
+    @Test
+    void the_size_of_the_short_list_is_kept_next_to_the_sort_order() {
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
+
+      favoriteService.setListSize(25);
+
+      verify(userPreferenceService).saveModuleSettings(FavoritePreferences.MODULE_KEY,
+          Map.of("sortOrder", "custom", "listSize", "25"));
+    }
+
+    @Test
+    void a_size_out_of_range_is_refused_and_nothing_is_stored() {
+      assertThatThrownBy(() -> favoriteService.setListSize(0)).isInstanceOf(InvalidDataException.class);
+      assertThatThrownBy(() -> favoriteService.setListSize(51)).isInstanceOf(InvalidDataException.class);
+
+      verify(userPreferenceService, never()).saveModuleSettings(anyString(), any());
+    }
+  }
+
+  @Nested
+  class ShortList {
+
+    /** The ones used last, no matter their group or the own order; the count names all of them. */
+    @Test
+    void it_holds_the_favourites_used_last_up_to_the_chosen_number() {
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom", "listSize", "2"));
+      var maintenance = group(5L, ME, "Wartung", 0);
+      givenGroups(maintenance);
+      givenFavorites(favorite(1L, null, 0, MONDAY), favorite(2L, maintenance, 0, MONDAY.plusDays(2)),
+          favorite(3L, null, 1, null), favorite(4L, null, 2, MONDAY.plusDays(1)));
+
+      var recent = favoriteService.getRecentFavorites();
+
+      assertThat(recent.favorites()).extracting(FavoriteEntry::id).containsExactly(2L, 4L);
+      assertThat(recent.total()).isEqualTo(4);
+    }
+
+    @Test
+    void with_fewer_favourites_than_the_number_it_holds_them_all() {
+      givenFavorites(favorite(1L, null, null, MONDAY), favorite(2L, null, null, null));
+
+      var recent = favoriteService.getRecentFavorites();
+
+      assertThat(recent.favorites()).extracting(FavoriteEntry::id).containsExactly(1L, 2L);
+      assertThat(recent.total()).isEqualTo(2);
+    }
   }
 
   private void givenGroups(FavoriteGroup... groups) {

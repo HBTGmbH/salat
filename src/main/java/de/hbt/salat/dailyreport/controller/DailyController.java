@@ -539,7 +539,7 @@ public class DailyController {
      * make the other disappear from the page.
      */
     private void addBookingOffers(Model model, long ecId, LocalDate date) {
-        model.addAttribute("favorites", buildFavoriteViews());
+        model.addAttribute("favorites", buildFavoriteViews(model));
         model.addAttribute("previousBookings", buildPreviousBookingViews(ecId, date));
     }
 
@@ -563,15 +563,13 @@ public class DailyController {
     }
 
     /**
-     * The favourites by section (#1414): those without a group first, then the groups in the person's
-     * order. A section without favourites is left out — the list offers favourites, not groups.
+     * The short list of favourites (#1414): the ones used last, as many as the person chose, without
+     * groups. All of them are in the dialog "Favoriten", whose link names how many there are.
      */
-    private List<FavoriteSectionView> buildFavoriteViews() {
-        return favoriteService.getOwnFavoriteList().sections().stream()
-            .filter(section -> !section.favorites().isEmpty())
-            .map(section -> new FavoriteSectionView(section.groupName(),
-                section.favorites().stream().map(DailyController::buildFavoriteView).toList()))
-            .toList();
+    private List<FavoriteView> buildFavoriteViews(Model model) {
+        var recent = favoriteService.getRecentFavorites();
+        model.addAttribute("favoriteCount", recent.total());
+        return recent.favorites().stream().map(DailyController::buildFavoriteView).toList();
     }
 
     private static FavoriteView buildFavoriteView(FavoriteEntry f) {

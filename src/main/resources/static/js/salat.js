@@ -452,7 +452,7 @@ document.addEventListener('htmx:after:swap', initInfoPopovers);
  * A list whose order the person sets: dragged by a grip with the mouse or a finger (SortableJS), or
  * moved one step with an arrow button — the way for the keyboard and for anyone who cannot drag.
  * Both rearrange the page and then submit a form, and the server reads the new order off the page
- * (the dialog "Favoriten ordnen": hidden inputs in document order). The browser keeps no second
+ * (the dialog "Favoriten" while arranging: hidden inputs in document order). The browser keeps no second
  * model of the arrangement.
  *
  *   data-sortable          on the container; its direct children are the items
@@ -558,9 +558,7 @@ document.addEventListener('click', function (event) {
 initSortables();
 document.addEventListener('htmx:after:swap', initSortables);
 
-/* A dialog with data-reload-on-close stands in front of a page that shows the same data. After a
-   change - its body carries data-changed="true" from the server then - closing it reloads the page. */
-/* The confirmation dialog can stand in front of another dialog (deleting a group in "Favoriten ordnen").
+/* The confirmation dialog can stand in front of another dialog (deleting a group in "Favoriten").
    Bootstrap knows one dialog at a time and, closing the front one, frees the page as if none were left. */
 document.addEventListener('hidden.bs.modal', function () {
   if (!document.querySelector('.modal.show')) return;
@@ -568,10 +566,89 @@ document.addEventListener('hidden.bs.modal', function () {
   document.body.style.overflow = 'hidden';
 });
 
+/* A dialog with data-reload-on-close stands in front of a page that shows the same data. After a
+   change - its body carries data-changed="true" from the server then - closing it reloads the page.
+   Not when a submit button inside closed it (data-bs-dismiss on a pick in "Favoriten"): that request
+   refreshes the page itself, and a reload would cut it off. */
+document.addEventListener('click', function (event) {
+  const button = event.target.closest('button[type="submit"][data-bs-dismiss="modal"]');
+  const modal = button && button.closest('.modal');
+  if (modal) modal.dataset.closedBySubmit = 'true';
+});
+
 document.addEventListener('hidden.bs.modal', function (event) {
   const modal = event.target;
   if (!modal.hasAttribute('data-reload-on-close')) return;
-  if (modal.querySelector('[data-changed="true"]')) window.location.reload();
+  const bySubmit = modal.dataset.closedBySubmit === 'true';
+  delete modal.dataset.closedBySubmit;
+  if (!bySubmit && modal.querySelector('[data-changed="true"]')) window.location.reload();
+});
+
+/* A dialog whose content asks for the first keystroke carries autofocus there. Bootstrap focuses the
+   dialog itself once it is shown, after htmx may already have honoured autofocus in the loaded body. */
+document.addEventListener('shown.bs.modal', function (event) {
+  event.target.querySelector('[autofocus]')?.focus();
+});
+document.addEventListener('htmx:after:swap', function (event) {
+  const modal = event.target.closest && event.target.closest('.modal.show');
+  modal?.querySelector('[autofocus]')?.focus();
+});
+
+/* ─── Filtering a list as you type (#1414) ───────────────────────────────────
+ *
+ *   data-list-filter       on the search field, a selector of the list it filters
+ *   data-filter-text       on every entry, the text that is searched
+ *   data-filter-group      on a group of entries; hidden without a hit, a <details> opens with one
+ *   data-filter-empty      the note shown when nothing is left
+ *   data-filter-disables   on a control, the selector of a search field; it rests while that holds a term
+ *
+ * Every word of the term has to occur, case and accents aside. Enter takes the only hit that is left.
+ * -------------------------------------------------------------------------- */
+
+function listFilterFold(text) {
+  return (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function applyListFilter(input) {
+  const list = document.querySelector(input.dataset.listFilter);
+  if (!list) return;
+  const words = listFilterFold(input.value).split(/\s+/).filter(Boolean);
+  let visible = 0;
+  list.querySelectorAll('[data-filter-text]').forEach(function (entry) {
+    const text = listFilterFold(entry.dataset.filterText);
+    const hit = words.every(word => text.includes(word));
+    entry.classList.toggle('d-none', !hit);
+    if (hit) visible++;
+  });
+  list.querySelectorAll('[data-filter-group]').forEach(function (group) {
+    const hits = group.querySelectorAll('[data-filter-text]:not(.d-none)').length;
+    group.classList.toggle('d-none', hits === 0);
+    if (group.tagName !== 'DETAILS') return;
+    if (words.length > 0) {
+      if (group.dataset.filterWasOpen === undefined) group.dataset.filterWasOpen = String(group.open);
+      group.open = hits > 0;
+    } else if (group.dataset.filterWasOpen !== undefined) {
+      group.open = group.dataset.filterWasOpen === 'true';
+      delete group.dataset.filterWasOpen;
+    }
+  });
+  list.querySelector('[data-filter-empty]')?.classList.toggle('d-none', visible > 0 || words.length === 0);
+  document.querySelectorAll('[data-filter-disables]').forEach(function (control) {
+    if (document.querySelector(control.dataset.filterDisables) === input) control.disabled = words.length > 0;
+  });
+}
+
+document.addEventListener('input', function (event) {
+  if (event.target.matches && event.target.matches('[data-list-filter]')) applyListFilter(event.target);
+});
+
+document.addEventListener('keydown', function (event) {
+  const input = event.target;
+  if (event.key !== 'Enter' || !input.matches || !input.matches('[data-list-filter]')) return;
+  event.preventDefault();
+  const list = document.querySelector(input.dataset.listFilter);
+  const hits = list ? list.querySelectorAll('[data-filter-text]:not(.d-none)') : [];
+  if (input.value.trim() && hits.length === 1) hits[0].click();
 });
 
 /* ─── Confirmation dialog (#1032, ADR-0027) ──────────────────────────────────
