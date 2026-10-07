@@ -12,8 +12,8 @@ import static de.hbt.salat.common.exception.ErrorCode.FA_GROUP_NAME_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.FA_GROUP_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.FA_GROUP_NOT_OWN;
 import static de.hbt.salat.common.exception.ErrorCode.FA_LAYOUT_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.FA_LIST_SIZE_INVALID;
 import static de.hbt.salat.favorites.domain.FavoriteSortOrder.CUSTOM;
-import static de.hbt.salat.favorites.domain.FavoriteSortOrder.RECENT;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -46,9 +46,11 @@ import de.hbt.salat.favorites.domain.FavoriteGroup;
 import de.hbt.salat.favorites.domain.FavoriteGroupOption;
 import de.hbt.salat.favorites.domain.FavoriteLayout;
 import de.hbt.salat.favorites.domain.FavoriteList;
+import de.hbt.salat.favorites.domain.FavoritePreferences;
 import de.hbt.salat.favorites.domain.FavoriteSection;
 import de.hbt.salat.favorites.domain.FavoriteSortOrder;
 import de.hbt.salat.favorites.domain.NewFavorite;
+import de.hbt.salat.favorites.domain.RecentFavorites;
 import de.hbt.salat.favorites.persistence.EmployeeReferences;
 import de.hbt.salat.favorites.persistence.EmployeeorderReferences;
 import de.hbt.salat.favorites.persistence.FavoriteGroupRepository;
@@ -72,9 +74,6 @@ import de.hbt.salat.settings.service.UserPreferenceService;
 @Authorized
 public class FavoriteService {
 
-  static final String PREFERENCES_MODULE = "favorites";
-  static final String PREFERENCE_SORT_ORDER = "sortOrder";
-
   /** The favourite applied last first; never applied ones behind, the one created last first. */
   private static final Comparator<Favorite> RECENTLY_USED_FIRST =
       comparing(Favorite::getLastUsed, nullsLast(reverseOrder()))
@@ -96,8 +95,22 @@ public class FavoriteService {
   @Transactional(readOnly = true)
   public FavoriteList getOwnFavoriteList() {
     long me = ownEmployeeId();
-    return arrange(sortOrder(), favoriteGroupRepository.findAllByEmployeeId(me),
+    return arrange(preferences().sortOrder(), favoriteGroupRepository.findAllByEmployeeId(me),
         favoriteRepository.findAllByEmployeeId(me));
+  }
+
+  /**
+   * The short list of the booking pages (#1414): the favourites of the logged-in person used last,
+   * at most as many as they chose, without regard to groups — and how many there are in all.
+   */
+  @Transactional(readOnly = true)
+  public RecentFavorites getRecentFavorites() {
+    var favorites = favoriteRepository.findAllByEmployeeId(ownEmployeeId());
+    return new RecentFavorites(favorites.stream()
+        .sorted(RECENTLY_USED_FIRST)
+        .limit(preferences().listSize())
+        .map(FavoriteService::entryOf)
+        .toList(), favorites.size());
   }
 
   /** The groups of the logged-in person in their order, to choose one when saving a favourite. */
@@ -197,13 +210,31 @@ public class FavoriteService {
   /** The sort order the logged-in person chose; {@link FavoriteSortOrder#RECENT} until they choose. */
   @Transactional(readOnly = true)
   public FavoriteSortOrder getSortOrder() {
-    return sortOrder();
+    return preferences().sortOrder();
   }
 
   public void setSortOrder(FavoriteSortOrder sortOrder) {
-    // the default is left out, so that going back to it leaves nothing behind
-    userPreferenceService.saveModuleSettings(PREFERENCES_MODULE,
-        sortOrder == RECENT ? Map.of() : Map.of(PREFERENCE_SORT_ORDER, sortOrder.getKey()));
+    savePreferences(preferences().withSortOrder(sortOrder));
+  }
+
+  /** How many favourites the short lists show (#1414); {@link FavoritePreferences#DEFAULT_LIST_SIZE} until chosen. */
+  @Transactional(readOnly = true)
+  public int getListSize() {
+    return preferences().listSize();
+  }
+
+  /**
+   * Sets how many favourites the short lists show (#1414).
+   *
+   * @throws InvalidDataException outside {@link FavoritePreferences#MIN_LIST_SIZE} to
+   *                              {@link FavoritePreferences#MAX_LIST_SIZE}
+   */
+  public void setListSize(int listSize) {
+    if (!FavoritePreferences.isValidListSize(listSize)) {
+      throw new InvalidDataException(FA_LIST_SIZE_INVALID,
+          FavoritePreferences.MIN_LIST_SIZE, FavoritePreferences.MAX_LIST_SIZE);
+    }
+    savePreferences(preferences().withListSize(listSize));
   }
 
   /**
@@ -265,7 +296,7 @@ public class FavoriteService {
         groups.get(section.groupId()).setPosition(groupPosition++);
       }
     }
-    boolean ownOrder = sortOrder() == CUSTOM;
+    boolean ownOrder = preferences().sortOrder() == CUSTOM;
     for (var section : sections) {
       var group = section.groupId() == null ? null : groups.get(section.groupId());
       for (int index = 0; index < section.favoriteIds().size(); index++) {
@@ -413,9 +444,12 @@ public class FavoriteService {
     return employeeId;
   }
 
-  private FavoriteSortOrder sortOrder() {
-    var value = userPreferenceService.getModuleSettings(PREFERENCES_MODULE).get(PREFERENCE_SORT_ORDER);
-    return value == null ? RECENT : FavoriteSortOrder.ofKey(value.toString()).orElse(RECENT);
+  private FavoritePreferences preferences() {
+    return FavoritePreferences.from(userPreferenceService.getModuleSettings(FavoritePreferences.MODULE_KEY));
+  }
+
+  private void savePreferences(FavoritePreferences preferences) {
+    userPreferenceService.saveModuleSettings(FavoritePreferences.MODULE_KEY, preferences.toMap());
   }
 
   private static <T> Map<Long, T> byId(List<T> entities, Function<T, Long> id) {

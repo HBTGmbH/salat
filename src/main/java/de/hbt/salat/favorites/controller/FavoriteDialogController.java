@@ -20,54 +20,60 @@ import de.hbt.salat.favorites.domain.FavoriteSortOrder;
 import de.hbt.salat.favorites.service.FavoriteService;
 
 /**
- * The dialog "Favoriten ordnen" (#1414): groups, their order, the order within them and the sort
- * order. Every page that shows a favourites list opens it; each action answers with the dialog's
- * body again, so the browser always shows what the server stored.
+ * The dialog "Favoriten" (#1414): every favourite of the person, by group, to search and pick from;
+ * behind the switch "Ordnen" the groups, their order, the order within them and the sort order.
+ * The booking pages open it from their short lists. Each action answers with the dialog's body again,
+ * so the browser always shows what the server stored.
+ *
+ * <p>Picking a favourite is not handled here: the page that opens the dialog provides the form it is
+ * applied with (the booking day knows the day and the area to refresh), so applying from the dialog and
+ * from the short list are one and the same request.
  *
  * <p>Open to every login, restricted ones included, like the booking screens that offer the
  * favourites: everything here is the person's own, and {@link FavoriteService} checks every id.
  */
 @Controller
-@RequestMapping("/favorites/organize")
+@RequestMapping("/favorites")
 @RequiredArgsConstructor
 @Authorized
-public class FavoriteOrganizeController {
+public class FavoriteDialogController {
 
-  static final String BODY = "favorites/organize :: organizeBody";
+  static final String BODY = "favorites/dialog :: dialogBody";
 
   private final FavoriteService favoriteService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
 
-  @GetMapping
-  public String show(Model model) {
-    return body(model, false);
+  /** @param organize whether to show the dialog in the mode that arranges, instead of the one that picks */
+  @GetMapping("/dialog")
+  public String show(@RequestParam(defaultValue = "false") boolean organize, Model model) {
+    return body(model, organize, false);
   }
 
-  @PostMapping("/sort-order")
+  @PostMapping("/organize/sort-order")
   public String setSortOrder(@RequestParam String sortOrder, Model model) {
-    return perform(model, () -> favoriteService.setSortOrder(
+    return organize(model, () -> favoriteService.setSortOrder(
         FavoriteSortOrder.ofKey(sortOrder).orElseThrow(() -> new InvalidDataException(FA_LAYOUT_INVALID))));
   }
 
-  @PostMapping("/groups")
+  @PostMapping("/organize/groups")
   public String createGroup(@RequestParam(required = false) String name, Model model) {
-    return perform(model, () -> favoriteService.createGroup(name));
+    return organize(model, () -> favoriteService.createGroup(name));
   }
 
-  @PostMapping("/groups/{groupId}/rename")
+  @PostMapping("/organize/groups/{groupId}/rename")
   public String renameGroup(@PathVariable long groupId, @RequestParam(required = false) String name, Model model) {
-    return perform(model, () -> favoriteService.renameGroup(groupId, name));
+    return organize(model, () -> favoriteService.renameGroup(groupId, name));
   }
 
-  @PostMapping("/groups/{groupId}/delete")
+  @PostMapping("/organize/groups/{groupId}/delete")
   public String deleteGroup(@PathVariable long groupId, Model model) {
-    return perform(model, () -> favoriteService.deleteGroup(groupId));
+    return organize(model, () -> favoriteService.deleteGroup(groupId));
   }
 
   /** The arrangement after a drag and drop or an arrow button, as tokens in the order of the page. */
-  @PostMapping("/arrange")
+  @PostMapping("/organize/arrange")
   public String arrange(@RequestParam(required = false) List<String> layout, Model model) {
-    return perform(model, () -> favoriteService.arrange(parse(layout)));
+    return organize(model, () -> favoriteService.arrange(parse(layout)));
   }
 
   private static FavoriteLayout parse(List<String> layout) {
@@ -78,25 +84,26 @@ public class FavoriteOrganizeController {
     }
   }
 
-  private String perform(Model model, Runnable action) {
+  private String organize(Model model, Runnable action) {
     try {
       action.run();
     } catch (ErrorCodeException e) {
       model.addAttribute("errors", errorCodeViewHelper.toViewMessages(e));
     }
-    return body(model, true);
+    return body(model, true, true);
   }
 
   /**
    * @param changed whether an action ran: the page behind the dialog shows the favourites as well and
    *                is reloaded when the dialog closes after a change
    */
-  private String body(Model model, boolean changed) {
+  private String body(Model model, boolean organize, boolean changed) {
     var favorites = favoriteService.getOwnFavoriteList();
     model.addAttribute("favoriteList", favorites);
     model.addAttribute("ungrouped", favorites.sections().getFirst());
     model.addAttribute("groups", favorites.sections().subList(1, favorites.sections().size()));
     model.addAttribute("customOrder", favorites.sortOrder() == FavoriteSortOrder.CUSTOM);
+    model.addAttribute("organize", organize);
     model.addAttribute("changed", changed);
     return BODY;
   }

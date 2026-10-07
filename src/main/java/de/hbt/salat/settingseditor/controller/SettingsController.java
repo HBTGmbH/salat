@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.controller.SuborderOption;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
@@ -34,6 +36,8 @@ import de.hbt.salat.employee.preferences.EmployeePreferenceService;
 import de.hbt.salat.employee.preferences.EmployeePreferences;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.favorites.domain.FavoritePreferences;
+import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.settings.domain.BetaFeature;
@@ -59,6 +63,8 @@ public class SettingsController {
   private final UiPreferenceService uiPreferenceService;
   private final LocaleSyncInterceptor localeSyncInterceptor;
   private final BetaFeatureService betaFeatureService;
+  private final FavoriteService favoriteService;
+  private final ErrorCodeViewHelper errorCodeViewHelper;
 
   @GetMapping
   public String show(Model model) {
@@ -72,6 +78,7 @@ public class SettingsController {
     form.setFavoriteSuborderId(timereport.favoriteSuborderId() != null
         ? timereport.favoriteSuborderId().toString() : "");
     form.setDurationInputMode(timereport.durationInputMode().getKey());
+    form.setFavoriteListSize(favoriteService.getListSize());
     form.setLocale(uiPreferenceService.getLocaleForCurrentUser());
     form.setNotificationEmail(employee.notificationEmail() != null ? employee.notificationEmail() : "");
     form.setGravatarEmail(employee.gravatarEmail() != null ? employee.gravatarEmail() : "");
@@ -97,6 +104,14 @@ public class SettingsController {
                       RedirectAttributes redirectAttributes,
                       HttpServletRequest request,
                       HttpServletResponse response) {
+    // first, so that a value out of range saves nothing at all rather than half the form (#1414)
+    try {
+      favoriteService.setListSize(form.getFavoriteListSize() != null ? form.getFavoriteListSize() : 0);
+    } catch (ErrorCodeException e) {
+      redirectAttributes.addFlashAttribute("toastError", errorCodeViewHelper.toViewMessages(e).stream()
+          .map(Object::toString).findFirst().orElse("Error"));
+      return "redirect:/settings";
+    }
     uiPreferenceService.saveLocaleForCurrentUser(form.getLocale());
     dailyPreferenceService.saveForCurrentUser(new DailyPreferences(form.getWorkDayStart(), form.isConsiderMandatoryBreak()));
 
@@ -167,6 +182,9 @@ public class SettingsController {
 
     /** Key of a {@link DurationInputMode}, see the booking form's entry mode toggle (#844). */
     private String durationInputMode = DurationInputMode.REMEMBER.getKey();
+
+    /** How many favourites the short lists of the booking pages show (#1414). */
+    private Integer favoriteListSize = FavoritePreferences.DEFAULT_LIST_SIZE;
 
     private String locale = "-browser-";
 

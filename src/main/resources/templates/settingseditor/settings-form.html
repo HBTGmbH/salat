@@ -45,6 +45,12 @@
         <option value="beginEnd" th:text="#{main.settings.timereport.durationinputmode.beginend}">Immer Beginn / Ende</option>
       </salat:select>
 
+      <salat:textInput type="number" min="1" max="50"
+                       th:field="*{favoriteListSize}"
+                       th:label="#{main.settings.favorites.listsize.label}"
+                       th:helpText="#{main.settings.favorites.listsize.help}"
+                       required="true" />
+
       <salat:textInput th:field="*{notificationEmail}"
                        th:label="#{main.settings.notification.email.label}"
                        th:helpText="#{main.settings.notification.email.help}"
