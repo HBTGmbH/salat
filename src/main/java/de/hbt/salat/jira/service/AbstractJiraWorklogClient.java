@@ -43,7 +43,7 @@ abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implemen
   protected abstract String apiPath();
 
   /**
-   * The comment of the worklog (#1408), see {@link JiraWorklogEntry#WORKLOG_COMMENT}: plain text for
+   * The comment of the worklog (#1408), see {@link JiraWorklogEntry#COMMENT_HEADING}: plain text for
    * Server, an ADF document for Cloud.
    */
   protected abstract Object comment(String text);

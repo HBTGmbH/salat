@@ -2,10 +2,10 @@ package de.hbt.salat.dailyreport.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import de.hbt.salat.dailyreport.persistence.BookedTicketReference;
 import de.hbt.salat.jira.command.TicketDaySum;
 
@@ -37,7 +37,7 @@ public final class TicketDaySums {
       var shares = shares(references.getFirst().minutes(), references.size());
       for (int i = 0; i < references.size(); i++) {
         var row = references.get(i);
-        sums.computeIfAbsent(new DayAndReference(row.workDate(), row.reference()), key -> new TreeMap<>())
+        sums.computeIfAbsent(new DayAndReference(row.workDate(), row.reference()), key -> new HashMap<>())
             .merge(row.employeeSign(), shares[i], Long::sum);
       }
     });

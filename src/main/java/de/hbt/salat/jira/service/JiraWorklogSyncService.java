@@ -5,6 +5,7 @@ import static java.util.Comparator.comparing;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -179,7 +180,7 @@ public class JiraWorklogSyncService {
         if (!unknown.contains(sum.ticketReference())) unknown.add(sum.ticketReference());
         continue;
       }
-      var shares = sharesByWorklog.computeIfAbsent(new WorklogKey(ticketKey, sum.workDate()), key -> new TreeMap<>());
+      var shares = sharesByWorklog.computeIfAbsent(new WorklogKey(ticketKey, sum.workDate()), key -> new HashMap<>());
       sum.minutesBySign().forEach((sign, minutes) -> shares.merge(sign, minutes, Long::sum));
     }
     var wanted = new LinkedHashMap<WorklogKey, JiraWorklogEntry>();

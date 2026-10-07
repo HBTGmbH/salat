@@ -2,7 +2,6 @@ package de.hbt.salat.jira.service;
 
 import java.time.LocalDate;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -31,16 +30,16 @@ public record JiraWorklogEntry(LocalDate workDate, int minutes, String comment) 
    * went to the people responsible for the project, who had to look the split up in SALAT. The name,
    * the task description and everything else a booking says about who and what stay in SALAT.
    */
-  static final String WORKLOG_COMMENT = "Von HBT protokollierte Stunden übertragen:";
+  static final String COMMENT_HEADING = "Von HBT protokollierte Stunden übertragen:";
 
   /** Between the lines of a comment; the Cloud client turns it into a hard break of its document. */
   static final String LINE_BREAK = "\n";
 
   /**
    * The worklog of one day out of the shares per sign: the time is their sum, the comment names
-   * them. A share of zero minutes is left out of the comment — after the split of a booking with
-   * several references a person can be left with nothing on a ticket, and {@code abc 0m} would only
-   * raise a question.
+   * them, sorted by sign — the only place that orders them. A share of zero minutes is left out of
+   * the comment: after the split of a booking with several references a person can be left with
+   * nothing on a ticket, and {@code abc 0m} would only raise a question.
    */
   static JiraWorklogEntry of(LocalDate workDate, Map<String, Long> minutesBySign) {
     var minutes = minutesBySign.values().stream().mapToLong(Long::longValue).sum();
@@ -48,10 +47,11 @@ public record JiraWorklogEntry(LocalDate workDate, int minutes, String comment) 
   }
 
   private static String commentOf(Map<String, Long> minutesBySign) {
-    return new TreeMap<>(minutesBySign).entrySet().stream()
+    return minutesBySign.entrySet().stream()
         .filter(share -> share.getValue() > 0)
+        .sorted(Map.Entry.comparingByKey())
         .map(share -> share.getKey() + " " + duration(share.getValue()))
-        .collect(Collectors.joining(LINE_BREAK, WORKLOG_COMMENT + LINE_BREAK, ""));
+        .collect(Collectors.joining(LINE_BREAK, COMMENT_HEADING + LINE_BREAK, ""));
   }
 
   /** {@code 4h}, {@code 2h 30m} or {@code 45m} — the notation JIRA itself uses for logged time. */
