@@ -63,7 +63,15 @@ class JiraCloudWorklogClientTest {
         .andExpect(jsonPath("$.comment.type").value("doc"))
         .andExpect(jsonPath("$.comment.version").value(1))
         .andExpect(jsonPath("$.comment.content[0].type").value("paragraph"))
-        .andExpect(jsonPath("$.comment.content[0].content[0].text").value("Aus SALAT übertragen: abc 1h, xyz 30m"))
+        // #1408: one paragraph, a line per person, joined by hard breaks.
+        .andExpect(jsonPath("$.comment.content.length()").value(1))
+        .andExpect(jsonPath("$.comment.content[0].content.length()").value(5))
+        .andExpect(jsonPath("$.comment.content[0].content[0].type").value("text"))
+        .andExpect(jsonPath("$.comment.content[0].content[0].text").value("Von HBT protokollierte Stunden übertragen:"))
+        .andExpect(jsonPath("$.comment.content[0].content[1].type").value("hardBreak"))
+        .andExpect(jsonPath("$.comment.content[0].content[2].text").value("abc 1h"))
+        .andExpect(jsonPath("$.comment.content[0].content[3].type").value("hardBreak"))
+        .andExpect(jsonPath("$.comment.content[0].content[4].text").value("xyz 30m"))
         .andRespond(withSuccess("""
             {"id": "20202"}""", MediaType.APPLICATION_JSON));
 

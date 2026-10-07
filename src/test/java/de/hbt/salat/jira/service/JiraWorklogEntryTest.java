@@ -22,7 +22,7 @@ class JiraWorklogEntryTest {
 
     assertThat(entry.workDate()).isEqualTo(DAY);
     assertThat(entry.minutes()).isEqualTo(390);
-    assertThat(entry.comment()).isEqualTo("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
+    assertThat(entry.comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 4h\nxyz 2h 30m");
   }
 
   @Test
@@ -30,7 +30,7 @@ class JiraWorklogEntryTest {
     var entry = JiraWorklogEntry.of(DAY, Map.of("abc", 61L, "def", 1L, "xyz", 59L));
 
     assertThat(entry.minutes()).isEqualTo(61 + 1 + 59);
-    assertThat(entry.comment()).isEqualTo("Aus SALAT übertragen: abc 1h 1m, def 1m, xyz 59m");
+    assertThat(entry.comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 1h 1m\ndef 1m\nxyz 59m");
   }
 
   @Test
@@ -38,13 +38,13 @@ class JiraWorklogEntryTest {
     var entry = JiraWorklogEntry.of(DAY, Map.of("abc", 0L, "xyz", 45L));
 
     assertThat(entry.minutes()).isEqualTo(45);
-    assertThat(entry.comment()).isEqualTo("Aus SALAT übertragen: xyz 45m");
+    assertThat(entry.comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nxyz 45m");
   }
 
   @Test
   void a_worklog_of_one_person_names_that_person() {
     assertThat(JiraWorklogEntry.of(DAY, Map.of("abc", 480L)).comment())
-        .isEqualTo("Aus SALAT übertragen: abc 8h");
+        .isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 8h");
   }
 
   @ParameterizedTest

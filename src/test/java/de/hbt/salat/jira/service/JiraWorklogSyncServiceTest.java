@@ -194,7 +194,7 @@ class JiraWorklogSyncServiceTest {
   void a_run_without_changes_causes_no_writing_call_at_all() {
     givenBookings(sum("ALPHA-1", "abc", 90));
     givenReplicatedTickets("ALPHA-1");
-    givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Aus SALAT übertragen: abc 1h 30m");
+    givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Von HBT protokollierte Stunden übertragen:\nabc 1h 30m");
 
     classUnderTest.sync(config());
 
@@ -304,8 +304,8 @@ class JiraWorklogSyncServiceTest {
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
     assertThat(entry.getValue().minutes()).isEqualTo(390);
-    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
-    assertThat(savedRow().getComment()).isEqualTo("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
+    assertThat(entry.getValue().comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 4h\nxyz 2h 30m");
+    assertThat(savedRow().getComment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 4h\nxyz 2h 30m");
   }
 
   @Test
@@ -319,7 +319,7 @@ class JiraWorklogSyncServiceTest {
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
     assertThat(entry.getValue().minutes()).isEqualTo(45);
-    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 45m");
+    assertThat(entry.getValue().comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 45m");
   }
 
   @Test
@@ -334,7 +334,7 @@ class JiraWorklogSyncServiceTest {
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
     assertThat(entry.getValue().minutes()).isEqualTo(135);
-    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 2h, xyz 15m");
+    assertThat(entry.getValue().comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 2h\nxyz 15m");
   }
 
   @Test
@@ -342,15 +342,15 @@ class JiraWorklogSyncServiceTest {
     // One person's booking moved to another: the sum stays at 90, the comment does not.
     givenBookings(sum("ALPHA-1", "abc", 60), sum("ALPHA-1", "xyz", 30));
     givenReplicatedTickets("ALPHA-1");
-    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Aus SALAT übertragen: abc 1h 30m");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Von HBT protokollierte Stunden übertragen:\nabc 1h 30m");
 
     classUnderTest.sync(config());
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).update(any(), eq("10101"), entry.capture());
-    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 1h, xyz 30m");
+    assertThat(entry.getValue().comment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 1h\nxyz 30m");
     assertThat(stored.getMinutes()).isEqualTo(90);
-    assertThat(stored.getComment()).isEqualTo("Aus SALAT übertragen: abc 1h, xyz 30m");
+    assertThat(stored.getComment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 1h\nxyz 30m");
     verify(syncRepository).save(stored);
   }
 
@@ -365,7 +365,7 @@ class JiraWorklogSyncServiceTest {
 
     verify(worklogClient).update(any(), eq("10101"), any());
     verify(worklogClient, never()).create(any(), any());
-    assertThat(stored.getComment()).isEqualTo("Aus SALAT übertragen: abc 1h 30m");
+    assertThat(stored.getComment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 1h 30m");
     verify(syncRepository).save(stored);
   }
 
@@ -373,14 +373,14 @@ class JiraWorklogSyncServiceTest {
   void a_worklog_written_again_after_somebody_deleted_it_remembers_its_comment() {
     givenBookings(sum("ALPHA-1", "abc", 120));
     givenReplicatedTickets("ALPHA-1");
-    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Aus SALAT übertragen: abc 1h 30m");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Von HBT protokollierte Stunden übertragen:\nabc 1h 30m");
     doThrow(new JiraWorklogNotFoundException("ALPHA-1", "10101", null))
         .when(worklogClient).update(any(), eq("10101"), any());
     when(worklogClient.create(any(), any())).thenReturn("10999");
 
     classUnderTest.sync(config());
 
-    assertThat(stored.getComment()).isEqualTo("Aus SALAT übertragen: abc 2h");
+    assertThat(stored.getComment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 2h");
   }
 
   @Test
