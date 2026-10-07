@@ -1,6 +1,7 @@
 package de.hbt.salat.employee.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.testutils.EmployeeTestUtils.BOSS_SIGN;
 import static de.hbt.salat.testutils.EmployeeTestUtils.TESTY_SIGN;
@@ -19,6 +20,8 @@ import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
+import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
 import de.hbt.salat.employee.domain.Employee;
@@ -41,6 +44,8 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 })
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class EmployeeServiceTest {
+
+	private static final long UNKNOWN_EMPLOYEE_ID = 999_999L;
 
 	@Autowired
 	private EmployeeService employeeDAO;
@@ -198,6 +203,21 @@ public class EmployeeServiceTest {
 		employeeDAO.anonymizeEmployee(other.getId(), BOSS_SIGN);
 
 		assertThat(one.getSign()).isNotEqualTo(other.getSign());
+	}
+
+	/** An id without an employee — a stale link or form — is answered as such, not as a server error (#1401). */
+	@Test
+	public void deleting_an_unknown_employee_is_refused() {
+		assertThatThrownBy(() -> employeeDAO.deleteEmployeeById(UNKNOWN_EMPLOYEE_ID))
+				.isInstanceOf(InvalidDataException.class)
+				.hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
+	}
+
+	@Test
+	public void anonymizing_an_unknown_employee_is_refused() {
+		assertThatThrownBy(() -> employeeDAO.anonymizeEmployee(UNKNOWN_EMPLOYEE_ID, TESTY_SIGN))
+				.isInstanceOf(InvalidDataException.class)
+				.hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
 	}
 
 	/** The flag is set explicitly: {@code notHidden()} compares against TRUE, so NULL is no answer. */

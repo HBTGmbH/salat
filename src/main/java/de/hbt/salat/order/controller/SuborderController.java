@@ -2,6 +2,7 @@ package de.hbt.salat.order.controller;
 
 import static de.hbt.salat.common.GlobalConstants.YESNO_NO;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
+import static de.hbt.salat.common.exception.ErrorCode.SO_NOT_FOUND;
 import static de.hbt.salat.common.util.DateUtils.format;
 import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.*;
 
@@ -111,7 +112,8 @@ public class SuborderController {
    * The "add another suborder" action after saving names the order it just created as
    * {@code customerorderId}, the form field — a button that opens a form must not change the
    * filter of the list behind it (ADR-0023). Without it the form is prefilled with what the list
-   * is filtered to.
+   * is filtered to. An order that no longer exists — a stale link or filter — is not prefilled; the
+   * form opens as without one (#1401).
    */
   @Authorized(requiresManager = true)
   @GetMapping("/create")
@@ -130,7 +132,7 @@ public class SuborderController {
     form.setHide(false);
     form.setOrderType(OrderType.STANDARD);
     form.setCustomerId(fCustomerId);
-    form.setCustomerorderId(orderId);
+    form.setCustomerorderId(isExistingCustomerorder(orderId) ? orderId : null);
     addFormModel(model, form, false, true);
     prefillValidity(form);
     return "order/sub-order-form";
@@ -138,8 +140,11 @@ public class SuborderController {
 
   @Authorized(requiresManager = true)
   @GetMapping("/{id}/edit")
-  public String editForm(@PathVariable Long id, Model model) {
+  public String editForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
     Suborder so = suborderService.getSuborderById(id);
+    if (so == null) {
+      return redirectToListBecauseSuborderNotFound(redirectAttributes);
+    }
     var form = toForm(so);
     addFormModel(model, form, true, true);
     return "order/sub-order-form";
@@ -151,6 +156,9 @@ public class SuborderController {
                       BindingResult bindingResult,
                       Model model,
                       RedirectAttributes redirectAttributes) {
+    if (isUpdateOfMissingSuborder(form)) {
+      return redirectToListBecauseSuborderNotFound(redirectAttributes);
+    }
     validateForm(form, bindingResult);
 
     boolean hasErrors = bindingResult.hasErrors();
@@ -243,9 +251,15 @@ public class SuborderController {
   @Authorized(requiresManager = true)
   @PostMapping("/{id}/copy")
   public String copy(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    suborderService.createCopy(id);
-    redirectAttributes.addFlashAttribute("toastSuccess",
-        messages.getMessage("form.suborder.message.copied", "Suborder copied successfully"));
+    try {
+      suborderService.createCopy(id);
+      redirectAttributes.addFlashAttribute("toastSuccess",
+          messages.getMessage("form.suborder.message.copied", "Suborder copied successfully"));
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream()
+              .map(Object::toString).findFirst().orElse("Error copying suborder"));
+    }
     return "redirect:/orders/suborders";
   }
 
@@ -324,10 +338,13 @@ public class SuborderController {
     if (form.getParentId() == null) {
       if (form.getCustomerorderId() != null) {
         var order = customerorderService.getCustomerorderById(form.getCustomerorderId());
-        var from = order.getFromDate();
-        var until = order.getUntilDate();
-        form.setValidFrom(format(from));
-        form.setValidUntil(until != null ? format(until) : "");
+        // an order chosen in the open form may have been deleted meanwhile; saving says so (#1401)
+        if (order != null) {
+          var from = order.getFromDate();
+          var until = order.getUntilDate();
+          form.setValidFrom(format(from));
+          form.setValidUntil(until != null ? format(until) : "");
+        }
       }
     } else {
       Suborder order = suborderService.getSuborderById(form.getParentId());
@@ -336,6 +353,25 @@ public class SuborderController {
       form.setValidFrom(format(from));
       form.setValidUntil(until != null ? format(until) : "");
     }
+  }
+
+  private boolean isExistingCustomerorder(Long customerorderId) {
+    return customerorderId != null && customerorderService.getCustomerorderById(customerorderId) != null;
+  }
+
+  private boolean isUpdateOfMissingSuborder(SuborderForm form) {
+    boolean isUpdate = form.getId() != null;
+    return isUpdate && suborderService.getSuborderById(form.getId()) == null;
+  }
+
+  /**
+   * Eine Unterauftragsnummer aus der Anfrage, zu der es keinen Unterauftrag gibt — ein veralteter Link, ein
+   * Lesezeichen, ein Formular, dessen Unterauftrag inzwischen gelöscht ist —, beantwortet jeder Handler gleich: zurück
+   * zur Liste mit einer Meldung (#1401).
+   */
+  private String redirectToListBecauseSuborderNotFound(RedirectAttributes redirectAttributes) {
+    errorCodeViewHelper.addToastError(redirectAttributes, SO_NOT_FOUND);
+    return "redirect:/orders/suborders";
   }
 
   private void validateForm(SuborderForm form, BindingResult bindingResult) {

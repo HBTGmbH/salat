@@ -377,6 +377,7 @@ public class CustomerorderService {
   public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);
     var customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
+    if (customerorder == null) throw new InvalidDataException(ErrorCode.CO_NOT_FOUND);
     if (specialOrders.isLockedCustomerorder(customerOrderId)) {
       throw new BusinessRuleException(ErrorCode.CO_SPECIAL_ORDER_LOCKED, customerorder.getSign());
     }

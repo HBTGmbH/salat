@@ -1,5 +1,6 @@
 package de.hbt.salat.order.controller;
 
+import static de.hbt.salat.common.exception.ErrorCode.CO_NOT_FOUND;
 import static de.hbt.salat.common.util.DateUtils.format;
 import static de.hbt.salat.common.util.DateUtils.today;
 import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.CUSTOMER_ID;
@@ -116,8 +117,11 @@ public class CustomerorderController {
 
   @Authorized(requiresManager = true)
   @GetMapping("/edit")
-  public String editForm(@RequestParam Long id, Model model) {
+  public String editForm(@RequestParam Long id, Model model, RedirectAttributes redirectAttributes) {
     Customerorder co = customerorderService.getCustomerorderById(id);
+    if (co == null) {
+      return redirectToListBecauseCustomerorderNotFound(redirectAttributes);
+    }
     var form = toForm(co);
     addFormModel(model, form, true);
     return "order/customer-order-form";
@@ -129,6 +133,9 @@ public class CustomerorderController {
                       BindingResult bindingResult,
                       Model model,
                       RedirectAttributes redirectAttributes) {
+    if (isUpdateOfMissingCustomerorder(form)) {
+      return redirectToListBecauseCustomerorderNotFound(redirectAttributes);
+    }
     validateForm(form, bindingResult);
 
     boolean hasErrors = bindingResult.hasErrors();
@@ -202,6 +209,21 @@ public class CustomerorderController {
           errorCodeViewHelper.toViewMessages(ex).stream()
               .map(Object::toString).findFirst().orElse("Error deleting customer order"));
     }
+    return "redirect:/orders/customerorders";
+  }
+
+  private boolean isUpdateOfMissingCustomerorder(CustomerorderForm form) {
+    boolean isUpdate = form.getId() != null;
+    return isUpdate && customerorderService.getCustomerorderById(form.getId()) == null;
+  }
+
+  /**
+   * Eine Auftragsnummer aus der Anfrage, zu der es keinen Auftrag gibt — ein veralteter Link, ein Lesezeichen, ein
+   * Formular, dessen Auftrag inzwischen gelöscht ist —, beantwortet jeder Handler gleich: zurück zur Liste mit einer
+   * Meldung (#1401).
+   */
+  private String redirectToListBecauseCustomerorderNotFound(RedirectAttributes redirectAttributes) {
+    errorCodeViewHelper.addToastError(redirectAttributes, CO_NOT_FOUND);
     return "redirect:/orders/customerorders";
   }
 

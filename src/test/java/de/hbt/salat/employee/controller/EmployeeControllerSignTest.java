@@ -58,6 +58,11 @@ class EmployeeControllerSignTest {
     setField(holder, "id", HOLDER_ID);
     holder.setSign("abc");
     when(employeeService.getEmployeeBySign("abc")).thenReturn(holder);
+    var other = new Employee();
+    setField(other, "id", OTHER_ID);
+    other.setSign("def");
+    when(employeeService.getEmployeeById(HOLDER_ID)).thenReturn(holder);
+    when(employeeService.getEmployeeById(OTHER_ID)).thenReturn(other);
   }
 
   @Test

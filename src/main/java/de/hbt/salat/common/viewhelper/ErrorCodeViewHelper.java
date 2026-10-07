@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
@@ -36,6 +37,14 @@ public class ErrorCodeViewHelper {
         .toArray();
     String resolved = messages.getMessage(key, args, "???" + key + "???");
     return new ViewMessage(key, args, resolved);
+  }
+
+  /**
+   * Die Meldung zu einem {@link ErrorCode} als Fehler-Toast der Umleitung — für eine Antwort, die nicht aus einer
+   * Ausnahme kommt, etwa ein Objekt, das es zur id aus der Anfrage nicht gibt (#1401).
+   */
+  public void addToastError(RedirectAttributes redirectAttributes, ErrorCode errorCode) {
+    redirectAttributes.addFlashAttribute("toastError", toViewMessage(ServiceFeedbackMessage.error(errorCode)).resolved());
   }
 
   public ViewMessage toViewMessage(String key) {

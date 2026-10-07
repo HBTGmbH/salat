@@ -30,7 +30,6 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
-import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
@@ -314,8 +313,7 @@ public class EmployeecontractController {
      * Hand geänderte Adresse —, beantwortet jeder Handler gleich: zurück zur Liste mit einer Meldung (#1401).
      */
     private String redirectToListBecauseContractNotFound(RedirectAttributes redirectAttributes) {
-        var notFound = errorCodeViewHelper.toViewMessage(ServiceFeedbackMessage.error(EC_EMPLOYEE_CONTRACT_NOT_FOUND));
-        redirectAttributes.addFlashAttribute("toastError", notFound.toString());
+        errorCodeViewHelper.addToastError(redirectAttributes, EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         return "redirect:/employees/contracts";
     }
 
