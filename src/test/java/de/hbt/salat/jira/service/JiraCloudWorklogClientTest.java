@@ -12,6 +12,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static de.hbt.salat.jira.domain.JiraApiFlavor.CLOUD;
 
 import java.time.LocalDate;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -49,7 +50,7 @@ class JiraCloudWorklogClientTest {
         .andRespond(withSuccess("""
             {"id": "20202"}""", MediaType.APPLICATION_JSON));
 
-    var worklogId = client.create(target(), new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 90));
+    var worklogId = client.create(target(), entry(LocalDate.of(2026, 1, 15), 90));
 
     assertThat(worklogId).isEqualTo("20202");
     jira.verify();
@@ -62,11 +63,11 @@ class JiraCloudWorklogClientTest {
         .andExpect(jsonPath("$.comment.type").value("doc"))
         .andExpect(jsonPath("$.comment.version").value(1))
         .andExpect(jsonPath("$.comment.content[0].type").value("paragraph"))
-        .andExpect(jsonPath("$.comment.content[0].content[0].text").value("Aus SALAT uebertragen"))
+        .andExpect(jsonPath("$.comment.content[0].content[0].text").value("Aus SALAT übertragen: abc 1h, xyz 30m"))
         .andRespond(withSuccess("""
             {"id": "20202"}""", MediaType.APPLICATION_JSON));
 
-    client.create(target(), new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 90));
+    client.create(target(), entry(LocalDate.of(2026, 1, 15), 90));
 
     jira.verify();
   }
@@ -81,7 +82,7 @@ class JiraCloudWorklogClientTest {
         .andExpect(method(HttpMethod.DELETE))
         .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
-    client.update(target(), "20202", new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 120));
+    client.update(target(), "20202", entry(LocalDate.of(2026, 1, 15), 120));
     client.delete(target(), "20202");
 
     jira.verify();
@@ -98,5 +99,10 @@ class JiraCloudWorklogClientTest {
 
   private static JiraWorklogTarget target() {
     return new JiraWorklogTarget("https://mock-jira.com", JiraCredentials.basic("mockUser", "mockPassword"), "MOCK-1");
+  }
+
+  /** A worklog of two people, {@code abc} with two thirds of the time and {@code xyz} with the rest. */
+  private static JiraWorklogEntry entry(LocalDate workDate, int minutes) {
+    return JiraWorklogEntry.of(workDate, Map.of("abc", minutes * 2L / 3, "xyz", minutes - minutes * 2L / 3));
   }
 }

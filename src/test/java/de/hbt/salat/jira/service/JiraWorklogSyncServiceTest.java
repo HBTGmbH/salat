@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,9 +42,10 @@ import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
 import de.hbt.salat.order.domain.Customerorder;
 
 /**
- * Writing the booked hours back to JIRA (#1007): one worklog per day and ticket, overwritten when
- * the sum moves, removed when the bookings are gone, and untouched when nothing changed — or when
- * its ticket is no longer replicated (#1167).
+ * Writing the booked hours back to JIRA (#1007): one worklog per day and ticket, its comment naming
+ * each person by sign with their share (#1408), overwritten when the sum or the split moves, removed
+ * when the bookings are gone, and untouched when nothing changed — or when its ticket is no longer
+ * replicated (#1167).
  */
 @FixedClock
 @ExtendWith(MockitoExtension.class)
@@ -121,7 +123,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_day_and_ticket_without_a_worklog_yet_gets_one() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90));
+    givenBookings(sum("ALPHA-1", "abc", 90));
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
@@ -148,7 +150,7 @@ class JiraWorklogSyncServiceTest {
    */
   @Test
   void a_ticket_the_replication_does_not_maintain_gets_no_worklog() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90), new TicketDaySum(DAY, "HAND-1", 60));
+    givenBookings(sum("ALPHA-1", "abc", 90), sum("HAND-1", "abc", 60));
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
@@ -163,7 +165,7 @@ class JiraWorklogSyncServiceTest {
   @Test
   void the_worklog_carries_the_sum_over_everybody_who_booked_that_day() {
     // Two people, one ticket, one day — that is one worklog, not two.
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90), new TicketDaySum(DAY, "ALPHA-1", 30));
+    givenBookings(sum("ALPHA-1", "abc", 90), sum("ALPHA-1", "xyz", 30));
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
@@ -176,7 +178,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_changed_booking_overwrites_the_worklog_of_that_day_instead_of_adding_one() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 120));
+    givenBookings(sum("ALPHA-1", "abc", 120));
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -190,9 +192,9 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_run_without_changes_causes_no_writing_call_at_all() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90));
+    givenBookings(sum("ALPHA-1", "abc", 90));
     givenReplicatedTickets("ALPHA-1");
-    givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+    givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Aus SALAT übertragen: abc 1h 30m");
 
     classUnderTest.sync(config());
 
@@ -219,7 +221,7 @@ class JiraWorklogSyncServiceTest {
   void a_worklog_on_a_ticket_no_longer_replicated_stays_in_jira_and_remembered() {
     // The replication removed the ticket (#1167) - moved away, or no longer matched by the JQL.
     // That says nothing about the bookings, so what SALAT wrote there is left as it is.
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90));
+    givenBookings(sum("ALPHA-1", "abc", 90));
     givenReplicatedTickets();
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -233,7 +235,7 @@ class JiraWorklogSyncServiceTest {
   @Test
   void a_ticket_that_comes_back_picks_up_at_its_remembered_worklog() {
     // no second worklog next to the one written before the ticket was removed
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 120));
+    givenBookings(sum("ALPHA-1", "abc", 120));
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -246,7 +248,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_day_left_with_nothing_but_zero_length_bookings_loses_its_worklog_too() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 0));
+    givenBookings(sum("ALPHA-1", "abc", 0));
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -260,7 +262,7 @@ class JiraWorklogSyncServiceTest {
   void a_reference_without_a_replicated_ticket_is_skipped() {
     // The reference is free text, so a typo is normal — and must not be written against an issue
     // that does not exist.
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90), new TicketDaySum(DAY, "ALPAH-99", 60));
+    givenBookings(sum("ALPHA-1", "abc", 90), sum("ALPAH-99", "abc", 60));
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
@@ -273,7 +275,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_reference_written_in_another_case_still_names_the_same_issue() {
-    givenBookings(new TicketDaySum(DAY, "alpha-1", 90), new TicketDaySum(DAY, "ALPHA-1", 30));
+    givenBookings(sum("alpha-1", "abc", 90), sum("ALPHA-1", "abc", 30));
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
@@ -287,9 +289,103 @@ class JiraWorklogSyncServiceTest {
     assertThat(entry.getValue().minutes()).isEqualTo(120);
   }
 
+  /**
+   * #1408: who stands behind the number, by sign and share, sorted by sign — and nothing else of the
+   * bookings.
+   */
+  @Test
+  void the_comment_names_each_person_by_sign_with_their_share() {
+    givenBookings(sum("ALPHA-1", "xyz", 150), sum("ALPHA-1", "abc", 240));
+    givenReplicatedTickets("ALPHA-1");
+    when(worklogClient.create(any(), any())).thenReturn("10101");
+
+    classUnderTest.sync(config());
+
+    var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
+    verify(worklogClient).create(any(), entry.capture());
+    assertThat(entry.getValue().minutes()).isEqualTo(390);
+    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
+    assertThat(savedRow().getComment()).isEqualTo("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
+  }
+
+  @Test
+  void a_person_left_with_no_minutes_after_the_split_is_not_named() {
+    givenBookings(new TicketDaySum(DAY, "ALPHA-1", Map.of("abc", 45L, "xyz", 0L)));
+    givenReplicatedTickets("ALPHA-1");
+    when(worklogClient.create(any(), any())).thenReturn("10101");
+
+    classUnderTest.sync(config());
+
+    var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
+    verify(worklogClient).create(any(), entry.capture());
+    assertThat(entry.getValue().minutes()).isEqualTo(45);
+    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 45m");
+  }
+
+  @Test
+  void a_reference_written_in_another_case_adds_up_the_shares_of_each_sign_too() {
+    givenBookings(sum("alpha-1", "abc", 90),
+        new TicketDaySum(DAY, "ALPHA-1", Map.of("abc", 30L, "xyz", 15L)));
+    givenReplicatedTickets("ALPHA-1");
+    when(worklogClient.create(any(), any())).thenReturn("10101");
+
+    classUnderTest.sync(config());
+
+    var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
+    verify(worklogClient).create(any(), entry.capture());
+    assertThat(entry.getValue().minutes()).isEqualTo(135);
+    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 2h, xyz 15m");
+  }
+
+  @Test
+  void a_changed_split_at_the_same_sum_overwrites_the_worklog() {
+    // One person's booking moved to another: the sum stays at 90, the comment does not.
+    givenBookings(sum("ALPHA-1", "abc", 60), sum("ALPHA-1", "xyz", 30));
+    givenReplicatedTickets("ALPHA-1");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Aus SALAT übertragen: abc 1h 30m");
+
+    classUnderTest.sync(config());
+
+    var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
+    verify(worklogClient).update(any(), eq("10101"), entry.capture());
+    assertThat(entry.getValue().comment()).isEqualTo("Aus SALAT übertragen: abc 1h, xyz 30m");
+    assertThat(stored.getMinutes()).isEqualTo(90);
+    assertThat(stored.getComment()).isEqualTo("Aus SALAT übertragen: abc 1h, xyz 30m");
+    verify(syncRepository).save(stored);
+  }
+
+  @Test
+  void a_worklog_remembered_without_a_comment_is_written_once_more() {
+    // Every row from before #1408: the first run after the release gives its worklog the new comment.
+    givenBookings(sum("ALPHA-1", "abc", 90));
+    givenReplicatedTickets("ALPHA-1");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+
+    classUnderTest.sync(config());
+
+    verify(worklogClient).update(any(), eq("10101"), any());
+    verify(worklogClient, never()).create(any(), any());
+    assertThat(stored.getComment()).isEqualTo("Aus SALAT übertragen: abc 1h 30m");
+    verify(syncRepository).save(stored);
+  }
+
+  @Test
+  void a_worklog_written_again_after_somebody_deleted_it_remembers_its_comment() {
+    givenBookings(sum("ALPHA-1", "abc", 120));
+    givenReplicatedTickets("ALPHA-1");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Aus SALAT übertragen: abc 1h 30m");
+    doThrow(new JiraWorklogNotFoundException("ALPHA-1", "10101", null))
+        .when(worklogClient).update(any(), eq("10101"), any());
+    when(worklogClient.create(any(), any())).thenReturn("10999");
+
+    classUnderTest.sync(config());
+
+    assertThat(stored.getComment()).isEqualTo("Aus SALAT übertragen: abc 2h");
+  }
+
   @Test
   void a_failure_on_one_ticket_leaves_the_others_and_the_remembered_row_alone() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90), new TicketDaySum(DAY, "ALPHA-2", 60));
+    givenBookings(sum("ALPHA-1", "abc", 90), sum("ALPHA-2", "abc", 60));
     givenReplicatedTickets("ALPHA-1", "ALPHA-2");
     var failing = givenStoredWorklog("ALPHA-1", DAY, "10101", 30);
     doThrow(new IllegalStateException("JIRA is unwell"))
@@ -308,7 +404,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void a_worklog_somebody_deleted_in_jira_is_written_again() {
-    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 120));
+    givenBookings(sum("ALPHA-1", "abc", 120));
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
     doThrow(new JiraWorklogNotFoundException("ALPHA-1", "10101", null))
@@ -385,8 +481,8 @@ class JiraWorklogSyncServiceTest {
   void switching_the_restriction_on_lowers_a_mixed_day_to_its_invoiceable_minutes() {
     // #1218: the worklog was written with everything; the next run keeps only what is billed.
     givenBookings(
-        List.of(new TicketDaySum(DAY, "ALPHA-1", 60)),
-        List.of(new TicketDaySum(DAY, "ALPHA-1", 30)));
+        List.of(sum("ALPHA-1", "abc", 60)),
+        List.of(sum("ALPHA-1", "abc", 30)));
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -400,7 +496,7 @@ class JiraWorklogSyncServiceTest {
 
   @Test
   void switching_the_restriction_on_removes_a_worklog_of_nothing_but_non_invoiceable_bookings() {
-    givenBookings(List.of(), List.of(new TicketDaySum(DAY, "ALPHA-1", 90)));
+    givenBookings(List.of(), List.of(sum("ALPHA-1", "abc", 90)));
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -413,8 +509,8 @@ class JiraWorklogSyncServiceTest {
   @Test
   void lifting_the_restriction_writes_the_non_invoiceable_minutes_again() {
     givenBookings(
-        List.of(new TicketDaySum(DAY, "ALPHA-1", 60)),
-        List.of(new TicketDaySum(DAY, "ALPHA-1", 30), new TicketDaySum(DAY, "ALPHA-2", 45)));
+        List.of(sum("ALPHA-1", "abc", 60)),
+        List.of(sum("ALPHA-1", "abc", 30), sum("ALPHA-2", "abc", 45)));
     givenReplicatedTickets("ALPHA-1", "ALPHA-2");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 60);
     when(worklogClient.create(any(), any())).thenReturn("10202");
@@ -434,7 +530,7 @@ class JiraWorklogSyncServiceTest {
   void a_scope_of_nothing_but_non_invoiceable_suborders_is_still_a_scope() {
     // The restriction filters bookings, not suborders: a scope with no invoiceable suborder must
     // lose its worklogs, not be skipped as if it named nothing.
-    givenBookings(List.of(), List.of(new TicketDaySum(DAY, "ALPHA-1", 90)));
+    givenBookings(List.of(), List.of(sum("ALPHA-1", "abc", 90)));
     givenReplicatedTickets("ALPHA-1");
     givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
@@ -513,15 +609,26 @@ class JiraWorklogSyncServiceTest {
 
   private JiraWorklogSync givenStoredWorklog(String issueKey, LocalDate workDate, String worklogId,
                                              int minutes) {
+    return givenStoredWorklog(issueKey, workDate, worklogId, minutes, null);
+  }
+
+  private JiraWorklogSync givenStoredWorklog(String issueKey, LocalDate workDate, String worklogId,
+                                             int minutes, String comment) {
     var row = new JiraWorklogSync();
     row.setCustomerorder(CUSTOMERORDER);
     row.setIssueKey(issueKey);
     row.setWorkDate(workDate);
     row.setWorklogId(worklogId);
     row.setMinutes(minutes);
+    row.setComment(comment);
     when(syncRepository.findInScopeFrom(CUSTOMERORDER_ID, null, SYNC_FROM))
         .thenReturn(List.of(row));
     return row;
+  }
+
+  /** What one person booked on a ticket on {@link #DAY}, after the split (#1326, #1408). */
+  private static TicketDaySum sum(String ticketReference, String sign, long minutes) {
+    return new TicketDaySum(DAY, ticketReference, Map.of(sign, minutes));
   }
 
   private JiraWorklogSync savedRow() {

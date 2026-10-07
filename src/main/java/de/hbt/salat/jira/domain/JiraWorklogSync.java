@@ -19,8 +19,8 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 
 /**
- * One worklog SALAT has written to JIRA (#1007): the sum of a day booked on a ticket, and the id
- * JIRA answered with.
+ * One worklog SALAT has written to JIRA (#1007): the sum of a day booked on a ticket, the comment
+ * naming how it is made up (#1408), and the id JIRA answered with.
  *
  * <p>This is the memory the whole sync rests on. Without it, two things are impossible: telling a
  * worklog SALAT wrote from one somebody entered in JIRA by hand — the second kind is never touched
@@ -72,6 +72,16 @@ public class JiraWorklogSync extends AuditedEntity {
   /** What was last written to JIRA, so an unchanged sum can be recognised without asking JIRA. */
   @Column(name = "minutes", nullable = false)
   private int minutes;
+
+  /**
+   * The comment last written to JIRA, as text (#1408) — the signs and shares the minutes are made
+   * up of. Kept as it was written rather than as a hash, so a changed split at the same sum is
+   * recognised, and so is a changed sign or a changed format of the comment. {@code null} for a
+   * worklog written before the comment named anybody: it differs from any comment written now, so
+   * the next run rewrites it. 2000 characters hold well over a hundred people on one ticket and day.
+   */
+  @Column(name = "comment", length = 2000)
+  private String comment;
 
   @Column(name = "last_synced")
   private LocalDateTime lastSynced;

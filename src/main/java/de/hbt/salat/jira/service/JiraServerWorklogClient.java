@@ -33,7 +33,7 @@ public class JiraServerWorklogClient extends AbstractJiraWorklogClient {
   }
 
   @Override
-  protected Object comment() {
-    return WORKLOG_COMMENT;
+  protected Object comment(String text) {
+    return text;
   }
 }

@@ -35,7 +35,7 @@ public class JiraCloudWorklogClient extends AbstractJiraWorklogClient {
   }
 
   @Override
-  protected Object comment() {
+  protected Object comment(String text) {
     return Map.of(
         "type", "doc",
         "version", 1,
@@ -43,6 +43,6 @@ public class JiraCloudWorklogClient extends AbstractJiraWorklogClient {
             "type", "paragraph",
             "content", List.of(Map.of(
                 "type", "text",
-                "text", WORKLOG_COMMENT)))));
+                "text", text)))));
   }
 }

@@ -4,17 +4,23 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import de.hbt.salat.dailyreport.persistence.BookedTicketReference;
 import de.hbt.salat.jira.command.TicketDaySum;
 
 /**
  * The minutes per day and ticket the worklog sync writes to JIRA (#1007), out of the references of
- * the bookings (#1326).
+ * the bookings (#1326), and per person by sign how they are made up (#1408).
  *
  * <p>A booking with several references has its duration split evenly among them, so JIRA shows as
  * much time as was booked, not that time once per ticket. Minutes that do not divide go to the
  * references in front, one each: 10 minutes on three tickets are 4, 3 and 3. Splitting happens per
  * booking, before anything is summed, so every booking's minutes add up to its duration exactly.
+ *
+ * <p>Each share goes to the person who booked it, before anything is summed. The shares of a person
+ * are therefore exactly what that person's bookings add to the worklog, and the shares of all people
+ * add up to the worklog's time — remainder minutes included.
  */
 public final class TicketDaySums {
 
@@ -26,12 +32,13 @@ public final class TicketDaySums {
     var byBooking = new LinkedHashMap<Long, List<BookedTicketReference>>();
     rows.forEach(row -> byBooking.computeIfAbsent(row.timereportId(), id -> new ArrayList<>()).add(row));
 
-    var sums = new LinkedHashMap<DayAndReference, Long>();
+    var sums = new LinkedHashMap<DayAndReference, Map<String, Long>>();
     byBooking.values().forEach(references -> {
       var shares = shares(references.getFirst().minutes(), references.size());
       for (int i = 0; i < references.size(); i++) {
         var row = references.get(i);
-        sums.merge(new DayAndReference(row.workDate(), row.reference()), shares[i], Long::sum);
+        sums.computeIfAbsent(new DayAndReference(row.workDate(), row.reference()), key -> new TreeMap<>())
+            .merge(row.employeeSign(), shares[i], Long::sum);
       }
     });
     return sums.entrySet().stream()

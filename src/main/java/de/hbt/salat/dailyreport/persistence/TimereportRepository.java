@@ -222,8 +222,12 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
    * Every ticket reference of every booking on the given suborders (#1007, #1326), one row per booking
    * and reference with the duration of the whole booking — {@code TicketDaySums} splits it among the
    * references and sums per day and ticket, the shape a JIRA worklog has: one number per day and ticket,
-   * no person, no task. Ordered by booking and position, so the references of a booking come together
-   * and in their order.
+   * made up of the shares of the people who booked, each named by the sign of the employee (#1408).
+   * No name, no task description — the sign is all the row says about the person. Ordered by booking
+   * and position, so the references of a booking come together and in their order.
+   *
+   * <p>The path to the sign runs over the employee order and the employee contract into the
+   * employee — {@code order} and {@code employee}, both import-legal for dailyreport (→ ADR-0021).
    *
    * <p>The whole period is read on every run rather than only the days that changed since the
    * last one. A booking is soft-deleted through {@code @SQLDelete}, which writes nothing but
@@ -243,7 +247,8 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
              tr.referenceday.refdate,
              index(ref),
              ref,
-             tr.duration)
+             tr.duration,
+             tr.employeeorder.employeecontract.employee.sign)
       from Timereport tr join tr.ticketReferences ref
       where tr.deleted = false
         and tr.employeeorder.suborder.id in (:suborderIds)

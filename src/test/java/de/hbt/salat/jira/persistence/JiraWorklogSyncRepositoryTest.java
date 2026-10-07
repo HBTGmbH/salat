@@ -82,6 +82,20 @@ class JiraWorklogSyncRepositoryTest {
         .extracting(JiraWorklogSync::getIssueKey).containsExactly("ALPHA-1");
   }
 
+  @Test
+  void keeps_the_comment_last_written_with_its_umlaut() {
+    // #1408: the comment is compared as text on every run, so it has to come back exactly as written.
+    var row = syncRepository.findInScopeFrom(alpha.getId(), null, DAY).getFirst();
+    row.setComment("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
+    syncRepository.save(row);
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(syncRepository.findInScopeFrom(alpha.getId(), null, DAY))
+        .extracting(JiraWorklogSync::getComment)
+        .containsExactly("Aus SALAT übertragen: abc 4h, xyz 2h 30m");
+  }
+
   private void save(Customerorder customerorder, Suborder suborder, String issueKey) {
     var row = new JiraWorklogSync();
     row.setCustomerorder(customerorder);

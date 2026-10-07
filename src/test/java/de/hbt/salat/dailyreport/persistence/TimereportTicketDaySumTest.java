@@ -8,6 +8,7 @@ import static de.hbt.salat.testutils.ReferencedayTestUtils.referenceday;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -31,9 +32,10 @@ import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
 
 /**
- * The sums the JIRA worklog sync is built from (#1007): per day and ticket reference, over all
- * people, and nothing else — a worklog in JIRA says how much, never who and never what. A booking
- * with several references has its duration split evenly among them (#1326).
+ * The sums the JIRA worklog sync is built from (#1007): per day and ticket reference, made up of
+ * the shares of the people who booked, each named by sign (#1408) — and nothing else, no name and
+ * no task description. A booking with several references has its duration split evenly among them
+ * (#1326).
  */
 @DataJpaTest
 @Import(AuthorizedUserAuditorAware.class)
@@ -69,7 +71,25 @@ public class TimereportTicketDaySumTest {
     book(suborder, employeecontract("aaa"), DAY, 2, 30, "ALPHA-1");
     book(suborder, employeecontract("bbb"), DAY, 1, 0, "ALPHA-1");
 
-    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", 210));
+    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 150L, "bbb", 60L)));
+    assertThat(sums().getFirst().minutes()).isEqualTo(210);
+  }
+
+  @Test
+  public void adds_up_the_bookings_of_one_person_on_one_ticket_that_day() {
+    var contract = employeecontract("aaa");
+    book(suborder, contract, DAY, 1, 0, "ALPHA-1");
+    book(suborder, contract, DAY, 0, 45, "ALPHA-1");
+
+    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 105L)));
+  }
+
+  @Test
+  public void names_the_people_by_sign_in_order() {
+    book(suborder, employeecontract("xyz"), DAY, 1, 0, "ALPHA-1");
+    book(suborder, employeecontract("abc"), DAY, 1, 0, "ALPHA-1");
+
+    assertThat(sums().getFirst().minutesBySign().keySet()).containsExactly("abc", "xyz");
   }
 
   @Test
@@ -79,8 +99,8 @@ public class TimereportTicketDaySumTest {
     book(suborder, contract, DAY.plusDays(1), 2, 0, "ALPHA-1");
 
     assertThat(sums()).containsExactlyInAnyOrder(
-        new TicketDaySum(DAY, "ALPHA-1", 60),
-        new TicketDaySum(DAY.plusDays(1), "ALPHA-1", 120));
+        new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L)),
+        new TicketDaySum(DAY.plusDays(1), "ALPHA-1", Map.of("aaa", 120L)));
   }
 
   @Test
@@ -90,8 +110,8 @@ public class TimereportTicketDaySumTest {
     book(suborder, contract, DAY, 2, 0, "ALPHA-2");
 
     assertThat(sums()).containsExactlyInAnyOrder(
-        new TicketDaySum(DAY, "ALPHA-1", 60),
-        new TicketDaySum(DAY, "ALPHA-2", 120));
+        new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L)),
+        new TicketDaySum(DAY, "ALPHA-2", Map.of("aaa", 120L)));
   }
 
   /** 10 minutes on three tickets are 4, 3 and 3: JIRA shows the time booked, not three times it. */
@@ -100,9 +120,9 @@ public class TimereportTicketDaySumTest {
     book(suborder, employeecontract("aaa"), DAY, 0, 10, "ALPHA-1", "ALPHA-2", "ALPHA-3");
 
     assertThat(sums()).containsExactlyInAnyOrder(
-        new TicketDaySum(DAY, "ALPHA-1", 4),
-        new TicketDaySum(DAY, "ALPHA-2", 3),
-        new TicketDaySum(DAY, "ALPHA-3", 3));
+        new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 4L)),
+        new TicketDaySum(DAY, "ALPHA-2", Map.of("aaa", 3L)),
+        new TicketDaySum(DAY, "ALPHA-3", Map.of("aaa", 3L)));
   }
 
   /** The split happens per booking, before summing - the position counts within each booking. */
@@ -113,8 +133,30 @@ public class TimereportTicketDaySumTest {
     book(suborder, employeecontract("ccc"), DAY, 1, 0, "ALPHA-2");
 
     assertThat(sums()).containsExactlyInAnyOrder(
-        new TicketDaySum(DAY, "ALPHA-1", 2 + 1),
-        new TicketDaySum(DAY, "ALPHA-2", 1 + 2 + 60));
+        new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 2L, "bbb", 1L)),
+        new TicketDaySum(DAY, "ALPHA-2", Map.of("aaa", 1L, "bbb", 2L, "ccc", 60L)));
+  }
+
+  /**
+   * #1408: each share goes to the person who booked it, remainder minutes included, so the shares
+   * in the comment always add up to the time of the worklog. A share of zero stays in the sum — it
+   * is the comment that leaves it out.
+   */
+  @Test
+  public void the_shares_of_the_people_add_up_to_the_time_of_the_ticket_remainders_included() {
+    book(suborder, employeecontract("aaa"), DAY, 0, 7, "ALPHA-1", "ALPHA-2", "ALPHA-3");
+    book(suborder, employeecontract("bbb"), DAY, 0, 1, "ALPHA-2", "ALPHA-1");
+    book(suborder, employeecontract("ccc"), DAY, 0, 50, "ALPHA-1");
+
+    var sums = sums();
+
+    assertThat(sums).containsExactlyInAnyOrder(
+        new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 3L, "bbb", 0L, "ccc", 50L)),
+        new TicketDaySum(DAY, "ALPHA-2", Map.of("aaa", 2L, "bbb", 1L)),
+        new TicketDaySum(DAY, "ALPHA-3", Map.of("aaa", 2L)));
+    assertThat(sums).allSatisfy(sum -> assertThat(sum.minutes())
+        .isEqualTo(sum.minutesBySign().values().stream().mapToLong(Long::longValue).sum()));
+    assertThat(sums.stream().mapToLong(TicketDaySum::minutes).sum()).isEqualTo(7 + 1 + 50);
   }
 
   @Test
@@ -136,7 +178,7 @@ public class TimereportTicketDaySumTest {
     entityManager.clear();
 
     assertThat(kept.getId()).isNotNull();
-    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", 60));
+    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L)));
   }
 
   @Test
@@ -144,7 +186,7 @@ public class TimereportTicketDaySumTest {
     book(suborder, employeecontract("aaa"), DAY, 1, 0, "ALPHA-1");
     book(otherSuborder, employeecontract("bbb"), DAY, 5, 0, "ALPHA-9");
 
-    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", 60));
+    assertThat(sums()).containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L)));
   }
 
   @Test
@@ -154,7 +196,7 @@ public class TimereportTicketDaySumTest {
     book(suborder, contract, DAY.minusDays(10), 4, 0, "ALPHA-1");
 
     assertThat(sums(List.of(suborder.getId()), DAY.minusDays(1), DAY.plusDays(1), false))
-        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", 60));
+        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L)));
   }
 
   @Test
@@ -164,7 +206,7 @@ public class TimereportTicketDaySumTest {
     book(internal, employeecontract("bbb"), DAY, 0, 30, "ALPHA-1");
 
     assertThat(sums(List.of(suborder.getId(), internal.getId()), DAY.minusDays(1), DAY.plusDays(1), false))
-        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", 90));
+        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L, "bbb", 30L)));
   }
 
   @Test
@@ -176,7 +218,7 @@ public class TimereportTicketDaySumTest {
     book(internal, employeecontract("ccc"), DAY, 2, 0, "ALPHA-2");
 
     assertThat(sums(List.of(suborder.getId(), internal.getId()), DAY.minusDays(1), DAY.plusDays(1), true))
-        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", 60));
+        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", Map.of("aaa", 60L)));
   }
 
   private List<TicketDaySum> sums() {
