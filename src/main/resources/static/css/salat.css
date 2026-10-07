@@ -1666,3 +1666,12 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 .save-fav-group .mb-3 {
   margin-bottom: 0 !important;
 }
+
+/* A full screen dialog takes the height of the visible screen (#1414). Bootstrap sizes it to the layout
+   viewport, and where anything on the page behind is wider than the phone, that viewport grows beyond
+   the screen and takes the footer with "Fertig" out of sight. dvh follows the visible area. */
+@media (max-width: 575.98px) {
+  .modal-fullscreen-sm-down {
+    height: 100dvh;
+  }
+}
