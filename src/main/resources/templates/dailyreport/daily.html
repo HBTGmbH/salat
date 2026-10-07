@@ -405,7 +405,7 @@
             </li>
             <li><hr class="dropdown-divider"/></li>
             <li>
-              <button type="button" th:replace="~{:: favouritesDialogOpener('dropdown-item')}"></button>
+              <button type="button" th:replace="~{:: favouritesDialogOpener('dropdown-item link-primary')}"></button>
             </li>
           </ul>
         </div>
@@ -1107,7 +1107,7 @@
   <div class="card-header">
     <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
     <div class="card-actions">
-      <button type="button" th:replace="~{:: favouritesDialogOpener('btn btn-sm btn-ghost-secondary')}"></button>
+      <button type="button" th:replace="~{:: favouritesDialogOpener('btn btn-sm btn-link px-0')}"></button>
     </div>
   </div>
   <div class="list-group list-group-flush">
@@ -1125,7 +1125,7 @@
 <button th:fragment="favouritesDialogOpener(classes)" type="button" th:class="${classes}"
         data-bs-toggle="modal" data-bs-target="#favoritesDialog"
         th:attr="hx-get=@{/favorites/dialog}" hx-target="#favoritesDialogBody">
-  <i class="ti ti-list-search me-1"></i><span th:text="#{main.favorites.all.link(${favoriteCount})}">Alle Favoriten (12) …</span>
+  <span th:text="#{main.favorites.all.link(${favoriteCount})}">Alle Favoriten (12) …</span>
 </button>
 
 <!--/*
