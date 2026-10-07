@@ -16,8 +16,13 @@ import java.util.stream.Collectors;
 public record JiraWorklogEntry(LocalDate workDate, int minutes, String comment) {
 
   /**
-   * The text every comment SALAT writes starts with, followed by how the time is made up: per person
-   * the sign and the share, sorted by sign (#1408) — {@code Aus SALAT übertragen: abc 4h, xyz 2h 30m}.
+   * The first line of every comment SALAT writes, followed by how the time is made up: one line per
+   * person with the sign and the share, sorted by sign (#1408), the lines separated by {@code \n}.
+   * <pre>
+   * Von HBT protokollierte Stunden übertragen:
+   * abc 4h
+   * xyz 2h 30m
+   * </pre>
    * A constant, not a message from the bundles: the reader is a foreign system with no locale of ours.
    *
    * <p>The sign is allowed where a name is not. It is how people are known in the projects SALAT
@@ -26,7 +31,10 @@ public record JiraWorklogEntry(LocalDate workDate, int minutes, String comment) 
    * went to the people responsible for the project, who had to look the split up in SALAT. The name,
    * the task description and everything else a booking says about who and what stay in SALAT.
    */
-  static final String WORKLOG_COMMENT = "Aus SALAT übertragen";
+  static final String WORKLOG_COMMENT = "Von HBT protokollierte Stunden übertragen:";
+
+  /** Between the lines of a comment; the Cloud client turns it into a hard break of its document. */
+  static final String LINE_BREAK = "\n";
 
   /**
    * The worklog of one day out of the shares per sign: the time is their sum, the comment names
@@ -40,11 +48,10 @@ public record JiraWorklogEntry(LocalDate workDate, int minutes, String comment) 
   }
 
   private static String commentOf(Map<String, Long> minutesBySign) {
-    var shares = new TreeMap<>(minutesBySign).entrySet().stream()
+    return new TreeMap<>(minutesBySign).entrySet().stream()
         .filter(share -> share.getValue() > 0)
         .map(share -> share.getKey() + " " + duration(share.getValue()))
-        .collect(Collectors.joining(", "));
-    return shares.isEmpty() ? WORKLOG_COMMENT : WORKLOG_COMMENT + ": " + shares;
+        .collect(Collectors.joining(LINE_BREAK, WORKLOG_COMMENT + LINE_BREAK, ""));
   }
 
   /** {@code 4h}, {@code 2h 30m} or {@code 45m} — the notation JIRA itself uses for logged time. */

@@ -54,7 +54,7 @@ class JiraServerWorklogClientTest {
         .andExpect(queryParam("adjustEstimate", "leave"))
         .andExpect(queryParam("notifyUsers", "false"))
         .andExpect(jsonPath("$.timeSpentSeconds").value(5400))
-        .andExpect(jsonPath("$.comment").value("Aus SALAT übertragen: abc 1h, xyz 30m"))
+        .andExpect(jsonPath("$.comment").value("Von HBT protokollierte Stunden übertragen:\nabc 1h\nxyz 30m"))
         .andRespond(withSuccess("""
             {"id": "10101", "self": "https://mock-jira.com/rest/api/2/issue/10000/worklog/10101"}""",
             MediaType.APPLICATION_JSON));
