@@ -60,6 +60,7 @@ class SuborderControllerTest {
 
   private static final long CUSTOMER_ID = 3L;
   private static final long ORDER_ID = 7L;
+  private static final long CUSTOMER_WITHOUT_ORDERS = 4L;
   /** A top-level suborder of the order that carries the order's id as its own. */
   private static final long TWIN = ORDER_ID;
   private static final LocalDate ORDER_FROM = LocalDate.parse("2026-01-01");
@@ -153,6 +154,25 @@ class SuborderControllerTest {
 
     assertThat(form.getParentId()).isNull();
     assertThat(form.getValidFrom()).isEqualTo("2026-01-01");
+  }
+
+  /** A customer without a single order (#1401): the form opens without an order and without a prefill. */
+  @Test
+  void a_new_form_for_a_customer_without_orders_opens_without_an_order() throws Exception {
+    var result = mockMvc.perform(get("/orders/suborders/create")
+        .param("fCustomerId", String.valueOf(CUSTOMER_WITHOUT_ORDERS))).andReturn();
+
+    assertThat(form(result).getCustomerorderId()).isNull();
+    assertThat((List<?>) result.getModelAndView().getModel().get("parentSuborders")).isEmpty();
+  }
+
+  @Test
+  void choosing_a_customer_without_orders_keeps_the_form_open_without_an_order() throws Exception {
+    var result = mockMvc.perform(post("/orders/suborders/change-customer")
+        .param("customerId", String.valueOf(CUSTOMER_WITHOUT_ORDERS)).param("customerorderId", "7")).andReturn();
+
+    assertThat(form(result).getCustomerorderId()).isNull();
+    assertThat((List<?>) result.getModelAndView().getModel().get("parentSuborders")).isEmpty();
   }
 
   @Test
