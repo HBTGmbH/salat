@@ -782,9 +782,10 @@ public class TimereportService {
 
   /**
    * Answers the jira module's question for the booked minutes per day and ticket (#1007), a booking
-   * with several references split among them (#1326). No
-   * per-person filter applies here and none is missing: the caller is the replication, not a user,
-   * and what leaves is a sum over everybody with no person in it. Which suborders may be asked
+   * with several references split among them (#1326), and per person by sign how they are made up
+   * (#1408). No per-person filter applies here and none is missing: the caller is the replication,
+   * not a user, and what leaves is per day and ticket the sign of each person with a share of the
+   * time — no name, no task description, nothing else of the booking. Which suborders may be asked
    * about is decided by the replication config, which only a manager can write.
    */
   @EventListener

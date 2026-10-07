@@ -6188,3 +6188,24 @@ databaseChangeLog:
             sql: >-
               ALTER TABLE workingday DROP COLUMN Starttimehour, DROP COLUMN Starttimeminute,
               DROP COLUMN breakhours, DROP COLUMN breakminutes
+
+  - changeSet:
+      id: 170
+      author: kr
+      comment: Zuletzt geschriebenen Kommentar des JIRA-Worklogs merken (#1408)
+      # Der Kommentar nennt je Person Kuerzel und Anteil. Der Abgleich vergleicht Minuten und Kommentar,
+      # damit eine geaenderte Aufteilung bei gleicher Summe den Worklog neu schreibt. Bestehende Zeilen
+      # bleiben NULL und werden beim ersten Lauf nach dem Release neu geschrieben.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_worklog_sync
+                columnName: comment
+      changes:
+        - addColumn:
+            tableName: jira_worklog_sync
+            columns:
+              - column:
+                  name: comment
+                  type: varchar(2000)

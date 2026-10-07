@@ -8,8 +8,8 @@ import lombok.Data;
 import de.hbt.salat.common.command.CommandEvent;
 
 /**
- * Asks for the booked minutes per day and ticket reference, for a set of suborders and a period
- * (#1007). The jira module needs them to write the worklogs; the bookings live in dailyreport,
+ * Asks for the booked minutes per day and ticket reference, per person by sign (#1408), for a set
+ * of suborders and a period (#1007). The jira module needs them to write the worklogs; the bookings live in dailyreport,
  * which the import direction does not allow jira to reach — so the answer comes back through a
  * command event, answered by a listener in {@code TimereportService}.
  *

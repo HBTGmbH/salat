@@ -15,6 +15,7 @@ import static de.hbt.salat.jira.domain.JiraApiFlavor.SERVER;
 
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -53,12 +54,12 @@ class JiraServerWorklogClientTest {
         .andExpect(queryParam("adjustEstimate", "leave"))
         .andExpect(queryParam("notifyUsers", "false"))
         .andExpect(jsonPath("$.timeSpentSeconds").value(5400))
-        .andExpect(jsonPath("$.comment").value("Aus SALAT uebertragen"))
+        .andExpect(jsonPath("$.comment").value("Aus SALAT übertragen: abc 1h, xyz 30m"))
         .andRespond(withSuccess("""
             {"id": "10101", "self": "https://mock-jira.com/rest/api/2/issue/10000/worklog/10101"}""",
             MediaType.APPLICATION_JSON));
 
-    var worklogId = client.create(target(), new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 90));
+    var worklogId = client.create(target(), entry(LocalDate.of(2026, 1, 15), 90));
 
     assertThat(worklogId).isEqualTo("10101");
     jira.verify();
@@ -73,7 +74,7 @@ class JiraServerWorklogClientTest {
         .andRespond(withSuccess("""
             {"id": "10101"}""", MediaType.APPLICATION_JSON));
 
-    client.create(target(), new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 90));
+    client.create(target(), entry(LocalDate.of(2026, 1, 15), 90));
 
     jira.verify();
   }
@@ -85,7 +86,7 @@ class JiraServerWorklogClientTest {
         .andRespond(withSuccess("""
             {"id": "10101"}""", MediaType.APPLICATION_JSON));
 
-    client.create(target(), new JiraWorklogEntry(LocalDate.of(2026, 7, 15), 90));
+    client.create(target(), entry(LocalDate.of(2026, 7, 15), 90));
 
     jira.verify();
   }
@@ -97,7 +98,7 @@ class JiraServerWorklogClientTest {
     jira.expect(requestTo(startsWith(WORKLOGS_URL + "?")))
         .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
-    assertThatThrownBy(() -> client.create(target(), new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 90)))
+    assertThatThrownBy(() -> client.create(target(), entry(LocalDate.of(2026, 1, 15), 90)))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -111,7 +112,7 @@ class JiraServerWorklogClientTest {
         .andRespond(withSuccess("""
             {"id": "10101"}""", MediaType.APPLICATION_JSON));
 
-    client.update(target(), "10101", new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 120));
+    client.update(target(), "10101", entry(LocalDate.of(2026, 1, 15), 120));
 
     jira.verify();
   }
@@ -122,7 +123,7 @@ class JiraServerWorklogClientTest {
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
     assertThatThrownBy(() -> client.update(target(), "10101",
-        new JiraWorklogEntry(LocalDate.of(2026, 1, 15), 120)))
+        entry(LocalDate.of(2026, 1, 15), 120)))
         .isInstanceOf(JiraWorklogNotFoundException.class);
   }
 
@@ -148,7 +149,7 @@ class JiraServerWorklogClientTest {
             {"id": "10101"}""", MediaType.APPLICATION_JSON));
 
     client.create(new JiraWorklogTarget("https://mock-jira.com", JiraCredentials.personalAccessToken("mockToken"),
-        "MOCK-1"), new JiraWorklogEntry(LocalDate.of(2026, 3, 2), 90));
+        "MOCK-1"), entry(LocalDate.of(2026, 3, 2), 90));
 
     jira.verify();
   }
@@ -169,5 +170,10 @@ class JiraServerWorklogClientTest {
   private static String basicAuth(String username, String password) {
     return "Basic " + Base64.getEncoder()
         .encodeToString((username + ":" + password).getBytes(UTF_8));
+  }
+
+  /** A worklog of two people, {@code abc} with two thirds of the time and {@code xyz} with the rest. */
+  private static JiraWorklogEntry entry(LocalDate workDate, int minutes) {
+    return JiraWorklogEntry.of(workDate, Map.of("abc", minutes * 2L / 3, "xyz", minutes - minutes * 2L / 3));
   }
 }

@@ -15,17 +15,11 @@ import de.hbt.salat.common.util.ClockProvider;
 
 /**
  * Everything the two worklog clients share (#1007). They differ in exactly two things: the API
- * version in the path, and how a comment is shaped — Server takes plain text, Cloud takes ADF.
+ * version in the path, and how a comment is shaped — Server takes plain text, Cloud takes ADF. The
+ * text of the comment comes with the entry (#1408).
  */
 @Slf4j
 abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implements JiraWorklogClient {
-
-  /**
-   * The comment every worklog SALAT writes carries. A constant, not a message from the bundles: the
-   * reader is a foreign system with no locale of ours, and above all it must never carry a name or
-   * a task description — everything a booking says about who and what stays in SALAT.
-   */
-  static final String WORKLOG_COMMENT = "Aus SALAT uebertragen";
 
   /**
    * JIRA insists on this shape for {@code started} — note the offset without a colon, which
@@ -48,8 +42,11 @@ abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implemen
   /** {@code rest/api/2} or {@code rest/api/3}, whichever flavour this client speaks. */
   protected abstract String apiPath();
 
-  /** Plain text for Server, an ADF document for Cloud. */
-  protected abstract Object comment();
+  /**
+   * The comment of the worklog (#1408), see {@link JiraWorklogEntry#WORKLOG_COMMENT}: plain text for
+   * Server, an ADF document for Cloud.
+   */
+  protected abstract Object comment(String text);
 
   @Override
   public String create(JiraWorklogTarget target, JiraWorklogEntry entry) {
@@ -124,7 +121,7 @@ abstract class AbstractJiraWorklogClient extends AbstractJiraRestClient implemen
     return Map.of(
         "started", started(entry.workDate()),
         "timeSpentSeconds", entry.minutes() * 60L,
-        "comment", comment());
+        "comment", comment(entry.comment()));
   }
 
   /**

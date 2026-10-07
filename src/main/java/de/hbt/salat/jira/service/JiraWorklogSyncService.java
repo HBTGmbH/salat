@@ -28,7 +28,8 @@ import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
 
 /**
  * Writes the hours booked in SALAT back into JIRA as worklogs (#1007): one worklog per day and
- * ticket, carrying the sum over everybody who booked on that ticket that day.
+ * ticket, carrying the sum over everybody who booked on that ticket that day, and a comment naming
+ * each of them by sign with their share (#1408).
  *
  * <p>Deliberately not {@code @Transactional}. Every step talks to JIRA over HTTP, and a transaction
  * around it would hold a database connection for the whole of a foreign system's response time —
@@ -37,11 +38,13 @@ import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
  * there would make SALAT forget a worklog it had just created, and the next run would write a second
  * one next to it.
  *
- * <p>Every run compares the full sums of the period against what was last written, rather than
- * tracking which days changed. A booking is soft-deleted, and the delete statement moves no
- * timestamp (see {@code TimereportRepository.getTicketDaySums}) — a deleted booking is recognisable
- * by nothing at all, and exactly its disappearance has to lower the sum. Comparing sums makes that
- * a non-issue, and a period without changes still produces no writing call whatsoever.
+ * <p>Every run compares the full sums of the period and their comments against what was last
+ * written, rather than tracking which days changed. A booking is soft-deleted, and the delete
+ * statement moves no timestamp (see {@code TimereportRepository.getBookedTicketReferences}) — a
+ * deleted booking is recognisable by nothing at all, and exactly its disappearance has to lower the
+ * sum. Comparing sums makes that a non-issue, and a period without changes still produces no
+ * writing call whatsoever. The comment is compared as well (#1408): a split that changes at the same
+ * sum — one person's booking moved to another — rewrites the worklog just like a changed sum.
  */
 @Slf4j
 @Service
@@ -97,7 +100,7 @@ public class JiraWorklogSyncService {
         cfg.getName(), scopeSign, from, until, wanted.size(), stored.size());
 
     var outcome = new Outcome();
-    wanted.forEach((key, minutes) -> writeOne(cfg, key, minutes, stored.get(key), outcome));
+    wanted.forEach((key, entry) -> writeOne(cfg, key, entry, stored.get(key), outcome));
     var unwanted = new LinkedHashMap<>(stored);
     unwanted.keySet().removeAll(wanted.keySet());
     var replicated = replicatedKeys(cfg, unwanted.keySet());
@@ -150,8 +153,8 @@ public class JiraWorklogSyncService {
   }
 
   /**
-   * What JIRA should hold after this run: the sums, reduced to the references that actually name a
-   * replicated ticket of this scope.
+   * What JIRA should hold after this run: the sums with their shares per sign, reduced to the
+   * references that actually name a replicated ticket of this scope.
    *
    * <p>The reference is free text (#982), so a typo is normal and must not turn into a write
    * against an issue that does not exist. Skipped references are counted and logged once, not per
@@ -159,15 +162,15 @@ public class JiraWorklogSyncService {
    *
    * <p>The key of the map is the key of the <em>ticket</em>, not the text that was typed: a
    * reference differing only in case names the same issue, and the two would otherwise compete for
-   * the same worklog. Their minutes are added up instead.
+   * the same worklog. Their minutes are added up instead, and so are the shares of each sign.
    *
    * <p>A sum of zero is left out, so a day that only carries zero-length bookings is treated like
    * one without bookings — JIRA rejects a worklog of no time at all.
    */
-  private Map<WorklogKey, Long> wantedWorklogs(JiraReplicationConfig cfg, String scopeSign,
-                                               List<TicketDaySum> sums) {
+  private Map<WorklogKey, JiraWorklogEntry> wantedWorklogs(JiraReplicationConfig cfg, String scopeSign,
+                                                           List<TicketDaySum> sums) {
     var ticketKeys = ticketKeysByReference(cfg, sums);
-    var wanted = new TreeMap<WorklogKey, Long>(
+    var sharesByWorklog = new TreeMap<WorklogKey, Map<String, Long>>(
         comparing(WorklogKey::issueKey).thenComparing(WorklogKey::workDate));
     var unknown = new ArrayList<String>();
     for (var sum : sums) {
@@ -176,9 +179,16 @@ public class JiraWorklogSyncService {
         if (!unknown.contains(sum.ticketReference())) unknown.add(sum.ticketReference());
         continue;
       }
-      wanted.merge(new WorklogKey(ticketKey, sum.workDate()), sum.minutes(), Long::sum);
+      var shares = sharesByWorklog.computeIfAbsent(new WorklogKey(ticketKey, sum.workDate()), key -> new TreeMap<>());
+      sum.minutesBySign().forEach((sign, minutes) -> shares.merge(sign, minutes, Long::sum));
     }
-    wanted.values().removeIf(minutes -> minutes <= 0);
+    var wanted = new LinkedHashMap<WorklogKey, JiraWorklogEntry>();
+    sharesByWorklog.forEach((key, shares) -> {
+      var entry = JiraWorklogEntry.of(key.workDate(), shares);
+      if (entry.minutes() > 0) {
+        wanted.put(key, entry);
+      }
+    });
     if (!unknown.isEmpty()) {
       log.info("Worklog sync of JIRA replication {} skipped {} ticket reference(s) without a "
               + "replicated ticket in scope {}: {}",
@@ -213,22 +223,21 @@ public class JiraWorklogSyncService {
   }
 
   /**
-   * One day and ticket: created, overwritten, or left alone because the sum has not moved. A
-   * failure is logged and the run carries on with the next one — the remembered row stays as it
-   * was, so the next run tries again.
+   * One day and ticket: created, overwritten, or left alone because neither the sum nor its comment
+   * has moved. A failure is logged and the run carries on with the next one — the remembered row
+   * stays as it was, so the next run tries again.
    */
-  private void writeOne(JiraReplicationConfig cfg, WorklogKey key, long minutes, JiraWorklogSync stored,
+  private void writeOne(JiraReplicationConfig cfg, WorklogKey key, JiraWorklogEntry entry, JiraWorklogSync stored,
                         Outcome outcome) {
-    if (stored != null && stored.getMinutes() == minutes) {
+    if (isWrittenAlready(entry, stored)) {
       outcome.unchanged++;
       return;
     }
     var client = worklogClients.forFlavor(cfg.getApiFlavor());
     var target = targetFor(cfg, key.issueKey());
-    var entry = new JiraWorklogEntry(key.workDate(), Math.toIntExact(minutes));
     try {
       if (stored == null) {
-        remember(cfg, key, client.create(target, entry), minutes);
+        remember(cfg, key, client.create(target, entry), entry);
         outcome.created++;
         return;
       }
@@ -241,7 +250,8 @@ public class JiraWorklogSyncService {
             stored.getWorklogId(), key.issueKey());
         stored.setWorklogId(client.create(target, entry));
       }
-      stored.setMinutes(Math.toIntExact(minutes));
+      stored.setMinutes(entry.minutes());
+      stored.setComment(entry.comment());
       stored.setLastSynced(DateTimeUtils.now());
       syncRepository.save(stored);
       outcome.updated++;
@@ -250,6 +260,16 @@ public class JiraWorklogSyncService {
       log.error("Worklog sync of JIRA replication {} failed for issue {} on {}: {}",
           cfg.getName(), key.issueKey(), key.workDate(), ex.getMessage(), ex);
     }
+  }
+
+  /**
+   * Whether JIRA holds this worklog as it is wanted now: same minutes, same comment (#1408). A row
+   * from before the comment was remembered has none, so its worklog is written once more.
+   */
+  private static boolean isWrittenAlready(JiraWorklogEntry entry, JiraWorklogSync stored) {
+    return stored != null
+        && stored.getMinutes() == entry.minutes()
+        && entry.comment().equals(stored.getComment());
   }
 
   /**
@@ -277,14 +297,15 @@ public class JiraWorklogSyncService {
     }
   }
 
-  private void remember(JiraReplicationConfig cfg, WorklogKey key, String worklogId, long minutes) {
+  private void remember(JiraReplicationConfig cfg, WorklogKey key, String worklogId, JiraWorklogEntry entry) {
     var row = new JiraWorklogSync();
     row.setCustomerorder(cfg.getCustomerorder());
     row.setSuborder(cfg.getSuborder());
     row.setIssueKey(key.issueKey());
     row.setWorkDate(key.workDate());
     row.setWorklogId(worklogId);
-    row.setMinutes(Math.toIntExact(minutes));
+    row.setMinutes(entry.minutes());
+    row.setComment(entry.comment());
     row.setLastSynced(DateTimeUtils.now());
     syncRepository.save(row);
   }
