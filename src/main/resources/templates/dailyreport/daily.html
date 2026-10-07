@@ -404,8 +404,8 @@
               </div>
             </li>
             <li><hr class="dropdown-divider"/></li>
-            <li>
-              <button type="button" th:replace="~{:: favouritesDialogOpener('dropdown-item link-primary')}"></button>
+            <li class="px-3 py-2">
+              <a th:replace="~{:: favouritesDialogOpener}"></a>
             </li>
           </ul>
         </div>
@@ -1107,7 +1107,7 @@
   <div class="card-header">
     <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
     <div class="card-actions">
-      <button type="button" th:replace="~{:: favouritesDialogOpener('btn btn-sm btn-link px-0')}"></button>
+      <a th:replace="~{:: favouritesDialogOpener}"></a>
     </div>
   </div>
   <div class="list-group list-group-flush">
@@ -1122,11 +1122,9 @@
   Opens the dialog with all favourites (#1414) and names how many there are: loads its body into the
   shell that the page includes once (favorites/dialog :: modal).
 */-->
-<button th:fragment="favouritesDialogOpener(classes)" type="button" th:class="${classes}"
-        data-bs-toggle="modal" data-bs-target="#favoritesDialog"
-        th:attr="hx-get=@{/favorites/dialog}" hx-target="#favoritesDialogBody">
-  <span th:text="#{main.favorites.all.link(${favoriteCount})}">Alle Favoriten (12) …</span>
-</button>
+<a th:fragment="favouritesDialogOpener" href="#favoritesDialog" data-bs-toggle="modal"
+   th:attr="hx-get=@{/favorites/dialog}" hx-target="#favoritesDialogBody"
+   th:text="#{main.favorites.all.link(${favoriteCount})}">Alle Favoriten (12) …</a>
 
 <!--/*
   The form a favourite picked in the dialog is applied with (#1414). Its buttons stand in the dialog and
