@@ -42,6 +42,7 @@ import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.MatrixService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
+import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
@@ -65,6 +66,7 @@ public class DailyController {
     private final WorkingdayService workingdayService;
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
+    private final AuthorizedEmployee authorizedEmployee;
     private final FavoriteService favoriteService;
     private final EmployeeorderService employeeorderService;
     private final MessageSourceAccessor messages;
@@ -539,7 +541,9 @@ public class DailyController {
      * make the other disappear from the page.
      */
     private void addBookingOffers(Model model, long ecId, LocalDate date) {
-        model.addAttribute("favorites", buildFavoriteViews(model));
+        // The favourites are the login's own (#1369). On somebody else's day they would offer the
+        // login's bookings, not that person's - shown only on the own day (#1414).
+        model.addAttribute("favorites", isLoginsOwnContract(ecId) ? buildFavoriteViews(model) : List.of());
         model.addAttribute("previousBookings", buildPreviousBookingViews(ecId, date));
     }
 
@@ -574,6 +578,12 @@ public class DailyController {
 
     private static FavoriteView buildFavoriteView(FavoriteEntry f) {
         return new FavoriteView(f.id(), f.suborderLabel(), f.comment(), f.ticketReferences(), f.duration());
+    }
+
+    private boolean isLoginsOwnContract(long ecId) {
+        return employeecontractService.getEmployeeIdOfEmployeecontract(ecId)
+            .filter(employeeId -> employeeId.equals(authorizedEmployee.getEmployeeId()))
+            .isPresent();
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {
