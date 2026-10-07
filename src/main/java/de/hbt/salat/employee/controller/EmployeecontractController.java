@@ -1,6 +1,7 @@
 package de.hbt.salat.employee.controller;
 
 import static de.hbt.salat.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
+import static de.hbt.salat.common.exception.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static de.hbt.salat.common.util.DateUtils.format;
 import static de.hbt.salat.common.util.DurationUtils.validateDuration;
 import static de.hbt.salat.employee.controller.EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_FILTER;
@@ -29,6 +30,7 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
@@ -80,14 +82,16 @@ public class EmployeecontractController {
     }
 
     @GetMapping("/view")
-    public String view(@RequestParam Long id, Model model) {
+    public String view(@RequestParam Long id, Model model, RedirectAttributes redirectAttributes) {
         Employeecontract ec;
         try {
             ec = employeecontractService.getEmployeecontractForView(id);
         } catch (AuthorizationException e) {
             throw new ErrorResponseException(HttpStatus.FORBIDDEN);
         }
-        if (ec == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
+        if (ec == null) {
+            return redirectToListBecauseContractNotFound(redirectAttributes);
+        }
         List<Overtime> overtimes = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(id);
         Duration totalOvertime = overtimes.stream()
                 .map(Overtime::getTimeMinutes)
@@ -119,8 +123,11 @@ public class EmployeecontractController {
 
     @Authorized(requiresManager = true)
     @GetMapping("/edit")
-    public String editForm(@RequestParam Long id, Model model) {
+    public String editForm(@RequestParam Long id, Model model, RedirectAttributes redirectAttributes) {
         Employeecontract ec = employeecontractService.getEmployeecontractById(id);
+        if (ec == null) {
+            return redirectToListBecauseContractNotFound(redirectAttributes);
+        }
         var form = toForm(ec);
         model.addAttribute("employeecontractForm", form);
 
@@ -141,6 +148,9 @@ public class EmployeecontractController {
                         BindingResult bindingResult,
                         Model model,
                         RedirectAttributes redirectAttributes) {
+        if (isUpdateOfMissingContract(form)) {
+            return redirectToListBecauseContractNotFound(redirectAttributes);
+        }
         validateContractForm(form, bindingResult);
 
         boolean isCreate = form.getId() == null;
@@ -218,6 +228,10 @@ public class EmployeecontractController {
                               @ModelAttribute("employeecontractForm") EmployeecontractForm form,
                               BindingResult bindingResult,
                               RedirectAttributes redirectAttributes) {
+        Employeecontract ec = employeecontractService.getEmployeecontractById(id);
+        if (ec == null) {
+            return redirectToListBecauseContractNotFound(redirectAttributes);
+        }
         // Validate overtime fields
         if (form.getNewOvertimeComment() == null || form.getNewOvertimeComment().isBlank()) {
             redirectAttributes.addFlashAttribute("toastError",
@@ -235,7 +249,6 @@ public class EmployeecontractController {
             return "redirect:/employees/contracts/edit?id=" + id;
         }
 
-        Employeecontract ec = employeecontractService.getEmployeecontractById(id);
         Overtime overtime = new Overtime();
         overtime.setComment(form.getNewOvertimeComment());
         overtime.setEmployeecontract(ec);
@@ -270,8 +283,11 @@ public class EmployeecontractController {
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Employeecontract ec = employeecontractService.getEmployeecontractById(id);
+        if (ec == null) {
+            return redirectToListBecauseContractNotFound(redirectAttributes);
+        }
         Employee loginEmployee = employeeService.getLoginEmployee();
-        if (ec != null && ec.getEmployee().getId().equals(loginEmployee.getId())) {
+        if (ec.getEmployee().getId().equals(loginEmployee.getId())) {
             redirectAttributes.addFlashAttribute("toastError",
                     messages.getMessage("form.employeecontract.error.delete.isloginemployee", "Cannot delete the contract of the currently logged-in employee"));
             return "redirect:/employees/contracts";
@@ -285,6 +301,21 @@ public class EmployeecontractController {
                     errorCodeViewHelper.toViewMessages(ex).stream()
                             .map(Object::toString).findFirst().orElse("Error deleting employee contract"));
         }
+        return "redirect:/employees/contracts";
+    }
+
+    private boolean isUpdateOfMissingContract(EmployeecontractForm form) {
+        boolean isUpdate = form.getId() != null;
+        return isUpdate && employeecontractService.getEmployeecontractById(form.getId()) == null;
+    }
+
+    /**
+     * Eine Vertragsnummer aus der Anfrage, zu der es keinen Vertrag gibt — ein veralteter Link, ein Lesezeichen, eine von
+     * Hand geänderte Adresse —, beantwortet jeder Handler gleich: zurück zur Liste mit einer Meldung (#1401).
+     */
+    private String redirectToListBecauseContractNotFound(RedirectAttributes redirectAttributes) {
+        var notFound = errorCodeViewHelper.toViewMessage(ServiceFeedbackMessage.error(EC_EMPLOYEE_CONTRACT_NOT_FOUND));
+        redirectAttributes.addFlashAttribute("toastError", notFound.toString());
         return "redirect:/employees/contracts";
     }
 
