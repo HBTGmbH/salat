@@ -422,7 +422,7 @@ class JiraTicketRepositoryTest {
 
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */
   private List<JiraTicket> searchBranchA(String term) {
-    return jiraTicketRepository.search(ALPHA, List.of(A, A_01), term, 20);
+    return jiraTicketRepository.search(ALPHA, List.of(A, A_01), term, PageRequest.of(0, 20));
   }
 
   private void save(Customerorder customerorder, Suborder suborder, Long jiraId, String key, String summary,

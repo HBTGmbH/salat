@@ -3,6 +3,7 @@ package de.hbt.salat.jira.service;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
@@ -51,7 +52,8 @@ public class JiraTicketSuggestionService {
     // on. The order within the path carries no meaning — it becomes an in clause, and what the
     // suggestions are sorted by is the update timestamp.
     String term = searchTerm == null ? "" : searchTerm.trim();
-    var tickets = jiraTicketRepository.search(location.customerorderId(), location.path(), term, MAX_SUGGESTIONS);
+    var tickets = jiraTicketRepository.search(location.customerorderId(), location.path(), term,
+        PageRequest.of(0, MAX_SUGGESTIONS));
     return deduplicated(tickets);
   }
 
