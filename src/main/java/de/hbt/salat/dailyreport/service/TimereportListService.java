@@ -36,7 +36,10 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.jira.service.JiraTicketService;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderSearchRow;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderTreeRow;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -228,49 +231,31 @@ public class TimereportListService {
     var visibility = visibilityService.anyTime();
     if (visibility.isEmpty()) return new OrderSearchResult(List.of(), List.of(), 0);
 
-    List<Customerorder> orders;
-    List<Suborder> suborders;
-    if (visibility.unrestricted()) {
-      orders = customerorderService.getNotHiddenCustomerorders();
-      suborders = suborderService.getNotHiddenSuborders();
-    } else {
+    // null heisst ohne Einschraenkung. Suche, Reihenfolge und Obergrenze laufen in der Datenbank (#1331): in Java
+    // waren das bei uneingeschraenkter Sicht alle Unterauftraege als Entitaeten, um hoechstens limit zu zeigen.
+    List<Long> visibleOrderIds = null;
+    List<Long> visibleSuborderIds = null;
+    if (!visibility.unrestricted()) {
       var values = timereportListDAO.findFilterValues(visibility);
-      orders = notHidden(customerorderService.getCustomerordersByIds(values.customerOrderIds()),
-          Customerorder::getHide);
-      suborders = notHidden(suborderService.getSubordersByIds(values.suborderIds()), Suborder::isHide);
+      visibleOrderIds = values.customerOrderIds();
+      visibleSuborderIds = values.suborderIds();
     }
-
-    // Auf die gewaehlten Auftraggeber eingeschraenkt, aus demselben Grund wie die Ticketauswahl: ein
-    // Eintrag, den der uebrige Filter ohnehin nicht durchliesse, gehoert nicht in die Liste.
-    if (!selectedCustomerIds.isEmpty()) {
-      var customers = new HashSet<>(selectedCustomerIds);
-      orders = orders.stream().filter(order -> customers.contains(order.getCustomer().getId())).toList();
-      var orderIds = orders.stream().map(Customerorder::getId).collect(Collectors.toSet());
-      suborders = suborders.stream()
-          .filter(suborder -> orderIds.contains(suborder.getCustomerorder().getId()))
-          .toList();
-    }
-
-    var search = term == null ? "" : term.trim().toLowerCase(java.util.Locale.ROOT);
-    var matchedOrders = includeOrders
-        ? orders.stream().filter(order -> matches(search, order.getSign(), order.getShortdescription(),
-              order.getCustomer().getShortname())).toList()
-        : List.<Customerorder>of();
-    var matchedSuborders = includeSuborders
-        ? suborders.stream()
-            .filter(suborder -> matches(search, suborder.getCompleteOrderSign(), suborder.getShortdescription()))
-            .toList()
-        : List.<Suborder>of();
 
     // Die Obergrenze gilt fuer beide zusammen: zweimal zweihundert Zeilen waeren keine Liste mehr, die
-    // jemand ueberfliegt. Auftraege zuerst, Unterauftraege fuellen den Rest.
-    var shownOrders = matchedOrders.stream().limit(limit).map(this::toOption).toList();
-    var shownSuborders = matchedSuborders.stream()
-        .limit(Math.max(0, limit - shownOrders.size()))
-        .map(TimereportListService::toOption)
-        .toList();
+    // jemand ueberfliegt. Auftraege zuerst, Unterauftraege fuellen den Rest. Auf die gewaehlten Auftraggeber
+    // eingeschraenkt, aus demselben Grund wie die Ticketauswahl: ein Eintrag, den der uebrige Filter ohnehin
+    // nicht durchliesse, gehoert nicht in die Liste.
+    var orders = includeOrders
+        ? customerorderService.searchNotHiddenCustomerorders(term, selectedCustomerIds, visibleOrderIds, limit)
+        : SearchHits.<CustomerorderSearchRow>none();
+    var shownOrders = orders.rows().stream().map(TimereportListService::toOption).toList();
+    var suborders = includeSuborders
+        ? suborderService.searchNotHiddenSuborders(term, selectedCustomerIds, visibleSuborderIds,
+            limit - shownOrders.size())
+        : SearchHits.<SuborderTreeRow>none();
+    var shownSuborders = suborders.rows().stream().map(TimereportListService::toOption).toList();
     return new OrderSearchResult(groupsOf(shownOrders, shownSuborders),
-        orphansOf(shownOrders, shownSuborders), matchedOrders.size() + matchedSuborders.size());
+        orphansOf(shownOrders, shownSuborders), Math.toIntExact(orders.total() + suborders.total()));
   }
 
   /**
@@ -386,6 +371,16 @@ public class TimereportListService {
   private OrderOption toOption(Customerorder order) {
     return new OrderOption(order.getId(), order.getSign(), order.getShortdescription(),
         order.getCustomer().getId(), order.getCustomer().getShortname(), 0);
+  }
+
+  private static OrderOption toOption(CustomerorderSearchRow order) {
+    return new OrderOption(order.id(), order.sign(), order.shortdescriptionOrDescription(), order.customerId(),
+        order.customerShortname(), 0);
+  }
+
+  private static SuborderOption toOption(SuborderTreeRow suborder) {
+    return new SuborderOption(suborder.id(), suborder.completeOrderSign(), suborder.shortdescription(),
+        suborder.customerorderId(), suborder.parentId(), suborder.level(), suborder.descendantCount());
   }
 
   private static SuborderOption toOption(Suborder suborder) {

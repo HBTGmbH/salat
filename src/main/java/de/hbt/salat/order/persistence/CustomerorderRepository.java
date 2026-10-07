@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,43 @@ import de.hbt.salat.order.domain.ResponsibleOption;
 @Repository
 public interface CustomerorderRepository extends PagingAndSortingRepository<Customerorder, Long>,
     JpaSpecificationExecutor<Customerorder>, CrudRepository<Customerorder, Long> {
+
+  /**
+   * {@link Customerorder#getShortdescription()} in JPQL (#1331): the short description, or else the description, cut
+   * to twenty characters. {@code length(...) = 0} rather than {@code = ''}: MySQL pads with blanks when comparing, and
+   * a short description of blanks would count as empty.
+   */
+  String SHORTDESCRIPTION_AS_SHOWN = """
+      case when c.shortdescription is null or length(c.shortdescription) = 0 then
+          case when length(c.description) > 20 then concat(substring(c.description, 1, 17), '...')
+              else coalesce(c.description, '') end
+          else c.shortdescription end""";
+
+  /**
+   * The orders the order dialog of the booking list offers (#1331): not hidden; of one of the customers unless
+   * {@code everyCustomer}; among the given ids unless {@code everyOrder}; containing the pattern in the sign, the short
+   * description or the customer's short name unless it is {@code null}.
+   */
+  String DIALOG_ORDERS = """
+      from Customerorder c join c.customer cu
+      where (c.hide is null or c.hide = false)
+      and (:everyCustomer = true or cu.id in :customerIds)
+      and (:everyOrder = true or c.id in :customerorderIds)
+      and (:pattern is null or lower(c.sign) like :pattern escape '!'
+          or lower(cu.shortname) like :pattern escape '!'
+          or lower(""" + SHORTDESCRIPTION_AS_SHOWN + ") like :pattern escape '!')";
+
+  /** {@link #DIALOG_ORDERS}, ordered by sign regardless of case and cut to the limit. */
+  @Query("""
+      select new de.hbt.salat.order.domain.CustomerorderSearchRow(c.id, c.sign, c.shortdescription,
+          c.description, cu.id, cu.shortname, cu.name, c.hide, c.untilDate)
+      """ + DIALOG_ORDERS + " order by lower(c.sign)")
+  List<CustomerorderSearchRow> findDialogOrders(String pattern, boolean everyCustomer, Collection<Long> customerIds,
+      boolean everyOrder, Collection<Long> customerorderIds, Limit limit);
+
+  @Query("select count(c) " + DIALOG_ORDERS)
+  long countDialogOrders(String pattern, boolean everyCustomer, Collection<Long> customerIds, boolean everyOrder,
+      Collection<Long> customerorderIds);
 
   @Query("select c from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
   List<Customerorder> findAllByResponsibleHbt(long responsibleHbtId);

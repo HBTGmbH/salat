@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.common.palette.PaletteQuery;
+import de.hbt.salat.common.util.ContainsPattern;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.customer.event.CustomerDeleteEvent;
@@ -40,6 +42,7 @@ import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.domain.ResponsibleOption;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
@@ -371,6 +374,38 @@ public class CustomerorderService {
    */
   public List<Customerorder> getNotHiddenCustomerorders() {
     return customerorderDAO.getNotHiddenCustomerorders();
+  }
+
+  /**
+   * The orders a search dialog over existing bookings offers (#1331), searched, ordered and cut in the database: not
+   * hidden — inactive ones included, as in {@link #getNotHiddenCustomerorders()} —, ordered by sign regardless of
+   * case, the first {@code limit} of them and how many there are.
+   *
+   * @param term             found in the sign, the short description as shown or the customer's short name, case
+   *                         aside; blank for every order
+   * @param customerIds      the customers the orders belong to, empty for all
+   * @param customerorderIds the orders to search among, {@code null} for all — the caller decides what its reader may
+   *                         see
+   */
+  @Transactional(readOnly = true)
+  public SearchHits<CustomerorderSearchRow> searchNotHiddenCustomerorders(String term, Collection<Long> customerIds,
+      Collection<Long> customerorderIds, int limit) {
+    var everyOrder = customerorderIds == null;
+    var noOrderToSearchAmong = !everyOrder && customerorderIds.isEmpty();
+    if (noOrderToSearchAmong || !ContainsPattern.canOccurInUtf8mb3(term)) {
+      return SearchHits.none();
+    }
+    var pattern = ContainsPattern.of(term);
+    var everyCustomer = customerIds.isEmpty();
+    var amongIds = everyOrder ? List.<Long>of() : customerorderIds;
+    var rows = limit > 0
+        ? customerorderRepository.findDialogOrders(pattern, everyCustomer, customerIds, everyOrder, amongIds,
+            Limit.of(limit))
+        : List.<CustomerorderSearchRow>of();
+    // fewer rows than the limit are all there are; only a full page needs counting
+    var total = rows.size() < limit ? rows.size()
+        : customerorderRepository.countDialogOrders(pattern, everyCustomer, customerIds, everyOrder, amongIds);
+    return new SearchHits<>(rows, total);
   }
 
   @Authorized(requiresManager = true)
