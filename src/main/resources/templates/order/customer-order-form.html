@@ -47,12 +47,6 @@
 
       <div class="row">
         <div class="col-md-4">
-          <div th:replace="~{order/ticket-reference-policy :: policyInput(inheritable=false)}"></div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-4">
           <salat:textInput th:field="*{description}" th:label="#{main.customerorder.description.text}" required="true" maxlength="255" />
         </div>
         <div class="col-md-4">
@@ -114,6 +108,12 @@
               <option value="12" th:text="#{main.general.month.text}">Month</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{order/ticket-reference-policy :: policyInput(inheritable=false)}"></div>
         </div>
       </div>
 
