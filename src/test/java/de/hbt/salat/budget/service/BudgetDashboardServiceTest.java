@@ -29,6 +29,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.ArgumentCaptor;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetDashboardRow;
@@ -74,6 +75,7 @@ public class BudgetDashboardServiceTest {
   private OrderBudgetService orderBudgetService;
   private BudgetControllingService budgetControllingService;
   private CustomerorderService customerorderService;
+  private FixedPriceCalculationService fixedPriceCalculationService;
   private BudgetDashboardService service;
 
   @BeforeEach
@@ -81,7 +83,9 @@ public class BudgetDashboardServiceTest {
     orderBudgetService = mock(OrderBudgetService.class);
     budgetControllingService = mock(BudgetControllingService.class);
     customerorderService = mock(CustomerorderService.class);
-    service = new BudgetDashboardService(orderBudgetService, budgetControllingService, customerorderService);
+    fixedPriceCalculationService = mock(FixedPriceCalculationService.class);
+    service = new BudgetDashboardService(orderBudgetService, budgetControllingService, customerorderService,
+        fixedPriceCalculationService);
 
     when(orderBudgetService.getAllActiveVisible(any())).thenReturn(List.of());
     when(budgetControllingService.computeUtilizationInfos(anyList())).thenReturn(Map.of());
@@ -145,6 +149,55 @@ public class BudgetDashboardServiceTest {
     service.computeDashboard(SEGMENT_ID, RESPONSIBLE_ID);
 
     assertThat(capturedRestriction()).isNotNull().isEmpty();
+  }
+
+  /**
+   * #1404: a fixed price is judged by the consumption of its calculated hours, with the calculation
+   * of {@link FixedPriceCalculationService}. 30 % of the euro budget would be on track at a progress
+   * of 40 %; 60 % of the calculated hours are behind. Without a calculation there is no utilization
+   * and no status, as for a plan without a budget.
+   */
+  @Test
+  public void judges_a_fixed_price_plan_by_the_consumption_of_its_calculated_hours() {
+    var calculated = fixedPricePlan(10L);
+    var uncalculated = fixedPricePlan(11L);
+    when(orderBudgetService.getAllActiveVisible(any())).thenReturn(List.of(calculated, uncalculated));
+    var info = new BudgetControllingService.UtilizationInfo(new BigDecimal("1000"), new BigDecimal("300"),
+        LocalDate.of(2026, 6, 15));
+    when(budgetControllingService.computeUtilizationInfos(anyList())).thenReturn(Map.of(
+        10L, new BudgetControllingService.BudgetUtilization(info, "A", "order"),
+        11L, new BudgetControllingService.BudgetUtilization(info, "A", "order")));
+    when(budgetControllingService.computeProgressPercents(anyList())).thenReturn(Map.of(10L, 40.0, 11L, 40.0));
+    when(fixedPriceCalculationService.getHoursConsumedPercents(any())).thenReturn(Map.of(10L, 60.0));
+
+    var rows = service.computeDashboard(null, null);
+
+    assertThat(rows).filteredOn(row -> row.budgetId() == 10L).singleElement().satisfies(row -> {
+      assertThat(row.fixedPrice()).isTrue();
+      assertThat(row.hasUtilization()).isTrue();
+      assertThat(row.shownUtilizationPercent()).isEqualTo(60.0);
+      assertThat(row.isAboveThreshold()).isTrue();
+      assertThat(row.progressStatus()).isEqualTo(ProgressStatus.BEHIND);
+    });
+    assertThat(rows).filteredOn(row -> row.budgetId() == 11L).singleElement().satisfies(row -> {
+      assertThat(row.hasUtilization()).isFalse();
+      assertThat(row.isAboveThreshold()).isFalse();
+      assertThat(row.isOverBudget()).isFalse();
+      assertThat(row.progressStatus()).isEqualTo(ProgressStatus.UNKNOWN);
+    });
+  }
+
+  private static OrderBudget fixedPricePlan(long id) {
+    var plan = new OrderBudget();
+    ReflectionTestUtils.setField(plan, "id", id);
+    plan.setName("plan " + id);
+    plan.setCustomerorder(customerorderWithId(ORDER_A));
+    plan.setValidFrom(LocalDate.of(2026, 1, 1));
+    plan.setValidUntil(LocalDate.of(2026, 12, 31));
+    plan.setActive(true);
+    plan.setAlertThresholdPercent(50);
+    plan.setFixedPrice(true);
+    return plan;
   }
 
   @SuppressWarnings("unchecked")
@@ -255,7 +308,8 @@ public class BudgetDashboardServiceTest {
       holidays.add(new Publicholiday(LocalDate.of(2026, 4, 3), "Karfreitag"));
       holidays.add(new Publicholiday(LocalDate.of(2026, 12, 25), "Weihnachten"));
 
-      figures = new BudgetDashboardService(visiblePlans(), controllingService(), mock(CustomerorderService.class));
+      figures = new BudgetDashboardService(visiblePlans(), controllingService(), mock(CustomerorderService.class),
+          mock(FixedPriceCalculationService.class));
     }
 
     @Test

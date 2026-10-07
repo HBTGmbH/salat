@@ -28,26 +28,64 @@ public record BudgetDashboardRow(
      * open-ended: there is no share of a running time without an end.
      */
     Double progressPercent,
-    ProgressStatus progressStatus
+    ProgressStatus progressStatus,
+    /**
+     * Whether the plan is a fixed price (#1404). Such a plan is judged by the consumption of its
+     * calculated hours, not by its euro budget: the instalments fill that up on a calendar of their
+     * own, whatever the work has come to.
+     */
+    boolean fixedPrice,
+    /**
+     * Booked against calculated hours, in percent, for a fixed-price plan; {@code null} for one
+     * without a calculation and for every other plan (→ {@code FixedPriceCalculationService}).
+     */
+    Double hoursConsumedPercent
 ) {
+
+    /** A row of a plan that is not a fixed price. */
+    public BudgetDashboardRow(long budgetId, String budgetName, long customerorderId, String customerorderSign,
+                              String customerorderName, LocalDate validFrom, LocalDate validUntil,
+                              LocalDate evaluatedUntil, BigDecimal budgetEuro, BigDecimal coveredRevenueEuro,
+                              Integer alertThresholdPercent, double utilizationPercent, Double progressPercent,
+                              ProgressStatus progressStatus) {
+        this(budgetId, budgetName, customerorderId, customerorderSign, customerorderName, validFrom, validUntil,
+            evaluatedUntil, budgetEuro, coveredRevenueEuro, alertThresholdPercent, utilizationPercent,
+            progressPercent, progressStatus, false, null);
+    }
+
     public boolean hasBudget() { return budgetEuro != null && budgetEuro.signum() != 0; }
     public boolean hasAlertThreshold() { return alertThresholdPercent != null; }
+
     /**
-     * The plan has reached its configured alert threshold. Purely a warning, and only meaningful
-     * when a threshold is configured at all — the field is optional. Without a budget amount there
-     * is nothing to be a percentage of, so such a plan is never above its threshold.
+     * Whether the row has a utilization to show and to judge: the share of the budget, or for a
+     * fixed price the share of the calculated hours. A fixed-price plan without a calculation has
+     * none, the way a plan without a budget amount has none.
      */
-    public boolean isAboveThreshold() {
-        return hasBudget() && hasAlertThreshold() && utilizationPercent >= alertThresholdPercent;
+    public boolean hasUtilization() {
+        return fixedPrice ? hoursConsumedPercent != null : hasBudget();
+    }
+
+    /** What the utilization column shows and the thresholds read (→ {@link #hasUtilization()}). */
+    public double shownUtilizationPercent() {
+        return fixedPrice ? (hoursConsumedPercent == null ? 0.0 : hoursConsumedPercent) : utilizationPercent;
     }
 
     /**
-     * The budget is used up: the revenue it has to cover exceeds it. Independent of the alert
+     * The plan has reached its configured alert threshold. Purely a warning, and only meaningful
+     * when a threshold is configured at all — the field is optional. Without a utilization there
+     * is nothing to be a percentage of, so such a plan is never above its threshold.
+     */
+    public boolean isAboveThreshold() {
+        return hasUtilization() && hasAlertThreshold() && shownUtilizationPercent() >= alertThresholdPercent;
+    }
+
+    /**
+     * The budget is used up — for a fixed price, the calculated hours. Independent of the alert
      * threshold, so a plan without one is still flagged once it goes over.
      */
-    public boolean isOverBudget() { return hasBudget() && utilizationPercent > 100.0; }
+    public boolean isOverBudget() { return hasUtilization() && shownUtilizationPercent() > 100.0; }
 
-    public double progressBarPercent() { return Math.min(utilizationPercent, 100.0); }
+    public double progressBarPercent() { return Math.min(shownUtilizationPercent(), 100.0); }
 
     /** A progress is known for this plan, so its status says something. */
     public boolean hasProgress() {

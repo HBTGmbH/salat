@@ -55,15 +55,7 @@
             <dd class="col-sm-7"
                 th:text="${budget.progressMode != null} ? #{|main.budget.field.progressMode.${budget.progressMode.name()}|} : #{main.budget.field.progressMode.none}"></dd>
             <dt class="col-sm-5" th:text="#{main.budget.field.fixedPrice}">Festpreis</dt>
-            <dd class="col-sm-7">
-              <span th:text="${budget.fixedPrice} ? #{main.general.yes} : #{main.general.no}">Nein</span>
-              <!--/* Es gilt das Kennzeichen des Plans; der Widerspruch zum Unterauftrag ist nur ein Hinweis. */-->
-              <div class="small text-warning" th:if="${fixedPriceMismatch}">
-                <i class="icon ti ti-alert-triangle"></i>
-                <span th:text="${budget.fixedPrice} ? #{main.budget.fixedprice.mismatch.planfixed}
-                                                    : #{main.budget.fixedprice.mismatch.suborderfixed}"></span>
-              </div>
-            </dd>
+            <dd class="col-sm-7" th:text="${budget.fixedPrice} ? #{main.general.yes} : #{main.general.no}">Nein</dd>
           </dl>
         </div>
         <div class="col-md-6">

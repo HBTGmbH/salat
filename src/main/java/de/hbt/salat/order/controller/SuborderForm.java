@@ -19,7 +19,6 @@ public class SuborderForm {
   private Boolean invoice;
   private Boolean standard;
   private Boolean commentnecessary;
-  private Boolean fixedPrice;
   private boolean trainingFlag;
   private String validFrom;
   private String validUntil;

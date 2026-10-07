@@ -1431,7 +1431,7 @@ Rules:
   ```html
   <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerHideFlag}"></td>
   ```
-- Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-tag-fill` (fixed price), `bi-mortarboard` (training)
+- Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-mortarboard` (training)
 - Do not put flag badges inline in the primary/name column — use the flags column instead
 - **Exception: „Inaktiv"** (#1220). An inactive entry gets no row tint (`table-*`); it carries
   `fragments/inactive-badge :: badge(${…})` behind its name or sign, in the first column that is

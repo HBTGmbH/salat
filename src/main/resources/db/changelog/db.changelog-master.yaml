@@ -6214,9 +6214,8 @@ databaseChangeLog:
       id: 167
       author: kr
       comment: Budgetplan als Festpreis kennzeichnen (#1404)
-      # Ein eigenes Merkmal am Plan, unabhaengig von suborder.fixedPrice: ein Plan kann auftragsweit
-      # sein und hat dann keinen Unterauftrag, dessen Kennzeichen er uebernehmen koennte. Alle
-      # bestehenden Plaene bleiben Dienstleistungsbudgets.
+      # Ein eigenes Merkmal am Plan: ein Plan kann auftragsweit sein. Alle bestehenden Plaene bleiben
+      # Dienstleistungsbudgets.
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -6313,3 +6312,31 @@ databaseChangeLog:
             tableName: order_budget_calculation
             columnNames: order_budget_id, suborder_id, cost_category_id
             constraintName: uk_order_budget_calculation_budget_suborder_category
+
+  - changeSet:
+      id: 171
+      author: kr
+      comment: Kennzeichen Festpreis-Angebot am Unterauftrag entfernen (#1404)
+      # Das Merkmal wird nicht mehr genutzt: nur noch verborgene Unterauftraege tragen es, die Rechnung
+      # zeigt solche Unterauftraege immer, und ein Festpreis ist seit #1404 ein Merkmal des Budgetplans.
+      # Wie Changeset 165: solange eine Definition oder View die Spalte noch nennt, ueberspringt
+      # CONTINUE den Changeset und prueft beim naechsten Start erneut.
+      preConditions:
+        - onFail: CONTINUE
+        - columnExists:
+            tableName: suborder
+            columnName: fixedPrice
+        - sqlCheck:
+            expectedResult: 0
+            sql: |-
+              SELECT (SELECT COUNT(*) FROM report_definition
+                       WHERE LOWER(`sql`) REGEXP 'fixedprice')
+                   + (SELECT COUNT(*) FROM etl_definition
+                       WHERE LOWER(CONCAT_WS(' ', init, execute, cleanup)) REGEXP 'fixedprice')
+                   + (SELECT COUNT(*) FROM information_schema.views
+                       WHERE table_schema = DATABASE()
+                         AND LOWER(view_definition) REGEXP 'fixedprice')
+      changes:
+        - dropColumn:
+            tableName: suborder
+            columnName: fixedPrice

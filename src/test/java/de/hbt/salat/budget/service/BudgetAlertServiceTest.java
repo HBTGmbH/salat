@@ -2,9 +2,11 @@ package de.hbt.salat.budget.service;
 
 import static de.hbt.salat.testutils.ReferenceTestUtils.customerorderWithId;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -48,17 +51,20 @@ public class BudgetAlertServiceTest {
   private final EmployeePreferenceService employeePreferenceService = mock(EmployeePreferenceService.class);
   private final OrderBudgetService orderBudgetService = mock(OrderBudgetService.class);
   private final MessageSourceAccessor messages = mock(MessageSourceAccessor.class);
+  private final FixedPriceCalculationService fixedPriceCalculationService = mock(FixedPriceCalculationService.class);
   private BudgetAlertService service;
 
   @BeforeEach
   public void setUp() {
     service = new BudgetAlertService(orderBudgetRepository, budgetControllingService, customerorderService,
         notificationService, mailService, employeePreferenceService, orderBudgetService,
-        messages, new SalatProperties());
+        messages, new SalatProperties(), fixedPriceCalculationService);
+    when(fixedPriceCalculationService.getHoursConsumedPercents(any())).thenReturn(Map.of());
     when(budgetControllingService.computeUtilizationInfo(any())).thenReturn(
         new UtilizationInfo(new BigDecimal("1000"), new BigDecimal("900"), LocalDate.of(2026, 6, 15)));
     when(messages.getMessage("main.budget.alert.email.subject")).thenReturn("Alert {0}");
     when(messages.getMessage("main.budget.alert.email.body")).thenReturn("{0} of {1}");
+    when(messages.getMessage("main.budget.alert.fixedprice.email.body")).thenReturn("hours {0} of {1}");
 
     when(customerorderService.getResponsiblesByCustomerorderId(CUSTOMERORDER_ID)).thenReturn(List.of(
         new CustomerorderResponsible(RESPONSIBLE_EMPLOYEE_ID, "Responsible Person", RESPONSIBLE_USER_ID)));
@@ -107,6 +113,49 @@ public class BudgetAlertServiceTest {
     service.checkAndNotify();
 
     verifyNoInteractions(notificationService, mailService);
+  }
+
+  /**
+   * #1404: a fixed price is measured by its calculated hours. The euro utilization of 90 % would
+   * raise the alert; 50 % of the calculated hours do not.
+   */
+  @Test
+  public void judges_a_fixed_price_plan_by_the_consumption_of_its_calculated_hours() {
+    var plan = plan(CUSTOMERORDER_ID);
+    plan.setFixedPrice(true);
+    givenPlans(plan);
+    when(fixedPriceCalculationService.getHoursConsumedPercents(any())).thenReturn(Map.of(1L, 50.0));
+
+    service.checkAndNotify();
+
+    verifyNoInteractions(notificationService, mailService);
+  }
+
+  @Test
+  public void alerts_a_fixed_price_plan_over_its_threshold_of_calculated_hours_in_words_of_hours() {
+    var plan = plan(CUSTOMERORDER_ID);
+    plan.setFixedPrice(true);
+    givenPlans(plan);
+    when(fixedPriceCalculationService.getHoursConsumedPercents(any())).thenReturn(Map.of(1L, 85.0));
+
+    service.checkAndNotify();
+
+    verify(notificationService).emitNotification(anyList(), anyString(), any(),
+        eq("main.budget.alert.fixedprice.notification.description"), any(), anyString(), any());
+    verify(mailService).sendEmail(eq("Alert plan"), eq("hours plan of co"), any(), any());
+  }
+
+  /** Without a calculation there is nothing to measure against — no alarm, as without a budget. */
+  @Test
+  public void raises_no_alert_for_a_fixed_price_plan_without_a_calculation() {
+    var plan = plan(CUSTOMERORDER_ID);
+    plan.setFixedPrice(true);
+    givenPlans(plan);
+
+    service.checkAndNotify();
+
+    verifyNoInteractions(notificationService, mailService);
+    verify(budgetControllingService, never()).computeUtilizationInfo(any());
   }
 
   private void givenPlans(OrderBudget... plans) {

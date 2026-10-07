@@ -1,6 +1,5 @@
 package de.hbt.salat.invoice.service;
 
-import static java.lang.Boolean.TRUE;
 import static java.time.Duration.ZERO;
 import static java.util.Comparator.comparing;
 import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
@@ -70,7 +69,6 @@ public class InvoiceService {
         .stream()
         .filter(suborder -> suborder.getValidity().overlaps(invoiceDateRange))
         .filter(suborder -> options.isShowNonInvoicableSuborders() || suborder.getInvoice() == YESNO_YES)
-        .filter(suborder -> options.isShowFixedPriceSuborders() || suborder.getFixedPrice() != TRUE)
         .sorted(SubOrderComparator.INSTANCE)
         .map(suborder -> {
           var timereports = timereportService.getTimereportsByDatesAndSuborderId(dateFirst, dateLast, suborder.getId()).stream()
@@ -104,7 +102,6 @@ public class InvoiceService {
   @AllArgsConstructor
   public static class InvoiceOptions {
     private final boolean showNonInvoicableSuborders;
-    private final boolean showFixedPriceSuborders;
     private final boolean showTimereports;
     private final boolean showTaskdescriptions;
     private final boolean showEmployee;

@@ -37,6 +37,7 @@ public class BudgetAlertService {
     private final OrderBudgetService orderBudgetService;
     private final MessageSourceAccessor messages;
     private final SalatProperties salatProperties;
+    private final FixedPriceCalculationService fixedPriceCalculationService;
 
     @Value("${salat.budget.alert.email.from:noreply@salat.local}")
     private String alertEmailFrom;
@@ -44,16 +45,24 @@ public class BudgetAlertService {
     public void checkAndNotify() {
         var today = DateUtils.today();
         var budgets = orderBudgetRepository.findByActiveAndAlertThresholdPercentIsNotNull(Boolean.TRUE);
+        // A fixed price is measured by the consumption of its calculated hours (#1404), with the
+        // calculation the dashboard and the controlling use; without a calculation it raises no alarm.
+        var hoursConsumed = fixedPriceCalculationService.getHoursConsumedPercents(budgets);
         for (var budget : budgets) {
             try {
-                var info = budgetControllingService.computeUtilizationInfo(budget);
-                var utilization = info.percent();
+                if (budget.isFixedPrice() && !hoursConsumed.containsKey(budget.getId())) {
+                    continue;
+                }
+                var utilization = budget.isFixedPrice()
+                    ? hoursConsumed.get(budget.getId())
+                    : budgetControllingService.computeUtilizationInfo(budget).percent();
                 var threshold = budget.getAlertThresholdPercent();
 
                 if (utilization >= threshold) {
                     if (budget.getAlertSentAt() == null) {
                         sendAlert(budget.getId(), budget.getName(), budget.getCustomerorderId(),
-                            budget.getCustomerorder().getSign(), utilization, threshold, today);
+                            budget.getCustomerorder().getSign(), budget.isFixedPrice(), utilization, threshold,
+                            today);
                         orderBudgetService.updateAlertSentAt(budget.getId(), today);
                         log.info("Budget alert sent for budget {} ({}): {}% >= {}%",
                             budget.getId(), budget.getName(), String.format("%.1f", utilization), threshold);
@@ -77,7 +86,9 @@ public class BudgetAlertService {
      * order by the sign it has today, read through the plan's reference (#1367).
      */
     private void sendAlert(long budgetId, String budgetName, long customerorderId, String coSign,
-                           double utilization, int threshold, LocalDate today) {
+                           boolean fixedPrice, double utilization, int threshold, LocalDate today) {
+        // The text says what the percentage is a share of: the budget, or the calculated hours.
+        var kind = fixedPrice ? "fixedprice." : "";
         var responsibleEmployees = customerorderService.getResponsiblesByCustomerorderId(customerorderId);
         if (responsibleEmployees.isEmpty()) {
             log.warn("No responsible employees for customerorder {} — skipping alert for budget {}", coSign, budgetId);
@@ -100,7 +111,7 @@ public class BudgetAlertService {
             recipientUserIds,
             "main.budget.alert.notification.title",
             List.of(budgetName),
-            "main.budget.alert.notification.description",
+            "main.budget.alert." + kind + "notification.description",
             List.of(budgetName, utilizationStr, thresholdStr),
             controllingUrl,
             messages.getMessage("main.budget.dashboard.link.controlling")
@@ -116,7 +127,7 @@ public class BudgetAlertService {
                 var subject = MessageFormat.format(
                     messages.getMessage("main.budget.alert.email.subject"), budgetName);
                 var body = MessageFormat.format(
-                    messages.getMessage("main.budget.alert.email.body"),
+                    messages.getMessage("main.budget.alert." + kind + "email.body"),
                     budgetName, coSign, utilization, threshold, absoluteUrl);
                 mailService.sendEmail(subject, body,
                     new MailContact("Salat Budget", alertEmailFrom),

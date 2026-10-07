@@ -129,11 +129,6 @@ public class Suborder extends AuditedEntity implements Serializable {
     private boolean trainingFlag;
 
     /**
-     * Flag for fixed price proposal
-     */
-    private Boolean fixedPrice;
-
-    /**
      * Overrides order type in customer order if set.
      */
     @Enumerated(EnumType.STRING)

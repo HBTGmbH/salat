@@ -55,18 +55,15 @@
             </select>
           </div>
         </div>
-        <!--/*
-          Wer einen Unterauftrag wählt, bekommt beim Anlegen dessen Festpreis-Kennzeichen vorbelegt
-          (#1404). Der Auslöser sitzt auf dieser Hülle und nicht auf der Auswahl: die Auswahl wird
-          beim Wechsel des Auftrags per OOB ersetzt, und ein Listener an ihr ginge dabei verloren;
-          das change-Ereignis steigt bis hierher auf.
-        */-->
-        <div class="col-md-6" th:hx-post="@{/budget/fixed-price}" hx-swap="none" hx-include="closest form"
-             hx-trigger="change">
+        <div class="col-md-6">
           <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, *{suborderId}, null)}"></div>
         </div>
       </div>
-      <div th:replace="~{budget/budget-form :: fixedPriceField(${budgetForm.fixedPrice}, ${fixedPriceMismatch}, null)}"></div>
+      <!--/* Ein eigenes Merkmal des Plans (#1404). */-->
+      <salat:checkboxSwitch th:field="*{fixedPrice}" th:label="#{main.budget.field.fixedPrice}" />
+      <div class="form-text mt-n2 mb-3" th:text="#{main.budget.field.fixedPrice.help}">
+        Ein Festpreis-Plan erzielt seinen Umsatz über Pauschalen und misst den Fortschritt manuell.
+      </div>
       <div class="row">
         <div class="col-md-6">
           <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.budget.field.validFrom}" required="true" />
@@ -92,36 +89,7 @@
   <!-- HTMX OOB updates -->
   <div th:if="${htmxRequest}">
     <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, ${budgetForm.suborderId}, ${subordersChanged})}"></div>
-    <div th:if="${fixedPriceChanged}"
-         th:replace="~{budget/budget-form :: fixedPriceField(${budgetForm.fixedPrice}, ${fixedPriceMismatch}, true)}"></div>
   </div>
 
 </main>
-
-<!--/*
-  Das Festpreis-Kennzeichen des Plans (#1404). Zweimal gerendert wie die Unterauftragsauswahl:
-  im Formular und als OOB-Ersatz, wenn die Wahl des Unterauftrags es vorbelegt. Deshalb name und
-  th:checked statt th:field — die OOB-Kopie steht ausserhalb des Formulars. Der Widerspruch zum
-  Kennzeichen des Unterauftrags ist nur ein Hinweis; es gilt das des Plans.
-*/-->
-<div th:fragment="fixedPriceField(checked, mismatch, oob)" class="mb-3" id="fixedPriceField"
-     th:attr="hx-swap-oob=${oob}">
-  <!--/* Spring setzt das Feld zurück, wenn der Schalter aus ist und nichts mitschickt. */-->
-  <input type="hidden" name="_fixedPrice" value="on"/>
-  <label class="form-check form-switch">
-    <input class="form-check-input" type="checkbox" id="fixedPrice" name="fixedPrice" value="true"
-           th:checked="${checked == true}"/>
-    <span class="form-check-label" th:text="#{main.budget.field.fixedPrice}">Festpreis</span>
-  </label>
-  <div class="form-text" th:text="#{main.budget.field.fixedPrice.help}">
-    Ein Festpreis-Plan erzielt Umsatz über Pauschalen und misst den Fortschritt manuell.
-  </div>
-  <div class="form-text text-warning" th:if="${mismatch}">
-    <i class="icon ti ti-alert-triangle"></i>
-    <span th:text="${checked == true} ? #{main.budget.fixedprice.mismatch.planfixed}
-                                      : #{main.budget.fixedprice.mismatch.suborderfixed}">
-      Der Unterauftrag ist als Festpreis-Angebot gekennzeichnet, der Plan nicht.</span>
-  </div>
-</div>
-
 </html>

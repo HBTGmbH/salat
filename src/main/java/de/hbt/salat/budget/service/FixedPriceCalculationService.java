@@ -98,20 +98,8 @@ public class FixedPriceCalculationService {
         if (!plan.isFixedPrice()) {
             return Optional.empty();
         }
-        long customerorderId = plan.getCustomerorderId();
-        Map<Long, SuborderReadModel> suborders = new HashMap<>();
-        suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId)
-            .forEach(suborder -> suborders.put(suborder.id(), suborder));
-        var costLookup = EmployeeCostLookup.of(employeeCostAssignmentRepository.findAllByOrderByCategoryNameAscIdAsc(),
-            employeeCostRepository.findAllByOrderByCategoryNameAscValidFromAsc());
-
-        var lines = plan.getCalculations().stream()
-            .map(line -> lineOf(plan, line, suborders, costLookup, includeCosts))
-            .toList();
-        var bookings = assignmentRepository.findPlanBookings(List.of(plan.getId()), until).stream()
-            .map(booking -> bookingOf(booking, customerorderId, suborders, costLookup, includeCosts))
-            .toList();
-        var calculation = FixedPriceCalculation.evaluate(lines, bookings, includeCosts);
+        var calculation = calculate(plan, assignmentRepository.findPlanBookings(List.of(plan.getId()), until),
+            suborderReadModels(plan.getCustomerorderId()), costLookup(), includeCosts);
 
         var flatRates = flatRatesOf(plan);
         var fixedPrice = sum(flatRates, due -> true);
@@ -121,6 +109,77 @@ public class FixedPriceCalculationService {
         var status = BudgetControllingService.computeProgressStatus(progress, calculation.total().consumedPercent());
         return Optional.of(new FixedPriceEvaluation(calculation.rows(), calculation.total(), fixedPrice, due, until,
             progress, status, includeCosts));
+    }
+
+    /**
+     * How much of its calculated hours each fixed-price plan has consumed, by plan id (#1404) — what
+     * the dashboard and the budget alert judge a fixed price by, instead of the euro budget its
+     * instalments fill up. The same calculation as {@link #evaluate}, up to the end of the plan but
+     * never later than today, as the dashboard reads every plan ({@code evaluatedUntil}).
+     *
+     * <p>A plan that is not a fixed price, or one without calculated hours, is absent: there is
+     * nothing its consumption could be measured against, so it gets neither a status nor an alert —
+     * the way a plan without a budget amount gets none.
+     *
+     * <p>One cost lookup and one read of the bookings for all plans. <b>Authorization:</b> the caller
+     * passes plans the current user may see — the dashboard gets them from {@code OrderBudgetService},
+     * the alert job runs as manager — as in {@code BudgetControllingService#computeUtilizationInfos}.
+     */
+    public Map<Long, Double> getHoursConsumedPercents(Collection<OrderBudget> plans) {
+        var calculated = plans.stream()
+            .filter(OrderBudget::isFixedPrice)
+            .filter(plan -> !plan.getCalculations().isEmpty())
+            .toList();
+        if (calculated.isEmpty()) {
+            return Map.of();
+        }
+        var today = DateUtils.today();
+        Map<Long, LocalDate> untilByPlan = new HashMap<>();
+        calculated.forEach(plan -> untilByPlan.put(plan.getId(),
+            plan.getValidUntil().isBefore(today) ? plan.getValidUntil() : today));
+        var latest = untilByPlan.values().stream().max(Comparator.naturalOrder()).orElse(today);
+        var bookingsByPlan = assignmentRepository.findPlanBookings(untilByPlan.keySet(), latest).stream()
+            .filter(booking -> !booking.day().isAfter(untilByPlan.get(booking.orderBudgetId())))
+            .collect(Collectors.groupingBy(PlanBooking::orderBudgetId));
+        var costLookup = costLookup();
+        Map<Long, Map<Long, SuborderReadModel>> subordersByOrder = new HashMap<>();
+        Map<Long, Double> consumed = new LinkedHashMap<>();
+        for (var plan : calculated) {
+            var suborders = subordersByOrder.computeIfAbsent(plan.getCustomerorderId(), this::suborderReadModels);
+            var percent = calculate(plan, bookingsByPlan.getOrDefault(plan.getId(), List.of()), suborders,
+                costLookup, false).total().consumedPercent();
+            if (percent != null) {
+                consumed.put(plan.getId(), percent);
+            }
+        }
+        return consumed;
+    }
+
+    /** The calculation of the plan with the given bookings set against it — the one rule for every view. */
+    private static FixedPriceCalculation.Result calculate(OrderBudget plan, List<PlanBooking> planBookings,
+                                                          Map<Long, SuborderReadModel> suborders,
+                                                          EmployeeCostLookup costLookup, boolean includeCosts) {
+        long customerorderId = plan.getCustomerorderId();
+        var lines = plan.getCalculations().stream()
+            .map(line -> lineOf(plan, line, suborders, costLookup, includeCosts))
+            .toList();
+        var bookings = planBookings.stream()
+            .map(booking -> bookingOf(booking, customerorderId, suborders, costLookup, includeCosts))
+            .toList();
+        return FixedPriceCalculation.evaluate(lines, bookings, includeCosts);
+    }
+
+    /** Every suborder of the order by id, hidden ones included — bookings stay on a hidden suborder. */
+    private Map<Long, SuborderReadModel> suborderReadModels(long customerorderId) {
+        Map<Long, SuborderReadModel> suborders = new HashMap<>();
+        suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId)
+            .forEach(suborder -> suborders.put(suborder.id(), suborder));
+        return suborders;
+    }
+
+    private EmployeeCostLookup costLookup() {
+        return EmployeeCostLookup.of(employeeCostAssignmentRepository.findAllByOrderByCategoryNameAscIdAsc(),
+            employeeCostRepository.findAllByOrderByCategoryNameAscValidFromAsc());
     }
 
     /**

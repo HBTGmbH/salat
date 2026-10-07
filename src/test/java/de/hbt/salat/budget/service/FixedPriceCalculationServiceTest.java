@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -201,6 +202,32 @@ class FixedPriceCalculationServiceTest {
     assertThat(evaluation.progressStatus()).isEqualTo(ProgressStatus.ON_TRACK);
     assertThat(evaluation.calculatedRate().euroPerHour()).isEqualByComparingTo("120.00");
     assertThat(evaluation.effectiveRateSoFar().euroPerHour()).isEqualByComparingTo("120.00");
+  }
+
+  /**
+   * Dashboard and alert read the consumption through the same calculation as the plan's page, up to
+   * today; a fixed price without calculated hours, and any other plan, is absent (#1404).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  void hands_dashboard_and_alert_the_consumption_the_evaluation_computes() {
+    addLine("co/02", "Senior", 120);
+    booked("co/02/A", SENIOR_PERSON, 30);
+    booked("co/02", PERSON_WITHOUT_COST, 6);
+    var withoutCalculation = new OrderBudget();
+    setId(withoutCalculation, 101L);
+    withoutCalculation.setFixedPrice(true);
+    var serviceBudget = new OrderBudget();
+    setId(serviceBudget, 102L);
+
+    var consumed = service.getHoursConsumedPercents(List.of(plan, withoutCalculation, serviceBudget));
+
+    assertThat(consumed).containsOnlyKeys(100L);
+    assertThat(consumed.get(100L)).isEqualTo(service.evaluate(plan, LocalDate.of(2026, 6, 15), false)
+        .orElseThrow().consumedPercent());
+    assertThat(consumed.get(100L)).isEqualTo(30.0);
+    verify(assignmentRepository).findPlanBookings(Set.of(100L),
+        LocalDate.of(2026, 6, 15));
   }
 
   @Test

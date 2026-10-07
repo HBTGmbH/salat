@@ -229,7 +229,7 @@ class StoredCompleteOrderSignTest {
   }
 
   private static SuborderDTO dto(String sign, Long parentId) {
-    return new SuborderDTO(null, sign, "Leistung", null, null, GlobalConstants.INVOICE_YES, false, false, false,
+    return new SuborderDTO(null, sign, "Leistung", null, null, GlobalConstants.INVOICE_YES, false, false,
         false, null, DateUtils.format(FROM), DateUtils.format(UNTIL), null, null, false, parentId, null, null);
   }
 

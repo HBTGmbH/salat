@@ -231,7 +231,6 @@ public class InvoiceController {
 
         var options = InvoiceOptions.builder()
             .showNonInvoicableSuborders(form.isInvoicebox())
-            .showFixedPriceSuborders(form.isFixedpricebox())
             .showBudget(form.isTargethoursbox())
             .useCustomerDescriptions(form.isCustomeridbox())
             .showTimereports(form.isTimereportsbox())

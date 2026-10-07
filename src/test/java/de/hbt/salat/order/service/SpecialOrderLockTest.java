@@ -120,7 +120,7 @@ class SpecialOrderLockTest {
   }
 
   private static SuborderDTO suborderDto(String sign, Long parentId) {
-    return new SuborderDTO(7L, sign, "Leistung", "Leistung", null, 'y', false, false, false, false,
+    return new SuborderDTO(7L, sign, "Leistung", "Leistung", null, 'y', false, false, false,
         OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null);
   }
 

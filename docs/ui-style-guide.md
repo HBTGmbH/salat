@@ -701,7 +701,6 @@ tragen dunkle Schrift auf voller Farbe. Großflächige getönte Bereiche bleiben
 | fakturierbar | `bg-success-lt` | `bi-cash-stack` |
 | Standard | `bg-warning-lt` | `bi-bookmark-star-fill` |
 | Kommentar erforderlich | `bg-danger-lt` | `bi-chat-square-text` |
-| Festpreis | `bg-primary-lt` | `bi-tag-fill` |
 | Schulung | `bg-purple-lt` | `bi-mortarboard` |
 
 Für Manager ist die `hide`-Badge ein **klickbarer Inline-Toggle** (HTMX-POST, tauscht nur die

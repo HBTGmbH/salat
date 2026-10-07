@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import de.hbt.salat.budget.service.TimereportBudgetAssignmentService;
 import de.hbt.salat.budget.viewhelper.AssignedTimereportViewHelper;
 import de.hbt.salat.budget.viewhelper.BudgetEmployeesViewHelper;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
@@ -211,19 +213,22 @@ public class BudgetController {
 
         try {
             long id;
+            var notices = new ArrayList<ServiceFeedbackMessage>();
             if (form.isNew()) {
                 id = orderBudgetService.create(data).getId();
                 filterHintViewHelper.addSuccess(redirectAttributes,
                     messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_ID);
             } else {
                 id = form.getId();
-                orderBudgetService.update(id, data);
+                // calculation lines the edit left without a place are removed and named (#1404)
+                notices.addAll(orderBudgetService.update(id, data));
                 filterHintViewHelper.addSuccess(redirectAttributes,
                     messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_ID);
             }
             // A customer rate above 0 EUR in the scope of a fixed price counts revenue twice (#1404);
             // the plan is saved all the same, and the rates are named below the success message.
-            noticeViewHelper.addNotices(redirectAttributes, fixedPriceCalculationService.noticesForPlan(id));
+            notices.addAll(fixedPriceCalculationService.noticesForPlan(id));
+            noticeViewHelper.addNotices(redirectAttributes, notices);
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",
                 errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).toList());
@@ -421,7 +426,6 @@ public class BudgetController {
      * the form adds a new one.
      */
     private void addFixedPrice(OrderBudget budget, Long editLine, Model model) {
-        model.addAttribute("fixedPriceMismatch", fixedPriceMismatch(budget.isFixedPrice(), budget.getSuborder()));
         if (!budget.isFixedPrice()) {
             return;
         }
@@ -448,15 +452,6 @@ public class BudgetController {
         model.addAttribute("calculationSuborders",
             fixedPriceCalculationService.getCalculableSuborders(budget, form.getSuborderId()));
         model.addAttribute("calculationCategories", fixedPriceCalculationService.getCategories());
-    }
-
-    /**
-     * Where the plan and the suborder it lives on disagree about being a fixed price (#1404). The
-     * plan's own flag is what counts; the disagreement is only named, never resolved — an order-wide
-     * plan has no suborder to disagree with.
-     */
-    static boolean fixedPriceMismatch(boolean planIsFixedPrice, Suborder suborder) {
-        return suborder != null && Boolean.TRUE.equals(suborder.getFixedPrice()) != planIsFixedPrice;
     }
 
     @Authorized(requiresManager = true)
@@ -494,24 +489,6 @@ public class BudgetController {
     }
 
     /**
-     * Presets the fixed-price flag of a new plan from the suborder just picked (#1404): a suborder
-     * offered as a fixed price is usually budgeted as one. Only on creation — on an edit the plan's
-     * own flag stands, and a disagreement is merely named below the switch.
-     */
-    @Authorized(requiresManager = true)
-    @PostMapping("/fixed-price")
-    public String presetFixedPrice(@ModelAttribute("budgetForm") OrderBudgetForm form, Model model,
-                                   HttpServletRequest request) {
-        if (form.isNew() && form.getSuborderId() != null) {
-            form.setFixedPrice(suborderService.isOfferedAtFixedPrice(form.getSuborderId()));
-        }
-        addFormModel(model, form, !form.isNew());
-        model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
-        model.addAttribute("fixedPriceChanged", true);
-        return "budget/budget-form";
-    }
-
-    /**
      * Refills the suborder list when the customer order changes. Offering the suborders of every
      * order let a budget be pointed at a suborder outside the chosen order — rejected on save since
      * #890, but only after the user had already picked it.
@@ -537,8 +514,6 @@ public class BudgetController {
             customerorderService.getSelectableCustomerorders(customerorder == null ? null : customerorder.getSign()));
         model.addAttribute("suborders", subordersOf(customerorder, form.getSuborderId()));
         model.addAttribute("progressModes", ProgressMode.values());
-        model.addAttribute("fixedPriceMismatch", form.getSuborderId() != null
-            && suborderService.isOfferedAtFixedPrice(form.getSuborderId()) != Boolean.TRUE.equals(form.getFixedPrice()));
         // The level in force for the selected order: overlaps within a level are fine, mixing two
         // levels is what gets rejected (#914, #1004). Since the list offers the whole suborder tree,
         // this is the only place the person sees which level the next plan has to match.
