@@ -543,13 +543,15 @@ public class SuborderController {
 
     // Suborders of the current customer order for parent dropdown — exclude the suborder being
     // edited, and keep the stored parent even when it is hidden: without it the guard below would
-    // drop the parent and the save would move the suborder to the top level (#1005)
-    var parentSuborders = suborderService
+    // drop the parent and the save would move the suborder to the top level (#1005).
+    // A customer without a single order leaves the form without an order, and so without parents (#1401).
+    boolean hasCustomerorder = form.getCustomerorderId() != null;
+    var parentSuborders = !hasCustomerorder ? List.<Suborder>of() : suborderService
         .getSelectableSubordersByCustomerorderId(form.getCustomerorderId(), form.getParentId())
         .stream()
         .filter(so -> !Objects.equals(so.getId(), form.getId()))
         .toList();
-    var currentCustomerorder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+    var currentCustomerorder = hasCustomerorder ? customerorderService.getCustomerorderById(form.getCustomerorderId()) : null;
     model.addAttribute("parentSuborders", parentSuborders);
     model.addAttribute("currentCustomerorder", currentCustomerorder);
 
