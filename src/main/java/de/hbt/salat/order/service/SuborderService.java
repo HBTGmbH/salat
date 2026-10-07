@@ -414,6 +414,17 @@ public class SuborderService {
   }
 
   /**
+   * Whether the suborder is offered as a fixed price ({@code fixedPrice}) — as a value for another
+   * module (ADR-0021): a budget plan on it is preset to a fixed price (#1404). {@code false} for an
+   * id without a suborder.
+   */
+  @Transactional(readOnly = true)
+  public boolean isOfferedAtFixedPrice(long suborderId) {
+    var suborder = suborderDAO.getSuborderById(suborderId);
+    return suborder != null && Boolean.TRUE.equals(suborder.getFixedPrice());
+  }
+
+  /**
    * The complete order signs ({@code ORDER/01/02}) of the suborders with these ids, by id — what
    * another module needs to name suborders it refers to by id (#1212, ADR-0021). An id without a
    * suborder is missing.

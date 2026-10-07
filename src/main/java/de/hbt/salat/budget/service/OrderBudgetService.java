@@ -20,6 +20,7 @@ import de.hbt.salat.budget.domain.OrderBudgetData;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
 import de.hbt.salat.budget.domain.OrderPosition;
+import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.persistence.MasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -301,7 +302,11 @@ public class OrderBudgetService {
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));
         budget.setAlertThresholdPercent(data.alertThresholdPercent());
-        budget.setProgressMode(data.progressMode());
+        budget.setFixedPrice(data.fixedPrice());
+        // A fixed price is measured by the progress entered by hand (#1404): the hours it was
+        // calculated with say nothing about the elapsed time, and the euro budget fills up with the
+        // instalments rather than with the work.
+        budget.setProgressMode(data.fixedPrice() ? ProgressMode.SCOPE : data.progressMode());
     }
 
     /**

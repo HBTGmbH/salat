@@ -95,7 +95,7 @@ public final class EmployeeCostLookup {
         if (assignment.isEmpty()) {
             assignment = findAssignment(AssignmentKey.general(employeeId), date);
         }
-        return assignment.flatMap(a -> findCost(a.getCategory().getId(), date));
+        return assignment.flatMap(a -> findCategoryCost(a.getCategory().getId(), date));
     }
 
     private Optional<EmployeeCostAssignment> findAssignment(AssignmentKey key, LocalDate date) {
@@ -104,7 +104,11 @@ public final class EmployeeCostLookup {
             .findFirst();
     }
 
-    private Optional<EmployeeCost> findCost(long categoryId, LocalDate date) {
+    /**
+     * The rate period of a category in force on that day — what an hour of the category costs then,
+     * whoever works it. The calculation of a fixed price prices its hours by category (#1404).
+     */
+    public Optional<EmployeeCost> findCategoryCost(long categoryId, LocalDate date) {
         return costsByCategoryId.getOrDefault(categoryId, List.of()).stream()
             .filter(c -> !c.getValidFrom().isAfter(date) && !c.getValidUntil().isBefore(date))
             .findFirst();

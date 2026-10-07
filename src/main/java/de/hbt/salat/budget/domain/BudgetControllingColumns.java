@@ -20,12 +20,19 @@ public record BudgetControllingColumns(
     boolean flatRate,
     boolean budget,
     boolean overrun,
-    boolean grossProfitMargin
+    boolean grossProfitMargin,
+    /**
+     * The effective and the agreed hourly rate (#1406) — wherever hours were booked. A section of a
+     * fixed-price plan leaves them out: it shows its own rates, read against the fixed price
+     * (→ {@link FixedPriceEvaluation}), and a second "effective rate" next to them would divide the
+     * instalments fallen due by the hours and contradict the first.
+     */
+    boolean hourlyRate
 ) {
 
     /** Nothing optional — the starting point for folding several sets into one. */
     public static final BudgetControllingColumns NONE =
-        new BudgetControllingColumns(false, false, false, false, false, false);
+        new BudgetControllingColumns(false, false, false, false, false, false, false);
 
     /**
      * The columns of a flat table, read off the lines it shows. Used where every line is of the same
@@ -40,7 +47,8 @@ public record BudgetControllingColumns(
             rows.stream().anyMatch(BudgetControllingRow::hasFlatRateRevenue),
             rows.stream().anyMatch(BudgetControllingRow::hasBudget),
             rows.stream().anyMatch(BudgetControllingRow::hasOverrun),
-            rows.stream().anyMatch(BudgetControllingRow::hasGrossProfitMargin));
+            rows.stream().anyMatch(BudgetControllingRow::hasGrossProfitMargin),
+            rows.stream().anyMatch(BudgetControllingRow::hasBooked));
     }
 
     /**
@@ -58,7 +66,7 @@ public record BudgetControllingColumns(
      */
     public BudgetControllingColumns withoutBudget() {
         return new BudgetControllingColumns(false, planned, flatRate, false, false,
-            grossProfitMargin);
+            grossProfitMargin, hourlyRate);
     }
 
     /**
@@ -77,7 +85,7 @@ public record BudgetControllingColumns(
 
     private BudgetControllingColumns withoutPlannedHours() {
         return new BudgetControllingColumns(revenueBeforeWindow, false, flatRate, budget, overrun,
-            grossProfitMargin);
+            grossProfitMargin, hourlyRate);
     }
 
     /**
@@ -95,6 +103,7 @@ public record BudgetControllingColumns(
             flatRate || other.flatRate(),
             budget || other.budget(),
             overrun || other.overrun(),
-            grossProfitMargin || other.grossProfitMargin());
+            grossProfitMargin || other.grossProfitMargin(),
+            hourlyRate || other.hourlyRate());
     }
 }

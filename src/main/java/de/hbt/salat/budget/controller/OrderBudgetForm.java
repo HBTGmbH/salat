@@ -26,6 +26,8 @@ public class OrderBudgetForm {
     private Boolean active = Boolean.TRUE;
     private Integer alertThresholdPercent;
     private ProgressMode progressMode;
+    /** Whether the plan is a fixed price (#1404). */
+    private Boolean fixedPrice = Boolean.FALSE;
 
     public boolean isNew() {
         return id == null;

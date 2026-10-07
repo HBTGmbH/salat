@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -45,6 +46,8 @@ import de.hbt.salat.budget.domain.PlanBooking;
 import de.hbt.salat.budget.domain.EmployeeCostLookup;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.EmployeeCost;
+import de.hbt.salat.budget.domain.FixedPriceCalculationRow;
+import de.hbt.salat.budget.domain.FixedPriceEvaluation;
 import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.domain.ProgressStatus;
 import de.hbt.salat.budget.domain.SectionKind;
@@ -111,6 +114,7 @@ public class BudgetControllingServiceTest {
   private SuborderService suborderService;
   private OrderPricingService orderPricingService;
   private EmployeeCostService employeeCostService;
+  private FixedPriceCalculationService fixedPriceCalculationService;
   private BudgetControllingService service;
   private Customerorder customerorder;
   private CustomerorderService customerorderService;
@@ -125,6 +129,7 @@ public class BudgetControllingServiceTest {
     orderPricingService = mock(OrderPricingService.class);
     var orderFlatRateService = mock(OrderFlatRateService.class);
     employeeCostService = mock(EmployeeCostService.class);
+    fixedPriceCalculationService = mock(FixedPriceCalculationService.class);
     var publicholidayService = mock(PublicholidayService.class);
 
     customerorder = mock(Customerorder.class);
@@ -192,7 +197,8 @@ public class BudgetControllingServiceTest {
 
     service = new BudgetControllingService(customerorderService, suborderService, timereportService,
         orderBudgetRepository, assignmentRepository, orderPricingService, orderFlatRateService,
-        employeeCostService, publicholidayService, budgetAuthorization, new OrderPositions(suborderService));
+        employeeCostService, publicholidayService, budgetAuthorization, new OrderPositions(suborderService),
+        fixedPriceCalculationService);
   }
 
   /**
@@ -1363,6 +1369,60 @@ public class BudgetControllingServiceTest {
 
     assertThat(service.computeUtilizationInfo(a).coveredRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
     assertThat(service.computeUtilizationInfo(b).coveredRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  /**
+   * #1406: the hours on a suborder that is not invoiceable count towards the effective rate, not
+   * towards the agreed one. 8 h on co/01/D at 100 EUR/h, 8 h on co/02, which is not invoiceable.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_only_the_hours_on_invoiceable_suborders_as_billable() {
+    suborders.stream().filter(so -> so.getId() == 20L).findFirst().orElseThrow().setInvoice('N');
+
+    var total = compute().total();
+
+    assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(16));
+    assertThat(total.billableHours()).isEqualTo(Duration.ofHours(8));
+    assertThat(total.agreedHourlyRateEuro()).isEqualByComparingTo("100.00");
+    assertThat(total.effectiveHourlyRateEuro()).isEqualByComparingTo("50.00");
+  }
+
+  /**
+   * #1404: a fixed-price plan is judged against its calculation, not against its euro budget, and
+   * its section shows the rates of the fixed price instead of the hourly rate columns (#1405).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_judge_a_fixed_price_plan_by_its_calculation() {
+    var fixedPrice = plan("Festpreis", null, FROM, UNTIL, "100000");
+    fixedPrice.setFixedPrice(true);
+    givenBudgets(fixedPrice);
+    var evaluation = new FixedPriceEvaluation(List.of(),
+        new FixedPriceCalculationRow(null, null, null, null, Duration.ofHours(10), Duration.ofHours(16), null, null),
+        new BigDecimal("1000"), BigDecimal.ZERO, UNTIL, 40.0, ProgressStatus.BEHIND, false);
+    when(fixedPriceCalculationService.evaluate(fixedPrice, UNTIL, false)).thenReturn(Optional.of(evaluation));
+
+    var section = sectionOf(SectionKind.ORDER_LEVEL);
+
+    assertThat(section.groups()).singleElement().satisfies(group -> {
+      assertThat(group.fixedPrice()).isSameAs(evaluation);
+      // 1.600 EUR of a budget of 100.000 EUR would say AHEAD; the calculation says BEHIND
+      assertThat(group.progressStatus()).isEqualTo(ProgressStatus.BEHIND);
+    });
+    assertThat(section.columns().hourlyRate()).isFalse();
+  }
+
+  /** A plan that is not a fixed price keeps the hourly rate columns and its status by budget. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_show_the_hourly_rates_for_a_service_budget() {
+    givenBudgets(plan("Dienstleistung", null, FROM, UNTIL, "1000"));
+
+    var section = sectionOf(SectionKind.ORDER_LEVEL);
+
+    assertThat(section.hasFixedPrice()).isFalse();
+    assertThat(section.columns().hourlyRate()).isTrue();
   }
 
   // --- helpers ---------------------------------------------------------------------------------

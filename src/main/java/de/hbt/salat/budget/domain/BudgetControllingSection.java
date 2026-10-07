@@ -51,7 +51,22 @@ public record BudgetControllingSection(
      */
     public BudgetControllingColumns columns() {
         return new BudgetControllingColumns(hasRevenueBeforeWindowData(), hasPlannedData(),
-            hasFlatRateData(), hasBudgetColumn(), hasOverrunData(), hasGrossProfitMarginData());
+            hasFlatRateData(), hasBudgetColumn(), hasOverrunData(), hasGrossProfitMarginData(),
+            hasHourlyRateData());
+    }
+
+    /**
+     * Whether the hourly rate columns have something to say (#1406): hours were booked, and no plan of
+     * the section is a fixed price — that one is read against its own rates
+     * (→ {@link BudgetControllingColumns#hourlyRate()}).
+     */
+    public boolean hasHourlyRateData() {
+        return !hasFixedPrice() && total.hasBooked();
+    }
+
+    /** Whether a plan of this section is a fixed price with an evaluation of its own (#1405). */
+    public boolean hasFixedPrice() {
+        return groups.stream().anyMatch(BudgetControllingGroup::hasFixedPrice);
     }
 
     public List<BudgetControllingRow> rows() {

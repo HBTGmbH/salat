@@ -35,8 +35,27 @@ public interface OrderBudgetRepository
     @Query("SELECT COUNT(b) FROM OrderBudget b WHERE b.customerorder.id = :customerorderId")
     long countByCustomerorderId(Long customerorderId);
 
-    @Query("SELECT COUNT(b) FROM OrderBudget b WHERE b.suborder.id = :suborderId")
+    /**
+     * The plans that refer to the suborder: as their scope, or through a line of their calculation
+     * (#1404). Either keeps the suborder from being deleted.
+     */
+    @Query("""
+        SELECT COUNT(b) FROM OrderBudget b
+        WHERE b.suborder.id = :suborderId
+           OR EXISTS (SELECT c.id FROM OrderBudgetCalculation c
+                      WHERE c.orderBudget = b AND c.suborder.id = :suborderId)
+        """)
     long countBySuborderId(Long suborderId);
+
+    /**
+     * Every fixed-price plan (#1404), with its order — what the list of customer rates judges each
+     * rate against. Few plans are fixed price, so the list asks for them once.
+     */
+    @Query("""
+        SELECT b FROM OrderBudget b JOIN FETCH b.customerorder LEFT JOIN FETCH b.suborder
+        WHERE b.fixedPrice = true
+        """)
+    List<OrderBudget> findFixedPrice();
 
     /**
      * Every plan, by start of validity. A view that lists plans by order sorts by the sign of the

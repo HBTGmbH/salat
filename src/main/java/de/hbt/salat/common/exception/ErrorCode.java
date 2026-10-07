@@ -212,6 +212,14 @@ public enum ErrorCode {
   BU_ORDER_HAS_BUDGET_REFERENCES("BU-0030", "budget plans, flat rates, customer rates or employee cost assignments still refer to the customer order"),
   BU_SUBORDER_HAS_BUDGET_REFERENCES("BU-0031", "budget plans, flat rates or employee cost assignments still refer to the suborder"),
   BU_PRICING_PATTERN_NOT_FOLLOWED("BU-0032", "the suborder pattern of a customer rate could not follow a renamed order or suborder"),
+  // #1404: fixed-price plans. A customer rate above 0 EUR in the scope of a fixed-price plan counts
+  // revenue twice; it is saved all the same and named as a notice, not refused.
+  BU_FIXED_PRICE_WITH_HOURLY_RATE("BU-0033", "a customer rate above 0 EUR applies in the scope of a fixed-price plan"),
+  BU_CALCULATION_NOT_FIXED_PRICE("BU-0034", "only a fixed-price plan has a calculation"),
+  BU_CALCULATION_SUBORDER_NOT_IN_SCOPE("BU-0035", "the suborder of a calculation line lies outside the scope of the plan"),
+  BU_CALCULATION_HOURS_REQUIRED("BU-0036", "a calculation line needs hours above zero"),
+  BU_CALCULATION_LINE_EXISTS("BU-0037", "the plan already has a calculation line for that suborder and cost category"),
+  BU_CALCULATION_LINE_NOT_FOUND("BU-0038", "calculation line not found"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
   JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),

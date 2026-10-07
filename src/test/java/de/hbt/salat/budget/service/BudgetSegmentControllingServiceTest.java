@@ -271,6 +271,64 @@ public class BudgetSegmentControllingServiceTest {
     assertThat(columns.flatRate()).isTrue();
   }
 
+  /**
+   * #1407: an order without revenue — neither from hours nor from flat rates —, without hours and
+   * without cost in the window is left out of the table and only counted. Since all of its figures
+   * are zero, the segment total stays what it was with the order listed.
+   */
+  @Test
+  public void should_count_an_order_without_revenue_hours_and_cost_instead_of_listing_it() {
+    var segment = segment("Industrie");
+    givenOrders(order("A", segment), order("B", segment), order("C", segment));
+    givenEvaluations(
+        revenue("A", "100"),
+        evaluation("B", section(SectionKind.ORDER_LEVEL, row("1000", "0", "0", Duration.ZERO))),
+        evaluation("C", section(SectionKind.ORDER_LEVEL, row("1000", "0", "0", Duration.ZERO))));
+
+    var group = service.compute(FROM, UNTIL).segments().get(0);
+
+    assertThat(group.orders()).extracting(SegmentControllingOrder::customerorderSign).containsExactly("A");
+    assertThat(group.hiddenOrderCount()).isEqualTo(2);
+    assertThat(group.total().revenueEuro()).isEqualByComparingTo("100");
+    assertThat(group.total().bookedHours()).isEqualTo(Duration.ofHours(1));
+    assertThat(group.total().costEuro()).isEqualByComparingTo("0");
+  }
+
+  /**
+   * Each of the three keeps an order in the table on its own: hours without revenue (internal work),
+   * cost without hours, a flat rate without anything else.
+   */
+  @Test
+  public void should_keep_an_order_that_has_hours_or_cost_or_a_flat_rate() {
+    var segment = segment("Industrie");
+    givenOrders(order("A", segment), order("B", segment), order("C", segment));
+    givenEvaluations(
+        evaluation("A", section(SectionKind.UNPLANNED, row(null, "0", "0", Duration.ofHours(3)))),
+        evaluation("B", section(SectionKind.UNPLANNED, row(null, "0", "120", Duration.ZERO))),
+        evaluation("C", section(SectionKind.ORDER_LEVEL, row("1000", "0", "0", Duration.ZERO).toBuilder()
+            .flatRateRevenueEuro(new BigDecimal("500")).build())));
+
+    var group = service.compute(FROM, UNTIL).segments().get(0);
+
+    assertThat(group.orders()).extracting(SegmentControllingOrder::customerorderSign)
+        .containsExactly("A", "B", "C");
+    assertThat(group.hasHiddenOrders()).isFalse();
+  }
+
+  /** A segment of nothing but such orders keeps its card; the hint stands in place of the table. */
+  @Test
+  public void should_keep_a_segment_whose_orders_are_all_hidden() {
+    givenOrders(order("A", segment("Industrie")));
+    givenEvaluations(evaluation("A", section(SectionKind.ORDER_LEVEL, row("1000", "0", "0", Duration.ZERO))));
+
+    var segments = service.compute(FROM, UNTIL).segments();
+
+    assertThat(segments).singleElement().satisfies(group -> {
+      assertThat(group.hasOrders()).isFalse();
+      assertThat(group.hiddenOrderCount()).isEqualTo(1);
+    });
+  }
+
   // --- fixture ---------------------------------------------------------------------------------
 
   /**

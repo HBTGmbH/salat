@@ -27,6 +27,7 @@ import de.hbt.salat.budget.domain.BudgetLevel;
 import de.hbt.salat.budget.domain.BudgetMode;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetData;
+import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.common.test.FixedClock;
@@ -399,12 +400,29 @@ public class OrderBudgetServiceTest {
     assertThat(stored.getSuborderId()).isEqualTo(TREE.suborderId("co/01/A"));
   }
 
+  /** #1404: a fixed price measures its progress by hand, whatever the form said. */
+  @Test
+  public void measures_a_fixed_price_plan_by_its_manual_progress() {
+    givenExisting();
+    when(orderBudgetRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    var stored = service.create(new OrderBudgetData("plan", TREE.orderId("co"), TREE.suborderId("co/01/A"),
+        JAN, DEC, true, null, ProgressMode.TIME, true));
+    var serviceBudget = service.create(new OrderBudgetData("plan", TREE.orderId("co"), TREE.suborderId("co/01/A"),
+        JAN, DEC, true, null, ProgressMode.TIME, false));
+
+    assertThat(stored.isFixedPrice()).isTrue();
+    assertThat(stored.getProgressMode()).isEqualTo(ProgressMode.SCOPE);
+    assertThat(serviceBudget.isFixedPrice()).isFalse();
+    assertThat(serviceBudget.getProgressMode()).isEqualTo(ProgressMode.TIME);
+  }
+
   @Test
   public void rejects_a_suborder_that_does_not_exist() {
     givenExisting();
 
     assertThatThrownBy(() -> service.create(new OrderBudgetData("plan", TREE.orderId("co"), OrderTree.UNKNOWN_ID,
-        JAN, DEC, true, null, null)))
+        JAN, DEC, true, null, null, false)))
         .isInstanceOf(InvalidDataException.class)
         .hasMessageContaining(ErrorCode.SO_NOT_FOUND.getCode());
   }
@@ -483,7 +501,7 @@ public class OrderBudgetServiceTest {
 
   private static OrderBudgetData data(String suborderSign, LocalDate from, LocalDate until, boolean active) {
     return new OrderBudgetData("plan", TREE.orderId("co"), TREE.suborderId(suborderSign), from, until, active,
-        null, null);
+        null, null, false);
   }
 
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until) {

@@ -321,11 +321,13 @@ public class EmployeeCostService {
 
     /**
      * A category nothing refers to any more goes away, as it did while it was only a name: the
-     * overview listed a name as long as a rate period or an assignment carried it.
+     * overview listed a name as long as a rate period or an assignment carried it. A line of a
+     * fixed-price calculation keeps it as well (#1404).
      */
     private void dropIfUnused(CostCategory category) {
         if (employeeCostRepository.countByCategoryId(category.getId()) == 0
-            && assignmentRepository.countByCategoryId(category.getId()) == 0) {
+            && assignmentRepository.countByCategoryId(category.getId()) == 0
+            && !categoryRepository.isUsedByCalculation(category.getId())) {
             categoryRepository.delete(category);
         }
     }

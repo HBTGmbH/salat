@@ -133,6 +133,46 @@ public class BudgetControllingRowTest {
     assertThat(row().revenueEuro(new BigDecimal("800")).build().hasOverrun()).isFalse();
   }
 
+  /**
+   * The mockup of #1406: 300 h on an invoiceable suborder at 95 EUR/h, 60 h on an internal one. The
+   * agreed rate reads the billable hours only, the effective rate every hour booked.
+   */
+  @Test
+  public void should_count_unbilled_hours_in_the_effective_rate_but_not_in_the_agreed_one() {
+    var billable = row().bookedHours(Duration.ofHours(300)).billableHours(Duration.ofHours(300))
+        .revenueEuro(new BigDecimal("28500")).flatRateRevenueEuro(BigDecimal.ZERO).build();
+    var internal = row().bookedHours(Duration.ofHours(60)).billableHours(Duration.ZERO)
+        .revenueEuro(BigDecimal.ZERO).flatRateRevenueEuro(BigDecimal.ZERO).build();
+
+    var total = BudgetControllingRow.sum(null, null, java.util.List.of(billable, internal), null, false);
+
+    assertThat(billable.agreedHourlyRateEuro()).isEqualByComparingTo("95.00");
+    assertThat(billable.effectiveHourlyRateEuro()).isEqualByComparingTo("95.00");
+    assertThat(internal.hasAgreedHourlyRate()).isFalse();
+    assertThat(internal.effectiveHourlyRateEuro()).isEqualByComparingTo("0.00");
+    assertThat(total.agreedHourlyRateEuro()).isEqualByComparingTo("95.00");
+    assertThat(total.effectiveHourlyRateEuro()).isEqualByComparingTo("79.17");
+  }
+
+  /** Flat rates count towards the effective rate (#1406), not towards the agreed one. */
+  @Test
+  public void should_count_flat_rates_in_the_effective_rate_only() {
+    var line = row().bookedHours(Duration.ofHours(100)).billableHours(Duration.ofHours(100))
+        .revenueEuro(new BigDecimal("9000")).flatRateRevenueEuro(new BigDecimal("1000")).build();
+
+    assertThat(line.agreedHourlyRateEuro()).isEqualByComparingTo("90.00");
+    assertThat(line.effectiveHourlyRateEuro()).isEqualByComparingTo("100.00");
+  }
+
+  /** Without hours there is nothing to divide by: the view shows a dash. */
+  @Test
+  public void should_have_no_hourly_rate_without_hours() {
+    var flatRateOnly = row().flatRateRevenueEuro(new BigDecimal("1000")).build();
+
+    assertThat(flatRateOnly.effectiveHourlyRateEuro()).isNull();
+    assertThat(flatRateOnly.agreedHourlyRateEuro()).isNull();
+  }
+
   private static org.assertj.core.data.Offset<Double> within(double d) {
     return org.assertj.core.data.Offset.offset(d);
   }

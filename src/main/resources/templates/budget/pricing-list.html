@@ -93,7 +93,16 @@
                  Buchung gehoert (#1065). */-->
           <td th:text="${row.orderBudgetName()} ?: '-'"></td>
           <td th:text="${p.description} ?: '-'"></td>
-          <td th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
+          <!--/* Ein Satz über 0 € im Geltungsbereich eines Festpreis-Plans zählt dessen Umsatz doppelt
+                 (#1404). Er bleibt gültig; die Plakette nennt die Pläne. */-->
+          <td class="text-nowrap" th:with="fixedPricePlans=${fixedPricePlansByRate.get(p.id)}">
+            <span th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></span>
+            <span th:if="${fixedPricePlans != null}" class="badge bg-warning-lt ms-1"
+                  th:title="#{main.pricing.fixedprice.conflict(${#strings.listJoin(fixedPricePlans, ', ')})}">
+              <i class="icon ti ti-alert-triangle m-0 me-1"></i>
+              <span th:text="#{main.budget.fixedprice.badge}">Festpreis</span>
+            </span>
+          </td>
           <!--/* One column like everywhere else in the module; 31.12.2999 means "no end". */-->
           <td class="d-none d-md-table-cell small text-muted">
             <span th:text="${#temporals.format(p.validFrom, 'dd.MM.yyyy')}"></span>
