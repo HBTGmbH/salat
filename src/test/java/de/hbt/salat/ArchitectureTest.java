@@ -181,14 +181,18 @@ public class ArchitectureTest {
    * <p>{@code order} because a favourite refers to its employee order (#1369, ADR-0036) and finds
    * its person through it — a column of its own for the person was redundant. order does not import
    * favorites, so the edge closes no cycle.
+   *
+   * <p>{@code settings} because the person chooses how their favourites are ordered (#1414), and
+   * that choice is a preference like the others — settings is the cross-cutting store a domain
+   * module uses directly (see {@link #employeeShouldAccessCommonAuthSettingsNotificationOnly}).
    */
   @ArchTest
-  static final ArchRule favoritesShouldAccessCommonAuthEmployeeOrderOnly = priority(HIGH).noClasses().that()
+  static final ArchRule favoritesShouldAccessCommonAuthEmployeeOrderSettingsOnly = priority(HIGH).noClasses().that()
       .resideInAPackage("de.hbt.salat.favorites..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "favorites must only import common, auth, employee, order",
+          "favorites must only import common, auth, employee, order, settings",
           "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.order.",
-          "de.hbt.salat.favorites."));
+          "de.hbt.salat.settings.", "de.hbt.salat.favorites."));
 
   /**
    * etl imports data from outside and needs the employee behind a record to attribute it. Nothing

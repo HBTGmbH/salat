@@ -74,4 +74,7 @@ public class TimereportForm {
     private int numberOfSerialDays = 1;
 
     private boolean saveAsFavorite;
+
+    /** The group the favourite is sorted into (#1414); {@code null} for none. */
+    private Long favoriteGroupId;
 }

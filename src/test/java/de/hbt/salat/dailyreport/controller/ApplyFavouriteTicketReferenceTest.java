@@ -1,6 +1,5 @@
 package de.hbt.salat.dailyreport.controller;
 
-import static de.hbt.salat.testutils.ReferenceTestUtils.employeeorderWithId;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -11,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +31,10 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
-import de.hbt.salat.favorites.domain.Favorite;
+import de.hbt.salat.favorites.domain.FavoriteEntry;
+import de.hbt.salat.favorites.domain.FavoriteList;
+import de.hbt.salat.favorites.domain.FavoriteSection;
+import de.hbt.salat.favorites.domain.FavoriteSortOrder;
 import de.hbt.salat.favorites.service.FavoriteService;
 
 /**
@@ -74,7 +75,7 @@ class ApplyFavouriteTicketReferenceTest {
     var employee = mock(Employee.class);
     when(employee.getId()).thenReturn(1L);
     when(employeeService.getLoginEmployee()).thenReturn(employee);
-    when(favoriteService.getFavorites(anyLong())).thenReturn(List.of());
+    when(favoriteService.getOwnFavoriteList()).thenReturn(new FavoriteList(FavoriteSortOrder.RECENT, List.of(new FavoriteSection(null, null, List.of()))));
   }
 
   @Test
@@ -98,8 +99,18 @@ class ApplyFavouriteTicketReferenceTest {
         eq("Daily"), eq(List.of()), eq(false), anyLong(), anyLong(), anyInt());
   }
 
-  private void givenFavourite(Favorite favourite) {
-    when(favoriteService.getFavorite(FAVOURITE_ID)).thenReturn(Optional.of(favourite));
+  /** Applying counts as a use (#1414) - only once the booking exists. */
+  @Test
+  void applying_marks_the_favourite_as_used() {
+    givenFavourite(favourite());
+
+    applyIt();
+
+    verify(favoriteService).markUsed(FAVOURITE_ID);
+  }
+
+  private void givenFavourite(FavoriteEntry favourite) {
+    when(favoriteService.getOwnFavorite(FAVOURITE_ID)).thenReturn(Optional.of(favourite));
   }
 
   private void applyIt() {
@@ -107,14 +118,9 @@ class ApplyFavouriteTicketReferenceTest {
         new MockHttpServletResponse(), new ExtendedModelMap());
   }
 
-  private static Favorite favourite(String... ticketReferences) {
-    return Favorite.builder()
-        .employeeorder(employeeorderWithId(EMPLOYEE_ORDER_ID))
-        .hours(1)
-        .minutes(30)
-        .comment("Daily")
-        .ticketReferences(new ArrayList<>(List.of(ticketReferences)))
-        .build();
+  private static FavoriteEntry favourite(String... ticketReferences) {
+    return new FavoriteEntry(FAVOURITE_ID, EMPLOYEE_ORDER_ID, "ORDER/01 - Wartung", 1, 30, "Daily",
+        List.of(ticketReferences), null, null, null);
   }
 
 }

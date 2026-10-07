@@ -6340,3 +6340,115 @@ databaseChangeLog:
         - dropColumn:
             tableName: suborder
             columnName: fixedPrice
+
+  - changeSet:
+      id: 173
+      author: kr
+      comment: Eigene, benannte Gruppen fuer Favoriten (#1414)
+      # Eine Gruppe gehoert einer Person und geht mit ihr. Der Name ist je Person eindeutig; position
+      # haelt die Reihenfolge der Gruppen, die die Person per Drag & Drop festlegt.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: favorite_group
+      changes:
+        - createTable:
+            tableName: favorite_group
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_favorite_group
+              - column:
+                  name: employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_favorite_group_employee
+                    references: employee(id)
+                    deleteCascade: true
+              - column:
+                  name: name
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: favorite_group
+            columnNames: employee_id, name
+            constraintName: uk_favorite_group_employee_id_name
+
+  - changeSet:
+      id: 174
+      author: kr
+      comment: Favorit kennt seine Gruppe (#1414)
+      # Ohne Gruppe steht ein Favorit oben in der Liste. Wird seine Gruppe geloescht, bleibt er erhalten
+      # und steht danach ohne Gruppe; das erledigt die Anwendung, ON DELETE SET NULL sichert es ab.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: favorite
+                columnName: favorite_group_id
+      changes:
+        - addColumn:
+            tableName: favorite
+            columns:
+              - column:
+                  name: favorite_group_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: favorite
+            baseColumnNames: favorite_group_id
+            constraintName: fk_favorite_favorite_group
+            referencedTableName: favorite_group
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+  - changeSet:
+      id: 175
+      author: kr
+      comment: Eigene Reihenfolge und letzte Benutzung eines Favoriten (#1414)
+      # Beide Spalten bleiben fuer den Bestand leer: last_used NULL heisst "seit #1414 nicht angewendet",
+      # position NULL "noch nicht von Hand eingeordnet". Die Anwendung sortiert solche Favoriten hinter
+      # die uebrigen, untereinander den zuletzt angelegten zuerst.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: favorite
+                columnName: last_used
+      changes:
+        - addColumn:
+            tableName: favorite
+            columns:
+              - column:
+                  name: position
+                  type: int
+              - column:
+                  name: last_used
+                  type: datetime

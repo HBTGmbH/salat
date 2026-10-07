@@ -5,6 +5,7 @@ import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_OVERLAP;
 import static de.hbt.salat.common.exception.ErrorCode.CO_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
 import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.FA_GROUP_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.EM_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.SO_COMPLETE_SIGN_TAKEN;
@@ -80,7 +81,9 @@ public class ConcurrentModificationAspect {
       "uk_suborder_customerorder_parent_sign", SO_SIGN_TAKEN,
       // #1342: an order sign with a slash can spell the same path as a suborder of another order
       "uk_suborder_complete_order_sign", SO_COMPLETE_SIGN_TAKEN,
-      "uk_report_definition_name", RP_REPORT_NAME_TAKEN);
+      "uk_report_definition_name", RP_REPORT_NAME_TAKEN,
+      // #1414: the same name created twice at the same time
+      "uk_favorite_group_employee_id_name", FA_GROUP_NAME_TAKEN);
 
   @AfterThrowing(pointcut = "within(de.hbt.salat..*) && @within(org.springframework.stereotype.Service)",
       throwing = "conflict")

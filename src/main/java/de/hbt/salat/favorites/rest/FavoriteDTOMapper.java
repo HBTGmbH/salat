@@ -7,7 +7,7 @@ import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-import de.hbt.salat.favorites.domain.Favorite;
+import de.hbt.salat.favorites.domain.FavoriteEntry;
 import de.hbt.salat.favorites.domain.NewFavorite;
 
 @Mapper(collectionMappingStrategy = CollectionMappingStrategy.ADDER_PREFERRED,
@@ -15,20 +15,24 @@ import de.hbt.salat.favorites.domain.NewFavorite;
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface FavoriteDTOMapper {
 
-    /** By hand: the single {@code ticketReference} of older clients is derived from the list (#1326). */
-    default FavoriteDTO map(Favorite favorite) {
+    /**
+     * By hand: the single {@code ticketReference} of older clients is derived from the list (#1326).
+     * The group (#1414) is read only — it is arranged in the application, not through the interface.
+     */
+    default FavoriteDTO map(FavoriteEntry favorite) {
         if (favorite == null) {
             return null;
         }
-        var references = List.copyOf(favorite.getTicketReferences());
+        var references = favorite.ticketReferences();
         return FavoriteDTO.builder()
-            .id(favorite.getId())
-            .employeeorderId(favorite.getEmployeeorderId())
-            .hours(favorite.getHours() == null ? 0 : favorite.getHours())
-            .minutes(favorite.getMinutes() == null ? 0 : favorite.getMinutes())
-            .comment(favorite.getComment())
+            .id(favorite.id())
+            .employeeorderId(favorite.employeeorderId())
+            .hours(favorite.hours())
+            .minutes(favorite.minutes())
+            .comment(favorite.comment())
             .ticketReference(references.isEmpty() ? null : references.getFirst())
             .ticketReferences(references)
+            .groupName(favorite.groupName())
             .build();
     }
 
@@ -50,6 +54,6 @@ public interface FavoriteDTOMapper {
             favorite.getComment(), references);
     }
 
-    List<FavoriteDTO> map(List<Favorite> favorites);
+    List<FavoriteDTO> map(List<FavoriteEntry> favorites);
 
 }

@@ -610,6 +610,8 @@ public class TimereportController {
         // a favourite belongs to the person of its employee order (#1369), and the list shows the
         // login's own: booking for somebody else offers none
         model.addAttribute("canSaveAsFavorite", ownContract);
+        // the groups a new favourite can be sorted into (#1414); without any, the form asks nothing
+        model.addAttribute("favoriteGroups", ownContract ? favoriteService.getOwnGroups() : List.of());
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         boolean canShare = !isEdit || ecId == effectiveContractId(fEmployeeContractId);
         model.addAttribute("canShare", canShare);
@@ -681,7 +683,8 @@ public class TimereportController {
             valueOf(durationHours).intValueExact(),
             valueOf(durationMinutes).intValueExact(),
             form.getComment(),
-            TicketReferences.normalize(form.getTicketReferences()));
+            TicketReferences.normalize(form.getTicketReferences()),
+            form.getFavoriteGroupId());
     }
 
     private List<RecentBooking> loadRecentBookings(Long fEmployeeContractId, TimereportForm form) {

@@ -1615,3 +1615,54 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 .issue-key {
   white-space: nowrap;
 }
+
+/* Sortable lists (#1414). The grip is the only place a drag starts, so that a finger anywhere else
+   still scrolls the dialog; touch-action hands the gesture on the grip to SortableJS instead of the
+   browser. */
+.favorites-organize-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 2rem;
+  min-height: 2rem;
+  color: var(--tblr-secondary);
+  cursor: grab;
+  touch-action: none;
+}
+
+.favorites-organize-handle:active {
+  cursor: grabbing;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+}
+
+.sortable-chosen {
+  background-color: var(--tblr-bg-surface-secondary);
+}
+
+/* An empty group stays a drop target and says so. */
+.favorites-organize-list:not(:has([data-sortable-item])) {
+  min-height: 2.75rem;
+  border: 1px dashed var(--tblr-border-color);
+  border-radius: var(--tblr-border-radius);
+}
+
+.favorites-organize-list:not(:has([data-sortable-item]))::before {
+  content: attr(data-empty-text);
+  display: block;
+  padding: 0.65rem 0.75rem;
+  color: var(--tblr-secondary);
+  font-size: var(--tblr-font-size-h5, 0.875rem);
+}
+
+/* The group choice beside "Speichern & Favorit" (#1414) keeps the row instead of taking a line. */
+.save-fav-group {
+  flex: 1 1 12rem;
+}
+
+.save-fav-group .mb-3 {
+  margin-bottom: 0 !important;
+}

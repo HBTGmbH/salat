@@ -11,6 +11,7 @@ import static de.hbt.salat.dailyreport.controller.DailyController.reviewReturnUr
 import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -41,6 +42,9 @@ import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.favorites.domain.FavoriteList;
+import de.hbt.salat.favorites.domain.FavoriteSection;
+import de.hbt.salat.favorites.domain.FavoriteSortOrder;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.EmployeeorderService;
 
@@ -82,6 +86,8 @@ class DailyViewReturnTest {
     when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
     when(employeecontractService.getCurrentContract(1L)).thenReturn(Optional.empty());
     when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
+    when(favoriteService.getOwnFavoriteList())
+        .thenReturn(new FavoriteList(FavoriteSortOrder.RECENT, List.of(new FavoriteSection(null, null, List.of()))));
   }
 
   @ParameterizedTest

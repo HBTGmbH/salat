@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import de.hbt.salat.auth.domain.AuthorizedUser;
-import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.favorites.service.FavoriteService;
 
 @Slf4j
@@ -38,15 +37,17 @@ public class FavoriteRestEndpoint {
   private final FavoriteService favoriteService;
   private final FavoriteDTOMapper mapper = Mappers.getMapper(FavoriteDTOMapper.class);
   private final AuthorizedUser authorizedUser;
-  private final AuthorizedEmployee authorizedEmployee;
 
+  @Operation(summary = "Liefert die eigenen Favoriten",
+      description = "Die Favoriten des authentifizierten Benutzers in der Reihenfolge der Anwendung: erst die ohne "
+          + "Gruppe, dann die Gruppen in der eigenen Reihenfolge, innerhalb nach der gewählten Sortierung")
   @GetMapping(path = "", produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
   public Collection<FavoriteDTO> getFavorites() {
     if(!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
-    return mapper.map(favoriteService.getFavorites(authorizedEmployee.getEmployeeId()));
+    return mapper.map(favoriteService.getOwnFavoriteList().favorites());
   }
 
   @Operation(summary = "Fügt einen neuen Favoriten hinzu",
@@ -65,7 +66,7 @@ public class FavoriteRestEndpoint {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
     var id = favoriteService.addFavorite(mapper.map(favorite));
-    return mapper.map(favoriteService.getFavorite(id).orElseThrow());
+    return mapper.map(favoriteService.getOwnFavorite(id).orElseThrow());
   }
 
   @Operation(summary = "Löscht einen Favoriten",

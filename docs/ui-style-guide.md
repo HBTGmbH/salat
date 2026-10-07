@@ -952,6 +952,13 @@ nach dem Swap neu verdrahtet (`flat-rate-form :: suborderSelect`, #1065). Umgeke
 umgebende Element das Mittel der Wahl, wo die Felder bleiben, aber `salat:`-Tags keine
 `hx-*`-Attribute durchreichen (`pricing-form.html`).
 
+**Ein Bereich, der sich mit seinen eigenen Bedienelementen neu zeichnet, tauscht mit `settle:0`**
+(#1414). htmx gibt jedem neuen Element mit derselben id bis zum Abklingen die Attribute des alten
+und stellt danach die neuen her. Ein Optionsfeld, das die Person gerade angeklickt hat, trug das
+Attribut `checked` vorher nicht — nach dem Tausch ist dann keine Option mehr gewählt. Der Dialog
+„Favoriten ordnen" setzt deshalb `hx-swap="innerHTML settle:0"` an seinen Rumpf; es muss die Zahl
+sein, `settle:0ms` ist für htmx eine Zeichenkette und damit wahr.
+
 ### 5.8 Diagramme
 
 Referenz ist die Kontenübersicht (`dailyreport/my-accounts.html`, #1175): Arbeitszeit, Urlaub und
@@ -1030,6 +1037,34 @@ die Voreinstellung zurück.
 **Nie allein.** Ein Diagramm ergänzt, es trägt keine Information allein. Die Werte, auf die es
 ankommt, stehen auch als Text daneben (Kennzahlen, Tabelle, „davon … geplant“). Deshalb gilt für
 die Säulen gegen den Hintergrund kein eigener Kontrastnachweis.
+
+### 5.9 Sortierbare Listen (#1414)
+
+Eine Reihenfolge, die die Person selbst festlegt, wird gezogen **und** mit Pfeilknöpfen verschoben.
+Das Ziehen übernimmt SortableJS (WebJar, eingebunden in `layout/base.html`) mit Maus und Finger; die
+Pfeile sind der Weg für die Tastatur und für alle, die nicht ziehen können. Das Verhalten steht
+einmal in `salat.js`, kein Template bringt eigenes Skript mit:
+
+| Attribut | Bedeutung |
+|---|---|
+| `data-sortable` | am Behälter; seine direkten Kinder sind die Einträge |
+| `data-sortable-item` | an jedem Eintrag; ein Pfeilknopf findet darüber seinen Eintrag |
+| `data-sortable-handle` | Selektor des Griffs, an dem gezogen wird |
+| `data-sortable-group` | Behälter desselben Namens tauschen Einträge aus |
+| `data-sortable-sort="false"` | keine Ordnung im Behälter, Einträge wandern nur zwischen Behältern |
+| `data-sortable-form` | id des Formulars, das nach jeder Änderung abgeschickt wird |
+| `data-sortable-move` | `up` oder `down`, an einem Knopf im Eintrag |
+
+- **Die Reihenfolge steht in der Seite, nicht in einem zweiten Modell im Browser.** Nach dem Ziehen
+  oder einem Pfeil schickt der Behälter das Formular ab; die versteckten Felder darin stehen in der
+  Reihenfolge des Dokuments, auch wenn sie über `form=` zu einem leeren Formular gehören. Der Server
+  liest die Anordnung daraus und zeichnet den Bereich neu.
+- **Gezogen wird nur am Griff** (`ti-grip-vertical`, `touch-action: none`). Überall sonst scrollt ein
+  Finger den Dialog weiter. Der Griff ist für Hilfstechnik verborgen (`aria-hidden`), die Pfeile
+  tragen einen Namen, der den Eintrag nennt.
+- Ein Pfeil, der nichts verschieben kann, ist gesperrt. Am Rand eines Behälters setzt er im
+  Nachbarbehälter derselben Gruppe fort; der Fokus bleibt nach dem Neuzeichnen auf ihm.
+- Ein leerer Behälter bleibt Ablageziel und sagt es (`data-empty-text`).
 
 ## 6. Eingabekomponenten nach Datentyp
 

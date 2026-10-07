@@ -46,4 +46,9 @@ public class FavoriteDTO implements Serializable {
       + "wird in Großbuchstaben gespeichert. Wie viele erlaubt sind, legt der Unterauftrag fest; geprüft wird beim "
       + "Anwenden des Favoriten.", example = "[\"PROJ-123\", \"PROJ-130\"]", nullable = true)
   private List<String> ticketReferences;
+
+  @Schema(description = "Name der Gruppe, in die die Person den Favoriten einsortiert hat; null ohne Gruppe. "
+      + "Nur lesend: Gruppen werden in der Anwendung angelegt und geordnet, ein neuer Favorit steht ohne Gruppe.",
+      example = "Wartung", nullable = true, accessMode = Schema.AccessMode.READ_ONLY)
+  private String groupName;
 }
