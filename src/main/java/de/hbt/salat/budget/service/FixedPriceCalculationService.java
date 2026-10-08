@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -101,14 +100,16 @@ public class FixedPriceCalculationService {
         var calculation = calculate(plan, assignmentRepository.findPlanBookings(List.of(plan.getId()), until),
             suborderReadModels(plan.getCustomerorderId()), costLookup(), includeCosts);
 
-        var flatRates = flatRatesOf(plan);
-        var fixedPrice = sum(flatRates, due -> true);
-        var due = sum(flatRates, amount -> !amount.due().isAfter(until));
+        var realizedUntil = BudgetControllingService.notAfterToday(until);
+        var realized = flatRatesOf(plan).stream()
+            .filter(amount -> !amount.due().isAfter(realizedUntil))
+            .map(FlatRateDueAmount::amount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         // The progress of today, as the controlling reads it for every plan (→ computeProgress).
         var progress = plan.scopeProgressPercentOn(DateUtils.today());
         var status = BudgetControllingService.computeProgressStatus(progress, calculation.total().consumedPercent());
-        return Optional.of(new FixedPriceEvaluation(calculation.rows(), calculation.total(), fixedPrice, due, until,
-            progress, status, includeCosts));
+        return Optional.of(new FixedPriceEvaluation(calculation.rows(), calculation.total(),
+            plan.totalOfAdjustments(), realized, realizedUntil, progress, status, includeCosts));
     }
 
     /**
@@ -227,8 +228,9 @@ public class FixedPriceCalculationService {
     }
 
     /**
-     * Every flat rate amount the plan holds over its whole validity — the fixed price — allocated by
-     * the rule the controlling uses (→ {@link FlatRateAllocation}), against every plan of the order.
+     * Every flat rate amount the plan holds over its whole validity — what is billed of the fixed
+     * price — allocated by the rule the controlling uses (→ {@link FlatRateAllocation}), against every
+     * plan of the order.
      */
     private List<FlatRateDueAmount> flatRatesOf(OrderBudget plan) {
         long customerorderId = plan.getCustomerorderId();
@@ -242,11 +244,6 @@ public class FixedPriceCalculationService {
                 .map(holder -> holder.getId().equals(plan.getId()))
                 .orElse(false))
             .toList();
-    }
-
-    private static BigDecimal sum(List<FlatRateDueAmount> amounts,
-                                  Predicate<FlatRateDueAmount> selected) {
-        return amounts.stream().filter(selected).map(FlatRateDueAmount::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private static BigDecimal hoursOf(Duration duration) {

@@ -5,18 +5,53 @@
 <!--/*
   Die Kalkulation eines Festpreis-Plans mit den darauf gebuchten Stunden (#1404) und darunter, was
   eine Stunde des Plans tatsächlich wert ist (#1405). Zwei Seiten zeigen sie: die Detailseite des
-  Plans, auf der Manager die Zeilen pflegen (editable), und das Controlling, in dem sie unter der
-  Tabelle des Abschnitts steht. Gerechnet wird in FixedPriceEvaluation, hier wird nur dargestellt.
+  Plans, auf der Manager die Zeilen pflegen (editable), und das Controlling, in dem sie in einem
+  Modal steht (#1435). Gerechnet wird in FixedPriceEvaluation, hier wird nur dargestellt.
 
   Kosten erscheinen nur, wenn die Auswertung sie trägt (fp.costsIncluded) — sie entscheidet das
   Recht, nicht die Vorlage.
 */-->
-<div th:fragment="evaluation(fp, title, planId, editable)" class="card-body border-top">
+<div th:fragment="evaluation(fp, planId, editable)" class="card-body border-top">
   <h4 class="mb-2">
     <span th:text="#{main.budget.calculation.title}">Kalkulation</span>
-    <span th:if="${title != null}" class="text-muted fw-normal" th:text="'· ' + ${title}">Plan</span>
     <span class="badge bg-blue-lt ms-1" th:text="#{main.budget.fixedprice.badge}">Festpreis</span>
   </h4>
+  <th:block th:replace="~{budget/fixed-price :: content(${fp}, ${planId}, ${editable})}"></th:block>
+</div>
+
+<!--/*
+  Im Controlling steht der ganze Block in einem Modal (#1435), geöffnet über den Link „Kalkulation“
+  im Kopf des Abschnitts. Unter der Tabelle machte er den Abschnitt lang, auch für den, der nur die
+  Tabelle lesen wollte. Der Titel nennt Plan und Auftrag: das Modal verdeckt den Kopf, an dem man
+  sonst ablesen würde, wessen Kalkulation es ist (→ AGENTS.md, modale Dialoge).
+*/-->
+<div th:fragment="modal(fp, modalId, planName, orderLabel)" class="modal fade" th:id="${modalId}"
+     tabindex="-1" aria-hidden="true" th:attr="aria-labelledby=${modalId + '-title'}">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" th:id="${modalId + '-title'}">
+          <h5 class="mb-0">
+            <span th:text="#{main.budget.calculation.title}">Kalkulation</span>
+            <span class="text-muted fw-normal" th:text="'· ' + ${planName}">Wartung und Betrieb</span>
+            <span class="badge bg-blue-lt ms-1" th:text="#{main.budget.fixedprice.badge}">Festpreis</span>
+          </h5>
+          <div class="text-muted small" th:text="${orderLabel}">ABC-12 Wartung und Betrieb</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
+      </div>
+      <div class="modal-body">
+        <th:block th:replace="~{budget/fixed-price :: content(${fp}, null, false)}"></th:block>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link link-secondary me-auto" data-bs-dismiss="modal"
+                th:text="#{main.button.close}">Schließen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:fragment="content(fp, planId, editable)">
 
   <div class="table-responsive">
     <table class="table table-vcenter table-sm mb-2">
@@ -128,19 +163,15 @@
     <dd class="col-sm-8 col-lg-9">
       <span th:text="${fp.hasFixedPrice()} ? #{main.budget.format.amount(${fp.fixedPriceEuro()})} : '—'">48.000,00 €</span>
       <span class="text-muted small ms-1" th:unless="${fp.hasFixedPrice()}"
-            th:text="#{main.fixedprice.rate.gap.NO_FIXED_PRICE}">keine Pauschalen</span>
-      <th:block th:if="${fp.hasFixedPrice()}">
-        <span class="text-muted small ms-2"
-              th:text="#{main.fixedprice.due(${#temporals.format(fp.evaluatedUntil(), 'dd.MM.yyyy')}, ${#messages.msg('main.budget.format.amount', fp.dueEuro())})}">
-          fällig bis 31.12.2026: 19.200,00 €</span>
-        <span class="text-muted small ms-2" th:if="${fp.earnedByProgressEuro() != null}"
-              th:text="#{main.fixedprice.earned(${#messages.msg('main.budget.format.amount', fp.earnedByProgressEuro())})}">
-          nach Fortschritt: 19.200,00 €</span>
-      </th:block>
+            th:text="#{main.fixedprice.rate.gap.NO_FIXED_PRICE}">kein Festpreis: der Plan hat keine Anpassungen</span>
+      <span class="text-muted small ms-2" th:if="${fp.earnedByProgressEuro() != null}"
+            th:text="#{main.fixedprice.earned(${#messages.msg('main.budget.format.amount', fp.earnedByProgressEuro())})}">
+        nach Fortschritt: 19.200,00 €</span>
     </dd>
 
     <!--/* Drei Stundensätze, jeder mit seiner Formel und den Zahlen darin (#1405). Wo einer nicht
-           zu berechnen ist, steht ein Strich und der Grund. */-->
+           zu berechnen ist, steht ein Strich und der Grund. Die fälligen Pauschalen stehen nur in
+           der Formel des realisierten Satzes, sie sind sein Zähler (#1435). */-->
     <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.rate.calculated}">Stundensatz kalkuliert</dt>
     <dd class="col-sm-8 col-lg-9" th:with="rate=${fp.calculatedRate()}">
       <span class="fw-bold" th:text="${rate.hasValue()} ? #{main.budget.format.amount(${rate.euroPerHour()})} : '—'">120,00 €</span>
@@ -151,12 +182,12 @@
             th:text="#{${'main.fixedprice.rate.gap.' + rate.gap().name()}}">kein Fortschrittseintrag</span>
     </dd>
 
-    <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.rate.effective}">Stundensatz effektiv bisher</dt>
-    <dd class="col-sm-8 col-lg-9" th:with="rate=${fp.effectiveRateSoFar()}">
-      <span class="fw-bold" th:text="${rate.hasValue()} ? #{main.budget.format.amount(${rate.euroPerHour()})} : '—'">120,00 €</span>
+    <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.rate.realized}">Stundensatz realisiert bisher</dt>
+    <dd class="col-sm-8 col-lg-9" th:with="rate=${fp.realizedRateSoFar()}">
+      <span class="fw-bold" th:text="${rate.hasValue()} ? #{main.budget.format.amount(${rate.euroPerHour()})} : '—'">100,00 €</span>
       <span class="text-muted small ms-2" th:if="${rate.hasValue()}"
-            th:text="#{main.fixedprice.rate.effective.formula(${#messages.msg('main.budget.format.amount', fp.earnedByProgressEuro())}, ${fp.total().bookedHoursFormatted()})}">
-        Festpreis × Fortschritt ÷ gebuchte Stunden</span>
+            th:text="#{main.fixedprice.rate.realized.formula(${#temporals.format(fp.realizedUntil(), 'dd.MM.yyyy')}, ${#messages.msg('main.budget.format.amount', fp.realizedEuro())}, ${fp.total().bookedHoursFormatted()})}">
+        fällige Pauschalen bis 08.10.2026 ÷ gebuchte Stunden</span>
       <span class="text-muted small ms-2" th:unless="${rate.hasValue()}"
             th:text="#{${'main.fixedprice.rate.gap.' + rate.gap().name()}}">kein Fortschrittseintrag</span>
     </dd>
@@ -186,7 +217,7 @@
       </dd>
     </th:block>
   </dl>
-</div>
+</th:block>
 
 </body>
 </html>

@@ -22,7 +22,7 @@ public class BudgetEmployeesViewHelperTest {
   public void formats_hours_and_rates_of_a_row() {
     var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(
         employee("abc", Duration.ofMinutes(510), 3,
-            List.of(new CostCategoryRate("Senior", 9500)), List.of(14000))), true));
+            List.of(new CostCategoryRate("Senior", 9500)), List.of(14000))), true), true);
 
     assertThat(card.rows()).singleElement().satisfies(row -> {
       assertThat(row.employeeSign()).isEqualTo("abc");
@@ -44,7 +44,7 @@ public class BudgetEmployeesViewHelperTest {
     var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(
         employee("abc", Duration.ofHours(8), 2,
             List.of(new CostCategoryRate("Senior", 9500), new CostCategoryRate("Junior", 6000)),
-            List.of(14000, 15000))), true));
+            List.of(14000, 15000))), true), true);
 
     assertThat(card.rows().getFirst().costs())
         .extracting(CostCategoryRate::name).containsExactly("Senior", "Junior");
@@ -59,7 +59,7 @@ public class BudgetEmployeesViewHelperTest {
   public void sums_the_hours_without_a_rate_and_says_there_is_something_to_report() {
     var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(
         new BudgetEmployee(1L, "abc", "Abc Person", 4, Duration.ofHours(10), List.of(), List.of(),
-            Duration.ofHours(4), Duration.ofHours(3), Duration.ofHours(2))), true));
+            Duration.ofHours(4), Duration.ofHours(3), Duration.ofHours(2))), true), true);
 
     assertThat(card.hoursWithoutCost()).isEqualTo("4:00");
     assertThat(card.hoursWithoutPrice()).isEqualTo("3:00");
@@ -74,16 +74,33 @@ public class BudgetEmployeesViewHelperTest {
   @Test
   public void reports_no_cost_side_at_all_where_costs_are_not_included() {
     var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(
-        employee("abc", Duration.ofHours(8), 1, List.of(), List.of(14000))), false));
+        employee("abc", Duration.ofHours(8), 1, List.of(), List.of(14000))), false), true);
 
     assertThat(card.costsIncluded()).isFalse();
     assertThat(card.anyWithoutCost()).isFalse();
     assertThat(card.hasFindings()).isFalse();
   }
 
+  /**
+   * A fixed-price plan has no customer rates by design (#1435): the card shows no rate column, says
+   * nothing about hours without one, and keeps the cost side.
+   */
+  @Test
+  public void reports_no_customer_rate_side_for_a_fixed_price() {
+    var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(
+        new BudgetEmployee(1L, "abc", "Abc Person", 4, Duration.ofHours(10), List.of(), List.of(),
+            Duration.ofHours(4), Duration.ofHours(10), Duration.ZERO)), true), false);
+
+    assertThat(card.pricesIncluded()).isFalse();
+    assertThat(card.anyWithoutPrice()).isFalse();
+    assertThat(card.anyWithoutCost()).isTrue();
+    assertThat(card.hasFindings()).isTrue();
+    assertThat(card.hasRateColumn()).isTrue();
+  }
+
   @Test
   public void formats_an_empty_card_as_an_empty_card() {
-    var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(), true));
+    var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(), true), true);
 
     assertThat(card.isEmpty()).isTrue();
     assertThat(card.hasFindings()).isFalse();

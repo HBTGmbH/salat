@@ -332,7 +332,7 @@ public class BudgetController {
         model.addAttribute("assignedHours", DurationUtils.format(assigned.totalDuration()));
         model.addAttribute("assignedTimereports",
             AssignedTimereportViewHelper.from(assigned.newest(), rates));
-        model.addAttribute("employees", BudgetEmployeesViewHelper.from(rates.employees()));
+        model.addAttribute("employees", BudgetEmployeesViewHelper.from(rates.employees(), !budget.isFixedPrice()));
         model.addAttribute("assignedLimit", ASSIGNED_LIST_LIMIT);
         model.addAttribute("assignedTruncated", assigned.truncated());
         // Only the other active plans of the same order are possible targets: an inactive plan
