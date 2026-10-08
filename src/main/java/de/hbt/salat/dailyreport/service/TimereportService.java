@@ -585,18 +585,19 @@ public class TimereportService {
   }
 
   private void validateOrderBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
-    // one timereport exists at least and all share the same data
+    // one timereport exists at least and all share the same order and comment
     Timereport timereport = timereports.getFirst();
-    LocalDate refdate = timereport.getReferenceday().getRefdate();
     Suborder suborder = timereport.getSuborder();
-    Employeeorder employeeorder = timereport.getEmployeeorder();
     if(TRUE.equals(suborder.getCommentnecessary())) {
       BusinessRuleCheckUtils.notEmpty(timereport.getTaskdescription(), TR_SUBORDER_COMMENT_MANDATORY);
     }
-    BusinessRuleCheckUtils.isTrue(
-        employeeorder.isValidAt(refdate),
-        TR_EMPLOYEE_ORDER_INVALID_REF_DATE
-    );
+    // but every serial day has a date of its own, and each must lie within the order (#1429)
+    for (var serialDay : timereports) {
+      LocalDate refdate = serialDay.getReferenceday().getRefdate();
+      if (!serialDay.getEmployeeorder().isValidAt(refdate)) {
+        throw new BusinessRuleException(TR_EMPLOYEE_ORDER_INVALID_REF_DATE, DateUtils.format(refdate));
+      }
+    }
   }
 
   /**
@@ -622,12 +623,14 @@ public class TimereportService {
     }
   }
 
+  /** Every serial day, not only the first: each has a date of its own (#1429). */
   private void validateContractBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
-    // one timereport exists at least and all share the same data
-    Timereport timereport = timereports.getFirst();
-    LocalDate refdate = timereport.getReferenceday().getRefdate();
-    BusinessRuleCheckUtils.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
-        TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE);
+    for (var serialDay : timereports) {
+      LocalDate refdate = serialDay.getReferenceday().getRefdate();
+      if (!serialDay.getEmployeecontract().isValidAt(refdate)) {
+        throw new BusinessRuleException(TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE, DateUtils.format(refdate));
+      }
+    }
   }
 
   private void validateWorkingDayBusinessRules(List<Timereport> timereports) {
