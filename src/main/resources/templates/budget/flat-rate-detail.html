@@ -41,7 +41,7 @@
         </div>
         <div class="col-md-6">
           <dl class="row">
-            <dt class="col-sm-5" th:text="#{main.flatrate.field.valid}">Gültig</dt>
+            <dt class="col-sm-5" th:text="#{main.flatrate.field.valid}">Zeitraum</dt>
             <dd class="col-sm-7">
               <span th:text="${#temporals.format(flatRate.validFrom, 'dd.MM.yyyy')}"></span>
               <th:block th:if="${flatRate.rhythm.name() != 'ONCE'}">

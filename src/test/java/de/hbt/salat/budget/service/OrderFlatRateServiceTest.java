@@ -240,26 +240,35 @@ public class OrderFlatRateServiceTest {
 
   // --- list filters ----------------------------------------------------------------------------
 
-  /** Same two filters as the rate list, and they are independent of each other (#957). */
+  /**
+   * A flat rate is never inactive (#1438): its period is when the payments fall due, and one whose
+   * last payment lies in the past is still part of its order.
+   */
   @Test
-  public void leaves_out_a_flat_rate_that_ended_yesterday() {
+  public void lists_a_flat_rate_whose_last_payment_lies_in_the_past() {
     given(flatRate("co", null, FlatRateRhythm.MONTHLY, TODAY.minusYears(1), YESTERDAY));
 
-    assertThat(service.getRows(null, false, true)).isEmpty();
+    assertThat(service.getRows(null, false)).hasSize(1);
   }
 
   @Test
-  public void shows_an_expired_flat_rate_when_asked_for() {
-    given(flatRate("co", null, FlatRateRhythm.MONTHLY, TODAY.minusYears(1), YESTERDAY));
-
-    assertThat(service.getRows(null, true, true)).hasSize(1);
-  }
-
-  @Test
-  public void shows_a_flat_rate_that_only_starts_tomorrow() {
+  public void lists_a_flat_rate_that_only_starts_tomorrow() {
     given(flatRate("co", null, FlatRateRhythm.ONCE, TOMORROW, TOMORROW));
 
-    assertThat(service.getRows(null, false, true)).hasSize(1);
+    assertThat(service.getRows(null, false)).hasSize(1);
+  }
+
+  /** Only the order can be inactive, and its flat rates appear when asked for (#957, #1438). */
+  @Test
+  public void leaves_out_the_flat_rates_of_an_inactive_order_unless_asked_for() {
+    var endedOrder = new OrderTree().order("ended");
+    endedOrder.setUntilDate(YESTERDAY);
+    var flatRate = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
+    flatRate.setCustomerorder(endedOrder);
+    given(flatRate);
+
+    assertThat(service.getRows(null, false)).isEmpty();
+    assertThat(service.getRows(null, true)).hasSize(1);
   }
 
   /** The row carries the whole schedule, so the list can say what a monthly rate adds up to. */
@@ -267,7 +276,7 @@ public class OrderFlatRateServiceTest {
   public void reports_the_schedule_a_definition_amounts_to() {
     given(flatRate("co", null, FlatRateRhythm.MONTHLY, TODAY, TODAY.plusMonths(2), "100"));
 
-    var row = service.getRows(null, false, true).get(0);
+    var row = service.getRows(null, true).get(0);
 
     assertThat(row.dueCount()).isEqualTo(3);
     assertThat(row.totalAmount()).isEqualByComparingTo("300");
@@ -279,7 +288,7 @@ public class OrderFlatRateServiceTest {
   public void marks_a_definition_that_puts_nothing_on_the_calendar() {
     given(flatRate("co", null, FlatRateRhythm.INSTALMENTS, TODAY, TODAY.plusYears(1)));
 
-    assertThat(service.getRows(null, false, true))
+    assertThat(service.getRows(null, true))
         .extracting(OrderFlatRateRow::isEmptySchedule).containsExactly(true);
   }
 
@@ -293,7 +302,7 @@ public class OrderFlatRateServiceTest {
     var onCo = flatRate("co", "co/01/A", FlatRateRhythm.ONCE, TODAY, TODAY);
     given(onOther, onCo);
 
-    assertThat(service.getRows(null, false, true))
+    assertThat(service.getRows(null, true))
         .extracting(row -> row.customerorder().getSign(), OrderFlatRateRow::suborderCompleteOrderSign)
         .containsExactly(tuple("co", "co/01/A"), tuple("other", null));
   }
@@ -304,7 +313,7 @@ public class OrderFlatRateServiceTest {
     var chosen = flatRate("co", null, FlatRateRhythm.ONCE, TODAY, TODAY);
     when(repository.findByCustomerorderIdOrderByValidFromAsc(TREE.orderId("co"))).thenReturn(List.of(chosen));
 
-    assertThat(service.getRows(TREE.orderId("co"), false, true)).extracting(OrderFlatRateRow::flatRate).containsExactly(chosen);
+    assertThat(service.getRows(TREE.orderId("co"), true)).extracting(OrderFlatRateRow::flatRate).containsExactly(chosen);
   }
 
   // --- helpers ---------------------------------------------------------------------------------

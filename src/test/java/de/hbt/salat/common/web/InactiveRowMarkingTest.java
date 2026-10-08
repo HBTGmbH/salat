@@ -49,12 +49,15 @@ class InactiveRowMarkingTest {
         .isEmpty();
   }
 
-  /** Die Bedingung je Liste ist dieselbe wie zuvor an der Tönung: das Flag beim Budgetplan, sonst ADR-0029. */
+  /**
+   * Die Bedingung je Liste ist dieselbe wie zuvor an der Tönung: das Flag beim Budgetplan, sonst ADR-0029. Die Liste der
+   * Pauschalen markiert den Auftrag: eine Pauschale ist nie inaktiv, nur ihr Auftrag kann es sein (#1438).
+   */
   @ParameterizedTest
   @CsvSource(delimiter = '|', value = {
       "budget/budget-list.html            | ${b.active != true}   | 1",
       "budget/pricing-list.html           | ${!p.currentlyValid}  | 1",
-      "budget/flat-rate-list.html         | ${!f.currentlyValid}  | 1",
+      "budget/flat-rate-list.html         | ${order != null and !order.currentlyValid} | 1",
       "order/customer-order-list.html     | ${!co.currentlyValid} | 1",
       "order/sub-order-list.html          | ${!so.currentlyValid} | 1",
       "order/employee-order-list.html     | ${!eo.currentlyValid} | 1",
