@@ -1447,6 +1447,59 @@ public class BudgetControllingServiceTest {
     assertThat(section.columns().hourlyRate()).isFalse();
   }
 
+  /**
+   * #1435: a fixed-price plan earns its price times its progress. Over the year that is 40 % of
+   * 100.000 EUR; the hourly rate matching its bookings earns nothing on top, and the flat rates
+   * allocated to it are what has been billed, not revenue of their own.
+   */
+  @Test
+  @FixedClock("2026-10-08T10:00:00")
+  public void should_take_the_revenue_of_a_fixed_price_plan_from_its_progress() {
+    var fixedPrice = fixedPricePlan();
+    givenBudgets(fixedPrice);
+    givenFlatRates(once("first instalment", null, IN_H1, "30000"));
+
+    var result = compute();
+    var section = sectionOf(result, SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().totalRevenueEuro()).isEqualByComparingTo("40000.00");
+    assertThat(section.rows()).noneMatch(BudgetControllingRow::flatRate);
+    assertThat(section.rows()).allSatisfy(row -> assertThat(row.hasTotalRevenue()).isFalse());
+    // the total of the order and every figure derived from it read the same revenue
+    assertThat(result.total().totalRevenueEuro()).isEqualByComparingTo("40000.00");
+  }
+
+  /**
+   * #1435: like the hours, the revenue of a window is what was achieved in it — the progress made
+   * from its start to its end. The part before it counts as revenue before the window.
+   */
+  @Test
+  @FixedClock("2026-10-08T10:00:00")
+  public void should_take_the_revenue_of_a_window_from_the_progress_made_in_it() {
+    givenBudgets(fixedPricePlan());
+
+    var total = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL).total();
+
+    // 40 % at the end, 10 % before 01.07.: 30 % of 100.000 EUR in the window, 10 % before it
+    assertThat(total.totalRevenueEuro()).isEqualByComparingTo("30000.00");
+    assertThat(total.revenueBeforeWindowEuro()).isEqualByComparingTo("10000.00");
+  }
+
+  /** 100.000 EUR, 10 % entered on 01.02., 40 % on 01.08. */
+  private static OrderBudget fixedPricePlan() {
+    var plan = plan("Festpreis", null, FROM, UNTIL, "100000");
+    plan.setFixedPrice(true);
+    plan.setProgressMode(ProgressMode.SCOPE);
+    for (var entry : List.of(Map.entry(LocalDate.of(2026, 2, 1), 10), Map.entry(LocalDate.of(2026, 8, 1), 40))) {
+      var scopeEntry = new OrderBudgetScopeEntry();
+      scopeEntry.setOrderBudget(plan);
+      scopeEntry.setRefdate(entry.getKey());
+      scopeEntry.setPercent(entry.getValue());
+      plan.getScopeEntries().add(scopeEntry);
+    }
+    return plan;
+  }
+
   /** A plan that is not a fixed price keeps the hourly rate columns and its status by budget. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
