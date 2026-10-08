@@ -157,7 +157,8 @@
           <tr th:if="${#lists.isEmpty(budget.scopeEntries)}">
             <td colspan="4" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
           </tr>
-          <tr th:each="entry : ${budget.scopeEntries}">
+          <!--/* By date, so the progress reads as it was made (#1435). */-->
+          <tr th:each="entry : ${budget.scopeEntriesByDate}">
             <td th:text="${entry.refdate}"></td>
             <td class="text-end" th:text="${entry.percent} + ' %'"></td>
             <td th:text="${entry.comment}"></td>

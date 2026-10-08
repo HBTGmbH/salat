@@ -109,6 +109,18 @@ public class OrderBudget extends AuditedEntity {
     }
 
     /**
+     * The progress entries by date, the oldest first; entries of one day in the order they were made
+     * (#1435). Sorted here rather than by {@code @OrderBy}: the collection is cached, and the cache
+     * keeps the order in which a new entry was added, not the one the database would return.
+     */
+    public List<OrderBudgetScopeEntry> getScopeEntriesByDate() {
+        return scopeEntries.stream()
+            .sorted(Comparator.comparing(OrderBudgetScopeEntry::getRefdate)
+                .thenComparing(OrderBudgetScopeEntry::getId, Comparator.nullsLast(Comparator.naturalOrder())))
+            .toList();
+    }
+
+    /**
      * Everything the plan was granted, whatever date each adjustment takes effect on. For a fixed
      * price that is the price agreed (#1435): the flat rates are what has been billed of it so far
      * and grow with the instalment plan, so they say nothing about the price itself.
