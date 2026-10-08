@@ -26,41 +26,41 @@ class FixedPriceEvaluationTest {
   }
 
   /**
-   * "Effective so far" takes the share of the fixed price the progress stands for, not the flat rates
-   * fallen due — decided for #1405. It therefore equals the rate expected at completion: (price × p) ÷ h
-   * is price ÷ (h ÷ p).
+   * "Realized so far" divides the flat rates fallen due by the booked hours (#1435), "expected at
+   * completion" the fixed price by the projected ones. The mockup of #1435: 48.000 EUR, 160 h at
+   * 40 %, 16.000 EUR billed.
    */
   @Test
-  void computes_the_effective_rate_so_far_from_the_share_of_the_fixed_price_the_progress_stands_for() {
-    var evaluation = evaluation("48000", 400, 200, 40.0);
+  void computes_the_realized_rate_from_the_flat_rates_fallen_due_and_the_expected_one_from_the_fixed_price() {
+    var evaluation = evaluation("48000", "16000", 400, 160, 40.0);
 
-    // 48.000 x 40 % = 19.200 EUR earned by 200 h
+    assertThat(evaluation.realizedRateSoFar().euroPerHour()).isEqualByComparingTo("100.00");
+    // 160 h at 40 % project to 400 h
+    assertThat(evaluation.projectedHours()).isEqualTo(Duration.ofHours(400));
+    assertThat(evaluation.expectedRateAtCompletion().euroPerHour()).isEqualByComparingTo("120.00");
+    // 48.000 x 40 % = 19.200 EUR, what the gross profit so far is read against
     assertThat(evaluation.earnedByProgressEuro()).isEqualByComparingTo("19200.00");
-    assertThat(evaluation.effectiveRateSoFar().euroPerHour()).isEqualByComparingTo("96.00");
-    // 200 h at 40 % project to 500 h
-    assertThat(evaluation.projectedHours()).isEqualTo(Duration.ofHours(500));
-    assertThat(evaluation.expectedRateAtCompletion().euroPerHour()).isEqualByComparingTo("96.00");
   }
 
+  /** Nothing billed yet is a rate of 0 EUR, and it needs neither a fixed price nor a progress. */
   @Test
-  void ignores_the_flat_rates_fallen_due_for_the_effective_rate() {
-    var dueAhead = new FixedPriceEvaluation(List.of(), total(400, 160), new BigDecimal("48000"),
-        new BigDecimal("48000"), LocalDate.of(2026, 6, 30), 40.0, ProgressStatus.ON_TRACK, false);
-
-    assertThat(dueAhead.effectiveRateSoFar().euroPerHour()).isEqualByComparingTo("120.00");
+  void reports_a_realized_rate_of_zero_before_anything_was_billed() {
+    assertThat(evaluation("48000", "0", 400, 160, 40.0).realizedRateSoFar().euroPerHour())
+        .isEqualByComparingTo("0.00");
+    assertThat(evaluation("0", "4000", 400, 160, null).realizedRateSoFar().euroPerHour())
+        .isEqualByComparingTo("25.00");
   }
 
   /** Without a progress entry or without bookings there is no rate, but the reason. */
   @Test
   void names_the_reason_instead_of_dividing_by_zero() {
-    assertThat(evaluation("48000", 400, 160, null).effectiveRateSoFar().gap()).isEqualTo(Gap.NO_PROGRESS);
     assertThat(evaluation("48000", 400, 160, null).expectedRateAtCompletion().gap()).isEqualTo(Gap.NO_PROGRESS);
     assertThat(evaluation("48000", 400, 160, 0.0).expectedRateAtCompletion().gap()).isEqualTo(Gap.NO_PROGRESS);
-    assertThat(evaluation("48000", 400, 0, 40.0).effectiveRateSoFar().gap()).isEqualTo(Gap.NO_BOOKINGS);
+    assertThat(evaluation("48000", 400, 0, 40.0).realizedRateSoFar().gap()).isEqualTo(Gap.NO_BOOKINGS);
     assertThat(evaluation("48000", 400, 0, 40.0).expectedRateAtCompletion().gap()).isEqualTo(Gap.NO_BOOKINGS);
     assertThat(evaluation("48000", 0, 160, 40.0).calculatedRate().gap()).isEqualTo(Gap.NO_CALCULATION);
     assertThat(evaluation("0", 400, 160, 40.0).calculatedRate().gap()).isEqualTo(Gap.NO_FIXED_PRICE);
-    assertThat(evaluation("0", 400, 160, 40.0).effectiveRateSoFar().hasValue()).isFalse();
+    assertThat(evaluation("0", 400, 160, 40.0).expectedRateAtCompletion().gap()).isEqualTo(Gap.NO_FIXED_PRICE);
   }
 
   @Test
@@ -81,8 +81,13 @@ class FixedPriceEvaluationTest {
 
   private static FixedPriceEvaluation evaluation(String fixedPrice, int calculatedHours, int bookedHours,
                                                  Double progress) {
+    return evaluation(fixedPrice, "0", calculatedHours, bookedHours, progress);
+  }
+
+  private static FixedPriceEvaluation evaluation(String fixedPrice, String realized, int calculatedHours,
+                                                 int bookedHours, Double progress) {
     return new FixedPriceEvaluation(List.of(), total(calculatedHours, bookedHours), new BigDecimal(fixedPrice),
-        BigDecimal.ZERO, LocalDate.of(2026, 6, 30), progress, ProgressStatus.UNKNOWN, false);
+        new BigDecimal(realized), LocalDate.of(2026, 6, 30), progress, ProgressStatus.UNKNOWN, false);
   }
 
   private static FixedPriceCalculationRow total(int calculatedHours, int bookedHours) {

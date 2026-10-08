@@ -212,7 +212,7 @@
     stehen darunter. Pflegen dürfen die Zeilen nur Manager.
   */-->
   <div class="card mb-3" id="calculation" th:if="${fixedPrice != null}">
-    <div th:replace="~{budget/fixed-price :: evaluation(${fixedPrice}, null, ${budget.id}, ${isManager})}"></div>
+    <div th:replace="~{budget/fixed-price :: evaluation(${fixedPrice}, ${budget.id}, ${isManager})}"></div>
 
     <div class="card-body border-top" th:if="${not #lists.isEmpty(conflictingRates)}">
       <div class="text-warning mb-1">
@@ -378,13 +378,15 @@
             <th class="text-end" th:text="#{main.budget.employees.field.hours}">Stunden</th>
             <th class="text-end d-none d-md-table-cell" th:text="#{main.budget.employees.field.bookings}">Buchungen</th>
             <th th:if="${employees.costsIncluded}" th:text="#{main.budget.employees.field.cost}">Kostensatz</th>
-            <th th:text="#{main.budget.employees.field.rate}">Kondition</th>
+            <!--/* A fixed-price plan has no customer rates by design (#1435): the column would only
+                   ever warn. */-->
+            <th th:if="${employees.pricesIncluded}" th:text="#{main.budget.employees.field.rate}">Kondition</th>
             <th class="w-1" th:if="${isManager}"></th>
           </tr>
         </thead>
         <tbody>
           <tr th:if="${employees.isEmpty()}">
-            <td th:colspan="${4 + (employees.costsIncluded ? 1 : 0) + (isManager ? 1 : 0)}"
+            <td th:colspan="${3 + (employees.costsIncluded ? 1 : 0) + (employees.pricesIncluded ? 1 : 0) + (isManager ? 1 : 0)}"
                 class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
           </tr>
           <tr th:each="e : ${employees.rows}">
@@ -412,7 +414,7 @@
                    invoiceable is deliberately not marked per person: it says nothing about them,
                    only about the suborder, and the booking list says it row by row. The plan-wide
                    hours are named below the table. */-->
-            <td>
+            <td th:if="${employees.pricesIncluded}">
               <div th:each="p : ${e.pricesEuroPerHour}" th:text="#{main.budget.format.amount(${p})}"></div>
               <span th:if="${e.missingPrice}" class="badge bg-warning-lt"
                     th:title="#{main.budget.rate.price.missing}">
@@ -421,14 +423,15 @@
               </span>
             </td>
             <!--/* The card is the occasion to enter a missing rate, so it leads to both forms with
-                   the person filled in. Creating either takes a manager, hence the links do too. */-->
+                   the person filled in. Creating either takes a manager, hence the links do too. A
+                   fixed-price plan leaves out the customer rate: one there is a conflict (#1435). */-->
             <td class="text-nowrap" th:if="${isManager}">
               <a class="btn btn-outline-secondary btn-sm"
                  th:href="@{/budget/employee-cost/assignments/create(employeeId=${e.employeeId})}"
                  th:title="#{main.budget.employees.link.cost(${e.employeeSign})}">
                 <i class="icon ti ti-coin m-0"></i>
               </a>
-              <a class="btn btn-outline-secondary btn-sm ms-1"
+              <a class="btn btn-outline-secondary btn-sm ms-1" th:if="${employees.pricesIncluded}"
                  th:href="@{/budget/pricing/create(customerorderId=${budget.customerorderId},employeeId=${e.employeeId})}"
                  th:title="#{main.budget.employees.link.rate(${e.employeeSign})}">
                 <i class="icon ti ti-receipt m-0"></i>
@@ -450,11 +453,16 @@
       </div>
       <!--/* Two texts, because the hint names the columns: whoever has no cost column must not be
              told about one. */-->
-      <small class="text-muted" th:if="${employees.costsIncluded}" th:text="#{main.budget.employees.hint}">
+      <small class="text-muted" th:if="${employees.costsIncluded and employees.pricesIncluded}"
+             th:text="#{main.budget.employees.hint}">
         Mehrere Einträge bedeuten mehrere greifende Sätze.
       </small>
-      <small class="text-muted" th:unless="${employees.costsIncluded}"
+      <small class="text-muted" th:if="${employees.pricesIncluded and not employees.costsIncluded}"
              th:text="#{main.budget.employees.hint.rateonly}">
+        Mehrere Einträge bedeuten mehrere greifende Sätze.
+      </small>
+      <small class="text-muted" th:if="${employees.costsIncluded and not employees.pricesIncluded}"
+             th:text="#{main.budget.employees.hint.costonly}">
         Mehrere Einträge bedeuten mehrere greifende Sätze.
       </small>
     </div>
@@ -510,13 +518,13 @@
               <!--/* The rates that apply to this booking (#964) — the same resolution the card
                      above summarises per person. No amounts: those stay in the controlling. */-->
               <th th:if="${employees.costsIncluded}" th:text="#{main.budget.assignments.field.cost}">Kostensatz</th>
-              <th th:text="#{main.budget.assignments.field.rate}">Kondition</th>
+              <th th:if="${employees.pricesIncluded}" th:text="#{main.budget.assignments.field.rate}">Kondition</th>
               <th th:text="#{main.budget.assignments.field.task}">Buchungstext</th>
             </tr>
           </thead>
           <tbody>
             <tr th:if="${#lists.isEmpty(assignedTimereports)}">
-              <td th:colspan="${6 + (isManager ? 1 : 0) + (employees.costsIncluded ? 1 : 0)}"
+              <td th:colspan="${5 + (isManager ? 1 : 0) + (employees.costsIncluded ? 1 : 0) + (employees.pricesIncluded ? 1 : 0)}"
                   class="text-center text-muted py-4"
                   th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
             </tr>
@@ -541,7 +549,7 @@
               </td>
               <!--/* A suborder that is not invoiceable is never billed, whatever rate matches, so
                      the cell says so instead of faulting a rate that would not take effect. */-->
-              <td class="text-nowrap">
+              <td class="text-nowrap" th:if="${employees.pricesIncluded}">
                 <span th:if="${tr.rate.notInvoiceable()}" class="badge bg-blue-lt"
                       th:title="#{main.budget.rate.notinvoiceable}">
                   <i class="icon ti ti-receipt-off m-0 me-1"></i>

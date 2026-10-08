@@ -27,8 +27,10 @@ import de.hbt.salat.budget.domain.CalculationLineData;
 import de.hbt.salat.budget.domain.CostCategory;
 import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
+import de.hbt.salat.budget.domain.FixedPriceEvaluation.Gap;
 import de.hbt.salat.budget.domain.FlatRateRhythm;
 import de.hbt.salat.budget.domain.OrderBudget;
+import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
 import de.hbt.salat.budget.domain.OrderBudgetCalculation;
 import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
@@ -176,32 +178,70 @@ class FixedPriceCalculationServiceTest {
   }
 
   /**
-   * The fixed price is every flat rate amount the plan holds over its whole validity; the progress
-   * against the consumption of the calculated hours decides the status.
+   * #1435: the fixed price is the sum of the plan's adjustments, whatever date each takes effect on.
+   * The flat rates are what has been billed of it, counted up to today; divided by the booked hours
+   * they make the realized rate. The progress against the consumption of the calculated hours decides
+   * the status.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  void takes_the_fixed_price_from_the_flat_rates_of_the_plan_and_judges_progress_against_the_hours() {
+  void takes_the_fixed_price_from_the_adjustments_and_the_realized_rate_from_the_flat_rates_due_by_today() {
     addLine("co/02", "Senior", 400);
     booked("co/02", SENIOR_PERSON, 160);
+    adjustment("40000", JAN);
+    adjustment("10000", LocalDate.of(2026, 9, 1));
+    monthlyFlatRate("4000");
+    progress(LocalDate.of(2026, 5, 31), 40);
+
+    // The window reaches to the end of the year; the flat rates count up to 15.06. only.
+    var evaluation = service.evaluate(plan, DEC, false).orElseThrow();
+
+    assertThat(evaluation.fixedPriceEuro()).isEqualByComparingTo("50000");
+    assertThat(evaluation.realizedUntil()).isEqualTo(LocalDate.of(2026, 6, 15));
+    // six monthly amounts, January to June
+    assertThat(evaluation.realizedEuro()).isEqualByComparingTo("24000");
+    assertThat(evaluation.progressStatus()).isEqualTo(ProgressStatus.ON_TRACK);
+    assertThat(evaluation.calculatedRate().euroPerHour()).isEqualByComparingTo("125.00");
+    assertThat(evaluation.realizedRateSoFar().euroPerHour()).isEqualByComparingTo("150.00");
+    // 160 h at 40 % project to 400 h
+    assertThat(evaluation.expectedRateAtCompletion().euroPerHour()).isEqualByComparingTo("125.00");
+  }
+
+  /** Flat rates alone make no fixed price (#1435): without adjustments the price-based rates have a gap. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  void has_no_fixed_price_without_adjustments_however_many_flat_rates_there_are() {
+    addLine("co/02", "Senior", 400);
+    booked("co/02", SENIOR_PERSON, 160);
+    monthlyFlatRate("4000");
+    progress(LocalDate.of(2026, 5, 31), 40);
+
+    var evaluation = service.evaluate(plan, DEC, false).orElseThrow();
+
+    assertThat(evaluation.hasFixedPrice()).isFalse();
+    assertThat(evaluation.calculatedRate().gap()).isEqualTo(Gap.NO_FIXED_PRICE);
+    assertThat(evaluation.expectedRateAtCompletion().gap()).isEqualTo(Gap.NO_FIXED_PRICE);
+    assertThat(evaluation.realizedRateSoFar().euroPerHour()).isEqualByComparingTo("150.00");
+  }
+
+  private void adjustment(String amount, LocalDate effective) {
+    var adjustment = new OrderBudgetAdjustment();
+    adjustment.setOrderBudget(plan);
+    adjustment.setAmount(new BigDecimal(amount));
+    adjustment.setEffective(effective);
+    plan.getAdjustments().add(adjustment);
+  }
+
+  private void monthlyFlatRate(String amount) {
     var instalments = new OrderFlatRate();
     setId(instalments, 7L);
     instalments.setCustomerorder(tree.order("co"));
     instalments.setOrderBudget(plan);
     instalments.setRhythm(FlatRateRhythm.MONTHLY);
-    instalments.setAmount(new BigDecimal("4000"));
+    instalments.setAmount(new BigDecimal(amount));
     instalments.setValidFrom(JAN);
     instalments.setValidUntil(DEC);
     when(orderFlatRateService.lookupFor(any())).thenReturn(OrderFlatRateLookup.of(List.of(instalments)));
-    progress(LocalDate.of(2026, 5, 31), 40);
-
-    var evaluation = service.evaluate(plan, LocalDate.of(2026, 6, 30), false).orElseThrow();
-
-    assertThat(evaluation.fixedPriceEuro()).isEqualByComparingTo("48000");
-    assertThat(evaluation.dueEuro()).isEqualByComparingTo("24000");
-    assertThat(evaluation.progressStatus()).isEqualTo(ProgressStatus.ON_TRACK);
-    assertThat(evaluation.calculatedRate().euroPerHour()).isEqualByComparingTo("120.00");
-    assertThat(evaluation.effectiveRateSoFar().euroPerHour()).isEqualByComparingTo("120.00");
   }
 
   /**

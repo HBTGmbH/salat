@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -81,7 +82,8 @@ public class OrderBudget extends AuditedEntity {
      * Whether the plan is a fixed price (#1404) — a feature of the plan itself; a plan may be
      * order-wide. The suborder's former "fixed price offer" flag is gone (Changeset 171).
      *
-     * <p>A fixed-price plan earns through flat rates only, measures its progress by hand
+     * <p>A fixed-price plan takes its price from its adjustments (#1435), is billed through flat
+     * rates only, measures its progress by hand
      * ({@link ProgressMode#SCOPE}) and carries a {@link #calculations calculation} its consumption
      * is judged against.
      */
@@ -104,6 +106,17 @@ public class OrderBudget extends AuditedEntity {
             .max(Comparator.comparing(OrderBudgetScopeEntry::getRefdate))
             .map(e -> (double) e.getPercent())
             .orElse(null);
+    }
+
+    /**
+     * Everything the plan was granted, whatever date each adjustment takes effect on. For a fixed
+     * price that is the price agreed (#1435): the flat rates are what has been billed of it so far
+     * and grow with the instalment plan, so they say nothing about the price itself.
+     */
+    public BigDecimal totalOfAdjustments() {
+        return adjustments.stream()
+            .map(OrderBudgetAdjustment::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /** Whether the plan applies to the customer order as a whole. */
