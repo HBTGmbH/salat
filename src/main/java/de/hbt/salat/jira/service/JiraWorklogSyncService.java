@@ -64,8 +64,10 @@ public class JiraWorklogSyncService {
   /**
    * Brings JIRA in line with what was booked in SALAT. Does nothing at all — not one HTTP call —
    * while the sync is switched off on this config.
+   *
+   * @param credentials what the replication signed in with — the account the worklogs are authored by
    */
-  public void sync(JiraReplicationConfig cfg) {
+  public void sync(JiraReplicationConfig cfg, JiraCredentials credentials) {
     if (!TRUE.equals(cfg.getWorklogSyncEnabled())) {
       return;
     }
@@ -101,13 +103,13 @@ public class JiraWorklogSyncService {
         cfg.getName(), scopeSign, from, until, wanted.size(), stored.size());
 
     var outcome = new Outcome();
-    wanted.forEach((key, entry) -> writeOne(cfg, key, entry, stored.get(key), outcome));
+    wanted.forEach((key, entry) -> writeOne(cfg, credentials, key, entry, stored.get(key), outcome));
     var unwanted = new LinkedHashMap<>(stored);
     unwanted.keySet().removeAll(wanted.keySet());
     var replicated = replicatedKeys(cfg, unwanted.keySet());
     unwanted.forEach((key, row) -> {
       if (replicated.contains(normalized(key.issueKey()))) {
-        removeOne(cfg, key, row, outcome);
+        removeOne(cfg, credentials, key, row, outcome);
       } else {
         outcome.kept++;
       }
@@ -228,14 +230,14 @@ public class JiraWorklogSyncService {
    * has moved. A failure is logged and the run carries on with the next one — the remembered row
    * stays as it was, so the next run tries again.
    */
-  private void writeOne(JiraReplicationConfig cfg, WorklogKey key, JiraWorklogEntry entry, JiraWorklogSync stored,
-                        Outcome outcome) {
+  private void writeOne(JiraReplicationConfig cfg, JiraCredentials credentials, WorklogKey key,
+                        JiraWorklogEntry entry, JiraWorklogSync stored, Outcome outcome) {
     if (isWrittenAlready(entry, stored)) {
       outcome.unchanged++;
       return;
     }
     var client = worklogClients.forFlavor(cfg.getApiFlavor());
-    var target = targetFor(cfg, key.issueKey());
+    var target = targetFor(cfg, credentials, key.issueKey());
     try {
       if (stored == null) {
         remember(cfg, key, client.create(target, entry), entry);
@@ -277,12 +279,12 @@ public class JiraWorklogSyncService {
    * A day and ticket that has no bookings left — in JIRA it must not stay behind. Only called for a
    * ticket that is still replicated, see {@link #replicatedKeys}.
    */
-  private void removeOne(JiraReplicationConfig cfg, WorklogKey key, JiraWorklogSync stored,
-                         Outcome outcome) {
+  private void removeOne(JiraReplicationConfig cfg, JiraCredentials credentials, WorklogKey key,
+                         JiraWorklogSync stored, Outcome outcome) {
     var client = worklogClients.forFlavor(cfg.getApiFlavor());
     try {
       try {
-        client.delete(targetFor(cfg, key.issueKey()), stored.getWorklogId());
+        client.delete(targetFor(cfg, credentials, key.issueKey()), stored.getWorklogId());
       } catch (JiraWorklogNotFoundException ex) {
         // Already gone — the goal is reached, only the memory of it is stale.
         log.info("Worklog {} of issue {} was already gone from JIRA",
@@ -311,8 +313,9 @@ public class JiraWorklogSyncService {
     syncRepository.save(row);
   }
 
-  private static JiraWorklogTarget targetFor(JiraReplicationConfig cfg, String issueKey) {
-    return new JiraWorklogTarget(cfg.getBaseUrl(), JiraCredentials.of(cfg), issueKey);
+  private static JiraWorklogTarget targetFor(JiraReplicationConfig cfg, JiraCredentials credentials,
+                                             String issueKey) {
+    return new JiraWorklogTarget(cfg.getBaseUrl(), credentials, issueKey);
   }
 
   /** A typed reference and a ticket key mean the same issue whatever the case was written in. */

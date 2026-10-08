@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -15,6 +17,7 @@ import static de.hbt.salat.jira.OrderTree.suborderWithId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +33,7 @@ import org.mockito.quality.Strictness;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.AuthorizationException;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
@@ -46,6 +50,12 @@ import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.secret.domain.SecretStatus;
+import de.hbt.salat.secret.domain.SecretSummary;
+import de.hbt.salat.secret.domain.SecretValue;
+import de.hbt.salat.secret.domain.Token;
+import de.hbt.salat.secret.domain.UsernamePassword;
+import de.hbt.salat.secret.service.SecretService;
 
 /**
  * Maintaining the replication configs from the user interface (#984), with the scope resolved by
@@ -58,6 +68,7 @@ class JiraReplicationConfigServiceTest {
 
   private static final long ID = 42L;
   private static final String STORED_PASSWORD = "stored-token";
+  private static final long STORED_SECRET_ID = 500L;
 
   /** The order tree of these tests: ALPHA with A, A/01 below A, and B; the order BETA next to it. */
   private static final long ALPHA = 1L;
@@ -103,12 +114,20 @@ class JiraReplicationConfigServiceTest {
   @Mock
   private JiraTicketRepository ticketRepository;
 
+  /** The secret store as a map (#1432): what it keeps is what these tests read back. */
+  @Mock
+  private SecretService secretService;
+
+  private final Map<Long, SecretValue> secrets = new HashMap<>();
+  private final Map<Long, Boolean> unreadable = new HashMap<>();
+
   @BeforeEach
   void setUp() {
     // the real resolution against a mocked order module: what is tested is the reading by id
     classUnderTest = new JiraReplicationConfigService(configRepository, jiraReplicationRunService,
         jiraSearchClients, new JiraScopes(customerorderService, suborderService), orderReferences, authorizedUser,
-        ticketRepository);
+        ticketRepository, new JiraCredentialStore(secretService));
+    givenSecretStore();
     when(authorizedUser.isManager()).thenReturn(true);
     when(orderReferences.customerorder(anyLong())).thenAnswer(invocation ->
         customerorderWithId(invocation.getArgument(0)));
@@ -140,7 +159,8 @@ class JiraReplicationConfigServiceTest {
 
     classUnderTest.update(ID, data(null));
 
-    assertThat(saved().getPassword()).isEqualTo(STORED_PASSWORD);
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", STORED_PASSWORD));
+    verify(secretService, never()).replace(anyLong(), any());
   }
 
   @Test
@@ -149,7 +169,92 @@ class JiraReplicationConfigServiceTest {
 
     classUnderTest.update(ID, data("  new-token  "));
 
-    assertThat(saved().getPassword()).isEqualTo("new-token");
+    assertThat(saved().getSecretId()).isEqualTo(STORED_SECRET_ID);
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "new-token"));
+  }
+
+  /** The password is stored encrypted, never in the replication (#1432). */
+  @Test
+  void a_new_replication_keeps_its_credentials_in_the_secret_store() {
+    classUnderTest.create(data("pw"));
+
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "pw"));
+    assertThat(saved().getLegacyUsername()).isNull();
+    assertThat(saved().getLegacyPassword()).isNull();
+  }
+
+  /** Without a key the password could only be kept in plain text, and that is never done (#1432). */
+  @Test
+  void without_a_key_no_replication_is_created() {
+    when(secretService.isAvailable()).thenReturn(false);
+
+    assertThatThrownBy(() -> classUnderTest.create(data("pw")))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.SE_NO_KEY);
+    verify(secretService, never()).create(any());
+    verify(configRepository, never()).save(any());
+  }
+
+  /** The user name is part of the secret (#1432): a new one is written with the stored password. */
+  @Test
+  void a_new_user_name_keeps_the_stored_password() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+
+    classUnderTest.update(ID, withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, " other-user ", null));
+
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("other-user", STORED_PASSWORD));
+  }
+
+  @Test
+  void a_new_user_name_needs_the_password_again_when_the_stored_one_is_unreadable() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+    unreadable.put(STORED_SECRET_ID, true);
+
+    assertThatThrownBy(() -> classUnderTest.update(ID,
+        withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "other-user", null)))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.SE_SECRET_UNREADABLE);
+    verify(secretService, never()).replace(anyLong(), any());
+  }
+
+  /** In a copy of the database the secret cannot be read: the form says so (#1432). */
+  @Test
+  void unreadable_credentials_are_reported_to_the_form() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+    unreadable.put(STORED_SECRET_ID, true);
+
+    var info = classUnderTest.getById(ID);
+
+    assertThat(info.credentialsReadable()).isFalse();
+    assertThat(info.username()).isNull();
+  }
+
+  @Test
+  void entering_the_password_again_makes_unreadable_credentials_usable() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+    unreadable.put(STORED_SECRET_ID, true);
+
+    classUnderTest.update(ID, data("new-token"));
+
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "new-token"));
+  }
+
+  /** A replication still keeping its secret in plain text moves it on the first save with a new one. */
+  @Test
+  void storing_new_credentials_clears_the_plain_text_columns() {
+    var stored = existingConfig();
+    stored.setSecretId(null);
+    stored.setLegacyUsername("jira-user");
+    stored.setLegacyPassword(STORED_PASSWORD);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, data("new-token"));
+
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "new-token"));
+    assertThat(saved().getLegacyUsername()).isNull();
+    assertThat(saved().getLegacyPassword()).isNull();
   }
 
   @Test
@@ -170,8 +275,7 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.create(withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, "jira-user", "pat"));
 
     assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
-    assertThat(saved().getUsername()).isNull();
-    assertThat(saved().getPassword()).isEqualTo("pat");
+    assertThat(secretOf(saved())).isEqualTo(new Token("pat"));
   }
 
   @Test
@@ -221,19 +325,21 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.update(ID, withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, null, "pat"));
 
     assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
-    assertThat(saved().getPassword()).isEqualTo("pat");
+    assertThat(saved().getSecretId()).isEqualTo(STORED_SECRET_ID);
+    assertThat(secretOf(saved())).isEqualTo(new Token("pat"));
   }
 
   @Test
   void an_existing_token_is_kept_when_the_field_stays_empty() {
     var stored = existingConfig();
     stored.setAuthMethod(JiraAuthMethod.PERSONAL_ACCESS_TOKEN);
-    stored.setUsername(null);
+    secrets.put(STORED_SECRET_ID, new Token(STORED_PASSWORD));
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
     classUnderTest.update(ID, withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.PERSONAL_ACCESS_TOKEN, null, null));
 
-    assertThat(saved().getPassword()).isEqualTo(STORED_PASSWORD);
+    assertThat(secretOf(saved())).isEqualTo(new Token(STORED_PASSWORD));
+    verify(secretService, never()).replace(anyLong(), any());
   }
 
   /** A config without a choice keeps HTTP Basic, the method every config used before #1385. */
@@ -291,7 +397,7 @@ class JiraReplicationConfigServiceTest {
 
     classUnderTest.setEnabled(ID, true);
     assertThat(saved().getEnabled()).isTrue();
-    assertThat(saved().getPassword()).isEqualTo(STORED_PASSWORD);
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", STORED_PASSWORD));
   }
 
   @Test
@@ -529,6 +635,20 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.delete(ID);
 
     verify(jiraReplicationRunService).deleteRunsOf(ID);
+  }
+
+  /** A deleted secret is gone; one left behind would still be stored (#1432, ADR-0038 §6). */
+  @Test
+  void deleting_a_replication_deletes_its_secret_after_it() {
+    var stored = existingConfig();
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.delete(ID);
+
+    var order = inOrder(configRepository, secretService);
+    order.verify(configRepository).delete(stored);
+    order.verify(secretService).delete(STORED_SECRET_ID);
+    assertThat(secrets).doesNotContainKey(STORED_SECRET_ID);
   }
 
   @Test
@@ -813,6 +933,19 @@ class JiraReplicationConfigServiceTest {
     assertThat(catalogue.options()).isEmpty();
   }
 
+  /** Said in words by the form and the picker (#1432), not a failed request to JIRA. */
+  @Test
+  void the_field_catalogue_is_not_fetched_with_unreadable_credentials() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+    unreadable.put(STORED_SECRET_ID, true);
+
+    assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.SE_SECRET_UNREADABLE);
+    verifyNoInteractions(jiraSearchClients);
+  }
+
   private void givenCatalogue(JiraField... fields) {
     when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
     when(jiraSearchClients.forFlavor(JiraApiFlavor.SERVER)).thenReturn(jiraSearchClient);
@@ -847,8 +980,8 @@ class JiraReplicationConfigServiceTest {
     config.setCustomerorder(customerorderWithId(ALPHA));
     config.setBaseUrl("https://jira.example.com");
     config.setApiFlavor(JiraApiFlavor.SERVER);
-    config.setUsername("jira-user");
-    config.setPassword(STORED_PASSWORD);
+    config.setSecretId(STORED_SECRET_ID);
+    secrets.put(STORED_SECRET_ID, new UsernamePassword("jira-user", STORED_PASSWORD));
     config.setJql("project = ALPHA");
     config.setEnabled(true);
     return config;
@@ -893,6 +1026,44 @@ class JiraReplicationConfigServiceTest {
                                                     String username, String password) {
     return new JiraReplicationConfigData("Alpha", ALPHA, null, "https://jira.example.com", apiFlavor,
         authMethod, username, password, "project = ALPHA", null, null, null, 100, true, false, null, false);
+  }
+
+  /**
+   * A map behind the mocked store: create hands out ids, replace and delete act on the map, and a
+   * secret marked unreadable fails to read the way one from another environment does.
+   */
+  private void givenSecretStore() {
+    when(secretService.isAvailable()).thenReturn(true);
+    when(secretService.create(any())).thenAnswer(invocation -> {
+      var id = 1000L + secrets.size();
+      secrets.put(id, invocation.getArgument(0));
+      return id;
+    });
+    doAnswer(invocation -> {
+      secrets.put(invocation.getArgument(0), invocation.getArgument(1));
+      unreadable.remove((Long) invocation.getArgument(0));
+      return null;
+    }).when(secretService).replace(anyLong(), any());
+    doAnswer(invocation -> secrets.remove((Long) invocation.getArgument(0)))
+        .when(secretService).delete(anyLong());
+    when(secretService.read(anyLong())).thenAnswer(invocation -> {
+      long id = invocation.getArgument(0);
+      if (unreadable.containsKey(id)) {
+        throw new BusinessRuleException(ErrorCode.SE_SECRET_UNREADABLE);
+      }
+      return secrets.get(id);
+    });
+    when(secretService.getSummary(anyLong())).thenAnswer(invocation -> {
+      long id = invocation.getArgument(0);
+      var value = secrets.get(id);
+      var readable = !unreadable.containsKey(id);
+      var username = readable && value instanceof UsernamePassword usernamePassword ? usernamePassword.username() : null;
+      return new SecretSummary(id, value.type(), SecretStatus.VALID, readable, username);
+    });
+  }
+
+  private SecretValue secretOf(JiraReplicationConfig config) {
+    return secrets.get(config.getSecretId());
   }
 
   private JiraReplicationConfig saved() {

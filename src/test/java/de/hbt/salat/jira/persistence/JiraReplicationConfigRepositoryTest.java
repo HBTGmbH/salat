@@ -122,8 +122,6 @@ class JiraReplicationConfigRepositoryTest {
     config.setSuborder(suborder);
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
-    config.setUsername("user");
-    config.setPassword("secret");
     config.setJql("project = RUN");
     config.setEnabled(true);
     configRepository.save(config);

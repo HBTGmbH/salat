@@ -1,6 +1,8 @@
 package de.hbt.salat.common;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -14,6 +16,11 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class ConfigurationLogger  {
+
+  /** Parts of a property name that mark its value as confidential. */
+  private static final List<String> CONFIDENTIAL =
+      List.of("credentials", "password", "secret", "token", "signingkey", "signing-key", "signing_key");
+
   @EventListener
   public void handleContextRefresh(ContextRefreshedEvent event) {
     final Environment env = event.getApplicationContext().getEnvironment();
@@ -27,12 +34,22 @@ public class ConfigurationLogger  {
         .map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
         .flatMap(Arrays::stream)
         .distinct()
-        .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
+        .filter(prop -> !isConfidential(prop))
         .sorted()
         .sequential()
         .forEach(prop -> sb.append(prop + " = >" + env.getProperty(prop) + "<\n"));
     sb.append("===========================================\n");
     log.info(sb.toString());
+  }
+
+  /**
+   * Whether the value of a property must not reach the log. Case-insensitive: the environment
+   * variables arrive with their own names, {@code SPRING_DATASOURCE_PASSWORD} or
+   * {@code SALAT_SECRET_KEYS_K1}, and a filter on lower case let them through (#1432).
+   */
+  static boolean isConfidential(String property) {
+    var name = property.toLowerCase(Locale.ROOT);
+    return CONFIDENTIAL.stream().anyMatch(name::contains);
   }
 
 }

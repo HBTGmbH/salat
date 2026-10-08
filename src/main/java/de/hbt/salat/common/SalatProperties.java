@@ -2,8 +2,11 @@ package de.hbt.salat.common;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,6 +29,7 @@ public class SalatProperties {
   private Runs runs = new Runs();
   private Vacation vacation = new Vacation();
   private Training training = new Training();
+  private Secret secret = new Secret();
 
   @Data
   public static class Auth {
@@ -127,6 +131,21 @@ public class SalatProperties {
     public static class History {
       private int retentionDays = 14;
     }
+  }
+
+  /**
+   * The keys of the secret store (#1432, → ADR-0038): {@code SALAT_SECRET_ACTIVEKEYID} and one
+   * {@code SALAT_SECRET_KEYS_<ID>} per key, a Base64 encoded 256-bit AES key each. Only ever from the
+   * environment, never from an {@code application*.yaml} — {@code SecretKeyConfigurationTest} checks
+   * the files. Without an active key the application starts, but stores no secret.
+   */
+  @Data
+  public static class Secret {
+    /** The key new values are encrypted with. Lower case letters and digits only. */
+    private String activeKeyId;
+    /** By key id. A key that is no longer active stays until the start has encrypted its rows anew. */
+    @ToString.Exclude
+    private Map<String, String> keys = new HashMap<>();
   }
 
 }

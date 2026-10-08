@@ -292,6 +292,28 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   Öffnen auf der Seite der Abnahme und das Buchungsformular). Einzelheiten in
   [`docs/ui-style-guide.md` §5.5](docs/ui-style-guide.md).
 
+## Secrets (→ ADR-0038)
+
+**Kein Secret im Klartext in der Datenbank. Secrets — Passwörter, Tokens, Schlüssel fremder
+Systeme — speichert und liest allein das Modul `secret`** (#1432).
+
+- `SecretService` legt an, ersetzt, liest und löscht; für ein Formular gibt `getSummary` alles außer
+  dem Secret heraus. Die Entität `Secret` und ihr Repository verlassen das Modul nicht
+  (`ArchitectureTest.nothingOutsideSecretTouchesTheStoredSecret`).
+- **Der Eigentümer merkt sich die id mit Fremdschlüssel**, nicht als `@ManyToOne` (bewusste
+  Abweichung von ADR-0036), und **löscht das Secret mit sich, in derselben Transaktion**: erst sich,
+  dann das Secret, denn der Fremdschlüssel zeigt darauf. `secret` weiß nicht, wer ein Secret
+  referenziert, und findet verwaiste nicht von selbst.
+- Jede Art von Secret ist ein Typ (`UsernamePassword`, `Token`), dessen `toString()` das Secret
+  auslässt. Kein Secret in Logs, Fehlermeldungen oder Laufhistorie: was ein fremder Client in seine
+  Meldung schreibt, geht durch eine Redaktion (`JiraCredentialRedaction`), bevor es angezeigt oder
+  gespeichert wird.
+- **Der Schlüssel kommt nur aus der Umgebung** (`SALAT_SECRET_ACTIVEKEYID`,
+  `SALAT_SECRET_KEYS_<ID>`), nie aus einem `application*.yaml` in `src/main/resources`
+  (`SecretKeyConfigurationTest`); der Schlüssel der Tests steht in `application-unittest.yaml`.
+  Ohne Schlüssel startet die Anwendung und speichert kein Secret; ein fehlerhafter verhindert den
+  Start. Lokal braucht jede Person einen eigenen (README).
+
 ## Legacy URL Redirects
 
 When a URL changes (controller rename, module move, path restructuring), register a permanent redirect in `de.hbt.salat.common.configuration.LegacyUrlRedirectConfig` so that bookmarks, history, and external links continue to work.
@@ -779,11 +801,12 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | `etl` | Data integration / extract-transform-load |
 | `favorites` | User favorites for quick access |
 | `invoice` | Invoice generation and settings |
-| `jira` | Jira integration and replication, and tickets maintained by hand or imported next to it (#1386, ADR-0037); may import `order` — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
+| `jira` | Jira integration and replication, and tickets maintained by hand or imported next to it (#1386, ADR-0037); may import `order` and `secret` (its credentials, #1432) — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
 | `notification` | Notifications |
 | `palette` | Object search of the command palette (#1157, ADR-0031): collects every module's `PaletteProvider`; imports only `common` and `auth`, and no module imports it |
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |
+| `secret` | Secrets of foreign systems, encrypted (#1432, ADR-0038): `SecretService` stores and reads them by id; imports only `common` and `auth` and knows none of the owners that import it |
 | `settings` | User preference store: entity, converter, repository, service — generic map-based API, no UI |
 | `settingseditor` | User preferences editing UI — aggregator; may import from **any** module; other modules must not import from `settingseditor` |
 | `statistic` | Aggregations and statistics |
@@ -837,6 +860,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `OrderFlatRate` | Stammdaten | `validFrom`/`validUntil` |
 | `OrderFlatRateInstalment` | Stammdaten | inherits the validity of its `OrderFlatRate` |
 | `OrderBudgetCalculation` | Stammdaten | goes with its `OrderBudget` |
+| `Secret` | Stammdaten | `status` instead of `hide`; deleted for good, with its owner (ADR-0038) |
 | `Timereport` | Bewegungsdaten | soft-delete (`deleted` + `@SQLRestriction`) |
 | `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |
@@ -1336,7 +1360,7 @@ RuntimeException
   - `VetoedException` — raised by an event listener to block a destructive operation
 - Error codes are defined in `ErrorCode` enum (`common/exception/ErrorCode.java`).
   - Format: two-letter module prefix + four-digit number, e.g. `CU-0001` for customer.
-  - Module prefixes in use: `AA` (auth), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `SO` (suborder), `TR` (time report), `RL` (release), `WD` (working day), `FA` (favorites), `ETL`, `XX` (generic).
+  - Module prefixes in use: `AA` (auth), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `SO` (suborder), `TR` (time report), `RL` (release), `WD` (working day), `FA` (favorites), `ETL`, `SE` (secret), `XX` (generic).
   - When adding a new error code, append it to the enum; never reuse or renumber existing codes.
 - `ServiceFeedbackMessage` (`common/exception/ServiceFeedbackMessage.java`) wraps an `ErrorCode` + severity + optional positional arguments (`{0}`, `{1}`, …); used to accumulate messages when building veto responses.
   - Factory methods: `ServiceFeedbackMessage.error(errorCode, args…)` / `.warning(…)`.

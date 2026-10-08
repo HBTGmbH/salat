@@ -60,7 +60,7 @@ public class ErrorCodeViewHelper {
    * der Test einen Schlüssel, den niemand nachschlägt (#1083).
    */
   public static String toErrorKey(ErrorCode errorCode) {
-    return "errorcode." + errorCode.getCode().replace('-', '.').toLowerCase();
+    return errorCode.messageKey();
   }
 
   public record ViewMessage(String key, Object[] args, String resolved) {

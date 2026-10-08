@@ -149,7 +149,7 @@ public class ArchitectureTest {
    * them itself: it asks with a {@code CommandEvent} from {@code de.hbt.salat.jira.command}, and
    * {@code TimereportService} answers it. The event class has to be visible from the listener,
    * hence this edge. What must stay forbidden is the other direction, {@code jira -> dailyreport}
-   * — see {@link #jiraShouldAccessCommonAuthOrderOnly}, which does not list dailyreport and is what
+   * — see {@link #jiraShouldAccessCommonAuthOrderSecretOnly}, which does not list dailyreport and is what
    * keeps the pair free of a cycle.
    */
   @ArchTest
@@ -235,13 +235,41 @@ public class ArchitectureTest {
    * dailyreport now imports jira (see
    * {@link #dailyreportShouldAccessOnlyItsKnownDependencies}), adding dailyreport here would close
    * a cycle.
+   *
+   * <p>{@code secret} keeps the credentials of the replications encrypted (#1432, ADR-0038); it
+   * imports no domain module, so the edge closes no cycle.
    */
   @ArchTest
-  static final ArchRule jiraShouldAccessCommonAuthOrderOnly = priority(HIGH).noClasses().that()
+  static final ArchRule jiraShouldAccessCommonAuthOrderSecretOnly = priority(HIGH).noClasses().that()
       .resideInAPackage("de.hbt.salat.jira..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "jira must only import common, auth, order",
-          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.order.", "de.hbt.salat.jira."));
+          "jira must only import common, auth, order, secret",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.order.", "de.hbt.salat.secret.",
+          "de.hbt.salat.jira."));
+
+  /**
+   * secret stores secrets encrypted and hands them out by id (#1432, ADR-0038). It knows none of
+   * their owners: an owner imports it and remembers the id, and a new integration brings a foreign
+   * key, not a new edge out of secret.
+   */
+  @ArchTest
+  static final ArchRule secretShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("de.hbt.salat.secret..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "secret must only import common, auth",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.secret."));
+
+  /**
+   * The other half (ADR-0038): the entity of a secret and its repository never leave the module.
+   * Their fields mean nothing without the key, and a secret is read decrypted through
+   * {@code SecretService} alone — an owner that loaded the row would hold the cipher text and a
+   * reason to decrypt it itself.
+   */
+  @ArchTest
+  static final ArchRule nothingOutsideSecretTouchesTheStoredSecret = priority(HIGH).noClasses().that()
+      .resideOutsideOfPackage("de.hbt.salat.secret..")
+      .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.secret.persistence..")
+      .orShould().dependOnClassesThat().haveFullyQualifiedName("de.hbt.salat.secret.domain.Secret");
 
   /**
    * reporting runs report definitions as SQL and renders the result generically, so it needs no

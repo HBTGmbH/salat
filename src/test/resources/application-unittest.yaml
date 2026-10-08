@@ -25,3 +25,9 @@ salat:
   vacation:
     customerorder-sign: ""
     do-not-calculate-signs: []
+  # Der Schlüssel des Secret-Speichers für die Tests (#1432). In einer Umgebung kommt er nur aus
+  # Umgebungsvariablen; in src/main/resources steht nie einer (SecretKeyConfigurationTest).
+  secret:
+    active-key-id: test
+    keys:
+      test: OHTqP+7nahpYHU5ywXXpaYn1EM7J5u4w2fzpXxmTmyw=
