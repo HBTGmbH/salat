@@ -3,6 +3,12 @@
 Date: 2026-09-18
 Status: Accepted
 
+> **Nachtrag 2026-10-08 (#1416, ADR-0038):** Für **ausgehende** Verbindungen, etwa die
+> Jira-Replikation per OAuth, führt die Anwendung OAuth selbst: Client-Secret im Deployment,
+> Callback und Erneuerung von Refresh-Tokens kehren dafür zurück. Die Anmeldung an Salat bleibt
+> unverändert bei EasyAuth. Der Token Store von EasyAuth hält nur Tokens des Login-Anbieters,
+> an die Sitzung gebunden, und taugt dafür nicht.
+
 ## Context and Problem Statement
 
 Salat wird als eine Anwendung deployt (→ ADR-0001) und braucht eine Laufzeitumgebung sowie eine
@@ -170,6 +176,7 @@ Entscheidung, nicht ein Versehen.
 | [ADR-0013](0013-kein-httpsession-in-neuen-controllern.md) | Wechselseitig stützend. Weil kein UI-Zustand in der `HttpSession` liegt, bleibt die Instanz austauschbar — und weil EasyAuth die Sitzung hält, braucht die Anwendung gar keine. |
 | [ADR-0018](0018-csrf-schutz-mit-cookie-tokenrepository.md) | Aufbauend. Der dort gewählte `CookieCsrfTokenRepository` ist gerade deshalb richtig, weil die Filter-Chains `STATELESS` sind — eine Folge dieser Betriebsform. Die CSRF-Chains gelten für die Profile `production`, `staging` und `localeasyauth`, also genau dort, wo EasyAuth aktiv ist. |
 | [ADR-0015](0015-error-modul-fuer-fehlerseite.md) | Berührungspunkt: der oben beschriebene Fall „authentifiziert, aber kein Salat-Benutzer" landet auf der Fehlerseite. Deren Layoutressourcen sind der Grund für die `permitAll`-Liste. |
+| [ADR-0038](0038-secrets-verschluesselt-im-eigenen-modul.md) | Nimmt für ausgehende Verbindungen zurück, was diese ADR aus der Anwendung herausgehalten hat: Client-Secret, Callback, Refresh-Tokens. Die eingehende Anmeldung berührt sie nicht. |
 | [ADR-0020](0020-local-qa-profil-fuer-performancemessungen.md) | Ausdrückliche Ausnahme von der Paritätsregel: `application-local-qa.yaml` spiegelt Azure-EasyAuth und OAuth2 bewusst **nicht** — lokal gibt es keinen Azure-Login. Der Kommentar steht im Profil. |
 
 ## Beteiligte Klassen und Konfiguration
