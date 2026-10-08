@@ -112,8 +112,6 @@ class JiraReplicationRunCleanupServiceTest {
     config.setCustomerorder(new OrderTree(entityManager).customerorder("SCOPE"));
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
-    config.setUsername("user");
-    config.setPassword("secret");
     config.setJql("project = RUN");
     config.setEnabled(true);
     return configRepository.save(config);

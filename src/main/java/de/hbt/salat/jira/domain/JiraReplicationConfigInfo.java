@@ -14,6 +14,11 @@ import java.time.LocalDateTime;
  * @param suborderId the suborder it is narrowed to, or {@code null} for the whole order
  * @param scopeSign the scope as the list shows it — the order sign or the complete order sign of
  *     the suborder, {@code AUFTRAG/01/02}, read from the current order tree
+ * @param username the user name of the stored credentials, {@code null} with a token or when they
+ *     cannot be read
+ * @param credentialsReadable whether the stored credentials can be used (#1432) — not in a copy of
+ *     the database from another environment, and not without a key; then they have to be entered
+ *     again
  * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
  * @param worklogSyncFrom first day the worklog sync covers
  * @param worklogSyncInvoiceableOnly whether only bookings on invoiceable suborders are written (#1218)
@@ -39,14 +44,18 @@ public record JiraReplicationConfigInfo(
     boolean worklogSyncEnabled,
     LocalDate worklogSyncFrom,
     boolean worklogSyncInvoiceableOnly,
-    LocalDateTime lastMaxUpdated
+    LocalDateTime lastMaxUpdated,
+    boolean credentialsReadable
 ) {
 
   /**
    * @param scopeSign the sign of order or suborder as the order tree carries it now — see
    *     {@code JiraScopes#signOf}
+   * @param username the user name of the stored credentials, read from the secret store
+   * @param credentialsReadable whether the stored credentials can be used
    */
-  public static JiraReplicationConfigInfo from(JiraReplicationConfig config, String scopeSign) {
+  public static JiraReplicationConfigInfo from(JiraReplicationConfig config, String scopeSign, String username,
+                                               boolean credentialsReadable) {
     return new JiraReplicationConfigInfo(
         config.getId(),
         config.getName(),
@@ -56,7 +65,7 @@ public record JiraReplicationConfigInfo(
         config.getBaseUrl(),
         config.getApiFlavor(),
         config.getAuthMethod(),
-        config.getUsername(),
+        username,
         config.getJql(),
         config.getParentFieldNames(),
         config.getAdditionalFieldNames(),
@@ -66,7 +75,8 @@ public record JiraReplicationConfigInfo(
         Boolean.TRUE.equals(config.getWorklogSyncEnabled()),
         config.getWorklogSyncFrom(),
         Boolean.TRUE.equals(config.getWorklogSyncInvoiceableOnly()),
-        config.getLastMaxUpdated()
+        config.getLastMaxUpdated(),
+        credentialsReadable
     );
   }
 }

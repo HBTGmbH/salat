@@ -6452,3 +6452,93 @@ databaseChangeLog:
               - column:
                   name: last_used
                   type: datetime
+
+  - changeSet:
+      id: 176
+      author: kr
+      comment: Secrets verschluesselt im Modul secret (#1432, ADR-0038)
+      # Klartext stehen nur Art und Zustand. payload haelt den 96-Bit-IV, danach Chiffrat und Tag
+      # (AES-256-GCM); key_id nennt den Schluessel aus der Umgebung, mit dem verschluesselt ist. Ein
+      # Secret kennt seinen Eigentuemer nicht, der Eigentuemer verweist per Fremdschluessel darauf.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: secret
+      changes:
+        - createTable:
+            tableName: secret
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_secret
+              - column:
+                  name: type
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: key_id
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payload
+                  type: varbinary(8192)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
+  - changeSet:
+      id: 177
+      author: kr
+      comment: Replikation verweist auf ihr Secret, Klartext-Passwort wird nullable (#1432)
+      # Die Anwendung stellt beim Start mit Schluessel die Klartext-Secrets um: Secret anlegen,
+      # secret_id setzen, username und password leeren. Liquibase kennt den Schluessel nicht. Die
+      # Spalten username und password entfallen, sobald die Umstellung in Produktion gelaufen ist.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: secret_id
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: secret_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: jira_replication_config
+            baseColumnNames: secret_id
+            constraintName: fk_jira_replication_config_secret
+            referencedTableName: secret
+            referencedColumnNames: id
+        - dropNotNullConstraint:
+            tableName: jira_replication_config
+            columnName: password
+            columnDataType: varchar(1024)

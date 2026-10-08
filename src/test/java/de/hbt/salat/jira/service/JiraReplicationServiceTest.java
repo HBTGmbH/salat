@@ -47,6 +47,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
@@ -68,6 +70,7 @@ class JiraReplicationServiceTest {
   private static final long SUBORDER_A_01 = 12L;
   private static final Customerorder ORDER_REFERENCE = customerorderWithId(ORDER);
   private static final Suborder SUBORDER_A_01_REFERENCE = suborderWithId(SUBORDER_A_01, ORDER_REFERENCE);
+  private static final long SECRET_ID = 5L;
 
   @MockitoBean
   private JiraSearchClients searchClients;
@@ -90,6 +93,10 @@ class JiraReplicationServiceTest {
   @MockitoBean
   private JiraScopes scopes;
 
+  /** The credentials come decrypted from the secret store (#1432); what is stored there is its test. */
+  @MockitoBean
+  private JiraCredentialStore credentialStore;
+
   @Autowired
   private JiraReplicationService jiraReplicationService;
 
@@ -100,6 +107,7 @@ class JiraReplicationServiceTest {
     when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
     when(scopes.signOf(ORDER, null)).thenReturn("MOCK_ORDER");
     when(scopes.signOf(ORDER, SUBORDER_A_01)).thenReturn("MOCK_ORDER/A/01");
+    when(credentialStore.credentialsOf(any())).thenReturn(JiraCredentials.basic("mockUser", "mockPassword"));
   }
 
   @Test
@@ -141,6 +149,20 @@ class JiraReplicationServiceTest {
 
     verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
         "2 Tickets geholt, 1 geschrieben. 1 nicht verarbeitet — der Wasserstand rückt nicht über sie hinaus.");
+  }
+
+  /** #1432: the run history says what the form says, in German, and JIRA is not asked at all. */
+  @Test
+  void aRunWithUnreadableCredentialsIsRecordedWithTheReasonInWords() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(credentialStore.credentialsOf(config)).thenThrow(new BusinessRuleException(ErrorCode.SE_SECRET_UNREADABLE));
+
+    assertThrows(BusinessRuleException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
+
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
+        "Abgebrochen: Die gespeicherten Zugangsdaten sind nicht lesbar und müssen neu eingegeben werden.");
+    verify(searchClient, never()).search(any());
   }
 
   @Test
@@ -1203,8 +1225,7 @@ class JiraReplicationServiceTest {
     makeAccessible(idField);
     setField(idField, config, 1L);
     config.setBaseUrl("http://mock-jira.com");
-    config.setUsername("mockUser");
-    config.setPassword("mockPassword");
+    config.setSecretId(SECRET_ID);
     config.setJql("project = MOCK");
     config.setPageSize(50);
     config.setCustomerorder(ORDER_REFERENCE);

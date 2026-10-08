@@ -404,8 +404,6 @@ class JiraTicketRepositoryTest {
     replication.setName(name);
     replication.setCustomerorder(alphaOrder);
     replication.setBaseUrl("https://jira.example.com");
-    replication.setUsername("user");
-    replication.setPassword("secret");
     replication.setJql("project = ALPHA");
     entityManager.persist(replication);
     return replication;

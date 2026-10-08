@@ -54,6 +54,8 @@ class JiraWorklogSyncServiceTest {
 
   private static final long REPLICATION_ID = 11L;
 
+  /** What the replication signed in with; the worklogs are written as this account (#1432). */
+  private static final JiraCredentials CREDENTIALS = JiraCredentials.basic("jira-user", "token");
   private static final LocalDate SYNC_FROM = LocalDate.of(2026, 6, 1);
   private static final LocalDate DAY = LocalDate.of(2026, 6, 10);
   private static final String SCOPE = "ALPHA";
@@ -95,7 +97,7 @@ class JiraWorklogSyncServiceTest {
     var config = config();
     config.setWorklogSyncEnabled(false);
 
-    classUnderTest.sync(config);
+    classUnderTest.sync(config, CREDENTIALS);
 
     // Not one call — neither to JIRA nor to the module that owns the bookings.
     verifyNoInteractions(worklogClients, commandPublisher, ticketRepository, syncRepository);
@@ -106,7 +108,7 @@ class JiraWorklogSyncServiceTest {
     var config = config();
     config.setWorklogSyncFrom(null);
 
-    classUnderTest.sync(config);
+    classUnderTest.sync(config, CREDENTIALS);
 
     verifyNoInteractions(worklogClients, commandPublisher);
   }
@@ -116,7 +118,7 @@ class JiraWorklogSyncServiceTest {
     var config = config();
     config.setWorklogSyncFrom(LocalDate.of(2026, 12, 1));
 
-    classUnderTest.sync(config);
+    classUnderTest.sync(config, CREDENTIALS);
 
     verifyNoInteractions(worklogClients, commandPublisher);
   }
@@ -127,7 +129,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
@@ -154,7 +156,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var target = ArgumentCaptor.forClass(JiraWorklogTarget.class);
     verify(worklogClient).create(target.capture(), any());
@@ -169,7 +171,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
@@ -182,7 +184,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(worklogClient).update(any(), eq("10101"), any());
     verify(worklogClient, never()).create(any(), any());
@@ -196,7 +198,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Von HBT protokollierte Stunden übertragen:\nabc 1h 30m");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verifyNoInteractions(worklogClient);
     verify(syncRepository, never()).save(any());
@@ -211,7 +213,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(worklogClient).delete(any(), eq("10101"));
     verify(syncRepository).delete(stored);
@@ -225,7 +227,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets();
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(worklogClient, never()).delete(any(), any());
     verify(syncRepository, never()).delete(any());
@@ -239,7 +241,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(worklogClient, never()).create(any(), any());
     verify(worklogClient).update(any(), eq("10101"), any());
@@ -252,7 +254,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(worklogClient).delete(any(), eq("10101"));
     verify(syncRepository).delete(stored);
@@ -266,7 +268,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var target = ArgumentCaptor.forClass(JiraWorklogTarget.class);
     verify(worklogClient).create(target.capture(), any());
@@ -279,7 +281,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var target = ArgumentCaptor.forClass(JiraWorklogTarget.class);
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
@@ -299,7 +301,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
@@ -314,7 +316,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
@@ -329,7 +331,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     when(worklogClient.create(any(), any())).thenReturn("10101");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).create(any(), entry.capture());
@@ -344,7 +346,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90, "Von HBT protokollierte Stunden übertragen:\nabc 1h 30m");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).update(any(), eq("10101"), entry.capture());
@@ -361,7 +363,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(worklogClient).update(any(), eq("10101"), any());
     verify(worklogClient, never()).create(any(), any());
@@ -378,7 +380,7 @@ class JiraWorklogSyncServiceTest {
         .when(worklogClient).update(any(), eq("10101"), any());
     when(worklogClient.create(any(), any())).thenReturn("10999");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     assertThat(stored.getComment()).isEqualTo("Von HBT protokollierte Stunden übertragen:\nabc 2h");
   }
@@ -392,7 +394,7 @@ class JiraWorklogSyncServiceTest {
         .when(worklogClient).update(any(), eq("10101"), any());
     when(worklogClient.create(any(), any())).thenReturn("10202");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     // The second ticket is written all the same …
     var saved = savedRow();
@@ -411,7 +413,7 @@ class JiraWorklogSyncServiceTest {
         .when(worklogClient).update(any(), eq("10101"), any());
     when(worklogClient.create(any(), any())).thenReturn("10999");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     assertThat(stored.getWorklogId()).isEqualTo("10999");
     assertThat(stored.getMinutes()).isEqualTo(120);
@@ -426,7 +428,7 @@ class JiraWorklogSyncServiceTest {
     doThrow(new JiraWorklogNotFoundException("ALPHA-1", "10101", null))
         .when(worklogClient).delete(any(), eq("10101"));
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(syncRepository).delete(stored);
   }
@@ -437,7 +439,7 @@ class JiraWorklogSyncServiceTest {
     // the start date would otherwise delete worklogs nobody asked about.
     givenBookings();
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verify(syncRepository).findInScopeFrom(CUSTOMERORDER_ID, null, SYNC_FROM);
   }
@@ -446,7 +448,7 @@ class JiraWorklogSyncServiceTest {
   void the_bookings_are_asked_for_over_the_whole_period_up_to_today() {
     givenBookings();
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
     verify(commandPublisher).publish(command.capture());
@@ -459,7 +461,7 @@ class JiraWorklogSyncServiceTest {
   void the_bookings_are_asked_for_without_restriction_unless_it_is_switched_on() {
     givenBookings();
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
     verify(commandPublisher).publish(command.capture());
@@ -470,7 +472,7 @@ class JiraWorklogSyncServiceTest {
   void the_restriction_to_invoiceable_bookings_is_passed_on_with_the_question() {
     givenBookings();
 
-    classUnderTest.sync(invoiceableOnly(config()));
+    classUnderTest.sync(invoiceableOnly(config()), CREDENTIALS);
 
     var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
     verify(commandPublisher).publish(command.capture());
@@ -486,7 +488,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(invoiceableOnly(config()));
+    classUnderTest.sync(invoiceableOnly(config()), CREDENTIALS);
 
     var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
     verify(worklogClient).update(any(), eq("10101"), entry.capture());
@@ -500,7 +502,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(invoiceableOnly(config()));
+    classUnderTest.sync(invoiceableOnly(config()), CREDENTIALS);
 
     verify(worklogClient).delete(any(), eq("10101"));
     verify(syncRepository).delete(stored);
@@ -515,7 +517,7 @@ class JiraWorklogSyncServiceTest {
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 60);
     when(worklogClient.create(any(), any())).thenReturn("10202");
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     // The mixed day goes back up to the full sum …
     assertThat(stored.getMinutes()).isEqualTo(90);
@@ -534,7 +536,7 @@ class JiraWorklogSyncServiceTest {
     givenReplicatedTickets("ALPHA-1");
     givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
-    classUnderTest.sync(invoiceableOnly(config()));
+    classUnderTest.sync(invoiceableOnly(config()), CREDENTIALS);
 
     var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
     verify(commandPublisher).publish(command.capture());
@@ -546,7 +548,7 @@ class JiraWorklogSyncServiceTest {
   void a_scope_that_matches_no_suborder_writes_nothing() {
     when(scopes.suborderIdsOf(CUSTOMERORDER_ID, null)).thenReturn(List.of());
 
-    classUnderTest.sync(config());
+    classUnderTest.sync(config(), CREDENTIALS);
 
     verifyNoInteractions(worklogClients, commandPublisher);
   }
@@ -558,8 +560,6 @@ class JiraWorklogSyncServiceTest {
     config.setCustomerorder(CUSTOMERORDER);
     config.setBaseUrl("https://jira.example.com");
     config.setApiFlavor(SERVER);
-    config.setUsername("jira-user");
-    config.setPassword("token");
     config.setEnabled(true);
     config.setWorklogSyncEnabled(true);
     config.setWorklogSyncFrom(SYNC_FROM);

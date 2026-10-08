@@ -271,6 +271,7 @@ public enum ErrorCode {
   JI_TICKET_IMPORT_MAPPING_MISMATCH("JI-0039", "the column assignment does not fit the ticket file"),
   JI_TICKET_SCOPE_REQUIRED("JI-0040", "a ticket needs a customer order"),
   JI_REPLICATION_RUN_SCOPE_BUSY("JI-0041", "another jira replication of the same scope is running"),
+  JI_REPLICATION_SECRET_MISSING("JI-0042", "no secret is stored for the jira replication"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),
@@ -283,6 +284,10 @@ public enum ErrorCode {
   RP_DEFINITIONS_NAME_OLD_SIGN("RP-0009", "report definitions name the old sign of a renamed order or suborder"),
   RP_REPORT_NAME_TAKEN("RP-0010", "another report definition already has this name"),
 
+  SE_NO_KEY("SE-0001", "secrets can neither be stored nor read: no key is configured"),
+  SE_SECRET_UNREADABLE("SE-0002", "the stored secret cannot be read and has to be entered again"),
+  SE_SECRET_NOT_FOUND("SE-0003", "the secret was not found"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   XX_CONCURRENT_MODIFICATION("XX-0003", "the data was changed concurrently"),
@@ -291,6 +296,15 @@ public enum ErrorCode {
 
   private final String code;
   private final String message;
+
+  /**
+   * The key the text of this code stands under in the message bundles: {@code TR-0015} →
+   * {@code errorcode.tr.0015}. Also for a service that writes the text where no view resolves it, the
+   * run history of a replication (#1432).
+   */
+  public String messageKey() {
+    return "errorcode." + code.replace('-', '.').toLowerCase();
+  }
 
   @Override
   public String toString() {

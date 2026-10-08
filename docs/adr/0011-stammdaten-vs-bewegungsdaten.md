@@ -85,6 +85,7 @@ Bewegungsdaten halten *Ereignisse* und *Aktivitäten* fest, die die Anwendung ü
 | `ReportDefinition` | reporting | ❌ fehlt | — | Berichtsvorlage; in `ScheduledReportJob`-Dropdown |
 | `ScheduledReportJob` | reporting | — | `enabled`-Flag | Geplanter Job; `enabled` reicht aus |
 | `OrderRevenueExcelMapping` | order | — | — | Kleines Mapping; kein Dropdown |
+| `Secret` | secret | — | `status` (`VALID`/`REAUTH_REQUIRED`) | Stammdatum seines Eigentümers (#1432, → ADR-0038); wird hart gelöscht, weil ein soft-gelöschtes Secret weiter gespeichert wäre |
 
 ### Bewegungsdaten
 

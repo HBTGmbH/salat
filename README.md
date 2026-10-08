@@ -141,6 +141,26 @@ SPRING_DATASOURCE_PASSWORD=salattest
 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
 ```
 
+### Key of the secret store
+
+Passwords and tokens of foreign systems (the JIRA replications) are stored encrypted
+([ADR-0038](docs/adr/0038-secrets-verschluesselt-im-eigenen-modul.md)). The key comes from the
+environment only, never from a configuration file in the repository:
+
+```
+SALAT_SECRET_ACTIVEKEYID=k1
+SALAT_SECRET_KEYS_K1=<output of: openssl rand -base64 32>
+```
+
+Every environment has a key of its own, and so does every developer locally — generate one and keep
+it to yourself. Without a key the application starts, but stores no password or token, and the
+replications do not run. A secret from a copy of another environment's database cannot be read
+locally; enter it again in the form of the replication.
+
+The key id consists of lower case letters and digits only. To change the key, add the new one
+(`SALAT_SECRET_KEYS_K2`), set `SALAT_SECRET_ACTIVEKEYID=k2` and restart: the start encrypts every
+secret with the new key, after that the old one can go.
+
 ## AGENTS.md
 
 More detailed design decisions can be found in AGENTS.md

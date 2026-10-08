@@ -73,18 +73,29 @@ public class JiraReplicationConfig extends AuditedEntity {
   private JiraAuthMethod authMethod = JiraAuthMethod.BASIC;
 
   /**
-   * On JIRA Cloud this is the Atlassian account e-mail — API tokens authenticate as that user.
-   * {@code null} with a Personal Access Token, which carries no user name (#1385).
+   * The secret the replication signs in with (#1432, → ADR-0038): user name and password — on JIRA
+   * Cloud the account e-mail and the API token — or the Personal Access Token. Read and written only
+   * through {@code JiraCredentialStore}.
+   *
+   * <p>An id with a foreign key, not a reference: the entity of the secret module means nothing
+   * without its service and never leaves the module (ADR-0038, deviating from ADR-0036).
+   * {@code null} only for a replication whose plain text secret has not been moved yet, because the
+   * environment provides no key.
    */
-  @Column(name = "username")
-  private String username;
+  @Column(name = "secret_id")
+  private Long secretId;
 
   /**
-   * On JIRA Cloud this is the API token, passed as the HTTP Basic password; with
-   * {@link JiraAuthMethod#PERSONAL_ACCESS_TOKEN} the token (#1385).
+   * The user name as it was stored in plain text before #1432. Read by
+   * {@code JiraPlaintextSecretMigration} alone, which moves it into the secret and clears it; the
+   * column goes once that has run in production.
    */
-  @Column(name = "password", nullable = false)
-  private String password;
+  @Column(name = "username")
+  private String legacyUsername;
+
+  /** The password or token in plain text before #1432 — see {@link #legacyUsername}. */
+  @Column(name = "password")
+  private String legacyPassword;
 
   @Column(name = "jql")
   private String jql;

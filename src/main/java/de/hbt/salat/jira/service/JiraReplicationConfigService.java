@@ -14,6 +14,7 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SCOPE_REQUI
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_TOKEN_NEEDS_SERVER;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP;
+import static de.hbt.salat.common.exception.ErrorCode.SE_NO_KEY;
 
 import static java.util.Comparator.comparing;
 
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.AuthorizationException;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
@@ -53,8 +55,9 @@ import de.hbt.salat.order.domain.SuborderLocation;
  * The REST endpoint that triggers a replication draws the same line.
  *
  * <p>Everything leaving this service is a {@link JiraReplicationConfigInfo} without the password.
- * The stored password is read in exactly two places — when it is kept across an edit, and when it is
- * removed from a failure message — and is written nowhere else.
+ * The credentials are kept encrypted in the module {@code secret} (#1432) and reached through
+ * {@link JiraCredentialStore} alone: written on create and update, read for the field catalogue and
+ * when a new user name keeps the stored password.
  */
 @Slf4j
 @Service
@@ -73,6 +76,7 @@ public class JiraReplicationConfigService {
   private final OrderReferences orderReferences;
   private final AuthorizedUser authorizedUser;
   private final JiraTicketRepository ticketRepository;
+  private final JiraCredentialStore credentialStore;
 
   @Transactional(readOnly = true)
   public List<JiraReplicationConfigInfo> getAll() {
@@ -80,7 +84,7 @@ public class JiraReplicationConfigService {
     var configs = configRepository.findAllByOrderByNameAsc();
     var signs = scopes.signsOf(configs);
     return configs.stream()
-        .map(config -> JiraReplicationConfigInfo.from(config, signs.get(config.getId())))
+        .map(config -> info(config, signs.get(config.getId())))
         .toList();
   }
 
@@ -88,12 +92,30 @@ public class JiraReplicationConfigService {
   public JiraReplicationConfigInfo getById(long id) {
     checkManager();
     var config = load(id);
-    return JiraReplicationConfigInfo.from(config,
-        scopes.signOf(config.getCustomerorderId(), config.getSuborderId()));
+    return info(config, scopes.signOf(config.getCustomerorderId(), config.getSuborderId()));
+  }
+
+  private JiraReplicationConfigInfo info(JiraReplicationConfig config, String scopeSign) {
+    var credentials = credentialStore.describe(config);
+    return JiraReplicationConfigInfo.from(config, scopeSign, credentials.username(), credentials.readable());
+  }
+
+  /**
+   * Whether credentials can be stored (#1432). Without a key in the environment the form says so
+   * instead of taking a password it cannot keep.
+   */
+  @Transactional(readOnly = true)
+  public boolean canStoreCredentials() {
+    checkManager();
+    return credentialStore.canStore();
   }
 
   public long create(JiraReplicationConfigData data) {
     checkManager();
+    if (!credentialStore.canStore()) {
+      // Never in plain text instead (#1432): without a key a replication cannot keep its password.
+      throw new BusinessRuleException(SE_NO_KEY);
+    }
     var scopeSign = validate(null, data);
     if (isBlank(data.password())) {
       // On an edit an empty field means "keep what is stored"; on a new record there is nothing to
@@ -102,7 +124,7 @@ public class JiraReplicationConfigService {
     }
     var config = new JiraReplicationConfig();
     apply(data, config, scopeSign);
-    config.setPassword(data.password().trim());
+    credentialStore.store(config, authMethodOf(data), usernameOf(data), data.password().trim());
     return configRepository.save(config).getId();
   }
 
@@ -115,9 +137,14 @@ public class JiraReplicationConfigService {
       // as a Basic password (#1385).
       throw new InvalidDataException(JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET);
     }
+    var storedUsername = credentialStore.describe(config).username();
     apply(data, config, scopeSign);
     if (!isBlank(data.password())) {
-      config.setPassword(data.password().trim());
+      credentialStore.store(config, authMethodOf(data), usernameOf(data), data.password().trim());
+    } else if (authMethodOf(data) == JiraAuthMethod.BASIC && !Objects.equals(usernameOf(data), storedUsername)) {
+      // The user name is part of the secret (#1432): a new one is written together with the stored
+      // password, which has to be readable for it.
+      credentialStore.changeUsername(config, usernameOf(data));
     }
     configRepository.save(config);
   }
@@ -131,6 +158,8 @@ public class JiraReplicationConfigService {
     var config = load(id);
     jiraReplicationRunService.deleteRunsOf(id);
     configRepository.delete(config);
+    // After the replication, whose foreign key points at it; Hibernate deletes in this order (#1432).
+    credentialStore.delete(config);
   }
 
   public void setEnabled(long id, boolean enabled) {
@@ -164,18 +193,22 @@ public class JiraReplicationConfigService {
    * <p>Outside a transaction: a foreign system's response time must not hold a database connection.
    * Nothing is written here, so the empty transaction scope this leaves inside the request is
    * harmless — see AGENTS.md on {@code NOT_SUPPORTED} (#1282).
+   *
+   * @throws de.hbt.salat.common.exception.ErrorCodeException when the stored credentials cannot be
+   *     read (#1432) — that has to be told in words, not as a failed request
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public JiraFieldCatalog getSelectableFields(long id) {
     checkManager();
     var config = load(id);
+    var credentials = credentialStore.credentialsOf(config);
     try {
-      var request = new JiraFieldsRequest(config.getBaseUrl(), JiraCredentials.of(config));
+      var request = new JiraFieldsRequest(config.getBaseUrl(), credentials);
       var fields = jiraSearchClients.forFlavor(config.getApiFlavor()).listFields(request);
       return JiraFieldCatalog.of(toOptions(fields));
     } catch (Exception ex) {
       log.error("Could not read the JIRA field catalogue: id={}, name={}", id, config.getName(), ex);
-      return JiraFieldCatalog.failed(JiraCredentialRedaction.redacted(ex, config.getPassword()));
+      return JiraFieldCatalog.failed(JiraCredentialRedaction.redacted(ex, credentials));
     }
   }
 
@@ -231,6 +264,11 @@ public class JiraReplicationConfigService {
     return data.authMethod() != null ? data.authMethod() : JiraAuthMethod.BASIC;
   }
 
+  /** A Personal Access Token carries no user name (#1385); one left in the hidden field is dropped. */
+  private static String usernameOf(JiraReplicationConfigData data) {
+    return authMethodOf(data) == JiraAuthMethod.BASIC ? data.username().trim() : null;
+  }
+
   private JiraReplicationConfig load(long id) {
     return configRepository.findById(id)
         .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_NOT_FOUND));
@@ -242,8 +280,6 @@ public class JiraReplicationConfigService {
     config.setBaseUrl(data.baseUrl().trim());
     config.setApiFlavor(apiFlavorOf(data));
     config.setAuthMethod(authMethodOf(data));
-    // A Personal Access Token carries no user name (#1385); one left in the hidden field is dropped.
-    config.setUsername(authMethodOf(data) == JiraAuthMethod.BASIC ? data.username().trim() : null);
     applyJql(data, config);
     config.setParentFieldNames(trimToNull(data.parentFieldNames()));
     applyFieldNames(data, config);

@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -18,10 +19,11 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.jira.domain.JiraAuthMethod;
+import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
@@ -49,6 +51,8 @@ public class JiraReplicationService {
   private final JiraReplicationRunService runService;
   private final JiraScopes scopes;
   private final JiraTicketImportRepository importRepo;
+  private final JiraCredentialStore credentialStore;
+  private final MessageSource messageSource;
 
   public List<JiraReplicationConfig> getEnabledReplications() {
     return configRepo.findByEnabledTrue();
@@ -73,15 +77,20 @@ public class JiraReplicationService {
    * is read afresh at the end anyway, and between start and end lies the whole run.
    */
   public JiraReplicationResult continueRun(long runId, long replicationId) {
-    JiraReplicationConfig cfg = null;
+    JiraCredentials credentials = null;
     JiraReplicationResult result;
     try {
-      cfg = configRepo.findById(replicationId)
+      var cfg = configRepo.findById(replicationId)
           .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
-      result = runReplication(cfg);
+      credentials = credentialStore.credentialsOf(cfg);
+      result = runReplication(cfg, credentials);
+    } catch (ErrorCodeException ex) {
+      // A rule of the application, credentials that cannot be read above all (#1432): the history
+      // says it in the words the form uses, not as a code.
+      runService.finishRun(runId, FAILED, "Abgebrochen: " + germanTextOf(ex));
+      throw ex;
     } catch (RuntimeException ex) {
-      var password = cfg != null ? cfg.getPassword() : null;
-      runService.finishRun(runId, FAILED, "Abgebrochen: " + redacted(ex, password));
+      runService.finishRun(runId, FAILED, "Abgebrochen: " + redacted(ex, credentials));
       throw ex;
     }
     runService.finishRun(runId, result.succeeded() ? SUCCEEDED : FAILED, result.summary());
@@ -91,15 +100,19 @@ public class JiraReplicationService {
   public JiraReplicationResult runReplication(long replicationId) {
     JiraReplicationConfig cfg = configRepo.findById(replicationId)
         .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
-    return runReplication(cfg);
+    return runReplication(cfg, credentialStore.credentialsOf(cfg));
   }
 
-  public JiraReplicationResult runReplication(JiraReplicationConfig cfg) {
+  /** The first message of the exception in German, like every message of the run history. */
+  private String germanTextOf(ErrorCodeException ex) {
+    return ex.getMessages().stream().findFirst()
+        .map(message -> messageSource.getMessage(message.getErrorCode().messageKey(),
+            message.getArguments().toArray(), ex.getMessage(), Locale.GERMAN))
+        .orElse(ex.getMessage());
+  }
+
+  private JiraReplicationResult runReplication(JiraReplicationConfig cfg, JiraCredentials credentials) {
     requireNonNull(cfg.getBaseUrl(), "baseUrl");
-    if (cfg.getAuthMethod() == JiraAuthMethod.BASIC) {
-      requireNonNull(cfg.getUsername(), "username");
-    }
-    requireNonNull(cfg.getPassword(), "password");
     requireNonNull(cfg.getJql(), "jql");
 
     int pageSize = cfg.getPageSize() != null && cfg.getPageSize() > 0 ? cfg.getPageSize() : 100;
@@ -138,7 +151,7 @@ public class JiraReplicationService {
     var fields = buildFieldList(cfg, fieldConfig);
     var jql = appendMaxUpdated(cfg.getJql(), baseline);
     var request = new JiraSearchRequest(
-        cfg.getBaseUrl(), JiraCredentials.of(cfg), jql, fields, pageSize);
+        cfg.getBaseUrl(), credentials, jql, fields, pageSize);
 
     // Which of the configured fields any answer actually carried. JIRA either rejects an unknown
     // field id with HTTP 400 — the run then fails visibly — or drops it silently, and that second
@@ -208,10 +221,10 @@ public class JiraReplicationService {
     // with it. Re-fetching the same tickets next time is harmless; losing the watermark is not.
     String worklogSyncError = null;
     try {
-      worklogSyncService.sync(cfg);
+      worklogSyncService.sync(cfg, credentials);
     } catch (Exception ex) {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
-      worklogSyncError = redacted(ex, cfg.getPassword());
+      worklogSyncError = redacted(ex, credentials);
     }
     return new JiraReplicationResult(fetched, processed, failed, skipped, skippedTickets, worklogSyncError);
   }

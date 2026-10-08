@@ -82,7 +82,8 @@ class JiraReplicationConfigControllerTest {
 
   private static JiraReplicationConfigInfo info(long customerorderId, Long suborderId) {
     return new JiraReplicationConfigInfo(7L, "Alpha", customerorderId, suborderId, "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, false, null);
+        JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, false, null,
+        true);
   }
 
   private static Authorized guardOf(Method method) {

@@ -41,6 +41,8 @@ import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.secret.domain.UsernamePassword;
+import de.hbt.salat.secret.service.SecretService;
 
 /**
  * A replication started by hand (#1282) is started from inside the HTTP request, and with Open
@@ -72,6 +74,10 @@ class JiraReplicationManualRunTest {
 
   @Autowired
   private JiraReplicationLauncher launcher;
+
+  /** Real (#1432): the run reads the credentials decrypted from the secret store. */
+  @Autowired
+  private SecretService secretService;
 
   @Autowired
   private JiraReplicationConfigRepository configRepo;
@@ -111,8 +117,7 @@ class JiraReplicationManualRunTest {
     config.setCustomerorder(customerorder);
     config.setBaseUrl("http://jira.example");
     config.setApiFlavor(SERVER);
-    config.setUsername("user");
-    config.setPassword("secret");
+    config.setSecretId(secretService.create(new UsernamePassword("user", "secret")));
     config.setJql("project = MAN");
     config.setEnabled(true);
     configId = configRepo.save(config).getId();
@@ -122,7 +127,9 @@ class JiraReplicationManualRunTest {
   void tearDown() {
     runRepo.deleteByReplicationId(configId);
     ticketRepo.deleteAll(ticketRepo.findInScope(customerorder.getId(), null));
+    var secretId = configRepo.findById(configId).orElseThrow().getSecretId();
     configRepo.deleteById(configId);
+    secretService.delete(secretId);
     new TransactionTemplate(transactionManager).executeWithoutResult(status -> orderTree.remove(customerorder));
   }
 
@@ -145,7 +152,8 @@ class JiraReplicationManualRunTest {
     assertThat(configRepo.findById(configId).orElseThrow().getLastMaxUpdated())
         .isEqualTo(LocalDateTime.parse("2026-09-02T11:00"));
     verify(worklogSyncService).sync(argThat(config -> config.getId().equals(configId)
-        && LocalDateTime.parse("2026-09-02T11:00").equals(config.getLastMaxUpdated())));
+        && LocalDateTime.parse("2026-09-02T11:00").equals(config.getLastMaxUpdated())),
+        argThat(credentials -> "secret".equals(credentials.secret())));
   }
 
   @Test

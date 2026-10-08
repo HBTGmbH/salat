@@ -19,6 +19,7 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
+import de.hbt.salat.jira.domain.JiraFieldCatalog;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.service.JiraReplicationConfigService;
 import de.hbt.salat.jira.service.JiraReplicationLauncher;
@@ -77,6 +78,7 @@ public class JiraReplicationConfigController {
   @GetMapping("/create")
   public String createForm(Model model) {
     addFormModel(model, new JiraReplicationConfigForm());
+    addCredentialsModel(model, true);
     return "jira/replication-form";
   }
 
@@ -84,6 +86,7 @@ public class JiraReplicationConfigController {
   public String editForm(@PathVariable long id, Model model) {
     var info = jiraReplicationConfigService.getById(id);
     addFormModel(model, JiraReplicationConfigForm.of(info));
+    addCredentialsModel(model, info.credentialsReadable());
     model.addAttribute("lastMaxUpdated", info.lastMaxUpdated());
     return "jira/replication-form";
   }
@@ -95,10 +98,19 @@ public class JiraReplicationConfigController {
    * nobody can point this at an address of their choosing. Deliberately not under {@code /api} or
    * {@code /rest} — those are stateless filter chains for machine clients and do not accept a
    * browser session.
+   *
+   * <p>Credentials that cannot be read (#1432) are said inside the dialogue, like an unreachable
+   * JIRA.
    */
   @GetMapping("/{id}/fields")
   public String fields(@PathVariable long id, Model model) {
-    model.addAttribute("fieldCatalog", jiraReplicationConfigService.getSelectableFields(id));
+    JiraFieldCatalog catalog;
+    try {
+      catalog = jiraReplicationConfigService.getSelectableFields(id);
+    } catch (ErrorCodeException ex) {
+      catalog = JiraFieldCatalog.failed(firstMessageOf(ex));
+    }
+    model.addAttribute("fieldCatalog", catalog);
     return "jira/replication-fields :: fieldPicker";
   }
 
@@ -143,6 +155,7 @@ public class JiraReplicationConfigController {
       form.setPassword(null);
       model.addAttribute("formErrors", toMessages(ex));
       addFormModel(model, form);
+      addCredentialsModel(model, form.isNew() || jiraReplicationConfigService.getById(form.getId()).credentialsReadable());
       return "jira/replication-form";
     }
     return "redirect:/jira/replications";
@@ -231,9 +244,20 @@ public class JiraReplicationConfigController {
                           Model model, HttpServletRequest request) {
     form.setSuborderId(null); // the previous pick belongs to the order that was just replaced
     addFormModel(model, form);
+    // The answer replaces the suborder select only; nothing of the credentials is rendered.
+    addCredentialsModel(model, true);
     model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
     model.addAttribute("subordersChanged", true);
     return "jira/replication-form";
+  }
+
+  /**
+   * Whether credentials can be stored at all, and whether the stored ones can be used (#1432). The
+   * form says so in either case, and asks for them again.
+   */
+  private void addCredentialsModel(Model model, boolean credentialsReadable) {
+    model.addAttribute("credentialsStorable", jiraReplicationConfigService.canStoreCredentials());
+    model.addAttribute("credentialsReadable", credentialsReadable);
   }
 
   private void addFormModel(Model model, JiraReplicationConfigForm form) {
