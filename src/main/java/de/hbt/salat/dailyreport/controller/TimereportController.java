@@ -483,18 +483,15 @@ public class TimereportController {
             if (!isEdit) {
                 // refused before seeding, so a refused booking leaves no working day behind (#1164)
                 timereportService.checkCreationAllowed(ecId, date);
-                boolean useBegin = beginEndMode && form.getBeginTime() != null;
-                LocalTime beginTime;
-                if (useBegin) {
-                    int[] begin = parseTime(form.getBeginTime());
-                    beginTime = LocalTime.of(begin[0], begin[1]);
-                } else {
-                    beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
-                }
+                var beginTime = workDayBeginOf(form, beginEndMode, ecId);
                 var serialDates = timereportService.getWorkableSerialDates(date, form.getNumberOfSerialDays());
                 for (LocalDate serialDate : serialDates) {
                     seedWorkingday(ecId, serialDate, beginTime);
                 }
+            } else if (isMovedToAnotherDay(form.getId(), date)) {
+                // a booking moved to another day is created there as far as the day is concerned (#1426)
+                timereportService.checkCreationAllowed(ecId, date);
+                seedWorkingday(ecId, date, workDayBeginOf(form, beginEndMode, ecId));
             }
 
             if (isEdit) {
@@ -722,6 +719,26 @@ public class TimereportController {
         var bookedUntil = workingdayService.getBookedUntilMinutes(ecId, date, editedTimereportId);
         bookedUntil.ifPresent(minutes -> model.addAttribute("bookedUntilMinutes", minutes));
         return bookedUntil;
+    }
+
+    /**
+     * Whether saving the edited booking puts it on another day than the stored one (#1426). A booking
+     * the user may not change counts as staying: saving refuses it anyway, and a working day seeded
+     * for it beforehand would stay behind, as seeding commits on its own (#1111).
+     */
+    private boolean isMovedToAnotherDay(long timereportId, LocalDate date) {
+        var stored = timereportService.getTimereportById(timereportId);
+        return stored != null && !date.equals(stored.getReferenceday())
+            && timereportService.isWriteAllowed(timereportId);
+    }
+
+    /** The begin entered in begin/end mode, otherwise the start of the working day the person prefers. */
+    private LocalTime workDayBeginOf(TimereportForm form, boolean beginEndMode, long ecId) {
+        if (beginEndMode && form.getBeginTime() != null) {
+            int[] begin = parseTime(form.getBeginTime());
+            return LocalTime.of(begin[0], begin[1]);
+        }
+        return dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
     }
 
     private void seedWorkingday(long ecId, LocalDate date, LocalTime beginTime) {
