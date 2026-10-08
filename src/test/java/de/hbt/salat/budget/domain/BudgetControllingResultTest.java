@@ -123,13 +123,13 @@ public class BudgetControllingResultTest {
     var withPlanned = section(SectionKind.ORDER_LEVEL,
         row().plannedHours(Duration.ofHours(10))
             .revenueBeforeWindowEuro(new BigDecimal("800")).build());
-    var withFlatRate = section(SectionKind.UNPLANNED,
-        row().flatRateRevenueEuro(new BigDecimal("50")).build());
+    var withBookedHours = section(SectionKind.UNPLANNED,
+        row().bookedHours(Duration.ofHours(4)).build());
 
-    var columns = result(withPlanned, withFlatRate).totalColumns();
+    var columns = result(withPlanned, withBookedHours).totalColumns();
 
     assertThat(columns.planned()).isTrue();
-    assertThat(columns.flatRate()).isTrue();
+    assertThat(columns.hourlyRate()).isTrue();
     // The revenue earned before the window explains the budget columns, and those are gone.
     assertThat(columns.revenueBeforeWindow()).isFalse();
   }

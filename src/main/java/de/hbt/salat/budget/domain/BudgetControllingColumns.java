@@ -17,22 +17,20 @@ import java.util.Collection;
 public record BudgetControllingColumns(
     boolean revenueBeforeWindow,
     boolean planned,
-    boolean flatRate,
     boolean budget,
     boolean overrun,
     boolean grossProfitMargin,
     /**
-     * The effective and the agreed hourly rate (#1406) — wherever hours were booked. A section of a
+     * The effective and the average hourly rate (#1406) — wherever hours were booked. A section of a
      * fixed-price plan leaves them out: it shows its own rates, read against the fixed price
-     * (→ {@link FixedPriceEvaluation}), and a second "effective rate" next to them would divide the
-     * instalments fallen due by the hours and contradict the first.
+     * (→ {@link FixedPriceEvaluation}), and a second set next to them would contradict the first.
      */
     boolean hourlyRate
 ) {
 
     /** Nothing optional — the starting point for folding several sets into one. */
     public static final BudgetControllingColumns NONE =
-        new BudgetControllingColumns(false, false, false, false, false, false, false);
+        new BudgetControllingColumns(false, false, false, false, false, false);
 
     /**
      * The columns of a flat table, read off the lines it shows. Used where every line is of the same
@@ -44,7 +42,6 @@ public record BudgetControllingColumns(
         return new BudgetControllingColumns(
             rows.stream().anyMatch(BudgetControllingRow::hasRevenueBeforeWindow),
             rows.stream().anyMatch(BudgetControllingRow::hasPlanned),
-            rows.stream().anyMatch(BudgetControllingRow::hasFlatRateRevenue),
             rows.stream().anyMatch(BudgetControllingRow::hasBudget),
             rows.stream().anyMatch(BudgetControllingRow::hasOverrun),
             rows.stream().anyMatch(BudgetControllingRow::hasGrossProfitMargin),
@@ -65,7 +62,7 @@ public record BudgetControllingColumns(
      * inside the period. Without those columns it is a number without a question.
      */
     public BudgetControllingColumns withoutBudget() {
-        return new BudgetControllingColumns(false, planned, flatRate, false, false,
+        return new BudgetControllingColumns(false, planned, false, false,
             grossProfitMargin, hourlyRate);
     }
 
@@ -84,7 +81,7 @@ public record BudgetControllingColumns(
     }
 
     private BudgetControllingColumns withoutPlannedHours() {
-        return new BudgetControllingColumns(revenueBeforeWindow, false, flatRate, budget, overrun,
+        return new BudgetControllingColumns(revenueBeforeWindow, false, budget, overrun,
             grossProfitMargin, hourlyRate);
     }
 
@@ -100,7 +97,6 @@ public record BudgetControllingColumns(
         return new BudgetControllingColumns(
             revenueBeforeWindow || other.revenueBeforeWindow(),
             planned || other.planned(),
-            flatRate || other.flatRate(),
             budget || other.budget(),
             overrun || other.overrun(),
             grossProfitMargin || other.grossProfitMargin(),

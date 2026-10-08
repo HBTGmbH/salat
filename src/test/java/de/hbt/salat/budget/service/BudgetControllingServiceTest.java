@@ -1129,9 +1129,40 @@ public class BudgetControllingServiceTest {
     assertThat(sectionOf(SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro()).isEqualByComparingTo("1300");
   }
 
-  /** A monthly flat rate is one record; every month of its validity is due on its own. */
+  /**
+   * #1436: a flat rate falling due after today is not earned yet, however far the window reaches.
+   * On 15.06. a monthly retainer over the year has earned six amounts, not twelve, and the revenue
+   * of the section says so.
+   */
   @Test
   @FixedClock("2026-06-15T10:00:00")
+  public void should_not_count_a_flat_rate_falling_due_after_today() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
+
+    var total = sectionOf(SectionKind.ORDER_LEVEL).total();
+
+    assertThat(total.flatRateRevenueEuro()).isEqualByComparingTo("600");
+    // 16 h at 100 EUR plus the six amounts from January to June.
+    assertThat(total.totalRevenueEuro()).isEqualByComparingTo("2200.00");
+  }
+
+  /** A window ending before today is read to its own end, as before (#1436). */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_the_flat_rates_of_a_past_window_to_its_end() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
+
+    var total = sectionOf(compute(FROM, LocalDate.of(2026, 3, 31)), SectionKind.ORDER_LEVEL).total();
+
+    assertThat(total.flatRateRevenueEuro()).isEqualByComparingTo("300");
+  }
+
+  /** A monthly flat rate is one record; every month of its validity is due on its own. */
+  @Test
+  // After the year, so that every amount has fallen due (→ #1436).
+  @FixedClock("2027-01-15T10:00:00")
   public void should_report_one_line_per_flat_rate_rather_than_per_due_date() {
     givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
     givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
@@ -1149,7 +1180,8 @@ public class BudgetControllingServiceTest {
    * plans has each of its months counted against the plan it falls into.
    */
   @Test
-  @FixedClock("2026-06-15T10:00:00")
+  // After the year, so that every amount has fallen due (→ #1436).
+  @FixedClock("2027-01-15T10:00:00")
   public void should_split_a_monthly_flat_rate_across_the_plans_its_months_fall_into() {
     givenBudgets(plan("H1", null, FROM, JUN, "1000"), plan("H2", null, JUL, UNTIL, "1000"));
     givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
@@ -1257,7 +1289,8 @@ public class BudgetControllingServiceTest {
 
   /** No plan at all is the same case as an ambiguous one: the amount is due and has to be visible. */
   @Test
-  @FixedClock("2026-06-15T10:00:00")
+  // After the year, so that every amount has fallen due (→ #1436).
+  @FixedClock("2027-01-15T10:00:00")
   public void should_report_a_flat_rate_no_plan_covers_as_without_budget() {
     givenBudgets(plan("H1", null, FROM, JUN, "1000"));
     givenFlatRates(once("late fee", null, IN_H2, "500"));
@@ -1334,7 +1367,8 @@ public class BudgetControllingServiceTest {
 
   /** Instalments are entered per date and are the case a fixed price order is paid in. */
   @Test
-  @FixedClock("2026-06-15T10:00:00")
+  // After the year, so that every amount has fallen due (→ #1436).
+  @FixedClock("2027-01-15T10:00:00")
   public void should_count_the_instalments_of_a_fixed_price_flat_rate() {
     givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
     givenFlatRates(instalments("fixed price", null, FROM, UNTIL,
@@ -1373,7 +1407,7 @@ public class BudgetControllingServiceTest {
 
   /**
    * #1406: the hours on a suborder that is not invoiceable count towards the effective rate, not
-   * towards the agreed one. 8 h on co/01/D at 100 EUR/h, 8 h on co/02, which is not invoiceable.
+   * towards the average one. 8 h on co/01/D at 100 EUR/h, 8 h on co/02, which is not invoiceable.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
@@ -1384,7 +1418,7 @@ public class BudgetControllingServiceTest {
 
     assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(16));
     assertThat(total.billableHours()).isEqualTo(Duration.ofHours(8));
-    assertThat(total.agreedHourlyRateEuro()).isEqualByComparingTo("100.00");
+    assertThat(total.averageHourlyRateEuro()).isEqualByComparingTo("100.00");
     assertThat(total.effectiveHourlyRateEuro()).isEqualByComparingTo("50.00");
   }
 
