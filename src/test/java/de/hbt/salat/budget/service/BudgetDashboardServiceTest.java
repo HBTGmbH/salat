@@ -278,7 +278,7 @@ public class BudgetDashboardServiceTest {
       book(a01x, "2026-03-10", 8, 0, EMPLOYEE, p1);
       book(a01, "2026-06-20", 4, 0, EMPLOYEE, p1);         // after today
       book(a02, "2026-04-01", 8, 0, EMPLOYEE, p2);         // not invoiceable
-      book(a03, "2026-04-02", 8, 0, EMPLOYEE, p1);         // hidden suborder
+      book(a03, "2026-04-02", 8, 0, EMPLOYEE, p1);         // hidden suborder, counts (#1439)
       book(a01, "2026-04-03", 2, 30, EMPLOYEE, null);      // unassigned
       book(a01, "2026-05-04", 1, 1, OTHER_EMPLOYEE, p1);   // personal rate, odd minutes
       book(b01, "2026-03-15", 8, 0, EMPLOYEE, p3);
@@ -326,11 +326,12 @@ public class BudgetDashboardServiceTest {
               BudgetDashboardRow::progressPercent,
               BudgetDashboardRow::progressStatus)
           .containsExactly(
-              // 8 h at the plan-bound 120 EUR/h, 61 min at the personal 150 EUR/h, six monthly
+              // 2 × 8 h at the plan-bound 120 EUR/h — one of them on the hidden suborder, which
+              // counts like any other (#1439) —, 61 min at the personal 150 EUR/h, six monthly
               // flat rates of 100 EUR up to today; only the first adjustment is in force. The time
               // progress counts 115 of 257 working days — the three holidays are not among them.
               tuple(101L, "A", "Order A", LocalDate.of(2026, 6, 15),
-                  new BigDecimal("1000"), new BigDecimal("1712.50005000"), 171.25,
+                  new BigDecimal("1000"), new BigDecimal("2672.50005000"), 267.25,
                   115.0 * 100 / 257, ProgressStatus.BEHIND),
               // Its only booking is on a suborder that is not invoiceable.
               tuple(102L, "A", "Order A", LocalDate.of(2026, 6, 15),

@@ -124,6 +124,8 @@
       <span th:if="${row.flatRate()}" class="badge bg-blue-lt me-1"
             th:text="#{main.controlling.row.flatrate}">Pauschale</span>
       <span th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</span>
+      <!--/* A hidden suborder still counts what was booked on it (#1439). */-->
+      <span th:if="${row.hidden()}" class="text-muted" th:text="${@hiddenMarkerViewHelper.suffix(true)}"> (verborgen)</span>
     </div>
   </td>
   <td class="text-end d-none d-lg-table-cell" th:if="${columns.revenueBeforeWindow()}"

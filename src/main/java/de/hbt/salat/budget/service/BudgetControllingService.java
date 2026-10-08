@@ -99,7 +99,10 @@ public class BudgetControllingService {
 
         Set<LocalDate> holidays = publicholidayService.getPublicHolidayDatesBetween(from, until);
 
-        var suborders = suborderService.getSuborderReadModelsByCustomerorderId(customerorderId);
+        // Hidden suborders included (#1439): hiding one means nobody is to book on it any more, and
+        // what was booked before stays booked. Without them their bookings found no suborder and
+        // dropped out of hours, revenue and cost, for past windows too.
+        var suborders = suborderService.getAllSuborderReadModelsByCustomerorderId(customerorderId);
         var budgets = orderBudgetRepository.findByCustomerorderId(customerorderId);
 
         // Rates and costs are resolved once per time report. Loading both tables up front keeps
@@ -621,7 +624,10 @@ public class BudgetControllingService {
         return BudgetControllingRow.builder()
             .sign(suborder.completeOrderSign())
             .label(suborder.shortdescription())
-            .plannedHours(suborder.debithours() != null ? suborder.debithours() : Duration.ZERO)
+            // Whoever hides a suborder no longer plans with it (#1439): its line shows what was booked
+            // on it, and without a booking it has no line at all.
+            .plannedHours(suborder.hide() || suborder.debithours() == null ? Duration.ZERO : suborder.debithours())
+            .hidden(suborder.hide())
             .revenueBeforeWindowEuro(amountOf(reports, ScoredReport::beforeWindow, ScoredReport::revenue))
             .bookedHours(hoursOf(reports, report -> !report.beforeWindow()))
             // The hours a rate can be agreed for at all (#1406): the work on invoiceable suborders.
@@ -816,14 +822,15 @@ public class BudgetControllingService {
     private record BillableSuborder(long customerorderId, String completeOrderSign) {}
 
     /**
-     * The suborders of the orders that earn anything, by id: invoiceable and not hidden, as the
-     * utilization has always counted them. The complete order sign walks the parent chain, so it is
-     * resolved once per suborder here instead of once per booking.
+     * The suborders of the orders that earn anything, by id: the invoiceable ones, hidden or not —
+     * the evaluation counts the bookings on a hidden suborder (#1439), and dashboard and alert must
+     * not report less. The complete order sign walks the parent chain, so it is resolved once per
+     * suborder here instead of once per booking.
      */
     private Map<Long, BillableSuborder> billableSuborders(List<Long> customerorderIds) {
         Map<Long, BillableSuborder> billable = new HashMap<>();
         for (var suborder : suborderService.getSubordersByCustomerorderIds(customerorderIds)) {
-            if (!suborder.isHide() && suborder.isInvoiceable()) {
+            if (suborder.isInvoiceable()) {
                 billable.put(suborder.getId(), new BillableSuborder(suborder.getCustomerorder().getId(),
                     suborder.getCompleteOrderSign()));
             }
@@ -873,9 +880,8 @@ public class BudgetControllingService {
         var revenue = BigDecimal.ZERO;
         for (var booking : bookings) {
             var suborder = suborders.get(booking.suborderId());
-            // Work on a suborder that is not invoiceable is never billed, whatever rate matches, and
-            // a hidden suborder never counted here. A booking of another order does not belong to
-            // the plan, whatever its assignment says.
+            // Work on a suborder that is not invoiceable is never billed, whatever rate matches. A
+            // booking of another order does not belong to the plan, whatever its assignment says.
             if (suborder == null || suborder.customerorderId() != orderId) {
                 continue;
             }
