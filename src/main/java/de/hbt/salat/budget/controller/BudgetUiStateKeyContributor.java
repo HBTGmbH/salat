@@ -34,14 +34,13 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey CUSTOMER_ORDER_ID = new UiStateKey("budget.CustomerorderId");
 
     /**
-     * The three "show inactive" switches stay apart: in the plan list the switch means inactive
-     * budget plans, in the rate list expired rates, in the flat-rate list expired flat rates (#1098).
-     * Because the parameter mapping is global, telling them apart requires one parameter name each —
-     * hence the prefixes.
+     * The two "show inactive" switches stay apart: in the plan list the switch means inactive
+     * budget plans, in the rate list expired rates (#1098). Because the parameter mapping is global,
+     * telling them apart requires one parameter name each — hence the prefixes. The flat-rate list
+     * has none: a flat rate is never inactive, its period is when the payments fall due (#1438).
      */
     public static final UiStateKey BUDGET_SHOW_INACTIVE = new UiStateKey("budgetList.ShowInactive");
     public static final UiStateKey PRICING_SHOW_INACTIVE = new UiStateKey("pricingList.ShowInactive");
-    public static final UiStateKey FLAT_RATE_SHOW_INACTIVE = new UiStateKey("flatRateList.ShowInactive");
 
     /**
      * Whether the rate list, respectively the flat-rate list, also shows the entries of orders whose
@@ -60,7 +59,6 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
         map.put("fBudgetShowInactive", BUDGET_SHOW_INACTIVE);
         map.put("fPricingShowInactive", PRICING_SHOW_INACTIVE);
         map.put("fPricingShowInactiveOrders", PRICING_SHOW_INACTIVE_ORDERS);
-        map.put("fFlatRateShowInactive", FLAT_RATE_SHOW_INACTIVE);
         map.put("fFlatRateShowInactiveOrders", FLAT_RATE_SHOW_INACTIVE_ORDERS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }

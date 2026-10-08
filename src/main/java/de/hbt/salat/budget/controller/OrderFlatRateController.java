@@ -57,23 +57,21 @@ public class OrderFlatRateController {
     /**
      * The parameters carry the prefix {@code f} of every remembered filter (ADR-0022) and are
      * registered in {@link BudgetUiStateKeyContributor} — without that registration nothing is
-     * remembered and both switches fall back to their default on every page view (#1098).
+     * remembered and the switch falls back to its default on every page view (#1098).
      *
-     * <p>Each switch has a key of its own, not the one of the rate list next door: the UiState
+     * <p>The switch has a key of its own, not the one of the rate list next door: the UiState
      * mapping is global, so a switch sharing a name with another list would share its remembered
-     * value (#952).
+     * value (#952). There is no switch for inactive flat rates — a flat rate is never inactive,
+     * only its order can be (#1438).
      */
     @GetMapping
     public String list(@RequestParam(required = false) Long fBudgetCustomerOrderId,
-                       @RequestParam(required = false) Boolean fFlatRateShowInactive,
                        @RequestParam(required = false) Boolean fFlatRateShowInactiveOrders,
                        Model model) {
-        var inactive = Boolean.TRUE.equals(fFlatRateShowInactive);
         var inactiveOrders = Boolean.TRUE.equals(fFlatRateShowInactiveOrders);
-        model.addAttribute("rows", orderFlatRateService.getRows(fBudgetCustomerOrderId, inactive, inactiveOrders));
+        model.addAttribute("rows", orderFlatRateService.getRows(fBudgetCustomerOrderId, inactiveOrders));
         model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("fBudgetCustomerOrderId", fBudgetCustomerOrderId);
-        model.addAttribute("showInactive", inactive);
         model.addAttribute("showInactiveOrders", inactiveOrders);
         return "budget/flat-rate-list";
     }

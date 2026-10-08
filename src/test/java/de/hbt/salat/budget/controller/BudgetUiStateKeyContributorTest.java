@@ -18,27 +18,21 @@ class BudgetUiStateKeyContributorTest {
         new BudgetUiStateKeyContributor().getParamToKeyMappings();
 
     @Test
-    void bothSwitchesOfTheFlatRateListAreRegistered() {
+    void theSwitchOfTheFlatRateListIsRegistered() {
         assertThat(paramToKey)
             .describedAs("an unregistered switch is never remembered")
-            .containsKeys("fFlatRateShowInactive", "fFlatRateShowInactiveOrders");
+            .containsKey("fFlatRateShowInactiveOrders");
+    }
+
+    /** A flat rate is never inactive, only its order can be (#1438). */
+    @Test
+    void theFlatRateListHasNoSwitchForInactiveFlatRates() {
+        assertThat(paramToKey).doesNotContainKey("fFlatRateShowInactive");
     }
 
     @Test
-    void theFlatRateListDoesNotShareItsKeysWithTheRateList() {
-        assertThat(paramToKey.get("fFlatRateShowInactive"))
-            .isNotEqualTo(paramToKey.get("fPricingShowInactive"));
+    void theFlatRateListDoesNotShareItsKeyWithTheRateList() {
         assertThat(paramToKey.get("fFlatRateShowInactiveOrders"))
             .isNotEqualTo(paramToKey.get("fPricingShowInactiveOrders"));
-    }
-
-    /**
-     * The flat rate's own validity and the validity of its order are two different things, so the
-     * two switches of the one list do not share a key either (#957).
-     */
-    @Test
-    void theTwoSwitchesOfTheFlatRateListDoNotShareOneKey() {
-        assertThat(paramToKey.get("fFlatRateShowInactive"))
-            .isNotEqualTo(paramToKey.get("fFlatRateShowInactiveOrders"));
     }
 }

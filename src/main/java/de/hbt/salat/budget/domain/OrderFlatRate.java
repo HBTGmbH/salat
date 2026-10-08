@@ -19,7 +19,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import de.hbt.salat.common.Validity;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -85,7 +84,13 @@ public class OrderFlatRate extends AuditedEntity {
     @Column(precision = 15, scale = 2)
     private BigDecimal amount;
 
-    /** The first due date. For {@link FlatRateRhythm#ONCE} it is the only one. */
+    /**
+     * The first due date. For {@link FlatRateRhythm#ONCE} it is the only one.
+     *
+     * <p>Start and end are the period the payments fall into, not a validity (#1438): a flat rate is
+     * never inactive, and one whose last payment lies in the past is still part of its order. Only
+     * the order it refers to can be inactive.
+     */
     @Column(name = "valid_from", nullable = false)
     private LocalDate validFrom;
 
@@ -99,15 +104,6 @@ public class OrderFlatRate extends AuditedEntity {
     @OneToMany(mappedBy = "orderFlatRate", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<OrderFlatRateInstalment> instalments = new ArrayList<>();
-
-    /**
-     * Whether the flat rate has not expired yet — the same rule as
-     * {@link OrderPricing#getCurrentlyValid()}, so the list filters of the two modules mean the same
-     * thing. A start in the future does not make it invalid but merely not yet due.
-     */
-    public boolean getCurrentlyValid() {
-        return !Validity.isInactive(validUntil);
-    }
 
     /** Whether this flat rate applies to the customer order as a whole. */
     public boolean isOrderWide() {

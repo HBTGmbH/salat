@@ -73,24 +73,22 @@ public class OrderFlatRateService {
     }
 
     /**
-     * The rows of the list view, optionally narrowed to one customer order. The two filters follow
-     * the rate list (→ AGENTS.md, "List View Filter Toggles"): unless asked otherwise, definitions
-     * that have expired themselves are left out, and so are those of orders whose own validity has
-     * expired.
+     * The rows of the list view, optionally narrowed to one customer order. Unless asked otherwise,
+     * the flat rates of orders whose own validity has expired are left out. A flat rate itself is
+     * never inactive (#1438): its period is when the payments fall due, and one whose last payment
+     * lies in the past is still part of its order — the instalments of a finished fixed price, say.
      *
-     * <p>Every row carries the schedule its definition amounts to over the definition's whole
-     * validity, so the list can show what a monthly rate or a set of instalments adds up to instead
-     * of only the amount of a single due date.
+     * <p>Every row carries the schedule its definition amounts to over its whole period, so the list
+     * can show what a monthly rate or a set of instalments adds up to instead of only the amount of a
+     * single due date.
      */
     @Transactional(readOnly = true)
-    public List<OrderFlatRateRow> getRows(Long customerorderId, boolean showInactive,
-                                          boolean showInactiveOrders) {
+    public List<OrderFlatRateRow> getRows(Long customerorderId, boolean showInactiveOrders) {
         var flatRates = customerorderId == null
             ? getAll()
             : orderFlatRateRepository.findByCustomerorderIdOrderByValidFromAsc(customerorderId);
         // order, suborder and plan come with the flat rate: the list queries fetch them (#1367)
         return flatRates.stream()
-            .filter(flatRate -> showInactive || flatRate.getCurrentlyValid())
             .map(flatRate -> new OrderFlatRateRow(flatRate,
                 flatRate.getCustomerorder(),
                 flatRate.getSuborder() == null ? null : flatRate.getSuborder().getCompleteOrderSign(),
