@@ -61,3 +61,6 @@ vor. Sollte je eine Ausnahme nötig werden, ist sie mit dem Kommentar
 * Good: die Anwendungsinstanz ist austauschbar — in den deployten Umgebungen hält EasyAuth die
   Sitzung (→ ADR-0026), sodass Skalieren keine Sitzungsaffinität braucht
 * Bad: mehr URL-Parameter, längere URLs bei komplexen Filtern
+* Neutral: Auch kurzlebiger Ablaufzustand, der kein UI-Zustand ist, gehört ins Cookie. Der
+  OAuth-Ablauf legt `state` und PKCE-`code_verifier` verschlüsselt in ein `__Host-`-Cookie
+  (→ ADR-0038, #1416).
