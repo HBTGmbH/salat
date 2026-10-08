@@ -487,11 +487,16 @@ public class BudgetControllingService {
                     reportsOf(suborder, scored, r -> plan.getId().equals(planOfBooking.get(r.timereportId()))),
                     includeCosts))
                 .filter(BudgetControllingRow::hasContent)
+                .map(row -> plan.isFixedPrice() ? withoutRevenue(row) : row)
                 .toList();
             // The flat rates allocated to this plan follow its suborders: they belong to the same
-            // budget and have to count towards the same subtotal (#972).
-            var rows = concat(suborderRows, flatRateRows(flatRates.of(plan.getId()), scopeSigns, window.getFrom(),
-                includeCosts));
+            // budget and have to count towards the same subtotal (#972). A fixed price earns by its
+            // progress instead (→ FixedPriceRevenue); what has been billed of it is in its
+            // calculation, and counting the flat rates here as well would count the price twice.
+            var rows = plan.isFixedPrice() ? suborderRows
+                : concat(suborderRows, flatRateRows(flatRates.of(plan.getId()), scopeSigns, window.getFrom(),
+                    includeCosts));
+            var fixedPriceRevenue = plan.isFixedPrice() ? FixedPriceRevenue.of(plan, window) : FixedPriceRevenue.NONE;
             var budget = cumulativeBudgetOf(plan, window.getUntil());
             // An archived plan is behind nothing any more; judging it would raise an alarm nobody
             // can act on (#1217).
@@ -506,15 +511,18 @@ public class BudgetControllingService {
             // The complete sign its suborder has today, like the rows below it (#1205, #1212).
             var sign = scopeSigns.ofPlan(plan);
             var subtotal = orderWide ? null
-                : aggregate(sign, plan.getName(), rows, budget, includeCosts);
-            collected.add(new CollectedPlan(plan.getId(), sign, plan.getName(), rows, subtotal, progress, fixedPrice));
+                : fixedPriceRevenue.addTo(aggregate(sign, plan.getName(), rows, budget, includeCosts));
+            collected.add(new CollectedPlan(plan.getId(), sign, plan.getName(), rows, subtotal, progress, fixedPrice,
+                fixedPriceRevenue));
         }
 
         var allRows = collected.stream().flatMap(c -> c.rows().stream()).toList();
         var totalBudget = plans.stream()
             .map(p -> cumulativeBudgetOf(p.plan(), window.getUntil()))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        var total = aggregate(null, null, allRows, totalBudget, includeCosts);
+        var total = collected.stream().map(CollectedPlan::fixedPriceRevenue)
+            .reduce(aggregate(null, null, allRows, totalBudget, includeCosts),
+                (sum, revenue) -> revenue.addTo(sum), (a, b) -> a);
 
         // The line a plan's budget consumption is read from: its own subtotal, or the section total
         // for an order-wide plan, which has no subtotal because it is the whole section.
@@ -639,7 +647,66 @@ public class BudgetControllingService {
     /** One plan of a section before its group is assembled (→ {@link #plannedSection}). */
     private record CollectedPlan(Long budgetId, String sign, String label,
                                  List<BudgetControllingRow> rows, BudgetControllingRow subtotal,
-                                 Double progressPercent, FixedPriceEvaluation fixedPrice) {}
+                                 Double progressPercent, FixedPriceEvaluation fixedPrice,
+                                 FixedPriceRevenue fixedPriceRevenue) {}
+
+    /**
+     * What a fixed-price plan earned (#1435): its price times the progress it made — inside the
+     * window, and before it for the budget columns. Like the hours, the revenue of a month is what was
+     * achieved in it, price × (progress at the end of the window − progress before it opened),
+     * so revenue, cost and profit of a line describe the same period.
+     *
+     * <p>The revenue belongs to the plan, not to a line: the progress is entered for the plan as a
+     * whole. Its suborder lines therefore carry hours and cost only, and the figure is added to the
+     * plan's subtotal and to the section total — whatever sums them up from there, the total of the
+     * order and the segment listing, reads it from those.
+     */
+    private record FixedPriceRevenue(BigDecimal beforeWindowEuro, BigDecimal inWindowEuro) {
+
+        static final FixedPriceRevenue NONE = new FixedPriceRevenue(BigDecimal.ZERO, BigDecimal.ZERO);
+
+        static FixedPriceRevenue of(OrderBudget plan, LocalDateRange window) {
+            var price = plan.totalOfAdjustments();
+            var before = shareOf(price, plan.scopeProgressPercentOn(window.getFrom().minusDays(1)));
+            var untilEnd = shareOf(price, plan.scopeProgressPercentOn(window.getUntil()));
+            return new FixedPriceRevenue(before, untilEnd.subtract(before));
+        }
+
+        private static BigDecimal shareOf(BigDecimal price, Double progressPercent) {
+            if (progressPercent == null) {
+                return BigDecimal.ZERO;
+            }
+            return price.multiply(BigDecimal.valueOf(progressPercent)).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+
+        BudgetControllingRow addTo(BudgetControllingRow row) {
+            if (this == NONE) {
+                return row;
+            }
+            return row.toBuilder()
+                .revenueEuro(orZero(row.revenueEuro()).add(inWindowEuro))
+                .revenueBeforeWindowEuro(orZero(row.revenueBeforeWindowEuro()).add(beforeWindowEuro))
+                .build();
+        }
+
+        private static BigDecimal orZero(BigDecimal amount) {
+            return amount == null ? BigDecimal.ZERO : amount;
+        }
+    }
+
+    /**
+     * A suborder line of a fixed-price plan: hours and cost, but no revenue of its own (#1435) — the
+     * plan earns by its progress, and a rate matching the work would earn on top of the price
+     * (→ FixedPriceRateConflict, which warns about exactly that).
+     */
+    private static BudgetControllingRow withoutRevenue(BudgetControllingRow row) {
+        return row.toBuilder()
+            .revenueEuro(null)
+            .revenueBeforeWindowEuro(null)
+            .flatRateRevenueEuro(null)
+            .forecastRevenueEuro(null)
+            .build();
+    }
 
     /** The share of its budget a line has consumed, or {@code null} where there is no budget. */
     private static Double budgetUsedPercentOf(BudgetControllingRow row) {
