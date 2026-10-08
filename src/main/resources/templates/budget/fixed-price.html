@@ -167,27 +167,20 @@
       <span class="text-muted small ms-2" th:if="${fp.earnedByProgressEuro() != null}"
             th:text="#{main.fixedprice.earned(${#messages.msg('main.budget.format.amount', fp.earnedByProgressEuro())})}">
         nach Fortschritt: 19.200,00 €</span>
+      <!--/* Die Pauschalen sind, was vom Festpreis abgerechnet ist (#1435), bis heute (#1436). */-->
+      <span class="text-muted small ms-2"
+            th:text="#{main.fixedprice.billed(${#messages.msg('main.budget.format.amount', fp.billedEuro())})}">
+        Abgerechnet: 16.000,00 €</span>
     </dd>
 
-    <!--/* Drei Stundensätze, jeder mit seiner Formel und den Zahlen darin (#1405). Wo einer nicht
-           zu berechnen ist, steht ein Strich und der Grund. Die fälligen Pauschalen stehen nur in
-           der Formel des realisierten Satzes, sie sind sein Zähler (#1435). */-->
+    <!--/* Zwei Stundensätze, jeder mit seiner Formel und den Zahlen darin (#1405, #1435). Wo einer
+           nicht zu berechnen ist, steht ein Strich und der Grund. */-->
     <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.rate.calculated}">Stundensatz kalkuliert</dt>
     <dd class="col-sm-8 col-lg-9" th:with="rate=${fp.calculatedRate()}">
       <span class="fw-bold" th:text="${rate.hasValue()} ? #{main.budget.format.amount(${rate.euroPerHour()})} : '—'">120,00 €</span>
       <span class="text-muted small ms-2" th:if="${rate.hasValue()}"
             th:text="#{main.fixedprice.rate.calculated.formula(${#messages.msg('main.budget.format.amount', fp.fixedPriceEuro())}, ${fp.total().calculatedHoursFormatted()})}">
         Festpreis ÷ kalkulierte Stunden</span>
-      <span class="text-muted small ms-2" th:unless="${rate.hasValue()}"
-            th:text="#{${'main.fixedprice.rate.gap.' + rate.gap().name()}}">kein Fortschrittseintrag</span>
-    </dd>
-
-    <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.rate.realized}">Stundensatz realisiert bisher</dt>
-    <dd class="col-sm-8 col-lg-9" th:with="rate=${fp.realizedRateSoFar()}">
-      <span class="fw-bold" th:text="${rate.hasValue()} ? #{main.budget.format.amount(${rate.euroPerHour()})} : '—'">100,00 €</span>
-      <span class="text-muted small ms-2" th:if="${rate.hasValue()}"
-            th:text="#{main.fixedprice.rate.realized.formula(${#temporals.format(fp.realizedUntil(), 'dd.MM.yyyy')}, ${#messages.msg('main.budget.format.amount', fp.realizedEuro())}, ${fp.total().bookedHoursFormatted()})}">
-        fällige Pauschalen bis 08.10.2026 ÷ gebuchte Stunden</span>
       <span class="text-muted small ms-2" th:unless="${rate.hasValue()}"
             th:text="#{${'main.fixedprice.rate.gap.' + rate.gap().name()}}">kein Fortschrittseintrag</span>
     </dd>
@@ -207,13 +200,33 @@
       <dd class="col-sm-8 col-lg-9">
         <span th:classappend="${fp.calculatedGrossProfitEuro() != null and fp.calculatedGrossProfitEuro().signum() < 0} ? 'text-danger' : ''"
               th:text="${fp.calculatedGrossProfitEuro() != null} ? #{main.budget.format.amount(${fp.calculatedGrossProfitEuro()})} : '—'"></span>
-        <span class="text-muted small ms-2" th:text="#{main.fixedprice.grossprofit.calculated.formula}">Festpreis − kalkulierte Kosten</span>
+        <!--/* Wie die Stundensätze mit den Zahlen darin; ohne Wert nur die Formel. */-->
+        <span class="text-muted small ms-2" th:if="${fp.calculatedGrossProfitEuro() != null}"
+              th:text="#{main.fixedprice.grossprofit.calculated.formula(${#messages.msg('main.budget.format.amount', fp.fixedPriceEuro())}, ${#messages.msg('main.budget.format.amount', fp.total().calculatedCostEuro())})}">
+          Festpreis − kalkulierte Kosten: 48.000,00 € − 24.000,00 €</span>
+        <span class="text-muted small ms-2" th:unless="${fp.calculatedGrossProfitEuro() != null}"
+              th:text="#{main.fixedprice.grossprofit.calculated.formula.plain}">Festpreis − kalkulierte Kosten</span>
+      </dd>
+      <!--/* Zwischen kalkuliert und bisher, wie die Stundensätze von der Kalkulation zum Ende (#1435). */-->
+      <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.grossprofit.expected}">Rohertrag erwartet am Ende</dt>
+      <dd class="col-sm-8 col-lg-9">
+        <span th:classappend="${fp.expectedGrossProfitEuro() != null and fp.expectedGrossProfitEuro().signum() < 0} ? 'text-danger' : ''"
+              th:text="${fp.expectedGrossProfitEuro() != null} ? #{main.budget.format.amount(${fp.expectedGrossProfitEuro()})} : '—'"></span>
+        <span class="text-muted small ms-2" th:if="${fp.expectedGrossProfitEuro() != null}"
+              th:text="#{main.fixedprice.grossprofit.expected.formula(${#messages.msg('main.budget.format.amount', fp.fixedPriceEuro())}, ${#messages.msg('main.budget.format.amount', fp.projectedCostEuro())})}">
+          Festpreis − hochgerechnete Kosten (Ist-Kosten ÷ Fortschritt): 48.000,00 € − 22.500,00 €</span>
+        <span class="text-muted small ms-2" th:unless="${fp.expectedGrossProfitEuro() != null}"
+              th:text="#{main.fixedprice.grossprofit.expected.formula.plain}">Festpreis − hochgerechnete Kosten (Ist-Kosten ÷ Fortschritt)</span>
       </dd>
       <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.grossprofit.sofar}">Rohertrag bisher</dt>
       <dd class="col-sm-8 col-lg-9">
         <span th:classappend="${fp.grossProfitSoFarEuro() != null and fp.grossProfitSoFarEuro().signum() < 0} ? 'text-danger' : ''"
               th:text="${fp.grossProfitSoFarEuro() != null} ? #{main.budget.format.amount(${fp.grossProfitSoFarEuro()})} : '—'"></span>
-        <span class="text-muted small ms-2" th:text="#{main.fixedprice.grossprofit.sofar.formula}">Festpreis × Fortschritt − Ist-Kosten</span>
+        <span class="text-muted small ms-2" th:if="${fp.grossProfitSoFarEuro() != null}"
+              th:text="#{main.fixedprice.grossprofit.sofar.formula(${#messages.msg('main.budget.format.amount', fp.earnedByProgressEuro())}, ${#messages.msg('main.budget.format.amount', fp.total().bookedCostEuro())})}">
+          Festpreis × Fortschritt − Ist-Kosten: 19.200,00 € − 9.000,00 €</span>
+        <span class="text-muted small ms-2" th:unless="${fp.grossProfitSoFarEuro() != null}"
+              th:text="#{main.fixedprice.grossprofit.sofar.formula.plain}">Festpreis × Fortschritt − Ist-Kosten</span>
       </dd>
     </th:block>
   </dl>

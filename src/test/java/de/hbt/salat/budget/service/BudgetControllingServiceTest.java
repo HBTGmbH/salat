@@ -1434,7 +1434,7 @@ public class BudgetControllingServiceTest {
     givenBudgets(fixedPrice);
     var evaluation = new FixedPriceEvaluation(List.of(),
         new FixedPriceCalculationRow(null, null, null, null, Duration.ofHours(10), Duration.ofHours(16), null, null),
-        new BigDecimal("1000"), BigDecimal.ZERO, UNTIL, 40.0, ProgressStatus.BEHIND, false);
+        new BigDecimal("1000"), BigDecimal.ZERO, 40.0, ProgressStatus.BEHIND, false);
     when(fixedPriceCalculationService.evaluate(fixedPrice, UNTIL, false)).thenReturn(Optional.of(evaluation));
 
     var section = sectionOf(SectionKind.ORDER_LEVEL);

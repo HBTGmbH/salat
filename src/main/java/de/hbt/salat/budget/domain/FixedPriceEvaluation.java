@@ -14,27 +14,26 @@ import java.util.List;
  * are what has been billed of it: an instalment plan enters each of them once its stage is reached,
  * so their sum grows with the project and is no basis for a calculation.
  *
- * <p>Three hourly rates, all derived here and nowhere else:
+ * <p>Two hourly rates, both derived here and nowhere else:
  * <ul>
  *   <li><b>calculated</b> — fixed price ÷ calculated hours: what an hour was offered at;</li>
- *   <li><b>realized so far</b> — the flat rates fallen due by {@code realizedUntil} ÷ the hours
- *       booked: what an hour has brought in as billed (#1435);</li>
  *   <li><b>expected at completion</b> — fixed price ÷ the hours projected from the booked ones and the
  *       progress: what an hour will have earned once the plan is finished.</li>
  * </ul>
- * The first version read „so far" off the progress as well, which made it equal to „expected at
- * completion" by arithmetic — (price × p) ÷ h = price ÷ (h ÷ p). Read off the billing it answers a
- * question of its own: an instalment plan billing ahead of the work shows a realized rate above the
- * expected one, one lagging behind a rate below it.
+ * A third, „so far", was dropped (#1435). Read off the progress it equals the expected rate by
+ * arithmetic — (price × p) ÷ h = price ÷ (h ÷ p) —, and read off the flat rates fallen due it follows
+ * the billing calendar instead of the work. What has been billed stands next to the price as an
+ * amount ({@code billedEuro}).
+ *
+ * <p>The gross profit comes in three, for the same three points in time: calculated, so far and
+ * expected at completion, the last one against the cost projected like the hours (#1435).
  *
  * <p>Where a figure cannot be computed — no fixed price, no calculation, no progress, no booking — the
  * rate carries the reason instead of a value ({@link Gap}), and the view shows a dash with it.
  *
  * @param fixedPriceEuro  the sum of the plan's adjustments
- * @param realizedEuro    the flat rate amounts allocated to the plan that have fallen due by
- *                        {@code realizedUntil}
- * @param realizedUntil   the end of the evaluated window, but never later than today: a flat rate
- *                        falling due after today has not been billed yet (#1436)
+ * @param billedEuro      the flat rate amounts allocated to the plan that have fallen due by the end
+ *                        of the evaluated window, but never later than today (#1436)
  * @param progressPercent the progress entered by hand, {@code null} where none was entered yet
  * @param progressStatus  progress against the consumption of the calculated hours
  */
@@ -42,8 +41,7 @@ public record FixedPriceEvaluation(
     List<FixedPriceCalculationRow> rows,
     FixedPriceCalculationRow total,
     BigDecimal fixedPriceEuro,
-    BigDecimal realizedEuro,
-    LocalDate realizedUntil,
+    BigDecimal billedEuro,
     Double progressPercent,
     ProgressStatus progressStatus,
     boolean costsIncluded
@@ -127,17 +125,6 @@ public record FixedPriceEvaluation(
         return HourlyRate.of(perHour(fixedPriceEuro, total.calculatedHours()));
     }
 
-    /**
-     * The flat rates fallen due ÷ the hours booked (#1435). Needs neither the fixed price nor the
-     * progress — only something to divide by; nothing billed yet is a rate of 0 EUR, not a gap.
-     */
-    public HourlyRate realizedRateSoFar() {
-        if (!hasBookedHours()) {
-            return HourlyRate.missing(Gap.NO_BOOKINGS);
-        }
-        return HourlyRate.of(perHour(realizedEuro, total.bookedHours()));
-    }
-
     /** Fixed price ÷ projected hours. */
     public HourlyRate expectedRateAtCompletion() {
         if (!hasFixedPrice()) {
@@ -167,6 +154,27 @@ public record FixedPriceEvaluation(
             return null;
         }
         return earned.subtract(total.bookedCostEuro());
+    }
+
+    /**
+     * The cost the plan will have run up at the pace so far: actual cost ÷ progress, the way
+     * {@link #projectedHours()} projects the hours; {@code null} where costs are not reported.
+     */
+    public BigDecimal projectedCostEuro() {
+        if (!costsIncluded || !hasProgress() || progressPercent <= 0 || total.bookedCostEuro() == null) {
+            return null;
+        }
+        return total.bookedCostEuro().multiply(BigDecimal.valueOf(100))
+            .divide(BigDecimal.valueOf(progressPercent), 2, RoundingMode.HALF_UP);
+    }
+
+    /** Fixed price less the projected cost (#1435); {@code null} where either is missing. */
+    public BigDecimal expectedGrossProfitEuro() {
+        var projectedCost = projectedCostEuro();
+        if (!hasFixedPrice() || projectedCost == null) {
+            return null;
+        }
+        return fixedPriceEuro.subtract(projectedCost);
     }
 
     public String progressFormatted() {

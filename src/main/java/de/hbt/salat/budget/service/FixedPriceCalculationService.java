@@ -100,16 +100,17 @@ public class FixedPriceCalculationService {
         var calculation = calculate(plan, assignmentRepository.findPlanBookings(List.of(plan.getId()), until),
             suborderReadModels(plan.getCustomerorderId()), costLookup(), includeCosts);
 
-        var realizedUntil = BudgetControllingService.notAfterToday(until);
-        var realized = flatRatesOf(plan).stream()
-            .filter(amount -> !amount.due().isAfter(realizedUntil))
+        // What has been billed of the price: the flat rates fallen due, never later than today (#1436).
+        var billedUntil = BudgetControllingService.notAfterToday(until);
+        var billed = flatRatesOf(plan).stream()
+            .filter(amount -> !amount.due().isAfter(billedUntil))
             .map(FlatRateDueAmount::amount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         // The progress of today, as the controlling reads it for every plan (→ computeProgress).
         var progress = plan.scopeProgressPercentOn(DateUtils.today());
         var status = BudgetControllingService.computeProgressStatus(progress, calculation.total().consumedPercent());
         return Optional.of(new FixedPriceEvaluation(calculation.rows(), calculation.total(),
-            plan.totalOfAdjustments(), realized, realizedUntil, progress, status, includeCosts));
+            plan.totalOfAdjustments(), billed, progress, status, includeCosts));
     }
 
     /**
