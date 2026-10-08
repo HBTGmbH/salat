@@ -179,13 +179,12 @@ class FixedPriceCalculationServiceTest {
 
   /**
    * #1435: the fixed price is the sum of the plan's adjustments, whatever date each takes effect on.
-   * The flat rates are what has been billed of it, counted up to today; divided by the booked hours
-   * they make the realized rate. The progress against the consumption of the calculated hours decides
-   * the status.
+   * The flat rates are what has been billed of it, counted up to today (#1436). The progress against
+   * the consumption of the calculated hours decides the status.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  void takes_the_fixed_price_from_the_adjustments_and_the_realized_rate_from_the_flat_rates_due_by_today() {
+  void takes_the_fixed_price_from_the_adjustments_and_what_was_billed_from_the_flat_rates_due_by_today() {
     addLine("co/02", "Senior", 400);
     booked("co/02", SENIOR_PERSON, 160);
     adjustment("40000", JAN);
@@ -197,17 +196,15 @@ class FixedPriceCalculationServiceTest {
     var evaluation = service.evaluate(plan, DEC, false).orElseThrow();
 
     assertThat(evaluation.fixedPriceEuro()).isEqualByComparingTo("50000");
-    assertThat(evaluation.realizedUntil()).isEqualTo(LocalDate.of(2026, 6, 15));
     // six monthly amounts, January to June
-    assertThat(evaluation.realizedEuro()).isEqualByComparingTo("24000");
+    assertThat(evaluation.billedEuro()).isEqualByComparingTo("24000");
     assertThat(evaluation.progressStatus()).isEqualTo(ProgressStatus.ON_TRACK);
     assertThat(evaluation.calculatedRate().euroPerHour()).isEqualByComparingTo("125.00");
-    assertThat(evaluation.realizedRateSoFar().euroPerHour()).isEqualByComparingTo("150.00");
     // 160 h at 40 % project to 400 h
     assertThat(evaluation.expectedRateAtCompletion().euroPerHour()).isEqualByComparingTo("125.00");
   }
 
-  /** Flat rates alone make no fixed price (#1435): without adjustments the price-based rates have a gap. */
+  /** Flat rates alone make no fixed price (#1435): without adjustments the rates have a gap. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
   void has_no_fixed_price_without_adjustments_however_many_flat_rates_there_are() {
@@ -221,7 +218,7 @@ class FixedPriceCalculationServiceTest {
     assertThat(evaluation.hasFixedPrice()).isFalse();
     assertThat(evaluation.calculatedRate().gap()).isEqualTo(Gap.NO_FIXED_PRICE);
     assertThat(evaluation.expectedRateAtCompletion().gap()).isEqualTo(Gap.NO_FIXED_PRICE);
-    assertThat(evaluation.realizedRateSoFar().euroPerHour()).isEqualByComparingTo("150.00");
+    assertThat(evaluation.billedEuro()).isEqualByComparingTo("24000");
   }
 
   private void adjustment(String amount, LocalDate effective) {
