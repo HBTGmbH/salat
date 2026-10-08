@@ -63,7 +63,12 @@ public record BudgetControllingRow(
      * Whether this line is a flat rate rather than a suborder (#972). Such a line has no hours at
      * all, so the view says what the amount in it stands for instead of leaving a row of dashes.
      */
-    boolean flatRate
+    boolean flatRate,
+    /**
+     * Whether the line is a hidden suborder (#1439). It counts like any other, and the view says it
+     * is hidden, as the selects do, so nobody wonders where a suborder no longer offered comes from.
+     */
+    boolean hidden
 ) {
 
     /**

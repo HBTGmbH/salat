@@ -164,7 +164,9 @@ public class BudgetControllingServiceTest {
                   && !r.getReferenceday().isAfter(periodUntil))
               .toList();
         });
-    when(suborderService.getSuborderReadModelsByCustomerorderId(anyLong())).thenAnswer(i -> summaries());
+    // As the order module answers (#1339): the visible suborders, or all of them, hidden ones included.
+    when(suborderService.getSuborderReadModelsByCustomerorderId(anyLong())).thenAnswer(i -> summaries(false));
+    when(suborderService.getAllSuborderReadModelsByCustomerorderId(anyLong())).thenAnswer(i -> summaries(true));
     // The utilization reads the same fixture in bulk, over every order and plan asked about (#1222).
     when(customerorderService.getCustomerordersByIds(any())).thenReturn(List.of(customerorder));
     when(suborderService.getSubordersByCustomerorderIds(any())).thenAnswer(i -> List.copyOf(suborders));
@@ -758,6 +760,64 @@ public class BudgetControllingServiceTest {
 
     assertThat(section.total().bookedHours()).isEqualTo(Duration.ofHours(8));
     assertThat(section.total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  // --- hidden suborders (#1439) ---------------------------------------------------------------
+
+  /**
+   * Hiding a suborder means nobody is to book on it any more; what was booked before stays booked.
+   * Its hours, revenue and cost count like those of any other suborder, and its line says it is hidden.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_the_bookings_on_a_hidden_suborder() {
+    var hidden = suborder("03", 'Y', 30L, null);
+    hidden.setHide(true);
+    suborders.add(hidden);
+    givenReports(eightHoursOn(11L, IN_H1), eightHoursOn(20L, IN_H2), eightHoursOn(30L, IN_H1));
+
+    var result = compute();
+
+    assertThat(result.total().bookedHours()).isEqualTo(Duration.ofHours(24));
+    assertThat(result.total().revenueEuro()).isEqualByComparingTo("2400.00");
+    assertThat(sectionOf(result, SectionKind.UNPLANNED).rows())
+        .filteredOn(row -> "co/03".equals(row.sign()))
+        .singleElement()
+        .satisfies(row -> {
+          assertThat(row.bookedHours()).isEqualTo(Duration.ofHours(8));
+          assertThat(row.hidden()).isTrue();
+        });
+  }
+
+  /** Whoever hides a suborder no longer plans with it: without a booking it has no line, planned hours or not. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_show_no_line_for_a_hidden_suborder_nobody_booked_on() {
+    var hidden = suborder("03", 'Y', 30L, null);
+    hidden.setHide(true);
+    hidden.setDebithours(Duration.ofHours(40));
+    suborders.add(hidden);
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+
+    var section = sectionOf(SectionKind.ORDER_LEVEL);
+
+    assertThat(section.rows()).noneMatch(row -> "co/03".equals(row.sign()));
+    assertThat(section.total().plannedHours()).isEqualTo(Duration.ZERO);
+  }
+
+  /** Dashboard and alert count the same bookings as the evaluation (#1439). */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_hidden_suborder_in_the_utilization() {
+    var hidden = suborder("03", 'Y', 30L, null);
+    hidden.setHide(true);
+    suborders.add(hidden);
+    var whole = plan("whole year", null, FROM, UNTIL, "2000");
+    givenBudgets(whole);
+    givenReports(eightHoursOn(11L, IN_H1), eightHoursOn(20L, IN_H2), eightHoursOn(30L, IN_H1));
+
+    // The two March bookings; the one in September has not happened yet (#972).
+    assertThat(service.computeUtilizationInfo(whole).coveredRevenueEuro()).isEqualByComparingTo("1600.00");
   }
 
   // --- the total over all sections of the order (#779) -----------------------------------------
@@ -1615,10 +1675,12 @@ public class BudgetControllingServiceTest {
    * The suborders as the order module hands them over (#1338), computed by its own rule rather than
    * rebuilt here — so complete sign and path in these tests are the ones production computes.
    */
-  private List<SuborderReadModel> summaries() {
+  private List<SuborderReadModel> summaries(boolean includeHidden) {
     var byId = new HashMap<Long, Suborder>();
     suborders.forEach(suborder -> byId.put(suborder.getId(), suborder));
-    return suborders.stream().map(suborder -> SuborderReadModel.of(suborder, byId)).toList();
+    return suborders.stream()
+        .filter(suborder -> includeHidden || !suborder.isHide())
+        .map(suborder -> SuborderReadModel.of(suborder, byId)).toList();
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */
