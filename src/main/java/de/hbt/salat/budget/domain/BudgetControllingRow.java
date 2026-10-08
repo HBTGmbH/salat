@@ -184,19 +184,21 @@ public record BudgetControllingRow(
     }
 
     /**
-     * The rate agreed on average (#1406): revenue from hours over the hours that can be billed at all.
-     * Set next to {@link #effectiveHourlyRateEuro()}, the gap between the two is what unbilled work
-     * costs the order per hour. {@code null} without billable hours.
+     * The average rate (#1406): the whole revenue, flat rates included, over the hours that can be
+     * billed at all. It shares its numerator with {@link #effectiveHourlyRateEuro()} (#1436), so the
+     * gap between the two is what unbilled work costs the order per hour and nothing else — with the
+     * flat rates on one side only, they would have narrowed the gap as well. {@code null} without
+     * billable hours.
      */
-    public BigDecimal agreedHourlyRateEuro() {
+    public BigDecimal averageHourlyRateEuro() {
         if (billableHours == null || billableHours.isZero()) {
             return null;
         }
-        return orZero(revenueEuro).divide(hoursOf(billableHours), 2, RoundingMode.HALF_UP);
+        return orZero(totalRevenueEuro()).divide(hoursOf(billableHours), 2, RoundingMode.HALF_UP);
     }
 
-    public boolean hasAgreedHourlyRate() {
-        return agreedHourlyRateEuro() != null;
+    public boolean hasAverageHourlyRate() {
+        return averageHourlyRateEuro() != null;
     }
 
     private static BigDecimal hoursOf(Duration duration) {

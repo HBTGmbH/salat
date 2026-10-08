@@ -135,10 +135,10 @@ public class BudgetControllingRowTest {
 
   /**
    * The mockup of #1406: 300 h on an invoiceable suborder at 95 EUR/h, 60 h on an internal one. The
-   * agreed rate reads the billable hours only, the effective rate every hour booked.
+   * average rate reads the billable hours only, the effective rate every hour booked.
    */
   @Test
-  public void should_count_unbilled_hours_in_the_effective_rate_but_not_in_the_agreed_one() {
+  public void should_count_unbilled_hours_in_the_effective_rate_but_not_in_the_average_one() {
     var billable = row().bookedHours(Duration.ofHours(300)).billableHours(Duration.ofHours(300))
         .revenueEuro(new BigDecimal("28500")).flatRateRevenueEuro(BigDecimal.ZERO).build();
     var internal = row().bookedHours(Duration.ofHours(60)).billableHours(Duration.ZERO)
@@ -146,21 +146,35 @@ public class BudgetControllingRowTest {
 
     var total = BudgetControllingRow.sum(null, null, java.util.List.of(billable, internal), null, false);
 
-    assertThat(billable.agreedHourlyRateEuro()).isEqualByComparingTo("95.00");
+    assertThat(billable.averageHourlyRateEuro()).isEqualByComparingTo("95.00");
     assertThat(billable.effectiveHourlyRateEuro()).isEqualByComparingTo("95.00");
-    assertThat(internal.hasAgreedHourlyRate()).isFalse();
+    assertThat(internal.hasAverageHourlyRate()).isFalse();
     assertThat(internal.effectiveHourlyRateEuro()).isEqualByComparingTo("0.00");
-    assertThat(total.agreedHourlyRateEuro()).isEqualByComparingTo("95.00");
+    assertThat(total.averageHourlyRateEuro()).isEqualByComparingTo("95.00");
     assertThat(total.effectiveHourlyRateEuro()).isEqualByComparingTo("79.17");
   }
 
-  /** Flat rates count towards the effective rate (#1406), not towards the agreed one. */
+  /**
+   * Flat rates count towards both rates (#1436), so the two differ in the hours they divide by and
+   * nothing else. The example of #1436: 100 h booked, 80 h of them billable at 100 EUR/h, 10.000 EUR
+   * of flat rates fallen due.
+   */
   @Test
-  public void should_count_flat_rates_in_the_effective_rate_only() {
-    var line = row().bookedHours(Duration.ofHours(100)).billableHours(Duration.ofHours(100))
-        .revenueEuro(new BigDecimal("9000")).flatRateRevenueEuro(new BigDecimal("1000")).build();
+  public void should_count_flat_rates_in_both_rates() {
+    var line = row().bookedHours(Duration.ofHours(100)).billableHours(Duration.ofHours(80))
+        .revenueEuro(new BigDecimal("8000")).flatRateRevenueEuro(new BigDecimal("10000")).build();
 
-    assertThat(line.agreedHourlyRateEuro()).isEqualByComparingTo("90.00");
+    assertThat(line.averageHourlyRateEuro()).isEqualByComparingTo("225.00");
+    assertThat(line.effectiveHourlyRateEuro()).isEqualByComparingTo("180.00");
+  }
+
+  /** Flat rates without a billable hour leave the average rate nothing to divide by (#1436). */
+  @Test
+  public void should_have_no_average_rate_without_billable_hours_even_with_flat_rates() {
+    var line = row().bookedHours(Duration.ofHours(10)).billableHours(Duration.ZERO)
+        .revenueEuro(BigDecimal.ZERO).flatRateRevenueEuro(new BigDecimal("1000")).build();
+
+    assertThat(line.hasAverageHourlyRate()).isFalse();
     assertThat(line.effectiveHourlyRateEuro()).isEqualByComparingTo("100.00");
   }
 
@@ -170,7 +184,7 @@ public class BudgetControllingRowTest {
     var flatRateOnly = row().flatRateRevenueEuro(new BigDecimal("1000")).build();
 
     assertThat(flatRateOnly.effectiveHourlyRateEuro()).isNull();
-    assertThat(flatRateOnly.agreedHourlyRateEuro()).isNull();
+    assertThat(flatRateOnly.averageHourlyRateEuro()).isNull();
   }
 
   private static org.assertj.core.data.Offset<Double> within(double d) {

@@ -11,9 +11,9 @@
   a column of its own, in euro — the budget columns add it to the window's own revenue and therefore
   still read against the whole plan, while profit and margin divide figures covering one period.
 
-  The revenue column is everything a line earns — hours times rate plus the flat rates falling due in
-  it (#972). Where flat rates are involved at all, the column next to it says how much of that came
-  from them, so nobody has to guess which of the two sources a figure is made of.
+  The revenue column is everything a line earns — hours times rate plus the flat rates fallen due in
+  it by today (#972, #1436). Every flat rate has a line of its own, marked as such, so a column
+  repeating its amount next to the revenue only cost width (#1436).
 
   Header and row are fragments of their own because three tables share them (#779): the sections of
   an order, the total over those sections, and the listing of orders per customer segment. Which
@@ -66,19 +66,13 @@
       <th class="text-end" th:if="${columns.planned()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
       <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
       <!--/*
-        The flat rate share of the column before it (#972). Only where flat rates actually fall due:
-        on an order billed purely by the hour this would be a column of dashes, and the table has
-        enough of them to fit already.
-      */-->
-      <th class="text-end" th:if="${columns.flatRate()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
-      <!--/*
-        Mittlerer vereinbarter und effektiver Stundensatz (#1406). Die Formeln stehen hinter dem
+        Mittlerer und effektiver Stundensatz (#1406, #1436). Die Formeln stehen hinter dem
         Info-Icon; der Text dazu steht einmal je Seite (Fragment rateHelp), weil dieser Kopf mehrfach
         auf einer Seite steht.
       */-->
       <th class="text-end text-nowrap" th:if="${columns.hourlyRate()}">
-        <span th:text="#{main.controlling.col.agreedrate}">Satz Ø (€/h)</span>
-        <button type="button" class="info-popover-toggle" data-info-popover="#agreedRateHelp"
+        <span th:text="#{main.controlling.col.averagerate}">Satz Ø (€/h)</span>
+        <button type="button" class="info-popover-toggle" data-info-popover="#averageRateHelp"
                 th:title="#{main.controlling.col.rate.help.toggle}"
                 th:aria-label="#{main.controlling.col.rate.help.toggle}">
           <i class="bi bi-info-circle"></i>
@@ -142,10 +136,8 @@
       th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}"
       th:text="${row.hasTotalRevenue()} ? #{main.budget.format.amount(${row.totalRevenueEuro()})} : '—'"></td>
-  <td class="text-end" th:if="${columns.flatRate()}" th:classappend="${cellClass}"
-      th:text="${row.hasFlatRateRevenue()} ? #{main.budget.format.amount(${row.flatRateRevenueEuro()})} : '—'"></td>
   <td class="text-end" th:if="${columns.hourlyRate()}" th:classappend="${cellClass}"
-      th:text="${row.hasAgreedHourlyRate()} ? #{main.budget.format.amount(${row.agreedHourlyRateEuro()})} : '—'"></td>
+      th:text="${row.hasAverageHourlyRate()} ? #{main.budget.format.amount(${row.averageHourlyRateEuro()})} : '—'"></td>
   <td class="text-end" th:if="${columns.hourlyRate()}" th:classappend="${cellClass}"
       th:text="${row.hasEffectiveHourlyRate()} ? #{main.budget.format.amount(${row.effectiveHourlyRateEuro()})} : '—'"></td>
   <td class="text-end" th:if="${columns.budget()}" th:classappend="${cellClass}"
@@ -178,7 +170,7 @@
   Tabellenkopf steht mehrfach auf einer Seite, und die Icons verweisen über die id hierher.
 */-->
 <div th:fragment="rateHelp" class="d-none">
-  <div id="agreedRateHelp" th:text="#{main.controlling.col.agreedrate.help}">
+  <div id="averageRateHelp" th:text="#{main.controlling.col.averagerate.help}">
     Umsatz aus Stunden ÷ fakturierbare Stunden
   </div>
   <div id="effectiveRateHelp" th:text="#{main.controlling.col.effectiverate.help}">

@@ -51,8 +51,7 @@ public record BudgetControllingSection(
      */
     public BudgetControllingColumns columns() {
         return new BudgetControllingColumns(hasRevenueBeforeWindowData(), hasPlannedData(),
-            hasFlatRateData(), hasBudgetColumn(), hasOverrunData(), hasGrossProfitMarginData(),
-            hasHourlyRateData());
+            hasBudgetColumn(), hasOverrunData(), hasGrossProfitMarginData(), hasHourlyRateData());
     }
 
     /**
@@ -85,15 +84,6 @@ public record BudgetControllingSection(
     public boolean hasRevenueBeforeWindowData() {
         return total.hasRevenueBeforeWindow()
             || rows().stream().anyMatch(BudgetControllingRow::hasRevenueBeforeWindow);
-    }
-
-    /**
-     * Whether any flat rate falls due in this section (#972). Only then is the breakdown column
-     * worth its width — on an order billed purely by the hour it would be a column of dashes.
-     */
-    public boolean hasFlatRateData() {
-        return total.hasFlatRateRevenue()
-            || rows().stream().anyMatch(BudgetControllingRow::hasFlatRateRevenue);
     }
 
     /**

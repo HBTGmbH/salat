@@ -30,12 +30,10 @@ public class BudgetControllingColumnsTest {
         row().build(),
         row().revenueBeforeWindowEuro(new BigDecimal("300")).build(),
         row().plannedHours(Duration.ofHours(10)).build(),
-        row().flatRateRevenueEuro(new BigDecimal("20")).build(),
         row().budgetEuro(new BigDecimal("100")).revenueEuro(new BigDecimal("150")).build()));
 
     assertThat(columns.revenueBeforeWindow()).isTrue();
     assertThat(columns.planned()).isTrue();
-    assertThat(columns.flatRate()).isTrue();
     assertThat(columns.budget()).isTrue();
     assertThat(columns.overrun()).isTrue();
   }
@@ -65,27 +63,27 @@ public class BudgetControllingColumnsTest {
    */
   @Test
   public void should_drop_the_columns_a_plan_answers_for() {
-    var all = new BudgetControllingColumns(true, true, true, true, true, true, true);
+    var all = new BudgetControllingColumns(true, true, true, true, true, true);
 
     assertThat(all.withoutBudget())
-        .isEqualTo(new BudgetControllingColumns(false, true, true, false, false, true, true));
+        .isEqualTo(new BudgetControllingColumns(false, true, false, false, true, true));
     assertThat(all.withoutPlan())
-        .isEqualTo(new BudgetControllingColumns(false, false, true, false, false, true, true));
+        .isEqualTo(new BudgetControllingColumns(false, false, false, false, true, true));
   }
 
   @Test
   public void should_take_over_every_column_of_the_sets_it_is_merged_with() {
-    var withBudget = new BudgetControllingColumns(false, false, false, true, true, false, false);
-    var withPlanned = new BudgetControllingColumns(false, true, false, false, false, false, true);
+    var withBudget = new BudgetControllingColumns(false, false, true, true, false, false);
+    var withPlanned = new BudgetControllingColumns(false, true, false, false, false, true);
 
     var merged = withBudget.merge(withPlanned);
 
-    assertThat(merged).isEqualTo(new BudgetControllingColumns(false, true, false, true, true, false, true));
+    assertThat(merged).isEqualTo(new BudgetControllingColumns(false, true, true, true, false, true));
   }
 
   @Test
   public void should_survive_being_merged_with_nothing() {
-    var columns = new BudgetControllingColumns(true, false, false, false, false, false, false);
+    var columns = new BudgetControllingColumns(true, false, false, false, false, false);
 
     assertThat(columns.merge(null)).isEqualTo(columns);
     assertThat(BudgetControllingColumns.NONE.merge(columns)).isEqualTo(columns);

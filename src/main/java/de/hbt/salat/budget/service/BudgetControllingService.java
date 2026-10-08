@@ -120,8 +120,12 @@ public class BudgetControllingService {
             readFrom(candidates, from), until, customerorderId);
         var flatRateLookup = orderFlatRateService.lookupFor(List.of(customerorderId));
         var positionOfFlatRate = flatRatePositions();
+        // A flat rate falling due after today has not been earned yet, however far the window
+        // reaches (#1436): bookings exist up to today only, and counting the amounts beyond it drove
+        // revenue and both rates up whenever somebody chose the end of the year as the window's end.
+        var flatRatesUntil = notAfterToday(until);
         var plans = withoutIdleDeactivatedPlans(candidates, candidateTimereports, planOfBooking,
-            allocate(flatRateLookup.dueAmounts(customerorderId, from, until), budgets, positionOfFlatRate),
+            allocate(flatRateLookup.dueAmounts(customerorderId, from, flatRatesUntil), budgets, positionOfFlatRate),
             from);
         var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
@@ -146,7 +150,7 @@ public class BudgetControllingService {
         // against every plan of the order rather than against the evaluated ones, so that the
         // allocation of an amount does not depend on the window somebody is looking at. Only a flat
         // rate naming its plan can land on a deactivated one (→ FlatRateAllocation).
-        var flatRatesByPlan = allocate(flatRateLookup.dueAmounts(customerorderId, readFrom, until), budgets,
+        var flatRatesByPlan = allocate(flatRateLookup.dueAmounts(customerorderId, readFrom, flatRatesUntil), budgets,
             positionOfFlatRate);
         var scopeSigns = scopeSigns(customerorder, suborders, budgets, flatRateLookup);
 
@@ -653,7 +657,7 @@ public class BudgetControllingService {
     }
 
     /**
-     * @param evaluatedUntil the last day the figures cover (→ {@link #evaluatedUntil(LocalDate)}).
+     * @param evaluatedUntil the last day the figures cover (→ {@link #notAfterToday(LocalDate)}).
      *                       Carried along so that a view can name its reference date and link to a
      *                       controlling evaluation over the same window instead of a wider one.
      */
@@ -721,7 +725,7 @@ public class BudgetControllingService {
         Map<Long, LocalDate> fromByOrder = budgets.stream()
             .collect(Collectors.toMap(OrderBudget::getCustomerorderId, OrderBudget::getValidFrom,
                 (a, b) -> a.isBefore(b) ? a : b));
-        var until = budgets.stream().map(b -> evaluatedUntil(b.getValidUntil())).max(naturalOrder()).orElseThrow();
+        var until = budgets.stream().map(b -> notAfterToday(b.getValidUntil())).max(naturalOrder()).orElseThrow();
         var budgetIds = budgets.stream().map(OrderBudget::getId).toList();
         var bookingsByPlan = assignmentRepository.findPlanBookings(budgetIds, until).stream()
             .collect(Collectors.groupingBy(PlanBooking::orderBudgetId));
@@ -761,8 +765,8 @@ public class BudgetControllingService {
     }
 
     /**
-     * The end of the window the utilization is measured over: the plan's own end, but never later
-     * than today (#972).
+     * The given day, but never later than today: the end of the window the utilization is measured
+     * over (#972), and the last day a flat rate counts in the controlling (#1436).
      *
      * <p>Dashboard and alerts answer "where does this plan stand", and that question is about the
      * present. Reading a plan to its own end counted what has not happened yet — with hourly work
@@ -775,9 +779,9 @@ public class BudgetControllingService {
      * utilization for the same reason. With both ends cut, the dashboard now says exactly what a
      * controlling evaluation up to today says.
      */
-    private static LocalDate evaluatedUntil(LocalDate planUntil) {
+    static LocalDate notAfterToday(LocalDate day) {
         var today = DateUtils.today();
-        return planUntil.isBefore(today) ? planUntil : today;
+        return day.isBefore(today) ? day : today;
     }
 
     /**
@@ -797,7 +801,7 @@ public class BudgetControllingService {
                                                    OrderFlatRateLookup flatRateLookup,
                                                    Function<OrderFlatRate, Optional<OrderPosition>> positionOfFlatRate) {
         long orderId = budget.getCustomerorderId();
-        var until = evaluatedUntil(budget.getValidUntil());
+        var until = notAfterToday(budget.getValidUntil());
 
         var revenue = BigDecimal.ZERO;
         for (var booking : bookings) {

@@ -259,16 +259,14 @@ public class BudgetSegmentControllingServiceTest {
   public void should_decide_the_columns_over_all_segments_at_once() {
     givenOrders(order("A", segment("Industrie")), order("B", segment("Öffentlicher Sektor")));
     givenEvaluations(
-        evaluation("A", section(SectionKind.ORDER_LEVEL,
-            row("100", "150", "10", Duration.ofHours(1)).toBuilder()
-                .flatRateRevenueEuro(new BigDecimal("40")).build())),
-        evaluation("B", section(SectionKind.UNPLANNED, row(null, "50", "10", Duration.ofHours(1)))));
+        evaluation("A", section(SectionKind.ORDER_LEVEL, row("100", "150", "10", Duration.ofHours(1)))),
+        evaluation("B", section(SectionKind.UNPLANNED, row(null, "50", "10", Duration.ZERO))));
 
     var columns = service.compute(FROM, UNTIL).columns();
 
-    // Only the first order has a flat rate, and the column appears in both tables, so that the two
-    // stay comparable side by side.
-    assertThat(columns.flatRate()).isTrue();
+    // Only the first order has booked hours, and the rate columns appear in both tables, so that the
+    // two stay comparable side by side.
+    assertThat(columns.hourlyRate()).isTrue();
   }
 
   /**
