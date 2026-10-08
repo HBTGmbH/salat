@@ -910,8 +910,20 @@ Fehlerhinweis gelesen.
 
 - **Eigenständige modale Dialoge** bleiben, wo mehr als eine Bestätigung verlangt wird:
   Benutzerwechsel (`layout/base.html`, die Auswahl findet im Dialog selbst statt), Teilen
-  (`daily.html`), Anonymisieren (`employee-form.html`, Danger Zone mit Doppelbestätigung) und der
-  Feldauswahl-Dialog der JIRA-Replikation. Die Regel oben gilt auch für sie.
+  (`daily.html`), Anonymisieren (`employee-form.html`) und Budgetplan löschen (`budget-detail.html`,
+  #1424) — beide Danger Zone mit Doppelbestätigung — und der Feldauswahl-Dialog der
+  JIRA-Replikation. Die Regel oben gilt auch für sie.
+
+- **Doppelbestätigung** (→ ADR-0027, Nachtrag #1424): eine rot umrandete Karte „Gefahrenbereich“
+  am Ende der Seite mit Erklärung und Knopf, dahinter ein eigener Dialog, in dem der Schlüssel des
+  Objekts — Kürzel der Person, Name des Plans — zweimal einzutippen ist. Der Handler in `salat.js`
+  gibt den Knopf erst frei, wenn alle markierten Felder genau den erwarteten Wert tragen, und leert
+  sie beim Öffnen; kein Template bringt dafür eigenes JavaScript mit. Der Server vergleicht erneut.
+
+  | Attribut | Bedeutung |
+  |---|---|
+  | `data-confirm-typed` | am Formular: der Wert, der einzutippen ist |
+  | `data-confirm-typed-input` | an jedem Feld, das ihn tragen muss |
 
 ### 5.6 Hilfetext — drei Stufen, nach Länge und Nachschlagehäufigkeit
 
@@ -1810,8 +1822,9 @@ Bewusst als Fragen formuliert — offene Punkte, kein beschlossenes Backlog.
     anonymisieren), während 23 Löschvorgänge mit `confirm()` auskommen.~~ **Beantwortet
     (#1032, → ADR-0027).** Drei Stufen, nach Umkehrbarkeit: eine Aktion ohne bleibenden Schaden
     fragt nicht; eine löschende oder in die Vergangenheit greifende Aktion geht über den
-    gemeinsamen Dialog, der benennt, was sie trifft; die Doppelbestätigung bleibt dem einen Fall
-    vorbehalten, der unwiderruflich Daten überschreibt.
+    gemeinsamen Dialog, der benennt, was sie trifft; die Doppelbestätigung bleibt den Fällen
+    vorbehalten, die unwiderruflich Daten überschreiben oder mit ihren Folgen löschen (seit #1424
+    auch das Löschen eines Budgetplans).
 
 **Barrierefreiheit** (nicht auditiert, Beobachtungen aus dem Code)
 19. **Icon-only-Buttons ohne `aria-label`**: `aria-label` erscheint nur in 3 Templates plus

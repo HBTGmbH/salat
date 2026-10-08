@@ -252,4 +252,13 @@ public interface TimereportBudgetAssignmentRepository
     @Query("DELETE FROM TimereportBudgetAssignment a WHERE a.timereportId IN :timereportIds")
     void deleteByTimereportIdIn(@Param("timereportIds") Collection<Long> timereportIds);
 
+    /**
+     * Dissolves every assignment of the plan in one statement, for deleting the plan (#1424). A plan
+     * can hold thousands of bookings; loading each assignment to remove it would be the slow path to
+     * the same result. Returns how many there were.
+     */
+    @Modifying
+    @Query("DELETE FROM TimereportBudgetAssignment a WHERE a.orderBudget.id = :budgetId")
+    int deleteByOrderBudgetId(@Param("budgetId") long orderBudgetId);
+
 }

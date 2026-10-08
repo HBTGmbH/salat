@@ -228,6 +228,7 @@ public enum ErrorCode {
   BU_CALCULATION_LINE_NOT_FOUND("BU-0038", "calculation line not found"),
   BU_CALCULATION_REMOVED_NOT_FIXED_PRICE("BU-0039", "the calculation lines of a plan that is no longer a fixed price were removed"),
   BU_CALCULATION_REMOVED_OUT_OF_SCOPE("BU-0040", "calculation lines whose suborder left the scope of the plan were removed"),
+  BU_BUDGET_DELETE_WRONG_NAME("BU-0041", "the confirmation does not match the name of the budget plan"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
   JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),

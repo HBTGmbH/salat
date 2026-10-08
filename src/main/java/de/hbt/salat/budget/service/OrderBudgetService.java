@@ -9,9 +9,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetLevel;
 import de.hbt.salat.budget.domain.BudgetScope;
@@ -20,12 +22,15 @@ import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
 import de.hbt.salat.budget.domain.OrderBudgetAdjustmentData;
 import de.hbt.salat.budget.domain.OrderBudgetData;
+import de.hbt.salat.budget.domain.OrderBudgetDeletion;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
 import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
 import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.persistence.MasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
+import de.hbt.salat.budget.persistence.OrderFlatRateRepository;
+import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
@@ -36,6 +41,7 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -49,6 +55,9 @@ public class OrderBudgetService {
     private final BudgetAuthorization budgetAuthorization;
     private final TimereportBudgetAssignmentService assignmentService;
     private final MasterDataReferences masterDataReferences;
+    private final OrderPricingRepository orderPricingRepository;
+    private final OrderFlatRateRepository orderFlatRateRepository;
+    private final AuthorizedUser authorizedUser;
 
     /**
      * Every caller goes through here, so this is where the customer order of the plan is checked —
@@ -246,6 +255,55 @@ public class OrderBudgetService {
         }
         budget.setActive(active);
         orderBudgetRepository.save(budget);
+    }
+
+    /** What deleting the plan would take with it (#1424) — the figures its dialog names. */
+    @Authorized(requiresManager = true)
+    @Transactional(readOnly = true)
+    public OrderBudgetDeletion deletionScope(long id) {
+        return deletionScopeOf(getById(id));
+    }
+
+    /**
+     * Deletes the plan for good (#1424): with its adjustments, progress entries and calculation
+     * lines, the assignments of its bookings, and the customer rates and flat rates bound to it.
+     * The bookings themselves stay and are without a budget afterwards.
+     *
+     * <p>The bound rates and flat rates go along rather than merely being unbound. Unbound, a rate
+     * would compete with a plan-less rate of the same pattern and person over the same period — a
+     * state saving refuses ({@code BU-0006}), and in which only the id would decide which one prices
+     * a booking.
+     *
+     * <p>Irreversible, so the name of the plan has to be typed to confirm it, and the comparison is
+     * repeated here rather than trusted to the dialog (→ ADR-0027, addendum). Everything runs in the
+     * one transaction of the service: if a part fails, nothing is deleted.
+     */
+    @Authorized(requiresManager = true)
+    public OrderBudgetDeletion delete(long id, String confirmName) {
+        var budget = getById(id);
+        if (!budget.getName().equals(confirmName)) {
+            throw new InvalidDataException(ErrorCode.BU_BUDGET_DELETE_WRONG_NAME, budget.getName());
+        }
+        var deleted = deletionScopeOf(budget);
+        assignmentService.removeAssignmentsOf(id);
+        orderPricingRepository.deleteAll(orderPricingRepository.findByOrderBudgetId(id));
+        orderFlatRateRepository.deleteAll(orderFlatRateRepository.findByOrderBudgetId(id));
+        // adjustments, progress entries and calculation lines belong to the plan and go with it
+        orderBudgetRepository.delete(budget);
+        log.info("Order budget {} '{}' of customer order {} deleted by {}: {} adjustment(s), {} progress "
+                + "entry(ies), {} calculation line(s), {} booking assignment(s), {} customer rate(s), "
+                + "{} flat rate(s)",
+            id, budget.getName(), budget.getCustomerorder().getSign(), authorizedUser.getLoginSign(),
+            deleted.adjustments(), deleted.scopeEntries(), deleted.calculationLines(),
+            deleted.assignedBookings(), deleted.pricings(), deleted.flatRates());
+        return deleted;
+    }
+
+    private OrderBudgetDeletion deletionScopeOf(OrderBudget budget) {
+        var id = budget.getId();
+        return new OrderBudgetDeletion(budget.getAdjustments().size(), budget.getScopeEntries().size(),
+            budget.getCalculations().size(), assignmentService.countAssignedTimereports(id),
+            orderPricingRepository.countByOrderBudgetId(id), orderFlatRateRepository.countByOrderBudgetId(id));
     }
 
     @Authorized(requiresManager = true)
