@@ -277,7 +277,31 @@ public class BudgetController {
         var boundFlatRates = orderFlatRateService.getByOrderBudgetId(id);
         model.addAttribute("boundFlatRates", boundFlatRates);
         addAssignedTimereports(budget, from, until, model);
+        if (authorizedUser.isManager()) {
+            model.addAttribute("deletion", orderBudgetService.deletionScope(id));
+        }
         return "budget/budget-detail";
+    }
+
+    /**
+     * Deletes the plan once its name has been typed twice (#1424); the service compares the name
+     * again. A mismatch leads back to the plan, which is still there.
+     */
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable long id, @RequestParam String confirmName,
+                         RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.delete(id, confirmName);
+            redirectAttributes.addFlashAttribute("toastSuccess",
+                messages.getMessage("main.budget.message.deleted", new Object[] {confirmName}));
+            return "redirect:/budget";
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+            return "redirect:/budget/" + id;
+        }
     }
 
     /**

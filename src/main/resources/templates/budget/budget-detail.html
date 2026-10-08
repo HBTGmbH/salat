@@ -589,6 +589,85 @@
     </form>
   </div>
 
+  <!-- Delete danger zone (managers only) -->
+  <div th:if="${isManager}" class="card mb-3 border-danger">
+    <div class="card-header">
+      <h3 class="card-title text-danger" th:text="#{main.budget.delete.dangerzone.title}">Gefahrenbereich</h3>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary" th:text="#{main.budget.delete.dangerzone.description}">Löscht den Budgetplan.</p>
+      <button type="button" class="btn btn-danger"
+              data-bs-toggle="modal" data-bs-target="#deleteBudgetModal">
+        <i class="icon ti ti-trash"></i>
+        <span th:text="#{main.budget.delete.button}">Budgetplan löschen</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div th:if="${isManager}" class="modal modal-blur fade" id="deleteBudgetModal" tabindex="-1"
+       role="dialog" aria-hidden="true" aria-labelledby="deleteBudgetModalTitle">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <form th:action="@{/budget/{id}/delete(id=${budget.id})}" method="post"
+              th:data-confirm-typed="${budget.name}">
+          <div class="modal-header">
+            <div>
+              <h5 class="modal-title" id="deleteBudgetModalTitle" th:text="#{main.budget.delete.modal.title}">Budgetplan löschen</h5>
+              <!--/* Name, Auftrag und Gültigkeit nennen den Plan (ADR-0027, Regel F): zwei Pläne
+                     eines Auftrags tragen oft ähnliche Namen und unterscheiden sich im Zeitraum. */-->
+              <div class="text-secondary small"
+                   th:with="validFrom=${#temporals.format(budget.validFrom, 'dd.MM.yyyy')},
+                            validUntil=${budget.validUntil.year != 2999} ? ${#temporals.format(budget.validUntil, 'dd.MM.yyyy')} : #{main.general.validity.open}"
+                   th:text="|${budget.name} · ${budget.customerorder.sign} · ${validFrom}–${validUntil}|"></div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    th:aria-label="#{main.general.button.cancel.text}"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-danger" role="alert">
+              <div class="d-flex">
+                <div>
+                  <i class="icon ti ti-alert-triangle me-2"></i>
+                </div>
+                <div>
+                  <div th:text="#{main.budget.delete.modal.owned(${deletion.adjustments}, ${deletion.scopeEntries}, ${deletion.calculationLines})}">
+                    Gelöscht werden: 3 Anpassungen, 5 Fortschrittseinträge, 4 Kalkulationszeilen.
+                  </div>
+                  <div th:text="#{main.budget.delete.modal.bookings(${deletion.assignedBookings})}">
+                    1.234 Buchungen verlieren ihre Zuordnung zu diesem Plan.
+                  </div>
+                  <div class="fw-bold" th:text="#{main.budget.delete.modal.bound(${deletion.pricings}, ${deletion.flatRates})}">
+                    Mitgelöscht werden auch die gebundenen Konditionen: 1 Kundenstundensatz, 2 Pauschalen.
+                  </div>
+                  <div th:text="#{main.budget.delete.modal.irreversible}">Das lässt sich nicht rückgängig machen.</div>
+                </div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label required" for="deleteBudgetName1"
+                     th:text="#{main.budget.delete.modal.name1.label}">Name des Plans eingeben</label>
+              <input type="text" class="form-control" id="deleteBudgetName1" autocomplete="off"
+                     data-confirm-typed-input autofocus />
+            </div>
+            <div class="mb-3">
+              <label class="form-label required" for="deleteBudgetName2"
+                     th:text="#{main.budget.delete.modal.name2.label}">Name des Plans wiederholen</label>
+              <input type="text" class="form-control" id="deleteBudgetName2" name="confirmName"
+                     autocomplete="off" data-confirm-typed-input />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link link-secondary me-auto"
+                    data-bs-dismiss="modal" th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+            <button type="submit" class="btn btn-danger" id="deleteBudgetSubmit" disabled
+                    th:text="#{main.budget.delete.modal.submit}">Endgültig löschen</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div class="mb-3">
     <a class="btn btn-outline-secondary" th:href="@{/budget}">
       <i class="icon ti ti-arrow-left"></i>

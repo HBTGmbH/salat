@@ -112,6 +112,10 @@ ausgelöst über `data-confirm`-Attribute am Formular oder an einem einzelnen Su
 vom delegierten Handler in `static/js/salat.js`. Kein Template bringt dafür eigenes JavaScript mit,
 und kein zweiter handgeschriebener Bestätigungsdialog kommt daneben.
 Eine Prüfseite, die Person, Zeitraum und Folge nennt, ersetzt den Dialog für ihre Aktion (Freigabe, #760; Abnahme, #1122; ADR-0027, Nachtrag).
+Was unwiderruflich überschreibt oder mit seinen Folgen löscht (Anonymisieren, Budgetplan löschen,
+#1424), bekommt statt des Dialogs die Doppelbestätigung: Karte „Gefahrenbereich“, eigener Dialog,
+Schlüssel des Objekts zweimal eingetippt (`data-confirm-typed`, `data-confirm-typed-input`), der
+Service vergleicht erneut (ADR-0027, Nachtrag #1424).
 
 ```html
 <form th:action="@{/customers/delete}" method="post"

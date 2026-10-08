@@ -66,4 +66,8 @@ public interface OrderFlatRateRepository
         """)
     List<OrderFlatRate> findByOrderBudgetId(@Param("budgetId") long orderBudgetId);
 
+    /** How many flat rates are bound to the plan — what deleting it takes along (#1424). */
+    @Query("SELECT COUNT(f) FROM OrderFlatRate f WHERE f.orderBudget.id = :budgetId")
+    long countByOrderBudgetId(@Param("budgetId") long orderBudgetId);
+
 }

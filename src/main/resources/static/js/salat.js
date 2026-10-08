@@ -777,6 +777,39 @@ document.addEventListener('submit', function (event) {
 // missing (see salat.css).
 document.body.classList.add('salat-confirm-ready');
 
+/* ─── Confirmation by typing (#1424, ADR-0027 addendum) ──────────────────────
+ *
+ * The irreversible actions — anonymizing a person, deleting a budget plan — sit in a dialog of
+ * their own and ask for the key of the object to be typed twice:
+ *
+ *   data-confirm-typed         on the form, the value that has to be typed
+ *   data-confirm-typed-input   on every field that has to hold it
+ *
+ * The submit buttons of the form stay disabled until every such field holds exactly that value; a
+ * disabled default button also keeps Enter from sending. Opening the dialog around the form empties
+ * the fields again. The server compares once more — this is a hurdle, not the check.
+ * -------------------------------------------------------------------------- */
+
+function updateTypedConfirmation(form) {
+  const expected = form.dataset.confirmTyped;
+  const inputs = Array.from(form.querySelectorAll('[data-confirm-typed-input]'));
+  const matches = inputs.length > 0 && inputs.every(input => input.value === expected);
+  form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = !matches; });
+}
+
+document.addEventListener('input', function (event) {
+  if (!event.target.matches || !event.target.matches('[data-confirm-typed-input]')) return;
+  const form = event.target.closest('form[data-confirm-typed]');
+  if (form) updateTypedConfirmation(form);
+});
+
+document.addEventListener('show.bs.modal', function (event) {
+  event.target.querySelectorAll('form[data-confirm-typed]').forEach(function (form) {
+    form.querySelectorAll('[data-confirm-typed-input]').forEach(input => { input.value = ''; });
+    updateTypedConfirmation(form);
+  });
+});
+
 /* ─── Submit once (#1237) ────────────────────────────────────────────────────
  *
  * A form marked data-submit-once goes out once: its buttons are locked from the submit until the

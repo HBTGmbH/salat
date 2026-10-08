@@ -84,7 +84,7 @@
     <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
       <div class="modal-content">
         <form th:action="@{/employees/{id}/anonymize(id=${employeeForm.id})}" method="post"
-              id="anonymizeForm" th:attr="data-employee-sign=${employeeForm.sign}">
+              id="anonymizeForm" th:data-confirm-typed="${employeeForm.sign}">
           <div class="modal-header">
             <div>
               <h5 class="modal-title" th:text="#{form.employee.anonymize.modal.title}">Anonymize Employee</h5>
@@ -106,11 +106,11 @@
             </div>
             <div class="mb-3">
               <label class="form-label required" for="confirmSign1" th:text="#{form.employee.anonymize.modal.sign1.label}">Enter employee sign</label>
-              <input type="text" class="form-control" id="confirmSign1" autocomplete="off" />
+              <input type="text" class="form-control" id="confirmSign1" autocomplete="off" data-confirm-typed-input />
             </div>
             <div class="mb-3">
               <label class="form-label required" for="confirmSign2" th:text="#{form.employee.anonymize.modal.sign2.label}">Confirm employee sign</label>
-              <input type="text" class="form-control" name="confirmSign" id="confirmSign2" autocomplete="off" />
+              <input type="text" class="form-control" name="confirmSign" id="confirmSign2" autocomplete="off" data-confirm-typed-input />
             </div>
           </div>
           <div class="modal-footer">
@@ -123,27 +123,6 @@
       </div>
     </div>
   </div>
-
-  <script th:if="${isEdit}">
-    (function () {
-      var form = document.getElementById('anonymizeForm');
-      if (!form) return;
-      var sign = form.getAttribute('data-employee-sign');
-      var input1 = document.getElementById('confirmSign1');
-      var input2 = document.getElementById('confirmSign2');
-      var btn = document.getElementById('anonymizeSubmitBtn');
-      function check() {
-        btn.disabled = !(input1.value === sign && input2.value === sign);
-      }
-      input1.addEventListener('input', check);
-      input2.addEventListener('input', check);
-      document.getElementById('anonymizeModal').addEventListener('show.bs.modal', function () {
-        input1.value = '';
-        input2.value = '';
-        btn.disabled = true;
-      });
-    })();
-  </script>
 
 </main>
 </html>

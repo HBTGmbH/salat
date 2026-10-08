@@ -83,4 +83,8 @@ public interface OrderPricingRepository
         """)
     List<OrderPricing> findByOrderBudgetId(@Param("budgetId") long orderBudgetId);
 
+    /** How many rates are bound to the plan — what deleting it takes along (#1424). */
+    @Query("SELECT COUNT(p) FROM OrderPricing p WHERE p.orderBudget.id = :budgetId")
+    long countByOrderBudgetId(@Param("budgetId") long orderBudgetId);
+
 }

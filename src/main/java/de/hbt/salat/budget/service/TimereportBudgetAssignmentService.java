@@ -320,6 +320,16 @@ public class TimereportBudgetAssignmentService {
         assignmentRepository.saveAll(assignments);
     }
 
+    /**
+     * Dissolves every assignment of the plan, as part of deleting it (#1424). Its bookings are
+     * without a budget afterwards and are not assigned anew: which plan they belong to is a decision
+     * the bulk assignment (#911) leaves to a person. Returns how many there were.
+     */
+    @Authorized(requiresManager = true)
+    public int removeAssignmentsOf(long orderBudgetId) {
+        return assignmentRepository.deleteByOrderBudgetId(orderBudgetId);
+    }
+
     /** How many bookings the plan holds. Reading it requires access to the plan itself. */
     @Transactional(readOnly = true)
     public long countAssignedTimereports(long orderBudgetId) {

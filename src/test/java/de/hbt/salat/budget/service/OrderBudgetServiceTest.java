@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,16 +24,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.auth.service.AuthorizationAspect;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.BudgetLevel;
 import de.hbt.salat.budget.domain.BudgetMode;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderBudgetCalculation;
+import de.hbt.salat.budget.domain.OrderBudgetAdjustment;
 import de.hbt.salat.budget.domain.OrderBudgetData;
+import de.hbt.salat.budget.domain.OrderBudgetDeletion;
+import de.hbt.salat.budget.domain.OrderBudgetScopeEntry;
+import de.hbt.salat.budget.domain.OrderFlatRate;
+import de.hbt.salat.budget.domain.OrderPricing;
 import de.hbt.salat.budget.domain.OrderPosition;
 import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.persistence.TestMasterDataReferences;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
+import de.hbt.salat.budget.persistence.OrderFlatRateRepository;
+import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -62,6 +73,9 @@ public class OrderBudgetServiceTest {
   private BudgetAuthorization budgetAuthorization;
 
   private TimereportBudgetAssignmentService assignmentService;
+  private OrderPricingRepository orderPricingRepository;
+  private OrderFlatRateRepository orderFlatRateRepository;
+  private AuthorizedUser authorizedUser;
 
   /** The order "co" with its suborders, and a suborder of another order; the plans refer to them by id (#1205). */
   private static final OrderTree TREE = new OrderTree()
@@ -83,8 +97,14 @@ public class OrderBudgetServiceTest {
             .toList());
     budgetAuthorization = permissiveAuthorization();
     assignmentService = mock(TimereportBudgetAssignmentService.class);
+    orderPricingRepository = mock(OrderPricingRepository.class);
+    orderFlatRateRepository = mock(OrderFlatRateRepository.class);
+    authorizedUser = mock(AuthorizedUser.class);
+    when(authorizedUser.isAuthenticated()).thenReturn(true);
+    when(authorizedUser.isManager()).thenReturn(true);
     service = new OrderBudgetService(orderBudgetRepository, customerorderService, suborderService,
-        new OrderPositions(suborderService), budgetAuthorization, assignmentService, TestMasterDataReferences.create());
+        new OrderPositions(suborderService), budgetAuthorization, assignmentService, TestMasterDataReferences.create(),
+        orderPricingRepository, orderFlatRateRepository, authorizedUser);
   }
 
   /** These tests are about the budget rules, so authorization lets everything through. */
@@ -555,6 +575,91 @@ public class OrderBudgetServiceTest {
     service.update(7L, data(null, JAN, DEC, false));
 
     verify(assignmentService, never()).revalidateAssignmentsOf(anyLong());
+  }
+
+  // --- deleting a plan (#1424) ------------------------------------------------------------------
+
+  /**
+   * The role is checked by the aspect, so the test goes through it — called directly, the service
+   * would delete for anybody.
+   */
+  @Test
+  public void should_reject_deleting_a_plan_without_manager_rights() {
+    when(authorizedUser.isManager()).thenReturn(false);
+    givenStored(7L, namedPlan("Relaunch"));
+    var proxyFactory = new AspectJProxyFactory(service);
+    proxyFactory.setProxyTargetClass(true);
+    proxyFactory.addAspect(new AuthorizationAspect(authorizedUser));
+    OrderBudgetService proxied = proxyFactory.getProxy();
+
+    assertThatThrownBy(() -> proxied.delete(7L, "Relaunch"))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(ErrorCode.AA_NEEDS_MANAGER.getCode());
+    verifyNothingDeleted();
+  }
+
+  @Test
+  public void should_refuse_to_delete_when_the_name_does_not_match() {
+    givenStored(7L, namedPlan("Relaunch"));
+
+    var thrown = catchThrowableOfType(InvalidDataException.class, () -> service.delete(7L, "relaunch"));
+
+    assertThat(thrown).hasMessageContaining(ErrorCode.BU_BUDGET_DELETE_WRONG_NAME.getCode());
+    // the message names the plan, so the person sees what was expected
+    assertThat(thrown.getMessages().getFirst().getArguments()).containsExactly("Relaunch");
+    verifyNothingDeleted();
+  }
+
+  /**
+   * Everything pointing at the plan goes before the plan itself — the foreign keys of assignments,
+   * rates and flat rates would refuse it otherwise.
+   */
+  @Test
+  public void should_delete_assignments_and_bound_conditions_before_the_plan() {
+    var plan = namedPlan("Relaunch");
+    givenStored(7L, plan);
+    var rate = new OrderPricing();
+    var flatRate = new OrderFlatRate();
+    when(orderPricingRepository.findByOrderBudgetId(7L)).thenReturn(List.of(rate));
+    when(orderFlatRateRepository.findByOrderBudgetId(7L)).thenReturn(List.of(flatRate));
+
+    service.delete(7L, "Relaunch");
+
+    var inOrder = inOrder(assignmentService, orderPricingRepository, orderFlatRateRepository, orderBudgetRepository);
+    inOrder.verify(assignmentService).removeAssignmentsOf(7L);
+    inOrder.verify(orderPricingRepository).deleteAll(List.of(rate));
+    inOrder.verify(orderFlatRateRepository).deleteAll(List.of(flatRate));
+    inOrder.verify(orderBudgetRepository).delete(plan);
+  }
+
+  /** What the dialog names: what the plan owns, its bookings, and the conditions bound to it. */
+  @Test
+  public void should_count_what_deleting_the_plan_takes_with_it() {
+    var plan = namedPlan("Relaunch");
+    plan.getAdjustments().add(new OrderBudgetAdjustment());
+    plan.getAdjustments().add(new OrderBudgetAdjustment());
+    plan.getScopeEntries().add(new OrderBudgetScopeEntry());
+    plan.getCalculations().add(new OrderBudgetCalculation());
+    givenStored(7L, plan);
+    when(assignmentService.countAssignedTimereports(7L)).thenReturn(1234L);
+    when(orderPricingRepository.countByOrderBudgetId(7L)).thenReturn(1L);
+    when(orderFlatRateRepository.countByOrderBudgetId(7L)).thenReturn(2L);
+
+    assertThat(service.deletionScope(7L)).isEqualTo(new OrderBudgetDeletion(2, 1, 1, 1234L, 1L, 2L));
+  }
+
+  private OrderBudget namedPlan(String name) {
+    var plan = plan(null, JAN, DEC);
+    plan.setName(name);
+    plan.setCustomerorder(TestMasterDataReferences.create().customerorder(TREE.orderId("co")));
+    return plan;
+  }
+
+  private void verifyNothingDeleted() {
+    verify(assignmentService, never()).removeAssignmentsOf(anyLong());
+    verify(orderPricingRepository, never()).deleteAll(any());
+    verify(orderFlatRateRepository, never()).deleteAll(any());
+    verify(orderBudgetRepository, never()).delete(any());
   }
 
   /** A plan as it already stands in the database, so an update has something to compare against. */

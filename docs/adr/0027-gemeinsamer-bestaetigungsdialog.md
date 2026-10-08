@@ -18,6 +18,23 @@ Status: Accepted
 > darin unmittelbar vor dem Ausführen erneut, die Abnahme nur den Zeitraum; keine von beiden
 > vergleicht sie mit der Anzeige.
 
+> **Nachtrag 2026-10-08 (#1424):** Die Doppelbestätigung hat einen zweiten Fall: das Löschen eines
+> Budgetplans. Es entfernt mit dem Plan seine Anpassungen, Fortschrittseinträge und
+> Kalkulationszeilen, die Zuordnungen seiner Buchungen und die an ihn gebundenen
+> Kundenstundensätze und Pauschalen. Nichts davon lässt sich wiederherstellen, und die Zuordnungen
+> der Buchungen waren Entscheidungen einzelner Personen. Damit gehört es in die Stufe des
+> Anonymisierens und nicht in die des gemeinsamen Dialogs. Die Stufe heißt deshalb nicht mehr „der
+> eine Fall, der unwiderruflich Daten überschreibt“, sondern: Aktionen, die unwiderruflich Daten
+> überschreiben oder mit ihren Folgen über das Objekt hinaus löschen. Das gewöhnliche Löschen eines
+> einzelnen Datensatzes bleibt beim gemeinsamen Dialog.
+> Beide Fälle folgen demselben Muster — Karte „Gefahrenbereich“, eigener Dialog, der Schlüssel des
+> Objekts zweimal eingetippt, der Server vergleicht erneut und weist mit eigenem Fehlercode ab
+> (`EM-0002`, `BU-0041`). Der Dialog nennt Regel **F** folgend das Objekt (beim Plan: Name, Auftrag,
+> Gültigkeit) und zählt auf, was mitgeht. Das Freigeben des Knopfs steht seitdem nicht mehr als
+> Skript im Template, sondern als delegierter Handler in `salat.js` (`data-confirm-typed`,
+> `data-confirm-typed-input`) — so gilt auch hier, dass keine Seite für eine Bestätigung eigenes
+> JavaScript mitbringt.
+
 ## Context and Problem Statement
 
 Bestätigungen liefen an 26 Stellen in sieben Modulen über das native `confirm()` des Browsers,
