@@ -1,4 +1,4 @@
-package de.hbt.salat.settings.domain;
+package de.hbt.salat.beta.domain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -9,40 +9,52 @@ import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 
 /**
- * There is currently no {@link BetaFeature} constant, so only the behaviour that does not need one
- * is covered here. The next beta brings back the round trip and {@link BetaFeatures#with}.
+ * Since #1447 the set holds keys and leaves the question which keys are still a beta to the caller,
+ * so the round trip is tested with a stand-in beta, while {@link BetaFeature} is empty.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BetaFeaturesTest {
 
+  private static final Predicate<String> ONLY_TEST_BETA = "test-beta"::equals;
+
   @Test
   public void should_be_empty_when_nothing_is_enabled() {
     assertThat(BetaFeatures.none().toMap()).isEmpty();
-    assertThat(BetaFeatures.ofKeys(List.of()).enabled()).isEmpty();
-    assertThat(BetaFeatures.ofKeys(null).enabled()).isEmpty();
+    assertThat(BetaFeatures.ofKeys(List.of(), ONLY_TEST_BETA).keys()).isEmpty();
+    assertThat(BetaFeatures.ofKeys(null, ONLY_TEST_BETA).keys()).isEmpty();
   }
 
   /** "timeinput" is what users who tried #830 still have stored; the beta ended with #1248. */
   @Test
   public void should_ignore_keys_of_features_that_no_longer_exist() {
-    var stored = Map.<String, Object>of("enabled", List.of("timeinput", "removed-beta"));
+    var stored = Map.<String, Object>of("enabled", List.of("timeinput", "test-beta"));
 
-    var features = BetaFeatures.from(stored);
+    var features = BetaFeatures.from(stored, ONLY_TEST_BETA);
 
-    assertThat(features.enabled()).isEmpty();
-    assertThat(features.toMap()).isEmpty();
+    assertThat(features.keys()).containsExactly("test-beta");
+    assertThat(features.toMap()).isEqualTo(Map.of("enabled", List.of("test-beta")));
   }
 
   @Test
   public void should_tolerate_a_missing_or_malformed_section() {
-    assertThat(BetaFeatures.from(null).enabled()).isEmpty();
-    assertThat(BetaFeatures.from(Map.of()).enabled()).isEmpty();
-    assertThat(BetaFeatures.from(Map.of("enabled", "timeinput")).enabled()).isEmpty();
+    assertThat(BetaFeatures.from(null, ONLY_TEST_BETA).keys()).isEmpty();
+    assertThat(BetaFeatures.from(Map.of(), ONLY_TEST_BETA).keys()).isEmpty();
+    assertThat(BetaFeatures.from(Map.of("enabled", "test-beta"), ONLY_TEST_BETA).keys()).isEmpty();
+  }
+
+  @Test
+  public void with_adds_a_key_once() {
+    var features = BetaFeatures.none().with("test-beta");
+
+    assertThat(features.with("test-beta")).isEqualTo(features);
+    assertThat(features.keys()).isEqualTo(Set.of("test-beta"));
   }
 
   /**

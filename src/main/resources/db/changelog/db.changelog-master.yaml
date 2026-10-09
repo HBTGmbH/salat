@@ -6569,3 +6569,205 @@ databaseChangeLog:
                   name: username
               - column:
                   name: password
+
+  - changeSet:
+      id: 179
+      author: kr
+      comment: Nutzung von Beta-Funktionen zaehlen (#1447)
+      # Eine Zeile je Person, Tag, Beta, Ereignis und Variante (BETA oder CLASSIC, die Vergleichsgruppe);
+      # jede weitere Nutzung erhoeht use_count. Die Zeilen einer beendeten Beta loescht das Ticket, das
+      # sie beendet, nachdem es die Auswertung festgehalten hat.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: beta_usage
+      changes:
+        - createTable:
+            tableName: beta_usage
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_beta_usage
+              - column:
+                  name: feature_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_beta_usage_employee
+                    references: employee(id)
+                    deleteCascade: true
+              - column:
+                  name: usage_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: variant
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: use_count
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: beta_usage
+            columnNames: feature_key, event_key, employee_id, usage_date, variant
+            constraintName: uk_beta_usage
+
+  - changeSet:
+      id: 180
+      author: kr
+      comment: Teilnahme an Beta-Funktionen und Stand der Rueckfragen (#1447)
+      # Wann eine Person eine Beta ein- und ausgeschaltet hat und wo sie mit den Rueckfragen steht. Die
+      # Antworten selbst stehen ohne Person in beta_feedback.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: beta_participation
+      changes:
+        - createTable:
+            tableName: beta_participation
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_beta_participation
+              - column:
+                  name: feature_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_beta_participation_employee
+                    references: employee(id)
+                    deleteCascade: true
+              - column:
+                  name: first_enabled_at
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled_at
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: disabled_at
+                  type: datetime
+              - column:
+                  name: feedback_state
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: feedback_ask_after
+                  type: date
+              - column:
+                  name: switch_off_pending
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: beta_participation
+            columnNames: feature_key, employee_id
+            constraintName: uk_beta_participation
+
+  - changeSet:
+      id: 181
+      author: kr
+      comment: Rueckmeldungen zu Beta-Funktionen, ohne Person (#1447)
+      # Bewusst ohne employee_id und ohne Audit-Spalten (ADR-0039): createdby nennte die Person, und die
+      # Zeitstempel verbaenden die Antwort mit der Aenderung ihrer beta_participation. Die Woche reicht.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: beta_feedback
+      changes:
+        - createTable:
+            tableName: beta_feedback
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_beta_feedback
+              - column:
+                  name: feature_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: feedback_trigger
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rating
+                  type: int
+              - column:
+                  name: comment_text
+                  type: varchar(1000)
+              - column:
+                  name: iso_week
+                  type: varchar(8)
+                  constraints:
+                    nullable: false
