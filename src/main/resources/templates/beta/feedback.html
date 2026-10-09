@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+
+<!--/*
+  The question how helpful a beta is (#1447), included by the page of the beta next to its hint:
+  <div th:replace="~{beta/feedback :: usePrompt('key')}"></div>
+  Renders only once the person has used the beta often enough (BetaFeedbackService). The answer is
+  stored without the person; "Später" asks again after a week, "Nicht mehr fragen" never.
+*/-->
+<div th:fragment="usePrompt(featureKey)" th:if="${@betaViewHelper.useFeedbackDue(featureKey)}"
+     class="alert alert-info" role="region"
+     th:with="label=${#messages.msg('main.settings.beta.' + featureKey + '.label')}"
+     th:aria-label="#{main.beta.feedback.use.title(${label})}">
+  <form th:attr="hx-post=@{/beta/feedback}" hx-target="closest .alert" hx-swap="outerHTML">
+    <input type="hidden" name="feature" th:value="${featureKey}"/>
+    <input type="hidden" name="trigger" value="USE"/>
+    <h4 class="alert-title mb-1" th:text="#{main.beta.feedback.use.title(${label})}">Wie hilfreich ist „…“?</h4>
+    <div class="text-secondary mb-2" th:text="#{main.beta.feedback.use.text}">
+      Die Einschätzung hilft bei der Entscheidung, ob die Funktion Standard wird.
+    </div>
+    <div th:replace="~{:: ratingScale(${featureKey})}"></div>
+    <textarea name="comment" class="form-control mb-2" rows="2" maxlength="1000"
+              th:placeholder="#{main.beta.feedback.comment.placeholder}"
+              th:aria-label="#{main.beta.feedback.comment.placeholder}"></textarea>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <button type="submit" class="btn btn-primary" th:text="#{main.beta.feedback.submit}">Senden</button>
+      <button type="button" class="btn btn-link" th:attr="hx-post=@{/beta/feedback/postpone}"
+              hx-target="closest .alert" hx-swap="outerHTML"
+              th:text="#{main.beta.feedback.later}">Später</button>
+      <button type="button" class="btn btn-link" th:attr="hx-post=@{/beta/feedback/decline}"
+              hx-target="closest .alert" hx-swap="outerHTML"
+              th:text="#{main.beta.feedback.never}">Nicht mehr fragen</button>
+      <span class="form-text ms-auto" th:text="#{main.beta.feedback.anonymous}">
+        Die Antwort wird ohne Namen gespeichert.
+      </span>
+    </div>
+  </form>
+</div>
+
+<!--/*
+  The question why, after switching a beta off (#1447): the settings page shows it above its form,
+  once per beta. Skipping it is one click.
+*/-->
+<div th:fragment="switchOffPrompt(question)" class="alert alert-info" role="region"
+     th:with="label=#{${question.labelKey}}"
+     th:aria-label="#{main.beta.feedback.switchoff.title(${label})}">
+  <form th:attr="hx-post=@{/beta/feedback}" hx-target="closest .alert" hx-swap="outerHTML">
+    <input type="hidden" name="feature" th:value="${question.featureKey}"/>
+    <input type="hidden" name="trigger" value="SWITCH_OFF"/>
+    <h4 class="alert-title mb-2" th:text="#{main.beta.feedback.switchoff.title(${label})}">
+      „…“ ausgeschaltet – was hat nicht gepasst?
+    </h4>
+    <textarea name="comment" class="form-control mb-2" rows="2" maxlength="1000"
+              th:placeholder="#{main.beta.feedback.switchoff.placeholder}"
+              th:aria-label="#{main.beta.feedback.switchoff.placeholder}"></textarea>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <button type="submit" class="btn btn-primary" th:text="#{main.beta.feedback.submit}">Senden</button>
+      <button type="button" class="btn btn-link" th:attr="hx-post=@{/beta/feedback/decline}"
+              hx-target="closest .alert" hx-swap="outerHTML"
+              th:text="#{main.beta.feedback.skip}">Überspringen</button>
+      <span class="form-text ms-auto" th:text="#{main.beta.feedback.anonymous}">
+        Die Antwort wird ohne Namen gespeichert.
+      </span>
+    </div>
+  </form>
+</div>
+
+<!--/* Five toggle buttons 1–5; leaving all of them off stores no rating. */-->
+<div th:fragment="ratingScale(featureKey)" class="mb-2">
+  <div class="btn-group" role="radiogroup" th:aria-label="#{main.beta.feedback.rating.label}">
+    <th:block th:each="rating : ${#numbers.sequence(1, 5)}">
+      <input type="radio" class="btn-check" name="rating" th:value="${rating}"
+             th:id="|beta-${featureKey}-rating-${rating}|"/>
+      <label class="btn btn-outline-primary" th:for="|beta-${featureKey}-rating-${rating}|"
+             th:text="${rating}">1</label>
+    </th:block>
+  </div>
+  <div class="form-text" th:text="#{main.beta.feedback.rating.scale}">1 = kaum hilfreich, 5 = sehr hilfreich</div>
+</div>
+
+<div th:fragment="thanks" class="alert alert-success" role="status" th:text="#{main.beta.feedback.thanks}">
+  Danke für die Rückmeldung!
+</div>
+
+<!--/* Replaces the question when it is put off or declined: nothing is left of it. */-->
+<div th:fragment="gone" hidden></div>
+
+</body>
+</html>

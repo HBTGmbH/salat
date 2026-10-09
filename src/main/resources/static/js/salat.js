@@ -67,6 +67,23 @@ document.addEventListener('click', event => {
   }
 });
 
+/* Counts a use of a beta that happens in the browser alone (#1447): an element with
+ * data-beta-usage="<beta>:<event>" reports its click. keepalive lets the request outlive a click that
+ * leaves the page. Counting is best effort - whatever goes wrong is ignored, never shown. */
+document.addEventListener('click', event => {
+  const element = event.target.closest('[data-beta-usage]');
+  if (!element) return;
+  const [feature, usage] = element.dataset.betaUsage.split(':');
+  if (!feature || !usage) return;
+  const token = document.cookie.split('; ').find(r => r.startsWith('XSRF-TOKEN='))?.split('=')[1];
+  fetch('/beta/usage', {
+    method: 'POST',
+    keepalive: true,
+    headers: { 'X-XSRF-TOKEN': token ? decodeURIComponent(token) : '' },
+    body: new URLSearchParams({ feature, event: usage }),
+  }).catch(() => {});
+});
+
 /* The settings moved from the header into the user menu (#1231). A dot on the trigger and "Neu" on
  * the entry point there until the menu has been opened once; then both stay away. The dot goes on
  * opening, the badge only when the menu closes again, so that it is seen once. Both are taken out

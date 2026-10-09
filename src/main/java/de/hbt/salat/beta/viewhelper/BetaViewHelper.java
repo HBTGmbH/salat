@@ -1,16 +1,19 @@
-package de.hbt.salat.settings.viewhelper;
+package de.hbt.salat.beta.viewhelper;
 
 import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
-import de.hbt.salat.settings.domain.BetaFeature;
-import de.hbt.salat.settings.service.BetaFeatureService;
+import de.hbt.salat.beta.domain.BetaFeature;
+import de.hbt.salat.beta.domain.SwitchOffQuestion;
+import de.hbt.salat.beta.service.BetaFeatureService;
+import de.hbt.salat.beta.service.BetaFeedbackService;
 
 /**
  * Exposes the current user's beta flags to Thymeleaf.
@@ -35,11 +38,35 @@ import de.hbt.salat.settings.service.BetaFeatureService;
 public class BetaViewHelper {
 
   private final BetaFeatureService betaFeatureService;
+  private final BetaFeedbackService betaFeedbackService;
 
   private final Map<BetaFeature, Boolean> resolved = new EnumMap<>(BetaFeature.class);
 
   public boolean isEnabled(BetaFeature feature) {
     return resolved.computeIfAbsent(feature, this::resolve);
+  }
+
+  /**
+   * Whether the page of the beta asks how helpful it is (#1447): the fragment
+   * {@code beta/feedback :: usePrompt} renders only then.
+   */
+  public boolean useFeedbackDue(String featureKey) {
+    try {
+      return betaFeedbackService.isUseFeedbackDue(featureKey);
+    } catch (RuntimeException e) {
+      log.debug("Could not decide on the feedback question of beta {}", featureKey, e);
+      return false;
+    }
+  }
+
+  /** The betas the person just switched off, to ask why on the settings page (#1447). */
+  public List<SwitchOffQuestion> switchOffQuestions() {
+    try {
+      return betaFeedbackService.getSwitchOffQuestions();
+    } catch (RuntimeException e) {
+      log.debug("Could not read the switch-off questions", e);
+      return List.of();
+    }
   }
 
   private boolean resolve(BetaFeature feature) {

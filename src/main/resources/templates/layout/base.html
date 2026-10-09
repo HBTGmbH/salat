@@ -537,6 +537,12 @@
                      th:text="#{main.general.mainmenu.authrules.text}">
                     Berechtigungsregeln
                   </a>
+                  <a class="dropdown-item" th:href="@{/beta/evaluation}"
+                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                     th:classappend="${subSection == 'beta-evaluation'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.betaevaluation.text}">
+                    Beta-Auswertung
+                  </a>
                 </div>
               </div>
             </div>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='systemsettings',
+        subSection='beta-evaluation',
+        title=#{main.beta.evaluation.title},
+        pageTitle=#{main.beta.evaluation.title},
+        sectionTitle=#{main.general.mainmenu.system.text}
+">
+<main layout:fragment="content">
+
+  <!--/*
+    The evaluation of the betas (#1447, ADR-0039): sums only. A value behind fewer than three people
+    is null in BetaEvaluation and shown as a dash, with the reason as its title.
+  */-->
+  <div class="card mb-3">
+    <div class="card-body">
+      <p class="text-secondary mb-0" th:text="#{main.beta.evaluation.hint}">
+        Nur gesammelte Zahlen. Werte, hinter denen weniger als 3 Personen stehen, erscheinen als „–“.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" th:if="${#lists.isEmpty(evaluations)}">
+    <div class="card-body text-secondary" th:text="#{main.beta.evaluation.empty}">
+      Es gibt keine laufende Beta und keine Messwerte.
+    </div>
+  </div>
+
+  <div class="card mb-3" th:each="evaluation : ${evaluations}">
+    <div class="card-header">
+      <h3 class="card-title">
+        <span th:text="${evaluation.ended} ? ${evaluation.featureKey} : #{${evaluation.labelKey}}">Name der Beta</span>
+        <span class="badge bg-secondary-lt ms-2" th:if="${evaluation.ended}"
+              th:text="#{main.beta.evaluation.ended}">beendet</span>
+      </h3>
+    </div>
+    <div class="card-body">
+
+      <h4 th:text="#{main.beta.evaluation.participation.title}">Teilnahme</h4>
+      <dl class="row mb-4" th:with="p=${evaluation.participation}">
+        <dt class="col-sm-5" th:text="#{main.beta.evaluation.participation.everenabled}">Je eingeschaltet</dt>
+        <dd class="col-sm-7"><span th:replace="~{:: value(${p.everEnabled}, '')}"></span></dd>
+        <dt class="col-sm-5" th:text="#{main.beta.evaluation.participation.enablednow}">Jetzt eingeschaltet</dt>
+        <dd class="col-sm-7"><span th:replace="~{:: value(${p.enabledNow}, '')}"></span></dd>
+        <dt class="col-sm-5" th:text="#{main.beta.evaluation.participation.switchedoff}">Wieder ausgeschaltet</dt>
+        <dd class="col-sm-7"><span th:replace="~{:: value(${p.switchedOff}, '')}"></span></dd>
+        <dt class="col-sm-5" th:text="#{main.beta.evaluation.participation.switchoffpercent}">Ausschaltquote</dt>
+        <dd class="col-sm-7"><span th:replace="~{:: value(${p.switchOffPercent}, ' %')}"></span></dd>
+        <dt class="col-sm-5" th:text="#{main.beta.evaluation.participation.mediandays}">Tage bis zum Ausschalten (Median)</dt>
+        <dd class="col-sm-7"><span th:replace="~{:: value(${p.medianDaysUntilOff}, '')}"></span></dd>
+      </dl>
+
+      <h4 th:text="#{main.beta.evaluation.usage.title}">Nutzung je Person und Woche</h4>
+      <p class="form-text" th:text="#{main.beta.evaluation.usage.hint}">
+        Mittelwert ± Standardfehler über die Personen, die das Ereignis in der Woche genutzt haben; in Klammern deren Zahl.
+      </p>
+      <p class="text-secondary" th:if="${#lists.isEmpty(evaluation.events)}"
+         th:text="#{main.beta.evaluation.usage.none}">Keine Ereignisse deklariert.</p>
+      <div class="table-responsive mb-4" th:each="event : ${evaluation.events}">
+        <table class="table table-sm table-vcenter">
+          <caption class="caption-top fw-bold" th:text="${event.eventKey}">applied</caption>
+          <thead>
+            <tr>
+              <th th:text="#{main.beta.evaluation.usage.week}">Woche</th>
+              <th class="text-end" th:text="#{main.beta.evaluation.usage.beta}">Mit Beta</th>
+              <th class="text-end" th:text="#{main.beta.evaluation.usage.classic}">Ohne Beta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="week : ${event.weeks}">
+              <td th:text="${week.isoWeek}">2026-W41</td>
+              <td class="text-end"><span th:replace="~{:: groupUsage(${week.beta})}"></span></td>
+              <td class="text-end"><span th:replace="~{:: groupUsage(${week.classic})}"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4 th:text="#{main.beta.evaluation.feedback.title}">Rückmeldungen</h4>
+      <p class="text-secondary mb-0" th:if="${#lists.isEmpty(evaluation.feedback)}"
+         th:text="#{main.beta.evaluation.feedback.none}">Noch keine Rückmeldungen.</p>
+      <div class="mb-3" th:each="summary : ${evaluation.feedback}">
+        <h5 th:text="#{${'main.beta.evaluation.feedback.trigger.' + summary.trigger}}">Nach Nutzung: Wie hilfreich?</h5>
+        <dl class="row mb-2">
+          <dt class="col-sm-5" th:text="#{main.beta.evaluation.feedback.answers}">Antworten</dt>
+          <dd class="col-sm-7" th:text="${summary.answers}">4</dd>
+          <dt class="col-sm-5" th:text="#{main.beta.evaluation.feedback.mean}">Bewertung (1–5)</dt>
+          <dd class="col-sm-7">
+            <span th:if="${summary.meanRating != null}"
+                  th:text="|${#numbers.formatDecimal(summary.meanRating, 1, 1)} ± ${#numbers.formatDecimal(summary.standardError, 1, 1)}|">3,8 ± 0,4</span>
+            <th:block th:if="${summary.meanRating == null}"><span th:replace="~{:: hidden}"></span></th:block>
+          </dd>
+          <dt class="col-sm-5" th:text="#{main.beta.evaluation.feedback.distribution}">Verteilung</dt>
+          <dd class="col-sm-7">
+            <span th:if="${not #lists.isEmpty(summary.ratingCounts)}">
+              <th:block th:each="count, stat : ${summary.ratingCounts}"><span class="me-2"
+                    th:text="|${stat.count}: ${count}|">1: 0</span> </th:block>
+            </span>
+            <th:block th:if="${#lists.isEmpty(summary.ratingCounts)}"><span th:replace="~{:: hidden}"></span></th:block>
+          </dd>
+        </dl>
+        <th:block th:unless="${#lists.isEmpty(summary.comments)}">
+          <div class="fw-bold" th:text="#{main.beta.evaluation.feedback.comments}">Freitexte</div>
+          <ul class="mb-0">
+            <li th:each="comment : ${summary.comments}" th:text="${comment}">Gut, aber …</li>
+          </ul>
+        </th:block>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!--/* A count or a percentage; null below three people. */-->
+<span th:fragment="value(number, unit)">
+  <span th:if="${number != null}" th:text="${number} + ${unit}">12</span>
+  <th:block th:if="${number == null}"><span th:replace="~{:: hidden}"></span></th:block>
+</span>
+
+<span th:fragment="groupUsage(group)">
+  <span th:if="${group.people != null}"
+        th:text="|${#numbers.formatDecimal(group.mean, 1, 1)} ± ${#numbers.formatDecimal(group.standardError, 1, 1)} (${group.people})|">4,2 ± 0,6 (7)</span>
+  <th:block th:if="${group.people == null}"><span th:replace="~{:: hidden}"></span></th:block>
+</span>
+
+<span th:fragment="hidden" class="text-secondary" th:title="#{main.beta.evaluation.hidden}">–</span>
+
+</html>

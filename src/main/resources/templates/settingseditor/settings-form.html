@@ -12,6 +12,12 @@
 
 <main layout:fragment="content">
 
+  <!--/* After switching a beta off, the question why (#1447) - above the form, not in it: it is a
+         form of its own. */-->
+  <th:block th:each="question : ${@betaViewHelper.switchOffQuestions()}">
+    <div th:replace="~{beta/feedback :: switchOffPrompt(${question})}"></div>
+  </th:block>
+
   <salat:form th:action="@{/settings/store}" th:object="${settingsForm}">
     <salat:inputs>
       <salat:textInput type="time"

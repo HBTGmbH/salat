@@ -260,6 +260,20 @@ public class ArchitectureTest {
           "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.secret."));
 
   /**
+   * beta holds the opt-in betas, counts their use and asks about them (#1447, ADR-0039). The switch
+   * is a preference ({@code settings}); a use and a participation belong to a person
+   * ({@code employee}). A module whose page carries a beta imports beta — never the other way round,
+   * so that a beta costs no edge out of it.
+   */
+  @ArchTest
+  static final ArchRule betaShouldAccessCommonAuthSettingsEmployeeOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("de.hbt.salat.beta..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "beta must only import common, auth, settings, employee",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.settings.", "de.hbt.salat.employee.",
+          "de.hbt.salat.beta."));
+
+  /**
    * The other half (ADR-0038): the entity of a secret and its repository never leave the module.
    * Their fields mean nothing without the key, and a secret is read decrypted through
    * {@code SecretService} alone — an owner that loaded the row would hold the cipher text and a

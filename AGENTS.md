@@ -581,7 +581,7 @@ A feature or fix is considered done when **all** of the following are true:
   otherwise Hibernate treats the entity as dirty on every flush and emits UPDATEs on read-only
   requests.
 - [`docs/beta-funktionen.md`](docs/beta-funktionen.md) describes when a change becomes an opt-in
-  beta and how it is introduced, promoted in context, and ended.
+  beta and how it is introduced, promoted in context, measured (#1447, ADR-0039) and ended.
 
 ## Architecture Decision Records
 - ADRs live in [`docs/adr/`](docs/adr/README.md) (format: MADR).
@@ -794,6 +794,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | Package | Responsibility |
 |---|---|
 | `auth` | Authentication, authorization beans and annotations |
+| `beta` | Opt-in betas (#1447, ADR-0039): the switches, counting their use with a comparison group, asking about them without storing the person, and the evaluation for management; imports only `common`, `auth`, `settings` and `employee` — a module whose page carries a beta imports `beta`, never the other way round |
 | `budget` | Budget planning and cost controlling |
 | `common` | Shared base classes, exceptions, events, utilities |
 | `error` | Custom error page (cross-cutting; may depend on auth, employee, common) |
@@ -875,6 +876,9 @@ Entities are divided into two categories (→ ADR-0011):
 | `JiraTicketImport` | Bewegungsdaten | — (geht mit seinem Geltungsbereich) |
 | `JiraWorklogSync` | Bewegungsdaten | — (gelöscht, sobald das Worklog in JIRA gelöscht wird) |
 | `Favorite` | Bewegungsdaten | — |
+| `BetaUsage` | Bewegungsdaten | — (gelöscht mit dem Ende der Beta) |
+| `BetaParticipation` | Bewegungsdaten | — (gelöscht mit dem Ende der Beta) |
+| `BetaFeedback` | Bewegungsdaten | — (ohne Person und ohne `AuditedEntity`, ADR-0039; gelöscht mit dem Ende der Beta) |
 
 ### Entity Pattern
 - All JPA entities extend `AuditedEntity` (`common/domain/AuditedEntity.java`)

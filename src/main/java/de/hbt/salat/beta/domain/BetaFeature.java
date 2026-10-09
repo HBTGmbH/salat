@@ -1,7 +1,8 @@
-package de.hbt.salat.settings.domain;
+package de.hbt.salat.beta.domain;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Opt-in beta features a user can switch on in the settings.
@@ -16,20 +17,29 @@ import java.util.Optional;
  * been removed — are silently dropped when the preferences are read, so no cleanup migration is
  * needed.
  *
+ * <p>Each constant declares what is measured about it (#1447): the events counted while it runs —
+ * with the beta switched on and, for comparison, off — and after how many uses a person is asked
+ * how helpful it is. An event a constant does not declare is not counted.
+ *
  * <p>There is currently no beta. The enum stays, empty, so that the next one costs a constant, its
  * two texts ({@link #labelKey()}, {@link #helpKey()}) and a named getter in {@code BetaViewHelper};
  * the settings page shows its switch section only while there is a constant. The last beta was the
  * time and duration input of #830 ({@code TIME_INPUT}), made the default with #1248.
  *
- * <p>How a beta is introduced, promoted on its page and ended: {@code docs/beta-funktionen.md}.
+ * <p>How a beta is introduced, promoted on its page, measured and ended:
+ * {@code docs/beta-funktionen.md}.
  */
 public enum BetaFeature {
   ;
 
   private final String key;
+  private final int feedbackAfterUses;
+  private final Set<String> events;
 
-  BetaFeature(String key) {
+  BetaFeature(String key, int feedbackAfterUses, String... events) {
     this.key = key;
+    this.feedbackAfterUses = feedbackAfterUses;
+    this.events = Set.of(events);
   }
 
   public String getKey() {
@@ -38,12 +48,16 @@ public enum BetaFeature {
 
   /** Message key of the switch label on the settings page. */
   public String labelKey() {
-    return "main.settings.beta." + key + ".label";
+    return BetaDefinition.labelKeyOf(key);
   }
 
   /** Message key of the one-line description below the switch on the settings page. */
   public String helpKey() {
-    return "main.settings.beta." + key + ".help";
+    return BetaDefinition.helpKeyOf(key);
+  }
+
+  public BetaDefinition definition() {
+    return new BetaDefinition(key, events, feedbackAfterUses);
   }
 
   public static Optional<BetaFeature> ofKey(String key) {
