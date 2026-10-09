@@ -580,6 +580,8 @@ A feature or fix is considered done when **all** of the following are true:
   Most notably: **a class mapped via `AttributeConverter` must implement `equals`/`hashCode`**,
   otherwise Hibernate treats the entity as dirty on every flush and emits UPDATEs on read-only
   requests.
+- [`docs/beta-funktionen.md`](docs/beta-funktionen.md) describes when a change becomes an opt-in
+  beta and how it is introduced, promoted in context, and ended.
 
 ## Architecture Decision Records
 - ADRs live in [`docs/adr/`](docs/adr/README.md) (format: MADR).
