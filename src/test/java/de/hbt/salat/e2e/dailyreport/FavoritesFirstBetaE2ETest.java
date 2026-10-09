@@ -28,7 +28,7 @@ import de.hbt.salat.e2e.PlaywrightE2ETestBase;
 class FavoritesFirstBetaE2ETest extends PlaywrightE2ETestBase {
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_MA_SIGN;
-  private static final LocalDate DAY = LocalDate.parse("2026-07-14");
+  private static final LocalDate DAY = LocalDate.parse("2026-07-22");
   private static final String DAY_PATH = "/dailyreport/daily?mode=daily&date=" + DAY;
   private static final String COMMENT = "E2E-Favorit der Beta";
 
