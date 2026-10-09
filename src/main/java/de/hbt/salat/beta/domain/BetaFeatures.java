@@ -12,8 +12,8 @@ import java.util.function.Predicate;
  * {@link de.hbt.salat.settings.domain.UserPreferenceMap}.
  *
  * <p>Modelled as a set rather than one flag per feature so that the next beta costs no schema and
- * no form change. It holds keys, not {@link BetaFeature} constants (#1447): which keys are still a
- * beta decides the caller with {@code known}, so that the module can be tested without a constant.
+ * no form change. It holds keys (#1447): the betas come from the modules, and which keys are still a
+ * beta the caller decides with {@code known}.
  */
 public record BetaFeatures(Set<String> keys) {
 

@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.beta.domain.BetaDefinition;
 import de.hbt.salat.beta.domain.BetaFeedback;
 import de.hbt.salat.beta.domain.BetaParticipation;
 import de.hbt.salat.beta.domain.FeedbackState;
@@ -21,12 +20,13 @@ import de.hbt.salat.beta.domain.SwitchOffQuestion;
 import de.hbt.salat.beta.persistence.BetaFeedbackRepository;
 import de.hbt.salat.beta.persistence.BetaParticipationRepository;
 import de.hbt.salat.beta.persistence.BetaUsageRepository;
+import de.hbt.salat.common.beta.BetaFeature;
 
 /**
  * Asks a person about a beta and stores the answer without them (#1447, ADR-0039).
  *
  * <p>Two questions: how helpful the beta is, once the person has used it often enough
- * ({@link BetaDefinition#feedbackAfterUses()}) and has had it switched on for at least
+ * ({@link BetaFeature#getFeedbackAfterUses()}) and has had it switched on for at least
  * {@link #MIN_DAYS_ENABLED} days; and why, right after they switched it off. "Later" asks the first
  * again after {@link #POSTPONE_DAYS} days, "do not ask again" never; the second is asked once.
  *
@@ -42,7 +42,7 @@ public class BetaFeedbackService {
   static final int MIN_DAYS_ENABLED = 7;
   static final int POSTPONE_DAYS = 7;
 
-  private final BetaCatalog catalog;
+  private final BetaFeatureRegistry registry;
   private final BetaParticipationRepository participationRepository;
   private final BetaUsageRepository usageRepository;
   private final BetaFeedbackRepository feedbackRepository;
@@ -51,16 +51,16 @@ public class BetaFeedbackService {
   /** Whether the page of the beta asks how helpful it is. */
   @Transactional(readOnly = true)
   public boolean isUseFeedbackDue(String featureKey) {
-    var definition = catalog.find(featureKey);
+    var feature = registry.find(featureKey);
     var participation = participation(featureKey);
-    if (definition.isEmpty() || participation.isEmpty()) {
+    if (feature.isEmpty() || participation.isEmpty()) {
       return false;
     }
     var p = participation.get();
     return p.isEnabled()
         && isAskable(p)
         && hasBeenOnLongEnough(p)
-        && usageRepository.sumUsesWithBeta(featureKey, p.getEmployeeId()) >= definition.get().feedbackAfterUses();
+        && usageRepository.sumUsesWithBeta(featureKey, p.getEmployeeId()) >= feature.get().getFeedbackAfterUses();
   }
 
   /** The betas the person switched off and has not been asked about yet. */
@@ -71,8 +71,8 @@ public class BetaFeedbackService {
         .orElse(List.of())
         .stream()
         .filter(p -> !p.isEnabled())
-        .flatMap(p -> catalog.find(p.getFeatureKey()).stream())
-        .map(definition -> new SwitchOffQuestion(definition.key(), definition.labelKey()))
+        .flatMap(p -> registry.find(p.getFeatureKey()).stream())
+        .map(feature -> new SwitchOffQuestion(feature.getKey(), feature.labelKey()))
         .toList();
   }
 

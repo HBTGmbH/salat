@@ -57,7 +57,7 @@
         Mittelwert ± Standardfehler über die Personen, die das Ereignis in der Woche genutzt haben; in Klammern deren Zahl.
       </p>
       <p class="text-secondary" th:if="${#lists.isEmpty(evaluation.events)}"
-         th:text="#{main.beta.evaluation.usage.none}">Keine Ereignisse deklariert.</p>
+         th:text="#{main.beta.evaluation.usage.none}">In diesen Wochen wurde noch keine Nutzung gezählt.</p>
       <div class="table-responsive mb-4" th:each="event : ${evaluation.events}">
         <table class="table table-sm table-vcenter">
           <caption class="caption-top fw-bold" th:text="${event.eventKey}">applied</caption>

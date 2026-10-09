@@ -2,7 +2,7 @@ package de.hbt.salat.beta.viewhelper;
 
 import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
-import de.hbt.salat.beta.domain.BetaFeature;
 import de.hbt.salat.beta.domain.SwitchOffQuestion;
 import de.hbt.salat.beta.service.BetaFeatureService;
 import de.hbt.salat.beta.service.BetaFeedbackService;
@@ -27,9 +26,9 @@ import de.hbt.salat.beta.service.BetaFeedbackService;
  * <p>Request scoped with memoized values, so a page with many fragments still reads the preference
  * once.
  *
- * <p>There is currently no beta (see {@link BetaFeature}). A new one gets a named getter here that
- * delegates to {@link #isEnabled}, so templates read {@code @betaViewHelper.featureName} rather than
- * spelling out the enum.
+ * <p>The betas belong to their modules (#1447, {@code BetaFeatureContributor}), so there is no
+ * named getter per beta here: a template asks by key, {@code @betaViewHelper.isEnabled('key')}, and
+ * the module keeps that key as the constant it contributes. An unknown key is never on.
  */
 @Slf4j
 @Component
@@ -40,10 +39,10 @@ public class BetaViewHelper {
   private final BetaFeatureService betaFeatureService;
   private final BetaFeedbackService betaFeedbackService;
 
-  private final Map<BetaFeature, Boolean> resolved = new EnumMap<>(BetaFeature.class);
+  private final Map<String, Boolean> resolved = new HashMap<>();
 
-  public boolean isEnabled(BetaFeature feature) {
-    return resolved.computeIfAbsent(feature, this::resolve);
+  public boolean isEnabled(String featureKey) {
+    return resolved.computeIfAbsent(featureKey, this::resolve);
   }
 
   /**
@@ -69,12 +68,12 @@ public class BetaViewHelper {
     }
   }
 
-  private boolean resolve(BetaFeature feature) {
+  private boolean resolve(String featureKey) {
     try {
-      return betaFeatureService.isEnabledForCurrentUser(feature);
+      return betaFeatureService.isEnabledForCurrentUser(featureKey);
     } catch (RuntimeException e) {
       // A beta flag must never be the reason a page fails to render.
-      log.debug("Could not resolve beta feature {}, falling back to disabled", feature, e);
+      log.debug("Could not resolve beta feature {}, falling back to disabled", featureKey, e);
       return false;
     }
   }

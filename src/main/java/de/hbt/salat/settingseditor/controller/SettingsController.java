@@ -38,7 +38,7 @@ import de.hbt.salat.favorites.domain.FavoritePreferences;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
-import de.hbt.salat.beta.domain.BetaFeature;
+import de.hbt.salat.beta.service.BetaFeatureRegistry;
 import de.hbt.salat.beta.service.BetaFeatureService;
 import de.hbt.salat.settings.service.UiPreferenceService;
 import de.hbt.salat.settings.web.LocaleSyncInterceptor;
@@ -61,6 +61,7 @@ public class SettingsController {
   private final UiPreferenceService uiPreferenceService;
   private final LocaleSyncInterceptor localeSyncInterceptor;
   private final BetaFeatureService betaFeatureService;
+  private final BetaFeatureRegistry betaFeatureRegistry;
   private final FavoriteService favoriteService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
 
@@ -89,7 +90,7 @@ public class SettingsController {
     model.addAttribute("defaultEmail", employeePreferenceService.defaultEmailFor(loginEmployee));
     model.addAttribute("suborders", loadSuborders());
     // the switch section is shown only while there is a beta to switch on
-    model.addAttribute("betaFeatureOptions", List.of(BetaFeature.values()));
+    model.addAttribute("betaFeatureOptions", betaFeatureRegistry.all());
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
     model.addAttribute("title", messages.getMessage("main.settings.title"));
@@ -178,7 +179,7 @@ public class SettingsController {
 
     private String gravatarEmail = "";
 
-    /** Keys of the beta features the user switched on, see {@link BetaFeature}. */
+    /** Keys of the beta features the user switched on, see {@code BetaFeatureContributor}. */
     private List<String> betaFeatures = new ArrayList<>();
 
   }

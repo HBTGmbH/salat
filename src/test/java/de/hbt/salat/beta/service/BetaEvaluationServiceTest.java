@@ -1,6 +1,6 @@
 package de.hbt.salat.beta.service;
 
-import static de.hbt.salat.beta.service.BetaTestData.DEFINITION;
+import static de.hbt.salat.beta.service.BetaTestData.FEATURE;
 import static de.hbt.salat.beta.service.BetaTestData.EVENT;
 import static de.hbt.salat.beta.service.BetaTestData.KEY;
 import static de.hbt.salat.beta.service.BetaTestData.participation;
@@ -48,7 +48,7 @@ class BetaEvaluationServiceTest {
   private static final LocalDate THIS_WEEK = LocalDate.of(2026, 6, 23);
 
   @Mock
-  private BetaCatalog catalog;
+  private BetaFeatureRegistry registry;
   @Mock
   private BetaUsageRepository usageRepository;
   @Mock
@@ -65,9 +65,9 @@ class BetaEvaluationServiceTest {
 
   @BeforeEach
   void setUp() {
-    when(catalog.all()).thenReturn(List.of(DEFINITION));
-    when(catalog.find(anyString())).thenReturn(Optional.empty());
-    when(catalog.find(KEY)).thenReturn(Optional.of(DEFINITION));
+    when(registry.all()).thenReturn(List.of(FEATURE));
+    when(registry.find(anyString())).thenReturn(Optional.empty());
+    when(registry.find(KEY)).thenReturn(Optional.of(FEATURE));
     when(usageRepository.findFeatureKeys()).thenReturn(List.of(KEY));
     when(participationRepository.findFeatureKeys()).thenReturn(List.of());
     when(feedbackRepository.findFeatureKeys()).thenReturn(List.of());
@@ -101,8 +101,12 @@ class BetaEvaluationServiceTest {
     assertThat(thisWeek(evaluation()).classic()).isEqualTo(GroupUsage.HIDDEN);
   }
 
+  /** The beta module knows no events: an event appears once a module has counted it. */
   @Test
-  void every_declared_event_has_eight_weeks_even_without_uses() {
+  void a_counted_event_has_eight_weeks_and_no_other_event_appears() {
+    assertThat(evaluation().events()).isEmpty();
+
+    rows.add(row(1, BetaVariant.CLASSIC, 1, THIS_WEEK));
     var events = evaluation().events();
 
     assertThat(events).hasSize(1);
@@ -170,7 +174,7 @@ class BetaEvaluationServiceTest {
 
   @Test
   void an_ended_beta_stays_under_its_key_while_its_rows_are_there() {
-    when(catalog.all()).thenReturn(List.of());
+    when(registry.all()).thenReturn(List.of());
     when(usageRepository.findFeatureKeys()).thenReturn(List.of("ended-beta"));
 
     var evaluations = service.getEvaluations();

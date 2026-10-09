@@ -794,7 +794,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | Package | Responsibility |
 |---|---|
 | `auth` | Authentication, authorization beans and annotations |
-| `beta` | Opt-in betas (#1447, ADR-0039): the switches, counting their use with a comparison group, asking about them without storing the person, and the evaluation for management; imports only `common`, `auth`, `settings` and `employee` — a module whose page carries a beta imports `beta`, never the other way round |
+| `beta` | Opt-in betas (#1447, ADR-0039): the switches, counting their use with a comparison group, asking about them without storing the person, and the evaluation for management; imports only `common`, `auth`, `settings` and `employee`. It knows no beta itself: each module declares its own and contributes the list through `BetaFeatureContributor` in `common.beta` (the pattern of `UiStateKeyContributor`), asking and counting through `Betas` there; no module imports `beta` except `settingseditor` |
 | `budget` | Budget planning and cost controlling |
 | `common` | Shared base classes, exceptions, events, utilities |
 | `error` | Custom error page (cross-cutting; may depend on auth, employee, common) |

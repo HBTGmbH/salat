@@ -45,7 +45,7 @@ class BetaFeatureServiceTest {
   @Mock
   private UserPreferenceService userPreferenceService;
   @Mock
-  private BetaCatalog catalog;
+  private BetaFeatureRegistry registry;
   @Mock
   private BetaParticipationRepository participationRepository;
   @Mock
@@ -58,7 +58,7 @@ class BetaFeatureServiceTest {
 
   @BeforeEach
   void setUp() {
-    when(catalog.isKnown(anyString())).thenAnswer(invocation -> KEY.equals(invocation.getArgument(0)));
+    when(registry.isKnown(anyString())).thenAnswer(invocation -> KEY.equals(invocation.getArgument(0)));
     when(measuredPerson.employeeId()).thenReturn(Optional.of(EMPLOYEE_ID));
     when(employeeReferences.employee(EMPLOYEE_ID)).thenReturn(ReferenceTestUtils.employeeWithId(EMPLOYEE_ID));
     storedSwitches(List.of());
