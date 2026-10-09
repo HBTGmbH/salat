@@ -7,11 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.beta.domain.BetaFeature;
 import de.hbt.salat.beta.domain.BetaFeatures;
 import de.hbt.salat.beta.domain.BetaParticipation;
 import de.hbt.salat.beta.persistence.BetaEmployeeReferences;
 import de.hbt.salat.beta.persistence.BetaParticipationRepository;
+import de.hbt.salat.common.beta.BetaFeature;
 import de.hbt.salat.settings.service.UserPreferenceService;
 
 /**
@@ -27,7 +27,7 @@ import de.hbt.salat.settings.service.UserPreferenceService;
 public class BetaFeatureService {
 
   private final UserPreferenceService userPreferenceService;
-  private final BetaCatalog catalog;
+  private final BetaFeatureRegistry registry;
   private final BetaParticipationRepository participationRepository;
   private final BetaEmployeeReferences employeeReferences;
   private final MeasuredPerson measuredPerson;
@@ -50,7 +50,7 @@ public class BetaFeatureService {
 
   public void saveForCurrentUser(Collection<String> featureKeys) {
     var before = current();
-    var after = BetaFeatures.ofKeys(featureKeys, catalog::isKnown);
+    var after = BetaFeatures.ofKeys(featureKeys, registry::isKnown);
     save(after);
     recordSwitches(before, after);
   }
@@ -58,7 +58,7 @@ public class BetaFeatureService {
   /** Used by the in-context activation link, which switches on a single feature. */
   public void enableForCurrentUser(String featureKey) {
     var before = current();
-    if (!catalog.isKnown(featureKey) || before.has(featureKey)) {
+    if (!registry.isKnown(featureKey) || before.has(featureKey)) {
       return;
     }
     var after = before.with(featureKey);
@@ -67,7 +67,7 @@ public class BetaFeatureService {
   }
 
   private BetaFeatures current() {
-    return BetaFeatures.from(userPreferenceService.getModuleSettings(BetaFeatures.MODULE_KEY), catalog::isKnown);
+    return BetaFeatures.from(userPreferenceService.getModuleSettings(BetaFeatures.MODULE_KEY), registry::isKnown);
   }
 
   private void save(BetaFeatures features) {

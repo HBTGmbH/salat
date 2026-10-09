@@ -10,18 +10,15 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TreeSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.beta.domain.BetaDefinition;
 import de.hbt.salat.beta.domain.BetaEvaluation;
 import de.hbt.salat.beta.domain.BetaEvaluation.EventUsage;
 import de.hbt.salat.beta.domain.BetaEvaluation.FeedbackSummary;
@@ -36,6 +33,7 @@ import de.hbt.salat.beta.domain.FeedbackTrigger;
 import de.hbt.salat.beta.persistence.BetaFeedbackRepository;
 import de.hbt.salat.beta.persistence.BetaParticipationRepository;
 import de.hbt.salat.beta.persistence.BetaUsageRepository;
+import de.hbt.salat.common.beta.BetaFeature;
 
 /**
  * Sums up what was measured about the betas (#1447), for management. The rows name people; what
@@ -54,14 +52,14 @@ public class BetaEvaluationService {
   /** How many weeks of use the page shows, the current one included. */
   static final int WEEKS = 8;
 
-  private final BetaCatalog catalog;
+  private final BetaFeatureRegistry registry;
   private final BetaUsageRepository usageRepository;
   private final BetaParticipationRepository participationRepository;
   private final BetaFeedbackRepository feedbackRepository;
 
   public List<BetaEvaluation> getEvaluations() {
     var keys = new LinkedHashSet<String>();
-    catalog.all().forEach(definition -> keys.add(definition.key()));
+    registry.all().forEach(feature -> keys.add(feature.getKey()));
     // then those with rows only, which have ended
     var measuredKeys = new TreeSet<String>();
     measuredKeys.addAll(usageRepository.findFeatureKeys());
@@ -72,13 +70,12 @@ public class BetaEvaluationService {
   }
 
   private BetaEvaluation evaluate(String featureKey) {
-    var definition = catalog.find(featureKey);
+    var feature = registry.find(featureKey);
     var firstWeek = today().with(DayOfWeek.MONDAY).minusWeeks(WEEKS - 1);
     return new BetaEvaluation(featureKey,
-        definition.map(BetaDefinition::labelKey).orElse(null),
+        feature.map(BetaFeature::labelKey).orElse(null),
         participation(participationRepository.findAllByFeatureKey(featureKey)),
-        events(definition.map(BetaDefinition::events).orElse(Set.of()),
-            usageRepository.findRows(featureKey, firstWeek), firstWeek),
+        events(usageRepository.findRows(featureKey, firstWeek), firstWeek),
         feedback(feedbackRepository.findAllByFeatureKey(featureKey)));
   }
 
@@ -95,9 +92,9 @@ public class BetaEvaluationService {
         daysUntilOff.size() >= MIN_PEOPLE ? (int) (long) daysUntilOff.get(daysUntilOff.size() / 2) : null);
   }
 
-  /** The declared events first, in their order by name, then whatever else was counted. */
-  static List<EventUsage> events(Collection<String> declared, List<BetaUsageRow> rows, LocalDate firstWeek) {
-    var eventKeys = new TreeSet<>(declared);
+  /** The events counted in the weeks shown, by name; the beta module knows no others. */
+  static List<EventUsage> events(List<BetaUsageRow> rows, LocalDate firstWeek) {
+    var eventKeys = new TreeSet<String>();
     rows.forEach(row -> eventKeys.add(row.eventKey()));
     var events = new ArrayList<EventUsage>();
     for (var eventKey : eventKeys) {

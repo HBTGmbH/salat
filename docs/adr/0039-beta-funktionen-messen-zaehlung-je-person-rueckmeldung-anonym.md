@@ -30,12 +30,22 @@ gewissen Nutzung wird nachgefragt. Zu entscheiden war:
 
 1. **Eigenes Modul `beta`.** Es übernimmt die Beta-Klassen aus `settings`; `settings` bleibt der
    generische Einstellungsspeicher ohne UI. `beta` importiert nur `common`, `auth`, `settings` und
-   `employee`. Ein Modul, dessen Seite eine Beta trägt, importiert `beta`, nie umgekehrt.
-2. **Vergleichsgruppe statt vorher/nachher.** Eine Beta deklariert an ihrer Konstante die
-   Ereignisse, die gezählt werden. Gezählt wird bei allen, mit eingeschalteter Beta als `BETA`,
-   sonst als `CLASSIC`. Vorher/nachher vermischt die Beta mit allem, was sich in der Zeit sonst
+   `employee`.
+   **Die Betas gehören den Modulen**, nach dem Muster von `UiStateKeyContributor` (ADR-0016) und
+   `PaletteProvider` (ADR-0031): Ein Modul deklariert seine Betas als `BetaFeature` und liefert sie
+   über einen `BetaFeatureContributor`; es fragt und zählt über das Interface `Betas`. Alle drei
+   liegen in `common.beta`. `beta` sammelt die Beiträge in `BetaFeatureRegistry` und kennt keine
+   Beta selbst. Außer `settingseditor`, das die Schalter zeigt, importiert kein Modul `beta`
+   (`ArchitectureTest.onlySettingseditorShouldAccessBeta`). Ein Enum der Betas in `beta` oder in
+   `common` hätte jede neue Beta zu einer Änderung an einem fremden Modul gemacht.
+2. **Vergleichsgruppe statt vorher/nachher.** Gezählt wird bei allen, mit eingeschalteter Beta
+   als `BETA`, sonst als `CLASSIC`. Vorher/nachher vermischt die Beta mit allem, was sich in der Zeit sonst
    ändert, etwa Monatsende oder Urlaubszeit; die Gruppe ohne Beta in derselben Woche erlebt
    dasselbe.
+   **Die Ereignisse gehören dem Modul, das zählt.** `beta` macht keine Annahme über sie und kennt
+   keine Liste: Es zählt jeden formal gültigen Schlüssel für eine Beta, die es gibt. Eine Liste an
+   der Beta hätte `beta` Wissen über die Vorgänge anderer Module aufgeladen; jede neue
+   Messung hätte zwei Module geändert.
 3. **Zeilen je Person, Tag, Beta, Ereignis und Variante, mit Zähler** (`beta_usage`). Erst die
    Person macht aus Summen eine Aussage: wie viele Personen hinter einem Wert stehen, Mittelwert
    und Standardfehler je Person. Und erst über die Person weiß die Rückfrage, wann jemand oft genug
@@ -60,11 +70,13 @@ und verschluckt jeden Fehler: Eine verlorene Zählung kostet weniger als eine ve
 
 * Good: Die Entscheidung über das Ende einer Beta steht auf Zahlen mit Vergleichsgruppe und
   Stichprobengröße, dazu auf Antworten, die ohne Namen gegeben werden.
-* Good: Eine neue Beta kostet für die Messung nur ihre Ereignisse und die Schwelle N an der
-  Konstante, dazu je Ereignis einen Aufruf oder ein Attribut.
+* Good: Eine neue Beta kostet ihr Modul eine Konstante mit der Schwelle N, einen Eintrag im
+  Contributor und je Ereignis einen Aufruf oder ein Attribut; `beta` ändert sich dafür nicht.
 * Bad: Nutzungszeilen nennen die Person. Sie verlassen den Service nie, liegen aber in der
   Datenbank, bis das Ende-Ticket sie löscht.
-* Bad: Gezählt wird nur, was deklariert und angebunden ist. Was niemand vorab festlegt, fehlt in
-  der Auswertung.
+* Bad: Gezählt wird nur, was angebunden ist. Was niemand vorab festlegt, fehlt in der Auswertung.
+* Bad: Ohne Liste prüft `beta` Ereignisse aus dem Browser nur formal. Eine Person kann ihre eigenen
+  Zählungen verfälschen, nicht die anderer; die Auswertung je Person und Woche begrenzt die Wirkung
+  auf eine Stimme.
 * Neutral: Am Ende einer Beta hält ihr Ende-Ticket die Auswertung gesammelt fest und löscht ihre
   Zeilen per Changeset; bis dahin zeigt die Seite die beendete Beta unter ihrem Schlüssel.

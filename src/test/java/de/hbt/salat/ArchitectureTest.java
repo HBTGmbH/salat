@@ -260,10 +260,10 @@ public class ArchitectureTest {
           "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.secret."));
 
   /**
-   * beta holds the opt-in betas, counts their use and asks about them (#1447, ADR-0039). The switch
-   * is a preference ({@code settings}); a use and a participation belong to a person
-   * ({@code employee}). A module whose page carries a beta imports beta — never the other way round,
-   * so that a beta costs no edge out of it.
+   * beta switches the opt-in betas, counts their use and asks about them (#1447, ADR-0039). The
+   * switch is a preference ({@code settings}); a use and a participation belong to a person
+   * ({@code employee}). Which betas there are it does not know: the modules contribute them through
+   * {@code common.beta} — the pattern of {@code UiStateKeyContributor} and {@code PaletteProvider}.
    */
   @ArchTest
   static final ArchRule betaShouldAccessCommonAuthSettingsEmployeeOnly = priority(HIGH).noClasses().that()
@@ -272,6 +272,17 @@ public class ArchitectureTest {
           "beta must only import common, auth, settings, employee",
           "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.settings.", "de.hbt.salat.employee.",
           "de.hbt.salat.beta."));
+
+  /**
+   * The other half (#1447): a module declares its betas, asks whether one is on and counts its use
+   * through {@code common.beta} alone, and never imports the beta module. A beta then stays in the
+   * module whose page carries it, and the beta module grows no knowledge of any of them. The settings
+   * page is the one exception: settingseditor shows the switches and may import any module.
+   */
+  @ArchTest
+  static final ArchRule onlySettingseditorShouldAccessBeta = priority(HIGH).noClasses().that()
+      .resideOutsideOfPackages("de.hbt.salat.beta..", "de.hbt.salat.settingseditor..")
+      .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.beta..");
 
   /**
    * The other half (ADR-0038): the entity of a secret and its repository never leave the module.

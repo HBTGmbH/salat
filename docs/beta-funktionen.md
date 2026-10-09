@@ -38,18 +38,36 @@ Was hier nicht steht, wird nicht gezählt und kann später nicht nachgeholt werd
 
 ## Einführen
 
-1. **Konstante** in `BetaFeature` mit einem kurzen, stabilen Schlüssel, der Schwelle N und den
-   Ereignissen: `FAVORITES_FIRST("favoritesfirst", 20, "applied", "opened")`. Er wird je Person
-   gespeichert; ein Schlüssel, den es nicht mehr gibt, fällt beim Lesen still weg, eine Migration
-   braucht es dafür nie.
+Eine Beta gehört dem Modul, dessen Seite sie trägt — wie seine UiState-Keys (ADR-0016) und seine
+Treffer in der Befehlspalette. Das Modul `beta` schaltet, zählt und wertet aus, kennt aber keine
+Beta selbst; die Module liefern ihm ihre Liste über `common.beta` und importieren es nie.
+
+1. **Beitrag im eigenen Modul:** eine Konstante `BetaFeature` mit kurzem, stabilem Schlüssel und
+   der Schwelle N, geliefert von einem `@Component`, das `BetaFeatureContributor` implementiert:
+
+   ```java
+   @Component
+   public class DailyReportBetaFeatureContributor implements BetaFeatureContributor {
+     public static final BetaFeature FAVORITES_FIRST = new BetaFeature("favoritesfirst", 20);
+
+     @Override
+     public List<BetaFeature> getBetaFeatures() {
+       return List.of(FAVORITES_FIRST);
+     }
+   }
+   ```
+
+   Der Schlüssel wird je Person gespeichert; ein Schlüssel, den es nicht mehr gibt, fällt beim Lesen
+   still weg, eine Migration braucht es dafür nie. Liefern zwei Module denselben Schlüssel, startet
+   die Anwendung nicht.
 2. **Texte** `main.settings.beta.<key>.label` und `.help` (`labelKey()`, `helpKey()`) in allen
    Sprachdateien. Die Einstellungen erzeugen den Schalter daraus selbst; der Bereich
-   „Beta-Funktionen“ erscheint nur, solange es eine Konstante gibt.
-3. **Getter** in `BetaViewHelper`, der an `isEnabled` delegiert. Templates lesen
-   `${@betaViewHelper.<name>}`, nie ein Model-Attribut — die Seiten werden aus vielen
-   HTMX-Endpunkten gerendert, und ein Model-Attribut fehlte im nächsten neuen. Im Java-Code fragt
-   `BetaFeatureService.isEnabledForCurrentUser`.
-   Die Klassen liegen im Modul `beta`; das Modul der Seite importiert es.
+   „Beta-Funktionen“ erscheint nur, solange ein Modul eine Beta liefert. `BetaFeaturesTest` prüft
+   für jeden Beitrag, dass beide Texte da sind.
+3. **Abfragen:** Templates lesen `${@betaViewHelper.isEnabled('favoritesfirst')}`, nie ein
+   Model-Attribut — die Seiten werden aus vielen HTMX-Endpunkten gerendert, und ein Model-Attribut
+   fehlte im nächsten neuen. Im Java-Code fragt das Modul über das Interface `Betas` aus
+   `common.beta`: `betas.isEnabled(FAVORITES_FIRST)`.
 4. **Verzweigung klein halten.** Am besten unterscheiden sich beide Varianten in einem Attribut
    oder einem Fragment, nicht in einem zweiten Codepfad. Was beim Beenden gelöscht wird, soll man
    finden: jede Stelle liest die Konstante, im Template mit Kommentar und Ticketnummer.
@@ -82,12 +100,20 @@ Gezählt wird **bei allen**: mit eingeschalteter Beta als Variante `BETA`, sonst
 Vergleichsgruppe. So vergleicht die Auswertung beide Gruppen in derselben Woche statt vorher und
 nachher, und Monatsende, Urlaubszeit oder ein anderes Release treffen beide gleich.
 
+**Die Ereignisse gehören dem Modul, das zählt**, nicht dem Modul `beta`. Es hält ihre Schlüssel
+als Konstanten bei sich (`DailyBetaEvents.FAVORITE_APPLIED = "favorite-applied"`), das führende
+Ticket nennt sie. `beta` macht keine Annahme über sie: Es zählt jeden formal gültigen Schlüssel
+(Kleinbuchstaben, Ziffern, Punkt und Bindestrich, höchstens 64 Zeichen) für eine Beta, die es gibt,
+und die Auswertung zeigt, was gezählt wurde.
+
 - **Im Java-Code** im Controller, nachdem die Aktion gelungen ist:
-  `betaUsageService.count(BetaFeature.FAVORITES_FIRST, "applied")`. Nicht in einem Service
+  `betas.count(FAVORITES_FIRST, DailyBetaEvents.FAVORITE_APPLIED)`. Nicht in einem Service
   innerhalb seiner Transaktion — das Lesen des Schalters würde sich ihr anschließen.
 - **Im Browser**, für Nutzungen, die der Server sonst nicht sieht: das Attribut
-  `data-beta-usage="favoritesfirst:opened"` am Element. Ein Klick darauf zählt.
-- Gezählt werden nur deklarierte Ereignisse, nur für die angemeldete Person und **nicht während
+  `data-beta-usage="favoritesfirst:favorite-dialog-opened"` am Element. Ein Klick darauf zählt.
+  Was aus dem Browser kommt, nimmt `beta` so, wie es ankommt; eine Person kann ihre eigenen
+  Zählungen also verfälschen, die anderer nicht.
+- Gezählt wird nur für die angemeldete Person und **nicht während
   einer Vertretung** (Impersonation).
 - Das Zählen lässt keine Anfrage scheitern; geht etwas schief, fehlt eine Zählung, sonst nichts.
 
@@ -135,13 +161,15 @@ Gelesen wird gegen das Erfolgskriterium aus dem Ticket, nicht gegen das Gefühl:
 ## Testen
 
 - E2E-Tests prüfen beide Varianten und heißen `…BetaE2ETest`, solange die Beta läuft.
-- `BetaFeaturesTest` deckt das Lesen und Schreiben der Schlüssel ab; eine neue Konstante braucht
-  dort nur dann einen Fall, wenn sie sich anders verhält.
+- `BetaFeaturesTest` deckt das Lesen und Schreiben der Schlüssel ab und findet jeden
+  `BetaFeatureContributor` auf dem Klassenpfad, um seine Texte zu prüfen; ein Contributor braucht
+  dafür einen öffentlichen Konstruktor ohne Argumente.
 - Logik, die von der Beta abhängt, wird als Unit-Test am Service bzw. ViewHelper für beide Werte
   des Schalters geprüft.
-- Die Services des Moduls arbeiten über `BetaCatalog` mit `BetaDefinition`s statt mit dem Enum;
-  Unit-Tests setzen dort eine Test-Beta ein (`BetaTestData`), auch solange `BetaFeature` leer ist.
-- Eine neue Beta prüft im Unit-Test ihres Controllers, dass jede deklarierte Aktion `count` mit dem
+- Die Services des Moduls `beta` holen die Betas aus `BetaFeatureRegistry`; Unit-Tests setzen dort
+  eine Test-Beta ein (`BetaTestData`).
+- Im eigenen Modul wird `Betas` gemockt: geschaltet und gezählt wird dort nichts selbst.
+- Eine neue Beta prüft im Unit-Test ihres Controllers, dass jede gezählte Aktion `count` mit dem
   richtigen Ereignis aufruft.
 
 ## Laufzeit und Ende
@@ -152,8 +180,9 @@ wird oder zurückgezogen — frühestens nach der Mindestlaufzeit. Das Ende ist 
 erfüllt oder nicht, Kernaussagen der Freitexte ohne Zitate, die eine Person erkennen lassen) und
 entfernt dann in einem Zug:
 
-- die Konstante in `BetaFeature` und den Getter in `BetaViewHelper` — der Compiler zeigt danach
-  jede übrige Stelle;
+- die Konstante und ihren Eintrag im `BetaFeatureContributor` des Moduls, den Contributor selbst,
+  wenn er leer wird — der Compiler zeigt danach jede übrige Stelle im Java-Code; im Template sucht
+  man den Schlüssel;
 - den verworfenen Zweig in Templates, JavaScript und Java;
 - Hinweis, Einstiegslink und Beta-Marke samt ihrer Message-Keys in allen Sprachdateien;
 - Verweise in der Tastenkürzel-Übersicht und im UI-Style-Guide;
@@ -163,6 +192,6 @@ entfernt dann in einem Zug:
   Schlüssel. Bis dahin zeigt die Auswertung die beendete Beta unter ihrem Schlüssel weiter.
 
 Einstellungen, die nur in der Beta galten, werden beim Standardwerden für alle sichtbar oder
-entfallen; das Ende-Ticket sagt, welches von beiden. `BetaFeature` bleibt als leeres Enum stehen,
-damit die nächste Beta nur eine Konstante, zwei Texte und einen Getter kostet.
+entfallen; das Ende-Ticket sagt, welches von beiden. Das Modul `beta` bleibt unverändert: Die
+nächste Beta kostet ihr Modul eine Konstante, einen Eintrag im Contributor und zwei Texte.
 

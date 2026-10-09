@@ -1,6 +1,5 @@
 package de.hbt.salat.beta.service;
 
-import static de.hbt.salat.beta.service.BetaTestData.DEFINITION;
 import static de.hbt.salat.beta.service.BetaTestData.EMPLOYEE_ID;
 import static de.hbt.salat.beta.service.BetaTestData.EVENT;
 import static de.hbt.salat.beta.service.BetaTestData.KEY;
@@ -45,7 +44,7 @@ class BetaUsageServiceTest {
   private static final LocalDate TODAY = LocalDate.of(2026, 6, 25);
 
   @Mock
-  private BetaCatalog catalog;
+  private BetaFeatureRegistry registry;
   @Mock
   private BetaFeatureService betaFeatureService;
   @Mock
@@ -62,7 +61,7 @@ class BetaUsageServiceTest {
 
   @BeforeEach
   void setUp() {
-    when(catalog.find(KEY)).thenReturn(Optional.of(DEFINITION));
+    when(registry.isKnown(KEY)).thenReturn(true);
     when(measuredPerson.employeeId()).thenReturn(Optional.of(EMPLOYEE_ID));
     when(employeeReferences.employee(EMPLOYEE_ID)).thenReturn(ReferenceTestUtils.employeeWithId(EMPLOYEE_ID));
   }
@@ -114,17 +113,28 @@ class BetaUsageServiceTest {
     verify(usageRepository, times(2)).increment(KEY, EVENT, EMPLOYEE_ID, TODAY, BetaVariant.CLASSIC);
   }
 
+  /** The module decides its events; any well-formed key is counted. */
   @Test
-  void an_event_the_beta_does_not_declare_is_not_counted() {
-    service.count(KEY, "forged");
+  void any_well_formed_event_of_the_calling_module_is_counted() {
+    when(usageRepository.increment(anyString(), anyString(), anyLong(), any(), any())).thenReturn(1);
+
+    service.count(KEY, "week-strip.hidden");
+
+    verify(usageRepository).increment(KEY, "week-strip.hidden", EMPLOYEE_ID, TODAY, BetaVariant.CLASSIC);
+  }
+
+  @Test
+  void a_malformed_event_key_is_not_counted() {
+    service.count(KEY, "Not an event!");
+    service.count(KEY, "");
+    service.count(KEY, null);
+    service.count(KEY, "x".repeat(65));
 
     verify(usageRepository, never()).increment(anyString(), anyString(), anyLong(), any(), any());
   }
 
   @Test
   void an_unknown_beta_is_not_counted() {
-    when(catalog.find("removed")).thenReturn(Optional.empty());
-
     service.count("removed", EVENT);
 
     verify(usageRepository, never()).increment(anyString(), anyString(), anyLong(), any(), any());

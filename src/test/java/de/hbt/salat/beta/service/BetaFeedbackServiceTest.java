@@ -1,6 +1,6 @@
 package de.hbt.salat.beta.service;
 
-import static de.hbt.salat.beta.service.BetaTestData.DEFINITION;
+import static de.hbt.salat.beta.service.BetaTestData.FEATURE;
 import static de.hbt.salat.beta.service.BetaTestData.EMPLOYEE_ID;
 import static de.hbt.salat.beta.service.BetaTestData.KEY;
 import static de.hbt.salat.beta.service.BetaTestData.participation;
@@ -45,7 +45,7 @@ class BetaFeedbackServiceTest {
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 6, 25, 10, 15, 30);
 
   @Mock
-  private BetaCatalog catalog;
+  private BetaFeatureRegistry registry;
   @Mock
   private BetaParticipationRepository participationRepository;
   @Mock
@@ -62,11 +62,11 @@ class BetaFeedbackServiceTest {
 
   @BeforeEach
   void setUp() {
-    when(catalog.find(KEY)).thenReturn(Optional.of(DEFINITION));
+    when(registry.find(KEY)).thenReturn(Optional.of(FEATURE));
     when(measuredPerson.employeeId()).thenReturn(Optional.of(EMPLOYEE_ID));
     participation = participation(NOW.minusDays(BetaFeedbackService.MIN_DAYS_ENABLED));
     when(participationRepository.findOne(KEY, EMPLOYEE_ID)).thenAnswer(invocation -> Optional.ofNullable(participation));
-    uses(DEFINITION.feedbackAfterUses());
+    uses(FEATURE.getFeedbackAfterUses());
   }
 
   @Nested
@@ -79,7 +79,7 @@ class BetaFeedbackServiceTest {
 
     @Test
     void waits_for_enough_uses() {
-      uses(DEFINITION.feedbackAfterUses() - 1);
+      uses(FEATURE.getFeedbackAfterUses() - 1);
 
       assertThat(service.isUseFeedbackDue(KEY)).isFalse();
     }
@@ -192,11 +192,11 @@ class BetaFeedbackServiceTest {
     ended.setFeatureKey("removed-beta");
     ended.setDisabledAt(NOW);
     ended.setSwitchOffPending(true);
-    when(catalog.find("removed-beta")).thenReturn(Optional.empty());
+    when(registry.find("removed-beta")).thenReturn(Optional.empty());
     when(participationRepository.findSwitchOffPending(EMPLOYEE_ID)).thenReturn(List.of(participation, ended));
 
     assertThat(service.getSwitchOffQuestions())
-        .containsExactly(new SwitchOffQuestion(KEY, DEFINITION.labelKey()));
+        .containsExactly(new SwitchOffQuestion(KEY, FEATURE.labelKey()));
   }
 
   @Test
