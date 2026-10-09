@@ -1,9 +1,16 @@
 package de.hbt.salat.dailyreport.rest;
 
+import static java.util.Comparator.comparingInt;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -20,7 +27,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -39,11 +45,14 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.dailyreport.domain.TimereportDTO;
+import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
 import de.hbt.salat.dailyreport.service.DailyWorkingReportService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
+import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.service.EmployeecontractService;
 
 @RestController
@@ -91,32 +100,41 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var contractIdsByDay = EmployeecontractsByDay.resolve(refDate, days,
-                day -> employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), day));
+        var lastDay = DateUtils.addDays(refDate, days - 1);
+        var periods = employeecontractService.getEmployeecontractPeriodsBetween(authorizedEmployee.getEmployeeId(), refDate, lastDay);
+        if (periods.isEmpty()) {
+            throw new ResponseStatusException(NOT_FOUND, "No employee contract of the user is valid between " + refDate + " and " + lastDay);
+        }
         var response = ResponseEntity.ok();
         if (csv) {
             var filename = String.format("%s-%sd.csv", DateUtils.format(refDate), days);
             response = response.header(CONTENT_DISPOSITION, "attachment; filename=" + filename);
             response = response.contentType(TEXT_CSV_DAILY_WORKING_REPORT);
         }
-        return response.body(getReports(contractIdsByDay));
+        return response.body(getReports(periods));
     }
 
-    private List<DailyWorkingReportData> getReports(Map<LocalDate, Long> contractIdsByDay) {
-        return contractIdsByDay.entrySet().stream()
-                .map(entry -> getReport(entry.getValue(), entry.getKey()))
+    private List<DailyWorkingReportData> getReports(List<EmployeecontractPeriod> periods) {
+        return periods.stream()
+                .flatMap(period -> getReports(period).stream())
+                .toList();
+    }
+
+    /** One query for the working days and one for the bookings of a contract over its part of the period (#1450). */
+    private List<DailyWorkingReportData> getReports(EmployeecontractPeriod period) {
+        var contractId = period.employeecontractId();
+        var workingDays = workingdayService.getWorkingdaysByEmployeeContractId(contractId, period.from(), period.until()).stream()
+                .collect(toMap(Workingday::getRefday, identity(), (first, second) -> first));
+        var bookingsByDay = timereportService.getTimereportsByDatesAndEmployeeContractId(contractId, period.from(), period.until()).stream()
+                .sorted(comparingInt(TimereportDTO::getSequencenumber))
+                .collect(groupingBy(TimereportDTO::getReferenceday, mapping(DailyReportData::valueOf, toList())));
+        return period.from().datesUntil(period.until().plusDays(1))
+                .map(day -> getReport(day, workingDays.get(day), bookingsByDay.getOrDefault(day, List.of())))
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private DailyWorkingReportData getReport(Long employeeContractId, LocalDate date) {
-        var workingDay = workingdayService.getWorkingday(employeeContractId, date);
-
-        var timeReports = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)
-                .stream()
-                .map(DailyReportData::valueOf)
-                .toList();
-
+    private DailyWorkingReportData getReport(LocalDate date, Workingday workingDay, List<DailyReportData> timeReports) {
         if(workingDay == null && timeReports.isEmpty()){
             return null;
         }
