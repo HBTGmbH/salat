@@ -27,9 +27,12 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.controller.SuborderOption;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
+import de.hbt.salat.dailyreport.preferences.DailySidebarPreferenceService;
+import de.hbt.salat.dailyreport.preferences.DailySidebarPreferences;
 import de.hbt.salat.dailyreport.preferences.DurationInputMode;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferenceService;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferences;
+import de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
 import de.hbt.salat.employee.preferences.EmployeePreferences;
 import de.hbt.salat.employee.service.EmployeeService;
@@ -51,6 +54,7 @@ public class SettingsController {
 
   private final DailyPreferenceService dailyPreferenceService;
   private final TimereportPreferenceService timereportPreferenceService;
+  private final DailySidebarPreferenceService dailySidebarPreferenceService;
   private final EmployeePreferenceService employeePreferenceService;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
@@ -78,6 +82,9 @@ public class SettingsController {
         ? timereport.favoriteSuborderId().toString() : "");
     form.setDurationInputMode(timereport.durationInputMode().getKey());
     form.setFavoriteListSize(favoriteService.getListSize());
+    var sidebar = dailySidebarPreferenceService.getForCurrentUser();
+    form.setWeekStripPlacement(sidebar.weekStrip().getKey());
+    form.setFavoriteShortListOrder(sidebar.favoriteOrder().getKey());
     form.setLocale(uiPreferenceService.getLocaleForCurrentUser());
     form.setNotificationEmail(employee.notificationEmail() != null ? employee.notificationEmail() : "");
     form.setGravatarEmail(employee.gravatarEmail() != null ? employee.gravatarEmail() : "");
@@ -102,13 +109,21 @@ public class SettingsController {
                       RedirectAttributes redirectAttributes,
                       HttpServletRequest request,
                       HttpServletResponse response) {
-    // first, so that a value out of range saves nothing at all rather than half the form (#1414)
-    try {
-      favoriteService.setListSize(form.getFavoriteListSize() != null ? form.getFavoriteListSize() : 0);
-    } catch (ErrorCodeException e) {
-      redirectAttributes.addFlashAttribute("toastError", errorCodeViewHelper.toViewMessages(e).stream()
-          .map(Object::toString).findFirst().orElse("Error"));
-      return "redirect:/settings";
+    // The settings of the beta "Favoriten zuerst" are stored only with it on (#1442): switched off,
+    // the page neither shows nor sends them, and what was stored stays for the next time.
+    boolean favoritesFirst = form.getBetaFeatures() != null
+        && form.getBetaFeatures().contains(DailyReportBetaFeatureContributor.FAVORITES_FIRST.getKey());
+    if (favoritesFirst) {
+      // first, so that a value out of range saves nothing at all rather than half the form (#1414)
+      try {
+        favoriteService.setListSize(form.getFavoriteListSize() != null ? form.getFavoriteListSize() : 0);
+      } catch (ErrorCodeException e) {
+        redirectAttributes.addFlashAttribute("toastError", errorCodeViewHelper.toViewMessages(e).stream()
+            .map(Object::toString).findFirst().orElse("Error"));
+        return "redirect:/settings";
+      }
+      dailySidebarPreferenceService.saveForCurrentUser(
+          DailySidebarPreferences.ofKeys(form.getWeekStripPlacement(), form.getFavoriteShortListOrder()));
     }
     uiPreferenceService.saveLocaleForCurrentUser(form.getLocale());
     dailyPreferenceService.saveForCurrentUser(new DailyPreferences(form.getWorkDayStart(), form.isConsiderMandatoryBreak()));
@@ -170,8 +185,17 @@ public class SettingsController {
     /** Key of a {@link DurationInputMode}, see the booking form's entry mode toggle (#844). */
     private String durationInputMode = DurationInputMode.REMEMBER.getKey();
 
-    /** How many favourites the short lists of the booking pages show (#1414). */
+    /**
+     * How many favourites the short list of the daily view shows ordered by use (#1414); a setting
+     * of the beta "Favoriten zuerst" since #1442.
+     */
     private Integer favoriteListSize = FavoritePreferences.DEFAULT_LIST_SIZE;
+
+    /** Key of a {@code WeekStripPlacement}, a setting of the beta "Favoriten zuerst" (#1442). */
+    private String weekStripPlacement;
+
+    /** Key of a {@code FavoriteShortListOrder}, a setting of the beta "Favoriten zuerst" (#1443). */
+    private String favoriteShortListOrder;
 
     private String locale = "-browser-";
 

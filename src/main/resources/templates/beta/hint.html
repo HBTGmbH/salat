@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+
+<!--/*
+  The hint promoting a beta on its page while it is off (#1442, docs/beta-funktionen.md, „Bewerben“):
+  <div th:replace="~{beta/hint :: hint('key')}"></div>
+  Title and sentence come from main.beta.<key>.hint.title and .text. „Aktivieren“ switches the beta on
+  and reloads the page (HX-Refresh). „Später“ and closing dismiss it on this device for good: it is
+  rendered hidden and shown by salat.js unless localStorage holds salat-beta-<key>-hint - a nudge for
+  the duration of the beta, which should not outlive it in the database.
+*/-->
+<div th:fragment="hint(featureKey)" th:unless="${@betaViewHelper.isEnabled(featureKey)}" hidden
+     class="alert alert-info" role="region" th:attr="data-beta-hint=${featureKey}"
+     th:with="title=${#messages.msg('main.beta.' + featureKey + '.hint.title')}"
+     th:aria-label="${title}">
+  <div class="d-flex align-items-start gap-2">
+    <i class="ti ti-bolt mt-1"></i>
+    <div class="flex-fill">
+      <h4 class="alert-title mb-1" th:text="${title}">Neu zum Ausprobieren: …</h4>
+      <div class="text-secondary" th:text="${#messages.msg('main.beta.' + featureKey + '.hint.text')}">
+        Was sich ändert, in einem Satz.
+      </div>
+      <div class="btn-list mt-2">
+        <button type="button" class="btn btn-primary" hx-swap="none"
+                th:attr="hx-post=@{/beta/{key}/enable(key=${featureKey})}"
+                th:text="#{main.beta.hint.activate}">Aktivieren</button>
+        <button type="button" class="btn btn-link" data-beta-hint-dismiss
+                th:text="#{main.beta.hint.later}">Später</button>
+      </div>
+    </div>
+    <button type="button" class="btn-close" data-beta-hint-dismiss th:aria-label="#{main.button.close}"></button>
+  </div>
+</div>
+
+</body>
+</html>

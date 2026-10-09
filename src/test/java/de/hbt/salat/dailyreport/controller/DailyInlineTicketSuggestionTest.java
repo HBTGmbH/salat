@@ -29,17 +29,19 @@ import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
+import de.hbt.salat.common.beta.Betas;
 import de.hbt.salat.dailyreport.domain.DailyViewData;
+import de.hbt.salat.dailyreport.domain.FavoriteShortList;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
 import de.hbt.salat.dailyreport.service.DailyService;
+import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
-import de.hbt.salat.favorites.domain.RecentFavorites;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
@@ -73,6 +75,10 @@ class DailyInlineTicketSuggestionTest {
   @Mock
   private FavoriteService favoriteService;
   @Mock
+  private FavoriteShortListService favoriteShortListService;
+  @Mock
+  private Betas betas;
+  @Mock
   private EmployeecontractService employeecontractService;
   @Mock
   private DailyPreferenceService dailyPreferenceService;
@@ -87,7 +93,7 @@ class DailyInlineTicketSuggestionTest {
     var employee = mock(Employee.class);
     when(employee.getId()).thenReturn(1L);
     when(employeeService.getLoginEmployee()).thenReturn(employee);
-    when(favoriteService.getRecentFavorites()).thenReturn(new RecentFavorites(List.of(), 0));
+    when(favoriteShortListService.getForCurrentUser()).thenReturn(FavoriteShortList.none());
     when(ticketReferencePolicyViewHelper.label(any())).thenReturn("höchstens 2");
     givenBooking("OPS-1");
     when(timereportService.getTicketReferencePolicy(TIMEREPORT_ID))

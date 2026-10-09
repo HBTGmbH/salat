@@ -51,12 +51,6 @@
         <option value="beginEnd" th:text="#{main.settings.timereport.durationinputmode.beginend}">Immer Beginn / Ende</option>
       </salat:select>
 
-      <salat:textInput type="number" min="1" max="50"
-                       th:field="*{favoriteListSize}"
-                       th:label="#{main.settings.favorites.listsize.label}"
-                       th:helpText="#{main.settings.favorites.listsize.help}"
-                       required="true" />
-
       <salat:textInput th:field="*{notificationEmail}"
                        th:label="#{main.settings.notification.email.label}"
                        th:helpText="#{main.settings.notification.email.help}"
@@ -101,16 +95,46 @@
             Beta-Funktion — Feedback und Probleme bitte im Slack-Channel #salat
           </div>
 
-          <label class="form-check form-switch" th:each="feature : ${betaFeatureOptions}">
-            <input class="form-check-input" type="checkbox"
-                   th:field="*{betaFeatures}" th:value="${feature.key}"/>
-            <span class="form-check-label">
-              <span th:text="#{${feature.labelKey()}}">Name der Funktion</span>
-              <span class="d-block form-text mt-0" th:text="#{${feature.helpKey()}}">
-                Was die Funktion anders macht.
+          <th:block th:each="feature : ${betaFeatureOptions}"
+                    th:with="switchedOn=${#lists.contains(settingsForm.betaFeatures, feature.key)}">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox"
+                     th:field="*{betaFeatures}" th:value="${feature.key}"/>
+              <span class="form-check-label">
+                <span th:text="#{${feature.labelKey()}}">Name der Funktion</span>
+                <span class="d-block form-text mt-0" th:text="#{${feature.helpKey()}}">
+                  Was die Funktion anders macht.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+
+            <!--/* Die Einstellungen der Beta „Favoriten zuerst“ (#1442): nur sichtbar und gesendet,
+                   solange ihr Schalter an ist (salat.js, data-beta-settings); der Server speichert
+                   sie nur mit eingeschalteter Beta. Sie entfallen oder werden allgemein mit dem
+                   Ende der Beta. */-->
+            <fieldset th:if="${feature.key == 'favoritesfirst'}" class="ms-5"
+                      th:attr="data-beta-settings=${feature.key}"
+                      th:hidden="${!switchedOn}" th:disabled="${!switchedOn}">
+              <salat:select th:field="*{weekStripPlacement}"
+                            th:label="#{main.settings.beta.favoritesfirst.weekstrip.label}">
+                <option value="below" th:text="#{main.settings.beta.favoritesfirst.weekstrip.below}">Unter den Favoriten</option>
+                <option value="above" th:text="#{main.settings.beta.favoritesfirst.weekstrip.above}">Über den Favoriten</option>
+                <option value="hidden" th:text="#{main.settings.beta.favoritesfirst.weekstrip.hidden}">Nicht anzeigen</option>
+              </salat:select>
+
+              <salat:select th:field="*{favoriteShortListOrder}"
+                            th:label="#{main.settings.beta.favoritesfirst.order.label}">
+                <option value="own" th:text="#{main.settings.beta.favoritesfirst.order.own}">Eigene Ordnung mit Gruppen</option>
+                <option value="recent" th:text="#{main.settings.beta.favoritesfirst.order.recent}">Nach letzter Nutzung</option>
+              </salat:select>
+
+              <salat:textInput type="number" min="1" max="50"
+                               th:field="*{favoriteListSize}"
+                               th:label="#{main.settings.favorites.listsize.label}"
+                               th:helpText="#{main.settings.favorites.listsize.help}"
+                               required="true" />
+            </fieldset>
+          </th:block>
         </div>
       </th:block>
 

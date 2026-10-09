@@ -166,6 +166,11 @@
 <!-- DAILY MODE                                                  -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div th:if="${mode == 'daily'}">
+  <!--/* Beta „Favoriten zuerst“ (#1442, docs/beta-funktionen.md): solange sie aus ist, wirbt der
+         Hinweis fuer sie, hoechstens einmal je Geraet (salat.js, data-beta-hint); mit ihr fragt die
+         Rueckfrage nach genug Nutzungen. Beides entfaellt mit dem Ende der Beta. */-->
+  <div th:replace="~{beta/hint :: hint('favoritesfirst')}"></div>
+  <div th:replace="~{beta/feedback :: usePrompt('favoritesfirst')}"></div>
   <div class="row align-items-start">
     <div class="col-lg-8">
 
@@ -392,17 +397,23 @@
             </li>
           </ul>
         </div>
-        <div class="dropdown flex-fill" th:if="${favorites != null and not #lists.isEmpty(favorites)}">
+        <div class="dropdown flex-fill" th:if="${favoriteSections != null and not #lists.isEmpty(favoriteSections)}">
           <button class="btn btn-outline-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
             <i class="ti ti-star me-1"></i><span th:text="#{main.daily.favourites.apply.button}">Favorit anwenden</span>
           </button>
+          <!--/* Dieselben Abschnitte wie die Karte (#1443); eine Gruppe steht unter ihrem Namen */-->
           <ul class="dropdown-menu w-100">
-            <li th:each="fav : ${favorites}">
-              <div class="d-flex align-items-stretch">
-                <form th:replace="~{:: favoriteApplyForm(${fav}, true)}"></form>
-                <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
-              </div>
-            </li>
+            <th:block th:each="favSection : ${favoriteSections}">
+              <li th:if="${favSection.groupName != null}">
+                <h6 class="dropdown-header text-truncate" th:text="${favSection.groupName}">Gruppe</h6>
+              </li>
+              <li th:each="fav : ${favSection.favorites}">
+                <div class="d-flex align-items-stretch">
+                  <form th:replace="~{:: favoriteApplyForm(${fav}, true)}"></form>
+                  <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
+                </div>
+              </li>
+            </th:block>
             <li><hr class="dropdown-divider"/></li>
             <li class="px-3 py-2">
               <a th:replace="~{:: favouritesDialogOpener}"></a>
@@ -585,7 +596,7 @@
       </div>
 
       <!-- OOB: week strip refresh -->
-      <div th:if="${isHtmxRequest == true and isDailyMode == true}" id="daily-week-strip" hx-swap-oob="outerHTML:#daily-week-strip"
+      <div th:if="${isHtmxRequest == true and isDailyMode == true and @dailySidebarViewHelper.weekStripShown}" id="daily-week-strip" hx-swap-oob="outerHTML:#daily-week-strip"
            class="list-group list-group-flush">
         <a th:each="wd : ${weekStripData}"
            th:href="@{/dailyreport/daily(mode='daily',date=${wd.date})}"
@@ -710,12 +721,17 @@
     <!-- Sidebar -->
     <div class="col-lg-4" th:if="${dailyData != null}">
 
+      <!--/* Mit der Beta „Favoriten zuerst“ (#1442) stehen die Favoriten ueber der Woche, wenn die
+             Person es so eingestellt hat; sonst darunter wie bisher. */-->
+      <th:block th:if="${@dailySidebarViewHelper.favoritesFirst}"><div th:replace="~{:: favouritesPanel}"></div></th:block>
+
       <!-- Week strip -->
       <!--/* Nur auf grossen Bildschirmen (#1269): neben dem Tag ist die Spalte darunter so schmal, dass
              Nicht gearbeitet in den Innenabstand des Eintrags ragt, und unter 992px stuende die Leiste unter
              dem Tag. Den Tag wechseln dort die Knoepfe darueber und die Befehlspalette. Ausgeblendet wird die
              Karte, nicht die Liste: der Out-of-Band-Austausch findet #daily-week-strip so weiter. */-->
-      <div class="card mb-3 d-none d-xl-block">
+      <!--/* Beta „Favoriten zuerst“ (#1442): die Person kann die Woche ganz ausblenden. */-->
+      <div class="card mb-3 d-none d-xl-block" th:if="${@dailySidebarViewHelper.weekStripShown}">
         <div class="card-header">
           <h3 class="card-title" th:text="#{main.daily.week.title}">Diese Woche</h3>
         </div>
@@ -754,11 +770,7 @@
         </div>
       </div>
 
-      <!-- Favourites -->
-      <div class="card mb-3" id="daily-favourites-panel"
-           th:if="${favorites != null and not #lists.isEmpty(favorites)}">
-        <th:block th:replace="~{:: favouritesPanelContent}"></th:block>
-      </div>
+      <th:block th:unless="${@dailySidebarViewHelper.favoritesFirst}"><div th:replace="~{:: favouritesPanel}"></div></th:block>
 
     </div><!-- end sidebar -->
   </div>
@@ -1100,21 +1112,46 @@
 </section>
 
 <!--/*
-  The favourites panel beside the day (#834), for the page and for its OOB refresh: the favourites
-  used last, as many as the person chose (#1414). The card header opens the dialog with all of them.
+  The favourites card beside the day (#834). It stands above or below the week (#1442), so the
+  sidebar includes it in either place.
 */-->
-<th:block th:fragment="favouritesPanelContent">
+<div th:fragment="favouritesPanel" class="card mb-3" id="daily-favourites-panel"
+     th:if="${favoriteSections != null and not #lists.isEmpty(favoriteSections)}">
+  <th:block th:replace="~{:: favouritesPanelContent}"></th:block>
+</div>
+
+<!--/*
+  The content of the favourites card, for the page and for its OOB refresh: the favourites used last,
+  or with the beta "Favoriten zuerst" the person's own order under the names of their groups (#1414,
+  #1443). The card header opens the dialog with all of them.
+  Beta (#1442): while it is off, a link in the header leads to its switch in the settings; with it,
+  the card carries the beta badge, whose tooltip names the channel for feedback. Both go with the beta.
+*/-->
+<th:block th:fragment="favouritesPanelContent"
+          th:with="favoritesFirst=${@betaViewHelper.isEnabled('favoritesfirst')}">
   <div class="card-header">
-    <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
-    <div class="card-actions">
+    <h3 class="card-title d-flex align-items-center gap-2">
+      <span th:text="#{main.daily.favourites.title}">Favoriten</span>
+      <span th:if="${favoritesFirst}" class="badge bg-azure-lt" data-bs-toggle="tooltip"
+            th:title="#{main.beta.feedback.hint}" th:text="#{main.beta.badge}">Beta</span>
+    </h3>
+    <div class="card-actions d-flex flex-wrap justify-content-end column-gap-3">
+      <a th:unless="${favoritesFirst}" class="small text-decoration-none" data-beta-link
+         th:href="@{/settings} + '#beta'" th:title="#{main.beta.favoritesfirst.link.tooltip}">
+        <i class="ti ti-bolt me-1"></i><span th:text="#{main.beta.favoritesfirst.link.label}">Beta testen</span>
+      </a>
       <a th:replace="~{:: favouritesDialogOpener}"></a>
     </div>
   </div>
   <div class="list-group list-group-flush">
-    <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
-      <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
-      <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
-    </div>
+    <th:block th:each="favSection : ${favoriteSections}">
+      <div th:if="${favSection.groupName != null}" class="list-group-header text-truncate"
+           th:text="${favSection.groupName}">Gruppe</div>
+      <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favSection.favorites}">
+        <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
+        <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
+      </div>
+    </th:block>
   </div>
 </th:block>
 
@@ -1123,6 +1160,7 @@
   shell that the page includes once (favorites/dialog :: modal).
 */-->
 <a th:fragment="favouritesDialogOpener" href="#favoritesDialog" data-bs-toggle="modal"
+   data-beta-usage="favoritesfirst:favorite-dialog-opened"
    th:attr="hx-get=@{/favorites/dialog}" hx-target="#favoritesDialogBody"
    th:text="#{main.favorites.all.link(${favoriteCount})}">Alle Favoriten (12) …</a>
 

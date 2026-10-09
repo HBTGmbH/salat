@@ -73,7 +73,11 @@ Beta selbst; die Module liefern ihm ihre Liste über `common.beta` und importier
    finden: jede Stelle liest die Konstante, im Template mit Kommentar und Ticketnummer.
 5. **Einstellungen, die nur in der Beta gelten**, stehen in den Einstellungen unter ihrem Schalter
    und sind nur sichtbar und wirksam, solange die Beta an ist. Gespeicherte Werte bleiben beim
-   Ausschalten erhalten.
+   Ausschalten erhalten. Sie stehen in einem `<fieldset data-beta-settings="<key>">`, das
+   `salat.js` mit dem Schalter ein- und ausblendet und dabei sperrt — ausgeschaltet schickt das
+   Formular sie nicht. Der Server speichert sie nur, wenn der Schalter im gesendeten Formular an
+   ist, und das Modul liest sie nur bei eingeschalteter Beta (Beispiel: `DailySidebarPreferences`,
+   #1442).
 
 ## Bewerben
 
@@ -82,7 +86,8 @@ Funktion wirkt, nicht nur in den Einstellungen:
 
 - **Hinweis** oben auf der betroffenen Seite, solange die Beta aus ist: `alert alert-info` mit
   Titel „Neu zum Ausprobieren: …“, einem Satz, was sich ändert, und den Knöpfen **Aktivieren** und
-  **Später**.
+  **Später**. Das Fragment `~{beta/hint :: hint('<key>')}` bringt das alles mit; die Seite liefert
+  nur Titel und Satz unter `main.beta.<key>.hint.title` und `.text`.
   - „Aktivieren“ schickt `POST /beta/{key}/enable`. Die Antwort trägt `HX-Refresh`; die
     Seite lädt mit eingeschalteter Beta neu, die Person bleibt, wo sie war.
   - „Später“ und das Schließen merken sich das im `localStorage` (`salat-beta-<key>-hint`), nicht in
