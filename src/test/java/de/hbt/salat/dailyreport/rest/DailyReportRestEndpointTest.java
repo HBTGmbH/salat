@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_BOOKING_NO_EMPLOYEE_ORDER;
 import static de.hbt.salat.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
@@ -104,6 +105,8 @@ class DailyReportRestEndpointTest {
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(employeecontractService.getEmployeeContractValidAt(employee.getId(), day))
                 .thenReturn(employeeContract);
+        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), day.plusDays(1)))
+                .thenReturn(employeeContract);
         when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day))
                 .thenReturn(List.of(timeReport1));
         when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day.plusDays(1)))
@@ -117,6 +120,81 @@ class DailyReportRestEndpointTest {
                 .hasSize(2)
                 .contains(valueOf(timeReport1))
                 .contains(valueOf(timeReport2));
+    }
+
+    @Test
+    void shouldGetBookingsAcrossAContractChange() {
+        // given
+        var lastDayOfOldContract = DateUtils.parse("2022-03-31");
+        var firstDayOfNewContract = DateUtils.parse("2022-04-01");
+        var bookingOnOldContract = TimereportDTO.builder().duration(Duration.ofHours(1)).build();
+        var bookingOnNewContract = TimereportDTO.builder().duration(Duration.ofHours(2)).build();
+        var employee = employee();
+        var oldContract = employeeContract(employee);
+        var newContract = employeeContract(employee);
+
+        when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), lastDayOfOldContract))
+                .thenReturn(oldContract);
+        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), firstDayOfNewContract))
+                .thenReturn(newContract);
+        when(timereportService.getTimereportsByDateAndEmployeeContractId(oldContract.getId(), lastDayOfOldContract))
+                .thenReturn(List.of(bookingOnOldContract));
+        when(timereportService.getTimereportsByDateAndEmployeeContractId(newContract.getId(), firstDayOfNewContract))
+                .thenReturn(List.of(bookingOnNewContract));
+
+        // when
+        var result = dailyReportRestEndpoint.getBookings(lastDayOfOldContract, 2, false);
+
+        // then
+        assertThat(result.getBody())
+                .containsExactly(valueOf(bookingOnOldContract), valueOf(bookingOnNewContract));
+    }
+
+    @Test
+    void shouldGetBookingsFromContractStartWhenThePeriodStartsBeforeIt() {
+        // given
+        var dayBeforeContract = DateUtils.parse("2019-03-31");
+        var firstDayOfContract = DateUtils.parse("2019-04-01");
+        var booking = TimereportDTO.builder().duration(Duration.ofHours(1)).build();
+        var employee = employee();
+        var employeeContract = employeeContract(employee);
+
+        when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), dayBeforeContract))
+                .thenReturn(null);
+        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), firstDayOfContract))
+                .thenReturn(employeeContract);
+        when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), firstDayOfContract))
+                .thenReturn(List.of(booking));
+
+        // when
+        var result = dailyReportRestEndpoint.getBookings(dayBeforeContract, 2, false);
+
+        // then
+        assertThat(result.getBody()).containsExactly(valueOf(booking));
+    }
+
+    @Test
+    void shouldAnswerNotFoundWithAReasonWhenNoContractIsValidInThePeriod() {
+        // given
+        var day = DateUtils.parse("2016-10-08");
+        var employee = employee();
+
+        when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeecontractService.getEmployeeContractValidAt(eq(employee.getId()), any(LocalDate.class)))
+                .thenReturn(null);
+
+        // when
+        assertThatThrownBy(() -> dailyReportRestEndpoint.getBookings(day, 2, false))
+                .isInstanceOfSatisfying(ResponseStatusException.class, e -> {
+                    assertThat(e.getStatusCode()).isEqualTo(NOT_FOUND);
+                    assertThat(e.getReason()).contains("2016-10-08", "2016-10-09");
+                });
+        verifyNoInteractions(timereportService);
     }
 
     @Test
