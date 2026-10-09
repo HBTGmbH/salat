@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.rest;
 
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -22,7 +23,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -43,10 +43,12 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.BookingOrderResolver;
 import de.hbt.salat.dailyreport.service.DailyWorkingReportService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
+import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.service.EmployeeorderService;
@@ -92,13 +94,16 @@ public class DailyReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var contractIdsByDay = EmployeecontractsByDay.resolve(refDate, days,
-                day -> employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), day));
+        var lastDay = DateUtils.addDays(refDate, days - 1);
+        var periods = employeecontractService.getEmployeecontractPeriodsBetween(authorizedEmployee.getEmployeeId(), refDate, lastDay);
+        if (periods.isEmpty()) {
+            throw new ResponseStatusException(NOT_FOUND, "No employee contract of the user is valid between " + refDate + " and " + lastDay);
+        }
         var response = ResponseEntity.ok();
         if (csv) {
             response = response.contentType(TEXT_CSV_DAILY_REPORT);
         }
-        return response.body(getDailyReports(contractIdsByDay));
+        return response.body(getDailyReports(periods));
     }
 
     @GetMapping(path = "/{employeeContractId}/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
@@ -273,10 +278,13 @@ public class DailyReportRestEndpoint {
                 .collect(toList());
     }
 
-    private List<DailyReportData> getDailyReports(Map<LocalDate, Long> contractIdsByDay) {
-        return contractIdsByDay.entrySet().stream()
-                .map(entry -> timereportService.getTimereportsByDateAndEmployeeContractId(entry.getValue(), entry.getKey()))
+    /** One query per contract over its part of the period, in the order the day view shows them (#1450). */
+    private List<DailyReportData> getDailyReports(List<EmployeecontractPeriod> periods) {
+        return periods.stream()
+                .map(period -> timereportService.getTimereportsByDatesAndEmployeeContractId(
+                        period.employeecontractId(), period.from(), period.until()))
                 .flatMap(List::stream)
+                .sorted(comparing(TimereportDTO::getReferenceday).thenComparingInt(TimereportDTO::getSequencenumber))
                 .map(DailyReportData::valueOf)
                 .collect(toList());
     }

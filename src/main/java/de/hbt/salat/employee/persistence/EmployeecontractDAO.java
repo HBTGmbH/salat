@@ -39,6 +39,13 @@ public class EmployeecontractDAO {
     }
 
     /**
+     * Gets the EmployeeContracts with the given employee id that are valid on at least one day between from and until.
+     */
+    public List<Employeecontract> getEmployeeContractsByEmployeeIdValidBetween(long employeeId, LocalDate from, LocalDate until) {
+        return employeecontractRepository.findAllByEmployeeIdAndValidBetween(employeeId, from, until);
+    }
+
+    /**
      * Gets the EmployeeContract with the given id.
      */
     public Employeecontract getEmployeecontractById(long id) {

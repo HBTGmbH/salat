@@ -45,6 +45,7 @@ import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employee_;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.domain.EmployeecontractListItemDTO;
 import de.hbt.salat.employee.domain.Employeecontract_;
 import de.hbt.salat.employee.domain.Overtime;
@@ -449,6 +450,14 @@ public class EmployeecontractService {
   @Authorized
   public Employeecontract getEmployeeContractValidAt(long employeeId, LocalDate date) {
     return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
+  }
+
+  /** The parts of the period the person's contracts cover, in order (#1450); empty if none covers a day of it. */
+  @Authorized
+  public List<EmployeecontractPeriod> getEmployeecontractPeriodsBetween(long employeeId, LocalDate from, LocalDate until) {
+    return employeecontractDAO.getEmployeeContractsByEmployeeIdValidBetween(employeeId, from, until).stream()
+        .map(contract -> EmployeecontractPeriod.of(contract, from, until))
+        .toList();
   }
 
   @Authorized

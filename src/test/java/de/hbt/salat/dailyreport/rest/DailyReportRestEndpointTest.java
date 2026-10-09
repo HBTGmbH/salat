@@ -43,6 +43,7 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.service.EmployeeorderService;
@@ -92,34 +93,23 @@ class DailyReportRestEndpointTest {
     void shouldGetBookings() {
         // given
         var day = DateUtils.parse("2024-07-06");
-        var timeReport1 = TimereportDTO.builder()
-                .duration(Duration.ofHours(1))
-                .build();
-        var timeReport2 = TimereportDTO.builder()
-                .duration(Duration.ofHours(2))
-                .build();
+        var timeReport1 = booking(day, 0, 1);
+        var timeReport2 = booking(day.plusDays(1), 0, 2);
         var employee = employee();
-        var employeeContract = employeeContract(employee);
+        var contractId = nextId();
 
         when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), day))
-                .thenReturn(employeeContract);
-        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), day.plusDays(1)))
-                .thenReturn(employeeContract);
-        when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day))
-                .thenReturn(List.of(timeReport1));
-        when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day.plusDays(1)))
-                .thenReturn(List.of(timeReport2));
+        when(employeecontractService.getEmployeecontractPeriodsBetween(employee.getId(), day, day.plusDays(1)))
+                .thenReturn(List.of(new EmployeecontractPeriod(contractId, day, day.plusDays(1))));
+        when(timereportService.getTimereportsByDatesAndEmployeeContractId(contractId, day, day.plusDays(1)))
+                .thenReturn(List.of(timeReport1, timeReport2));
 
         // when
         var result = dailyReportRestEndpoint.getBookings(day, 2, false);
 
         // then
-        assertThat(result.getBody())
-                .hasSize(2)
-                .contains(valueOf(timeReport1))
-                .contains(valueOf(timeReport2));
+        assertThat(result.getBody()).containsExactly(valueOf(timeReport1), valueOf(timeReport2));
     }
 
     @Test
@@ -127,21 +117,21 @@ class DailyReportRestEndpointTest {
         // given
         var lastDayOfOldContract = DateUtils.parse("2022-03-31");
         var firstDayOfNewContract = DateUtils.parse("2022-04-01");
-        var bookingOnOldContract = TimereportDTO.builder().duration(Duration.ofHours(1)).build();
-        var bookingOnNewContract = TimereportDTO.builder().duration(Duration.ofHours(2)).build();
+        var bookingOnOldContract = booking(lastDayOfOldContract, 0, 1);
+        var bookingOnNewContract = booking(firstDayOfNewContract, 0, 2);
         var employee = employee();
-        var oldContract = employeeContract(employee);
-        var newContract = employeeContract(employee);
+        var oldContractId = nextId();
+        var newContractId = nextId();
 
         when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), lastDayOfOldContract))
-                .thenReturn(oldContract);
-        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), firstDayOfNewContract))
-                .thenReturn(newContract);
-        when(timereportService.getTimereportsByDateAndEmployeeContractId(oldContract.getId(), lastDayOfOldContract))
+        when(employeecontractService.getEmployeecontractPeriodsBetween(employee.getId(), lastDayOfOldContract, firstDayOfNewContract))
+                .thenReturn(List.of(
+                        new EmployeecontractPeriod(oldContractId, lastDayOfOldContract, lastDayOfOldContract),
+                        new EmployeecontractPeriod(newContractId, firstDayOfNewContract, firstDayOfNewContract)));
+        when(timereportService.getTimereportsByDatesAndEmployeeContractId(oldContractId, lastDayOfOldContract, lastDayOfOldContract))
                 .thenReturn(List.of(bookingOnOldContract));
-        when(timereportService.getTimereportsByDateAndEmployeeContractId(newContract.getId(), firstDayOfNewContract))
+        when(timereportService.getTimereportsByDatesAndEmployeeContractId(newContractId, firstDayOfNewContract, firstDayOfNewContract))
                 .thenReturn(List.of(bookingOnNewContract));
 
         // when
@@ -157,17 +147,15 @@ class DailyReportRestEndpointTest {
         // given
         var dayBeforeContract = DateUtils.parse("2019-03-31");
         var firstDayOfContract = DateUtils.parse("2019-04-01");
-        var booking = TimereportDTO.builder().duration(Duration.ofHours(1)).build();
+        var booking = booking(firstDayOfContract, 0, 1);
         var employee = employee();
-        var employeeContract = employeeContract(employee);
+        var contractId = nextId();
 
         when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), dayBeforeContract))
-                .thenReturn(null);
-        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), firstDayOfContract))
-                .thenReturn(employeeContract);
-        when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), firstDayOfContract))
+        when(employeecontractService.getEmployeecontractPeriodsBetween(employee.getId(), dayBeforeContract, firstDayOfContract))
+                .thenReturn(List.of(new EmployeecontractPeriod(contractId, firstDayOfContract, firstDayOfContract)));
+        when(timereportService.getTimereportsByDatesAndEmployeeContractId(contractId, firstDayOfContract, firstDayOfContract))
                 .thenReturn(List.of(booking));
 
         // when
@@ -175,6 +163,32 @@ class DailyReportRestEndpointTest {
 
         // then
         assertThat(result.getBody()).containsExactly(valueOf(booking));
+    }
+
+    /** The query of a period sorts by order; the list keeps the order of the day view, by day and sequence. */
+    @Test
+    void shouldGetBookingsByDayAndSequence() {
+        // given
+        var day = DateUtils.parse("2024-07-08");
+        var secondOfFirstDay = booking(day, 1, 1);
+        var firstOfSecondDay = booking(day.plusDays(1), 0, 2);
+        var firstOfFirstDay = booking(day, 0, 3);
+        var employee = employee();
+        var contractId = nextId();
+
+        when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeecontractService.getEmployeecontractPeriodsBetween(employee.getId(), day, day.plusDays(1)))
+                .thenReturn(List.of(new EmployeecontractPeriod(contractId, day, day.plusDays(1))));
+        when(timereportService.getTimereportsByDatesAndEmployeeContractId(contractId, day, day.plusDays(1)))
+                .thenReturn(List.of(secondOfFirstDay, firstOfSecondDay, firstOfFirstDay));
+
+        // when
+        var result = dailyReportRestEndpoint.getBookings(day, 2, false);
+
+        // then
+        assertThat(result.getBody())
+                .containsExactly(valueOf(firstOfFirstDay), valueOf(secondOfFirstDay), valueOf(firstOfSecondDay));
     }
 
     @Test
@@ -185,8 +199,8 @@ class DailyReportRestEndpointTest {
 
         when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(eq(employee.getId()), any(LocalDate.class)))
-                .thenReturn(null);
+        when(employeecontractService.getEmployeecontractPeriodsBetween(employee.getId(), day, day.plusDays(1)))
+                .thenReturn(List.of());
 
         // when
         assertThatThrownBy(() -> dailyReportRestEndpoint.getBookings(day, 2, false))
@@ -202,13 +216,13 @@ class DailyReportRestEndpointTest {
         // given
         var today = DateUtils.today();
         var employee = employee();
-        var employeeContract = employeeContract(employee);
+        var contractId = nextId();
 
         when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(eq(employee.getId()), dateArgumentCaptor.capture()))
-                .thenReturn(employeeContract);
-        when(timereportService.getTimereportsByDateAndEmployeeContractId(eq(employeeContract.getId()),  dateArgumentCaptor.capture()))
+        when(employeecontractService.getEmployeecontractPeriodsBetween(eq(employee.getId()), dateArgumentCaptor.capture(), dateArgumentCaptor.capture()))
+                .thenReturn(List.of(new EmployeecontractPeriod(contractId, today, today)));
+        when(timereportService.getTimereportsByDatesAndEmployeeContractId(eq(contractId), dateArgumentCaptor.capture(), dateArgumentCaptor.capture()))
                 .thenReturn(List.of());
 
         // when
@@ -216,7 +230,7 @@ class DailyReportRestEndpointTest {
 
         // then
         assertThat(result.getBody()).isEmpty();
-        assertThat(dateArgumentCaptor.getAllValues()).hasSize(2).allMatch(today::equals);
+        assertThat(dateArgumentCaptor.getAllValues()).hasSize(4).allMatch(today::equals);
     }
 
     @Test
@@ -510,6 +524,12 @@ class DailyReportRestEndpointTest {
         Employee res = new Employee();
         ReflectionTestUtils.setField(res, "id", nextId());
         return res;
+    }
+
+    private TimereportDTO booking(LocalDate day, int sequencenumber, int hours) {
+        return TimereportDTO.builder()
+                .referenceday(day).sequencenumber(sequencenumber).duration(Duration.ofHours(hours))
+                .build();
     }
 
     private Employeecontract employeeContract(Employee employee) {

@@ -20,6 +20,10 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   @Query("select e from Employeecontract e where e.employee.id = :employeeId and e.validFrom <= :validAt and (e.validUntil >= :validAt or e.validUntil is null)")
   Optional<Employeecontract> findByEmployeeIdAndValidAt(long employeeId, LocalDate validAt);
 
+  /** Die Verträge der Person, die den Zeitraum ganz oder teilweise abdecken, nach Beginn geordnet (#1450). */
+  @Query("select e from Employeecontract e where e.employee.id = :employeeId and e.validFrom <= :until and (e.validUntil >= :from or e.validUntil is null) order by e.validFrom")
+  List<Employeecontract> findAllByEmployeeIdAndValidBetween(long employeeId, LocalDate from, LocalDate until);
+
   @Query("""
     select ec from Employeecontract ec
     join ec.supervisors s
