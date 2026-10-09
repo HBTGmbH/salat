@@ -204,6 +204,22 @@ public class TimereportController {
         return "dailyreport/timereport-form";
     }
 
+    /**
+     * A save that answers with the form itself — ticket proposals (#1326), a validation error — leaves
+     * the address it posted to in the address bar. Reloading, a restored tab or going back asks it per
+     * GET; that leads back into the form instead of a 405 (#1444). The unsaved input is lost.
+     */
+    @GetMapping
+    public String reloadCreate() {
+        return "redirect:/dailyreport/timereports/new";
+    }
+
+    /** See {@link #reloadCreate()}; an unknown booking ends where its edit form does. */
+    @GetMapping("/{id:\\d+}")
+    public String reloadUpdate(@PathVariable Long id) {
+        return "redirect:/dailyreport/timereports/" + id + "/edit";
+    }
+
     @PostMapping
     @Authorized
     public String create(
