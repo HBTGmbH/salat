@@ -239,8 +239,9 @@ mit einer verständlichen Meldung. Eine Tabelle mit Aufräumjob wäre der Preis,
 Die Umsetzung des Moduls stellt auch die bestehenden Replikationen um. Liquibase kennt den
 Schlüssel nicht, deshalb läuft die Umstellung beim Start in Java: Für jede Replikation mit Passwort
 und ohne `secret_id` wird ein Secret angelegt, der Verweis gesetzt und das Klartext-Secret geleert.
-Die Umstellung ist wiederholbar und läuft nur mit Schlüssel. Die Spalten `username` und `password`
-entfallen in einem späteren Release, wenn die Umstellung in Produktion gelaufen ist.
+Die Umstellung ist wiederholbar und läuft nur mit Schlüssel. Nachdem sie in Produktion gelaufen
+war, sind die Spalten `username` und `password` und mit ihnen die Umstellung selbst entfallen
+(#1434).
 
 ### Bedrohungen
 

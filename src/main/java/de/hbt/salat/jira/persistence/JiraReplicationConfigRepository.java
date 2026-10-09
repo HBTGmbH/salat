@@ -48,8 +48,4 @@ public interface JiraReplicationConfigRepository extends JpaRepository<JiraRepli
 
   @Query("select count(c) from JiraReplicationConfig c where c.suborder.id in :suborderIds")
   long countBySuborderIdIn(Collection<Long> suborderIds);
-
-  /** The replications that still keep their secret in plain text (#1432), to be moved at start. */
-  @Query("select c.id from JiraReplicationConfig c where c.secretId is null and c.legacyPassword is not null order by c.id")
-  List<Long> findIdsWithPlaintextSecret();
 }

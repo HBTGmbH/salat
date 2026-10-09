@@ -6542,3 +6542,30 @@ databaseChangeLog:
             tableName: jira_replication_config
             columnName: password
             columnDataType: varchar(1024)
+
+  - changeSet:
+      id: 178
+      author: kr
+      comment: Klartextspalten username und password der Replikation entfernen (#1434)
+      # Seit #1432 liegen die Zugangsdaten verschluesselt im Modul secret, die Umstellung beim Start
+      # hat die Spalten geleert. Steht in einer Replikation ohne secret_id noch ein Passwort, ist die
+      # Umstellung dort nicht gelaufen: dann ueberspringt CONTINUE den Changeset und prueft beim
+      # naechsten Start erneut, statt das Passwort zu verlieren.
+      preConditions:
+        - onFail: CONTINUE
+        - columnExists:
+            tableName: jira_replication_config
+            columnName: password
+        - sqlCheck:
+            expectedResult: 0
+            sql: |-
+              SELECT COUNT(*) FROM jira_replication_config
+               WHERE secret_id IS NULL AND password IS NOT NULL
+      changes:
+        - dropColumn:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: username
+              - column:
+                  name: password
