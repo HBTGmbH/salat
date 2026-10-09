@@ -54,12 +54,11 @@ class JiraCredentialStore {
 
   /**
    * What the form shows of the stored credentials: the user name, and whether they can be read at
-   * all. A replication whose plain text secret has not been moved yet — the environment has no key —
-   * shows the user name it still keeps in plain text.
+   * all. A replication without a secret shows no user name.
    */
   StoredCredentials describe(JiraReplicationConfig config) {
     if (config.getSecretId() == null) {
-      return new StoredCredentials(config.getLegacyUsername(), false);
+      return new StoredCredentials(null, false);
     }
     var summary = secretService.getSummary(config.getSecretId());
     var fits = summary.type() == secretTypeOf(config.getAuthMethod());
@@ -68,7 +67,6 @@ class JiraCredentialStore {
 
   /**
    * Stores new credentials: replaces the secret, or creates it when the replication has none yet.
-   * The plain text columns are cleared — what is entered here is the secret from now on.
    *
    * @param username the user name with {@link JiraAuthMethod#BASIC}, ignored with a token
    */
@@ -81,8 +79,6 @@ class JiraCredentialStore {
     } else {
       secretService.replace(config.getSecretId(), value);
     }
-    config.setLegacyUsername(null);
-    config.setLegacyPassword(null);
   }
 
   /**

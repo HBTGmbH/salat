@@ -179,8 +179,6 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.create(data("pw"));
 
     assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "pw"));
-    assertThat(saved().getLegacyUsername()).isNull();
-    assertThat(saved().getLegacyPassword()).isNull();
   }
 
   /** Without a key the password could only be kept in plain text, and that is never done (#1432). */
@@ -241,20 +239,28 @@ class JiraReplicationConfigServiceTest {
     assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "new-token"));
   }
 
-  /** A replication still keeping its secret in plain text moves it on the first save with a new one. */
+  /** Without a secret there is nothing to show, not even a user name (#1434). */
   @Test
-  void storing_new_credentials_clears_the_plain_text_columns() {
+  void a_replication_without_a_secret_shows_no_credentials() {
     var stored = existingConfig();
     stored.setSecretId(null);
-    stored.setLegacyUsername("jira-user");
-    stored.setLegacyPassword(STORED_PASSWORD);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    var info = classUnderTest.getById(ID);
+
+    assertThat(info.credentialsReadable()).isFalse();
+    assertThat(info.username()).isNull();
+  }
+
+  @Test
+  void entering_the_credentials_gives_a_replication_without_a_secret_one() {
+    var stored = existingConfig();
+    stored.setSecretId(null);
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
     classUnderTest.update(ID, data("new-token"));
 
     assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user", "new-token"));
-    assertThat(saved().getLegacyUsername()).isNull();
-    assertThat(saved().getLegacyPassword()).isNull();
   }
 
   @Test

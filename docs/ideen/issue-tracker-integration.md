@@ -48,7 +48,7 @@ Salat an mehreren Stellen nicht.
 | Eine Buchung verweist auf ein Ticket | Eine Buchung trägt beliebig viele Ticketverweise (#1326). `TicketDaySums` teilt die Minuten gleichmäßig auf. |
 | Excel-Import als Ausweg | Import und manuelle Pflege gibt es seit #1386. Die Hoheit über ein Ticket liegt in `jira_ticket.replication_id`: gesetzt heißt repliziert, leer heißt von Hand gepflegt. |
 | `external_issue` mit Titel, Status, Typ, Labels, Parent | Salat hat mehr: konfigurierbare Zusatzfelder als JSON (ADR-0024), über die Parent-Kette geerbte Felder (#881), `top_level_key`, Ticketvorschläge und Ticketketten. Ohne sie verfehlt der Entwurf sein eigenes Ziel „ohne Funktionsverlust“. |
-| Credentials verschlüsselt (Envelope Encryption) | Heute liegen Passwort und Token unverschlüsselt in `jira_replication_config.password`. Das lässt sich unabhängig von allem anderen verbessern. |
+| Credentials verschlüsselt (Envelope Encryption) | Gibt es seit #1432: Passwort und Token liegen verschlüsselt im Modul `secret` (ADR-0038), die Klartextspalten sind mit #1434 entfallen. |
 
 ## 3. Wo der Entwurf bewusste Entscheidungen in Salat umkehrt
 

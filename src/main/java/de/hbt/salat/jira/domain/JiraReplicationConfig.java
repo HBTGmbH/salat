@@ -79,23 +79,12 @@ public class JiraReplicationConfig extends AuditedEntity {
    *
    * <p>An id with a foreign key, not a reference: the entity of the secret module means nothing
    * without its service and never leaves the module (ADR-0038, deviating from ADR-0036).
-   * {@code null} only for a replication whose plain text secret has not been moved yet, because the
-   * environment provides no key.
+   * {@code null} when no secret is stored: the replication does not run until the credentials are
+   * entered in its form. The plain text columns {@code username} and {@code password} it had before
+   * are gone (#1434).
    */
   @Column(name = "secret_id")
   private Long secretId;
-
-  /**
-   * The user name as it was stored in plain text before #1432. Read by
-   * {@code JiraPlaintextSecretMigration} alone, which moves it into the secret and clears it; the
-   * column goes once that has run in production.
-   */
-  @Column(name = "username")
-  private String legacyUsername;
-
-  /** The password or token in plain text before #1432 — see {@link #legacyUsername}. */
-  @Column(name = "password")
-  private String legacyPassword;
 
   @Column(name = "jql")
   private String jql;
