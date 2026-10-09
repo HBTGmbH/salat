@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -67,12 +68,14 @@ public class DailyReportRestEndpoint {
     @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
     @ResponseStatus(OK)
     @Operation(summary = "Liefert Zeitbuchungen für den aktuellen Benutzer",
-              description = "Ruft Zeitbuchungen für den angemeldeten Benutzer in einem angegebenen Zeitraum ab. Der Benutzer muss authentifiziert sein.",
+              description = "Ruft Zeitbuchungen für den angemeldeten Benutzer in einem angegebenen Zeitraum ab. Der Benutzer muss authentifiziert sein. "
+                      + "Für jeden Tag gilt der an diesem Tag gültige Mitarbeitervertrag, der Zeitraum darf also über einen Vertragswechsel reichen. "
+                      + "Tage ohne gültigen Vertrag tragen nichts bei.",
               responses = {
                   @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage der Zeitbuchungen",
                       content = @Content(array = @ArraySchema(schema = @Schema(implementation = DailyReportData.class)))),
                   @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-                  @ApiResponse(responseCode = "404", description = "Kein gültiger Mitarbeitervertrag zum Referenzdatum gefunden")
+                  @ApiResponse(responseCode = "404", description = "An keinem Tag des Zeitraums gilt ein Mitarbeitervertrag; die Antwort nennt den Zeitraum")
               })
     public ResponseEntity<List<DailyReportData>> getBookings(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) 
@@ -89,15 +92,13 @@ public class DailyReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), refDate);
-        if(employeecontract == null) {
-            throw new ResponseStatusException(NOT_FOUND);
-        }
+        var contractIdsByDay = EmployeecontractsByDay.resolve(refDate, days,
+                day -> employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), day));
         var response = ResponseEntity.ok();
         if (csv) {
             response = response.contentType(TEXT_CSV_DAILY_REPORT);
         }
-        return response.body(getDailyReports(employeecontract.getId(), refDate, days));
+        return response.body(getDailyReports(contractIdsByDay));
     }
 
     @GetMapping(path = "/{employeeContractId}/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
@@ -267,6 +268,14 @@ public class DailyReportRestEndpoint {
         return IntStream.range(0, days)
                 .mapToObj(day -> DateUtils.addDays(startDay, day))
                 .map(day -> timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, day))
+                .flatMap(List::stream)
+                .map(DailyReportData::valueOf)
+                .collect(toList());
+    }
+
+    private List<DailyReportData> getDailyReports(Map<LocalDate, Long> contractIdsByDay) {
+        return contractIdsByDay.entrySet().stream()
+                .map(entry -> timereportService.getTimereportsByDateAndEmployeeContractId(entry.getValue(), entry.getKey()))
                 .flatMap(List::stream)
                 .map(DailyReportData::valueOf)
                 .collect(toList());

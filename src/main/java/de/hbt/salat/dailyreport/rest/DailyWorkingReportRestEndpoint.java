@@ -4,7 +4,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -21,8 +20,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -64,7 +63,9 @@ public class DailyWorkingReportRestEndpoint {
     @ResponseStatus(OK)
     @Operation(
         summary = "Liefert tägliche Zeiterfassungen für einen bestimmten Zeitraum",
-        description = "Gibt die täglichen Zeiterfassungen für den authentifizierten Benutzer für einen spezifizierten Zeitraum zurück. Kann als JSON oder CSV geliefert werden."
+        description = "Gibt die täglichen Zeiterfassungen für den authentifizierten Benutzer für einen spezifizierten Zeitraum zurück. Kann als JSON oder CSV geliefert werden. "
+            + "Für jeden Tag gilt der an diesem Tag gültige Mitarbeitervertrag, der Zeitraum darf also über einen Vertragswechsel reichen. "
+            + "Tage ohne gültigen Vertrag tragen nichts bei."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -76,7 +77,7 @@ public class DailyWorkingReportRestEndpoint {
             )
         ),
         @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-        @ApiResponse(responseCode = "404", description = "Kein gültiger Mitarbeitervertrag gefunden")
+        @ApiResponse(responseCode = "404", description = "An keinem Tag des Zeitraums gilt ein Mitarbeitervertrag; die Antwort nennt den Zeitraum")
     })
     public ResponseEntity<List<DailyWorkingReportData>> getReports(
             @Parameter(description = "Referenzdatum für den Beginn des Berichtszeitraums", required = true)
@@ -90,23 +91,20 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), refDate);
-        if(employeecontract == null) {
-            throw new ResponseStatusException(NOT_FOUND);
-        }
+        var contractIdsByDay = EmployeecontractsByDay.resolve(refDate, days,
+                day -> employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), day));
         var response = ResponseEntity.ok();
         if (csv) {
             var filename = String.format("%s-%sd.csv", DateUtils.format(refDate), days);
             response = response.header(CONTENT_DISPOSITION, "attachment; filename=" + filename);
             response = response.contentType(TEXT_CSV_DAILY_WORKING_REPORT);
         }
-        return response.body(getReports(employeecontract.getId(), refDate, days));
+        return response.body(getReports(contractIdsByDay));
     }
 
-    private List<DailyWorkingReportData> getReports(Long employeeContractId, LocalDate startDay, int days) {
-        return IntStream.range(0, days)
-                .mapToObj(day -> DateUtils.addDays(startDay, day))
-                .map(day -> getReport(employeeContractId, day))
+    private List<DailyWorkingReportData> getReports(Map<LocalDate, Long> contractIdsByDay) {
+        return contractIdsByDay.entrySet().stream()
+                .map(entry -> getReport(entry.getValue(), entry.getKey()))
                 .filter(Objects::nonNull)
                 .toList();
     }
