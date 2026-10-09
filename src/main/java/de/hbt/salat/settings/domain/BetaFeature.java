@@ -20,6 +20,8 @@ import java.util.Optional;
  * two texts ({@link #labelKey()}, {@link #helpKey()}) and a named getter in {@code BetaViewHelper};
  * the settings page shows its switch section only while there is a constant. The last beta was the
  * time and duration input of #830 ({@code TIME_INPUT}), made the default with #1248.
+ *
+ * <p>How a beta is introduced, promoted on its page and ended: {@code docs/beta-funktionen.md}.
  */
 public enum BetaFeature {
   ;
