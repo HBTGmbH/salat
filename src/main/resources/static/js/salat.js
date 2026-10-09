@@ -84,6 +84,47 @@ document.addEventListener('click', event => {
   }).catch(() => {});
 });
 
+/* The hint promoting a beta on its page (#1442, beta/hint.html): rendered hidden, shown unless it was
+ * dismissed on this device. "Später" and closing dismiss it for good - in localStorage, not in the
+ * preferences, since it is a nudge for the duration of the beta. */
+function betaHintStorageKey(hint) {
+  return `salat-beta-${hint.dataset.betaHint}-hint`;
+}
+
+document.querySelectorAll('[data-beta-hint]').forEach(hint => {
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem(betaHintStorageKey(hint)) === 'dismissed';
+  } catch (e) {
+    // private mode: the hint shows, it only cannot be dismissed for good
+  }
+  if (!dismissed) hint.hidden = false;
+});
+
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-beta-hint-dismiss]');
+  const hint = button?.closest('[data-beta-hint]');
+  if (!hint) return;
+  hint.hidden = true;
+  try {
+    localStorage.setItem(betaHintStorageKey(hint), 'dismissed');
+  } catch (e) {
+    // private mode: gone until the next page load
+  }
+});
+
+/* Settings that apply only within a beta stand under its switch in a fieldset
+ * data-beta-settings="<key>" (#1442): shown and sent only while the switch is on, so that switching
+ * the beta off neither shows nor stores them. */
+document.addEventListener('change', event => {
+  const input = event.target;
+  if (!input.matches?.('input[type="checkbox"][name="betaFeatures"]')) return;
+  document.querySelectorAll(`fieldset[data-beta-settings="${CSS.escape(input.value)}"]`).forEach(fieldset => {
+    fieldset.hidden = !input.checked;
+    fieldset.disabled = !input.checked;
+  });
+});
+
 /* The settings moved from the header into the user menu (#1231). A dot on the trigger and "Neu" on
  * the entry point there until the menu has been opened once; then both stay away. The dot goes on
  * opening, the badge only when the menu closes again, so that it is seen once. Both are taken out

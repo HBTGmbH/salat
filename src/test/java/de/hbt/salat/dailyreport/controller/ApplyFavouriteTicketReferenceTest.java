@@ -1,10 +1,13 @@
 package de.hbt.salat.dailyreport.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,17 +26,23 @@ import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
+import de.hbt.salat.common.beta.Betas;
+import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.DailyViewData;
+import de.hbt.salat.dailyreport.domain.FavoriteShortList;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
+import de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor;
 import de.hbt.salat.dailyreport.service.DailyService;
+import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.favorites.domain.FavoriteEntry;
-import de.hbt.salat.favorites.domain.RecentFavorites;
 import de.hbt.salat.favorites.service.FavoriteService;
 
 /**
@@ -63,9 +72,15 @@ class ApplyFavouriteTicketReferenceTest {
   @Mock
   private FavoriteService favoriteService;
   @Mock
+  private FavoriteShortListService favoriteShortListService;
+  @Mock
+  private Betas betas;
+  @Mock
   private EmployeecontractService employeecontractService;
   @Mock
   private DailyPreferenceService dailyPreferenceService;
+  @Mock
+  private ErrorCodeViewHelper errorCodeViewHelper;
 
   /** Everything the handler renders afterwards; none of it is what this test is about. */
   @BeforeEach
@@ -76,7 +91,7 @@ class ApplyFavouriteTicketReferenceTest {
     var employee = mock(Employee.class);
     when(employee.getId()).thenReturn(1L);
     when(employeeService.getLoginEmployee()).thenReturn(employee);
-    when(favoriteService.getRecentFavorites()).thenReturn(new RecentFavorites(List.of(), 0));
+    when(favoriteShortListService.getForCurrentUser()).thenReturn(FavoriteShortList.none());
   }
 
   @Test
@@ -108,6 +123,28 @@ class ApplyFavouriteTicketReferenceTest {
     applyIt();
 
     verify(favoriteService).markUsed(FAVOURITE_ID);
+  }
+
+  /** The use the beta "Favoriten zuerst" is measured by (#1442), with it on and off alike. */
+  @Test
+  void applying_counts_for_the_beta_favourites_first() {
+    givenFavourite(favourite());
+
+    applyIt();
+
+    verify(betas).count(DailyReportBetaFeatureContributor.FAVORITES_FIRST, "favorite-applied");
+  }
+
+  @Test
+  void a_refused_booking_is_not_counted() {
+    givenFavourite(favourite());
+    when(errorCodeViewHelper.toViewMessages(any())).thenReturn(List.of());
+    doThrow(new BusinessRuleException(ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE)).when(timereportService)
+        .createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), anyLong(), anyLong(), anyInt());
+
+    applyIt();
+
+    verify(betas, never()).count(any(), any());
   }
 
   private void givenFavourite(FavoriteEntry favourite) {

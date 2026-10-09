@@ -36,7 +36,7 @@ class FavoriteDialogE2ETest extends PlaywrightE2ETestBase {
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + DAY, EMPLOYEE));
       assertThat(bookingsWithComment(page)).hasCount(1);
 
-      page.locator("#daily-favourites-panel .card-actions a").click();
+      page.locator("#daily-favourites-panel a[href='#favoritesDialog']").click();
       Locator search = page.locator("#favoritesSearch");
       assertThat(search).isFocused();
 

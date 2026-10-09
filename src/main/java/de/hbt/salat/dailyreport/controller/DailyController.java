@@ -31,14 +31,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.beta.Betas;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.dailyreport.domain.FavoriteShortList;
 import de.hbt.salat.dailyreport.domain.PreviousBooking;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
+import de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor;
 import de.hbt.salat.dailyreport.service.DailyService;
+import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.MatrixService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
@@ -68,6 +72,8 @@ public class DailyController {
     private final EmployeeService employeeService;
     private final AuthorizedEmployee authorizedEmployee;
     private final FavoriteService favoriteService;
+    private final FavoriteShortListService favoriteShortListService;
+    private final Betas betas;
     private final EmployeeorderService employeeorderService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
@@ -428,6 +434,7 @@ public class DailyController {
                 fav.comment(), fav.ticketReferences(), false, fav.hours(), fav.minutes(), 1);
             // only a booking that was created counts as a use (#1414)
             favoriteService.markUsed(favoriteId);
+            betas.count(DailyReportBetaFeatureContributor.FAVORITES_FIRST, DailyBetaEvents.FAVORITE_APPLIED);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
@@ -543,7 +550,7 @@ public class DailyController {
     private void addBookingOffers(Model model, long ecId, LocalDate date) {
         // The favourites are the login's own (#1369). On somebody else's day they would offer the
         // login's bookings, not that person's - shown only on the own day (#1414).
-        model.addAttribute("favorites", isLoginsOwnContract(ecId) ? buildFavoriteViews(model) : List.of());
+        model.addAttribute("favoriteSections", isLoginsOwnContract(ecId) ? buildFavoriteSections(model) : List.of());
         model.addAttribute("previousBookings", buildPreviousBookingViews(ecId, date));
     }
 
@@ -567,13 +574,17 @@ public class DailyController {
     }
 
     /**
-     * The short list of favourites (#1414): the ones used last, as many as the person chose, without
-     * groups. All of them are in the dialog "Favoriten", whose link names how many there are.
+     * The favourites of card and dropdown (#1414, #1443), in sections with or without a heading
+     * ({@link FavoriteShortList}). All of them are in the dialog "Favoriten", whose link names how
+     * many there are.
      */
-    private List<FavoriteView> buildFavoriteViews(Model model) {
-        var recent = favoriteService.getRecentFavorites();
-        model.addAttribute("favoriteCount", recent.total());
-        return recent.favorites().stream().map(DailyController::buildFavoriteView).toList();
+    private List<FavoriteViewSection> buildFavoriteSections(Model model) {
+        var shortList = favoriteShortListService.getForCurrentUser();
+        model.addAttribute("favoriteCount", shortList.total());
+        return shortList.sections().stream()
+            .map(section -> new FavoriteViewSection(section.groupName(),
+                section.favorites().stream().map(DailyController::buildFavoriteView).toList()))
+            .toList();
     }
 
     private static FavoriteView buildFavoriteView(FavoriteEntry f) {

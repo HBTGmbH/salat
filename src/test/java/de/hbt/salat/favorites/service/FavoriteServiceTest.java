@@ -488,14 +488,14 @@ class FavoriteServiceTest {
 
     /** The ones used last, no matter their group or the own order; the count names all of them. */
     @Test
-    void it_holds_the_favourites_used_last_up_to_the_chosen_number() {
-      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom", "listSize", "2"));
+    void it_holds_the_favourites_used_last_up_to_the_given_number() {
+      preferences.put(FavoritePreferences.MODULE_KEY, Map.of("sortOrder", "custom"));
       var maintenance = group(5L, ME, "Wartung", 0);
       givenGroups(maintenance);
       givenFavorites(favorite(1L, null, 0, MONDAY), favorite(2L, maintenance, 0, MONDAY.plusDays(2)),
           favorite(3L, null, 1, null), favorite(4L, null, 2, MONDAY.plusDays(1)));
 
-      var recent = favoriteService.getRecentFavorites();
+      var recent = favoriteService.getRecentFavorites(2);
 
       assertThat(recent.favorites()).extracting(FavoriteEntry::id).containsExactly(2L, 4L);
       assertThat(recent.total()).isEqualTo(4);
@@ -505,7 +505,7 @@ class FavoriteServiceTest {
     void with_fewer_favourites_than_the_number_it_holds_them_all() {
       givenFavorites(favorite(1L, null, null, MONDAY), favorite(2L, null, null, null));
 
-      var recent = favoriteService.getRecentFavorites();
+      var recent = favoriteService.getRecentFavorites(10);
 
       assertThat(recent.favorites()).extracting(FavoriteEntry::id).containsExactly(1L, 2L);
       assertThat(recent.total()).isEqualTo(2);

@@ -101,14 +101,16 @@ public class FavoriteService {
 
   /**
    * The short list of the booking pages (#1414): the favourites of the logged-in person used last,
-   * at most as many as they chose, without regard to groups — and how many there are in all.
+   * at most {@code limit}, without regard to groups — and how many there are in all. How many the
+   * caller decides: the size the person chose ({@link #getListSize()}) applies only within the
+   * beta of the daily view (#1442).
    */
   @Transactional(readOnly = true)
-  public RecentFavorites getRecentFavorites() {
+  public RecentFavorites getRecentFavorites(int limit) {
     var favorites = favoriteRepository.findAllByEmployeeId(ownEmployeeId());
     return new RecentFavorites(favorites.stream()
         .sorted(RECENTLY_USED_FIRST)
-        .limit(preferences().listSize())
+        .limit(limit)
         .map(FavoriteService::entryOf)
         .toList(), favorites.size());
   }
@@ -217,7 +219,11 @@ public class FavoriteService {
     savePreferences(preferences().withSortOrder(sortOrder));
   }
 
-  /** How many favourites the short lists show (#1414); {@link FavoritePreferences#DEFAULT_LIST_SIZE} until chosen. */
+  /**
+   * How many favourites the short list ordered by use shows, as the person chose (#1414);
+   * {@link FavoritePreferences#DEFAULT_LIST_SIZE} until chosen. Since #1442 a setting of the beta of
+   * the daily view, which decides whether it applies.
+   */
   @Transactional(readOnly = true)
   public int getListSize() {
     return preferences().listSize();

@@ -11,7 +11,6 @@ import static de.hbt.salat.dailyreport.controller.DailyController.reviewReturnUr
 import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -31,18 +30,20 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
+import de.hbt.salat.common.beta.Betas;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.DailyViewData;
+import de.hbt.salat.dailyreport.domain.FavoriteShortList;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
 import de.hbt.salat.dailyreport.service.DailyService;
+import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.MatrixService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
-import de.hbt.salat.favorites.domain.RecentFavorites;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.EmployeeorderService;
 
@@ -70,6 +71,8 @@ class DailyViewReturnTest {
   @Mock private EmployeecontractService employeecontractService;
   @Mock private EmployeeService employeeService;
   @Mock private FavoriteService favoriteService;
+  @Mock private FavoriteShortListService favoriteShortListService;
+  @Mock private Betas betas;
   @Mock private EmployeeorderService employeeorderService;
   @Mock private MessageSourceAccessor messages;
   @Mock private ErrorCodeViewHelper errorCodeViewHelper;
@@ -84,7 +87,7 @@ class DailyViewReturnTest {
     when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
     when(employeecontractService.getCurrentContract(1L)).thenReturn(Optional.empty());
     when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
-    when(favoriteService.getRecentFavorites()).thenReturn(new RecentFavorites(List.of(), 0));
+    when(favoriteShortListService.getForCurrentUser()).thenReturn(FavoriteShortList.none());
   }
 
   @ParameterizedTest
