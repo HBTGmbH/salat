@@ -44,6 +44,7 @@ class JiraCredentialStoreTest {
   void setUp() {
     store = new JiraCredentialStore(secretService, oauthService);
     when(oauthService.isAvailable()).thenReturn(true);
+    when(secretService.isAvailable()).thenReturn(true);
     config = new JiraReplicationConfig();
     config.setBaseUrl("https://Example.atlassian.net/");
     config.setApiFlavor(JiraApiFlavor.CLOUD);
@@ -82,6 +83,24 @@ class JiraCredentialStoreTest {
     config.setSecretId(null);
 
     assertRejected(() -> store.credentialsOf(config), ErrorCode.JI_REPLICATION_OAUTH_NOT_CONNECTED);
+  }
+
+  /** The key is there, the registration at Atlassian is not: that is what the message has to say. */
+  @Test
+  void without_a_registration_the_replication_says_that_oauth_is_not_set_up() {
+    config.setSecretId(null);
+    when(oauthService.isAvailable()).thenReturn(false);
+
+    assertRejected(() -> store.credentialsOf(config), ErrorCode.JI_REPLICATION_OAUTH_NOT_CONFIGURED);
+  }
+
+  @Test
+  void without_a_key_the_replication_says_that_the_key_is_missing() {
+    config.setSecretId(null);
+    when(oauthService.isAvailable()).thenReturn(false);
+    when(secretService.isAvailable()).thenReturn(false);
+
+    assertRejected(() -> store.credentialsOf(config), ErrorCode.SC_NO_KEY);
   }
 
   @Test

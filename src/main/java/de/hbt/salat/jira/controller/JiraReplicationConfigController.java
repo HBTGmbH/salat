@@ -417,9 +417,30 @@ public class JiraReplicationConfigController {
   private void addCredentialsModel(Model model, boolean credentialsReadable, JiraReplicationConfigInfo stored) {
     model.addAttribute("credentialsStorable", jiraReplicationConfigService.canStoreCredentials());
     model.addAttribute("credentialsReadable", credentialsReadable);
-    model.addAttribute("oauthAvailable", jiraReplicationConfigService.canConnectOAuth());
+    var oauthAvailable = jiraReplicationConfigService.canConnectOAuth();
+    model.addAttribute("oauthAvailable", oauthAvailable);
     model.addAttribute("storedAuthMethod", stored != null ? stored.authMethod() : null);
     model.addAttribute("oauthConnection", stored != null ? stored.oauthConnection() : null);
+    model.addAttribute("fieldsBlockedReason", fieldsBlockedReason(stored, oauthAvailable));
+  }
+
+  /**
+   * Why the field catalogue is not offered for a stored replication, as a message key — {@code null}
+   * when it is (#1417). Only OAuth has a reason of its own: without the setup, a connection or with
+   * an expired one there is nothing to fetch the fields with, and the button would only lead to an
+   * error message.
+   */
+  static String fieldsBlockedReason(JiraReplicationConfigInfo stored, boolean oauthAvailable) {
+    if (stored == null || stored.authMethod() != JiraAuthMethod.OAUTH) {
+      return null;
+    }
+    if (!oauthAvailable) {
+      return "main.jira.replication.oauth.unavailable";
+    }
+    if (stored.oauthConnection() == null) {
+      return "main.jira.replication.fields.button.disabled.notconnected";
+    }
+    return stored.oauthConnection().reauthRequired() ? "main.jira.replication.oauth.expired" : null;
   }
 
   private void addFormModel(Model model, JiraReplicationConfigForm form) {
