@@ -9,7 +9,6 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -21,7 +20,6 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import de.hbt.salat.common.SalatProperties.Jira.OAuth;
 import de.hbt.salat.common.test.FixedClock;
-import de.hbt.salat.common.util.ClockProvider;
 import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.TokenRequestException;
 
 /** The token endpoint as Atlassian runs it (#1417): JSON in, JSON out, {@code 403} for a used-up refresh token. */
@@ -61,7 +59,6 @@ class JiraOAuthTokenClientTest {
 
     assertThat(tokens.accessToken()).isEqualTo("access-1");
     assertThat(tokens.refreshToken()).isEqualTo("refresh-1");
-    assertThat(tokens.expiresAt()).isEqualTo(Instant.now(ClockProvider.getClock()).plusSeconds(3600));
     assertThat(tokens.scopes()).containsExactlyInAnyOrder("read:jira-work", "offline_access");
     provider.verify();
   }
@@ -120,7 +117,7 @@ class JiraOAuthTokenClientTest {
 
   @Test
   void nothing_of_a_token_appears_in_the_string_forms() {
-    var tokens = new JiraOAuthTokenClient.Tokens("access-1", Instant.EPOCH, "refresh-1", java.util.Set.of());
+    var tokens = new JiraOAuthTokenClient.Tokens("access-1", "refresh-1", java.util.Set.of());
     var request = new JiraOAuthTokenClient.TokenRequest("refresh_token", "client", "client-secret", null, null, null,
         "refresh-1");
 

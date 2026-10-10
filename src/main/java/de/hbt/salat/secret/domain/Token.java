@@ -1,6 +1,6 @@
 package de.hbt.salat.secret.domain;
 
-/** A single token, a Personal Access Token for instance (#1432). */
+/** A single token: a Personal Access Token (#1432), or the refresh token of an OAuth connection (#1417). */
 public record Token(String token) implements SecretValue {
 
   @Override

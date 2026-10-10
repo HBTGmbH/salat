@@ -10,10 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
+import de.hbt.salat.jira.domain.JiraOAuthConnection;
 import de.hbt.salat.jira.domain.JiraOAuthConnectionInfo;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.oauth.JiraOAuthService;
-import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.domain.SecretType;
 import de.hbt.salat.secret.domain.SecretValue;
@@ -27,9 +27,9 @@ import de.hbt.salat.secret.service.SecretService;
  * from here, and the replication remembers nothing but the id of its secret.
  *
  * <p>With HTTP Basic the user name is part of the secret — on Cloud it is the e-mail address of the
- * account, and useless without the token. A Personal Access Token is a secret of its own type, and so
- * is an OAuth connection (#1417): its tokens are renewed by {@link JiraOAuthService} whenever a
- * client asks for them.
+ * account, and useless without the token. A Personal Access Token is a secret of its own type. With
+ * OAuth (#1417) the secret is the refresh token, a token as well; every client gets a fresh access
+ * token from {@link JiraOAuthService}, and the account and site stand with the replication.
  */
 @Component
 @RequiredArgsConstructor
@@ -76,25 +76,27 @@ class JiraCredentialStore {
   }
 
   /**
-   * A valid access token, renewed if need be, and the API address of the site it was granted for.
+   * A fresh access token, and the API address of the site the connection was made for.
    * The base URL has to name that site still: changed afterwards, the replication would read another
    * site with the permission granted for this one, or fail with a message nobody understands.
    */
   private JiraCredentials oauthCredentialsOf(JiraReplicationConfig config) {
-    if (config.getSecretId() == null) {
+    var connection = config.getOauthConnection();
+    if (config.getSecretId() == null || connection == null) {
       throw new BusinessRuleException(canConnect() ? JI_REPLICATION_OAUTH_NOT_CONNECTED : SC_NO_KEY);
     }
-    var tokens = oauthService.currentTokens(config.getSecretId());
-    var connection = tokens.connection();
-    if (!isSameSite(config.getBaseUrl(), connection.resourceUrl())) {
-      throw new BusinessRuleException(JI_REPLICATION_OAUTH_SITE_CHANGED, connection.resourceUrl());
+    if (!isSameSite(config.getBaseUrl(), connection.siteUrl())) {
+      throw new BusinessRuleException(JI_REPLICATION_OAUTH_SITE_CHANGED, connection.siteUrl());
     }
-    return JiraCredentials.oauth(tokens.accessToken(), connection.resourceId(), connection.grants(WRITE_SCOPE));
+    var accessToken = oauthService.accessToken(config.getSecretId());
+    return JiraCredentials.oauth(accessToken, connection.cloudId(), connection.grants(WRITE_SCOPE));
   }
 
   /**
    * What the form shows of the stored credentials: the user name, and whether they can be read at
-   * all. A replication without a secret shows no user name. With OAuth the connection instead.
+   * all. A replication without a secret shows no user name. With OAuth the connection instead, read
+   * from the replication; it has to be established again when Atlassian refused to renew the tokens
+   * or they cannot be read here — in a copy of the database from another environment.
    */
   StoredCredentials describe(JiraReplicationConfig config) {
     if (config.getSecretId() == null) {
@@ -102,29 +104,34 @@ class JiraCredentialStore {
     }
     var summary = secretService.getSummary(config.getSecretId());
     var fits = summary.type() == secretTypeOf(config.getAuthMethod());
-    var connection = fits && summary.connection() != null
-        ? JiraOAuthConnectionInfo.of(summary.connection(), summary.status() == SecretStatus.REAUTH_REQUIRED,
-            isSameSite(config.getBaseUrl(), summary.connection().resourceUrl()), WRITE_SCOPE)
+    var connection = config.getOauthConnection();
+    var info = fits && connection != null
+        ? JiraOAuthConnectionInfo.of(connection,
+            summary.status() == SecretStatus.REAUTH_REQUIRED || !summary.readable(),
+            isSameSite(config.getBaseUrl(), connection.siteUrl()), WRITE_SCOPE)
         : null;
-    return new StoredCredentials(summary.username(), summary.readable() && fits, connection);
+    return new StoredCredentials(summary.username(), summary.readable() && fits, info);
   }
 
   /**
-   * Stores the tokens of a new connection: replaces the secret — tokens, password or token alike —
-   * or creates it when the replication has none yet (ADR-0038 §6).
+   * Stores a new connection: the refresh token replaces the secret — a refresh token, password or
+   * token alike — or creates it when the replication has none yet (ADR-0038 §6); what the connection
+   * is goes to the replication.
    */
-  void connect(JiraReplicationConfig config, OAuthTokens tokens) {
+  void connect(JiraReplicationConfig config, String refreshToken, JiraOAuthConnection connection) {
     if (config.getSecretId() == null) {
-      config.setSecretId(secretService.create(tokens));
+      config.setSecretId(secretService.create(new Token(refreshToken)));
     } else {
-      secretService.replace(config.getSecretId(), tokens);
+      secretService.replace(config.getSecretId(), new Token(refreshToken));
     }
+    config.setOauthConnection(connection);
   }
 
-  /** Deletes the secret and forgets it, in the same transaction (ADR-0038 §6). */
+  /** Deletes the secret and forgets it and the connection, in the same transaction (ADR-0038 §6). */
   void disconnect(JiraReplicationConfig config) {
     delete(config);
     config.setSecretId(null);
+    config.setOauthConnection(null);
   }
 
   /** A trailing slash and the case of the host say nothing about which site is meant. */
@@ -173,7 +180,8 @@ class JiraCredentialStore {
     return switch (method) {
       case BASIC -> SecretType.USERNAME_PASSWORD;
       case PERSONAL_ACCESS_TOKEN -> SecretType.TOKEN;
-      case OAUTH -> SecretType.OAUTH;
+      // The refresh token of the connection (#1417); the access token is never stored.
+      case OAUTH -> SecretType.TOKEN;
     };
   }
 

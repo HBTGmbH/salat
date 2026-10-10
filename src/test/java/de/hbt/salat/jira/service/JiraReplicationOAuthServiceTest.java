@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -35,11 +34,12 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
+import de.hbt.salat.jira.domain.JiraOAuthConnection;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.oauth.JiraOAuthGrant;
 import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
-import de.hbt.salat.secret.domain.OAuthTokens;
+import de.hbt.salat.secret.domain.Token;
 import de.hbt.salat.secret.service.SecretService;
 
 /**
@@ -87,8 +87,7 @@ class JiraReplicationOAuthServiceTest {
     config.setWorklogSyncEnabled(false);
     when(configRepository.findById(ID)).thenReturn(Optional.of(config));
     when(oauthService.complete(any(), any(), any(), any())).thenReturn(
-        new JiraOAuthGrant("atlassian", "access-1", Instant.parse("2026-06-25T09:15:30Z"), "refresh-1",
-            Set.of("read:jira-work", "read:me", "offline_access")));
+        new JiraOAuthGrant("access-1", "refresh-1", Set.of("read:jira-work", "read:me", "offline_access")));
     when(accountClient.me("access-1")).thenReturn(new AtlassianAccountClient.Account("account-1", "Person A", null));
     when(secretService.create(any())).thenReturn(500L);
   }
@@ -144,27 +143,37 @@ class JiraReplicationOAuthServiceTest {
     assertRejected(() -> classUnderTest.replicationOf("cookie", "state"), ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
   }
 
+  /** The refresh token is the secret; account and site are none and stand with the replication. */
   @Test
-  void connecting_stores_the_tokens_with_account_site_and_who_connected() {
+  void connecting_stores_the_refresh_token_as_secret_and_the_connection_with_the_replication() {
     when(accountClient.accessibleSites("access-1")).thenReturn(List.of(
         new AtlassianAccountClient.Site("cloud-other", "Other", "https://other.atlassian.net", List.of("read:jira-work")),
         new AtlassianAccountClient.Site("cloud-1", "Example", SITE, List.of("read:jira-work", "read:me"))));
 
     classUnderTest.completeConnection(ID, "cookie", "state", "code", null);
 
-    var stored = ArgumentCaptor.forClass(OAuthTokens.class);
-    verify(secretService).create(stored.capture());
-    var connection = stored.getValue().connection();
-    assertThat(stored.getValue().refreshToken()).isEqualTo("refresh-1");
-    assertThat(connection.provider()).isEqualTo("atlassian");
+    verify(secretService).create(new Token("refresh-1"));
+    assertThat(config.getSecretId()).isEqualTo(500L);
+    var connection = config.getOauthConnection();
     assertThat(connection.accountId()).isEqualTo("account-1");
     assertThat(connection.accountName()).isEqualTo("Person A");
-    assertThat(connection.resourceId()).isEqualTo("cloud-1");
-    assertThat(connection.resourceUrl()).isEqualTo(SITE);
+    assertThat(connection.cloudId()).isEqualTo("cloud-1");
+    assertThat(connection.siteUrl()).isEqualTo(SITE);
+    assertThat(connection.scopes()).containsExactlyInAnyOrder("read:jira-work", "read:me", "offline_access");
     assertThat(connection.connectedBy()).isEqualTo("mgr");
     assertThat(connection.connectedAt()).isNotNull();
-    assertThat(config.getSecretId()).isEqualTo(500L);
     verify(configRepository).save(config);
+  }
+
+  @Test
+  void a_grant_without_a_refresh_token_stores_nothing() {
+    when(oauthService.complete(any(), any(), any(), any()))
+        .thenReturn(new JiraOAuthGrant("access-1", null, Set.of("read:jira-work")));
+
+    assertRejected(() -> classUnderTest.completeConnection(ID, "cookie", "state", "code", null),
+        ErrorCode.JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED);
+    verify(secretService, never()).create(any());
+    assertThat(config.getOauthConnection()).isNull();
   }
 
   @Test
@@ -175,7 +184,7 @@ class JiraReplicationOAuthServiceTest {
 
     classUnderTest.completeConnection(ID, "cookie", "state", "code", null);
 
-    verify(secretService).replace(eq(500L), any(OAuthTokens.class));
+    verify(secretService).replace(500L, new Token("refresh-1"));
     verify(secretService, never()).create(any());
   }
 
@@ -189,16 +198,19 @@ class JiraReplicationOAuthServiceTest {
     verify(secretService, never()).create(any());
     verify(secretService, never()).replace(anyLong(), any());
     assertThat(config.getSecretId()).isNull();
+    assertThat(config.getOauthConnection()).isNull();
   }
 
   @Test
-  void disconnecting_deletes_the_tokens_and_forgets_them() {
+  void disconnecting_deletes_the_token_and_forgets_the_connection() {
     config.setSecretId(500L);
+    config.setOauthConnection(new JiraOAuthConnection("account-1", "Person A", "cloud-1", SITE, Set.of(), "mgr", null));
 
     classUnderTest.disconnect(ID);
 
     verify(secretService).delete(500L);
     assertThat(config.getSecretId()).isNull();
+    assertThat(config.getOauthConnection()).isNull();
     verify(configRepository).save(config);
   }
 

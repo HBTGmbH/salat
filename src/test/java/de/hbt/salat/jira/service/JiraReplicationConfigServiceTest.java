@@ -14,7 +14,6 @@ import static org.mockito.Mockito.when;
 import static de.hbt.salat.jira.OrderTree.customerorderWithId;
 import static de.hbt.salat.jira.OrderTree.suborderWithId;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -44,6 +43,7 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldOption;
+import de.hbt.salat.jira.domain.JiraOAuthConnection;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.oauth.JiraOAuthService;
@@ -53,8 +53,6 @@ import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
-import de.hbt.salat.secret.domain.OAuthConnection;
-import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.domain.SecretSummary;
 import de.hbt.salat.secret.domain.SecretValue;
@@ -418,6 +416,7 @@ class JiraReplicationConfigServiceTest {
 
     assertThat(saved().getSecretId()).isEqualTo(STORED_SECRET_ID);
     assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user@example.com", "api"));
+    assertThat(saved().getOauthConnection()).isNull();
   }
 
   @Test
@@ -427,7 +426,8 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.update(ID, withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.OAUTH, null, null));
 
     assertThat(saved().getSecretId()).isEqualTo(STORED_SECRET_ID);
-    assertThat(secretOf(saved())).isInstanceOf(OAuthTokens.class);
+    assertThat(secretOf(saved())).isEqualTo(new Token("refresh-token"));
+    assertThat(saved().getOauthConnection()).isNotNull();
     verify(secretService, never()).delete(anyLong());
     verify(secretService, never()).replace(anyLong(), any());
   }
@@ -442,7 +442,7 @@ class JiraReplicationConfigServiceTest {
     assertThat(info.oauthConnection().siteHost()).isEqualTo("jira.example.com");
     assertThat(info.oauthConnection().siteMatches()).isTrue();
     assertThat(info.oauthConnection().writeGranted()).isFalse();
-    assertThat(info.toString()).doesNotContain("access-token").doesNotContain("refresh-token");
+    assertThat(info.toString()).doesNotContain("refresh-token");
   }
 
   /** A config without a choice keeps HTTP Basic, the method every config used before #1385. */
@@ -1082,9 +1082,9 @@ class JiraReplicationConfigServiceTest {
     var config = existingConfig();
     config.setApiFlavor(JiraApiFlavor.CLOUD);
     config.setAuthMethod(JiraAuthMethod.OAUTH);
-    secrets.put(STORED_SECRET_ID, new OAuthTokens("access-token", Instant.parse("2026-06-25T11:00:00Z"),
-        "refresh-token", new OAuthConnection("atlassian", "account-1", "Person A", "cloud-1",
-            "https://jira.example.com", Set.of("read:jira-work"), "mgr", LocalDateTime.of(2026, 6, 1, 9, 0))));
+    secrets.put(STORED_SECRET_ID, new Token("refresh-token"));
+    config.setOauthConnection(new JiraOAuthConnection("account-1", "Person A", "cloud-1", "https://jira.example.com",
+        Set.of("read:jira-work"), "mgr", LocalDateTime.of(2026, 6, 1, 9, 0)));
     return config;
   }
 
@@ -1172,8 +1172,7 @@ class JiraReplicationConfigServiceTest {
       var value = secrets.get(id);
       var readable = !unreadable.containsKey(id);
       var username = readable && value instanceof UsernamePassword usernamePassword ? usernamePassword.username() : null;
-      var connection = readable && value instanceof OAuthTokens tokens ? tokens.connection() : null;
-      return new SecretSummary(id, value.type(), SecretStatus.VALID, readable, username, connection);
+      return new SecretSummary(id, value.type(), SecretStatus.VALID, readable, username);
     });
   }
 

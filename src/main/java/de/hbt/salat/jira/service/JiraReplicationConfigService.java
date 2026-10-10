@@ -168,12 +168,17 @@ public class JiraReplicationConfigService {
         log.info("JIRA replication {} switched to OAuth by {}, the stored credentials are deleted",
             config.getName(), authorizedUser.getLoginSign());
       }
-    } else if (!isBlank(data.password())) {
-      credentialStore.store(config, authMethodOf(data), usernameOf(data), data.password().trim());
-    } else if (authMethodOf(data) == JiraAuthMethod.BASIC && !Objects.equals(usernameOf(data), storedUsername)) {
-      // The user name is part of the secret (#1432): a new one is written together with the stored
-      // password, which has to be readable for it.
-      credentialStore.changeUsername(config, usernameOf(data));
+    } else {
+      // Off OAuth, the account it was connected to means nothing any more (#1417); the tokens go with
+      // the password or token that replaces them.
+      config.setOauthConnection(null);
+      if (!isBlank(data.password())) {
+        credentialStore.store(config, method, usernameOf(data), data.password().trim());
+      } else if (method == JiraAuthMethod.BASIC && !Objects.equals(usernameOf(data), storedUsername)) {
+        // The user name is part of the secret (#1432): a new one is written together with the stored
+        // password, which has to be readable for it.
+        credentialStore.changeUsername(config, usernameOf(data));
+      }
     }
     configRepository.save(config);
   }

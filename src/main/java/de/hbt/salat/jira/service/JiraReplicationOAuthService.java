@@ -27,11 +27,11 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
+import de.hbt.salat.jira.domain.JiraOAuthConnection;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.oauth.JiraOAuthAuthorization;
 import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
-import de.hbt.salat.secret.domain.OAuthConnection;
 
 /**
  * Connects a replication to an Atlassian account via OAuth 2.0 (3LO) (#1417, → ADR-0038): start,
@@ -134,6 +134,12 @@ public class JiraReplicationOAuthService {
   public void completeConnection(long replicationId, String cookieValue, String state, String code, String error) {
     checkManager();
     var grant = oauthService.complete(cookieValue, state, code, error);
+    if (grant.refreshToken() == null) {
+      // Without offline_access there is nothing to get the next access token with.
+      log.info("Connecting JIRA replication {} by {} refused: Atlassian granted no refresh token", replicationId,
+          authorizedUser.getLoginSign());
+      throw new BusinessRuleException(JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED, "no_refresh_token");
+    }
     var config = transaction.execute(tx -> requireOAuth(load(replicationId)));
     AtlassianAccountClient.Site site;
     AtlassianAccountClient.Account account;
@@ -154,12 +160,11 @@ public class JiraReplicationOAuthService {
           replicationId, ex.getClass().getSimpleName());
       throw new BusinessRuleException(JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED, "accessible_resources");
     }
-    var connection = new OAuthConnection(JiraOAuthService.PROVIDER, account.accountId(), account.displayName(), site.id(),
-        site.url(), grant.scopes(), authorizedUser.getLoginSign(), DateTimeUtils.now());
-    var tokens = grant.toTokens(connection);
+    var connection = new JiraOAuthConnection(account.accountId(), account.displayName(), site.id(), site.url(),
+        grant.scopes(), authorizedUser.getLoginSign(), DateTimeUtils.now());
     transaction.executeWithoutResult(tx -> {
       var stored = requireOAuth(load(replicationId));
-      credentialStore.connect(stored, tokens);
+      credentialStore.connect(stored, grant.refreshToken(), connection);
       configRepository.save(stored);
     });
     log.info("JIRA replication {} connected to the Atlassian account {} on {} by {}, scopes {}", replicationId,

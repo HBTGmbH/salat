@@ -224,8 +224,8 @@ public class JiraReplicationService {
     String worklogSyncError = null;
     var syncCredentials = credentials;
     try {
-      // An OAuth access token lives an hour (#1417); after a long search it is fetched again, and
-      // renewed if need be, rather than failing halfway through the worklogs.
+      // An OAuth access token lives an hour (#1417): the worklogs get a fresh one rather than the one
+      // the search started with, which a long search may have used up.
       if (credentials.method() == JiraAuthMethod.OAUTH && TRUE.equals(cfg.getWorklogSyncEnabled())) {
         syncCredentials = credentialStore.credentialsOf(cfg);
       }
