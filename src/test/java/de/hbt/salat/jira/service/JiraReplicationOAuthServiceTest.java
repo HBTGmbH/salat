@@ -141,7 +141,7 @@ class JiraReplicationOAuthServiceTest {
   void a_callback_for_another_owner_is_rejected() {
     when(oauthService.ownerOf("atlassian", "cookie", "state")).thenReturn("person:7");
 
-    assertRejected(() -> classUnderTest.replicationOf("cookie", "state"), ErrorCode.SE_OAUTH_STATE_INVALID);
+    assertRejected(() -> classUnderTest.replicationOf("cookie", "state"), ErrorCode.SC_OAUTH_STATE_INVALID);
   }
 
   @Test

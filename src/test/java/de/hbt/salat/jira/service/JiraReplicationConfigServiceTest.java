@@ -197,7 +197,7 @@ class JiraReplicationConfigServiceTest {
     assertThatThrownBy(() -> classUnderTest.create(data("pw")))
         .isInstanceOf(BusinessRuleException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
-        .isEqualTo(ErrorCode.SE_NO_KEY);
+        .isEqualTo(ErrorCode.SC_NO_KEY);
     verify(secretService, never()).create(any());
     verify(configRepository, never()).save(any());
   }
@@ -221,7 +221,7 @@ class JiraReplicationConfigServiceTest {
         withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "other-user", null)))
         .isInstanceOf(BusinessRuleException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
-        .isEqualTo(ErrorCode.SE_SECRET_UNREADABLE);
+        .isEqualTo(ErrorCode.SC_SECRET_UNREADABLE);
     verify(secretService, never()).replace(anyLong(), any());
   }
 
@@ -1045,7 +1045,7 @@ class JiraReplicationConfigServiceTest {
     assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID))
         .isInstanceOf(BusinessRuleException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
-        .isEqualTo(ErrorCode.SE_SECRET_UNREADABLE);
+        .isEqualTo(ErrorCode.SC_SECRET_UNREADABLE);
     verifyNoInteractions(jiraSearchClients);
   }
 
@@ -1163,7 +1163,7 @@ class JiraReplicationConfigServiceTest {
     when(secretService.read(anyLong())).thenAnswer(invocation -> {
       long id = invocation.getArgument(0);
       if (unreadable.containsKey(id)) {
-        throw new BusinessRuleException(ErrorCode.SE_SECRET_UNREADABLE);
+        throw new BusinessRuleException(ErrorCode.SC_SECRET_UNREADABLE);
       }
       return secrets.get(id);
     });

@@ -15,7 +15,7 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SCOPE_REQUI
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_TOKEN_NEEDS_SERVER;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP;
-import static de.hbt.salat.common.exception.ErrorCode.SE_NO_KEY;
+import static de.hbt.salat.common.exception.ErrorCode.SC_NO_KEY;
 
 import static java.util.Comparator.comparing;
 
@@ -131,7 +131,7 @@ public class JiraReplicationConfigService {
     var typedSecret = authMethodOf(data).hasTypedSecret();
     if (typedSecret && !credentialStore.canStore()) {
       // Never in plain text instead (#1432): without a key a replication cannot keep its password.
-      throw new BusinessRuleException(SE_NO_KEY);
+      throw new BusinessRuleException(SC_NO_KEY);
     }
     var scopeSign = validate(null, data);
     if (typedSecret && isBlank(data.password())) {

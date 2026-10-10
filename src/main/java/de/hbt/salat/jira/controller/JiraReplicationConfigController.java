@@ -4,11 +4,11 @@ package de.hbt.salat.jira.controller;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_SELECTED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE;
-import static de.hbt.salat.common.exception.ErrorCode.SE_NO_KEY;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_DENIED;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_NOT_CONFIGURED;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_STATE_INVALID;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_TOKEN_REQUEST_FAILED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_NO_KEY;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_DENIED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_NOT_CONFIGURED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_STATE_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,7 +76,7 @@ public class JiraReplicationConfigController {
 
   /** The codes a callback can end with, by their code, as the address carries them (#1417). */
   private static final Map<String, ErrorCode> OAUTH_FAILURES = Stream.of(
-          SE_NO_KEY, SE_OAUTH_NOT_CONFIGURED, SE_OAUTH_STATE_INVALID, SE_OAUTH_DENIED, SE_OAUTH_TOKEN_REQUEST_FAILED,
+          SC_NO_KEY, SC_OAUTH_NOT_CONFIGURED, SC_OAUTH_STATE_INVALID, SC_OAUTH_DENIED, SC_OAUTH_TOKEN_REQUEST_FAILED,
           JI_REPLICATION_NOT_FOUND, JI_REPLICATION_OAUTH_NOT_SELECTED, JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE,
           XX_CONCURRENT_MODIFICATION)
       .collect(Collectors.toUnmodifiableMap(ErrorCode::getCode, Function.identity()));
@@ -368,8 +368,8 @@ public class JiraReplicationConfigController {
   private static String withOAuthOutcome(String path, ErrorCodeException ex) {
     var message = ex.getMessages().stream().findFirst().orElse(null);
     var url = UriComponentsBuilder.fromPath(path)
-        .queryParam("oauth", message != null ? message.getErrorCode().getCode() : SE_OAUTH_STATE_INVALID.getCode());
-    if (message != null && message.getErrorCode() == SE_OAUTH_TOKEN_REQUEST_FAILED && !message.getArguments().isEmpty()) {
+        .queryParam("oauth", message != null ? message.getErrorCode().getCode() : SC_OAUTH_STATE_INVALID.getCode());
+    if (message != null && message.getErrorCode() == SC_OAUTH_TOKEN_REQUEST_FAILED && !message.getArguments().isEmpty()) {
       url.queryParam("oauthDetail", String.valueOf(message.getArguments().getFirst()));
     }
     return url.encode().build().toUriString();
@@ -395,7 +395,7 @@ public class JiraReplicationConfigController {
       return;
     }
     Object argument = switch (failure) {
-      case SE_OAUTH_TOKEN_REQUEST_FAILED -> detail != null && OAUTH_ERROR.matcher(detail).matches() ? detail : "unknown";
+      case SC_OAUTH_TOKEN_REQUEST_FAILED -> detail != null && OAUTH_ERROR.matcher(detail).matches() ? detail : "unknown";
       case JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE -> baseUrl;
       default -> null;
     };
