@@ -138,7 +138,7 @@ class SecretServiceTest {
     assertThatThrownBy(() -> secretService.read(target))
         .isInstanceOf(BusinessRuleException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
-        .isEqualTo(ErrorCode.SE_SECRET_UNREADABLE);
+        .isEqualTo(ErrorCode.SC_SECRET_UNREADABLE);
   }
 
   /** A secret from another environment: a message, not an error page, and the form asks again. */
@@ -152,7 +152,7 @@ class SecretServiceTest {
     assertThatThrownBy(() -> secretService.read(id))
         .isInstanceOf(BusinessRuleException.class)
         .extracting(ex -> firstCode((ErrorCodeException) ex))
-        .isEqualTo(ErrorCode.SE_SECRET_UNREADABLE);
+        .isEqualTo(ErrorCode.SC_SECRET_UNREADABLE);
     assertThat(secretService.getSummary(id).readable()).isFalse();
   }
 

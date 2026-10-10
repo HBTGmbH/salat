@@ -157,7 +157,7 @@ class JiraReplicationServiceTest {
   void aRunWithUnreadableCredentialsIsRecordedWithTheReasonInWords() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(credentialStore.credentialsOf(config)).thenThrow(new BusinessRuleException(ErrorCode.SE_SECRET_UNREADABLE));
+    when(credentialStore.credentialsOf(config)).thenThrow(new BusinessRuleException(ErrorCode.SC_SECRET_UNREADABLE));
 
     assertThrows(BusinessRuleException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
 
@@ -172,7 +172,7 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(credentialStore.credentialsOf(config))
-        .thenThrow(new BusinessRuleException(ErrorCode.SE_OAUTH_REAUTH_REQUIRED));
+        .thenThrow(new BusinessRuleException(ErrorCode.SC_OAUTH_REAUTH_REQUIRED));
 
     assertThrows(BusinessRuleException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
 

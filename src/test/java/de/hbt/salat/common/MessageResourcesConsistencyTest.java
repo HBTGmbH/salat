@@ -125,6 +125,43 @@ class MessageResourcesConsistencyTest {
         .isEmpty();
   }
 
+  /**
+   * Two codes with the same number share one text: {@code Properties} keeps the last of two equal
+   * keys, and the first code shows the message of the second. {@code SE-0001} stood for "user not
+   * found" and for "no key" at once until #1417.
+   */
+  @Test
+  void everyErrorCodeHasANumberOfItsOwn() {
+    var byCode = new TreeMap<String, Set<String>>();
+    for (ErrorCode errorCode : ErrorCode.values()) {
+      byCode.computeIfAbsent(errorCode.getCode(), k -> new TreeSet<>()).add(errorCode.name());
+    }
+    byCode.values().removeIf(names -> names.size() == 1);
+
+    assertThat(byCode).as("codes given to more than one ErrorCode").isEmpty();
+  }
+
+  /** The case above seen from the bundles: a key written twice is a text that silently disappears. */
+  @Test
+  void noBundleDefinesAKeyTwice() throws IOException {
+    for (String bundle : Arrays.asList(GERMAN_BUNDLE, ENGLISH_BUNDLE)) {
+      var seen = new TreeSet<String>();
+      var twice = new TreeSet<String>();
+      try (var reader = new java.io.BufferedReader(new InputStreamReader(
+          MessageResourcesConsistencyTest.class.getResourceAsStream(bundle), UTF_8))) {
+        reader.lines()
+            .filter(line -> !line.isBlank() && !line.startsWith("#") && !line.startsWith("!") && line.contains("="))
+            .map(line -> line.substring(0, line.indexOf('=')).trim())
+            .forEach(key -> {
+              if (!seen.add(key)) {
+                twice.add(key);
+              }
+            });
+      }
+      assertThat(twice).as("keys defined twice in %s", bundle).isEmpty();
+    }
+  }
+
   @Test
   void noBundleContainsAnEmptyValue() throws IOException {
     for (String bundle : Arrays.asList(GERMAN_BUNDLE, ENGLISH_BUNDLE)) {

@@ -3,7 +3,7 @@ package de.hbt.salat.jira.service;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_CONNECTED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_SITE_CHANGED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SECRET_MISSING;
-import static de.hbt.salat.common.exception.ErrorCode.SE_NO_KEY;
+import static de.hbt.salat.common.exception.ErrorCode.SC_NO_KEY;
 
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
@@ -56,9 +56,9 @@ class JiraCredentialStore {
 
   /**
    * @throws BusinessRuleException {@code JI-0042} when no secret is stored or it does not fit the
-   *     sign-in method, {@code SE-0001} without a key, {@code SE-0002} when the secret is unreadable
+   *     sign-in method, {@code SC-0001} without a key, {@code SC-0002} when the secret is unreadable
    *     — each says that the credentials have to be entered again, or why they cannot be. With OAuth
-   *     {@code JI-0044} when it is not connected, {@code SE-0004} when the connection has expired and
+   *     {@code JI-0044} when it is not connected, {@code SC-0004} when the connection has expired and
    *     {@code JI-0046} when it was made for another site than the base URL names.
    */
   JiraCredentials credentialsOf(JiraReplicationConfig config) {
@@ -66,7 +66,7 @@ class JiraCredentialStore {
       return oauthCredentialsOf(config);
     }
     if (config.getSecretId() == null) {
-      throw new BusinessRuleException(canStore() ? JI_REPLICATION_SECRET_MISSING : SE_NO_KEY);
+      throw new BusinessRuleException(canStore() ? JI_REPLICATION_SECRET_MISSING : SC_NO_KEY);
     }
     var value = secretService.read(config.getSecretId());
     if (value instanceof UsernamePassword usernamePassword && config.getAuthMethod() == JiraAuthMethod.BASIC) {
@@ -85,7 +85,7 @@ class JiraCredentialStore {
    */
   private JiraCredentials oauthCredentialsOf(JiraReplicationConfig config) {
     if (config.getSecretId() == null) {
-      throw new BusinessRuleException(canConnect() ? JI_REPLICATION_OAUTH_NOT_CONNECTED : SE_NO_KEY);
+      throw new BusinessRuleException(canConnect() ? JI_REPLICATION_OAUTH_NOT_CONNECTED : SC_NO_KEY);
     }
     var tokens = oauthService.currentTokens(config.getSecretId());
     var connection = tokens.connection();

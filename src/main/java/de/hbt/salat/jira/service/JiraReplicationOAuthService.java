@@ -4,8 +4,8 @@ import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_SELECTED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_STATE_INVALID;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_TOKEN_REQUEST_FAILED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_STATE_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED;
 import static de.hbt.salat.jira.service.JiraCredentialStore.ATLASSIAN;
 import static de.hbt.salat.jira.service.JiraCredentialStore.WRITE_SCOPE;
 
@@ -80,7 +80,7 @@ public class JiraReplicationOAuthService {
    * switched on later, the replication has to be connected again.
    *
    * @throws BusinessRuleException {@code JI-0047} when the stored replication does not sign in with
-   *     OAuth — an unsaved change of the form does not count; {@code SE-0005} without a registration
+   *     OAuth — an unsaved change of the form does not count; {@code SC-0005} without a registration
    */
   @Transactional(readOnly = true)
   public OAuthAuthorization startConnection(long replicationId) {
@@ -105,19 +105,19 @@ public class JiraReplicationOAuthService {
   /**
    * The replication a callback is for, from the cookie of the attempt.
    *
-   * @throws BusinessRuleException {@code SE-0006} when the callback belongs to no attempt of this
+   * @throws BusinessRuleException {@code SC-0006} when the callback belongs to no attempt of this
    *     person in this browser, or to something other than a replication
    */
   public long replicationOf(String cookieValue, String state) {
     checkManager();
     var owner = oauthService.ownerOf(ATLASSIAN, cookieValue, state);
     if (owner == null || !owner.startsWith(OWNER_PREFIX)) {
-      throw new BusinessRuleException(SE_OAUTH_STATE_INVALID);
+      throw new BusinessRuleException(SC_OAUTH_STATE_INVALID);
     }
     try {
       return Long.parseLong(owner.substring(OWNER_PREFIX.length()));
     } catch (NumberFormatException ex) {
-      throw new BusinessRuleException(SE_OAUTH_STATE_INVALID);
+      throw new BusinessRuleException(SC_OAUTH_STATE_INVALID);
     }
   }
 
@@ -153,7 +153,7 @@ public class JiraReplicationOAuthService {
     } catch (RestClientException ex) {
       log.warn("Connecting JIRA replication {}: Atlassian could not be asked for sites and account: {}",
           replicationId, ex.getClass().getSimpleName());
-      throw new BusinessRuleException(SE_OAUTH_TOKEN_REQUEST_FAILED, "accessible_resources");
+      throw new BusinessRuleException(SC_OAUTH_TOKEN_REQUEST_FAILED, "accessible_resources");
     }
     var connection = new OAuthConnection(ATLASSIAN, account.accountId(), account.displayName(), site.id(),
         site.url(), grant.scopes(), authorizedUser.getLoginSign(), DateTimeUtils.now());

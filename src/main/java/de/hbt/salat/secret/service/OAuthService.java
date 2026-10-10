@@ -1,12 +1,12 @@
 package de.hbt.salat.secret.service;
 
-import static de.hbt.salat.common.exception.ErrorCode.SE_NO_KEY;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_DENIED;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_NOT_CONFIGURED;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_REAUTH_REQUIRED;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_STATE_INVALID;
-import static de.hbt.salat.common.exception.ErrorCode.SE_OAUTH_TOKEN_REQUEST_FAILED;
-import static de.hbt.salat.common.exception.ErrorCode.SE_SECRET_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.SC_NO_KEY;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_DENIED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_NOT_CONFIGURED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_REAUTH_REQUIRED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_STATE_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_SECRET_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 
 import java.nio.charset.StandardCharsets;
@@ -109,7 +109,7 @@ public class OAuthService {
    * @param owner what the connection will belong to, checked again in the callback
    * @param scopes what to ask for — no more than is needed
    * @param parameters what the provider wants in addition, e.g. {@code audience} and {@code prompt}
-   * @throws BusinessRuleException {@code SE-0005} without a registration, {@code SE-0001} without a key
+   * @throws BusinessRuleException {@code SC-0005} without a registration, {@code SC-0001} without a key
    */
   public OAuthAuthorization authorize(String provider, String owner, Collection<String> scopes,
                                       Map<String, String> parameters) {
@@ -134,7 +134,7 @@ public class OAuthService {
   /**
    * Who the callback is for — read from the cookie, once it has been checked.
    *
-   * @throws BusinessRuleException {@code SE-0006} when the cookie is missing, expired, changed, or
+   * @throws BusinessRuleException {@code SC-0006} when the cookie is missing, expired, changed, or
    *     belongs to another provider, another person or another attempt
    */
   public String ownerOf(String provider, String cookieValue, String state) {
@@ -147,8 +147,8 @@ public class OAuthService {
    *
    * @param error what the provider sent instead of a code, {@code access_denied} when the person
    *     declined
-   * @throws BusinessRuleException {@code SE-0006} as with {@link #ownerOf}, {@code SE-0007} when the
-   *     person declined or there is no code, {@code SE-0008} when the provider refused the code
+   * @throws BusinessRuleException {@code SC-0006} as with {@link #ownerOf}, {@code SC-0007} when the
+   *     person declined or there is no code, {@code SC-0008} when the provider refused the code
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public OAuthGrant complete(String provider, String cookieValue, String state, String code, String error) {
@@ -156,14 +156,14 @@ public class OAuthService {
     if (error != null || code == null || code.isBlank()) {
       log.info("OAuth connection to {} for {} not granted by {}: {}", provider, pending.owner(),
           pending.loginSign(), error);
-      throw new BusinessRuleException(SE_OAUTH_DENIED);
+      throw new BusinessRuleException(SC_OAUTH_DENIED);
     }
     var client = requireClient(provider);
     try {
       var tokens = tokenClient.exchange(client, code, pending.codeVerifier());
       return new OAuthGrant(provider, tokens.accessToken(), tokens.expiresAt(), tokens.refreshToken(), tokens.scopes());
     } catch (TokenRequestException ex) {
-      throw new BusinessRuleException(SE_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
+      throw new BusinessRuleException(SC_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
     }
   }
 
@@ -181,10 +181,10 @@ public class OAuthService {
    * are read and written in short transactions of their own, the version as a safety net behind the
    * lock.
    *
-   * @throws BusinessRuleException {@code SE-0004} when the connection has to be established again —
-   *     the provider refused to renew it, or it cannot be read with the keys there are; {@code SE-0008}
-   *     when the provider could not be asked; {@code SE-0001} without any key
-   * @throws InvalidDataException {@code SE-0003} when the secret does not exist
+   * @throws BusinessRuleException {@code SC-0004} when the connection has to be established again —
+   *     the provider refused to renew it, or it cannot be read with the keys there are; {@code SC-0008}
+   *     when the provider could not be asked; {@code SC-0001} without any key
+   * @throws InvalidDataException {@code SC-0003} when the secret does not exist
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public OAuthTokens currentTokens(long secretId) {
@@ -215,9 +215,9 @@ public class OAuthService {
     } catch (TokenRequestException ex) {
       if (ex.isInvalidGrant()) {
         requireReauthentication(secretId, snapshot);
-        throw new BusinessRuleException(SE_OAUTH_REAUTH_REQUIRED);
+        throw new BusinessRuleException(SC_OAUTH_REAUTH_REQUIRED);
       }
-      throw new BusinessRuleException(SE_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
+      throw new BusinessRuleException(SC_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
     }
     var renewed = snapshot.tokens().renewed(response.accessToken(), response.expiresAt(), response.refreshToken(),
         response.scopes());
@@ -238,32 +238,32 @@ public class OAuthService {
 
   private Snapshot read(long secretId) {
     if (!cipher.canEncrypt()) {
-      throw new BusinessRuleException(SE_NO_KEY);
+      throw new BusinessRuleException(SC_NO_KEY);
     }
     return transaction.execute(status -> {
-      var secret = repository.findById(secretId).orElseThrow(() -> new InvalidDataException(SE_SECRET_NOT_FOUND));
+      var secret = repository.findById(secretId).orElseThrow(() -> new InvalidDataException(SC_SECRET_NOT_FOUND));
       if (secret.getType() != SecretType.OAUTH || secret.getStatus() == SecretStatus.REAUTH_REQUIRED) {
-        throw new BusinessRuleException(SE_OAUTH_REAUTH_REQUIRED);
+        throw new BusinessRuleException(SC_OAUTH_REAUTH_REQUIRED);
       }
       try {
         var plaintext = cipher.decrypt(secret.getKeyId(), secret.getPayload(), secret.associatedData());
         var tokens = (OAuthTokens) SecretCodec.decode(SecretType.OAUTH, plaintext);
         if (!tokens.hasTokens()) {
-          throw new BusinessRuleException(SE_OAUTH_REAUTH_REQUIRED);
+          throw new BusinessRuleException(SC_OAUTH_REAUTH_REQUIRED);
         }
         return new Snapshot(tokens, secret.getUpdatecounter());
       } catch (UnreadableSecretException ex) {
         // Not written back as REAUTH_REQUIRED: a key missing by mistake would otherwise end every
         // connection for good, although the payload is intact.
         log.warn("Secret {} (OAUTH) cannot be read: {}", secretId, ex.getMessage());
-        throw new BusinessRuleException(SE_OAUTH_REAUTH_REQUIRED);
+        throw new BusinessRuleException(SC_OAUTH_REAUTH_REQUIRED);
       }
     });
   }
 
   private void write(long secretId, Integer expectedVersion, OAuthTokens tokens, SecretStatus status) {
     transaction.executeWithoutResult(tx -> {
-      var secret = repository.findById(secretId).orElseThrow(() -> new InvalidDataException(SE_SECRET_NOT_FOUND));
+      var secret = repository.findById(secretId).orElseThrow(() -> new InvalidDataException(SC_SECRET_NOT_FOUND));
       if (!Objects.equals(secret.getUpdatecounter(), expectedVersion)) {
         // Replaced or reconnected while the provider was asked; the lock rules out a second renewal.
         throw new BusinessRuleException(XX_CONCURRENT_MODIFICATION);
@@ -286,18 +286,18 @@ public class OAuthService {
         || !Objects.equals(pending.loginSign(), authorizedUser.getLoginSign())) {
       log.info("OAuth callback of {} to {} rejected: no matching connection attempt", authorizedUser.getLoginSign(),
           provider);
-      throw new BusinessRuleException(SE_OAUTH_STATE_INVALID);
+      throw new BusinessRuleException(SC_OAUTH_STATE_INVALID);
     }
     return pending;
   }
 
   private Client requireClient(String provider) {
     if (!cipher.canEncrypt()) {
-      throw new BusinessRuleException(SE_NO_KEY);
+      throw new BusinessRuleException(SC_NO_KEY);
     }
     var client = client(provider);
     if (client == null) {
-      throw new BusinessRuleException(SE_OAUTH_NOT_CONFIGURED);
+      throw new BusinessRuleException(SC_OAUTH_NOT_CONFIGURED);
     }
     return client;
   }

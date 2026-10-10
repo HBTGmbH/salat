@@ -1,8 +1,8 @@
 package de.hbt.salat.secret.service;
 
-import static de.hbt.salat.common.exception.ErrorCode.SE_NO_KEY;
-import static de.hbt.salat.common.exception.ErrorCode.SE_SECRET_NOT_FOUND;
-import static de.hbt.salat.common.exception.ErrorCode.SE_SECRET_UNREADABLE;
+import static de.hbt.salat.common.exception.ErrorCode.SC_NO_KEY;
+import static de.hbt.salat.common.exception.ErrorCode.SC_SECRET_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.SC_SECRET_UNREADABLE;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +55,7 @@ public class SecretService {
 
   /**
    * @return the id the owner remembers
-   * @throws BusinessRuleException {@code SE-0001} without a key
+   * @throws BusinessRuleException {@code SC-0001} without a key
    */
   public long create(SecretValue value) {
     requireKey();
@@ -75,7 +75,7 @@ public class SecretService {
   /**
    * Replaces the content, of another type if need be, and makes the secret valid again.
    *
-   * @throws BusinessRuleException {@code SE-0001} without a key
+   * @throws BusinessRuleException {@code SC-0001} without a key
    */
   public void replace(long id, SecretValue value) {
     requireKey();
@@ -89,7 +89,7 @@ public class SecretService {
   /**
    * The content, decrypted.
    *
-   * @throws BusinessRuleException {@code SE-0001} without any key, {@code SE-0002} when the secret
+   * @throws BusinessRuleException {@code SC-0001} without any key, {@code SC-0002} when the secret
    *     cannot be decrypted with the keys there are — it has to be entered again
    */
   @Transactional(readOnly = true)
@@ -99,7 +99,7 @@ public class SecretService {
       return open(secret);
     } catch (UnreadableSecretException ex) {
       log.warn("Secret {} cannot be read: {}", id, ex.getMessage());
-      throw new BusinessRuleException(cipher.canEncrypt() ? SE_SECRET_UNREADABLE : SE_NO_KEY);
+      throw new BusinessRuleException(cipher.canEncrypt() ? SC_SECRET_UNREADABLE : SC_NO_KEY);
     }
   }
 
@@ -137,11 +137,11 @@ public class SecretService {
 
   private void requireKey() {
     if (!cipher.canEncrypt()) {
-      throw new BusinessRuleException(SE_NO_KEY);
+      throw new BusinessRuleException(SC_NO_KEY);
     }
   }
 
   private Secret load(long id) {
-    return repository.findById(id).orElseThrow(() -> new InvalidDataException(SE_SECRET_NOT_FOUND));
+    return repository.findById(id).orElseThrow(() -> new InvalidDataException(SC_SECRET_NOT_FOUND));
   }
 }

@@ -149,7 +149,7 @@ class OAuthServiceTest {
     var authorization = authorize();
 
     assertRejected(() -> oauthService.complete(PROVIDER, authorization.cookie().getValue(), "forged", "code", null),
-        ErrorCode.SE_OAUTH_STATE_INVALID);
+        ErrorCode.SC_OAUTH_STATE_INVALID);
     verify(tokenClient, never()).exchange(any(), any(), any());
   }
 
@@ -157,9 +157,9 @@ class OAuthServiceTest {
   void a_callback_without_the_cookie_is_rejected() {
     var state = queryOf(authorize()).get("state");
 
-    assertRejected(() -> oauthService.ownerOf(PROVIDER, null, state), ErrorCode.SE_OAUTH_STATE_INVALID);
+    assertRejected(() -> oauthService.ownerOf(PROVIDER, null, state), ErrorCode.SC_OAUTH_STATE_INVALID);
     assertRejected(() -> oauthService.ownerOf(PROVIDER, "test.bm90LWEtY29va2ll", state),
-        ErrorCode.SE_OAUTH_STATE_INVALID);
+        ErrorCode.SC_OAUTH_STATE_INVALID);
   }
 
   @Test
@@ -168,7 +168,7 @@ class OAuthServiceTest {
     ClockProvider.setClock(Clock.offset(ClockProvider.getClock(), Duration.ofMinutes(11)));
 
     assertRejected(() -> oauthService.ownerOf(PROVIDER, authorization.cookie().getValue(),
-        queryOf(authorization).get("state")), ErrorCode.SE_OAUTH_STATE_INVALID);
+        queryOf(authorization).get("state")), ErrorCode.SC_OAUTH_STATE_INVALID);
   }
 
   @Test
@@ -177,7 +177,7 @@ class OAuthServiceTest {
     when(authorizedUser.getLoginSign()).thenReturn("other");
 
     assertRejected(() -> oauthService.ownerOf(PROVIDER, authorization.cookie().getValue(),
-        queryOf(authorization).get("state")), ErrorCode.SE_OAUTH_STATE_INVALID);
+        queryOf(authorization).get("state")), ErrorCode.SC_OAUTH_STATE_INVALID);
   }
 
   @Test
@@ -185,7 +185,7 @@ class OAuthServiceTest {
     var authorization = authorize();
 
     assertRejected(() -> oauthService.ownerOf("github", authorization.cookie().getValue(),
-        queryOf(authorization).get("state")), ErrorCode.SE_OAUTH_STATE_INVALID);
+        queryOf(authorization).get("state")), ErrorCode.SC_OAUTH_STATE_INVALID);
   }
 
   @Test
@@ -193,7 +193,7 @@ class OAuthServiceTest {
     var authorization = authorize();
 
     assertRejected(() -> oauthService.complete(PROVIDER, authorization.cookie().getValue(),
-        queryOf(authorization).get("state"), null, "access_denied"), ErrorCode.SE_OAUTH_DENIED);
+        queryOf(authorization).get("state"), null, "access_denied"), ErrorCode.SC_OAUTH_DENIED);
     verify(tokenClient, never()).exchange(any(), any(), any());
   }
 
@@ -202,7 +202,7 @@ class OAuthServiceTest {
     assertThat(oauthService.isAvailable(PROVIDER)).isTrue();
     assertThat(oauthService.isAvailable("github")).isFalse();
     assertRejected(() -> oauthService.authorize("github", OWNER, List.of("read"), Map.of()),
-        ErrorCode.SE_OAUTH_NOT_CONFIGURED);
+        ErrorCode.SC_OAUTH_NOT_CONFIGURED);
   }
 
   @Test
@@ -262,7 +262,7 @@ class OAuthServiceTest {
     var id = storedConnection(Duration.ofMinutes(1));
     when(tokenClient.refresh(any(), any())).thenThrow(new TokenRequestException("invalid_grant"));
 
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SE_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SC_OAUTH_REAUTH_REQUIRED);
 
     var summary = secretService.getSummary(id);
     assertThat(summary.status()).isEqualTo(SecretStatus.REAUTH_REQUIRED);
@@ -271,7 +271,7 @@ class OAuthServiceTest {
     assertThat(stored.accessToken()).isNull();
     assertThat(stored.refreshToken()).isNull();
     // and the provider is not asked again with a token it has refused
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SE_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SC_OAUTH_REAUTH_REQUIRED);
     verify(tokenClient, times(1)).refresh(any(), any());
   }
 
@@ -280,7 +280,7 @@ class OAuthServiceTest {
     var id = storedConnection(Duration.ofMinutes(1));
     when(tokenClient.refresh(any(), any())).thenThrow(new TokenRequestException("request_failed"));
 
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SE_OAUTH_TOKEN_REQUEST_FAILED);
+    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED);
 
     assertThat(secretService.getSummary(id).status()).isEqualTo(SecretStatus.VALID);
     assertThat(((OAuthTokens) secretService.read(id)).refreshToken()).isEqualTo("refresh-0");

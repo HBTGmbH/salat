@@ -92,10 +92,10 @@ class JiraReplicationConfigControllerOAuthTest {
 
   @Test
   void a_callback_without_an_attempt_leads_to_the_list_and_clears_the_cookie() throws Exception {
-    when(oauthService.replicationOf(any(), any())).thenThrow(new BusinessRuleException(ErrorCode.SE_OAUTH_STATE_INVALID));
+    when(oauthService.replicationOf(any(), any())).thenThrow(new BusinessRuleException(ErrorCode.SC_OAUTH_STATE_INVALID));
 
     mockMvc.perform(get(CALLBACK).param("code", "the-code").param("state", "forged"))
-        .andExpect(redirectedUrl("/jira/replications?oauth=SE-0006"))
+        .andExpect(redirectedUrl("/jira/replications?oauth=SC-0006"))
         .andExpect(header().string("Set-Cookie", Matchers.containsString("Max-Age=0")));
     verify(oauthService, never()).completeConnection(anyLong(), any(), any(), any(), any());
   }
@@ -103,11 +103,11 @@ class JiraReplicationConfigControllerOAuthTest {
   @Test
   void a_refused_code_names_the_error_of_the_provider() throws Exception {
     when(oauthService.replicationOf(any(), any())).thenReturn(7L);
-    doThrow(new BusinessRuleException(ErrorCode.SE_OAUTH_TOKEN_REQUEST_FAILED, "invalid_grant"))
+    doThrow(new BusinessRuleException(ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED, "invalid_grant"))
         .when(oauthService).completeConnection(anyLong(), any(), any(), any(), any());
 
     mockMvc.perform(get(CALLBACK).param("code", "the-code").param("state", "state"))
-        .andExpect(redirectedUrl("/jira/replications/7/edit?oauth=SE-0008&oauthDetail=invalid_grant"));
+        .andExpect(redirectedUrl("/jira/replications/7/edit?oauth=SC-0008&oauthDetail=invalid_grant"));
   }
 
   @Test
@@ -121,7 +121,7 @@ class JiraReplicationConfigControllerOAuthTest {
   /** The address can be typed by hand: no text of its own reaches the page. */
   @Test
   void the_form_shows_nothing_of_the_address_but_a_known_code_and_an_oauth_error() throws Exception {
-    mockMvc.perform(get("/jira/replications/7/edit").param("oauth", "SE-0008").param("oauthDetail", "Ihr Konto ist gesperrt"))
+    mockMvc.perform(get("/jira/replications/7/edit").param("oauth", "SC-0008").param("oauthDetail", "Ihr Konto ist gesperrt"))
         .andExpect(model().attribute("toastError", "Der Anbieter hat die Anmeldung abgelehnt (unknown). Bitte noch einmal verbinden."));
     mockMvc.perform(get("/jira/replications/7/edit").param("oauth", "AA-0001"))
         .andExpect(model().attributeDoesNotExist("toastError"));

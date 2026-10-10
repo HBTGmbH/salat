@@ -88,9 +88,9 @@ class JiraCredentialStoreTest {
 
   @Test
   void an_expired_connection_fails_with_the_words_of_the_secret_module() {
-    when(oauthService.currentTokens(500L)).thenThrow(new BusinessRuleException(ErrorCode.SE_OAUTH_REAUTH_REQUIRED));
+    when(oauthService.currentTokens(500L)).thenThrow(new BusinessRuleException(ErrorCode.SC_OAUTH_REAUTH_REQUIRED));
 
-    assertRejected(() -> store.credentialsOf(config), ErrorCode.SE_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> store.credentialsOf(config), ErrorCode.SC_OAUTH_REAUTH_REQUIRED);
   }
 
   private static OAuthTokens tokens(String siteUrl, String... scopes) {
