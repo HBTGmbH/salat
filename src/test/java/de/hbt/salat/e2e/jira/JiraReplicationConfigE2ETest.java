@@ -166,8 +166,12 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
     }
   }
 
+  /**
+   * The buttons of the OAuth panel (#1417) sit inside the form but submit forms of their own
+   * ({@code form="oauthConnectForm"}); saving is the first submit button that belongs to the form.
+   */
   private static void save(Page page) {
-    page.locator("form.card button[type=submit]").first().click();
+    page.locator("form.card button[type=submit]:not([form])").first().click();
   }
 
   /**
