@@ -9,6 +9,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import jakarta.persistence.EntityManager;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -25,6 +28,8 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.secret.domain.OAuthConnection;
+import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.domain.SecretType;
 import de.hbt.salat.secret.domain.Token;
@@ -77,6 +82,32 @@ class SecretServiceTest {
     flushAndClear();
 
     assertThat(secretService.read(id)).isEqualTo(new UsernamePassword("jira-user", PASSWORD));
+  }
+
+  /** Access and refresh token are one secret with the account behind them (#1417, ADR-0038 §1). */
+  @Test
+  void an_oauth_connection_is_read_back_as_it_was_stored() {
+    var tokens = new OAuthTokens("access-token", Instant.parse("2026-06-25T11:00:00Z"), "refresh-token",
+        new OAuthConnection("atlassian", "account-1", "Person A", "cloud-1", "https://example.atlassian.net",
+            Set.of("read:jira-work", "offline_access"), "mgr", LocalDateTime.of(2026, 6, 1, 9, 0)));
+    var id = secretService.create(tokens);
+    flushAndClear();
+
+    assertThat(secretService.read(id)).isEqualTo(tokens);
+    var summary = secretService.getSummary(id);
+    assertThat(summary.type()).isEqualTo(SecretType.OAUTH);
+    assertThat(summary.connection()).isEqualTo(tokens.connection());
+    var payload = new String(repository.findById(id).orElseThrow().getPayload(), StandardCharsets.ISO_8859_1);
+    assertThat(payload).doesNotContain("access-token").doesNotContain("refresh-token").doesNotContain("Person A");
+  }
+
+  @Test
+  void the_string_form_of_an_oauth_connection_leaves_the_tokens_out() {
+    var tokens = new OAuthTokens("access-token", Instant.EPOCH, "refresh-token",
+        new OAuthConnection("atlassian", "account-1", "Person A", "cloud-1", "https://example.atlassian.net",
+            Set.of(), "mgr", null));
+
+    assertThat(tokens.toString()).doesNotContain("access-token").doesNotContain("refresh-token");
   }
 
   /** Everything but type and status is encrypted, the user name included (ADR-0038 §2). */

@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -31,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import de.hbt.salat.common.command.CommandPublisher;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.jira.command.GetTicketWorklogSumsCommandEvent;
 import de.hbt.salat.jira.command.TicketDaySum;
@@ -101,6 +103,31 @@ class JiraWorklogSyncServiceTest {
 
     // Not one call — neither to JIRA nor to the module that owns the bookings.
     verifyNoInteractions(worklogClients, commandPublisher, ticketRepository, syncRepository);
+  }
+
+  /** An OAuth connection made without the write scope (#1417): said once, not failed on every worklog. */
+  @Test
+  void a_connection_without_the_write_scope_writes_nothing_and_says_why() {
+    givenBookings(sum("ALPHA-1", "abc", 90));
+    givenReplicatedTickets("ALPHA-1");
+
+    assertThatThrownBy(() -> classUnderTest.sync(config(), JiraCredentials.oauth("access", "cloud-1", false)))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining("JI-0048");
+    verifyNoInteractions(worklogClients, commandPublisher);
+  }
+
+  @Test
+  void an_oauth_connection_writes_to_the_atlassian_api_of_its_site() {
+    givenBookings(sum("ALPHA-1", "abc", 90));
+    givenReplicatedTickets("ALPHA-1");
+    when(worklogClient.create(any(), any())).thenReturn("10101");
+
+    classUnderTest.sync(config(), JiraCredentials.oauth("access", "cloud-1", true));
+
+    var target = ArgumentCaptor.forClass(JiraWorklogTarget.class);
+    verify(worklogClient).create(target.capture(), any());
+    assertThat(target.getValue().baseUrl()).isEqualTo("https://api.atlassian.com/ex/jira/cloud-1");
   }
 
   @Test

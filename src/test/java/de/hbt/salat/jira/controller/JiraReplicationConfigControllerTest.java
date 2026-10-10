@@ -42,6 +42,18 @@ class JiraReplicationConfigControllerTest {
         .satisfies(guard -> assertThat(guard.requiresManager()).isTrue()));
   }
 
+  /** The callback of the OAuth connection (#1417) is a GET, and as guarded as every write. */
+  @Test
+  void the_oauth_callback_carries_its_own_guard() throws Exception {
+    var callback = Arrays.stream(JiraReplicationConfigController.class.getDeclaredMethods())
+        .filter(method -> method.getName().equals("oauthCallback"))
+        .findFirst()
+        .orElseThrow();
+
+    assertThat(guardOf(callback)).isNotNull();
+    assertThat(guardOf(callback).requiresManager()).isTrue();
+  }
+
   @Test
   void an_edit_form_starts_without_a_password() {
     // The form is filled from the info record, which has none — so an edit cannot show the stored
@@ -83,7 +95,7 @@ class JiraReplicationConfigControllerTest {
   private static JiraReplicationConfigInfo info(long customerorderId, Long suborderId) {
     return new JiraReplicationConfigInfo(7L, "Alpha", customerorderId, suborderId, "ALPHA", "https://jira.example.com",
         JiraApiFlavor.SERVER, JiraAuthMethod.BASIC, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, false, null,
-        true);
+        true, null);
   }
 
   private static Authorized guardOf(Method method) {

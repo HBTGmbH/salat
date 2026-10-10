@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.service;
 
 import static java.lang.Boolean.TRUE;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_WRITE_NOT_GRANTED;
 import static java.util.Comparator.comparing;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.command.CommandPublisher;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.common.util.DateUtils;
@@ -66,10 +68,15 @@ public class JiraWorklogSyncService {
    * while the sync is switched off on this config.
    *
    * @param credentials what the replication signed in with — the account the worklogs are authored by
+   * @throws BusinessRuleException {@code JI-0048} when an OAuth connection was made without the scope
+   *     to write (#1417) — the run says so instead of failing on every single worklog
    */
   public void sync(JiraReplicationConfig cfg, JiraCredentials credentials) {
     if (!TRUE.equals(cfg.getWorklogSyncEnabled())) {
       return;
+    }
+    if (!credentials.writeGranted()) {
+      throw new BusinessRuleException(JI_REPLICATION_OAUTH_WRITE_NOT_GRANTED);
     }
     var from = cfg.getWorklogSyncFrom();
     if (from == null) {
@@ -315,7 +322,7 @@ public class JiraWorklogSyncService {
 
   private static JiraWorklogTarget targetFor(JiraReplicationConfig cfg, JiraCredentials credentials,
                                              String issueKey) {
-    return new JiraWorklogTarget(cfg.getBaseUrl(), credentials, issueKey);
+    return new JiraWorklogTarget(credentials.baseUrl(cfg.getBaseUrl()), credentials, issueKey);
   }
 
   /** A typed reference and a ticket key mean the same issue whatever the case was written in. */
