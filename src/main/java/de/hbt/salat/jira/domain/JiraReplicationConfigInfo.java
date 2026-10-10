@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
  * @param credentialsReadable whether the stored credentials can be used (#1432) — not in a copy of
  *     the database from another environment, and not without a key; then they have to be entered
  *     again
+ * @param oauthConnection the Atlassian account the replication is connected to (#1417), {@code null}
+ *     without OAuth or before it is connected
  * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
  * @param worklogSyncFrom first day the worklog sync covers
  * @param worklogSyncInvoiceableOnly whether only bookings on invoiceable suborders are written (#1218)
@@ -45,7 +47,8 @@ public record JiraReplicationConfigInfo(
     LocalDate worklogSyncFrom,
     boolean worklogSyncInvoiceableOnly,
     LocalDateTime lastMaxUpdated,
-    boolean credentialsReadable
+    boolean credentialsReadable,
+    JiraOAuthConnectionInfo oauthConnection
 ) {
 
   /**
@@ -53,9 +56,10 @@ public record JiraReplicationConfigInfo(
    *     {@code JiraScopes#signOf}
    * @param username the user name of the stored credentials, read from the secret store
    * @param credentialsReadable whether the stored credentials can be used
+   * @param oauthConnection the connected Atlassian account, {@code null} without one
    */
   public static JiraReplicationConfigInfo from(JiraReplicationConfig config, String scopeSign, String username,
-                                               boolean credentialsReadable) {
+                                               boolean credentialsReadable, JiraOAuthConnectionInfo oauthConnection) {
     return new JiraReplicationConfigInfo(
         config.getId(),
         config.getName(),
@@ -76,7 +80,8 @@ public record JiraReplicationConfigInfo(
         config.getWorklogSyncFrom(),
         Boolean.TRUE.equals(config.getWorklogSyncInvoiceableOnly()),
         config.getLastMaxUpdated(),
-        credentialsReadable
+        credentialsReadable,
+        oauthConnection
     );
   }
 }

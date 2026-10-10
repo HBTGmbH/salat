@@ -115,10 +115,13 @@ Nach ADR-0011 sind Secrets **Stammdaten** ihres Eigentümers: langlebig und von 
 referenziert. Sie haben kein `hide`, sondern einen Zustand, und sie werden **hart gelöscht**. Ein
 soft-gelöschtes Secret wäre ein Secret, das weiter gespeichert ist.
 
-Von Spring Security OAuth2 Client nutzt die Anwendung nur die Bausteine für den HTTP-Austausch:
-`ClientRegistration`, die Token-Response-Clients für Code-Tausch und Refresh, PKCE. Nicht genutzt
-wird `oauth2Client()` mit seinem Filter: er schlüsselt den autorisierten Client nach dem
-angemeldeten Principal, hier aber gehört er einer Replikation.
+Spring Security OAuth2 Client nutzt die Anwendung nicht. `oauth2Client()` mit seinem Filter
+schlüsselt den autorisierten Client nach dem angemeldeten Principal, hier aber gehört er einer
+Replikation. Auch seine Token-Response-Clients passen nicht (geprüft in #1417): Atlassian erwartet
+die Anfrage als JSON mit den Client-Zugangsdaten darin und beantwortet ein verbrauchtes
+Refresh-Token mit `403` und `invalid_grant`, Spring sendet ein Formular und liest den Fehler nur aus
+einem `400`. Code-Tausch, Refresh und PKCE sind deshalb ein kleiner eigener Client mit `RestClient`
+im Modul `secret`.
 
 ### 3. Verschlüsselung
 
@@ -188,7 +191,9 @@ Verbindung muss neu hergestellt werden. Das lässt sich nicht verhindern, nur si
   (`JiraScopeDeleteListener`).
 * **Widerruf beim Anbieter** erfolgt nach dem Commit, wenn der Anbieter einen
   Revocation-Endpunkt anbietet. Scheitert er, wird das protokolliert, das Löschen bleibt bestehen.
-  Ohne Endpunkt sagt das Formular, wo man den Zugriff der App im fremden Konto entzieht.
+  Ohne Endpunkt sagt das Formular, wo man den Zugriff der App im fremden Konto entzieht. Atlassian
+  bietet für OAuth 2.0 (3LO) keinen an (geprüft in #1417): Das Formular verweist auf die verbundenen
+  Apps im Atlassian-Konto.
 * **Der Eigentümer verantwortet das Löschen.** Das Modul `secret` weiß nicht, wer ein Secret
   referenziert, und erkennt verwaiste Secrets deshalb nicht von selbst.
 
@@ -289,7 +294,8 @@ Neutral beschrieben; die konkreten Namen stehen in der Betriebsdokumentation.
 2. Der Anwendung `SALAT_SECRET_ACTIVEKEYID` und `SALAT_SECRET_KEYS_<ID>` bereitstellen, vor dem
    Release, das die Klartext-Secrets umstellt.
 3. Für OAuth (#1417): je Umgebung eine App beim Anbieter registrieren, Redirect-URI eintragen,
-   Client-ID und Client-Secret wie den Schlüssel bereitstellen.
+   Client-ID und Client-Secret wie den Schlüssel bereitstellen (`SALAT_OAUTH_CLIENTS_<ANBIETER>_CLIENTID`,
+   `SALAT_OAUTH_CLIENTS_<ANBIETER>_CLIENTSECRET`).
 4. Schlüsselwechsel: neuen Schlüssel ergänzen, aktive Kennung umstellen, neu starten. Den alten
    erst entfernen, wenn der Start alle Zeilen neu verschlüsselt hat.
 

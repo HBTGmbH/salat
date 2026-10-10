@@ -8,7 +8,10 @@ package de.hbt.salat.secret.domain;
  *     without any key at all.
  * @param username the user name of a {@link UsernamePassword}; {@code null} for other types and for
  *     a secret that is not readable
+ * @param connection what an {@link OAuthTokens} connection is, without its tokens (#1417);
+ *     {@code null} for other types and for a secret that is not readable
  */
-public record SecretSummary(long id, SecretType type, SecretStatus status, boolean readable, String username) {
+public record SecretSummary(long id, SecretType type, SecretStatus status, boolean readable, String username,
+                            OAuthConnection connection) {
 
 }

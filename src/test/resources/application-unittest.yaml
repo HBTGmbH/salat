@@ -31,3 +31,10 @@ salat:
     active-key-id: test
     keys:
       test: OHTqP+7nahpYHU5ywXXpaYn1EM7J5u4w2fzpXxmTmyw=
+  # Eine App-Registrierung für die Tests der OAuth-Verbindung (#1417). In einer Umgebung kommen
+  # Client-ID und Client-Secret nur aus Umgebungsvariablen; die Token-Aufrufe sind in den Tests gemockt.
+  oauth:
+    clients:
+      atlassian:
+        client-id: test-client
+        client-secret: test-client-secret

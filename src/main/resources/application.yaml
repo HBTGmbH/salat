@@ -43,6 +43,18 @@ salat:
   notifications:
     retention-days: 30               # env: SALAT_NOTIFICATIONS_RETENTION_DAYS — days to keep notifications before auto-delete
     bell-limit: 10                   # env: SALAT_NOTIFICATIONS_BELL_LIMIT — max notifications shown in bell dropdown
+  oauth:
+    clients:
+      # Ausgehende OAuth-Verbindung der JIRA-Replikation zu Jira Cloud (#1417, ADR-0038 §7). Je
+      # Umgebung eine eigene App-Registrierung bei Atlassian; Client-ID und Client-Secret nur aus der
+      # Umgebung: SALAT_OAUTH_CLIENTS_ATLASSIAN_CLIENTID, SALAT_OAUTH_CLIENTS_ATLASSIAN_CLIENTSECRET.
+      # Ohne sie bietet das Formular „Mit Atlassian verbinden“ nicht an.
+      atlassian:
+        authorization-uri: https://auth.atlassian.com/authorize
+        token-uri: https://auth.atlassian.com/oauth/token
+        # env: SALAT_OAUTH_CLIENTS_ATLASSIAN_REDIRECTURI — fest je Profil, in der App-Registrierung
+        # eingetragen; lokal mit dem Port, auf dem die Anwendung läuft.
+        redirect-uri: http://localhost:8080/jira/replications/oauth/callback
   reporting:
     scheduler:
       cron: "0 0 5 * * ?"           # env: SALAT_REPORTING_SCHEDULER_CRON — Daily at 5:00 AM

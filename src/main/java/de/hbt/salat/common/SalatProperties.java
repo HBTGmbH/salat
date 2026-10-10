@@ -30,6 +30,7 @@ public class SalatProperties {
   private Vacation vacation = new Vacation();
   private Training training = new Training();
   private Secret secret = new Secret();
+  private OAuth oauth = new OAuth();
 
   @Data
   public static class Auth {
@@ -146,6 +147,29 @@ public class SalatProperties {
     /** By key id. A key that is no longer active stays until the start has encrypted its rows anew. */
     @ToString.Exclude
     private Map<String, String> keys = new HashMap<>();
+  }
+
+  /**
+   * The apps Salat is registered as at OAuth providers, for outgoing connections (#1417, → ADR-0038 §7),
+   * by registration id: {@code atlassian}. Endpoints stand in {@code application.yaml}, the redirect URI
+   * per profile, client id and client secret only in the environment
+   * ({@code SALAT_OAUTH_CLIENTS_ATLASSIAN_CLIENTID}, {@code SALAT_OAUTH_CLIENTS_ATLASSIAN_CLIENTSECRET}).
+   * Without them a form does not offer to connect.
+   */
+  @Data
+  public static class OAuth {
+    private Map<String, Client> clients = new HashMap<>();
+
+    @Data
+    public static class Client {
+      private String clientId;
+      @ToString.Exclude
+      private String clientSecret;
+      /** Fixed per environment, not derived from the request: behind the proxy the host need not be the public one. */
+      private String redirectUri;
+      private String authorizationUri;
+      private String tokenUri;
+    }
   }
 
 }

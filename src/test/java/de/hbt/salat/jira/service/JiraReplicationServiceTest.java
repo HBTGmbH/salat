@@ -28,6 +28,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -163,6 +164,36 @@ class JiraReplicationServiceTest {
     verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
         "Abgebrochen: Die gespeicherten Zugangsdaten sind nicht lesbar und müssen neu eingegeben werden.");
     verify(searchClient, never()).search(any());
+  }
+
+  /** #1417: Atlassian refused to renew the tokens — the history says what the form says. */
+  @Test
+  void aRunWithAnExpiredConnectionIsRecordedAsSuch() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(credentialStore.credentialsOf(config))
+        .thenThrow(new BusinessRuleException(ErrorCode.SE_OAUTH_REAUTH_REQUIRED));
+
+    assertThrows(BusinessRuleException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
+
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
+        "Abgebrochen: Verbindung abgelaufen – bitte neu verbinden.");
+    verify(searchClient, never()).search(any());
+  }
+
+  /** #1417: with OAuth the search goes to the API address of the site, not to the base URL. */
+  @Test
+  void anOAuthRunSearchesTheAtlassianApiOfItsSite() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(credentialStore.credentialsOf(config)).thenReturn(JiraCredentials.oauth("access", "cloud-1", false));
+    when(searchClient.search(any())).thenReturn(Collections.emptyIterator());
+
+    jiraReplicationService.continueRun(77L, config.getId());
+
+    var request = ArgumentCaptor.forClass(JiraSearchRequest.class);
+    verify(searchClient).search(request.capture());
+    assertThat(request.getValue().baseUrl()).isEqualTo("https://api.atlassian.com/ex/jira/cloud-1");
   }
 
   @Test

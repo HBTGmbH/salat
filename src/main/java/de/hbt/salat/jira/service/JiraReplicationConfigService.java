@@ -7,6 +7,7 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_BASE_URL_RE
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_JQL_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NAME_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NEEDS_CLOUD;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_PAGE_SIZE_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_PASSWORD_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND;
@@ -97,7 +98,8 @@ public class JiraReplicationConfigService {
 
   private JiraReplicationConfigInfo info(JiraReplicationConfig config, String scopeSign) {
     var credentials = credentialStore.describe(config);
-    return JiraReplicationConfigInfo.from(config, scopeSign, credentials.username(), credentials.readable());
+    return JiraReplicationConfigInfo.from(config, scopeSign, credentials.username(), credentials.readable(),
+        credentials.connection());
   }
 
   /**
@@ -110,21 +112,38 @@ public class JiraReplicationConfigService {
     return credentialStore.canStore();
   }
 
+  /**
+   * Whether a replication can be connected to an Atlassian account (#1417): the app is registered in
+   * this environment and there is a key for the tokens. Without, the form does not offer it.
+   */
+  @Transactional(readOnly = true)
+  public boolean canConnectOAuth() {
+    checkManager();
+    return credentialStore.canConnect();
+  }
+
+  /**
+   * With OAuth (#1417) the replication is saved without a secret: the account is connected
+   * afterwards, from the form of the stored replication.
+   */
   public long create(JiraReplicationConfigData data) {
     checkManager();
-    if (!credentialStore.canStore()) {
+    var typedSecret = authMethodOf(data).hasTypedSecret();
+    if (typedSecret && !credentialStore.canStore()) {
       // Never in plain text instead (#1432): without a key a replication cannot keep its password.
       throw new BusinessRuleException(SE_NO_KEY);
     }
     var scopeSign = validate(null, data);
-    if (isBlank(data.password())) {
+    if (typedSecret && isBlank(data.password())) {
       // On an edit an empty field means "keep what is stored"; on a new record there is nothing to
       // keep, so the replication would fail on its first run with a null password.
       throw new InvalidDataException(JI_REPLICATION_PASSWORD_REQUIRED);
     }
     var config = new JiraReplicationConfig();
     apply(data, config, scopeSign);
-    credentialStore.store(config, authMethodOf(data), usernameOf(data), data.password().trim());
+    if (typedSecret) {
+      credentialStore.store(config, authMethodOf(data), usernameOf(data), data.password().trim());
+    }
     return configRepository.save(config).getId();
   }
 
@@ -132,14 +151,24 @@ public class JiraReplicationConfigService {
     checkManager();
     var scopeSign = validate(id, data);
     var config = load(id);
-    if (authMethodOf(data) != config.getAuthMethod() && isBlank(data.password())) {
+    var method = authMethodOf(data);
+    var methodChanged = method != config.getAuthMethod();
+    if (methodChanged && method.hasTypedSecret() && isBlank(data.password())) {
       // Kept across the switch, the stored password would go out as a bearer token, or the token
-      // as a Basic password (#1385).
+      // as a Basic password (#1385) — or there are only the OAuth tokens, which are no password (#1417).
       throw new InvalidDataException(JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET);
     }
     var storedUsername = credentialStore.describe(config).username();
     apply(data, config, scopeSign);
-    if (!isBlank(data.password())) {
+    if (method == JiraAuthMethod.OAUTH) {
+      if (methodChanged) {
+        // Password or token are of no use to OAuth and are not kept around (#1417); the account is
+        // connected afterwards.
+        credentialStore.disconnect(config);
+        log.info("JIRA replication {} switched to OAuth by {}, the stored credentials are deleted",
+            config.getName(), authorizedUser.getLoginSign());
+      }
+    } else if (!isBlank(data.password())) {
       credentialStore.store(config, authMethodOf(data), usernameOf(data), data.password().trim());
     } else if (authMethodOf(data) == JiraAuthMethod.BASIC && !Objects.equals(usernameOf(data), storedUsername)) {
       // The user name is part of the secret (#1432): a new one is written together with the stored
@@ -203,7 +232,7 @@ public class JiraReplicationConfigService {
     var config = load(id);
     var credentials = credentialStore.credentialsOf(config);
     try {
-      var request = new JiraFieldsRequest(config.getBaseUrl(), credentials);
+      var request = new JiraFieldsRequest(credentials.baseUrl(config.getBaseUrl()), credentials);
       var fields = jiraSearchClients.forFlavor(config.getApiFlavor()).listFields(request);
       return JiraFieldCatalog.of(toOptions(fields));
     } catch (Exception ex) {
@@ -382,9 +411,12 @@ public class JiraReplicationConfigService {
       throw new InvalidDataException(JI_REPLICATION_SCOPE_REQUIRED);
     }
     requireText(data.baseUrl(), JI_REPLICATION_BASE_URL_REQUIRED);
-    if (authMethodOf(data) == JiraAuthMethod.PERSONAL_ACCESS_TOKEN && apiFlavorOf(data) != JiraApiFlavor.SERVER) {
-      // Atlassian Cloud accepts no bearer PAT; its API token is the Basic password (#1385).
-      throw new InvalidDataException(JI_REPLICATION_TOKEN_NEEDS_SERVER);
+    if (!authMethodOf(data).isAvailableOn(apiFlavorOf(data))) {
+      // Atlassian Cloud accepts no bearer PAT; its API token is the Basic password (#1385). An
+      // Atlassian account to connect exists on Cloud only (#1417).
+      throw new InvalidDataException(authMethodOf(data) == JiraAuthMethod.OAUTH
+          ? JI_REPLICATION_OAUTH_NEEDS_CLOUD
+          : JI_REPLICATION_TOKEN_NEEDS_SERVER);
     }
     if (authMethodOf(data) == JiraAuthMethod.BASIC) {
       requireText(data.username(), JI_REPLICATION_USERNAME_REQUIRED);

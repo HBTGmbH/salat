@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import static de.hbt.salat.jira.OrderTree.customerorderWithId;
 import static de.hbt.salat.jira.OrderTree.suborderWithId;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,11 +52,14 @@ import de.hbt.salat.jira.persistence.OrderReferences;
 import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.secret.domain.OAuthConnection;
+import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.domain.SecretSummary;
 import de.hbt.salat.secret.domain.SecretValue;
 import de.hbt.salat.secret.domain.Token;
 import de.hbt.salat.secret.domain.UsernamePassword;
+import de.hbt.salat.secret.service.OAuthService;
 import de.hbt.salat.secret.service.SecretService;
 
 /**
@@ -118,6 +123,9 @@ class JiraReplicationConfigServiceTest {
   @Mock
   private SecretService secretService;
 
+  @Mock
+  private OAuthService oauthService;
+
   private final Map<Long, SecretValue> secrets = new HashMap<>();
   private final Map<Long, Boolean> unreadable = new HashMap<>();
 
@@ -126,7 +134,7 @@ class JiraReplicationConfigServiceTest {
     // the real resolution against a mocked order module: what is tested is the reading by id
     classUnderTest = new JiraReplicationConfigService(configRepository, jiraReplicationRunService,
         jiraSearchClients, new JiraScopes(customerorderService, suborderService), orderReferences, authorizedUser,
-        ticketRepository, new JiraCredentialStore(secretService));
+        ticketRepository, new JiraCredentialStore(secretService, oauthService));
     givenSecretStore();
     when(authorizedUser.isManager()).thenReturn(true);
     when(orderReferences.customerorder(anyLong())).thenAnswer(invocation ->
@@ -346,6 +354,95 @@ class JiraReplicationConfigServiceTest {
 
     assertThat(secretOf(saved())).isEqualTo(new Token(STORED_PASSWORD));
     verify(secretService, never()).replace(anyLong(), any());
+  }
+
+  /** With OAuth (#1417) the account is connected after saving, so there is nothing to type. */
+  @Test
+  void an_oauth_replication_is_saved_without_a_secret() {
+    classUnderTest.create(withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.OAUTH, null, null));
+
+    assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.OAUTH);
+    assertThat(saved().getSecretId()).isNull();
+    verify(secretService, never()).create(any());
+  }
+
+  @Test
+  void an_oauth_replication_ignores_a_password_left_in_the_hidden_field() {
+    classUnderTest.create(withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.OAUTH, "jira-user", "typed"));
+
+    assertThat(saved().getSecretId()).isNull();
+    verify(secretService, never()).create(any());
+  }
+
+  @Test
+  void oauth_is_refused_on_server() {
+    var data = withAuth(JiraApiFlavor.SERVER, JiraAuthMethod.OAUTH, null, null);
+
+    assertThatThrownBy(() -> classUnderTest.create(data))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_OAUTH_NEEDS_CLOUD);
+    verify(configRepository, never()).save(any());
+  }
+
+  /** Password and API token are of no use to OAuth and are not kept around. */
+  @Test
+  void switching_to_oauth_deletes_the_stored_credentials() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+
+    classUnderTest.update(ID, withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.OAUTH, null, null));
+
+    assertThat(saved().getAuthMethod()).isEqualTo(JiraAuthMethod.OAUTH);
+    assertThat(saved().getSecretId()).isNull();
+    verify(secretService).delete(STORED_SECRET_ID);
+  }
+
+  /** The OAuth tokens are no password: switching back needs the API token, as any switch does. */
+  @Test
+  void switching_from_oauth_to_the_api_token_needs_the_token() {
+    var stored = connectedConfig();
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+    var data = withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.BASIC, "jira-user@example.com", null);
+
+    assertThatThrownBy(() -> classUnderTest.update(ID, data))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_AUTH_CHANGE_NEEDS_SECRET);
+  }
+
+  @Test
+  void switching_from_oauth_to_the_api_token_replaces_the_tokens() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(connectedConfig()));
+
+    classUnderTest.update(ID, withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.BASIC, "jira-user@example.com", "api"));
+
+    assertThat(saved().getSecretId()).isEqualTo(STORED_SECRET_ID);
+    assertThat(secretOf(saved())).isEqualTo(new UsernamePassword("jira-user@example.com", "api"));
+  }
+
+  @Test
+  void an_oauth_replication_keeps_its_connection_when_saved_again() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(connectedConfig()));
+
+    classUnderTest.update(ID, withAuth(JiraApiFlavor.CLOUD, JiraAuthMethod.OAUTH, null, null));
+
+    assertThat(saved().getSecretId()).isEqualTo(STORED_SECRET_ID);
+    assertThat(secretOf(saved())).isInstanceOf(OAuthTokens.class);
+    verify(secretService, never()).delete(anyLong());
+    verify(secretService, never()).replace(anyLong(), any());
+  }
+
+  @Test
+  void the_form_sees_the_connected_account_but_no_token() {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(connectedConfig()));
+
+    var info = classUnderTest.getById(ID);
+
+    assertThat(info.oauthConnection().accountName()).isEqualTo("Person A");
+    assertThat(info.oauthConnection().siteHost()).isEqualTo("jira.example.com");
+    assertThat(info.oauthConnection().siteMatches()).isTrue();
+    assertThat(info.oauthConnection().writeGranted()).isFalse();
+    assertThat(info.toString()).doesNotContain("access-token").doesNotContain("refresh-token");
   }
 
   /** A config without a choice keeps HTTP Basic, the method every config used before #1385. */
@@ -980,6 +1077,17 @@ class JiraReplicationConfigServiceTest {
         100, true, false, null, false);
   }
 
+  /** A Cloud replication connected to an Atlassian account (#1417). */
+  private JiraReplicationConfig connectedConfig() {
+    var config = existingConfig();
+    config.setApiFlavor(JiraApiFlavor.CLOUD);
+    config.setAuthMethod(JiraAuthMethod.OAUTH);
+    secrets.put(STORED_SECRET_ID, new OAuthTokens("access-token", Instant.parse("2026-06-25T11:00:00Z"),
+        "refresh-token", new OAuthConnection("atlassian", "account-1", "Person A", "cloud-1",
+            "https://jira.example.com", Set.of("read:jira-work"), "mgr", LocalDateTime.of(2026, 6, 1, 9, 0))));
+    return config;
+  }
+
   private JiraReplicationConfig existingConfig() {
     var config = new JiraReplicationConfig();
     config.setName("Alpha");
@@ -1064,7 +1172,8 @@ class JiraReplicationConfigServiceTest {
       var value = secrets.get(id);
       var readable = !unreadable.containsKey(id);
       var username = readable && value instanceof UsernamePassword usernamePassword ? usernamePassword.username() : null;
-      return new SecretSummary(id, value.type(), SecretStatus.VALID, readable, username);
+      var connection = readable && value instanceof OAuthTokens tokens ? tokens.connection() : null;
+      return new SecretSummary(id, value.type(), SecretStatus.VALID, readable, username, connection);
     });
   }
 

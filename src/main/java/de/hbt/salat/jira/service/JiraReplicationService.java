@@ -1,5 +1,6 @@
 package de.hbt.salat.jira.service;
 
+import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.FAILED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
@@ -151,7 +153,7 @@ public class JiraReplicationService {
     var fields = buildFieldList(cfg, fieldConfig);
     var jql = appendMaxUpdated(cfg.getJql(), baseline);
     var request = new JiraSearchRequest(
-        cfg.getBaseUrl(), credentials, jql, fields, pageSize);
+        credentials.baseUrl(cfg.getBaseUrl()), credentials, jql, fields, pageSize);
 
     // Which of the configured fields any answer actually carried. JIRA either rejects an unknown
     // field id with HTTP 400 — the run then fails visibly — or drops it silently, and that second
@@ -220,11 +222,20 @@ public class JiraReplicationService {
     // run has just replicated, and a failure while writing them must not take the watermark above
     // with it. Re-fetching the same tickets next time is harmless; losing the watermark is not.
     String worklogSyncError = null;
+    var syncCredentials = credentials;
     try {
-      worklogSyncService.sync(cfg, credentials);
+      // An OAuth access token lives an hour (#1417); after a long search it is fetched again, and
+      // renewed if need be, rather than failing halfway through the worklogs.
+      if (credentials.method() == JiraAuthMethod.OAUTH && TRUE.equals(cfg.getWorklogSyncEnabled())) {
+        syncCredentials = credentialStore.credentialsOf(cfg);
+      }
+      worklogSyncService.sync(cfg, syncCredentials);
+    } catch (ErrorCodeException ex) {
+      log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage());
+      worklogSyncError = germanTextOf(ex);
     } catch (Exception ex) {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
-      worklogSyncError = redacted(ex, credentials);
+      worklogSyncError = redacted(ex, syncCredentials);
     }
     return new JiraReplicationResult(fetched, processed, failed, skipped, skippedTickets, worklogSyncError);
   }

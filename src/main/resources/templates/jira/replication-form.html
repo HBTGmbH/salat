@@ -59,28 +59,109 @@
         </div>
       </div>
 
-      <!--/* The sign-in method (#1385) is a choice on Server / Data Center only: Cloud takes its API
-             token as the Basic password and accepts no bearer token. salatApplyAuthMethod() below
-             keeps rows, the required user name and the wording of the secret field in step. */-->
-      <div class="row" id="authMethodRow"
-           th:classappend="${replicationForm.apiFlavor.name() == 'CLOUD'} ? 'd-none'">
-        <div class="col-md-4">
+      <!--/* The sign-in method (#1385, #1417): Server / Data Center offers Basic and a Personal Access
+             Token, Cloud its API token as the Basic password and an Atlassian account via OAuth.
+             salatApplyAuthMethod() below swaps the options with the flavor and keeps rows, the
+             required user name and the wording of the secret field in step; #authMethodOptions
+             carries every method with its label per flavor. */-->
+      <div class="row" id="authMethodRow">
+        <div class="col-md-5">
           <salat:select th:field="*{authMethod}" th:label="#{main.jira.replication.field.authMethod}" required="true">
-            <option th:each="method : ${authMethods}" th:value="${method.name()}"
-                    th:text="#{${method.label}}">Benutzername und Passwort</option>
+            <option th:each="method : ${authMethods}" th:if="${method.isAvailableOn(replicationForm.apiFlavor)}"
+                    th:value="${method.name()}"
+                    th:text="#{${method.labelOn(replicationForm.apiFlavor)}}">Benutzername und Passwort</option>
           </salat:select>
+        </div>
+      </div>
+      <div id="authMethodOptions" hidden>
+        <span th:each="method : ${authMethods}" th:data-value="${method.name()}"
+              th:data-label-server="${method.labelOnServer() != null} ? #{${method.labelOnServer()}} : ''"
+              th:data-label-cloud="${method.labelOnCloud() != null} ? #{${method.labelOnCloud()}} : ''"></span>
+      </div>
+
+      <!--/* OAuth (#1417): the account is connected, not typed. Connecting works on the stored
+             replication — the button sends the form #oauthConnectForm below the page, not this one,
+             so an unsaved switch to OAuth has to be saved first. */-->
+      <div id="oauthPanel" class="mb-3"
+           th:classappend="${replicationForm.authMethod.name() != 'OAUTH'} ? 'd-none'"
+           th:with="connectable=${isEdit and storedAuthMethod != null and storedAuthMethod.name() == 'OAUTH'},
+                    connection=${oauthConnection}">
+        <div class="card card-sm">
+          <div class="card-body">
+            <div th:unless="${oauthAvailable}" class="text-warning"
+                 th:text="#{main.jira.replication.oauth.unavailable}">Nicht eingerichtet.</div>
+            <th:block th:if="${oauthAvailable}">
+              <th:block th:if="${!connectable or connection == null}">
+                <div class="fw-bold mb-2" th:text="#{main.jira.replication.oauth.notconnected}">Nicht verbunden</div>
+                <button type="submit" form="oauthConnectForm" class="btn btn-primary" th:disabled="${!connectable}">
+                  <i class="icon ti ti-plug-connected"></i>
+                  <span th:text="#{main.jira.replication.oauth.button.connect}">Mit Atlassian verbinden</span>
+                </button>
+                <div th:unless="${connectable}" class="form-text"
+                     th:text="#{main.jira.replication.oauth.notsaved}">Erst speichern, dann verbinden.</div>
+              </th:block>
+              <th:block th:if="${connectable and connection != null and connection.reauthRequired}">
+                <div class="fw-bold text-warning mb-2">
+                  <i class="icon ti ti-alert-triangle"></i>
+                  <span th:text="#{main.jira.replication.oauth.expired}">Verbindung abgelaufen – bitte neu verbinden</span>
+                </div>
+                <button type="submit" form="oauthConnectForm" class="btn btn-primary">
+                  <i class="icon ti ti-refresh"></i>
+                  <span th:text="#{main.jira.replication.oauth.button.reconnect}">Neu verbinden</span>
+                </button>
+              </th:block>
+              <th:block th:if="${connectable and connection != null and !connection.reauthRequired}">
+                <div class="fw-bold text-success">
+                  <i class="icon ti ti-check"></i>
+                  <span th:text="#{main.jira.replication.oauth.connected(${connection.accountName})}">Verbunden als Person A</span>
+                </div>
+                <div class="text-secondary mb-2"
+                     th:text="#{main.jira.replication.oauth.connected.detail(${connection.siteHost()},
+                         ${#temporals.format(connection.connectedAt, 'dd.MM.yyyy')})}">
+                  Site: example.atlassian.net · seit 07.10.2026
+                </div>
+                <div th:unless="${connection.siteMatches}" class="alert alert-warning mb-2"
+                     th:text="#{main.jira.replication.oauth.sitechanged(${connection.siteHost()})}"></div>
+                <div th:if="${replicationForm.worklogSyncEnabled and !connection.writeGranted}"
+                     class="alert alert-warning mb-2"
+                     th:text="#{main.jira.replication.oauth.writemissing}"></div>
+                <div class="d-flex gap-2">
+                  <button type="submit" form="oauthConnectForm" class="btn btn-outline-primary">
+                    <i class="icon ti ti-refresh"></i>
+                    <span th:text="#{main.jira.replication.oauth.button.reconnect}">Neu verbinden</span>
+                  </button>
+                  <button type="submit" form="oauthDisconnectForm" class="btn btn-outline-danger">
+                    <i class="icon ti ti-plug-connected-x"></i>
+                    <span th:text="#{main.jira.replication.oauth.button.disconnect}">Trennen</span>
+                  </button>
+                </div>
+              </th:block>
+            </th:block>
+            <div class="form-text" th:text="#{main.jira.replication.oauth.actsas}">
+              Die Replikation handelt als das verbundene Konto.
+            </div>
+            <div class="form-text">
+              <span th:text="#{main.jira.replication.oauth.revoke}">Kein Widerruf über die Schnittstelle.</span>
+              <a href="https://id.atlassian.com/manage-profile/apps" target="_blank" rel="noopener noreferrer"
+                 th:text="#{main.jira.replication.oauth.revoke.link}">Verbundene Apps</a>
+            </div>
+          </div>
         </div>
       </div>
 
       <!--/* Credentials are kept encrypted (#1432). Without a key the application cannot keep them, and
              the fields are offered read-only; a secret that cannot be decrypted has to be entered
-             again. */-->
-      <div th:if="${!credentialsStorable}" class="alert alert-warning mb-3"
-           th:text="#{main.jira.replication.secret.nokey}"></div>
-      <div th:if="${credentialsStorable and isEdit and !credentialsReadable}" class="alert alert-warning mb-3"
-           th:text="#{main.jira.replication.secret.unreadable}"></div>
+             again. Not with OAuth, whose panel above says what there is to say. */-->
+      <div id="secretAlerts" th:classappend="${replicationForm.authMethod.name() == 'OAUTH'} ? 'd-none'">
+        <div th:if="${!credentialsStorable}" class="alert alert-warning mb-3"
+             th:text="#{main.jira.replication.secret.nokey}"></div>
+        <div th:if="${credentialsStorable and isEdit and !credentialsReadable}" class="alert alert-warning mb-3"
+             th:text="#{main.jira.replication.secret.unreadable}"></div>
+      </div>
 
-      <div class="row" th:with="token=${replicationForm.authMethod.name() == 'PERSONAL_ACCESS_TOKEN'}">
+      <div class="row" id="secretRow"
+           th:with="token=${replicationForm.authMethod.name() == 'PERSONAL_ACCESS_TOKEN'}"
+           th:classappend="${replicationForm.authMethod.name() == 'OAUTH'} ? 'd-none'">
         <div class="col-md-6" id="usernameColumn" th:classappend="${token} ? 'd-none'">
           <salat:textInput th:field="*{username}" th:label="#{main.jira.replication.field.username}"
                            required="true" maxlength="255" th:readonly="${!credentialsStorable}"
@@ -258,6 +339,18 @@
     </div>
   </div>
 
+  <!--/* Connecting and disconnecting (#1417) act on the stored replication, like resetting the
+         watermark below; their buttons sit in the panel of the form above and name these forms. */-->
+  <form th:if="${isEdit}" id="oauthConnectForm" method="post"
+        th:action="@{/jira/replications/{id}/oauth/connect(id=${replicationForm.id})}"></form>
+  <form th:if="${isEdit}" id="oauthDisconnectForm" method="post"
+        th:action="@{/jira/replications/{id}/oauth/disconnect(id=${replicationForm.id})}"
+        data-confirm data-confirm-variant="danger"
+        th:data-confirm-title="#{main.jira.replication.oauth.disconnect.confirm.title}"
+        th:data-confirm-text="#{main.jira.replication.oauth.disconnect.confirm.text}"
+        th:data-confirm-detail="${replicationForm.name}"
+        th:data-confirm-label="#{main.jira.replication.oauth.button.disconnect}"></form>
+
   <!--/* Its own form, outside the one above: resetting the watermark is an action on the stored
          record, not an unsaved edit of it. */-->
   <form th:if="${isEdit}" th:action="@{/jira/replications/{id}/reset-watermark(id=${replicationForm.id})}"
@@ -285,27 +378,49 @@
       section.classList.toggle('d-none', !toggle.checked);
     }
 
-    // The sign-in method (#1385): Cloud offers no choice and falls back to Basic; a Personal Access
-    // Token needs no user name, and the secret field names what it holds. Hidden, the user name
-    // must not stay required, or the browser would refuse to submit.
-    function salatApplyAuthMethod() {
+    // The sign-in method (#1385, #1417): each flavor offers its own two, and a method the new flavor
+    // does not offer falls back to Basic. A Personal Access Token needs no user name, and the secret
+    // field names what it holds; OAuth needs neither field but the panel to connect. Hidden, the
+    // user name must not stay required, or the browser would refuse to submit.
+    function salatOfferAuthMethods() {
       const flavor = document.getElementById('apiFlavor');
       const method = document.getElementById('authMethod');
       if (!flavor || !method) return;
-      const cloud = flavor.value === 'CLOUD';
-      if (cloud && method.value !== 'BASIC') {
-        if (method.tomselect) method.tomselect.setValue('BASIC', true); else method.value = 'BASIC';
+      const options = Array.from(document.querySelectorAll('#authMethodOptions [data-value]'))
+        .map(option => ({
+          value: option.dataset.value,
+          text: flavor.value === 'CLOUD' ? option.dataset.labelCloud : option.dataset.labelServer
+        }))
+        .filter(option => option.text);
+      const value = options.some(option => option.value === method.value) ? method.value : 'BASIC';
+      // The native options first: TomSelect does not remove the ones it drops, and sync() reads
+      // them back from the select.
+      method.replaceChildren(...options.map(option => new Option(option.text, option.value, false, option.value === value)));
+      if (method.tomselect) {
+        method.tomselect.clear(true);
+        method.tomselect.clearOptions();
+        method.tomselect.sync();
+        method.tomselect.setValue(value, true);
       }
-      document.getElementById('authMethodRow').classList.toggle('d-none', cloud);
+      salatApplyAuthMethod();
+    }
+
+    function salatApplyAuthMethod() {
+      const method = document.getElementById('authMethod');
+      if (!method) return;
       const token = method.value === 'PERSONAL_ACCESS_TOKEN';
+      const oauth = method.value === 'OAUTH';
       const username = document.getElementById('username');
-      username.required = !token;
+      username.required = !token && !oauth;
       document.getElementById('usernameColumn').classList.toggle('d-none', token);
+      document.getElementById('secretRow').classList.toggle('d-none', oauth);
+      document.getElementById('secretAlerts').classList.toggle('d-none', oauth);
+      document.getElementById('oauthPanel').classList.toggle('d-none', !oauth);
       const secret = document.getElementById('secretColumn');
       secret.querySelector('label').textContent = token ? secret.dataset.labelToken : secret.dataset.labelBasic;
       secret.querySelector('.form-text').textContent = token ? secret.dataset.helpToken : secret.dataset.helpBasic;
     }
-    document.getElementById('apiFlavor')?.addEventListener('change', salatApplyAuthMethod);
+    document.getElementById('apiFlavor')?.addEventListener('change', salatOfferAuthMethods);
     document.getElementById('authMethod')?.addEventListener('change', salatApplyAuthMethod);
     salatApplyAuthMethod();
   </script>
