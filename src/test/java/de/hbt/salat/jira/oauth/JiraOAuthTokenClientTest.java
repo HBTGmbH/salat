@@ -1,4 +1,4 @@
-package de.hbt.salat.secret.service;
+package de.hbt.salat.jira.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -19,26 +19,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-import de.hbt.salat.common.SalatProperties.OAuth.Client;
+import de.hbt.salat.common.SalatProperties.Jira.OAuth;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.ClockProvider;
-import de.hbt.salat.secret.service.OAuthTokenClient.TokenRequestException;
+import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.TokenRequestException;
 
 /** The token endpoint as Atlassian runs it (#1417): JSON in, JSON out, {@code 403} for a used-up refresh token. */
 @FixedClock
 @DisplayNameGeneration(ReplaceUnderscores.class)
-class OAuthTokenClientTest {
+class JiraOAuthTokenClientTest {
 
   private static final String TOKEN_URI = "https://auth.example.com/oauth/token";
 
   private MockRestServiceServer provider;
-  private OAuthTokenClient client;
+  private JiraOAuthTokenClient client;
 
   @BeforeEach
   void setUp() {
     var builder = RestClient.builder();
     provider = MockRestServiceServer.bindTo(builder).build();
-    client = new OAuthTokenClient(builder);
+    client = new JiraOAuthTokenClient(builder);
   }
 
   @Test
@@ -120,16 +120,16 @@ class OAuthTokenClientTest {
 
   @Test
   void nothing_of_a_token_appears_in_the_string_forms() {
-    var tokens = new OAuthTokenClient.Tokens("access-1", Instant.EPOCH, "refresh-1", java.util.Set.of());
-    var request = new OAuthTokenClient.TokenRequest("refresh_token", "client", "client-secret", null, null, null,
+    var tokens = new JiraOAuthTokenClient.Tokens("access-1", Instant.EPOCH, "refresh-1", java.util.Set.of());
+    var request = new JiraOAuthTokenClient.TokenRequest("refresh_token", "client", "client-secret", null, null, null,
         "refresh-1");
 
     assertThat(tokens.toString()).doesNotContain("access-1").doesNotContain("refresh-1");
     assertThat(request.toString()).doesNotContain("client-secret").doesNotContain("refresh-1");
   }
 
-  private static Client registration() {
-    var client = new Client();
+  private static OAuth registration() {
+    var client = new OAuth();
     client.setClientId("client");
     client.setClientSecret("client-secret");
     client.setRedirectUri("https://salat.example.com/callback");

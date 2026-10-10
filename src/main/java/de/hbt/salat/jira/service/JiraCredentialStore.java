@@ -12,13 +12,13 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraOAuthConnectionInfo;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
+import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.domain.SecretType;
 import de.hbt.salat.secret.domain.SecretValue;
 import de.hbt.salat.secret.domain.Token;
 import de.hbt.salat.secret.domain.UsernamePassword;
-import de.hbt.salat.secret.service.OAuthService;
 import de.hbt.salat.secret.service.SecretService;
 
 /**
@@ -28,21 +28,18 @@ import de.hbt.salat.secret.service.SecretService;
  *
  * <p>With HTTP Basic the user name is part of the secret — on Cloud it is the e-mail address of the
  * account, and useless without the token. A Personal Access Token is a secret of its own type, and so
- * is an OAuth connection (#1417): its tokens are renewed by {@link OAuthService} whenever a client
- * asks for them.
+ * is an OAuth connection (#1417): its tokens are renewed by {@link JiraOAuthService} whenever a
+ * client asks for them.
  */
 @Component
 @RequiredArgsConstructor
 class JiraCredentialStore {
 
-  /** The registration in {@code salat.oauth.clients} a replication connects with (#1417). */
-  static final String ATLASSIAN = "atlassian";
-
   /** The scope that lets the connection write worklogs; asked for only when they are written. */
   static final String WRITE_SCOPE = "write:jira-work";
 
   private final SecretService secretService;
-  private final OAuthService oauthService;
+  private final JiraOAuthService oauthService;
 
   /** Whether credentials can be stored — the environment provides a key. */
   boolean canStore() {
@@ -51,14 +48,14 @@ class JiraCredentialStore {
 
   /** Whether a replication can be connected to an Atlassian account: the app is registered and there is a key. */
   boolean canConnect() {
-    return oauthService.isAvailable(ATLASSIAN);
+    return oauthService.isAvailable();
   }
 
   /**
    * @throws BusinessRuleException {@code JI-0042} when no secret is stored or it does not fit the
    *     sign-in method, {@code SC-0001} without a key, {@code SC-0002} when the secret is unreadable
    *     — each says that the credentials have to be entered again, or why they cannot be. With OAuth
-   *     {@code JI-0044} when it is not connected, {@code SC-0004} when the connection has expired and
+   *     {@code JI-0044} when it is not connected, {@code JI-0049} when the connection has expired and
    *     {@code JI-0046} when it was made for another site than the base URL names.
    */
   JiraCredentials credentialsOf(JiraReplicationConfig config) {

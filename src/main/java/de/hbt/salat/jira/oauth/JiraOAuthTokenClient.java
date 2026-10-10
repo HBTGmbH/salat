@@ -1,4 +1,4 @@
-package de.hbt.salat.secret.service;
+package de.hbt.salat.jira.oauth;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,12 +14,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-import de.hbt.salat.common.SalatProperties.OAuth.Client;
+import de.hbt.salat.common.SalatProperties.Jira.OAuth;
 import de.hbt.salat.common.util.ClockProvider;
 
 /**
- * The token endpoint of an OAuth provider (#1417): the code against the first tokens, the refresh
- * token against new ones.
+ * The token endpoint of Atlassian (#1417): the code against the first tokens, the refresh token
+ * against new ones.
  *
  * <p>Not the token response clients of Spring Security, which ADR-0038 §2 had in mind: Atlassian
  * expects the request as JSON with the client credentials in it, and answers a refresh token that is
@@ -31,34 +31,34 @@ import de.hbt.salat.common.util.ClockProvider;
  */
 @Slf4j
 @Component
-class OAuthTokenClient {
+class JiraOAuthTokenClient {
 
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private final RestClient restClient;
 
-  OAuthTokenClient() {
+  JiraOAuthTokenClient() {
     this(RestClient.builder());
   }
 
   /** For tests, which bind a {@code MockRestServiceServer} to the builder they pass in. */
-  OAuthTokenClient(RestClient.Builder restClientBuilder) {
+  JiraOAuthTokenClient(RestClient.Builder restClientBuilder) {
     this.restClient = restClientBuilder.build();
   }
 
   /** The authorization code and the PKCE verifier of the attempt against the first tokens. */
-  Tokens exchange(Client client, String code, String codeVerifier) {
+  Tokens exchange(OAuth client, String code, String codeVerifier) {
     return request(client, new TokenRequest("authorization_code", client.getClientId(), client.getClientSecret(),
         code, client.getRedirectUri(), codeVerifier, null));
   }
 
   /** The refresh token against new tokens; with a rotating provider the old one is used up by this. */
-  Tokens refresh(Client client, String refreshToken) {
+  Tokens refresh(OAuth client, String refreshToken) {
     return request(client, new TokenRequest("refresh_token", client.getClientId(), client.getClientSecret(),
         null, null, null, refreshToken));
   }
 
-  private Tokens request(Client client, TokenRequest body) {
+  private Tokens request(OAuth client, TokenRequest body) {
     TokenResponse response;
     try {
       response = restClient.post().uri(client.getTokenUri())

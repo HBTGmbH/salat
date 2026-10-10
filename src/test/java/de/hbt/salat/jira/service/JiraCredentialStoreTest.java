@@ -22,9 +22,9 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
+import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.secret.domain.OAuthConnection;
 import de.hbt.salat.secret.domain.OAuthTokens;
-import de.hbt.salat.secret.service.OAuthService;
 import de.hbt.salat.secret.service.SecretService;
 
 /** The credentials of a replication connected via OAuth (#1417): a fresh access token and the API address of its site. */
@@ -37,7 +37,7 @@ class JiraCredentialStoreTest {
   private SecretService secretService;
 
   @Mock
-  private OAuthService oauthService;
+  private JiraOAuthService oauthService;
 
   private JiraCredentialStore store;
   private JiraReplicationConfig config;
@@ -45,7 +45,7 @@ class JiraCredentialStoreTest {
   @BeforeEach
   void setUp() {
     store = new JiraCredentialStore(secretService, oauthService);
-    when(oauthService.isAvailable("atlassian")).thenReturn(true);
+    when(oauthService.isAvailable()).thenReturn(true);
     config = new JiraReplicationConfig();
     config.setBaseUrl("https://Example.atlassian.net/");
     config.setApiFlavor(JiraApiFlavor.CLOUD);
@@ -88,9 +88,9 @@ class JiraCredentialStoreTest {
 
   @Test
   void an_expired_connection_fails_with_the_words_of_the_secret_module() {
-    when(oauthService.currentTokens(500L)).thenThrow(new BusinessRuleException(ErrorCode.SC_OAUTH_REAUTH_REQUIRED));
+    when(oauthService.currentTokens(500L)).thenThrow(new BusinessRuleException(ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED));
 
-    assertRejected(() -> store.credentialsOf(config), ErrorCode.SC_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> store.credentialsOf(config), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
   }
 
   private static OAuthTokens tokens(String siteUrl, String... scopes) {

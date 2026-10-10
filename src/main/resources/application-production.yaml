@@ -28,10 +28,9 @@ salat:
         principal-id-claim-name: oid
   auth-service:
     cache-expiry: 1h
-  oauth:
-    clients:
-      atlassian:
-        redirect-uri: https://salat.hbt.de/jira/replications/oauth/callback
+  jira:
+    oauth:
+      redirect-uri: https://salat.hbt.de/jira/replications/oauth/callback
   reporting:
     email:
       from: salat-noreply@hbt.de

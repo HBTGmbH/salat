@@ -9,7 +9,7 @@ import java.util.Set;
  * here is a secret, but it is stored encrypted with the tokens, like the user name of a
  * {@link UsernamePassword}, and it is all a form gets to see of the connection.
  *
- * @param provider the registration in {@code salat.oauth.clients} the tokens are renewed with
+ * @param provider who issued the tokens, {@code atlassian}
  * @param accountId the id of the foreign account, as the provider names it
  * @param accountName the display name of the foreign account
  * @param resourceId the resource of the provider the connection was made for — the cloud id of an

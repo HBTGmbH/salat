@@ -24,8 +24,8 @@ class SecretKeyConfigurationTest {
   @Test
   void no_profile_names_the_credentials_of_an_oauth_app() {
     assertThat(ProfileProperties.all())
-        .filteredOn(entry -> entry.name().startsWith("salat.oauth.")
-            && (entry.name().endsWith(".client-id") || entry.name().endsWith(".client-secret")))
+        .filteredOn(entry -> entry.name().equals("salat.jira.oauth.client-id")
+            || entry.name().equals("salat.jira.oauth.client-secret"))
         .isEmpty();
   }
 
@@ -37,8 +37,8 @@ class SecretKeyConfigurationTest {
     assertThat(ConfigurationLogger.isConfidential("SPRING_DATASOURCE_PASSWORD")).isTrue();
     assertThat(ConfigurationLogger.isConfidential("SALAT_UISTATE_SIGNINGKEY")).isTrue();
     assertThat(ConfigurationLogger.isConfidential("salat.ui-state.signing-key")).isTrue();
-    assertThat(ConfigurationLogger.isConfidential("SALAT_OAUTH_CLIENTS_ATLASSIAN_CLIENTSECRET")).isTrue();
-    assertThat(ConfigurationLogger.isConfidential("salat.oauth.clients.atlassian.client-secret")).isTrue();
+    assertThat(ConfigurationLogger.isConfidential("SALAT_JIRA_OAUTH_CLIENTSECRET")).isTrue();
+    assertThat(ConfigurationLogger.isConfidential("salat.jira.oauth.client-secret")).isTrue();
     assertThat(ConfigurationLogger.isConfidential("spring.datasource.url")).isFalse();
   }
 }

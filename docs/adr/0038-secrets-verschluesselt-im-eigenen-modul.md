@@ -120,8 +120,7 @@ schlüsselt den autorisierten Client nach dem angemeldeten Principal, hier aber 
 Replikation. Auch seine Token-Response-Clients passen nicht (geprüft in #1417): Atlassian erwartet
 die Anfrage als JSON mit den Client-Zugangsdaten darin und beantwortet ein verbrauchtes
 Refresh-Token mit `403` und `invalid_grant`, Spring sendet ein Formular und liest den Fehler nur aus
-einem `400`. Code-Tausch, Refresh und PKCE sind deshalb ein kleiner eigener Client mit `RestClient`
-im Modul `secret`.
+einem `400`. Code-Tausch, Refresh und PKCE sind deshalb ein kleiner eigener Client mit `RestClient`.
 
 ### 3. Verschlüsselung
 
@@ -206,8 +205,22 @@ nicht aus dem Request abgeleitet, weil hinter dem Proxy der Host nicht der öffe
 Fehlt die Registrierung, bietet das Formular „Verbinden“ nicht an.
 
 Die Routen für Start und Callback gehören dem Eigentümer (die Replikation: ihr Controller), weil er
-die Berechtigung kennt. Das Modul `secret` liefert den Ablauf dazwischen: Autorisierungsanfrage
-bauen, Callback prüfen, Code tauschen, Secret anlegen.
+die Berechtigung kennt. **Das OAuth-Protokoll liegt beim Eigentümer, nicht im Modul `secret`**
+(geändert in #1417): Autorisierungsanfrage, Callback-Prüfung, Code-Tausch und Erneuerung stehen im
+Modul `jira` (Unterpaket `jira.oauth`), denn bisher verbindet nur die Replikation, und nur mit
+Atlassian. `secret` bleibt reiner Speicher und kennt kein Protokoll, nur den Inhalt der Art `OAUTH`.
+Dafür bietet es drei schmale Methoden an:
+
+* **Lesen mit Version** und **Ersetzen nur bei unveränderter Version**: Die Erneuerung schreibt
+  bedingt zurück (Abschnitt 5), ohne dass die Entität das Modul verlässt.
+* **Versiegeln eines flüchtigen Werts** mit dem Schlüssel der Umgebung und eigener Associated Data:
+  das Cookie aus Abschnitt 8.
+
+Kommt ein zweiter Eigentümer oder Anbieter dazu, etwa Verbindungen je Person, wird das Protokoll in
+ein eigenes Modul gezogen; `secret` ändert sich dafür nicht.
+
+Die Registrierung steht unter `salat.jira.oauth`; Client-ID und Client-Secret kommen als
+`SALAT_JIRA_OAUTH_CLIENTID` und `SALAT_JIRA_OAUTH_CLIENTSECRET` aus der Umgebung.
 
 ### 8. `state` und PKCE im verschlüsselten Cookie
 
@@ -215,7 +228,8 @@ ADR-0013 erlaubt Zustand im Cookie. `state`, `code_verifier`, die Bindung an den
 `jira-replication:<id>`), das Kürzel der angemeldeten Person und der Ablaufzeitpunkt liegen in einem
 Cookie:
 
-* verschlüsselt mit dem Schlüssel aus Abschnitt 3, Associated Data `oauth-state`,
+* verschlüsselt mit dem Schlüssel aus Abschnitt 3 über `SecretService#sealTransient`, Associated Data
+  `transient:oauth-state`,
 * Präfix `__Host-`, `HttpOnly`, `Secure`, **`SameSite=Lax`**, höchstens zehn Minuten gültig.
   `Strict` ginge nicht: Der Callback ist eine Navigation von der Site des Anbieters.
 
@@ -294,8 +308,8 @@ Neutral beschrieben; die konkreten Namen stehen in der Betriebsdokumentation.
 2. Der Anwendung `SALAT_SECRET_ACTIVEKEYID` und `SALAT_SECRET_KEYS_<ID>` bereitstellen, vor dem
    Release, das die Klartext-Secrets umstellt.
 3. Für OAuth (#1417): je Umgebung eine App beim Anbieter registrieren, Redirect-URI eintragen,
-   Client-ID und Client-Secret wie den Schlüssel bereitstellen (`SALAT_OAUTH_CLIENTS_<ANBIETER>_CLIENTID`,
-   `SALAT_OAUTH_CLIENTS_<ANBIETER>_CLIENTSECRET`).
+   Client-ID und Client-Secret wie den Schlüssel bereitstellen (`SALAT_JIRA_OAUTH_CLIENTID`,
+   `SALAT_JIRA_OAUTH_CLIENTSECRET`).
 4. Schlüsselwechsel: neuen Schlüssel ergänzen, aktive Kennung umstellen, neu starten. Den alten
    erst entfernen, wenn der Start alle Zeilen neu verschlüsselt hat.
 

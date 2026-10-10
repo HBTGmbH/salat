@@ -27,10 +27,9 @@ salat:
         principal-id-claim-name: oid
   auth-service:
     cache-expiry: 5m
-  oauth:
-    clients:
-      atlassian:
-        redirect-uri: https://salat-test.hbt.de/jira/replications/oauth/callback
+  jira:
+    oauth:
+      redirect-uri: https://salat-test.hbt.de/jira/replications/oauth/callback
 springdoc:
   swagger-ui:
     oauth:
