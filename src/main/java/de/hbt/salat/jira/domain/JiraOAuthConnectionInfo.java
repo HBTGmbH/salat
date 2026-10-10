@@ -1,7 +1,6 @@
 package de.hbt.salat.jira.domain;
 
 import java.time.LocalDateTime;
-import de.hbt.salat.secret.domain.OAuthConnection;
 
 /**
  * The Atlassian account a replication is connected to (#1417), as the form shows it — without a
@@ -28,9 +27,9 @@ public record JiraOAuthConnectionInfo(
 ) {
 
   /** @param writeScope the scope that lets the connection write worklogs */
-  public static JiraOAuthConnectionInfo of(OAuthConnection connection, boolean reauthRequired, boolean siteMatches,
+  public static JiraOAuthConnectionInfo of(JiraOAuthConnection connection, boolean reauthRequired, boolean siteMatches,
                                            String writeScope) {
-    return new JiraOAuthConnectionInfo(connection.accountName(), connection.resourceUrl(), connection.connectedBy(),
+    return new JiraOAuthConnectionInfo(connection.accountName(), connection.siteUrl(), connection.connectedBy(),
         connection.connectedAt(), reauthRequired, siteMatches, connection.grants(writeScope));
   }
 

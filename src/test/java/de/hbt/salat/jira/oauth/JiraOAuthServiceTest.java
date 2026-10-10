@@ -13,20 +13,18 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -43,8 +41,7 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.ClockProvider;
 import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.TokenRequestException;
 import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.Tokens;
-import de.hbt.salat.secret.domain.OAuthConnection;
-import de.hbt.salat.secret.domain.OAuthTokens;
+import de.hbt.salat.secret.domain.Token;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.service.SecretService;
 
@@ -134,7 +131,7 @@ class JiraOAuthServiceTest {
     when(tokenClient.exchange(any(), eq("the-code"), any())).thenAnswer(invocation -> {
       String verifier = invocation.getArgument(2);
       assertThat(JiraOAuthService.codeChallenge(verifier)).isEqualTo(query.get("code_challenge"));
-      return tokens("access-1", "refresh-1", Duration.ofHours(1));
+      return tokens("access-1", "refresh-1");
     });
 
     assertThat(oauthService.ownerOf(authorization.cookie().getValue(), query.get("state"))).isEqualTo(OWNER);
@@ -204,93 +201,85 @@ class JiraOAuthServiceTest {
     assertThat(oauthService.isAvailable()).isTrue();
   }
 
+  /** Only the refresh token is stored; each run gets its own access token (ADR-0038 §5). */
   @Test
-  void a_valid_access_token_is_handed_out_without_asking_the_provider() {
-    var id = storedConnection(Duration.ofMinutes(30));
+  void every_call_renews_and_stores_the_rotated_refresh_token_right_away() {
+    var id = storedRefreshToken();
+    givenRotatingProvider(Duration.ZERO);
 
-    assertThat(oauthService.currentTokens(id).accessToken()).isEqualTo("access-0");
-    verify(tokenClient, never()).refresh(any(), any());
+    assertThat(oauthService.accessToken(id)).isEqualTo("access-1");
+    assertThat(secretService.read(id)).isEqualTo(new Token("refresh-1"));
+    assertThat(oauthService.accessToken(id)).isEqualTo("access-2");
+    assertThat(secretService.read(id)).isEqualTo(new Token("refresh-2"));
   }
 
-  /** Five minutes are the least a token has to have left (ADR-0038 §5). */
   @Test
-  void an_expiring_access_token_is_renewed_and_the_rotated_refresh_token_stored() {
-    var id = storedConnection(Duration.ofMinutes(4));
-    when(tokenClient.refresh(any(), eq("refresh-0"))).thenReturn(tokens("access-1", "refresh-1", Duration.ofHours(1)));
+  void a_provider_that_does_not_rotate_leaves_the_refresh_token_as_it_is() {
+    var id = storedRefreshToken();
+    when(tokenClient.refresh(any(), eq("refresh-0"))).thenReturn(tokens("access-1", null));
 
-    var renewed = oauthService.currentTokens(id);
-
-    assertThat(renewed.accessToken()).isEqualTo("access-1");
-    var stored = (OAuthTokens) secretService.read(id);
-    assertThat(stored.accessToken()).isEqualTo("access-1");
-    assertThat(stored.refreshToken()).isEqualTo("refresh-1");
-    assertThat(stored.connection().accountName()).isEqualTo("Person A");
+    assertThat(oauthService.accessToken(id)).isEqualTo("access-1");
+    assertThat(secretService.read(id)).isEqualTo(new Token("refresh-0"));
   }
 
   /**
-   * The test of the acceptance criteria: two callers at the same time, one call to the token
-   * endpoint. A rotating refresh token used twice could end the connection (ADR-0038 §5).
+   * The test of the acceptance criteria: two callers at the same time never renew with the same
+   * refresh token. The second one waits and renews with the one the first has just stored — a rotating
+   * refresh token used twice could end the connection (ADR-0038 §5).
    */
   @Test
-  void two_callers_at_the_same_time_renew_once() throws Exception {
-    var id = storedConnection(Duration.ofMinutes(1));
-    var calls = new AtomicInteger();
-    when(tokenClient.refresh(any(), any())).thenAnswer(invocation -> {
-      calls.incrementAndGet();
-      // the second caller is on its way into the lock while the first one is still at the provider
-      Thread.sleep(200);
-      return tokens("access-1", "refresh-1", Duration.ofHours(1));
-    });
+  void two_callers_at_the_same_time_renew_one_after_the_other() throws Exception {
+    var id = storedRefreshToken();
+    // the second caller is on its way into the lock while the first one is still at the provider
+    givenRotatingProvider(Duration.ofMillis(200));
 
     var executor = Executors.newFixedThreadPool(2);
     try {
-      var first = executor.submit(() -> oauthService.currentTokens(id));
-      var second = executor.submit(() -> oauthService.currentTokens(id));
+      var first = executor.submit(() -> oauthService.accessToken(id));
+      var second = executor.submit(() -> oauthService.accessToken(id));
 
-      assertThat(first.get(10, TimeUnit.SECONDS).accessToken()).isEqualTo("access-1");
-      assertThat(second.get(10, TimeUnit.SECONDS).accessToken()).isEqualTo("access-1");
+      assertThat(List.of(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS)))
+          .containsExactlyInAnyOrder("access-1", "access-2");
     } finally {
       executor.shutdownNow();
     }
-    assertThat(calls).hasValue(1);
-    verify(tokenClient, times(1)).refresh(any(), eq("refresh-0"));
+    var used = ArgumentCaptor.forClass(String.class);
+    verify(tokenClient, times(2)).refresh(any(), used.capture());
+    assertThat(used.getAllValues()).containsExactly("refresh-0", "refresh-1");
+    assertThat(secretService.read(id)).isEqualTo(new Token("refresh-2"));
   }
 
   @Test
-  void invalid_grant_ends_the_connection_and_keeps_who_it_was() {
-    var id = storedConnection(Duration.ofMinutes(1));
+  void invalid_grant_removes_the_refresh_token() {
+    var id = storedRefreshToken();
     when(tokenClient.refresh(any(), any())).thenThrow(new TokenRequestException("invalid_grant"));
 
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> oauthService.accessToken(id), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
 
-    var summary = secretService.getSummary(id);
-    assertThat(summary.status()).isEqualTo(SecretStatus.REAUTH_REQUIRED);
-    assertThat(summary.connection().accountName()).isEqualTo("Person A");
-    var stored = (OAuthTokens) secretService.read(id);
-    assertThat(stored.accessToken()).isNull();
-    assertThat(stored.refreshToken()).isNull();
-    // and the provider is not asked again with a token it has refused
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
+    assertThat(secretService.getSummary(id).status()).isEqualTo(SecretStatus.REAUTH_REQUIRED);
+    assertThat(secretService.read(id)).isEqualTo(new Token(null));
+    // and Atlassian is not asked again with a token it has refused
+    assertRejected(() -> oauthService.accessToken(id), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
     verify(tokenClient, times(1)).refresh(any(), any());
   }
 
   @Test
-  void another_refusal_leaves_the_connection_as_it_is() {
-    var id = storedConnection(Duration.ofMinutes(1));
+  void another_refusal_leaves_the_refresh_token_as_it_is() {
+    var id = storedRefreshToken();
     when(tokenClient.refresh(any(), any())).thenThrow(new TokenRequestException("request_failed"));
 
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED);
+    assertRejected(() -> oauthService.accessToken(id), ErrorCode.JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED);
 
     assertThat(secretService.getSummary(id).status()).isEqualTo(SecretStatus.VALID);
-    assertThat(((OAuthTokens) secretService.read(id)).refreshToken()).isEqualTo("refresh-0");
+    assertThat(secretService.read(id)).isEqualTo(new Token("refresh-0"));
   }
 
   @Test
-  void only_the_management_reaches_the_tokens() {
-    var id = storedConnection(Duration.ofMinutes(30));
+  void only_the_management_gets_an_access_token() {
+    var id = storedRefreshToken();
     when(authorizedUser.isManager()).thenReturn(false);
 
-    assertThatThrownBy(() -> oauthService.currentTokens(id)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> oauthService.accessToken(id)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(this::authorize).isInstanceOf(AuthorizationException.class);
   }
 
@@ -299,21 +288,23 @@ class JiraOAuthServiceTest {
         Map.of("audience", "api.atlassian.com"));
   }
 
-  private long storedConnection(Duration validFor) {
-    var connection = new OAuthConnection("atlassian", "account-1", "Person A", "cloud-1", "https://example.atlassian.net",
-        Set.of("read:jira-work", "offline_access"), "mgr", LocalDateTime.of(2026, 6, 1, 9, 0));
-    var tokens = new OAuthTokens("access-0", now().plus(validFor), "refresh-0", connection);
-    var id = new TransactionTemplate(transactionManager).execute(status -> secretService.create(tokens));
+  private long storedRefreshToken() {
+    var id = new TransactionTemplate(transactionManager).execute(status -> secretService.create(new Token("refresh-0")));
     createdSecrets.add(id);
     return id;
   }
 
-  private static Tokens tokens(String access, String refresh, Duration validFor) {
-    return new Tokens(access, now().plus(validFor), refresh, Set.of());
+  /** Atlassian as it rotates: refresh-N gives access-(N+1) and refresh-(N+1). */
+  private void givenRotatingProvider(Duration delay) {
+    when(tokenClient.refresh(any(), any())).thenAnswer(invocation -> {
+      Thread.sleep(delay.toMillis());
+      var next = Integer.parseInt(invocation.<String>getArgument(1).substring("refresh-".length())) + 1;
+      return tokens("access-" + next, "refresh-" + next);
+    });
   }
 
-  private static Instant now() {
-    return Instant.now(ClockProvider.getClock());
+  private static Tokens tokens(String access, String refresh) {
+    return new Tokens(access, refresh, Set.of());
   }
 
   private static Map<String, String> queryOf(JiraOAuthAuthorization authorization) {

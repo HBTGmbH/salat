@@ -33,19 +33,20 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.ClockProvider;
 import de.hbt.salat.jira.oauth.JiraOAuthStateCookie.Pending;
 import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.TokenRequestException;
-import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
+import de.hbt.salat.secret.domain.Token;
 import de.hbt.salat.secret.domain.VersionedSecret;
 import de.hbt.salat.secret.service.SecretService;
 
 /**
  * OAuth 2.0 (3LO) against Atlassian (#1417, → ADR-0038 §§5–8): the authorization code flow with PKCE
- * between the start and the callback of a replication, and the renewal of the tokens it stored.
+ * between the start and the callback of a replication, and a fresh access token for every run from
+ * the refresh token it stored.
  *
  * <p>The routes belong to the replication, which knows who may connect; this service knows the
- * attempt only by the owner it was given ({@code jira-replication:<id>}). The tokens are a secret of
- * type {@code OAUTH} in the module {@code secret}, written and read through {@link SecretService}
- * alone: storing them is the replication's, renewing them is this service's.
+ * attempt only by the owner it was given ({@code jira-replication:<id>}). The refresh token is a
+ * {@link Token} in the module {@code secret}, written and read through {@link SecretService} alone:
+ * storing it first is the replication's, replacing it with the rotated one is this service's.
  *
  * <p>Management only, like the replications: the hourly run reaches this as the job user.
  */
@@ -56,9 +57,6 @@ public class JiraOAuthService {
 
   /** The cookie that carries a connection attempt to the callback. */
   public static final String STATE_COOKIE = JiraOAuthStateCookie.NAME;
-
-  /** Recorded as the provider of a connection in the secret. */
-  public static final String PROVIDER = "atlassian";
 
   private static final int RANDOM_BYTES = 32;
   private static final Base64.Encoder BASE64_URL = Base64.getUrlEncoder().withoutPadding();
@@ -147,8 +145,7 @@ public class JiraOAuthService {
     var registration = requireRegistration();
     try {
       var tokens = tokenClient.exchange(registration, code, pending.codeVerifier());
-      return new JiraOAuthGrant(PROVIDER, tokens.accessToken(), tokens.expiresAt(), tokens.refreshToken(),
-          tokens.scopes());
+      return new JiraOAuthGrant(tokens.accessToken(), tokens.refreshToken(), tokens.scopes());
     } catch (TokenRequestException ex) {
       throw new BusinessRuleException(JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
     }
@@ -160,73 +157,68 @@ public class JiraOAuthService {
   }
 
   /**
-   * The tokens of a connection with an access token that is valid for at least
-   * {@link OAuthTokens#MINIMUM_VALIDITY}, renewed if need be (ADR-0038 §5): a second caller waits for
-   * the first one's renewal and takes its tokens, so a rotating refresh token is used only once.
+   * A fresh access token for one run (ADR-0038 §5). Only the refresh token is stored; every call
+   * renews with it, and the access token lives in memory as long as the caller uses it — an hour at
+   * most.
+   *
+   * <p>Atlassian rotates the refresh token with every renewal, and the new one is stored right away,
+   * not at the end of the run: a run that aborts would otherwise take the only valid refresh token
+   * with it. One lock per secret keeps two callers — the hourly run and a field catalogue opened at
+   * the same time — from renewing with the same refresh token; the second one reads the one the first
+   * has just stored. The version is the safety net behind the lock.
    *
    * <p>Outside a transaction: no database connection is held while Atlassian is asked. Reading and
-   * writing are short transactions of {@link SecretService}, the version as a safety net behind the
-   * lock.
+   * writing are short transactions of {@link SecretService}.
    *
    * @throws BusinessRuleException {@code JI-0049} when the connection has to be established again —
-   *     Atlassian refused to renew it, or it cannot be read with the keys there are; {@code JI-0053}
-   *     when Atlassian could not be asked; {@code SC-0001} without any key
+   *     Atlassian refused to renew it, or the refresh token cannot be read with the keys there are;
+   *     {@code JI-0053} when Atlassian could not be asked; {@code SC-0001} without any key
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
-  public OAuthTokens currentTokens(long secretId) {
-    var current = read(secretId);
-    if (tokensOf(current).isUsableAt(now())) {
-      return tokensOf(current);
-    }
+  public String accessToken(long secretId) {
+    var registration = requireRegistration();
     var lock = renewalLocks.computeIfAbsent(secretId, id -> new ReentrantLock());
     lock.lock();
     try {
-      var fresh = read(secretId);
-      if (tokensOf(fresh).isUsableAt(now())) {
-        // Renewed by the caller this one waited for.
-        return tokensOf(fresh);
+      var stored = readRefreshToken(secretId);
+      var refreshToken = ((Token) stored.value()).token();
+      JiraOAuthTokenClient.Tokens response;
+      try {
+        response = tokenClient.refresh(registration, refreshToken);
+      } catch (TokenRequestException ex) {
+        if (ex.isInvalidGrant()) {
+          requireReauthentication(secretId, stored);
+          throw new BusinessRuleException(JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
+        }
+        throw new BusinessRuleException(JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
       }
-      return renew(secretId, fresh);
+      // A provider that does not rotate returns none; then the old one stays valid.
+      if (response.refreshToken() != null && !response.refreshToken().equals(refreshToken)) {
+        secretService.replaceIfUnchanged(secretId, stored.version(), new Token(response.refreshToken()),
+            SecretStatus.VALID);
+      }
+      return response.accessToken();
     } finally {
       lock.unlock();
     }
   }
 
-  private OAuthTokens renew(long secretId, VersionedSecret stored) {
-    var registration = requireRegistration();
-    JiraOAuthTokenClient.Tokens response;
-    try {
-      response = tokenClient.refresh(registration, tokensOf(stored).refreshToken());
-    } catch (TokenRequestException ex) {
-      if (ex.isInvalidGrant()) {
-        requireReauthentication(secretId, stored);
-        throw new BusinessRuleException(JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
-      }
-      throw new BusinessRuleException(JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED, ex.error());
-    }
-    var renewed = tokensOf(stored).renewed(response.accessToken(), response.expiresAt(), response.refreshToken(),
-        response.scopes());
-    secretService.replaceIfUnchanged(secretId, stored.version(), renewed, SecretStatus.VALID);
-    return renewed;
-  }
-
   /**
-   * {@code invalid_grant}: the refresh token is used up, expired or revoked (ADR-0038 §6). The tokens
-   * go, the connection stays, so the form can say which account to connect again.
+   * {@code invalid_grant}: the refresh token is used up, expired or revoked (ADR-0038 §6). It goes;
+   * the connection with the replication stays, so the form can say which account to connect again.
    */
   private void requireReauthentication(long secretId, VersionedSecret stored) {
-    secretService.replaceIfUnchanged(secretId, stored.version(), tokensOf(stored).withoutTokens(),
-        SecretStatus.REAUTH_REQUIRED);
-    log.warn("Secret {} (OAUTH): Atlassian refused to renew the tokens (invalid_grant) - the connection has to "
-        + "be established again", secretId);
+    secretService.replaceIfUnchanged(secretId, stored.version(), new Token(null), SecretStatus.REAUTH_REQUIRED);
+    log.warn("Secret {}: Atlassian refused the refresh token (invalid_grant) - the connection has to be "
+        + "established again", secretId);
   }
 
   /**
-   * The stored connection, as long as it has tokens. A secret that cannot be read is not written
-   * back as {@code REAUTH_REQUIRED}: a key missing by mistake would otherwise end every connection for
-   * good, although the payload is intact.
+   * The stored refresh token. One that cannot be read is not written back as {@code REAUTH_REQUIRED}:
+   * a key missing by mistake would otherwise end every connection for good, although the payload is
+   * intact.
    */
-  private VersionedSecret read(long secretId) {
+  private VersionedSecret readRefreshToken(long secretId) {
     VersionedSecret stored;
     try {
       stored = secretService.readVersioned(secretId);
@@ -236,15 +228,11 @@ public class JiraOAuthService {
       }
       throw ex;
     }
-    if (!(stored.value() instanceof OAuthTokens tokens) || stored.status() == SecretStatus.REAUTH_REQUIRED
-        || !tokens.hasTokens()) {
+    if (!(stored.value() instanceof Token token) || token.token() == null
+        || stored.status() == SecretStatus.REAUTH_REQUIRED) {
       throw new BusinessRuleException(JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
     }
     return stored;
-  }
-
-  private static OAuthTokens tokensOf(VersionedSecret stored) {
-    return (OAuthTokens) stored.value();
   }
 
   private Pending verify(String cookieValue, String state) {

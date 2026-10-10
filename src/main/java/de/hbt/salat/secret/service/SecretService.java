@@ -17,7 +17,6 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
-import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.Secret;
 import de.hbt.salat.secret.domain.SecretStatus;
 import de.hbt.salat.secret.domain.SecretSummary;
@@ -198,8 +197,7 @@ public class SecretService {
       value = null;
     }
     var username = value instanceof UsernamePassword usernamePassword ? usernamePassword.username() : null;
-    var connection = value instanceof OAuthTokens tokens ? tokens.connection() : null;
-    return new SecretSummary(id, secret.getType(), secret.getStatus(), value != null, username, connection);
+    return new SecretSummary(id, secret.getType(), secret.getStatus(), value != null, username);
   }
 
   public void delete(long id) {

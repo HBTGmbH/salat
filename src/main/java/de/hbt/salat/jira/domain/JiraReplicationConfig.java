@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -85,6 +87,15 @@ public class JiraReplicationConfig extends AuditedEntity {
    */
   @Column(name = "secret_id")
   private Long secretId;
+
+  /**
+   * The Atlassian account the replication is connected to with {@link JiraAuthMethod#OAUTH} (#1417):
+   * account, site, scopes, who connected when. No secret, hence a JSON column here rather than part
+   * of {@link #secretId}; {@code null} without OAuth and before connecting.
+   */
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "oauth_connection")
+  private JiraOAuthConnection oauthConnection;
 
   @Column(name = "jql")
   private String jql;

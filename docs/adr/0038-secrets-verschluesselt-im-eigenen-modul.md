@@ -6,8 +6,8 @@ Status: Proposed
 ## Context and Problem Statement
 
 Die Jira-Replikation soll sich an Jira Cloud per OAuth anmelden können (#1417), statt mit einem
-API-Token, das jemand von Hand erzeugt und einträgt. Dafür muss Salat Access- und Refresh-Tokens
-speichern und selbst erneuern. Das kann es bisher nicht: Die Anwendung ist nur Resource Server, die
+API-Token, das jemand von Hand erzeugt und einträgt. Dafür muss Salat ein Refresh-Token speichern
+und damit selbst Access-Tokens holen. Das kann es bisher nicht: Die Anwendung ist nur Resource Server, die
 Anmeldung übernimmt EasyAuth (→ ADR-0026).
 
 Dazu kommt ein bestehender Mangel. Die Replikation speichert ihr Secret (Passwort, Cloud-API-Token
@@ -77,17 +77,19 @@ Ein Secret hat eine Art, und jede Art ist eine Einheit, die zusammen geschrieben
 | Art | Inhalt | Heute genutzt von |
 |---|---|---|
 | `USERNAME_PASSWORD` | Benutzername und Passwort | Replikation mit `BASIC` (Server: Passwort, Cloud: E-Mail und API-Token) |
-| `TOKEN` | ein Token | Replikation mit `PERSONAL_ACCESS_TOKEN` |
+| `TOKEN` | ein Token | Replikation mit `PERSONAL_ACCESS_TOKEN`; Replikation mit OAuth: das Refresh-Token (#1417) |
 | `KEY` | Schlüssel mit Kennung | noch niemand; kommt mit dem ersten Nutzer |
-| `OAUTH` | Access-Token mit Ablauf, Refresh-Token, Scopes, fremdes Konto | Replikation mit OAuth (#1417) |
 
-Access- und Refresh-Token sind **ein** Secret, nicht zwei, weil sie nur zusammen erneuert werden.
 Der Benutzername gehört mit ins Secret: Bei Cloud ist er die E-Mail-Adresse des Kontos, und er ist
 ohne das Passwort nutzlos.
 
-Bei OAuth handelt die Replikation als das verbundene Konto, nicht als die Person, die verbunden
-hat. Das Secret hält beides fest: das fremde Konto (Kennung und Name, für die Anzeige) und das
-Salat-Kürzel derjenigen Person, die verbunden hat, mit dem Zeitpunkt.
+**Bei OAuth ist nur das Refresh-Token ein Secret** (geändert in #1417; geplant war eine eigene Art
+`OAUTH` mit Access-Token, Ablauf, Scopes und Konto). Das Access-Token wird nie gespeichert: Jeder
+Lauf holt sich mit dem Refresh-Token ein frisches und hält es nur im Speicher, höchstens eine Stunde.
+Was die Verbindung ist — fremdes Konto (Kennung und Name), Site, gewährte Scopes, Kürzel der
+Person, die verbunden hat, und Zeitpunkt —, ist kein Geheimnis und steht beim Eigentümer, bei der
+Replikation als JSON in `jira_replication_config.oauth_connection`. Die Replikation handelt als das
+verbundene Konto, nicht als die Person, die verbunden hat.
 
 ### 2. Modul und Modell
 
@@ -103,7 +105,7 @@ Tabelle `secret` im Modul `secret`:
 | `version` | Versionsnummer (→ ADR-0033) |
 | Audit-Spalten | über `AuditedEntity` |
 
-Alles außer Art und Zustand ist verschlüsselt, auch Benutzername und Konto. Für die Anzeige gibt
+Alles außer Art und Zustand ist verschlüsselt, auch der Benutzername. Für die Anzeige gibt
 der Service eine Zusammenfassung ohne das eigentliche Secret heraus.
 
 Die Entität verlässt das Modul nie, der Inhalt nur entschlüsselt über `SecretService`. Deshalb
@@ -150,8 +152,9 @@ denn Spring macht aus einem Unterstrich im Namen der Variablen einen Punkt.
   Formulare bieten die Eingabe nicht an, und ein Lauf, der ein Secret braucht, scheitert mit einer
   Meldung, die das sagt.
 * **Zeile mit unbekannter Kennung oder Chiffrat, das sich nicht entschlüsseln lässt**: Das Secret
-  ist nicht lesbar. Eine OAuth-Verbindung geht auf `REAUTH_REQUIRED`, ein Passwort oder Token muss
-  neu eingegeben werden.
+  ist nicht lesbar. Eine OAuth-Verbindung muss neu hergestellt, ein Passwort oder Token neu
+  eingegeben werden. Der Zustand wird dafür nicht geschrieben: Ein versehentlich fehlender Schlüssel
+  soll keine Verbindung endgültig beenden.
 
 ### 4. Lokale Kopien
 
@@ -161,16 +164,20 @@ neu ein. Das ist gewollt.
 
 ### 5. Rotierende Refresh-Tokens
 
-Ein Versionsvergleich beim Schreiben allein reicht nicht: Wenn zwei Erneuerungen gleichzeitig
-starten, haben beide das alte Refresh-Token schon an den Anbieter geschickt, bevor eine beim
-Speichern scheitert. Ein Anbieter, der die Wiederverwendung erkennt, widerruft dann womöglich alle.
-Deshalb gilt **gegenseitiger Ausschluss vor dem Aufruf**:
+Jeder Lauf erneuert, und der Anbieter rotiert dabei das Refresh-Token. Ein Versionsvergleich beim
+Schreiben allein reicht nicht: Wenn zwei Erneuerungen gleichzeitig starten, haben beide das alte
+Refresh-Token schon an den Anbieter geschickt, bevor eine beim Speichern scheitert. Ein Anbieter,
+der die Wiederverwendung erkennt, widerruft dann womöglich alle. Deshalb gilt **gegenseitiger
+Ausschluss vor dem Aufruf**:
 
-1. Ist das Access-Token noch mindestens fünf Minuten gültig, wird es benutzt.
-2. Sonst nimmt der Aufrufer die Sperre dieses Secrets, eine Sperre je id in der JVM.
-3. In der Sperre liest er die Zeile neu. Hat inzwischen ein anderer erneuert, nimmt er dessen Token.
-4. Sonst erneuert er. Während des HTTP-Aufrufs hält er keine Datenbankverbindung.
-5. Er schreibt beide Tokens in einer kurzen Transaktion, mit der Versionsnummer als Sicherheitsnetz.
+1. Der Aufrufer nimmt die Sperre dieses Secrets, eine Sperre je id in der JVM.
+2. In der Sperre liest er das Refresh-Token, mit Versionsnummer.
+3. Er erneuert. Während des HTTP-Aufrufs hält er keine Datenbankverbindung.
+4. Er schreibt das rotierte Refresh-Token **sofort** in einer kurzen Transaktion, mit der
+   Versionsnummer als Sicherheitsnetz, nicht erst am Ende des Laufs: Ein abgebrochener Lauf nähme
+   sonst das einzige gültige Refresh-Token mit.
+5. Erst dann gibt er die Sperre frei und das Access-Token an den Lauf. Ein zweiter Aufrufer liest in
+   der Sperre schon das neue Refresh-Token.
 
 Wie in ADR-0028 setzt die Sperre **eine Instanz** voraus. Wird diese Voraussetzung aufgegeben, ist
 der nächste Schritt eine Lease-Spalte mit bedingtem `UPDATE`, gemeinsam mit den übrigen Sperren der
@@ -181,10 +188,11 @@ Verbindung muss neu hergestellt werden. Das lässt sich nicht verhindern, nur si
 
 ### 6. Ablauf, Widerruf, Trennen, Löschen
 
-* **`invalid_grant`** beim Erneuern setzt das Secret auf `REAUTH_REQUIRED` und entfernt die Tokens
-  aus dem Inhalt. Der Lauf scheitert mit „Verbindung abgelaufen – bitte neu verbinden“, das
-  Formular zeigt den Zustand.
-* **Trennen** löscht das Secret und leert den Verweis beim Eigentümer, in derselben Transaktion.
+* **`invalid_grant`** beim Erneuern setzt das Secret auf `REAUTH_REQUIRED` und entfernt das
+  Refresh-Token aus dem Inhalt. Der Lauf scheitert mit „Verbindung abgelaufen – bitte neu
+  verbinden“, das Formular zeigt den Zustand und, aus den Angaben beim Eigentümer, welches Konto.
+* **Trennen** löscht das Secret und leert beim Eigentümer Verweis und Verbindung, in derselben
+  Transaktion.
 * **Löschen einer Replikation** löscht ihr Secret mit. Ein anderer Weg dorthin existiert nicht: Das
   Löschen von Auftrag oder Unterauftrag wird abgewiesen, solange eine Replikation darauf zeigt
   (`JiraScopeDeleteListener`).
@@ -208,7 +216,8 @@ Die Routen für Start und Callback gehören dem Eigentümer (die Replikation: ih
 die Berechtigung kennt. **Das OAuth-Protokoll liegt beim Eigentümer, nicht im Modul `secret`**
 (geändert in #1417): Autorisierungsanfrage, Callback-Prüfung, Code-Tausch und Erneuerung stehen im
 Modul `jira` (Unterpaket `jira.oauth`), denn bisher verbindet nur die Replikation, und nur mit
-Atlassian. `secret` bleibt reiner Speicher und kennt kein Protokoll, nur den Inhalt der Art `OAUTH`.
+Atlassian. `secret` bleibt reiner Speicher und kennt kein Protokoll; das Refresh-Token ist für das
+Modul ein Token wie jedes andere.
 Dafür bietet es drei schmale Methoden an:
 
 * **Lesen mit Version** und **Ersetzen nur bei unveränderter Version**: Die Erneuerung schreibt

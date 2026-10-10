@@ -6771,3 +6771,24 @@ databaseChangeLog:
                   type: varchar(8)
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 182
+      author: kr
+      comment: JIRA-Replikation merkt sich das per OAuth verbundene Atlassian-Konto (#1417)
+      # Konto, Site (cloud id und URL), Scopes, wer wann verbunden hat, als JSON. Nichts davon ist
+      # geheim; die Tokens selbst liegen verschluesselt in secret, die Replikation verweist ueber
+      # secret_id darauf. Ohne OAuth und vor dem Verbinden NULL.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: oauth_connection
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: oauth_connection
+                  type: json
