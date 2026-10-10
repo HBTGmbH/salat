@@ -1,4 +1,4 @@
-package de.hbt.salat.secret.service;
+package de.hbt.salat.jira.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,24 +34,24 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.ClockProvider;
-import de.hbt.salat.secret.domain.OAuthAuthorization;
+import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.TokenRequestException;
+import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.Tokens;
 import de.hbt.salat.secret.domain.OAuthConnection;
 import de.hbt.salat.secret.domain.OAuthTokens;
 import de.hbt.salat.secret.domain.SecretStatus;
-import de.hbt.salat.secret.persistence.SecretRepository;
-import de.hbt.salat.secret.service.OAuthTokenClient.TokenRequestException;
-import de.hbt.salat.secret.service.OAuthTokenClient.Tokens;
+import de.hbt.salat.secret.service.SecretService;
 
 /**
- * Outgoing OAuth (#1417, ADR-0038 §§5–8): the attempt from start to callback, and the renewal of the
- * tokens under the lock of their secret. Against the database and with the key of the test
- * configuration; the token endpoint of the provider is mocked.
+ * OAuth against Atlassian (#1417, ADR-0038 §§5–8): the attempt from start to callback, and the
+ * renewal of the tokens under the lock of their secret. Against the database and with the key of the
+ * test configuration; the token endpoint of Atlassian is mocked.
  *
  * <p>Not transactional: the renewal reads and writes in transactions of its own, and two callers
  * from two threads only see what was committed. Every test removes the secrets it created.
@@ -59,25 +59,24 @@ import de.hbt.salat.secret.service.OAuthTokenClient.Tokens;
 @SpringBootTest
 @FixedClock
 @DisplayNameGeneration(ReplaceUnderscores.class)
-class OAuthServiceTest {
+class JiraOAuthServiceTest {
 
-  private static final String PROVIDER = "atlassian";
   private static final String OWNER = "jira-replication:7";
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
 
   @MockitoBean
-  private OAuthTokenClient tokenClient;
+  private JiraOAuthTokenClient tokenClient;
 
   @Autowired
-  private OAuthService oauthService;
+  private JiraOAuthService oauthService;
 
   @Autowired
   private SecretService secretService;
 
   @Autowired
-  private SecretRepository repository;
+  private SalatProperties properties;
 
   @Autowired
   private PlatformTransactionManager transactionManager;
@@ -93,7 +92,8 @@ class OAuthServiceTest {
 
   @AfterEach
   void tearDown() {
-    createdSecrets.forEach(repository::deleteById);
+    when(authorizedUser.isManager()).thenReturn(true);
+    createdSecrets.forEach(secretService::delete);
   }
 
   @Test
@@ -133,12 +133,12 @@ class OAuthServiceTest {
     var query = queryOf(authorization);
     when(tokenClient.exchange(any(), eq("the-code"), any())).thenAnswer(invocation -> {
       String verifier = invocation.getArgument(2);
-      assertThat(OAuthService.codeChallenge(verifier)).isEqualTo(query.get("code_challenge"));
+      assertThat(JiraOAuthService.codeChallenge(verifier)).isEqualTo(query.get("code_challenge"));
       return tokens("access-1", "refresh-1", Duration.ofHours(1));
     });
 
-    assertThat(oauthService.ownerOf(PROVIDER, authorization.cookie().getValue(), query.get("state"))).isEqualTo(OWNER);
-    var grant = oauthService.complete(PROVIDER, authorization.cookie().getValue(), query.get("state"), "the-code", null);
+    assertThat(oauthService.ownerOf(authorization.cookie().getValue(), query.get("state"))).isEqualTo(OWNER);
+    var grant = oauthService.complete(authorization.cookie().getValue(), query.get("state"), "the-code", null);
 
     assertThat(grant.accessToken()).isEqualTo("access-1");
     assertThat(grant.refreshToken()).isEqualTo("refresh-1");
@@ -148,8 +148,8 @@ class OAuthServiceTest {
   void a_callback_with_another_state_is_rejected() {
     var authorization = authorize();
 
-    assertRejected(() -> oauthService.complete(PROVIDER, authorization.cookie().getValue(), "forged", "code", null),
-        ErrorCode.SC_OAUTH_STATE_INVALID);
+    assertRejected(() -> oauthService.complete(authorization.cookie().getValue(), "forged", "code", null),
+        ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
     verify(tokenClient, never()).exchange(any(), any(), any());
   }
 
@@ -157,9 +157,9 @@ class OAuthServiceTest {
   void a_callback_without_the_cookie_is_rejected() {
     var state = queryOf(authorize()).get("state");
 
-    assertRejected(() -> oauthService.ownerOf(PROVIDER, null, state), ErrorCode.SC_OAUTH_STATE_INVALID);
-    assertRejected(() -> oauthService.ownerOf(PROVIDER, "test.bm90LWEtY29va2ll", state),
-        ErrorCode.SC_OAUTH_STATE_INVALID);
+    assertRejected(() -> oauthService.ownerOf(null, state), ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
+    assertRejected(() -> oauthService.ownerOf("test.bm90LWEtY29va2ll", state),
+        ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
   }
 
   @Test
@@ -167,8 +167,8 @@ class OAuthServiceTest {
     var authorization = authorize();
     ClockProvider.setClock(Clock.offset(ClockProvider.getClock(), Duration.ofMinutes(11)));
 
-    assertRejected(() -> oauthService.ownerOf(PROVIDER, authorization.cookie().getValue(),
-        queryOf(authorization).get("state")), ErrorCode.SC_OAUTH_STATE_INVALID);
+    assertRejected(() -> oauthService.ownerOf(authorization.cookie().getValue(),
+        queryOf(authorization).get("state")), ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
   }
 
   @Test
@@ -176,33 +176,32 @@ class OAuthServiceTest {
     var authorization = authorize();
     when(authorizedUser.getLoginSign()).thenReturn("other");
 
-    assertRejected(() -> oauthService.ownerOf(PROVIDER, authorization.cookie().getValue(),
-        queryOf(authorization).get("state")), ErrorCode.SC_OAUTH_STATE_INVALID);
-  }
-
-  @Test
-  void a_callback_for_another_provider_is_rejected() {
-    var authorization = authorize();
-
-    assertRejected(() -> oauthService.ownerOf("github", authorization.cookie().getValue(),
-        queryOf(authorization).get("state")), ErrorCode.SC_OAUTH_STATE_INVALID);
+    assertRejected(() -> oauthService.ownerOf(authorization.cookie().getValue(),
+        queryOf(authorization).get("state")), ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
   }
 
   @Test
   void a_declined_consent_exchanges_nothing() {
     var authorization = authorize();
 
-    assertRejected(() -> oauthService.complete(PROVIDER, authorization.cookie().getValue(),
-        queryOf(authorization).get("state"), null, "access_denied"), ErrorCode.SC_OAUTH_DENIED);
+    assertRejected(() -> oauthService.complete(authorization.cookie().getValue(),
+        queryOf(authorization).get("state"), null, "access_denied"), ErrorCode.JI_REPLICATION_OAUTH_DENIED);
     verify(tokenClient, never()).exchange(any(), any(), any());
   }
 
+  /** Without the registration in the environment the form does not offer to connect (ADR-0038 §7). */
   @Test
-  void a_provider_without_registration_is_not_offered() {
-    assertThat(oauthService.isAvailable(PROVIDER)).isTrue();
-    assertThat(oauthService.isAvailable("github")).isFalse();
-    assertRejected(() -> oauthService.authorize("github", OWNER, List.of("read"), Map.of()),
-        ErrorCode.SC_OAUTH_NOT_CONFIGURED);
+  void without_a_registration_connecting_is_not_offered() {
+    var registration = properties.getJira().getOauth();
+    var clientSecret = registration.getClientSecret();
+    registration.setClientSecret(null);
+    try {
+      assertThat(oauthService.isAvailable()).isFalse();
+      assertRejected(this::authorize, ErrorCode.JI_REPLICATION_OAUTH_NOT_CONFIGURED);
+    } finally {
+      registration.setClientSecret(clientSecret);
+    }
+    assertThat(oauthService.isAvailable()).isTrue();
   }
 
   @Test
@@ -262,7 +261,7 @@ class OAuthServiceTest {
     var id = storedConnection(Duration.ofMinutes(1));
     when(tokenClient.refresh(any(), any())).thenThrow(new TokenRequestException("invalid_grant"));
 
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SC_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
 
     var summary = secretService.getSummary(id);
     assertThat(summary.status()).isEqualTo(SecretStatus.REAUTH_REQUIRED);
@@ -271,7 +270,7 @@ class OAuthServiceTest {
     assertThat(stored.accessToken()).isNull();
     assertThat(stored.refreshToken()).isNull();
     // and the provider is not asked again with a token it has refused
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SC_OAUTH_REAUTH_REQUIRED);
+    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED);
     verify(tokenClient, times(1)).refresh(any(), any());
   }
 
@@ -280,7 +279,7 @@ class OAuthServiceTest {
     var id = storedConnection(Duration.ofMinutes(1));
     when(tokenClient.refresh(any(), any())).thenThrow(new TokenRequestException("request_failed"));
 
-    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED);
+    assertRejected(() -> oauthService.currentTokens(id), ErrorCode.JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED);
 
     assertThat(secretService.getSummary(id).status()).isEqualTo(SecretStatus.VALID);
     assertThat(((OAuthTokens) secretService.read(id)).refreshToken()).isEqualTo("refresh-0");
@@ -295,13 +294,13 @@ class OAuthServiceTest {
     assertThatThrownBy(this::authorize).isInstanceOf(AuthorizationException.class);
   }
 
-  private OAuthAuthorization authorize() {
-    return oauthService.authorize(PROVIDER, OWNER, List.of("read:jira-work", "offline_access"),
+  private JiraOAuthAuthorization authorize() {
+    return oauthService.authorize(OWNER, List.of("read:jira-work", "offline_access"),
         Map.of("audience", "api.atlassian.com"));
   }
 
   private long storedConnection(Duration validFor) {
-    var connection = new OAuthConnection(PROVIDER, "account-1", "Person A", "cloud-1", "https://example.atlassian.net",
+    var connection = new OAuthConnection("atlassian", "account-1", "Person A", "cloud-1", "https://example.atlassian.net",
         Set.of("read:jira-work", "offline_access"), "mgr", LocalDateTime.of(2026, 6, 1, 9, 0));
     var tokens = new OAuthTokens("access-0", now().plus(validFor), "refresh-0", connection);
     var id = new TransactionTemplate(transactionManager).execute(status -> secretService.create(tokens));
@@ -317,7 +316,7 @@ class OAuthServiceTest {
     return Instant.now(ClockProvider.getClock());
   }
 
-  private static Map<String, String> queryOf(OAuthAuthorization authorization) {
+  private static Map<String, String> queryOf(JiraOAuthAuthorization authorization) {
     var params = UriComponentsBuilder.fromUriString(authorization.redirectUrl()).build().getQueryParams();
     var decoded = new java.util.HashMap<String, String>();
     params.forEach((name, values) -> decoded.put(name, URLDecoder.decode(values.getFirst(), StandardCharsets.UTF_8)));

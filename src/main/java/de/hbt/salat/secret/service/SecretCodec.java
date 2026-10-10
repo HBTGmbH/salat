@@ -95,8 +95,7 @@ final class SecretCodec {
     return new LinkedHashSet<>(Arrays.asList(text.trim().split(" +")));
   }
 
-  /** Fields in the format of this codec, for other values the module encrypts — the OAuth state cookie. */
-  static byte[] write(String... fields) {
+  private static byte[] write(String... fields) {
     var bytes = new ByteArrayOutputStream();
     try (var out = new DataOutputStream(bytes)) {
       out.writeByte(VERSION);
@@ -116,7 +115,7 @@ final class SecretCodec {
     return bytes.toByteArray();
   }
 
-  static List<String> read(byte[] bytes) {
+  private static List<String> read(byte[] bytes) {
     try (var in = new DataInputStream(new ByteArrayInputStream(bytes))) {
       var version = in.readByte();
       if (version != VERSION) {
@@ -134,7 +133,7 @@ final class SecretCodec {
     }
   }
 
-  static String field(List<String> fields, int index) {
+  private static String field(List<String> fields, int index) {
     return index < fields.size() ? fields.get(index) : null;
   }
 }

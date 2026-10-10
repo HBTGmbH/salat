@@ -46,6 +46,7 @@ import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
+import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.jira.persistence.OrderReferences;
@@ -59,7 +60,6 @@ import de.hbt.salat.secret.domain.SecretSummary;
 import de.hbt.salat.secret.domain.SecretValue;
 import de.hbt.salat.secret.domain.Token;
 import de.hbt.salat.secret.domain.UsernamePassword;
-import de.hbt.salat.secret.service.OAuthService;
 import de.hbt.salat.secret.service.SecretService;
 
 /**
@@ -124,7 +124,7 @@ class JiraReplicationConfigServiceTest {
   private SecretService secretService;
 
   @Mock
-  private OAuthService oauthService;
+  private JiraOAuthService oauthService;
 
   private final Map<Long, SecretValue> secrets = new HashMap<>();
   private final Map<Long, Boolean> unreadable = new HashMap<>();

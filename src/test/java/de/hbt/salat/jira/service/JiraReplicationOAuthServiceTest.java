@@ -36,10 +36,10 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
+import de.hbt.salat.jira.oauth.JiraOAuthGrant;
+import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
-import de.hbt.salat.secret.domain.OAuthGrant;
 import de.hbt.salat.secret.domain.OAuthTokens;
-import de.hbt.salat.secret.service.OAuthService;
 import de.hbt.salat.secret.service.SecretService;
 
 /**
@@ -62,7 +62,7 @@ class JiraReplicationOAuthServiceTest {
   private SecretService secretService;
 
   @Mock
-  private OAuthService oauthService;
+  private JiraOAuthService oauthService;
 
   @Mock
   private AtlassianAccountClient accountClient;
@@ -86,8 +86,8 @@ class JiraReplicationOAuthServiceTest {
     config.setAuthMethod(JiraAuthMethod.OAUTH);
     config.setWorklogSyncEnabled(false);
     when(configRepository.findById(ID)).thenReturn(Optional.of(config));
-    when(oauthService.complete(eq("atlassian"), any(), any(), any(), any())).thenReturn(
-        new OAuthGrant("atlassian", "access-1", Instant.parse("2026-06-25T09:15:30Z"), "refresh-1",
+    when(oauthService.complete(any(), any(), any(), any())).thenReturn(
+        new JiraOAuthGrant("atlassian", "access-1", Instant.parse("2026-06-25T09:15:30Z"), "refresh-1",
             Set.of("read:jira-work", "read:me", "offline_access")));
     when(accountClient.me("access-1")).thenReturn(new AtlassianAccountClient.Account("account-1", "Person A", null));
     when(secretService.create(any())).thenReturn(500L);
@@ -97,7 +97,7 @@ class JiraReplicationOAuthServiceTest {
   void a_replication_without_worklogs_asks_for_reading_only() {
     classUnderTest.startConnection(ID);
 
-    verify(oauthService).authorize(eq("atlassian"), eq("jira-replication:7"),
+    verify(oauthService).authorize(eq("jira-replication:7"),
         eq(List.of("read:jira-work", "read:me", "offline_access")), anyMap());
   }
 
@@ -107,7 +107,7 @@ class JiraReplicationOAuthServiceTest {
 
     classUnderTest.startConnection(ID);
 
-    verify(oauthService).authorize(eq("atlassian"), eq("jira-replication:7"),
+    verify(oauthService).authorize(eq("jira-replication:7"),
         eq(List.of("read:jira-work", "read:me", "offline_access", "write:jira-work")), anyMap());
   }
 
@@ -117,7 +117,7 @@ class JiraReplicationOAuthServiceTest {
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<java.util.Map<String, String>> parameters = ArgumentCaptor.forClass(java.util.Map.class);
-    verify(oauthService).authorize(any(), any(), any(), parameters.capture());
+    verify(oauthService).authorize(any(), any(), parameters.capture());
     assertThat(parameters.getValue()).containsEntry("audience", "api.atlassian.com").containsEntry("prompt", "consent");
   }
 
@@ -127,21 +127,21 @@ class JiraReplicationOAuthServiceTest {
     config.setAuthMethod(JiraAuthMethod.BASIC);
 
     assertRejected(() -> classUnderTest.startConnection(ID), ErrorCode.JI_REPLICATION_OAUTH_NOT_SELECTED);
-    verify(oauthService, never()).authorize(any(), any(), any(), anyMap());
+    verify(oauthService, never()).authorize(any(), any(), anyMap());
   }
 
   @Test
   void the_callback_names_the_replication_of_the_attempt() {
-    when(oauthService.ownerOf("atlassian", "cookie", "state")).thenReturn("jira-replication:7");
+    when(oauthService.ownerOf("cookie", "state")).thenReturn("jira-replication:7");
 
     assertThat(classUnderTest.replicationOf("cookie", "state")).isEqualTo(ID);
   }
 
   @Test
   void a_callback_for_another_owner_is_rejected() {
-    when(oauthService.ownerOf("atlassian", "cookie", "state")).thenReturn("person:7");
+    when(oauthService.ownerOf("cookie", "state")).thenReturn("person:7");
 
-    assertRejected(() -> classUnderTest.replicationOf("cookie", "state"), ErrorCode.SC_OAUTH_STATE_INVALID);
+    assertRejected(() -> classUnderTest.replicationOf("cookie", "state"), ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID);
   }
 
   @Test

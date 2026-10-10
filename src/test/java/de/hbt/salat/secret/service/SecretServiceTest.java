@@ -101,6 +101,36 @@ class SecretServiceTest {
     assertThat(payload).doesNotContain("access-token").doesNotContain("refresh-token").doesNotContain("Person A");
   }
 
+  /** The renewal of OAuth tokens writes back only what it read (#1417, ADR-0038 §5). */
+  @Test
+  void a_secret_is_replaced_only_at_the_version_it_was_read_at() {
+    var id = secretService.create(new Token("old"));
+    flushAndClear();
+    var read = secretService.readVersioned(id);
+
+    secretService.replaceIfUnchanged(id, read.version(), new Token("renewed"), SecretStatus.REAUTH_REQUIRED);
+    flushAndClear();
+
+    assertThat(secretService.read(id)).isEqualTo(new Token("renewed"));
+    assertThat(secretService.getSummary(id).status()).isEqualTo(SecretStatus.REAUTH_REQUIRED);
+    assertThatThrownBy(() -> secretService.replaceIfUnchanged(id, read.version(), new Token("stale"), SecretStatus.VALID))
+        .isInstanceOf(BusinessRuleException.class)
+        .satisfies(ex -> assertThat(((ErrorCodeException) ex).getMessages())
+            .anySatisfy(message -> assertThat(message.getErrorCode()).isEqualTo(ErrorCode.XX_CONCURRENT_MODIFICATION)));
+  }
+
+  /** The cookie of an OAuth attempt (#1417, ADR-0038 §8): sealed with the key, bound to its context. */
+  @Test
+  void a_transient_value_opens_under_its_own_context_only() {
+    var sealed = secretService.sealTransient("state".getBytes(StandardCharsets.UTF_8), "oauth-state");
+
+    assertThat(sealed).startsWith("test.").doesNotContain("state");
+    assertThat(secretService.openTransient(sealed, "oauth-state")).isEqualTo("state".getBytes(StandardCharsets.UTF_8));
+    assertThat(secretService.openTransient(sealed, "other")).isNull();
+    assertThat(secretService.openTransient(sealed.substring(0, sealed.length() - 2) + "AA", "oauth-state")).isNull();
+    assertThat(secretService.openTransient("unknown.AAAA", "oauth-state")).isNull();
+  }
+
   @Test
   void the_string_form_of_an_oauth_connection_leaves_the_tokens_out() {
     var tokens = new OAuthTokens("access-token", Instant.EPOCH, "refresh-token",

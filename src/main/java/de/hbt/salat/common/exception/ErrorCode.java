@@ -278,6 +278,11 @@ public enum ErrorCode {
   JI_REPLICATION_OAUTH_SITE_CHANGED("JI-0046", "the connection was made for another site than the base url names"),
   JI_REPLICATION_OAUTH_NOT_SELECTED("JI-0047", "the stored jira replication does not sign in with oauth"),
   JI_REPLICATION_OAUTH_WRITE_NOT_GRANTED("JI-0048", "the oauth connection lacks the scope to write worklogs"),
+  JI_REPLICATION_OAUTH_REAUTH_REQUIRED("JI-0049", "the oauth connection has expired or was revoked and has to be established again"),
+  JI_REPLICATION_OAUTH_NOT_CONFIGURED("JI-0050", "no oauth client registration is configured"),
+  JI_REPLICATION_OAUTH_STATE_INVALID("JI-0051", "the oauth callback does not belong to a connection attempt of this person, or it has expired"),
+  JI_REPLICATION_OAUTH_DENIED("JI-0052", "the oauth authorization was cancelled or denied"),
+  JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED("JI-0053", "the oauth provider refused the token request"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),
@@ -293,11 +298,6 @@ public enum ErrorCode {
   SC_NO_KEY("SC-0001", "secrets can neither be stored nor read: no key is configured"),
   SC_SECRET_UNREADABLE("SC-0002", "the stored secret cannot be read and has to be entered again"),
   SC_SECRET_NOT_FOUND("SC-0003", "the secret was not found"),
-  SC_OAUTH_REAUTH_REQUIRED("SC-0004", "the oauth connection has expired or was revoked and has to be established again"),
-  SC_OAUTH_NOT_CONFIGURED("SC-0005", "no oauth client registration is configured"),
-  SC_OAUTH_STATE_INVALID("SC-0006", "the oauth callback does not belong to a connection attempt of this person, or it has expired"),
-  SC_OAUTH_DENIED("SC-0007", "the oauth authorization was cancelled or denied"),
-  SC_OAUTH_TOKEN_REQUEST_FAILED("SC-0008", "the oauth provider refused the token request"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

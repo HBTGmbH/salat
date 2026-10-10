@@ -4,9 +4,8 @@ import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_SELECTED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE;
-import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_STATE_INVALID;
-import static de.hbt.salat.common.exception.ErrorCode.SC_OAUTH_TOKEN_REQUEST_FAILED;
-import static de.hbt.salat.jira.service.JiraCredentialStore.ATLASSIAN;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED;
 import static de.hbt.salat.jira.service.JiraCredentialStore.WRITE_SCOPE;
 
 import java.util.ArrayList;
@@ -29,16 +28,16 @@ import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
+import de.hbt.salat.jira.oauth.JiraOAuthAuthorization;
+import de.hbt.salat.jira.oauth.JiraOAuthService;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
-import de.hbt.salat.secret.domain.OAuthAuthorization;
 import de.hbt.salat.secret.domain.OAuthConnection;
-import de.hbt.salat.secret.service.OAuthService;
 
 /**
  * Connects a replication to an Atlassian account via OAuth 2.0 (3LO) (#1417, → ADR-0038): start,
- * callback, disconnect. The flow in between — {@code state}, PKCE, the code against tokens — is the
- * module {@code secret}'s; here is what only the replication knows: who may connect, which scopes it
- * needs, and which site its base URL names.
+ * callback, disconnect. The flow in between — {@code state}, PKCE, the code against tokens — is
+ * {@link JiraOAuthService}'s; here is what only the replication knows: who may connect, which scopes
+ * it needs, and which site its base URL names.
  *
  * <p>Managers only, like everything around the replications; only who may edit a replication may
  * connect it, connect it again or disconnect it.
@@ -58,13 +57,13 @@ public class JiraReplicationOAuthService {
 
   private final JiraReplicationConfigRepository configRepository;
   private final JiraCredentialStore credentialStore;
-  private final OAuthService oauthService;
+  private final JiraOAuthService oauthService;
   private final AtlassianAccountClient accountClient;
   private final AuthorizedUser authorizedUser;
   private final TransactionTemplate transaction;
 
   JiraReplicationOAuthService(JiraReplicationConfigRepository configRepository, JiraCredentialStore credentialStore,
-                              OAuthService oauthService, AtlassianAccountClient accountClient,
+                              JiraOAuthService oauthService, AtlassianAccountClient accountClient,
                               AuthorizedUser authorizedUser, PlatformTransactionManager transactionManager) {
     this.configRepository = configRepository;
     this.credentialStore = credentialStore;
@@ -80,10 +79,10 @@ public class JiraReplicationOAuthService {
    * switched on later, the replication has to be connected again.
    *
    * @throws BusinessRuleException {@code JI-0047} when the stored replication does not sign in with
-   *     OAuth — an unsaved change of the form does not count; {@code SC-0005} without a registration
+   *     OAuth — an unsaved change of the form does not count; {@code JI-0050} without a registration
    */
   @Transactional(readOnly = true)
-  public OAuthAuthorization startConnection(long replicationId) {
+  public JiraOAuthAuthorization startConnection(long replicationId) {
     checkManager();
     var config = load(replicationId);
     if (config.getAuthMethod() != JiraAuthMethod.OAUTH || config.getApiFlavor() != JiraApiFlavor.CLOUD) {
@@ -99,25 +98,25 @@ public class JiraReplicationOAuthService {
     parameters.put("prompt", "consent");
     log.info("Connecting JIRA replication {} to an Atlassian account started by {}, scopes {}", replicationId,
         authorizedUser.getLoginSign(), scopes);
-    return oauthService.authorize(ATLASSIAN, OWNER_PREFIX + replicationId, scopes, parameters);
+    return oauthService.authorize(OWNER_PREFIX + replicationId, scopes, parameters);
   }
 
   /**
    * The replication a callback is for, from the cookie of the attempt.
    *
-   * @throws BusinessRuleException {@code SC-0006} when the callback belongs to no attempt of this
+   * @throws BusinessRuleException {@code JI-0051} when the callback belongs to no attempt of this
    *     person in this browser, or to something other than a replication
    */
   public long replicationOf(String cookieValue, String state) {
     checkManager();
-    var owner = oauthService.ownerOf(ATLASSIAN, cookieValue, state);
+    var owner = oauthService.ownerOf(cookieValue, state);
     if (owner == null || !owner.startsWith(OWNER_PREFIX)) {
-      throw new BusinessRuleException(SC_OAUTH_STATE_INVALID);
+      throw new BusinessRuleException(JI_REPLICATION_OAUTH_STATE_INVALID);
     }
     try {
       return Long.parseLong(owner.substring(OWNER_PREFIX.length()));
     } catch (NumberFormatException ex) {
-      throw new BusinessRuleException(SC_OAUTH_STATE_INVALID);
+      throw new BusinessRuleException(JI_REPLICATION_OAUTH_STATE_INVALID);
     }
   }
 
@@ -129,12 +128,12 @@ public class JiraReplicationOAuthService {
    * wait for that. The tokens are written in a short transaction of their own.
    *
    * @throws BusinessRuleException {@code JI-0045} when the account does not reach the site of the base
-   *     URL — nothing is stored then; the codes of {@link OAuthService#complete} for the callback itself
+   *     URL — nothing is stored then; the codes of {@link JiraOAuthService#complete} for the callback itself
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public void completeConnection(long replicationId, String cookieValue, String state, String code, String error) {
     checkManager();
-    var grant = oauthService.complete(ATLASSIAN, cookieValue, state, code, error);
+    var grant = oauthService.complete(cookieValue, state, code, error);
     var config = transaction.execute(tx -> requireOAuth(load(replicationId)));
     AtlassianAccountClient.Site site;
     AtlassianAccountClient.Account account;
@@ -153,9 +152,9 @@ public class JiraReplicationOAuthService {
     } catch (RestClientException ex) {
       log.warn("Connecting JIRA replication {}: Atlassian could not be asked for sites and account: {}",
           replicationId, ex.getClass().getSimpleName());
-      throw new BusinessRuleException(SC_OAUTH_TOKEN_REQUEST_FAILED, "accessible_resources");
+      throw new BusinessRuleException(JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED, "accessible_resources");
     }
-    var connection = new OAuthConnection(ATLASSIAN, account.accountId(), account.displayName(), site.id(),
+    var connection = new OAuthConnection(JiraOAuthService.PROVIDER, account.accountId(), account.displayName(), site.id(),
         site.url(), grant.scopes(), authorizedUser.getLoginSign(), DateTimeUtils.now());
     var tokens = grant.toTokens(connection);
     transaction.executeWithoutResult(tx -> {

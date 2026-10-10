@@ -172,7 +172,7 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(credentialStore.credentialsOf(config))
-        .thenThrow(new BusinessRuleException(ErrorCode.SC_OAUTH_REAUTH_REQUIRED));
+        .thenThrow(new BusinessRuleException(ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED));
 
     assertThrows(BusinessRuleException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
 
