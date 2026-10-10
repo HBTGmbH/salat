@@ -5,6 +5,7 @@ import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_C
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_REAUTH_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_STATE_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED;
+import static de.hbt.salat.common.exception.ErrorCode.SC_NO_KEY;
 import static de.hbt.salat.common.exception.ErrorCode.SC_SECRET_UNREADABLE;
 
 import java.nio.charset.StandardCharsets;
@@ -97,7 +98,7 @@ public class JiraOAuthService {
    * @param owner what the connection will belong to, checked again in the callback
    * @param scopes what to ask for — no more than is needed
    * @param parameters what Atlassian wants in addition: {@code audience} and {@code prompt}
-   * @throws BusinessRuleException {@code JI-0050} without a registration or a key
+   * @throws BusinessRuleException {@code JI-0050} without a registration, {@code SC-0001} without a key
    */
   public JiraOAuthAuthorization authorize(String owner, Collection<String> scopes, Map<String, String> parameters) {
     var registration = requireRegistration();
@@ -250,8 +251,11 @@ public class JiraOAuthService {
   }
 
   private OAuth requireRegistration() {
+    if (!secretService.isAvailable()) {
+      throw new BusinessRuleException(SC_NO_KEY);
+    }
     var registration = registration();
-    if (registration == null || !secretService.isAvailable()) {
+    if (registration == null) {
       throw new BusinessRuleException(JI_REPLICATION_OAUTH_NOT_CONFIGURED);
     }
     return registration;

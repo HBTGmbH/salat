@@ -1,5 +1,6 @@
 package de.hbt.salat.jira.service;
 
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_CONFIGURED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_CONNECTED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_SITE_CHANGED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_SECRET_MISSING;
@@ -9,6 +10,7 @@ import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraOAuthConnection;
 import de.hbt.salat.jira.domain.JiraOAuthConnectionInfo;
@@ -55,7 +57,8 @@ class JiraCredentialStore {
    * @throws BusinessRuleException {@code JI-0042} when no secret is stored or it does not fit the
    *     sign-in method, {@code SC-0001} without a key, {@code SC-0002} when the secret is unreadable
    *     — each says that the credentials have to be entered again, or why they cannot be. With OAuth
-   *     {@code JI-0044} when it is not connected, {@code JI-0049} when the connection has expired and
+   *     {@code JI-0044} when it is not connected, {@code JI-0050} when OAuth is not set up in this
+   *     environment, {@code JI-0049} when the connection has expired and
    *     {@code JI-0046} when it was made for another site than the base URL names.
    */
   JiraCredentials credentialsOf(JiraReplicationConfig config) {
@@ -83,13 +86,24 @@ class JiraCredentialStore {
   private JiraCredentials oauthCredentialsOf(JiraReplicationConfig config) {
     var connection = config.getOauthConnection();
     if (config.getSecretId() == null || connection == null) {
-      throw new BusinessRuleException(canConnect() ? JI_REPLICATION_OAUTH_NOT_CONNECTED : SC_NO_KEY);
+      throw new BusinessRuleException(whyNotConnected());
     }
     if (!isSameSite(config.getBaseUrl(), connection.siteUrl())) {
       throw new BusinessRuleException(JI_REPLICATION_OAUTH_SITE_CHANGED, connection.siteUrl());
     }
     var accessToken = oauthService.accessToken(config.getSecretId());
     return JiraCredentials.oauth(accessToken, connection.cloudId(), connection.grants(WRITE_SCOPE));
+  }
+
+  /**
+   * Why a replication with OAuth has no connection, in the order a manager can do something about it:
+   * the key of the environment, the registration at Atlassian, connecting.
+   */
+  private ErrorCode whyNotConnected() {
+    if (!secretService.isAvailable()) {
+      return SC_NO_KEY;
+    }
+    return oauthService.isAvailable() ? JI_REPLICATION_OAUTH_NOT_CONNECTED : JI_REPLICATION_OAUTH_NOT_CONFIGURED;
   }
 
   /**

@@ -221,21 +221,22 @@
 
       <!--/* Only for a stored replication (#1013): the catalogue is fetched with the credentials of
              the saved row, and the password field is never prefilled, so there is nothing to fetch
-             with before the first save. */-->
-      <div class="mb-3">
-        <button th:if="${isEdit}" type="button" class="btn btn-outline-primary"
+             with before the first save. With OAuth (#1417) only once it is connected:
+             fieldsBlockedReason names why not — OAuth not set up, not connected, expired. */-->
+      <div class="mb-3" th:with="fieldsOffered=${isEdit and fieldsBlockedReason == null}">
+        <button th:if="${fieldsOffered}" type="button" class="btn btn-outline-primary"
                 data-bs-toggle="modal" data-bs-target="#fieldPickerModal"
                 th:hx-get="@{/jira/replications/{id}/fields(id=${replicationForm.id})}"
                 hx-target="#fieldPickerBody">
           <i class="icon ti ti-list-search"></i>
           <span th:text="#{main.jira.replication.fields.button}">Felder auswählen</span>
         </button>
-        <button th:unless="${isEdit}" type="button" class="btn btn-outline-primary" disabled>
+        <button th:unless="${fieldsOffered}" type="button" class="btn btn-outline-primary" disabled>
           <i class="icon ti ti-list-search"></i>
           <span th:text="#{main.jira.replication.fields.button}">Felder auswählen</span>
         </button>
-        <div th:unless="${isEdit}" class="form-text"
-             th:text="#{main.jira.replication.fields.button.disabled.help}">
+        <div th:unless="${fieldsOffered}" class="form-text"
+             th:text="${isEdit} ? #{${fieldsBlockedReason}} : #{main.jira.replication.fields.button.disabled.help}">
           Erst speichern.
         </div>
       </div>

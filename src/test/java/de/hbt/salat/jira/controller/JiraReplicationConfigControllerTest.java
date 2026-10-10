@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
+import de.hbt.salat.jira.domain.JiraOAuthConnectionInfo;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 
 /**
@@ -52,6 +53,29 @@ class JiraReplicationConfigControllerTest {
 
     assertThat(guardOf(callback)).isNotNull();
     assertThat(guardOf(callback).requiresManager()).isTrue();
+  }
+
+  /** The field catalogue of an OAuth replication needs the setup and a valid connection (#1417). */
+  @Test
+  void the_field_catalogue_of_an_oauth_replication_is_offered_only_when_it_can_be_fetched() {
+    var connected = new JiraOAuthConnectionInfo("Person A", "https://example.atlassian.net", "mgr", null, false, true,
+        false);
+    var expired = new JiraOAuthConnectionInfo("Person A", "https://example.atlassian.net", "mgr", null, true, true,
+        false);
+
+    assertThat(JiraReplicationConfigController.fieldsBlockedReason(oauth(connected), true)).isNull();
+    assertThat(JiraReplicationConfigController.fieldsBlockedReason(oauth(connected), false))
+        .isEqualTo("main.jira.replication.oauth.unavailable");
+    assertThat(JiraReplicationConfigController.fieldsBlockedReason(oauth(null), true))
+        .isEqualTo("main.jira.replication.fields.button.disabled.notconnected");
+    assertThat(JiraReplicationConfigController.fieldsBlockedReason(oauth(expired), true))
+        .isEqualTo("main.jira.replication.oauth.expired");
+  }
+
+  @Test
+  void the_field_catalogue_of_other_replications_is_offered_whatever_the_oauth_setup() {
+    assertThat(JiraReplicationConfigController.fieldsBlockedReason(info(1L, null), false)).isNull();
+    assertThat(JiraReplicationConfigController.fieldsBlockedReason(null, false)).isNull();
   }
 
   @Test
@@ -100,5 +124,11 @@ class JiraReplicationConfigControllerTest {
 
   private static Authorized guardOf(Method method) {
     return method.getAnnotation(Authorized.class);
+  }
+
+  private static JiraReplicationConfigInfo oauth(JiraOAuthConnectionInfo connection) {
+    return new JiraReplicationConfigInfo(7L, "Alpha", 1L, null, "ALPHA", "https://example.atlassian.net",
+        JiraApiFlavor.CLOUD, JiraAuthMethod.OAUTH, null, "project = ALPHA", null, null, null, 100, true, false, null,
+        false, null, true, connection);
   }
 }
