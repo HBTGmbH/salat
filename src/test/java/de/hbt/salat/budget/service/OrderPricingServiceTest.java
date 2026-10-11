@@ -70,7 +70,7 @@ public class OrderPricingServiceTest {
     // The orders of the rates are the ones of the tree, read by id (#1212).
     TREE.stub(customerorderService, suborderService);
     employeeService = mock(EmployeeService.class);
-    when(employeeService.getEmployeeById(EMP)).thenReturn(employee(EMP, "emp"));
+    when(employeeService.existsEmployeeById(EMP)).thenReturn(true);
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     when(orderBudgetRepository.findByCustomerorderId(any())).thenReturn(List.of());
     budgetAuthorization = mock(BudgetAuthorization.class);
@@ -240,7 +240,7 @@ public class OrderPricingServiceTest {
   public void should_not_ask_for_an_employee_when_the_rate_names_none() {
     service.save(data("co", null, null));
 
-    verify(employeeService, never()).getEmployeeById(anyLong());
+    verify(employeeService, never()).existsEmployeeById(anyLong());
     var saved = ArgumentCaptor.forClass(OrderPricing.class);
     verify(orderPricingRepository).save(saved.capture());
     assertThat(saved.getValue().isForEveryone()).isTrue();
@@ -626,8 +626,8 @@ public class OrderPricingServiceTest {
   private void givenSuborders(String... completeOrderSigns) {
     // The pattern check of #958 runs first and is not what these tests are about.
     when(suborderService.existsSuborderMatching(anyLong(), any())).thenReturn(true);
-    when(suborderService.getSubordersByCustomerorderId(TREE.orderId("co")))
-        .thenReturn(List.of(completeOrderSigns).stream().map(TREE::suborder).toList());
+    when(suborderService.getSuborderReadModelsByCustomerorderId(TREE.orderId("co")))
+        .thenReturn(List.of(completeOrderSigns).stream().map(TREE::readModel).toList());
   }
 
   /** The order of the rates and its suborders, with the ids the plans refer to (#1205). */

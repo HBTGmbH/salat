@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -41,6 +42,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.domain.SuborderLocation;
 
 /**
  * The bulk assignment is where a person overrides what could not be decided automatically (#911).
@@ -120,6 +122,9 @@ public class TimereportBudgetBulkAssignmentServiceTest {
         .forEach(suborder -> suborders.put(suborder.getId(), suborder));
     when(suborderService.getSuborderById(anyLong()))
         .thenAnswer(invocation -> suborders.get(invocation.<Long>getArgument(0)));
+    when(suborderService.getSuborderLocationById(anyLong()))
+        .thenAnswer(invocation -> Optional.ofNullable(suborders.get(invocation.<Long>getArgument(0)))
+            .map(SuborderLocation::of));
     // Read from the tree as it is when asked, as the order module does.
     when(suborderService.getAllSuborderReadModelsByCustomerorderId(1L)).thenAnswer(invocation ->
         suborders.values().stream().map(suborder -> SuborderReadModel.of(suborder, suborders)).toList());

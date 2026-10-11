@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -434,6 +435,16 @@ public class SuborderService {
   public Map<Long, SuborderLocation> getSuborderLocationsByIds(Collection<Long> suborderIds) {
     return getSubordersByIds(suborderIds).stream()
         .collect(Collectors.toMap(Suborder::getId, SuborderLocation::of));
+  }
+
+  /**
+   * {@link #getSuborderLocationsByIds} for one suborder — for a module that is handed a suborder id
+   * to refer to and has to tell whether it exists and which order it belongs to (#1399). Empty when
+   * there is no such suborder.
+   */
+  @Transactional(readOnly = true)
+  public Optional<SuborderLocation> getSuborderLocationById(long suborderId) {
+    return Optional.ofNullable(suborderDAO.getSuborderById(suborderId)).map(SuborderLocation::of);
   }
 
   /**

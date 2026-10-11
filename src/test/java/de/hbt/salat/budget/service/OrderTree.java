@@ -14,6 +14,8 @@ import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderLocation;
+import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -62,6 +64,15 @@ class OrderTree {
 
   Suborder suborder(String completeOrderSign) {
     return suborders.get(completeOrderSign);
+  }
+
+  /** A suborder of the tree as the order module reads it out (#1399). */
+  SuborderReadModel readModel(String completeOrderSign) {
+    return SuborderReadModel.of(suborders.get(completeOrderSign), suborderById());
+  }
+
+  private Map<Long, Suborder> suborderById() {
+    return suborders.values().stream().collect(Collectors.toMap(Suborder::getId, suborder -> suborder));
   }
 
   /**
@@ -116,8 +127,16 @@ class OrderTree {
     });
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i -> suborders.values().stream()
         .filter(suborder -> suborder.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
-    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> suborders.values().stream()
-        .filter(suborder -> suborder.getCustomerorder().getId().equals(i.<Long>getArgument(0))).toList());
+    when(suborderService.getSuborderLocationById(anyLong())).thenAnswer(i -> suborders.values().stream()
+        .filter(suborder -> suborder.getId().equals(i.<Long>getArgument(0))).findFirst().map(SuborderLocation::of));
+    when(suborderService.getSuborderReadModelsByCustomerorderId(anyLong())).thenAnswer(i -> {
+      var byId = suborderById();
+      return suborders.values().stream()
+          .filter(suborder -> suborder.getCustomerorder().getId().equals(i.<Long>getArgument(0)))
+          .map(suborder -> SuborderReadModel.of(suborder, byId))
+          .toList();
+    });
+    when(customerorderService.existsCustomerorderById(anyLong())).thenAnswer(i -> byId(i.getArgument(0)) != null);
     return this;
   }
 

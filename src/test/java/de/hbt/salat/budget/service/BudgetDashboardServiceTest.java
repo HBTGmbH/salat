@@ -56,6 +56,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.domain.SuborderLocation;
 
 /**
  * The dashboard filters by customer segment and by order responsible (#920). Both filters are
@@ -403,6 +404,9 @@ public class BudgetDashboardServiceTest {
       });
       when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
           suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
+      when(suborderService.getSuborderLocationById(anyLong())).thenAnswer(i ->
+          suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst()
+              .map(SuborderLocation::of));
       when(orderBudgetRepository.findByCustomerorderIdInAndActive(any(), any())).thenAnswer(i -> {
         Collection<Long> ids = askAll(i.getArgument(0));
         return plans.stream()

@@ -67,6 +67,7 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.testutils.CostCategoryTestUtils;
 
 /**
@@ -185,6 +186,9 @@ public class BudgetControllingServiceTest {
     });
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
         suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
+    when(suborderService.getSuborderLocationById(anyLong())).thenAnswer(i ->
+        suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst()
+            .map(SuborderLocation::of));
 
     givenSuborders(first, deep, second);
     givenReports(eightHoursOn(11L, IN_H1), eightHoursOn(20L, IN_H2));

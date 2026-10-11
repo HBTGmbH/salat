@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -42,11 +43,9 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
-import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
-import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -96,9 +95,9 @@ public class EmployeeCostServiceTest {
     employeeService = mock(EmployeeService.class);
     suborderService = mock(SuborderService.class);
     // The people of PEOPLE exist, nobody else does.
-    when(employeeService.getEmployeeById(anyLong())).thenAnswer(invocation -> employee(invocation.getArgument(0)));
+    when(employeeService.existsEmployeeById(anyLong())).thenAnswer(invocation -> PEOPLE.containsValue(invocation.<Long>getArgument(0)));
     // The suborders of SUBORDERS exist, nothing else does (#1205: referenced by id).
-    when(suborderService.getSuborderById(anyLong())).thenAnswer(invocation -> suborder(invocation.getArgument(0)));
+    when(suborderService.getSuborderLocationById(anyLong())).thenAnswer(invocation -> location(invocation.getArgument(0)));
     // The order "co" exists, nothing else does (#1343: referenced by id).
     customerorderService = mock(CustomerorderService.class);
     when(customerorderService.getCustomerorderOptionsByIds(any())).thenAnswer(invocation ->
@@ -238,7 +237,7 @@ public class EmployeeCostServiceTest {
 
     service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC));
 
-    verify(suborderService, never()).getSuborderById(anyLong());
+    verify(suborderService, never()).getSuborderLocationById(anyLong());
   }
 
   /** The suborder is stored by id (#1205). */
@@ -889,34 +888,13 @@ public class EmployeeCostServiceTest {
   private static final Map<String, Long> SUBORDERS = Map.of("co/01", 51L);
   private static final long NO_SUBORDER = 99L;
 
-  private static Suborder suborder(long id) {
+  private static Optional<SuborderLocation> location(long id) {
     return SUBORDERS.entrySet().stream().filter(entry -> entry.getValue() == id).findFirst()
-        .map(entry -> {
-          var customerorder = new Customerorder();
-          customerorder.setSign("co");
-          var suborder = new Suborder();
-          suborder.setCustomerorder(customerorder);
-          suborder.setSign(entry.getKey().substring("co/".length()));
-          setId(suborder, id);
-          suborder.deriveCompleteOrderSign();
-          return suborder;
-        })
-        .orElse(null);
+        .map(entry -> new SuborderLocation(id, CUSTOMERORDER, List.of(id), entry.getKey()));
   }
 
   private static long idOf(String employeeSign) {
     return PEOPLE.getOrDefault(employeeSign, GHOST);
-  }
-
-  private static Employee employee(long id) {
-    return PEOPLE.entrySet().stream().filter(person -> person.getValue() == id).findFirst()
-        .map(person -> {
-          var employee = new Employee();
-          setId(employee, id);
-          employee.setSign(person.getKey());
-          return employee;
-        })
-        .orElse(null);
   }
 
   /**

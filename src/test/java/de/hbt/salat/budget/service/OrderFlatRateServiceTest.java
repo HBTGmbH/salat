@@ -143,6 +143,17 @@ public class OrderFlatRateServiceTest {
   }
 
   @Test
+  public void refuses_an_unknown_suborder() {
+    var data = new OrderFlatRateData(TREE.orderId("co"), OrderTree.UNKNOWN_ID, null, "description",
+        FlatRateRhythm.ONCE, new BigDecimal("1000"), TODAY, TODAY);
+
+    assertThatThrownBy(() -> service.save(data))
+        .isInstanceOf(ErrorCodeException.class)
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.SO_NOT_FOUND);
+  }
+
+  @Test
   public void refuses_a_suborder_that_does_not_belong_to_the_order() {
     var data = new OrderFlatRateData(TREE.orderId("co"), TREE.suborderId("other/01"), null, null,
         FlatRateRhythm.ONCE, new BigDecimal("1000"), TODAY, TODAY);
@@ -159,7 +170,7 @@ public class OrderFlatRateServiceTest {
     service.save(data(FlatRateRhythm.ONCE, TODAY, null, "1000"));
 
     assertThat(savedFlatRate().isOrderWide()).isTrue();
-    verify(suborderService, never()).getSuborderById(anyLong());
+    verify(suborderService, never()).getSuborderLocationById(anyLong());
   }
 
   /** Order and suborder are stored by id (#1205). */

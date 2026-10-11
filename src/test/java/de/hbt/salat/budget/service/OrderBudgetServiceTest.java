@@ -460,6 +460,16 @@ public class OrderBudgetServiceTest {
         .hasMessageContaining(ErrorCode.SO_NOT_FOUND.getCode());
   }
 
+  @Test
+  public void rejects_a_customer_order_that_does_not_exist() {
+    givenExisting();
+
+    assertThatThrownBy(() -> service.create(new OrderBudgetData("plan", OrderTree.UNKNOWN_ID, null,
+        JAN, DEC, true, null, null, false)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.CO_NOT_FOUND.getCode());
+  }
+
   // --- assignments follow a changed plan (#974) -------------------------------------------------
 
   /**
