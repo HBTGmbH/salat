@@ -8,7 +8,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
@@ -564,6 +566,38 @@ class DailyWorkingReportServiceImportTest {
         .isInstanceOfSatisfying(InvalidDataException.class, ex ->
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_BOOKING_NO_EMPLOYEE_ORDER));
     assertNothingCreatedOrDeleted();
+  }
+
+  /**
+   * The limit of a day with an absence (#397) checks each new booking against what the day holds at that
+   * moment. A file that swaps time between two orders of one day must not be refused for a booking it
+   * replaces itself, so every replaced booking of the day is deleted before the first new one is created,
+   * whatever order the employee orders come in.
+   */
+  @Test
+  void replacing_bookings_of_several_orders_deletes_all_replaced_before_creating_any() {
+    var otherOrderId = 183220L;
+    var otherOrder = employeeorder(otherOrderId, contract, suborder("222", "Abwesenheit", "01", "Urlaub"));
+    when(employeeorderDAO.getEmployeeorderById(otherOrderId)).thenReturn(otherOrder);
+    when(employeeorderService.getEmployeeorderById(otherOrderId)).thenReturn(otherOrder);
+    stored(booking(1L, "Arbeit", 240, null));
+    when(timereportDAO.getTimereportsByDateAndEmployeeOrderId(DAY, otherOrderId)).thenReturn(List.of(
+        TimereportDTO.builder().id(2L).referenceday(DAY).employeeorderId(otherOrderId).employeecontractId(CONTRACT_ID)
+            .employeeSign("testuser").customerorderSign("222").completeOrderSign("222/01")
+            .duration(Duration.ofHours(4)).taskdescription("Urlaub").ticketReferences(List.of()).build()));
+    var report = DailyWorkingReportData.builder()
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .dailyReports(List.of(
+            DailyReportData.builder().employeeorderId(ORDER_ID).hours(5).minutes(0).comment("Arbeit").build(),
+            DailyReportData.builder().employeeorderId(otherOrderId).hours(3).minutes(0).comment("Urlaub").build()))
+        .build();
+
+    service.updateReports(List.of(report));
+
+    var inOrder = inOrder(timereportService);
+    inOrder.verify(timereportService, times(2)).deleteTimereportsById(any());
+    inOrder.verify(timereportService, times(2)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(),
+        any(Duration.class), anyInt());
   }
 
   // fixtures

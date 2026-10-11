@@ -185,10 +185,18 @@ public class DailyWorkingReportService {
 
         var wdResult = doCreateWorkingDay(report, employeecontract);
 
-        var totals = report.getDailyReports().stream()
+        var changes = report.getDailyReports().stream()
             .collect(groupingBy(DailyReportData::getEmployeeorderId))
             .entrySet().stream()
-            .map(e -> doCreateDailyReports(report.getDate(), e.getKey(), e.getValue(), upsert, contractId))
+            .map(e -> changesOf(report.getDate(), e.getKey(), e.getValue(), upsert, contractId))
+            .toList();
+        // every replaced booking of the day goes before the first new one is created: the limit of a
+        // day with an absence (#397) checks each booking against what the day holds at that moment, and
+        // a booking of one order must not be refused for one of another order the file replaces
+        changes.forEach(this::deleteReplaced);
+        changes.forEach(this::createNew);
+        var totals = changes.stream()
+            .map(DayChanges::counts)
             .reduce(new BookingCounts(List.of(), List.of(), List.of()), BookingCounts::add);
 
         return new ImportReport.DayResult(report.getDate(),
@@ -239,7 +247,7 @@ public class DailyWorkingReportService {
 
     private record WorkingDayResult(boolean created, boolean dataChanged, LocalTime startTime, LocalTime breakDuration) {}
 
-    private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> incomingBookings, boolean upsert, long contractId) {
+    private DayChanges changesOf(LocalDate day, Long employeeOrderId, List<DailyReportData> incomingBookings, boolean upsert, long contractId) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
         if (employeeOrder == null) {
             throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
@@ -261,12 +269,9 @@ public class DailyWorkingReportService {
         var newBookings = bookings.stream().filter(not(existingBookingsWithoutId::contains)).toList();
         var oldBookings = existingBookings.stream().filter(booking -> !bookings.contains(booking.withoutId())).toList();
 
-        if (!oldBookings.isEmpty() && upsert){
-            var ids = oldBookings.stream().map(DailyReportData::getId).filter(Objects::nonNull).toList();
-            timereportService.deleteTimereportsById(ids);
-        }
-
-        newBookings.forEach(booking -> doCreateDailyReport(day, booking, employeeOrder, employeeContract));
+        var replacedIds = upsert
+            ? oldBookings.stream().map(DailyReportData::getId).filter(Objects::nonNull).toList()
+            : List.<Long>of();
 
         int pairCount = upsert ? Math.min(newBookings.size(), oldBookings.size()) : 0;
         var updatedDetails = IntStream.range(0, pairCount)
@@ -274,7 +279,24 @@ public class DailyWorkingReportService {
             .toList();
         var pureCreated = newBookings.subList(pairCount, newBookings.size()).stream().map(DailyWorkingReportService::toBookingDetail).toList();
         var pureDeleted = upsert ? oldBookings.subList(pairCount, oldBookings.size()).stream().map(DailyWorkingReportService::toBookingDetail).toList() : List.<ImportReport.BookingDetail>of();
-        return new BookingCounts(pureCreated, pureDeleted, updatedDetails);
+        return new DayChanges(day, employeeOrder, replacedIds, newBookings,
+            new BookingCounts(pureCreated, pureDeleted, updatedDetails));
+    }
+
+    /** What the file changes on one day for one employee order, carried out in two steps (#397). */
+    private record DayChanges(LocalDate day, Employeeorder employeeorder, List<Long> replacedIds,
+                              List<DailyReportData> newBookings, BookingCounts counts) {
+    }
+
+    private void deleteReplaced(DayChanges changes) {
+        if (!changes.replacedIds().isEmpty()) {
+            timereportService.deleteTimereportsById(changes.replacedIds());
+        }
+    }
+
+    private void createNew(DayChanges changes) {
+        changes.newBookings().forEach(booking ->
+            doCreateDailyReport(changes.day(), booking, changes.employeeorder(), changes.employeeorder().getEmployeecontract()));
     }
 
     /**

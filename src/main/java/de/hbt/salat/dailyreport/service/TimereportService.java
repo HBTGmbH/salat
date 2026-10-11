@@ -22,6 +22,8 @@ import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static de.hbt.salat.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static de.hbt.salat.common.exception.ErrorCode.TR_ABSENCE_DAY_EXCEEDS_TARGET;
+import static de.hbt.salat.common.exception.ErrorCode.TR_ABSENCE_DAY_WITHOUT_TARGET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_EXCEEDS_ONE_DAY;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE;
@@ -64,6 +66,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -248,6 +251,9 @@ public class TimereportService {
     }
     LocalDate previousDate = timereport.getReferenceday().getRefdate();
     Employeecontract previousContract = timereport.getEmployeecontract();
+    // taken before the booking is filled with the new values: the limit of a day with an absence compares
+    // the day before and after the change (#397)
+    var previousState = new StoredBooking(timereport.getEmployeeorder(), previousDate, timereport.getDuration());
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
         timereport);
     // across a contract boundary a booking changes its contract, never its person (#1128)
@@ -265,7 +271,8 @@ public class TimereportService {
     }
     Map<Long, LocalDate> previousReferencedays = dayChanged ? Map.of(timereportId, previousDate) : Map.of();
     Map<Long, Long> previousEmployeecontractIds = contractChanged ? Map.of(timereportId, previousContract.getId()) : Map.of();
-    checkAndSaveTimereports(Collections.singletonList(timereport), force, previousReferencedays, previousEmployeecontractIds);
+    checkAndSaveTimereports(Collections.singletonList(timereport), force, previousReferencedays, previousEmployeecontractIds,
+        List.of(previousState));
   }
 
   /**
@@ -354,11 +361,15 @@ public class TimereportService {
   }
 
   private void checkAndSaveTimereports(List<Timereport> timereports) {
-    checkAndSaveTimereports(timereports, false, Map.of(), Map.of());
+    checkAndSaveTimereports(timereports, false, Map.of(), Map.of(), List.of());
   }
 
+  /**
+   * @param previousStates the bookings among {@code timereports} that exist already, as they stood
+   *                       before this change — what the limit of a day with an absence compares with
+   */
   private void checkAndSaveTimereports(List<Timereport> timereports, boolean force, Map<Long, LocalDate> previousReferencedays,
-      Map<Long, Long> previousEmployeecontractIds) {
+      Map<Long, Long> previousEmployeecontractIds, List<StoredBooking> previousStates) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
     if (!force) {
@@ -369,6 +380,7 @@ public class TimereportService {
     validateContractBusinessRules(timereports);
     validateOrderBusinessRules(timereports);
     validateTicketReferences(timereports);
+    validateAbsenceDayLimit(timereports, previousStates);
     validateEmployeeorderBudget(timereports);
 
     timereports.forEach(t -> {
@@ -512,6 +524,116 @@ public class TimereportService {
       day = nextDay; // prepare next iteration
     } while(nextWorkableDay == null);
     return nextWorkableDay;
+  }
+
+  /**
+   * On a day with an absence — vacation, sickness or anything else booked on an order of type
+   * {@link OrderType#KRANK_URLAUB_ABWESEND} — all bookings of the day together must not exceed the target of
+   * that day (#397). Otherwise an absence would earn overtime: the day off counts with its full working
+   * time, and whatever is booked next to it comes on top. A day without an absence knows no such limit.
+   *
+   * <p>The target is the one the booking form proposes the rest of for an absence (#1214,
+   * {@link DailyService#getRemainingDayTarget}), computed by {@link WorkingTimeTarget}: the daily working time
+   * of the contract on a weekday within its validity that is no public holiday, nothing otherwise. Standby
+   * is no working time (#463) and counts neither here nor there. So the proposal is exactly what this check
+   * still lets through.
+   *
+   * <p>Checked on every save, whichever way the booking comes — the form, the inline edit, a favourite, a
+   * previous booking, serial days, shifting and moving, the CSV import and the REST API all come through
+   * {@link #checkAndSaveTimereports} — and from either side: an absence on a day with working time as much
+   * as working time on a day with an absence.
+   *
+   * <p>Days that broke the rule before it existed stay as they are. Changing one of their bookings is
+   * refused only where the change makes the excess larger: shortening a booking, correcting its comment
+   * or moving it away has to remain possible, and none of that is a reason to reject.
+   */
+  private void validateAbsenceDayLimit(List<Timereport> timereports, List<StoredBooking> previousStates) {
+    var savedIds = timereports.stream().map(Timereport::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+    timereports.stream()
+        .collect(groupingBy(BookingOnDay::dayOf, LinkedHashMap::new, Collectors.toList()))
+        .forEach((day, savedOnDay) -> validateAbsenceDay(savedOnDay.getFirst().getEmployeecontract(), day.day(),
+            savedOnDay, savedIds, previousStates));
+  }
+
+  private void validateAbsenceDay(Employeecontract employeecontract, LocalDate day, List<Timereport> savedOnDay,
+      Set<Long> savedIds, List<StoredBooking> previousStates) {
+    var others = timereportRepository.findAllByEmployeecontractIdAndReferencedayRefdate(employeecontract.getId(), day)
+        .stream()
+        .filter(timereport -> !savedIds.contains(timereport.getId()))
+        .map(BookingOnDay::of)
+        .toList();
+    var after = savedOnDay.stream().map(BookingOnDay::of).toList();
+    if (!BookingOnDay.anyAbsence(others, after)) {
+      return;
+    }
+    var dayKey = new DayKey(employeecontract.getId(), day);
+    var before = previousStates.stream().map(StoredBooking::onDay).filter(state -> state.day().equals(dayKey)).toList();
+
+    Duration target = WorkingTimeTarget.between(employeecontract, day, day, publicholidayDAO::getPublicHolidaysBetween);
+    Duration bookedByOthers = BookingOnDay.workingTimeOf(others);
+    Duration excessAfter = bookedByOthers.plus(BookingOnDay.workingTimeOf(after)).minus(target);
+    // before the change the day may not have had an absence at all, and then it had no limit to exceed
+    Duration excessBefore = BookingOnDay.anyAbsence(others, before)
+        ? bookedByOthers.plus(BookingOnDay.workingTimeOf(before)).minus(target)
+        : Duration.ZERO;
+    boolean exceedsTarget = excessAfter.isPositive();
+    boolean excessGrows = excessAfter.compareTo(excessBefore) > 0;
+    if (!exceedsTarget || !excessGrows) {
+      return;
+    }
+
+    var date = DateUtils.format(day);
+    var sign = employeecontract.getEmployee().getSign();
+    if (!target.isPositive()) {
+      throw new BusinessRuleException(TR_ABSENCE_DAY_WITHOUT_TARGET, date, sign);
+    }
+    var remaining = target.minus(bookedByOthers);
+    throw new BusinessRuleException(TR_ABSENCE_DAY_EXCEEDS_TARGET, date, sign, DurationUtils.format(target),
+        DurationUtils.format(remaining.isNegative() ? Duration.ZERO : remaining));
+  }
+
+  /** A day of a contract — the unit the limit of a day with an absence applies to (#397). */
+  private record DayKey(long employeecontractId, LocalDate day) {
+  }
+
+  /**
+   * A stored booking as it stood before a change, taken before the change is applied to it: the values the
+   * limit of a day with an absence needs of its previous state (#397). Changing a booking replaces its employee
+   * order and its day instead of altering them, so the references keep the old state.
+   */
+  private record StoredBooking(Employeeorder employeeorder, LocalDate day, Duration duration) {
+
+    BookingOnDay onDay() {
+      return BookingOnDay.of(employeeorder, day, duration);
+    }
+  }
+
+  /** A booking as far as the limit of a day with an absence asks about it (#397). */
+  private record BookingOnDay(DayKey day, Duration workingTime, boolean absence) {
+
+    static BookingOnDay of(Timereport timereport) {
+      return of(timereport.getEmployeeorder(), timereport.getReferenceday().getRefdate(), timereport.getDuration());
+    }
+
+    static BookingOnDay of(Employeeorder employeeorder, LocalDate day, Duration duration) {
+      OrderType orderType = employeeorder.getSuborder().getEffectiveOrderType();
+      // no type at all is a standard order, as in TimereportRepository.IS_WORKING_TIME
+      boolean workingTime = orderType == null || orderType.isWorkingTime();
+      return new BookingOnDay(new DayKey(employeeorder.getEmployeecontract().getId(), day),
+          workingTime ? duration : Duration.ZERO, orderType == OrderType.KRANK_URLAUB_ABWESEND);
+    }
+
+    static DayKey dayOf(Timereport timereport) {
+      return new DayKey(timereport.getEmployeecontract().getId(), timereport.getReferenceday().getRefdate());
+    }
+
+    static boolean anyAbsence(List<BookingOnDay> first, List<BookingOnDay> second) {
+      return first.stream().anyMatch(BookingOnDay::absence) || second.stream().anyMatch(BookingOnDay::absence);
+    }
+
+    static Duration workingTimeOf(List<BookingOnDay> bookings) {
+      return bookings.stream().map(BookingOnDay::workingTime).reduce(Duration.ZERO, Duration::plus);
+    }
   }
 
   private void validateEmployeeorderBudget(List<Timereport> timereports) throws BusinessRuleException {

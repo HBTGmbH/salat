@@ -121,6 +121,8 @@ public enum ErrorCode {
   TR_TICKET_REFERENCES_NOT_ALLOWED("TR-0049", "the suborder of the booking allows no ticket references"),
   TR_TICKET_REFERENCES_EXCEED_LIMIT("TR-0050", "the booking has more ticket references than its suborder allows"),
   TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT("TR-0051", "the employee order belongs to another employee contract than the booking"),
+  TR_ABSENCE_DAY_EXCEEDS_TARGET("TR-0052", "on a day with an absence, all bookings together exceed the daily working time"),
+  TR_ABSENCE_DAY_WITHOUT_TARGET("TR-0053", "an absence is booked on a day without working time target, or time next to one"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
