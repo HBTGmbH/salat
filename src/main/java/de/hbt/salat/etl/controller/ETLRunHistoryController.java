@@ -1,7 +1,6 @@
 package de.hbt.salat.etl.controller;
 
 import java.time.LocalDate;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,7 +23,6 @@ import de.hbt.salat.etl.configuration.EtlSwitch;
 import de.hbt.salat.etl.service.ETLRunHistoryService;
 import de.hbt.salat.etl.service.ETLRunLauncher;
 import de.hbt.salat.etl.service.ETLService;
-import de.hbt.salat.etl.viewhelper.ETLExecutionViewHelper;
 import de.hbt.salat.etl.viewhelper.ETLRunViewHelper;
 
 /**
@@ -85,34 +83,6 @@ public class ETLRunHistoryController {
     model.addAttribute("fEtlRunFailedOnly", failedOnly);
     addRunFormModel(model);
     return "etl/run-list";
-  }
-
-  /**
-   * Ein Lauf mit seinen Ausführungen (#1324) — welche Definition in welcher Referenzperiode lief,
-   * mit welchem Ergebnis und welcher Meldung.
-   *
-   * <p>Welche Ausführungen die Person sieht, entscheidet {@code ETLRunHistoryService} — je
-   * Definition nach dem Leserecht. Einen Lauf, den es nicht (mehr) gibt, etwa weil das Aufräumen
-   * ihn inzwischen gelöscht hat, beantwortet die Liste mit einer Meldung; zur durchgereichten
-   * {@code AuthorizationException} siehe {@link #run}.
-   */
-  @GetMapping("/{id}")
-  public String detail(@PathVariable long id, Model model, RedirectAttributes redirectAttributes) {
-    try {
-      var detail = etlRunHistoryService.getRunDetail(id);
-      var executions = detail.executions();
-      model.addAttribute("run", ETLRunViewHelper.from(detail.run()));
-      model.addAttribute("executions", IntStream.range(0, executions.size())
-          .mapToObj(i -> ETLExecutionViewHelper.from(i + 1, executions.get(i)))
-          .toList());
-      model.addAttribute("hiddenExecutions", detail.hiddenExecutions());
-      return "etl/run-detail";
-    } catch (AuthorizationException ex) {
-      throw ex;
-    } catch (ErrorCodeException ex) {
-      redirectAttributes.addFlashAttribute("toastError", firstMessageOf(ex));
-      return "redirect:/etl/runs";
-    }
   }
 
   /**

@@ -27,8 +27,7 @@ import lombok.Setter;
  *
  * <p>Bewusst eine eigene Tabelle statt einer Zeile ohne Definition in {@code etl_execution_history}:
  * dort steht in jeder Zeile eine ETL-Definition, und die ETL- und Report-SQLs in der Datenbank
- * gruppieren über {@code etl_name}. Seit #1324 verweist jede Ausführung über {@code run_id} auf
- * ihren Lauf; die Seite eines Laufs zeigt sie.
+ * gruppieren über {@code etl_name}.
  */
 @Entity
 @Table(name = "etl_run_history")

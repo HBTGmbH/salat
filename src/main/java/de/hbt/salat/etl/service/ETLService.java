@@ -391,7 +391,7 @@ public class ETLService {
     var failed = new ArrayList<String>();
     try {
       for (ETLDefinition definition : definitions.get()) {
-        if (!executeETL(run, definition, dateRange)) {
+        if (!executeETL(definition, dateRange)) {
           failed.add(definition.getName());
         }
         executed.add(definition.getName());
@@ -503,10 +503,9 @@ public class ETLService {
    * Das SQL jeder Anweisung stand früher darin und machte rund 95 % des Eintrags aus — ein Lauf über
    * die ganze Historie schrieb so über 100 MB.
    *
-   * @param run der Lauf, zu dem jeder Eintrag gehört (#1324)
    * @return {@code true}, wenn jede Referenzperiode dieser Definition durchlief
    */
-  private boolean executeETL(ETLRunHistory run, ETLDefinition def, LocalDateRange dateRange) {
+  private boolean executeETL(ETLDefinition def, LocalDateRange dateRange) {
     var etlName = def.getName();
 
     var refPeriods = generateReferencePeriodRanges(dateRange, def.getReferencePeriod());
@@ -514,7 +513,7 @@ public class ETLService {
     for (LocalDateRange refPeriod : refPeriods) {
       boolean success = false;
       StringBuilder message = new StringBuilder();
-      message.append(ETLExecutionHistory.DATE_RANGE_PREFIX).append(refPeriod).append("\n");
+      message.append("Date Range: ").append(refPeriod).append("\n");
       var running = new RunningStatement();
 
       try {
@@ -562,7 +561,6 @@ public class ETLService {
         throw ex;
       } finally {
         historyRepo.save(ETLExecutionHistory.builder()
-            .run(run)
             .etlId(def.getId())
             .etlName(def.getName())
             .executedAt(DateTimeUtils.now()).success(success).message(message.toString()).build());
