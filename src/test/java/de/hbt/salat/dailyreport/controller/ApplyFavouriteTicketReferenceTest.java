@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -101,7 +102,7 @@ class ApplyFavouriteTicketReferenceTest {
     applyIt();
 
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        eq("Daily"), eq(List.of("PROJ-123", "PROJ-130")), eq(false), anyLong(), anyLong(), anyInt());
+        eq("Daily"), eq(List.of("PROJ-123", "PROJ-130")), eq(false), any(Duration.class), anyInt());
   }
 
   /** A favourite made before this existed has no reference, and none is invented for it. */
@@ -112,7 +113,7 @@ class ApplyFavouriteTicketReferenceTest {
     applyIt();
 
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        eq("Daily"), eq(List.of()), eq(false), anyLong(), anyLong(), anyInt());
+        eq("Daily"), eq(List.of()), eq(false), any(Duration.class), anyInt());
   }
 
   /** Applying counts as a use (#1414) - only once the booking exists. */
@@ -140,7 +141,7 @@ class ApplyFavouriteTicketReferenceTest {
     givenFavourite(favourite());
     when(errorCodeViewHelper.toViewMessages(any())).thenReturn(List.of());
     doThrow(new BusinessRuleException(ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE)).when(timereportService)
-        .createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), anyLong(), anyLong(), anyInt());
+        .createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
 
     applyIt();
 

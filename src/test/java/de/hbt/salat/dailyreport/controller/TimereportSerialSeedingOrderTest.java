@@ -107,7 +107,7 @@ class TimereportSerialSeedingOrderTest {
     // Die Eingabeprüfung endet im Formular, nicht auf der Fehlerseite …
     assertThat(view).isEqualTo("dailyreport/timereport-form");
     // … und kein Serientag ist angelegt worden.
-    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), anyInt(), anyInt());
+    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), any(LocalTime.class));
   }
 
   @Test
@@ -127,7 +127,7 @@ class TimereportSerialSeedingOrderTest {
     var order = inOrder(employeeorderService, workingdayService);
     order.verify(employeeorderService)
         .getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(EC_ID, SUBORDER_ID, DATE);
-    order.verify(workingdayService, times(3)).seedWorkingday(anyLong(), any(), anyInt(), anyInt());
+    order.verify(workingdayService, times(3)).seedWorkingday(anyLong(), any(), any(LocalTime.class));
   }
 
   private String create(TimereportForm form) {

@@ -1,7 +1,7 @@
 package de.hbt.salat.dailyreport.controller;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_INVALID_FORMAT;
 import static de.hbt.salat.common.util.DateUtils.formatMonth;
 import static de.hbt.salat.common.util.DateUtils.today;
@@ -221,12 +221,12 @@ public class DailyController {
                 workingday.setBreakLength(Duration.ZERO);
             } else {
                 var beginTime = dailyPreferenceService.getForEmployeeContractId(effEmployeeContractId).workDayStart();
-                int[] start = parseTime(form.getStartTime(), beginTime.getHour(), beginTime.getMinute());
+                var start = parseFlexibleTimeOfDay(form.getStartTime()).orElse(beginTime.truncatedTo(MINUTES));
                 // the break is a duration, not a time of day — "30" means half an hour, not 30 o'clock
-                int[] brk   = parseBreak(form.getBreakTime());
+                var brk = parseBreak(form.getBreakTime());
                 workingday.setType(Workingday.WorkingDayType.WORKED);
-                workingday.setStartTime(LocalTime.of(start[0], start[1]));
-                workingday.setBreakLength(Duration.ofHours(brk[0]).plusMinutes(brk[1]));
+                workingday.setStartTime(start);
+                workingday.setBreakLength(brk);
             }
             workingdayService.upsertWorkingday(workingday);
             if ("true".equals(request.getHeader("HX-Request"))) {
@@ -326,15 +326,13 @@ public class DailyController {
             var tr = timereportService.getTimereportById(id);
             date = tr.getReferenceday();
             ecId = tr.getEmployeecontractId();
-            long hours = tr.getDuration().toHours();
-            long minutes = tr.getDuration().toMinutesPart();
+            var bookedDuration = tr.getDuration();
             // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — an unparseable value is
             // reported back instead of being discarded silently (#825). The duration parameter is
             // absent when only the comment was edited; then the stored duration stays untouched.
             var parsedMinutes = parseFlexibleMinutes(duration);
             if (parsedMinutes.isPresent()) {
-                hours = parsedMinutes.getAsLong() / MINUTES_PER_HOUR;
-                minutes = parsedMinutes.getAsLong() % MINUTES_PER_HOUR;
+                bookedDuration = Duration.ofMinutes(parsedMinutes.getAsLong());
             } else if (duration != null) {
                 throw new InvalidDataException(TR_DURATION_INVALID_FORMAT);
             }
@@ -349,11 +347,11 @@ public class DailyController {
                     timereportService.updateTimereport(id,
                         ecId, tr.getEmployeeorderId(),
                         date, desc, TimereportController.withAdoptedKeys(tr.getTicketReferences(), adoptedTicketKeys),
-                        tr.isTraining(), hours, minutes);
+                        tr.isTraining(), bookedDuration);
                 } else {
                     timereportService.updateTimereport(id,
                         ecId, tr.getEmployeeorderId(),
-                        date, desc, tr.isTraining(), hours, minutes);
+                        date, desc, tr.isTraining(), bookedDuration);
                 }
             }
         } catch (ErrorCodeException ex) {
@@ -426,12 +424,12 @@ public class DailyController {
         try {
             var fav = favoriteService.getOwnFavorite(favoriteId).orElseThrow();
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
-            workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
+            workingdayService.seedWorkingday(ecId, date, beginTime);
             // the overload with the references (#1029): without it the favourite would hand back
             // everything but the tickets it was made for. More than the suborder allows by now is
             // refused with a message, not cut short (#1326).
             timereportService.createTimereports(ecId, fav.employeeorderId(), date,
-                fav.comment(), fav.ticketReferences(), false, fav.hours(), fav.minutes(), 1);
+                fav.comment(), fav.ticketReferences(), false, fav.duration(), 1);
             // only a booking that was created counts as a use (#1414)
             favoriteService.markUsed(favoriteId);
             betas.count(DailyReportBetaFeatureContributor.FAVORITES_FIRST, DailyBetaEvents.FAVORITE_APPLIED);
@@ -482,10 +480,10 @@ public class DailyController {
         long ecId = effectiveContractId(fEmployeeContractId);
         try {
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
-            workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
+            workingdayService.seedWorkingday(ecId, date, beginTime);
             timereportService.createTimereports(ecId, employeeorderId, date,
                 comment != null ? comment : "", ticketReferences, false,
-                durationMinutes / MINUTES_PER_HOUR, durationMinutes % MINUTES_PER_HOUR, 1);
+                Duration.ofMinutes(durationMinutes), 1);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
@@ -617,15 +615,8 @@ public class DailyController {
      * the same input in a time-of-day field would be an invalid hour and silently fall back to zero
      * (#833). Anything unparseable means no break.
      */
-    private static int[] parseBreak(String value) {
-        long minutes = parseFlexibleMinutes(value).orElse(0L);
-        return new int[]{(int) (minutes / MINUTES_PER_HOUR), (int) (minutes % MINUTES_PER_HOUR)};
-    }
-
-    private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
-        return parseFlexibleTimeOfDay(hhmm)
-            .map(time -> new int[]{time.getHour(), time.getMinute()})
-            .orElseGet(() -> new int[]{defaultHour, defaultMinute});
+    private static Duration parseBreak(String value) {
+        return Duration.ofMinutes(parseFlexibleMinutes(value).orElse(0L));
     }
 
     /**

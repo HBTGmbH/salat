@@ -121,6 +121,50 @@ class WorkingdayBookedUntilTest {
     assertThat(workingdayService.getBookedUntilMinutes(EMPLOYEE_CONTRACT_ID, DAY, null)).hasValue(25 * 60);
   }
 
+  /** Start, break and bookings count with their minutes (#1400). */
+  @Test
+  void the_quitting_time_counts_the_minutes_of_start_break_and_bookings() {
+    storeWorkingday(WORKED, 7, 15, 0, 45);
+    bookings(booking(1L, OrderType.STANDARD, 1, 45));
+
+    assertThat(workingdayService.calculateQuittingTime(EMPLOYEE_CONTRACT_ID, DAY)).isEqualTo("09:45");
+  }
+
+  /** Unlike the booked-until minutes, the quitting time is a time of day and wraps at midnight. */
+  @Test
+  void the_quitting_time_wraps_at_midnight() {
+    storeWorkingday(WORKED, 22, 30, 0, 30);
+    bookings(booking(1L, OrderType.STANDARD, 1, 45));
+
+    assertThat(workingdayService.calculateQuittingTime(EMPLOYEE_CONTRACT_ID, DAY)).isEqualTo("00:45");
+  }
+
+  @Test
+  void the_begin_shown_for_the_next_booking_counts_the_minutes_of_start_break_and_bookings() {
+    var workingday = storeWorkingday(WORKED, 7, 15, 0, 45);
+    bookings(booking(1L, OrderType.STANDARD, 1, 45));
+
+    assertThat(workingdayService.determineBeginTimeToDisplay(EMPLOYEE_CONTRACT_ID, DAY, workingday))
+        .isEqualTo(LocalTime.of(9, 45));
+  }
+
+  @Test
+  void the_begin_shown_for_the_next_booking_wraps_at_midnight() {
+    var workingday = storeWorkingday(WORKED, 22, 30, 0, 30);
+    bookings(booking(1L, OrderType.STANDARD, 1, 45));
+
+    assertThat(workingdayService.determineBeginTimeToDisplay(EMPLOYEE_CONTRACT_ID, DAY, workingday))
+        .isEqualTo(LocalTime.of(0, 45));
+  }
+
+  @Test
+  void a_booking_past_midnight_with_minutes_is_not_wrapped() {
+    storeWorkingday(WORKED, 22, 30, 0, 30);
+    bookings(booking(1L, OrderType.STANDARD, 1, 45));
+
+    assertThat(workingdayService.getBookedUntilMinutes(EMPLOYEE_CONTRACT_ID, DAY, null)).hasValue(24 * 60 + 45);
+  }
+
   @Test
   void a_day_marked_not_worked_has_no_starting_point() {
     storeWorkingday(NOT_WORKED, 0, 0, 0, 0);
@@ -128,7 +172,7 @@ class WorkingdayBookedUntilTest {
     assertThat(workingdayService.getBookedUntilMinutes(EMPLOYEE_CONTRACT_ID, DAY, null)).isEmpty();
   }
 
-  private void storeWorkingday(Workingday.WorkingDayType type, int startHour, int startMinute,
+  private Workingday storeWorkingday(Workingday.WorkingDayType type, int startHour, int startMinute,
       int breakHours, int breakMinutes) {
     var workingday = new Workingday();
     workingday.setRefday(DAY);
@@ -136,6 +180,7 @@ class WorkingdayBookedUntilTest {
     workingday.setStartTime(LocalTime.of(startHour, startMinute));
     workingday.setBreakLength(Duration.ofHours(breakHours).plusMinutes(breakMinutes));
     when(workingdayRepository.findByRefdayAndEmployeecontractId(DAY, EMPLOYEE_CONTRACT_ID)).thenReturn(Optional.of(workingday));
+    return workingday;
   }
 
   private void bookings(TimereportDTO... bookings) {

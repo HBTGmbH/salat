@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -101,7 +102,7 @@ class TimereportEditContractTest {
         new ExtendedModelMap());
 
     verify(timereportService).updateTimereport(eq(TIMEREPORT_ID), eq(OWN_CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        anyString(), any(), anyBoolean(), eq(1L), eq(30L));
+        anyString(), any(), anyBoolean(), eq(Duration.ofHours(1).plusMinutes(30)));
     verify(employeeorderService, never())
         .getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(eq(REMEMBERED_CONTRACT_ID), anyLong(), any());
   }

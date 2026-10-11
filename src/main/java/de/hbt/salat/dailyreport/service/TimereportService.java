@@ -15,7 +15,6 @@ import static de.hbt.salat.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 import static de.hbt.salat.common.GlobalConstants.DEBITHOURS_UNIT_YEAR;
 import static de.hbt.salat.common.GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
 import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_DAY;
-import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 import static de.hbt.salat.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
 import static de.hbt.salat.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
@@ -24,9 +23,7 @@ import static de.hbt.salat.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static de.hbt.salat.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_EXCEEDS_ONE_DAY;
-import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_INVALID;
-import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE;
@@ -158,9 +155,9 @@ public class TimereportService {
   }
 
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays) throws ErrorCodeException {
-    createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, null, trainingFlag, durationHours,
-        durationMinutes, numberOfSerialDays);
+      boolean trainingFlag, Duration duration, int numberOfSerialDays) throws ErrorCodeException {
+    createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, null, trainingFlag, duration,
+        numberOfSerialDays);
   }
 
   /**
@@ -168,7 +165,7 @@ public class TimereportService {
    *                         allows is checked on saving (#1326)
    */
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      List<String> ticketReferences, boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
+      List<String> ticketReferences, boolean trainingFlag, Duration duration, int numberOfSerialDays)
       throws ErrorCodeException {
 
     // the form offers 1..MAX_SERIAL_BOOKING_DAYS; a hand-crafted POST must not ask for more (#826)
@@ -177,8 +174,8 @@ public class TimereportService {
     }
 
     Timereport timereportTemplate = new Timereport();
-    validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, timereportTemplate);
+    validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
+        timereportTemplate);
     // set on the template, so getTwin() carries them to every serial day
     timereportTemplate.setTicketReferences(TicketReferences.normalize(ticketReferences));
 
@@ -213,8 +210,8 @@ public class TimereportService {
   }
 
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
-    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours, durationMinutes, false);
+      boolean trainingFlag, Duration duration) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration, false);
   }
 
   /**
@@ -222,9 +219,9 @@ public class TimereportService {
    * shifting, importing — must not silently drop them (#982).
    */
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes, boolean force) throws ErrorCodeException {
-    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, force, null, false);
+      boolean trainingFlag, Duration duration, boolean force) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
+        force, null, false);
   }
 
   /**
@@ -232,13 +229,13 @@ public class TimereportService {
    * field means.
    */
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      List<String> ticketReferences, boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
-    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, false, ticketReferences == null ? List.of() : ticketReferences, true);
+      List<String> ticketReferences, boolean trainingFlag, Duration duration) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
+        false, ticketReferences == null ? List.of() : ticketReferences, true);
   }
 
   private void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes, boolean force,
+      boolean trainingFlag, Duration duration, boolean force,
       List<String> ticketReferences, boolean applyTicketReferences) throws ErrorCodeException {
     if (force && !authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);
@@ -251,8 +248,8 @@ public class TimereportService {
     }
     LocalDate previousDate = timereport.getReferenceday().getRefdate();
     Employeecontract previousContract = timereport.getEmployeecontract();
-    validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, timereport);
+    validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
+        timereport);
     // across a contract boundary a booking changes its contract, never its person (#1128)
     BusinessRuleCheckUtils.isTrue(
         Objects.equals(previousContract.getEmployee().getId(), timereport.getEmployeecontract().getEmployee().getId()),
@@ -316,8 +313,7 @@ public class TimereportService {
         shiftedDate,
         timereport.getTaskdescription(),
         timereport.isTraining(),
-        timereport.getDuration().toHours(),
-        timereport.getDuration().toMinutesPart());
+        timereport.getDuration());
   }
 
   public void deleteTimereportById(long timereportId) throws ErrorCodeException {
@@ -385,7 +381,7 @@ public class TimereportService {
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes,
+      boolean trainingFlag, Duration duration,
       Timereport timereport) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeeContractId);
     DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
@@ -402,19 +398,18 @@ public class TimereportService {
     DataValidationUtils.notNull(referenceDay, TR_REFERENCE_DAY_NULL);
     Referenceday referenceday = getOrAddReferenceday(referenceDay);
     DataValidationUtils.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
-    DataValidationUtils.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
-    DataValidationUtils.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
+    // hours and minutes apart exist only where a value comes in from outside (#1400), and are checked there
+    DataValidationUtils.notNull(duration, TR_DURATION_INVALID);
+    DataValidationUtils.isTrue(!duration.isNegative(), TR_DURATION_INVALID);
     // a booking cannot be longer than the day it belongs to (#825). Enforced here so that every
     // caller is covered - the booking form, the inline edit of the daily view and the REST API.
-    // Hours and minutes are stored as one duration (#1381); a minutes part of 60 or more simply adds up.
-    long totalDurationMinutes = durationHours * MINUTES_PER_HOUR + durationMinutes;
-    DataValidationUtils.isTrue(totalDurationMinutes <= MINUTES_PER_DAY, TR_DURATION_EXCEEDS_ONE_DAY);
+    DataValidationUtils.isTrue(duration.compareTo(Duration.ofMinutes(MINUTES_PER_DAY)) <= 0, TR_DURATION_EXCEEDS_ONE_DAY);
 
     timereport.setEmployeeorder(employeeorder);
     timereport.setReferenceday(referenceday);
     timereport.setTaskdescription(taskDescription.trim());
     timereport.setTraining(trainingFlag);
-    timereport.setDuration(Duration.ofMinutes(totalDurationMinutes));
+    timereport.setDuration(duration);
   }
 
   private static String contractLabel(Employeecontract employeecontract) {

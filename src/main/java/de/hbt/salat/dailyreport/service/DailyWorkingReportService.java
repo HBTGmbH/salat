@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
@@ -74,7 +75,7 @@ public class DailyWorkingReportService {
             if (workingDay.getType() != WorkingDayType.NOT_WORKED) {
                 var bd = workingDay.getBreakLength();
                 builder.startTime(workingDay.getStartOfWorkingDay().toLocalTime());
-                builder.breakDuration(LocalTime.of(bd.toHoursPart(), bd.toMinutesPart()));
+                builder.breakDuration(LocalTime.MIDNIGHT.plus(bd.truncatedTo(MINUTES)));
             }
         }
         return builder.build();
@@ -213,12 +214,12 @@ public class DailyWorkingReportService {
         var oldType = workingDay.getType();
 
         ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
-            workingDay.setBreakLength(Duration.ofHours(bd.getHour()).plusMinutes(bd.getMinute()));
+            workingDay.setBreakLength(Duration.between(LocalTime.MIDNIGHT, bd.truncatedTo(MINUTES)));
         }, () -> {
             workingDay.setBreakLength(Duration.ZERO);
         });
         ofNullable(report.getStartTime()).ifPresentOrElse(st -> {
-            workingDay.setStartTime(LocalTime.of(st.getHour(), st.getMinute()));
+            workingDay.setStartTime(st.truncatedTo(MINUTES));
         }, () -> {
             workingDay.setStartTime(LocalTime.MIDNIGHT);
         });
@@ -354,8 +355,7 @@ public class DailyWorkingReportService {
                 booking.getComment(),
                 booking.getTicketReferences(),
                 booking.isTraining(),
-                booking.getHours(),
-                booking.getMinutes(),
+                booking.toDuration(),
                 1
         );
     }

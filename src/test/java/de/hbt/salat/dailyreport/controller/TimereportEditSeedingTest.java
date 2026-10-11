@@ -2,7 +2,6 @@ package de.hbt.salat.dailyreport.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -112,11 +112,10 @@ class TimereportEditSeedingTest {
     update(bookingOn(NEW_DATE));
 
     var order = inOrder(workingdayService, timereportService);
-    order.verify(workingdayService).seedWorkingday(EC_ID, NEW_DATE, 9, 0);
+    order.verify(workingdayService).seedWorkingday(EC_ID, NEW_DATE, LocalTime.of(9, 0));
     order.verify(timereportService).updateTimereport(
         eq(TIMEREPORT_ID), anyLong(), anyLong(),
-        eq(NEW_DATE), anyString(), any(), anyBoolean(),
-        anyLong(), anyLong());
+        eq(NEW_DATE), anyString(), any(), anyBoolean(), any(Duration.class));
   }
 
   @Test
@@ -128,14 +127,14 @@ class TimereportEditSeedingTest {
 
     update(form);
 
-    verify(workingdayService).seedWorkingday(EC_ID, NEW_DATE, 7, 45);
+    verify(workingdayService).seedWorkingday(EC_ID, NEW_DATE, LocalTime.of(7, 45));
   }
 
   @Test
   void a_booking_staying_on_its_day_seeds_nothing() {
     update(bookingOn(STORED_DATE));
 
-    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), anyInt(), anyInt());
+    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), any(LocalTime.class));
   }
 
   /** Den Fehler meldet dann das Speichern selbst; ein Arbeitstag bleibt nicht zurück. */
@@ -146,7 +145,7 @@ class TimereportEditSeedingTest {
 
     update(bookingOn(NEW_DATE));
 
-    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), anyInt(), anyInt());
+    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), any(LocalTime.class));
   }
 
   @Test
@@ -157,7 +156,7 @@ class TimereportEditSeedingTest {
 
     update(bookingOn(NEW_DATE));
 
-    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), anyInt(), anyInt());
+    verify(workingdayService, never()).seedWorkingday(anyLong(), any(), any(LocalTime.class));
   }
 
   private void update(TimereportForm form) {

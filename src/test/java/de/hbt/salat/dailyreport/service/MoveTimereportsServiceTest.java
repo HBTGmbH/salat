@@ -195,7 +195,7 @@ class MoveTimereportsServiceTest {
                 .satisfies(ex -> assertThat(((ErrorCodeException) ex).getMessages())
                     .anyMatch(m -> m.getErrorCode() == TR_MOVE_ACCEPTED_REQ_ADMIN));
             verify(timereportService, never()).updateTimereport(anyLong(), anyLong(), anyLong(), any(), any(),
-                anyBoolean(), anyLong(), anyLong(), anyBoolean());
+                anyBoolean(), any(Duration.class), anyBoolean());
             verify(employeeorderService, never()).create(any());
         }
 
@@ -208,7 +208,28 @@ class MoveTimereportsServiceTest {
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
             verify(timereportService).updateTimereport(eq(1L), eq(10L), eq(99L), any(), any(),
-                anyBoolean(), anyLong(), anyLong(), eq(true));
+                anyBoolean(), any(Duration.class), eq(true));
+        }
+
+        /** The booking keeps its duration, minutes included, as one value (#1400). */
+        @Test
+        void a_moved_booking_keeps_its_duration_with_minutes() {
+            var booking = TimereportDTO.builder()
+                .id(1L)
+                .employeecontractId(10L)
+                .employeeName("Mustermann")
+                .referenceday(LocalDate.of(2024, 1, 10))
+                .status(TIMEREPORT_STATUS_COMMITTED)
+                .duration(Duration.ofHours(1).plusMinutes(45))
+                .build();
+            rangeWith(booking);
+            when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
+                .thenReturn(List.of(employeeorderWithId(99L)));
+
+            classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
+
+            verify(timereportService).updateTimereport(eq(1L), eq(10L), eq(99L), any(), any(),
+                anyBoolean(), eq(Duration.ofHours(1).plusMinutes(45)), eq(true));
         }
 
         @Test
@@ -221,7 +242,7 @@ class MoveTimereportsServiceTest {
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
             verify(timereportService).updateTimereport(eq(1L), eq(10L), eq(99L), any(), any(),
-                anyBoolean(), anyLong(), anyLong(), eq(true));
+                anyBoolean(), any(Duration.class), eq(true));
         }
     }
 
@@ -345,7 +366,7 @@ class MoveTimereportsServiceTest {
 
             verify(employeeorderService, never()).create(any());
             verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L),
-                eq(LocalDate.of(2024, 1, 10)), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
+                eq(LocalDate.of(2024, 1, 10)), any(), anyBoolean(), any(Duration.class), eq(true));
         }
 
         @Test
@@ -374,8 +395,8 @@ class MoveTimereportsServiceTest {
             assertThat(createdEo.getUntilDate()).isEqualTo(LocalDate.of(2024, 12, 31));
             assertThat(createdEo.getSuborder()).isSameAs(target);
             assertThat(createdEo.getEmployeecontract()).isSameAs(contract);
-            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
-            verify(timereportService).updateTimereport(eq(101L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(55L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
+            verify(timereportService).updateTimereport(eq(101L), eq(10L), eq(55L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
         }
 
         @Test
@@ -402,8 +423,8 @@ class MoveTimereportsServiceTest {
             var captor = ArgumentCaptor.forClass(Employeeorder.class);
             verify(employeeorderService).create(captor.capture());
             assertThat(captor.getValue().getFromDate()).isEqualTo(LocalDate.of(2024, 1, 10));
-            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
-            verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
+            verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
         }
     }
 }

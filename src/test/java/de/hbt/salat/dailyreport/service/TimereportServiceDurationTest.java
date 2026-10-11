@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_EXCEEDS_ONE_DAY;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -92,7 +93,7 @@ class TimereportServiceDurationTest {
 
     // the value from the bug report, entered as 5530 in the inline edit of the daily view
     assertThatThrownBy(() -> classUnderTest.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID,
-        EMPLOYEE_ORDER_ID, DATE, "comment", false, 55, 30))
+        EMPLOYEE_ORDER_ID, DATE, "comment", false, Duration.ofHours(55).plusMinutes(30)))
         .isInstanceOf(InvalidDataException.class)
         .hasMessageContaining(TR_DURATION_EXCEEDS_ONE_DAY.getCode());
 
@@ -134,7 +135,7 @@ class TimereportServiceDurationTest {
 
   private void create(long hours, long minutes) throws Exception {
     classUnderTest.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, DATE, "comment",
-        false, hours, minutes, 1);
+        false, Duration.ofHours(hours).plusMinutes(minutes), 1);
   }
 
 }

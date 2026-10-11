@@ -265,7 +265,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                List.of(), false,1, 0, 1);
+                List.of(), false, Duration.ofHours(1), 1);
     }
 
     @Test
@@ -300,7 +300,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                List.of(), false,1, 0, 1);
+                List.of(), false, Duration.ofHours(1), 1);
     }
 
     @Test
@@ -373,7 +373,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                List.of("ERP-1"), false, 1, 0, 1);
+                List.of("ERP-1"), false, Duration.ofHours(1), 1);
     }
 
     /* The length check sits in the service; over the API its rejection is the caller's error (#1140). */
@@ -391,7 +391,7 @@ class DailyReportRestEndpointTest {
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(employeeorderService.getEmployeeorderById(1L)).thenReturn(employeeOrder);
         doThrow(new InvalidDataException(TR_TICKET_REFERENCE_INVALID_LENGTH)).when(timereportService).createTimereports(
-                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), anyLong(), anyLong(), anyInt());
+                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
 
         // when
         assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))
@@ -419,7 +419,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                null, false, 1, 0, 1);
+                null, false, Duration.ofHours(1), 1);
     }
 
     /* A client that sends the id together with signs of an older read keeps working: the id wins, and the
@@ -443,7 +443,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                null, false, 1, 0, 1);
+                null, false, Duration.ofHours(1), 1);
         verifyNoInteractions(bookingOrderResolver);
     }
 
@@ -481,7 +481,7 @@ class DailyReportRestEndpointTest {
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(bookingOrderResolver.resolve(booking, day)).thenReturn(employeeOrder);
         doThrow(new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE)).when(timereportService).createTimereports(
-                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), anyLong(), anyLong(), anyInt());
+                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
 
         // when / then
         assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))

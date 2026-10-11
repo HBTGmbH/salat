@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -126,8 +127,7 @@ class TimereportTicketSuggestionTest {
 
     assertThat(view).isEqualTo("dailyreport/timereport-form");
     assertThat(model.get("ticketSuggestions")).isEqualTo(List.of("ABC-12", "ABC-13"));
-    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(),
-        anyLong(), anyLong(), anyInt());
+    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
   }
 
   @Test
@@ -199,8 +199,7 @@ class TimereportTicketSuggestionTest {
     controller.create(null, referenced, null, null, null, null, redirectAttributes, new ExtendedModelMap());
     controller.create(null, answered, null, null, null, null, redirectAttributes, new ExtendedModelMap());
 
-    verify(timereportService, times(3)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(),
-        anyLong(), anyLong(), anyInt());
+    verify(timereportService, times(3)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
     verify(customerorderService, never()).getCustomerordersWithValidEmployeeOrders(anyLong(), any());
   }
 
@@ -227,7 +226,7 @@ class TimereportTicketSuggestionTest {
 
   private void verifyCreatedWith(List<String> references) {
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE), anyString(),
-        eq(references), eq(false), eq(1L), eq(30L), eq(1));
+        eq(references), eq(false), eq(Duration.ofHours(1).plusMinutes(30)), eq(1));
   }
 
   private static TimereportForm booking(String comment) {

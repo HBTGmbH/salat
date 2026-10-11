@@ -280,7 +280,7 @@ class ContractChangeOvertimeTest {
 
   private void moveBooking(long booking, long contract, long employeeorder, LocalDate day) {
     workingday(contract, day);
-    timereportService.updateTimereport(booking, contract, employeeorder, day, "task", null, false, 8, 0);
+    timereportService.updateTimereport(booking, contract, employeeorder, day, "task", null, false, Duration.ofHours(8));
   }
 
   private long contract(LocalDate validFrom, LocalDate validUntil, LocalDate releaseDate, LocalDate acceptanceDate) {
@@ -292,7 +292,7 @@ class ContractChangeOvertimeTest {
 
   private long book(long contract, long employeeorder, LocalDate day) {
     workingday(contract, day);
-    timereportService.createTimereports(contract, employeeorder, day, "task", false, 8, 0, 1);
+    timereportService.createTimereports(contract, employeeorder, day, "task", false, Duration.ofHours(8), 1);
     return timereportRepository.findAllByEmployeecontractIdAndReferencedayRefdate(contract, day).getFirst().getId();
   }
 

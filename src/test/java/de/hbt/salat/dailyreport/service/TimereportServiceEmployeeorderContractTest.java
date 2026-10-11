@@ -167,14 +167,14 @@ class TimereportServiceEmployeeorderContractTest {
     givenBooking();
 
     assertThatThrownBy(() -> timereportService.updateTimereport(TIMEREPORT_ID, CONTRACT_ID,
-        COLLEAGUE_EMPLOYEE_ORDER_ID, DAY, "Kommentar", false, 1, 0))
+        COLLEAGUE_EMPLOYEE_ORDER_ID, DAY, "Kommentar", false, Duration.ofHours(1)))
         .isInstanceOfSatisfying(InvalidDataException.class, ex ->
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT));
     verify(timereportRepository, never()).save(any());
   }
 
   private void create(long employeeorderId) {
-    timereportService.createTimereports(CONTRACT_ID, employeeorderId, DAY, "Kommentar", List.of(), false, 1, 0, 1);
+    timereportService.createTimereports(CONTRACT_ID, employeeorderId, DAY, "Kommentar", List.of(), false, Duration.ofHours(1), 1);
   }
 
   private void givenBooking() {

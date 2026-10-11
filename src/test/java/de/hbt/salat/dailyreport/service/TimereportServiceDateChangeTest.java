@@ -331,11 +331,35 @@ class TimereportServiceDateChangeTest {
     actingAsOwner();
 
     timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, RELEASED_DAY,
-        "changed comment", false, 2, 0);
+        "changed comment", false, Duration.ofHours(2));
 
     assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_OPEN);
     assertThat(timereport.getDuration()).isEqualTo(Duration.ofHours(2));
     assertThat(publishedEvent().getPreviousReferencedays()).isEmpty();
+  }
+
+  /** The duration arrives as one value and is stored as it is, minutes included (#1400). */
+  @Test
+  void an_update_stores_a_duration_with_minutes_as_given() {
+    var timereport = givenBooking(OPEN_DAY, TIMEREPORT_STATUS_OPEN);
+    actingAsOwner();
+
+    timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, OPEN_DAY,
+        "comment", false, Duration.ofHours(1).plusMinutes(45));
+
+    assertThat(timereport.getDuration()).isEqualTo(Duration.ofHours(1).plusMinutes(45));
+  }
+
+  @Test
+  void shifting_a_booking_keeps_its_duration_with_minutes() {
+    var timereport = givenBooking(OPEN_DAY, TIMEREPORT_STATUS_OPEN);
+    timereport.setDuration(Duration.ofHours(1).plusMinutes(45));
+    actingAsOwner();
+
+    timereportService.shiftDays(TIMEREPORT_ID, 1);
+
+    assertThat(timereport.getReferenceday().getRefdate()).isEqualTo(OTHER_OPEN_DAY);
+    assertThat(timereport.getDuration()).isEqualTo(Duration.ofHours(1).plusMinutes(45));
   }
 
   /** Moving bookings to another suborder ({@code MoveTimereportsService}) keeps the day and the status. */
@@ -345,7 +369,7 @@ class TimereportServiceDateChangeTest {
     actingAsManager();
 
     timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, ACCEPTED_DAY,
-        "comment", false, 1, 0, true);
+        "comment", false, Duration.ofHours(1), true);
 
     assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_CLOSED);
     verify(timereportRepository).save(timereport);
@@ -373,7 +397,7 @@ class TimereportServiceDateChangeTest {
 
   private void moveTo(LocalDate day) {
     timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, day,
-        "comment", false, 1, 0);
+        "comment", false, Duration.ofHours(1));
   }
 
   private void actingAsOwner() {
@@ -400,7 +424,7 @@ class TimereportServiceDateChangeTest {
   /** what creating a booking on that day answers the same person */
   private String refusalOnCreation(LocalDate day) {
     var refusal = catchThrowable(() -> timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, day,
-        "comment", false, 1, 0, 1));
+        "comment", false, Duration.ofHours(1), 1));
     assertThat(refusal).isInstanceOf(AuthorizationException.class);
     return refusal.getMessage();
   }

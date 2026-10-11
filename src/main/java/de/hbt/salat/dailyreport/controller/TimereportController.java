@@ -1,6 +1,5 @@
 package de.hbt.salat.dailyreport.controller;
 
-import static java.math.BigDecimal.valueOf;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static de.hbt.salat.common.GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
@@ -9,6 +8,7 @@ import static de.hbt.salat.common.util.DurationUtils.parseFlexibleMinutes;
 import static de.hbt.salat.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 import static de.hbt.salat.dailyreport.preferences.DurationInputMode.BEGIN_END;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -429,12 +429,10 @@ public class TimereportController {
 
         boolean beginEndMode = DurationInputMode.ofFormValue(form.getDurationMode()) == BEGIN_END;
 
-        long durationHours;
-        long durationMinutes;
+        Duration bookingDuration;
         if (beginEndMode && form.getBeginTime() != null && form.getEndTime() != null) {
-            int[] begin = parseTime(form.getBeginTime());
-            int[] end = parseTime(form.getEndTime());
-            long totalMinutes = (end[0] * 60L + end[1]) - (begin[0] * 60L + begin[1]);
+            bookingDuration = Duration.between(parseTime(form.getBeginTime()), parseTime(form.getEndTime()));
+            long totalMinutes = bookingDuration.toMinutes();
             if (totalMinutes <= 0) {
                 return reRenderFormWithError(fEmployeeContractId, model, form, ecId, date, isEdit, returnUrl,
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.positive"));
@@ -444,8 +442,6 @@ public class TimereportController {
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
 
             }
-            durationHours = totalMinutes / 60;
-            durationMinutes = totalMinutes % 60;
         } else {
             // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — normalising here also means
             // an out-of-range minutes part such as "1:75" becomes 2:15 instead of being stored as is
@@ -454,8 +450,7 @@ public class TimereportController {
                 return reRenderFormWithError(fEmployeeContractId, model, form, ecId, date, isEdit, returnUrl,
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
             }
-            durationHours = totalMinutes / 60;
-            durationMinutes = totalMinutes % 60;
+            bookingDuration = Duration.ofMinutes(totalMinutes);
         }
 
         if (form.getSuborderId() == null) {
@@ -512,10 +507,10 @@ public class TimereportController {
 
             if (isEdit) {
                 timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
-                        form.getComment(), form.getTicketReferences(), form.isTraining(), durationHours, durationMinutes);
+                        form.getComment(), form.getTicketReferences(), form.isTraining(), bookingDuration);
             } else {
                 timereportService.createTimereports(ecId, employeeOrderId, date,
-                        form.getComment(), form.getTicketReferences(), form.isTraining(), durationHours, durationMinutes,
+                        form.getComment(), form.getTicketReferences(), form.isTraining(), bookingDuration,
                         form.getNumberOfSerialDays());
                 // #844: only creating a booking teaches the preference — an edit always opens in
                 // duration mode because begin/end are not stored per booking
@@ -526,7 +521,7 @@ public class TimereportController {
             // else offers none (populateModel), and addFavorite refuses it
             if (form.isSaveAsFavorite()) {
                 favoriteService.addFavorite(
-                    favoriteFrom(employeeOrderId, durationHours, durationMinutes, form));
+                    favoriteFrom(employeeOrderId, bookingDuration, form));
             }
 
             // Handle sharing (in edit and create modes)
@@ -690,11 +685,9 @@ public class TimereportController {
      * #1326). They go through the same normalisation as the booking itself, so a favourite can never
      * hold something the booking would have rejected.
      */
-    static NewFavorite favoriteFrom(long employeeOrderId, long durationHours, long durationMinutes,
-            TimereportForm form) {
-        return new NewFavorite(employeeOrderId,
-            valueOf(durationHours).intValueExact(),
-            valueOf(durationMinutes).intValueExact(),
+    static NewFavorite favoriteFrom(long employeeOrderId, Duration duration, TimereportForm form) {
+        return NewFavorite.of(employeeOrderId,
+            duration,
             form.getComment(),
             TicketReferences.normalize(form.getTicketReferences()),
             form.getFavoriteGroupId());
@@ -751,14 +744,13 @@ public class TimereportController {
     /** The begin entered in begin/end mode, otherwise the start of the working day the person prefers. */
     private LocalTime workDayBeginOf(TimereportForm form, boolean beginEndMode, long ecId) {
         if (beginEndMode && form.getBeginTime() != null) {
-            int[] begin = parseTime(form.getBeginTime());
-            return LocalTime.of(begin[0], begin[1]);
+            return parseTime(form.getBeginTime());
         }
         return dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
     }
 
     private void seedWorkingday(long ecId, LocalDate date, LocalTime beginTime) {
-        workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
+        workingdayService.seedWorkingday(ecId, date, beginTime);
     }
 
     private List<SuborderOption> suborderOptions(long ecId, LocalDate date) {
@@ -832,10 +824,8 @@ public class TimereportController {
         return now.getHour() * 60L + now.getMinute();
     }
 
-    private static int[] parseTime(String hhmm) {
-        return parseFlexibleTimeOfDay(hhmm)
-            .map(time -> new int[]{time.getHour(), time.getMinute()})
-            .orElseGet(() -> new int[]{0, 0});
+    private static LocalTime parseTime(String hhmm) {
+        return parseFlexibleTimeOfDay(hhmm).orElse(LocalTime.MIDNIGHT);
     }
 
     /**
