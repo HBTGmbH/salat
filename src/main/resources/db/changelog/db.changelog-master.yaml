@@ -6876,3 +6876,107 @@ databaseChangeLog:
             referencedTableName: etl_run_history
             referencedColumnNames: id
             onDelete: CASCADE
+
+  - changeSet:
+      id: 185
+      author: kr
+      comment: Add table jira_replication_run_step - die Schritte eines Laufs der JIRA-Replikation (#1325)
+      # Je Lauf ein Eintrag fuer "Tickets lesen" und, bei eingeschaltetem Abgleich, einer fuer "Worklogs
+      # schreiben". Geschrieben, wenn der Schritt endet. Die Zaehler des jeweils anderen Schritts bleiben
+      # NULL. Der Status kennt dieselben Werte wie der Lauf, als Text; der neue Wert INCOMPLETE des
+      # Laufs braucht deshalb keine Aenderung an jira_replication_run.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: jira_replication_run_step
+      changes:
+        - createTable:
+            tableName: jira_replication_run_step
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_jira_replication_run_step
+              - column:
+                  name: run_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: step
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: finished_at
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tickets_fetched
+                  type: int
+              - column:
+                  name: tickets_written
+                  type: int
+              - column:
+                  name: tickets_failed
+                  type: int
+              - column:
+                  name: tickets_skipped
+                  type: int
+              - column:
+                  name: tickets_removed
+                  type: int
+              - column:
+                  name: parent_chains_resolved
+                  type: int
+              - column:
+                  name: worklogs_from
+                  type: date
+              - column:
+                  name: worklogs_until
+                  type: date
+              - column:
+                  name: worklogs_created
+                  type: int
+              - column:
+                  name: worklogs_updated
+                  type: int
+              - column:
+                  name: worklogs_deleted
+                  type: int
+              - column:
+                  name: worklogs_unchanged
+                  type: int
+              - column:
+                  name: worklogs_kept
+                  type: int
+              - column:
+                  name: worklogs_failed
+                  type: int
+              - column:
+                  name: message
+                  type: varchar(4000)
+        # Mit ON DELETE CASCADE: das Aufraeumen der Laufhistorie und das Loeschen einer Replikation
+        # loeschen nur die Laeufe, die Schritte gehen mit.
+        - addForeignKeyConstraint:
+            baseTableName: jira_replication_run_step
+            baseColumnNames: run_id
+            constraintName: fk_jira_replication_run_step_run
+            referencedTableName: jira_replication_run
+            referencedColumnNames: id
+            onDelete: CASCADE

@@ -36,9 +36,11 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
+import de.hbt.salat.jira.domain.JiraReplicationRunStep;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
+import de.hbt.salat.jira.persistence.JiraReplicationRunStepRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.secret.domain.UsernamePassword;
@@ -87,6 +89,9 @@ class JiraReplicationManualRunTest {
 
   @Autowired
   private JiraReplicationRunRepository runRepo;
+
+  @Autowired
+  private JiraReplicationRunStepRepository stepRepo;
 
   @Autowired
   private EntityManagerFactory entityManagerFactory;
@@ -154,6 +159,25 @@ class JiraReplicationManualRunTest {
     verify(worklogSyncService).sync(argThat(config -> config.getId().equals(configId)
         && LocalDateTime.parse("2026-09-02T11:00").equals(config.getLastMaxUpdated())),
         argThat(credentials -> "secret".equals(credentials.secret())));
+  }
+
+  /** The steps (#1325) are written by the run in the background, against the real database. */
+  @Test
+  void the_run_writes_its_step_of_reading_the_tickets() throws InterruptedException {
+    when(searchClient.search(any())).thenReturn(List.of(
+        issue("1", "MAN-1", null, "2026-09-01T10:00"),
+        issue("2", "MAN-2", "MAN-1", "2026-09-01T10:00")).iterator());
+
+    var run = finished(startInRequest());
+
+    var steps = stepRepo.findByRunIdOrderByStartedAtAscIdAsc(run.getId());
+    assertThat(steps).hasSize(1);
+    var step = steps.getFirst();
+    assertThat(step.getStep()).isEqualTo(JiraReplicationRunStep.Step.READ_TICKETS);
+    assertThat(step.getStatus()).isEqualTo(SUCCEEDED);
+    assertThat(step.getTicketsFetched()).isEqualTo(2);
+    assertThat(step.getTicketsWritten()).isEqualTo(2);
+    assertThat(step.getFinishedAt()).isNotNull();
   }
 
   @Test

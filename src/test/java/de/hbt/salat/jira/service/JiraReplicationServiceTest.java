@@ -719,7 +719,7 @@ class JiraReplicationServiceTest {
     assertThat(byKey.getJiraId()).isEqualTo(9003L);
     assertThat(result.skipped()).isEqualTo(2);
     assertThat(result.written()).isZero();
-    assertThat(result.succeeded()).isTrue();
+    assertThat(result.status()).isEqualTo(JiraReplicationRun.Status.SUCCEEDED);
     assertThat(result.summary()).contains("2 übersprungen").contains("MOCK-1 (Andere)").contains("MOCK-3 (Andere)");
   }
 

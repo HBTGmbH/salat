@@ -226,8 +226,13 @@
                   </td>
                 </tr>
                 <tr th:each="run : ${runs}">
-                  <td class="text-nowrap"
-                      th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</td>
+                  <!--/* The start opens the page of the run with its steps (#1325), as the name opens a
+                         replication in the first tab. */-->
+                  <td class="text-nowrap">
+                    <a th:href="@{/jira/replications/runs/{id}(id=${run.id})}"
+                       th:title="#{main.jira.replication.run.action.details}"
+                       th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</a>
+                  </td>
                   <td class="d-none d-md-table-cell text-nowrap">
                     <span th:if="${run.finishedAt != null}"
                           th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:04</span>
@@ -239,9 +244,7 @@
                   </td>
                   <td th:text="${run.replicationName}">Name</td>
                   <td>
-                    <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'},skipped=${run.status.name() == 'SKIPPED'}"
-                          th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : (${skipped} ? 'bg-warning-lt' : 'bg-azure-lt'))"
-                          th:text="#{${'main.jira.replication.run.status.' + run.status}}">Erfolgreich</span>
+                    <span th:replace="~{jira/replication-run :: statusBadge(${run.status})}">Erfolgreich</span>
                   </td>
                   <td class="d-none d-md-table-cell" th:text="#{${'main.jira.replication.run.trigger.' + run.triggeredBy}}">Stündlich</td>
                   <!--/* An aborted run carries the exception text and grows long; the cell wraps it

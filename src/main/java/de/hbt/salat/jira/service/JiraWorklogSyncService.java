@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -70,13 +71,15 @@ public class JiraWorklogSyncService {
    * while the sync is switched off on this config.
    *
    * @param credentials what the replication signed in with — the account the worklogs are authored by
+   * @return what the sync did, for the step of the run (#1325) — empty while it is switched off, and
+   *     with the reason when it is switched on but has nothing to work on
    * @throws BusinessRuleException {@code JI-0048} when an OAuth connection was made without the scope
    *     to write (#1417) — the run says so instead of failing on every single worklog; {@code JI-0054}
    *     when the JIRA connection is switched off in this environment (#1458)
    */
-  public void sync(JiraReplicationConfig cfg, JiraCredentials credentials) {
+  public Optional<JiraWorklogSyncResult> sync(JiraReplicationConfig cfg, JiraCredentials credentials) {
     if (!TRUE.equals(cfg.getWorklogSyncEnabled())) {
-      return;
+      return Optional.empty();
     }
     jiraSwitch.requireEnabled();
     if (!credentials.writeGranted()) {
@@ -87,13 +90,15 @@ public class JiraWorklogSyncService {
       // The form insists on a date whenever the switch is on, so this is a row edited around it.
       log.warn("Worklog sync of JIRA replication {} is enabled without a start date - skipped, "
           + "because writing the whole history of the order is never what was meant", cfg.getName());
-      return;
+      return Optional.of(JiraWorklogSyncResult.skipped(
+          "Kein Startdatum gesetzt – der Abgleich schreibt nichts, statt die ganze Historie des Auftrags."));
     }
     var until = DateUtils.today();
     if (until.isBefore(from)) {
       log.info("Worklog sync of JIRA replication {} starts on {} and has nothing to do yet",
           cfg.getName(), from);
-      return;
+      return Optional.of(JiraWorklogSyncResult.skipped(
+          "Der Abgleich beginnt am %s und hat bis dahin nichts zu tun.".formatted(from.format(JiraWorklogSyncResult.DAY_FORMAT))));
     }
 
     // The scope as the order tree names it now (#1323), for the log.
@@ -102,7 +107,8 @@ public class JiraWorklogSyncService {
     if (suborderIds.isEmpty()) {
       log.warn("Worklog sync of JIRA replication {} found no suborder under scope {} - skipped",
           cfg.getName(), scopeSign);
-      return;
+      return Optional.of(JiraWorklogSyncResult.skipped(
+          "Im Geltungsbereich %s liegt kein Unterauftrag – es gibt nichts abzugleichen.".formatted(scopeSign)));
     }
 
     var invoiceableOnly = TRUE.equals(cfg.getWorklogSyncInvoiceableOnly());
@@ -130,6 +136,8 @@ public class JiraWorklogSyncService {
             + "unchanged={}, kept={}, failed={}",
         cfg.getName(), outcome.created, outcome.updated, outcome.deleted, outcome.unchanged,
         outcome.kept, outcome.failed);
+    return Optional.of(new JiraWorklogSyncResult(from, until, null, outcome.created, outcome.updated,
+        outcome.deleted, outcome.unchanged, outcome.kept, outcome.failed, outcome.failedWorklogs));
   }
 
   /**
@@ -270,7 +278,7 @@ public class JiraWorklogSyncService {
       syncRepository.save(stored);
       outcome.updated++;
     } catch (Exception ex) {
-      outcome.failed++;
+      outcome.failed(key);
       log.error("Worklog sync of JIRA replication {} failed for issue {} on {}: {}",
           cfg.getName(), key.issueKey(), key.workDate(), ex.getMessage(), ex);
     }
@@ -304,7 +312,7 @@ public class JiraWorklogSyncService {
       syncRepository.delete(stored);
       outcome.deleted++;
     } catch (Exception ex) {
-      outcome.failed++;
+      outcome.failed(key);
       log.error("Worklog sync of JIRA replication {} could not delete the worklog of issue {} "
               + "on {}: {}",
           cfg.getName(), key.issueKey(), key.workDate(), ex.getMessage(), ex);
@@ -347,5 +355,14 @@ public class JiraWorklogSyncService {
     private int unchanged;
     private int kept;
     private int failed;
+    /** The first of the failed ones by ticket and day, for the step of the run (#1325). */
+    private final List<String> failedWorklogs = new ArrayList<>();
+
+    private void failed(WorklogKey key) {
+      failed++;
+      if (failedWorklogs.size() < JiraWorklogSyncResult.FAILED_NAMED) {
+        failedWorklogs.add(JiraWorklogSyncResult.nameOf(key.issueKey(), key.workDate()));
+      }
+    }
   }
 }
