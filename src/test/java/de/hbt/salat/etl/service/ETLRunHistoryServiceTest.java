@@ -3,12 +3,14 @@ package de.hbt.salat.etl.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.auth.domain.AccessLevel.EXECUTE;
+import static de.hbt.salat.auth.domain.AccessLevel.READ;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_NOT_RUNNING;
 import static de.hbt.salat.etl.domain.ETLRunHistory.Status.FAILED;
@@ -32,9 +34,11 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.etl.auth.ETLAuthorization;
+import de.hbt.salat.etl.domain.ETLExecutionHistory;
 import de.hbt.salat.etl.domain.ETLRunHistory;
 import de.hbt.salat.etl.domain.ETLRunHistory.Status;
 import de.hbt.salat.etl.domain.ETLRunHistory.Trigger;
+import de.hbt.salat.etl.persistence.ETLExecutionHistoryRepository;
 import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
 
 /**
@@ -49,6 +53,9 @@ class ETLRunHistoryServiceTest {
 
   @Mock
   private ETLRunHistoryRepository runHistoryRepository;
+
+  @Mock
+  private ETLExecutionHistoryRepository executionHistoryRepository;
 
   @Mock
   private ETLAuthorization etlAuthorization;
@@ -151,6 +158,86 @@ class ETLRunHistoryServiceTest {
     etlRunHistoryService.markFinished(7L);
 
     assertThat(run.getMessage()).isEqualTo("Von Hand als beendet markiert.");
+  }
+
+  // --- Die Ausführungen eines Laufs (#1324) ---------------------------------------------------
+
+  @Test
+  void the_executions_of_a_run_are_shown_only_for_definitions_the_login_may_read() {
+    // Die Regel nennt die Definition 1 mit READ; fuer die 2 hat die Anmeldung keine (oder nur
+    // EXECUTE). Ihre Ausfuehrung traegt im Fehlerfall das SQL der Definition und bleibt verborgen.
+    when(etlAuthorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
+    when(runHistoryRepository.findById(7L)).thenReturn(Optional.of(run(FAILED)));
+    var readable = execution(1L, "readable");
+    var foreign = execution(2L, "foreign");
+    var readableAgain = execution(1L, "readable");
+    when(executionHistoryRepository.findByRunInOrderOfExecution(7L))
+        .thenReturn(List.of(readable, foreign, readableAgain));
+    when(etlAuthorization.isAuthorizedForDefinitionId(1L, READ)).thenReturn(true);
+    when(etlAuthorization.isAuthorizedForDefinitionId(2L, READ)).thenReturn(false);
+
+    var detail = etlRunHistoryService.getRunDetail(7L);
+
+    assertThat(detail.executions()).containsExactly(readable, readableAgain);
+    assertThat(detail.hiddenExecutions()).isEqualTo(1);
+  }
+
+  @Test
+  void a_run_whose_executions_are_all_hidden_says_how_many_there_are() {
+    // Sonst saehe er aus wie ein Lauf ohne Ausfuehrungen.
+    when(etlAuthorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
+    when(runHistoryRepository.findById(7L)).thenReturn(Optional.of(run(SUCCEEDED)));
+    when(executionHistoryRepository.findByRunInOrderOfExecution(7L))
+        .thenReturn(List.of(execution(2L, "foreign"), execution(3L, "other")));
+    when(etlAuthorization.isAuthorizedForDefinitionId(anyLong(), eq(READ))).thenReturn(false);
+
+    var detail = etlRunHistoryService.getRunDetail(7L);
+
+    assertThat(detail.executions()).isEmpty();
+    assertThat(detail.hiddenExecutions()).isEqualTo(2);
+  }
+
+  @Test
+  void a_run_without_executions_has_none_and_hides_none() {
+    when(etlAuthorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
+    when(runHistoryRepository.findById(7L)).thenReturn(Optional.of(run(Status.SKIPPED)));
+    when(executionHistoryRepository.findByRunInOrderOfExecution(7L)).thenReturn(List.of());
+
+    var detail = etlRunHistoryService.getRunDetail(7L);
+
+    assertThat(detail.run().getStatus()).isEqualTo(Status.SKIPPED);
+    assertThat(detail.executions()).isEmpty();
+    assertThat(detail.hiddenExecutions()).isZero();
+  }
+
+  @Test
+  void without_a_rule_the_executions_are_refused_before_anything_is_read() {
+    when(etlAuthorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
+
+    assertThatThrownBy(() -> etlRunHistoryService.getRunDetail(7L))
+        .isInstanceOf(AuthorizationException.class);
+
+    verifyNoInteractions(runHistoryRepository, executionHistoryRepository);
+  }
+
+  @Test
+  void the_executions_of_a_run_that_does_not_exist_cannot_be_shown() {
+    when(etlAuthorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(true);
+    when(runHistoryRepository.findById(7L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> etlRunHistoryService.getRunDetail(7L))
+        .isInstanceOf(InvalidDataException.class)
+        .satisfies(ex -> assertThat(errorCodesOf(ex)).containsExactly(ETL_RUN_NOT_FOUND));
+  }
+
+  private static ETLExecutionHistory execution(long etlId, String etlName) {
+    return ETLExecutionHistory.builder()
+        .etlId(etlId)
+        .etlName(etlName)
+        .executedAt(LocalDateTime.of(2026, 9, 20, 2, 1))
+        .success(true)
+        .message("Date Range: 2026-09-01 - 2026-09-30\n")
+        .build();
   }
 
   @Test

@@ -707,6 +707,66 @@ public class ETLServiceTest {
     assertThat(run.getMessage()).contains("Lauf abgebrochen").contains("Server shutdown in progress");
   }
 
+  // --- Jede Ausführung gehört zu ihrem Lauf (#1324) -------------------------------------------
+
+  @Test
+  void every_execution_entry_belongs_to_the_run_it_was_written_in() {
+    givenDefinition("worked-hours");
+    var entries = savedExecutionEntries();
+
+    etlService.execute(new LocalDateRange(LocalDate.of(2026, 1, 5), LocalDate.of(2026, 3, 20)),
+        List.of("worked-hours"), SCHEDULED);
+
+    // drei Monate, drei Referenzperioden — jede mit dem Lauf, den startRun angelegt hat
+    assertThat(entries).hasSize(3);
+    assertThat(entries).extracting(ETLExecutionHistory::getRun)
+        .containsOnly(savedInstances.getFirst());
+  }
+
+  @Test
+  void a_failed_execution_belongs_to_its_run_as_well() {
+    givenDefinition("worked-hours");
+    when(jdbcTemplate.update(anyString())).thenThrow(new DataAccessResourceFailureException("no connection"));
+    var entries = savedExecutionEntries();
+
+    etlService.execute(ONE_MONTH, List.of("worked-hours"), SCHEDULED);
+
+    assertThat(entries).singleElement().satisfies(entry -> {
+      assertThat(entry.isSuccess()).isFalse();
+      assertThat(entry.getRun()).isSameAs(savedInstances.getFirst());
+    });
+  }
+
+  @Test
+  void a_run_continued_in_the_background_hands_its_row_to_every_execution() {
+    // Der Weg der Oberfläche (#1071): eröffnet im Thread der Anfrage, ausgeführt im Hintergrund,
+    // dazwischen nur die id.
+    givenDefinition("worked-hours");
+    var run = ETLRunHistory.builder()
+        .id(7L)
+        .startedAt(LocalDateTime.of(2026, 10, 3, 2, 0, 0))
+        .status(Status.RUNNING)
+        .triggeredBy(MANUAL)
+        .build();
+    when(runHistoryRepo.findById(7L)).thenReturn(Optional.of(run));
+    var entries = savedExecutionEntries();
+
+    etlService.continueRun(7L, new LocalDateRange(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 3, 31)),
+        List.of(42L));
+
+    assertThat(entries).hasSize(2);
+    assertThat(entries).extracting(ETLExecutionHistory::getRun).containsOnly(run);
+  }
+
+  private List<ETLExecutionHistory> savedExecutionEntries() {
+    var entries = new ArrayList<ETLExecutionHistory>();
+    when(historyRepo.save(any())).thenAnswer(i -> {
+      entries.add(i.getArgument(0));
+      return i.getArgument(0);
+    });
+    return entries;
+  }
+
   @Test
   void the_choice_list_holds_only_what_the_login_may_execute_sorted_by_name() {
     givenGraph();
