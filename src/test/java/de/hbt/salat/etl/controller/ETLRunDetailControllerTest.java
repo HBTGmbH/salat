@@ -27,9 +27,11 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.etl.configuration.EtlSwitch;
 import de.hbt.salat.etl.domain.ETLExecutionHistory;
 import de.hbt.salat.etl.domain.ETLRunDetail;
 import de.hbt.salat.etl.domain.ETLRunHistory;
@@ -62,7 +64,8 @@ class ETLRunDetailControllerTest {
     messageSource.setFallbackToSystemLocale(false);
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new ETLRunHistoryController(etlRunHistoryService, mock(ETLService.class),
-        mock(ETLRunLauncher.class), new ErrorCodeViewHelper(messages), messages);
+        mock(ETLRunLauncher.class), new EtlSwitch(new SalatProperties()), new ErrorCodeViewHelper(messages),
+        messages);
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }
 
