@@ -11,8 +11,8 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 
 /**
- * How a replication run ends (#1325): single worklogs that could not be written make it incomplete,
- * an exception or an issue that could not be stored make it fail.
+ * How a replication run ends (#1325): single issues that could not be stored and single worklogs that
+ * could not be written make it incomplete, a worklog sync that broke off makes it fail.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class JiraReplicationResultTest {
@@ -36,8 +36,14 @@ class JiraReplicationResultTest {
   }
 
   @Test
-  void an_issue_that_could_not_be_stored_fails_the_run_even_with_failed_worklogs() {
-    assertThat(result(1, null, 3).status()).isEqualTo(FAILED);
+  void an_issue_that_could_not_be_stored_makes_the_run_incomplete() {
+    assertThat(result(1, null, 0).status()).isEqualTo(INCOMPLETE);
+    assertThat(result(1, null, 3).status()).isEqualTo(INCOMPLETE);
+  }
+
+  @Test
+  void a_sync_that_broke_off_fails_the_run_even_with_issues_not_stored() {
+    assertThat(result(1, "Zeitüberschreitung", 0).status()).isEqualTo(FAILED);
   }
 
   private static JiraReplicationResult result(int failed, String worklogSyncError, int failedWorklogs) {

@@ -12,7 +12,8 @@ import de.hbt.salat.jira.domain.JiraReplicationRun.Status;
  *
  * @param fetched the issues JIRA answered with
  * @param written the tickets inserted or updated
- * @param failed the issues that could not be stored; the watermark does not move past them (#841)
+ * @param failed the issues that could not be stored; the watermark does not move past them (#841),
+ *     and the run is incomplete (#1325)
  * @param skipped the issues another replication maintains in the same scope (#1386) — left to it,
  *     and worth a look at the JQL of the two
  * @param skippedTickets the first {@value #SKIPPED_NAMED} of them, each with the replication that
@@ -32,14 +33,15 @@ public record JiraReplicationResult(int fetched, int written, int failed, int sk
   }
 
   /**
-   * How the run ends (#1325): failed when an issue could not be stored or the worklog sync broke off,
-   * incomplete when only single worklogs could not be written, otherwise succeeded.
+   * How the run ends (#1325): failed when the worklog sync broke off, incomplete when single issues
+   * could not be stored or single worklogs could not be written, otherwise succeeded. Only the status
+   * follows from the issues not processed; the watermark is held back by them as before (#841).
    */
   public Status status() {
-    if (failed > 0 || worklogSyncError != null) {
+    if (worklogSyncError != null) {
       return FAILED;
     }
-    return failedWorklogs > 0 ? INCOMPLETE : SUCCEEDED;
+    return failed > 0 || failedWorklogs > 0 ? INCOMPLETE : SUCCEEDED;
   }
 
   /** The message of the run, German like every message stored in a run history. */

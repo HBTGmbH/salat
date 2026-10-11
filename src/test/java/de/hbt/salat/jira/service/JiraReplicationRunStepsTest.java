@@ -141,17 +141,17 @@ class JiraReplicationRunStepsTest {
   }
 
   @Test
-  void an_issue_that_could_not_be_stored_fails_the_step_and_the_run() {
+  void an_issue_that_could_not_be_stored_makes_the_step_and_the_run_incomplete() {
     var unreadable = issue("not-a-number", "ALPHA-2");
     when(searchClient.search(any())).thenReturn(List.of(issue("1001", "ALPHA-1"), unreadable).iterator());
 
     replicationService.continueRun(RUN_ID, REPLICATION_ID);
 
     var step = theOnlyStep();
-    assertThat(step.getStatus()).isEqualTo(FAILED);
+    assertThat(step.getStatus()).isEqualTo(INCOMPLETE);
     assertThat(step.getTicketsFailed()).isEqualTo(1);
     assertThat(step.getMessage()).isEqualTo("1 nicht verarbeitet — der Wasserstand rückt nicht über sie hinaus.");
-    verify(runService).finishRun(eq(RUN_ID), eq(FAILED), any());
+    verify(runService).finishRun(eq(RUN_ID), eq(INCOMPLETE), any());
   }
 
   @Test
