@@ -9,6 +9,7 @@ import static com.tngtech.archunit.library.freeze.FreezingArchRule.freeze;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaFieldAccess.AccessType;
 import com.tngtech.archunit.core.domain.JavaMember;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
@@ -29,11 +30,17 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import java.lang.annotation.Annotation;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.springframework.data.domain.Persistable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -455,8 +462,8 @@ public class ArchitectureTest {
    *
    * <p>Als Setter gilt eine Instanzmethode {@code set…} der Entity selbst; Setter einer gemeinsamen
    * Oberklasse ohne {@code @Entity} ({@code AuditedEntity}) zählen nicht, denn sie gehören keinem
-   * Fachmodul. Was die Regel nicht sieht: ein Ändern über die Sammlung eines Getters
-   * ({@code getSuborders().add(…)}). Das bleibt Sache des Reviews.
+   * Fachmodul. Ein Ändern über die Sammlung eines Getters ({@code getSuborders().add(…)}) verhindert
+   * {@link #collectionsReachableFromAnotherModuleAreHandedOutReadOnly}.
    *
    * <p>Der Bestand bei Einführung ist eingefroren ({@code src/test/resources/archunit_store}): zehn
    * Aufrufe. {@code MoveTimereportsService} baut einen Mitarbeiterauftrag des Moduls {@code order}
@@ -522,6 +529,102 @@ public class ArchitectureTest {
     return association.get("cascade")
         .map(cascade -> ((Object[]) cascade).length > 0)
         .orElse(false);
+  }
+
+  /**
+   * Eine Sammlung, die ein anderes Modul erreicht, gibt ihr Getter nur als unveränderliche Sicht heraus
+   * (ADR-0036, Regel 3, #1371). Über eine Referenz auf Stammdaten oder über eine Service-Methode, die
+   * eine Entity herausgibt, erreicht ein Modul fremde Entities und navigiert von dort weiter; ein
+   * Getter, der die von Hibernate verwaltete Liste selbst zurückgibt, ließe es darin schreiben, ohne
+   * einen Setter aufzurufen. Deshalb wickelt ein öffentlicher Getter einer solchen Entity, der ein
+   * Sammlungsfeld liest, es in {@code Collections.unmodifiable…}, {@code List.copyOf},
+   * {@code Set.copyOf} oder {@code Stream.toList}. Das besitzende Modul ändert die Sammlung über
+   * ausdrückliche Methoden der Entity.
+   *
+   * <p>Welche Entities ein anderes Modul erreicht, ergibt sich aus dem Code: Ziele von Assoziationen
+   * aus einem anderen Modul und Entities in der Signatur einer Service-Methode, die ein anderes Modul
+   * aufruft, dazu alles, was von dort über Assoziationen erreichbar ist. Der Schutz greift zur
+   * Laufzeit ({@code UnsupportedOperationException}); diese Regel sorgt dafür, dass es ihn überall gibt.
+   */
+  @ArchTest
+  static final ArchRule collectionsReachableFromAnotherModuleAreHandedOutReadOnly = priority(HIGH).classes()
+      .should(new ArchCondition<JavaClass>("hand out the collections of an entity another module reaches only as unmodifiable views") {
+        private Set<JavaClass> reachable = Set.of();
+
+        @Override
+        public void init(Collection<JavaClass> allClasses) {
+          reachable = entitiesReachableFromAnotherModule(allClasses);
+        }
+
+        @Override
+        public void check(JavaClass entity, ConditionEvents events) {
+          if (!reachable.contains(entity)) {
+            return;
+          }
+          entity.getMethods().stream()
+              .filter(method -> method.getModifiers().contains(JavaModifier.PUBLIC))
+              .filter(method -> !method.getModifiers().contains(JavaModifier.STATIC))
+              .filter(method -> method.getRawReturnType().isAssignableTo(Collection.class))
+              .filter(method -> readsOwnCollectionField(entity, method))
+              .filter(method -> !handsOutAView(method))
+              .forEach(method -> events.add(SimpleConditionEvent.violated(method,
+                  "%s hands out a collection of entity %s, which module(s) other than %s reach, without an unmodifiable view"
+                      .formatted(method.getFullName(), entity.getName(), moduleOf(entity)))));
+        }
+      });
+
+  /**
+   * Die Entities, die ein anderes Modul erreicht: Ziele einer Assoziation aus einem anderen Modul,
+   * Entities in der Signatur eines {@code @Service}, den ein anderes Modul aufruft, und alles, was von
+   * dort über Felder erreichbar ist.
+   */
+  private static Set<JavaClass> entitiesReachableFromAnotherModule(Collection<JavaClass> allClasses) {
+    var reached = new HashSet<JavaClass>();
+    for (JavaClass javaClass : allClasses) {
+      if (isEntity(javaClass)) {
+        javaClass.getFields().stream()
+            .flatMap(field -> field.getType().getAllInvolvedRawTypes().stream())
+            .filter(ArchitectureTest::isEntity)
+            .filter(target -> !moduleOf(target).equals(moduleOf(javaClass)))
+            .forEach(reached::add);
+      }
+      for (JavaMethodCall call : javaClass.getMethodCallsFromSelf()) {
+        var owner = call.getTargetOwner();
+        if (owner.isAnnotatedWith(Service.class) && !moduleOf(owner).equals(moduleOf(javaClass))) {
+          call.getTarget().resolveMember().ifPresent(method -> method.getAllInvolvedRawTypes().stream()
+              .filter(ArchitectureTest::isEntity)
+              .forEach(reached::add));
+        }
+      }
+    }
+    var pending = new ArrayDeque<>(reached);
+    while (!pending.isEmpty()) {
+      pending.poll().getAllFields().stream()
+          .flatMap(field -> field.getType().getAllInvolvedRawTypes().stream())
+          .filter(ArchitectureTest::isEntity)
+          .filter(reached::add)
+          .forEach(pending::add);
+    }
+    return reached;
+  }
+
+  private static boolean readsOwnCollectionField(JavaClass entity, JavaMethod method) {
+    return method.getFieldAccesses().stream()
+        .filter(access -> access.getAccessType() == AccessType.GET)
+        .map(access -> access.getTarget().resolveMember())
+        .flatMap(Optional::stream)
+        .anyMatch(field -> entity.isAssignableTo(field.getOwner().getName())
+            && field.getRawType().isAssignableTo(Collection.class));
+  }
+
+  private static boolean handsOutAView(JavaMethod method) {
+    return method.getMethodCallsFromSelf().stream().anyMatch(call -> {
+      var owner = call.getTargetOwner().getName();
+      var name = call.getName();
+      return owner.equals(Collections.class.getName()) && name.startsWith("unmodifiable")
+          || (owner.equals(List.class.getName()) || owner.equals(Set.class.getName())) && name.equals("copyOf")
+          || owner.equals(Stream.class.getName()) && name.equals("toList");
+    });
   }
 
   /** The module of a class: the first package below {@code de.hbt.salat}. */

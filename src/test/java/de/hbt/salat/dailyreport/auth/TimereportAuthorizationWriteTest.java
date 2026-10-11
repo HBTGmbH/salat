@@ -216,7 +216,9 @@ class TimereportAuthorizationWriteTest {
         var sign = owner ? OWNER : supervisingPeopleLead ? PEOPLE_LEAD : SOMEBODY_ELSE;
         if (owner && supervisingPeopleLead) {
             // one person as owner and supervisor of the same contract
-            contract.getSupervisors().add(employee(OWNER));
+            var supervisors = new ArrayList<>(contract.getSupervisors());
+            supervisors.add(employee(OWNER));
+            contract.setSupervisors(supervisors);
         }
         lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(sign);
         lenient().when(authorizedUser.getLoginSign()).thenReturn(sign);
