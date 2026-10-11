@@ -7,10 +7,13 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
 import static com.tngtech.archunit.library.freeze.FreezingArchRule.freeze;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMember;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.domain.JavaModifier;
+import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeGradleTestFixtures;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeJars;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
@@ -21,10 +24,17 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import java.lang.annotation.Annotation;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 import org.springframework.data.domain.Persistable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Repository;
@@ -437,6 +447,82 @@ public class ArchitectureTest {
           }
         }
       });
+
+  /**
+   * Eine Referenz über die Modulgrenze ist nur lesend (ADR-0036, Regel 3, #1371): kein Modul ruft einen
+   * Setter auf einer JPA-Entity eines anderen Moduls auf. Geschrieben wird beim besitzenden Modul,
+   * über dessen Service oder ein Event (ADR-0003). Innerhalb des Moduls bleibt der Setter erlaubt.
+   *
+   * <p>Als Setter gilt eine Instanzmethode {@code set…} der Entity selbst; Setter einer gemeinsamen
+   * Oberklasse ohne {@code @Entity} ({@code AuditedEntity}) zählen nicht, denn sie gehören keinem
+   * Fachmodul. Was die Regel nicht sieht: ein Ändern über die Sammlung eines Getters
+   * ({@code getSuborders().add(…)}). Das bleibt Sache des Reviews.
+   *
+   * <p>Der Bestand bei Einführung ist eingefroren ({@code src/test/resources/archunit_store}): zehn
+   * Aufrufe. {@code MoveTimereportsService} baut einen Mitarbeiterauftrag des Moduls {@code order}
+   * selbst zusammen, bevor es ihn über {@code EmployeeorderService.create} anlegt; das Modul
+   * {@code employee} schreibt Anmeldename und Status in den {@code SalatUser} des Moduls {@code auth}.
+   * Ein neuer Aufruf lässt den Build rot werden; ein behobener verschwindet von selbst aus der Liste.
+   */
+  private static final Pattern SETTER = Pattern.compile("set\\p{Lu}.*");
+
+  @ArchTest
+  static final ArchRule noSetterIsCalledOnAnEntityOfAnotherModule = freeze(priority(HIGH).classes()
+      .should(new ArchCondition<JavaClass>("call no setter of a JPA entity of another module") {
+        @Override
+        public void check(JavaClass caller, ConditionEvents events) {
+          for (JavaMethodCall call : caller.getMethodCallsFromSelf()) {
+            var entity = call.getTargetOwner();
+            if (SETTER.matcher(call.getName()).matches() && entity.isAnnotatedWith(Entity.class)
+                && !moduleOf(entity).equals(moduleOf(caller))) {
+              events.add(SimpleConditionEvent.violated(call,
+                  "%s calls %s on entity %s of module %s from module %s %s".formatted(
+                      call.getOrigin().getFullName(), call.getName(), entity.getName(), moduleOf(entity),
+                      moduleOf(caller), call.getSourceCodeLocation())));
+            }
+          }
+        }
+      }));
+
+  private static final Set<Class<? extends Annotation>> ASSOCIATIONS =
+      Set.of(ManyToOne.class, OneToOne.class, OneToMany.class, ManyToMany.class);
+
+  /**
+   * Keine Kaskade über die Modulgrenze (ADR-0036, Regel 3, #1371): eine Assoziation, deren Ziel eine
+   * Entity eines anderen Moduls ist, trägt kein {@code cascade}. Sonst schriebe das Speichern oder
+   * Löschen des eigenen Aggregats in die Tabelle des anderen Moduls. Geprüft wird die Annotation am
+   * Feld und an einem Getter, das Ziel als Feldtyp oder als Typargument einer Sammlung.
+   */
+  @ArchTest
+  static final ArchRule noAssociationCascadesIntoAnotherModule = priority(HIGH).classes()
+      .that().areAnnotatedWith(Entity.class)
+      .should(new ArchCondition<JavaClass>("cascade no association into an entity of another module") {
+        @Override
+        public void check(JavaClass entity, ConditionEvents events) {
+          Stream.concat(
+                  entity.getFields().stream().map(field -> new Association(field, field.getType())),
+                  entity.getMethods().stream().map(method -> new Association(method, method.getReturnType())))
+              .forEach(association -> association.member().getAnnotations().stream()
+                  .filter(annotation -> ASSOCIATIONS.stream().anyMatch(annotation.getRawType()::isEquivalentTo))
+                  .filter(ArchitectureTest::cascades)
+                  .forEach(annotation -> association.type().getAllInvolvedRawTypes().stream()
+                      .filter(ArchitectureTest::isEntity)
+                      .filter(target -> !moduleOf(target).equals(moduleOf(entity)))
+                      .distinct()
+                      .forEach(target -> events.add(SimpleConditionEvent.violated(association.member(),
+                          "%s cascades into entity %s of module %s from module %s".formatted(
+                              association.member().getFullName(), target.getName(), moduleOf(target),
+                              moduleOf(entity)))))));
+        }
+      });
+
+  private record Association(JavaMember member, JavaType type) {}
+
+  private static boolean cascades(JavaAnnotation<?> association) {
+    return association.get("cascade")
+        .map(cascade -> ((Object[]) cascade).length > 0)
+        .orElse(false);
+  }
 
   /** The module of a class: the first package below {@code de.hbt.salat}. */
   private static String moduleOf(JavaClass javaClass) {
