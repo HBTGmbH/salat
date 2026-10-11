@@ -11,7 +11,8 @@ import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
 
 /**
  * Deletes expired rows of the run history (#1282). Every enabled replication writes one row an
- * hour, and a run history is for looking back days, not months.
+ * hour, and a run history is for looking back days, not months. The steps of a run (#1325) go with it
+ * through the foreign key.
  */
 @Slf4j
 @Service

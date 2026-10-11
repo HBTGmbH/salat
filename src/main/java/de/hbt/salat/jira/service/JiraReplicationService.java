@@ -3,7 +3,11 @@ package de.hbt.salat.jira.service;
 import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.FAILED;
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.INCOMPLETE;
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SKIPPED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
+import static de.hbt.salat.jira.domain.JiraReplicationRunStep.Step.READ_TICKETS;
+import static de.hbt.salat.jira.domain.JiraReplicationRunStep.Step.WRITE_WORKLOGS;
 import static de.hbt.salat.jira.service.JiraCredentialRedaction.redacted;
 
 import java.time.LocalDateTime;
@@ -15,8 +19,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +31,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
+import de.hbt.salat.jira.domain.JiraReplicationRunStep;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketImportRepository;
@@ -87,7 +95,7 @@ public class JiraReplicationService {
       var cfg = configRepo.findById(replicationId)
           .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
       credentials = credentialStore.credentialsOf(cfg);
-      result = runReplication(cfg, credentials);
+      result = runReplication(cfg, credentials, step -> runService.recordStep(runId, step));
     } catch (ErrorCodeException ex) {
       // A rule of the application, credentials that cannot be read above all (#1432): the history
       // says it in the words the form uses, not as a code.
@@ -97,14 +105,15 @@ public class JiraReplicationService {
       runService.finishRun(runId, FAILED, "Abgebrochen: " + redacted(ex, credentials));
       throw ex;
     }
-    runService.finishRun(runId, result.succeeded() ? SUCCEEDED : FAILED, result.summary());
+    runService.finishRun(runId, result.status(), result.summary());
     return result;
   }
 
+  /** A run without a row in the run history, and without steps. */
   public JiraReplicationResult runReplication(long replicationId) {
     JiraReplicationConfig cfg = configRepo.findById(replicationId)
         .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
-    return runReplication(cfg, credentialStore.credentialsOf(cfg));
+    return runReplication(cfg, credentialStore.credentialsOf(cfg), step -> { });
   }
 
   /** The first message of the exception in German, like every message of the run history. */
@@ -115,9 +124,160 @@ public class JiraReplicationService {
         .orElse(ex.getMessage());
   }
 
-  private JiraReplicationResult runReplication(JiraReplicationConfig cfg, JiraCredentials credentials) {
+  /** The reason an exception gives, as the run history says it: in German, without the password. */
+  private String reasonOf(RuntimeException ex, JiraCredentials credentials) {
+    return ex instanceof ErrorCodeException errorCodeException
+        ? germanTextOf(errorCodeException)
+        : redacted(ex, credentials);
+  }
+
+  /**
+   * The two steps of a run (#1325), each written once it has ended: reading the tickets, then writing
+   * the worklogs. A step that breaks off is written as failed; a run that breaks off in the first step
+   * does not reach the second, and leaves no entry for it.
+   *
+   * @param steps where the steps are written — nowhere for a run without a row in the run history
+   */
+  private JiraReplicationResult runReplication(JiraReplicationConfig cfg, JiraCredentials credentials,
+                                               Consumer<JiraReplicationRunStep> steps) {
     // Opening the run asks already (#1458); this is for the ways that carry on a run or skip the row.
     jiraSwitch.requireEnabled();
+    var tickets = readTickets(cfg, credentials, steps);
+    var worklogs = writeWorklogs(cfg, credentials, steps);
+    return new JiraReplicationResult(tickets.fetched(), tickets.written(), tickets.failed(), tickets.skipped(),
+        tickets.skippedTickets(), worklogs.error(), worklogs.failed());
+  }
+
+  /**
+   * The step „Tickets lesen". Not processed issues make it fail, as they make the run fail: the
+   * watermark stops at them (#841).
+   */
+  private TicketReading readTickets(JiraReplicationConfig cfg, JiraCredentials credentials,
+                                    Consumer<JiraReplicationRunStep> steps) {
+    var startedAt = DateTimeUtils.now();
+    TicketReading reading;
+    try {
+      reading = replicateTickets(cfg, credentials);
+    } catch (RuntimeException ex) {
+      recordFailedStep(steps, READ_TICKETS, startedAt, reasonOf(ex, credentials), ex);
+      throw ex;
+    }
+    steps.accept(JiraReplicationRunStep.builder()
+        .step(READ_TICKETS)
+        .startedAt(startedAt)
+        .finishedAt(DateTimeUtils.now())
+        .status(reading.failed() > 0 ? FAILED : SUCCEEDED)
+        .ticketsFetched(reading.fetched())
+        .ticketsWritten(reading.written())
+        .ticketsFailed(reading.failed())
+        .ticketsSkipped(reading.skipped())
+        .ticketsRemoved(reading.removed())
+        .parentChainsResolved(reading.parentChainsResolved())
+        .message(JiraReplicationResult.ticketRemarks(reading.failed(), reading.skipped(), reading.skippedTickets()))
+        .build());
+    return reading;
+  }
+
+  /**
+   * The step „Worklogs schreiben" (#1007), last, and with its own safety net: the worklogs are
+   * written against the tickets this run has just replicated, and a failure while writing them must
+   * not take the watermark with it. Re-fetching the same tickets next time is harmless; losing the
+   * watermark is not.
+   *
+   * <p>Switched off, the sync leaves no step. Single worklogs that could not be written make the step
+   * incomplete, not failed (#1325): the rest went through, and the next run tries those again.
+   */
+  private WorklogWriting writeWorklogs(JiraReplicationConfig cfg, JiraCredentials credentials,
+                                       Consumer<JiraReplicationRunStep> steps) {
+    var startedAt = DateTimeUtils.now();
+    var syncCredentials = credentials;
+    Optional<JiraWorklogSyncResult> outcome;
+    try {
+      // An OAuth access token lives an hour (#1417): the worklogs get a fresh one rather than the one
+      // the search started with, which a long search may have used up.
+      if (credentials.method() == JiraAuthMethod.OAUTH && TRUE.equals(cfg.getWorklogSyncEnabled())) {
+        syncCredentials = credentialStore.credentialsOf(cfg);
+      }
+      outcome = worklogSyncService.sync(cfg, syncCredentials);
+    } catch (ErrorCodeException ex) {
+      log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage());
+      return failedWorklogStep(steps, startedAt, germanTextOf(ex), ex);
+    } catch (RuntimeException ex) {
+      log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
+      return failedWorklogStep(steps, startedAt, redacted(ex, syncCredentials), ex);
+    }
+    if (outcome.isEmpty()) {
+      return WorklogWriting.NOTHING;
+    }
+    var sync = outcome.get();
+    var step = JiraReplicationRunStep.builder()
+        .step(WRITE_WORKLOGS)
+        .startedAt(startedAt)
+        .finishedAt(DateTimeUtils.now())
+        .message(sync.message());
+    if (sync.isSkipped()) {
+      steps.accept(step.status(SKIPPED).build());
+      return WorklogWriting.NOTHING;
+    }
+    steps.accept(step
+        .status(sync.failed() > 0 ? INCOMPLETE : SUCCEEDED)
+        .worklogsFrom(sync.from())
+        .worklogsUntil(sync.until())
+        .worklogsCreated(sync.created())
+        .worklogsUpdated(sync.updated())
+        .worklogsDeleted(sync.deleted())
+        .worklogsUnchanged(sync.unchanged())
+        .worklogsKept(sync.kept())
+        .worklogsFailed(sync.failed())
+        .build());
+    return new WorklogWriting(null, sync.failed());
+  }
+
+  private static WorklogWriting failedWorklogStep(Consumer<JiraReplicationRunStep> steps, LocalDateTime startedAt,
+                                                  String reason, RuntimeException ex) {
+    recordFailedStep(steps, WRITE_WORKLOGS, startedAt, reason, ex);
+    return new WorklogWriting(reason, 0);
+  }
+
+  /**
+   * A step that broke off. Should writing it fail as well, the exception of the step stays the one
+   * that counts, and carries the other along.
+   */
+  private static void recordFailedStep(Consumer<JiraReplicationRunStep> steps, JiraReplicationRunStep.Step step,
+                                       LocalDateTime startedAt, String reason, RuntimeException ex) {
+    try {
+      steps.accept(JiraReplicationRunStep.builder()
+          .step(step)
+          .startedAt(startedAt)
+          .finishedAt(DateTimeUtils.now())
+          .status(FAILED)
+          .message(reason)
+          .build());
+    } catch (RuntimeException recordingFailure) {
+      ex.addSuppressed(recordingFailure);
+    }
+  }
+
+  /** What reading the tickets did. */
+  private record TicketReading(int fetched, int written, int failed, int skipped, List<String> skippedTickets,
+                               int removed, int parentChainsResolved) {
+
+  }
+
+  /**
+   * What writing the worklogs did, as far as the run is concerned.
+   *
+   * @param error why the sync broke off, {@code null} when it did not
+   * @param failed the single worklogs it could not write
+   */
+  private record WorklogWriting(String error, int failed) {
+
+    /** Switched off, or nothing to work on. */
+    static final WorklogWriting NOTHING = new WorklogWriting(null, 0);
+
+  }
+
+  private TicketReading replicateTickets(JiraReplicationConfig cfg, JiraCredentials credentials) {
     requireNonNull(cfg.getBaseUrl(), "baseUrl");
     requireNonNull(cfg.getJql(), "jql");
 
@@ -206,10 +366,10 @@ public class JiraReplicationService {
     // Loaded once for both steps. The removal comes first, so that a removed parent no longer
     // passes values on in this very run.
     var tickets = new ArrayList<>(ticketRepo.findInScope(cfg.getCustomerorderId(), cfg.getSuborderId()));
-    if (seenJiraIds != null) removeUnseenTickets(cfg, scopeSign, tickets, seenJiraIds, failed);
+    int removed = seenJiraIds != null ? removeUnseenTickets(cfg, scopeSign, tickets, seenJiraIds, failed) : 0;
 
     var reparented = translateParentIds(cfg, tickets, parentIdsToTranslate);
-    resolveParentChains(cfg, scopeSign, tickets, reparented);
+    int parentChainsResolved = resolveParentChains(cfg, scopeSign, tickets, reparented);
 
     // Update last_max_updated if progressed - but never past an issue this run failed to store
     newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
@@ -221,27 +381,7 @@ public class JiraReplicationService {
     warnAboutFailedIssues(cfg, failed, advanced, newMax);
 
     log.info("Finished JIRA replication: name={}, processed={} (updated/inserted)", cfg.getName(), processed);
-
-    // Last, and with its own safety net (#1007): the worklogs are written against the tickets this
-    // run has just replicated, and a failure while writing them must not take the watermark above
-    // with it. Re-fetching the same tickets next time is harmless; losing the watermark is not.
-    String worklogSyncError = null;
-    var syncCredentials = credentials;
-    try {
-      // An OAuth access token lives an hour (#1417): the worklogs get a fresh one rather than the one
-      // the search started with, which a long search may have used up.
-      if (credentials.method() == JiraAuthMethod.OAUTH && TRUE.equals(cfg.getWorklogSyncEnabled())) {
-        syncCredentials = credentialStore.credentialsOf(cfg);
-      }
-      worklogSyncService.sync(cfg, syncCredentials);
-    } catch (ErrorCodeException ex) {
-      log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage());
-      worklogSyncError = germanTextOf(ex);
-    } catch (Exception ex) {
-      log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
-      worklogSyncError = redacted(ex, syncCredentials);
-    }
-    return new JiraReplicationResult(fetched, processed, failed, skipped, skippedTickets, worklogSyncError);
+    return new TicketReading(fetched, processed, failed, skipped, skippedTickets, removed, parentChainsResolved);
   }
 
   /**
@@ -262,13 +402,13 @@ public class JiraReplicationService {
    * up here first. Bookings are not affected: their ticket reference is free text, not a foreign key
    * (#982). Nor are the worklogs written on these tickets — see {@link JiraWorklogSyncService}.
    */
-  private void removeUnseenTickets(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets,
-                                   Set<Long> seenJiraIds, int failed) {
+  private int removeUnseenTickets(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets,
+                                  Set<Long> seenJiraIds, int failed) {
     if (failed > 0) {
       log.warn("Replication {} fetched everything the JQL matches, but {} issues could not be "
           + "processed - tickets of scope {} no longer matched are not removed in this run",
           cfg.getName(), failed, scopeSign);
-      return;
+      return 0;
     }
     // Only its own tickets (#1386): who maintains a ticket is its foreign key. One maintained by hand,
     // by another replication, or left behind by a deleted one is not this run's to remove.
@@ -281,6 +421,7 @@ public class JiraReplicationService {
     }
     log.info("Removed {} tickets of scope {} no longer matched by the JQL of replication {}",
         unseen.size(), scopeSign, cfg.getName());
+    return unseen.size();
   }
 
   /**
@@ -293,8 +434,10 @@ public class JiraReplicationService {
    * <p>Every ticket is resolved again on every run, not just the ones the run touched. That is what
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
+   *
+   * @return how many tickets were written again for it
    */
-  private void resolveParentChains(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets,
+  private int resolveParentChains(JiraReplicationConfig cfg, String scopeSign, List<JiraTicket> tickets,
                                    List<JiraTicket> reparented) {
     // Every ticket of the scope, whoever maintains it (#1386): these values are derived, never entered,
     // and the page writing a ticket by hand derives them the same way.
@@ -309,6 +452,7 @@ public class JiraReplicationService {
     log.info("Resolved parent chains for {} changed tickets of scope {} with inherited fields {}",
         changed.size(), scopeSign, inherited);
     ticketRepo.saveAll(new ArrayList<>(changed));
+    return changed.size();
   }
 
   /**

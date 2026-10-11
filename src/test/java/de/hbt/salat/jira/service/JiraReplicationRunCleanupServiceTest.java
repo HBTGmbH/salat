@@ -5,6 +5,8 @@ import static org.mockito.Mockito.when;
 import static de.hbt.salat.jira.domain.JiraApiFlavor.SERVER;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
 import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.SCHEDULED;
+import static de.hbt.salat.jira.domain.JiraReplicationRunStep.Step.READ_TICKETS;
+import static de.hbt.salat.jira.domain.JiraReplicationRunStep.Step.WRITE_WORKLOGS;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
@@ -23,8 +25,10 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.jira.OrderTree;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
+import de.hbt.salat.jira.domain.JiraReplicationRunStep;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
+import de.hbt.salat.jira.persistence.JiraReplicationRunStepRepository;
 
 /**
  * The run history of the replications does not grow without end (#1282): every enabled replication
@@ -47,6 +51,9 @@ class JiraReplicationRunCleanupServiceTest {
 
   @Autowired
   private JiraReplicationConfigRepository configRepository;
+
+  @Autowired
+  private JiraReplicationRunStepRepository stepRepository;
 
   @Autowired
   private SalatProperties salatProperties;
@@ -93,6 +100,68 @@ class JiraReplicationRunCleanupServiceTest {
     assertThat(runRepository.findAll())
         .extracting(JiraReplicationRun::getId)
         .containsExactly(kept.getId());
+  }
+
+  /** The steps of a run (#1325) go with it — the foreign key deletes them, the cleanup need not. */
+  @Test
+  void the_steps_of_a_deleted_run_go_with_it() {
+    var expired = save(NOW.minusDays(15));
+    var kept = save(NOW.minusDays(1));
+    step(expired, READ_TICKETS, NOW.minusDays(15));
+    var keptStep = step(kept, READ_TICKETS, NOW.minusDays(1));
+
+    cleanupService.deleteExpiredRuns();
+
+    assertThat(stepRepository.findAll())
+        .extracting(JiraReplicationRunStep::getId)
+        .containsExactly(keptStep.getId());
+  }
+
+  /** Deleting a replication deletes its runs (#1282), and with them their steps (#1325). */
+  @Test
+  void the_steps_go_with_the_runs_of_a_deleted_replication() {
+    var other = new JiraReplicationConfig();
+    other.setName("Andere");
+    other.setCustomerorder(replication.getCustomerorder());
+    other.setBaseUrl("http://jira.example");
+    other.setApiFlavor(SERVER);
+    other.setJql("project = OTHER");
+    other.setEnabled(true);
+    other = configRepository.save(other);
+    var run = save(NOW);
+    var otherRun = runRepository.save(JiraReplicationRun.builder()
+        .replication(other).startedAt(NOW).status(SUCCEEDED).triggeredBy(SCHEDULED).build());
+    step(run, READ_TICKETS, NOW);
+    step(run, WRITE_WORKLOGS, NOW.plusSeconds(3));
+    var otherStep = step(otherRun, READ_TICKETS, NOW);
+
+    runRepository.deleteByReplicationId(replication.getId());
+
+    assertThat(stepRepository.findAll())
+        .extracting(JiraReplicationRunStep::getId)
+        .containsExactly(otherStep.getId());
+  }
+
+  @Test
+  void the_steps_of_a_run_come_in_the_order_they_ran() {
+    var run = save(NOW);
+    var second = step(run, WRITE_WORKLOGS, NOW.plusSeconds(3));
+    var first = step(run, READ_TICKETS, NOW);
+
+    assertThat(stepRepository.findByRunIdOrderByStartedAtAscIdAsc(run.getId()))
+        .extracting(JiraReplicationRunStep::getId)
+        .containsExactly(first.getId(), second.getId());
+  }
+
+  private JiraReplicationRunStep step(JiraReplicationRun run, JiraReplicationRunStep.Step step,
+                                      LocalDateTime startedAt) {
+    return stepRepository.save(JiraReplicationRunStep.builder()
+        .run(run)
+        .step(step)
+        .startedAt(startedAt)
+        .finishedAt(startedAt.plusSeconds(2))
+        .status(SUCCEEDED)
+        .build());
   }
 
   private JiraReplicationRun save(LocalDateTime startedAt) {

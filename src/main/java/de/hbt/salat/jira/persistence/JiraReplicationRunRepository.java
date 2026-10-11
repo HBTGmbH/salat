@@ -24,6 +24,10 @@ public interface JiraReplicationRunRepository extends JpaRepository<JiraReplicat
 
   List<JiraReplicationRun> findByStatus(Status status);
 
+  /** One run with its replication, for the page of the run (#1325). */
+  @EntityGraph(attributePaths = "replication")
+  Optional<JiraReplicationRun> findWithReplicationById(long id);
+
   /**
    * The running run of this replication, if there is one. {@code findFirst} because a second
    * {@code RUNNING} row may be left over from a crash, and the answer has to name the start of the

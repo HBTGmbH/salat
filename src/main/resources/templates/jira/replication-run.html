@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='systemsettings',
+        subSection='jira-replications',
+        title=#{main.jira.replication.run.detail.title},
+        pageTitle=#{main.jira.replication.run.detail.title},
+        sectionTitle=#{main.general.mainmenu.system.text}
+">
+<main layout:fragment="content">
+
+  <!--/* The page of one run (#1325): the run as the list shows it, and below it its steps in the order
+         they ran. The badges come from the same fragment as in the list, so a status has one colour. */-->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="${run.replicationName}">Name</h3>
+      <div class="card-actions d-flex gap-2">
+        <!--/* A running run writes its steps as they end; the page does not follow on its own. */-->
+        <th:block th:if="${run.status.name() == 'RUNNING'}">
+          <a th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications/runs/{id}(id=${run.id})})}"></a>
+        </th:block>
+        <a class="btn btn-sm btn-outline-secondary" th:href="@{/jira/replications} + '#tab-runs'">
+          <i class="icon ti ti-arrow-left" aria-hidden="true"></i>
+          <span th:text="#{main.jira.replication.run.detail.back}">Zur Laufhistorie</span>
+        </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="datagrid">
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.run.field.startedAt}">Start</div>
+          <div class="datagrid-content"
+               th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.run.field.finishedAt}">Ende</div>
+          <div class="datagrid-content">
+            <span th:if="${run.finishedAt != null}"
+                  th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:04</span>
+            <span th:if="${run.finishedAt == null}" class="text-secondary">&ndash;</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.run.field.duration}">Dauer</div>
+          <div class="datagrid-content">
+            <span th:if="${run.duration != null}" th:text="${run.duration}">4 s</span>
+            <span th:if="${run.duration == null}" class="text-secondary">&ndash;</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.run.field.status}">Status</div>
+          <div class="datagrid-content">
+            <span th:replace="~{:: statusBadge(${run.status})}">Erfolgreich</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.run.field.trigger}">Ausgelöst durch</div>
+          <div class="datagrid-content" th:text="#{${'main.jira.replication.run.trigger.' + run.triggeredBy}}">Stündlich</div>
+        </div>
+      </div>
+      <div class="datagrid mt-3">
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.run.field.message}">Meldung</div>
+          <div class="datagrid-content text-break">
+            <th:block th:replace="~{:: message(${run.message}, ${run.messagePreview})}"></th:block>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.jira.replication.run.step.title}">Schritte</h3>
+    </div>
+    <div th:if="${#lists.isEmpty(steps)}" class="card-body">
+      <p class="mb-1" th:text="${run.status.name() == 'RUNNING'}
+          ? #{main.jira.replication.run.step.none.running}
+          : #{main.jira.replication.run.step.none}">Zu diesem Lauf gibt es keine Schritte.</p>
+      <p class="text-secondary mb-0" th:unless="${run.status.name() == 'RUNNING'}"
+         th:text="#{main.jira.replication.run.step.none.hint}">Ein übersprungener Lauf beginnt keinen Schritt.</p>
+    </div>
+    <div th:unless="${#lists.isEmpty(steps)}" class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.jira.replication.run.step.field.step}">Schritt</th>
+            <th th:text="#{main.jira.replication.run.field.startedAt}">Start</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.run.field.finishedAt}">Ende</th>
+            <th th:text="#{main.jira.replication.run.field.duration}">Dauer</th>
+            <th th:text="#{main.jira.replication.run.field.status}">Status</th>
+            <th th:text="#{main.jira.replication.run.step.field.counters}">Ergebnis</th>
+            <th th:text="#{main.jira.replication.run.field.message}">Meldung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="step : ${steps}">
+            <td class="text-nowrap" th:text="#{${'main.jira.replication.run.step.' + step.step}}">Tickets lesen</td>
+            <td class="text-nowrap"
+                th:text="${#temporals.format(step.startedAt, 'HH:mm:ss')}">10:15:00</td>
+            <td class="d-none d-md-table-cell text-nowrap"
+                th:text="${#temporals.format(step.finishedAt, 'HH:mm:ss')}">10:15:03</td>
+            <td class="text-nowrap" th:text="${step.duration}">3 s</td>
+            <td><span th:replace="~{:: statusBadge(${step.status})}">Erfolgreich</span></td>
+            <td class="small">
+              <div th:if="${step.worklogsFrom != null}" class="text-nowrap">
+                <span class="text-secondary" th:text="#{main.jira.replication.run.step.period}">Zeitraum</span>
+                <span th:text="${#temporals.format(step.worklogsFrom, 'dd.MM.yyyy')} + ' – ' + ${#temporals.format(step.worklogsUntil, 'dd.MM.yyyy')}">01.06.2026 – 11.10.2026</span>
+              </div>
+              <!--/* A counter of single cases that went wrong stands out once it is above zero — next to
+                     the badge, that is what tells a failed or incomplete step at a glance. */-->
+              <ul th:unless="${#lists.isEmpty(step.counters)}" class="list-inline mb-0">
+                <li th:each="counter : ${step.counters}" class="list-inline-item text-nowrap"
+                    th:classappend="${counter.noticeable} ? 'text-danger fw-bold' : ''">
+                  <span th:text="${counter.value}">12</span>
+                  <span th:text="#{${'main.jira.replication.run.step.counter.' + counter.key}}">geholt</span>
+                </li>
+              </ul>
+              <span th:if="${#lists.isEmpty(step.counters) and step.worklogsFrom == null}" class="text-secondary">&ndash;</span>
+            </td>
+            <td class="text-break small">
+              <th:block th:replace="~{:: message(${step.message}, ${step.messagePreview})}"></th:block>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!--/* The status of a run or a step. One fragment for the run history, the page of a run and its steps,
+       so that a status has one colour wherever it appears (#1325). Incomplete in orange: between the
+       green of a run that went through and the red of one that broke off, and apart from the yellow of a
+       run that never began. */-->
+<span th:fragment="statusBadge(status)" class="badge"
+      th:with="name=${status.name()}"
+      th:classappend="${name == 'SUCCEEDED'} ? 'bg-green-lt'
+          : (${name == 'FAILED'} ? 'bg-danger-lt'
+          : (${name == 'INCOMPLETE'} ? 'bg-orange-lt'
+          : (${name == 'SKIPPED'} ? 'bg-warning-lt' : 'bg-azure-lt')))"
+      th:text="#{${'main.jira.replication.run.status.' + status}}">Erfolgreich</span>
+
+<!--/* A message, folded when it is long: an aborted run carries the text of the exception, a run with
+       many skipped tickets names them all. The preview is the summary and stays visible. */-->
+<th:block th:fragment="message(text, preview)">
+  <span th:if="${text == null}" class="text-secondary">&ndash;</span>
+  <span th:if="${text != null and preview == null}" th:text="${text}">12 Tickets geholt, 3 geschrieben.</span>
+  <details th:if="${text != null and preview != null}">
+    <summary class="cursor-pointer" th:text="${preview}">Abgebrochen: …</summary>
+    <div class="mt-1" style="white-space: pre-line" th:text="${text}">Abgebrochen: 401 Unauthorized</div>
+  </details>
+</th:block>
+
+</html>

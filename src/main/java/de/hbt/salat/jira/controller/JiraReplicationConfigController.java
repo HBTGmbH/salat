@@ -49,6 +49,7 @@ import de.hbt.salat.jira.service.JiraReplicationConfigService;
 import de.hbt.salat.jira.service.JiraReplicationLauncher;
 import de.hbt.salat.jira.service.JiraReplicationOAuthService;
 import de.hbt.salat.jira.service.JiraReplicationRunService;
+import de.hbt.salat.jira.viewhelper.JiraReplicationRunStepViewHelper;
 import de.hbt.salat.jira.viewhelper.JiraReplicationRunViewHelper;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -269,6 +270,27 @@ public class JiraReplicationConfigController {
       redirectAttributes.addFlashAttribute("toastError", firstMessageOf(ex));
     }
     return "redirect:/jira/replications" + RUNS_TAB;
+  }
+
+  /**
+   * The page of one run (#1325): the run, and below it its steps in the order they ran. Behind the
+   * same guard as the run history — whoever sees the list sees the steps. A run the cleanup has
+   * deleted meanwhile leads back to the list, with the reason.
+   */
+  @GetMapping("/runs/{runId}")
+  public String runDetail(@PathVariable long runId, Model model, RedirectAttributes redirectAttributes) {
+    JiraReplicationRunService.RunWithSteps runWithSteps;
+    try {
+      runWithSteps = jiraReplicationRunService.getRunWithSteps(runId);
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError", firstMessageOf(ex));
+      return "redirect:/jira/replications" + RUNS_TAB;
+    }
+    model.addAttribute("run", JiraReplicationRunViewHelper.from(runWithSteps.run()));
+    model.addAttribute("steps", runWithSteps.steps().stream()
+        .map(JiraReplicationRunStepViewHelper::from)
+        .toList());
+    return "jira/replication-run";
   }
 
   /** Sets a run that only stands on "running" because of a crash to finished (#1282). */

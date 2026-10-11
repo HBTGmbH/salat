@@ -31,8 +31,10 @@ import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Status;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
+import de.hbt.salat.jira.domain.JiraReplicationRunStep;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
+import de.hbt.salat.jira.persistence.JiraReplicationRunStepRepository;
 
 /**
  * The run history of the replications (#1282), modelled on the ETL's (→ ADR-0028).
@@ -64,6 +66,7 @@ public class JiraReplicationRunService {
   private final JiraReplicationConfigRepository configRepository;
   private final RunFinisher runFinisher;
   private final JiraSwitch jiraSwitch;
+  private final JiraReplicationRunStepRepository stepRepository;
 
   /**
    * Opens a run and is the lock at the same time: checking and writing form one section, two
@@ -198,7 +201,40 @@ public class JiraReplicationRunService {
         .collect(toSet());
   }
 
-  /** The runs of a replication that is being deleted — they have nothing left to refer to. */
+  /**
+   * Writes a step of a run (#1325) once it has ended. Like {@link #recordSkippedRun} without a
+   * transaction of its own: the step is one row, and {@code save} commits it on the spot.
+   */
+  public void recordStep(long runId, JiraReplicationRunStep step) {
+    step.setRun(runRepository.getReferenceById(runId));
+    step.setMessage(shortened(step.getMessage()));
+    stepRepository.save(step);
+  }
+
+  /**
+   * A run with its steps in the order they ran (#1325) — for whoever may see the run history, and
+   * for nobody else.
+   */
+  @Transactional(readOnly = true)
+  public RunWithSteps getRunWithSteps(long runId) {
+    var run = runRepository.findWithReplicationById(runId)
+        .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_RUN_NOT_FOUND));
+    return new RunWithSteps(run, stepRepository.findByRunIdOrderByStartedAtAscIdAsc(runId));
+  }
+
+  /** A run and its steps, the replication of the run loaded with it. */
+  public record RunWithSteps(JiraReplicationRun run, List<JiraReplicationRunStep> steps) {
+
+    public RunWithSteps {
+      steps = List.copyOf(steps);
+    }
+
+  }
+
+  /**
+   * The runs of a replication that is being deleted — they have nothing left to refer to. Their steps
+   * go with them through the foreign key (#1325).
+   */
   @Transactional
   public void deleteRunsOf(long replicationId) {
     runRepository.deleteByReplicationId(replicationId);

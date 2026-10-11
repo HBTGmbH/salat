@@ -46,11 +46,25 @@ public class JiraReplicationRun {
   public enum Status {
     RUNNING,
     SUCCEEDED,
+    /**
+     * Broken off by an exception — the run or one of its steps — or with tickets that could not be
+     * stored.
+     */
     FAILED,
+    /**
+     * Gone through, but single worklogs could not be written (#1325). Not {@link #SUCCEEDED},
+     * because JIRA is missing hours; not {@link #FAILED} either, because everything else went through
+     * and the next run tries the missing ones again. Stored as text in a {@code varchar(20)} like
+     * every status, so the value needs no change to the schema.
+     */
+    INCOMPLETE,
     /**
      * Not begun at all, because the same replication was still running. A status of its own rather
      * than {@link #FAILED}: nothing ran that could have gone wrong. Without the row the hourly run
      * would leave a gap in the list that looks like an application that was switched off.
+     *
+     * <p>A step (#1325) carries it when the worklog sync is switched on but has nothing to work on —
+     * no start date, a start date to come, no suborder in the scope.
      */
     SKIPPED
   }

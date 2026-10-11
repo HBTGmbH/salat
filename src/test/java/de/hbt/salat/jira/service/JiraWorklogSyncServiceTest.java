@@ -602,6 +602,82 @@ class JiraWorklogSyncServiceTest {
     verifyNoInteractions(worklogClients, commandPublisher);
   }
 
+  /** What the sync did goes into the step of the run (#1325) — nothing at all while it is off. */
+  @Test
+  void a_sync_switched_off_reports_nothing() {
+    var config = config();
+    config.setWorklogSyncEnabled(false);
+
+    assertThat(classUnderTest.sync(config, CREDENTIALS)).isEmpty();
+  }
+
+  @Test
+  void a_sync_without_a_start_date_reports_why_it_did_nothing() {
+    var config = config();
+    config.setWorklogSyncFrom(null);
+
+    var result = classUnderTest.sync(config, CREDENTIALS).orElseThrow();
+
+    assertThat(result.isSkipped()).isTrue();
+    assertThat(result.message())
+        .isEqualTo("Kein Startdatum gesetzt – der Abgleich schreibt nichts, statt die ganze Historie des Auftrags.");
+    assertThat(result.from()).isNull();
+  }
+
+  @Test
+  void a_start_date_in_the_future_reports_when_the_sync_begins() {
+    var config = config();
+    config.setWorklogSyncFrom(LocalDate.of(2026, 12, 1));
+
+    var result = classUnderTest.sync(config, CREDENTIALS).orElseThrow();
+
+    assertThat(result.isSkipped()).isTrue();
+    assertThat(result.message()).isEqualTo("Der Abgleich beginnt am 01.12.2026 und hat bis dahin nichts zu tun.");
+  }
+
+  @Test
+  void a_scope_without_a_suborder_reports_that() {
+    when(scopes.suborderIdsOf(CUSTOMERORDER_ID, null)).thenReturn(List.of());
+
+    var result = classUnderTest.sync(config(), CREDENTIALS).orElseThrow();
+
+    assertThat(result.isSkipped()).isTrue();
+    assertThat(result.message()).isEqualTo("Im Geltungsbereich ALPHA liegt kein Unterauftrag – es gibt nichts abzugleichen.");
+  }
+
+  @Test
+  void a_sync_reports_its_period_and_what_became_of_each_worklog() {
+    givenBookings(sum("ALPHA-1", "abc", 90), sum("ALPHA-2", "abc", 60));
+    givenReplicatedTickets("ALPHA-1", "ALPHA-2");
+    givenStoredWorklog("ALPHA-2", DAY, "10102", 60, "abc 1:00");
+    when(worklogClient.create(any(), any())).thenReturn("10101");
+
+    var result = classUnderTest.sync(config(), CREDENTIALS).orElseThrow();
+
+    assertThat(result.isSkipped()).isFalse();
+    assertThat(result.from()).isEqualTo(SYNC_FROM);
+    assertThat(result.until()).isEqualTo(LocalDate.of(2026, 6, 25));
+    assertThat(result.created()).isEqualTo(1);
+    assertThat(result.failed()).isZero();
+    assertThat(result.created() + result.updated() + result.unchanged()).isEqualTo(2);
+    assertThat(result.message()).isNull();
+  }
+
+  @Test
+  void a_sync_reports_the_worklogs_it_could_not_write_by_ticket_and_day() {
+    givenBookings(sum("ALPHA-1", "abc", 90), sum("ALPHA-2", "abc", 60));
+    givenReplicatedTickets("ALPHA-1", "ALPHA-2");
+    when(worklogClient.create(any(), any())).thenThrow(new IllegalStateException("JIRA is unwell"));
+
+    var result = classUnderTest.sync(config(), CREDENTIALS).orElseThrow();
+
+    assertThat(result.failed()).isEqualTo(2);
+    assertThat(result.created()).isZero();
+    assertThat(result.failedWorklogs()).containsExactly("ALPHA-1 am 10.06.2026", "ALPHA-2 am 10.06.2026");
+    assertThat(result.message()).isEqualTo("2 Worklogs konnten nicht abgeglichen werden, der nächste Lauf "
+        + "versucht es erneut: ALPHA-1 am 10.06.2026, ALPHA-2 am 10.06.2026.");
+  }
+
   private JiraReplicationConfig config() {
     var config = new JiraReplicationConfig();
     ReflectionTestUtils.setField(config, "id", REPLICATION_ID);

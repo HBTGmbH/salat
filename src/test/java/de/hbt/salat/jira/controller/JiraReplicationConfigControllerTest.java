@@ -7,12 +7,15 @@ import java.util.Arrays;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraOAuthConnectionInfo;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
+import de.hbt.salat.jira.service.JiraReplicationRunService;
 
 /**
  * The replication maintenance page (#984). What is worth pinning down here is the boundary: the
@@ -53,6 +56,21 @@ class JiraReplicationConfigControllerTest {
 
     assertThat(guardOf(callback)).isNotNull();
     assertThat(guardOf(callback).requiresManager()).isTrue();
+  }
+
+  /**
+   * Whoever sees the run history sees the steps of a run (#1325): the page of a run lowers neither the
+   * guard of the controller nor that of the service it reads through.
+   */
+  @Test
+  void the_page_of_a_run_is_behind_the_guard_of_the_run_history() throws Exception {
+    var page = JiraReplicationConfigController.class.getDeclaredMethod("runDetail", long.class,
+        Model.class, RedirectAttributes.class);
+    var read = JiraReplicationRunService.class.getDeclaredMethod("getRunWithSteps", long.class);
+
+    assertThat(guardOf(page)).isNull();
+    assertThat(guardOf(read)).isNull();
+    assertThat(JiraReplicationRunService.class.getAnnotation(Authorized.class).requiresManager()).isTrue();
   }
 
   /** The field catalogue of an OAuth replication needs the setup and a valid connection (#1417). */
