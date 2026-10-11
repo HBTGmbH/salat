@@ -82,9 +82,14 @@ weiter die id.
   verbietet den Aufruf eines Setters auf einer Entity eines anderen Moduls; die zehn Aufrufe bei
   Einführung sind eingefroren (`order` aus `dailyreport`, `auth` aus `employee`).
   `noAssociationCascadesIntoAnotherModule` verbietet `cascade` auf einer Assoziation in ein anderes
-  Modul; hier war der Bestand leer, die Regel greift sofort
-* Bad: ein Ändern über die Sammlung eines Getters (`getSuborders().add(…)`) sieht keine der beiden
-  Regeln; das bleibt Sache des Reviews
+  Modul; hier war der Bestand leer, die Regel greift sofort.
+  `collectionsReachableFromAnotherModuleAreHandedOutReadOnly` verlangt, dass eine Entity, die ein
+  anderes Modul über eine Referenz oder eine Service-Signatur erreicht, ihre Sammlungen nur als
+  unveränderliche Sicht herausgibt; das besitzende Modul ändert sie über Setter oder ausdrückliche
+  Methoden der Entity. Betroffen waren `Customerorder.suborders` und `responsibleHbt`,
+  `Suborder.suborders` und `employeeorders` sowie `Employeecontract.supervisors`
+* Bad: der Schutz der Sammlungen greift erst zur Laufzeit (`UnsupportedOperationException`); Java hat
+  keinen Listentyp nur zum Lesen, und ein eigener liefe durch jeden Aufrufer
 * Neutral: **ADR-0021 bleibt in Kraft und wird ergänzt.** Eine Referenz auf Stammdaten ist eine
   erlaubte Verbindung von Entities über die Grenze. Der Satz „Entities verlassen die Abfrage nicht“
   gilt weiter für Service-Signaturen: `ArchitectureTest.noEntityCrossesAModuleBoundaryThroughAService`

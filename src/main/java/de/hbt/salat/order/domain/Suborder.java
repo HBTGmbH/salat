@@ -22,6 +22,7 @@ import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -59,10 +60,12 @@ public class Suborder extends AuditedEntity implements Serializable {
      */
     @OneToMany(mappedBy = "suborder")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
     private List<Employeeorder> employeeorders;
 
     @OneToMany(mappedBy = "parentorder", cascade = CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
     private List<Suborder> suborders;
 
     /**
@@ -150,6 +153,19 @@ public class Suborder extends AuditedEntity implements Serializable {
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private Integer ticketReferenceLimit;
+
+    /**
+     * Read only (#1371): another module reaches the suborder through a reference and must not change
+     * the list Hibernate manages. {@code null} where none has been set yet.
+     */
+    public List<Employeeorder> getEmployeeorders() {
+        return employeeorders == null ? null : Collections.unmodifiableList(employeeorders);
+    }
+
+    /** Read only, as {@link #getEmployeeorders()}; a child is added with {@link #addSuborder}. */
+    public List<Suborder> getSuborders() {
+        return suborders == null ? null : Collections.unmodifiableList(suborders);
+    }
 
     public void addSuborder(Suborder child) {
         if (suborders == null) {

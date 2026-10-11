@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -60,6 +61,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
      */
     @OneToMany(mappedBy = "customerorder")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
     private List<Suborder> suborders;
 
     /**
@@ -79,6 +81,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
             columnNames = {"CUSTOMERORDER_ID", "EMPLOYEE_ID"}))
     @Fetch(FetchMode.SELECT)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
     private List<Employee> responsibleHbt = new ArrayList<>();
 
     /**
@@ -154,9 +157,18 @@ public class Customerorder extends AuditedEntity implements Serializable {
         return "";
     }
 
+    /**
+     * The suborders, sorted, as a copy that cannot be changed (#1371): another module reaches the order
+     * through a reference and must not change the list Hibernate manages. Sorting the copy also leaves
+     * that list as it is; it used to be sorted in place on every read.
+     */
     public List<Suborder> getSuborders() {
-        suborders.sort(SubOrderComparator.INSTANCE);
-        return suborders;
+        return suborders.stream().sorted(SubOrderComparator.INSTANCE).toList();
+    }
+
+    /** Read only, as {@link #getSuborders()}; set as a whole with {@link #setResponsibleHbt}. */
+    public List<Employee> getResponsibleHbt() {
+        return responsibleHbt == null ? null : Collections.unmodifiableList(responsibleHbt);
     }
 
     public String getShortdescription() {

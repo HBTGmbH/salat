@@ -62,8 +62,10 @@ See also README.md
   other module's entity, writing stays with events (ADR-0003) — and navigation stays within master
   data. `ArchitectureTest` enforces read only (#1371): `noSetterIsCalledOnAnEntityOfAnotherModule`
   (the calls that existed when it came in are frozen in `src/test/resources/archunit_store`; a new
-  one fails the build) and `noAssociationCascadesIntoAnotherModule`. Changing through a getter's
-  collection remains a matter of review. Lists fetch it with `join fetch` or `@BatchSize`, never per
+  one fails the build), `noAssociationCascadesIntoAnotherModule` and
+  `collectionsReachableFromAnotherModuleAreHandedOutReadOnly`: an entity another module reaches hands
+  out its collections only as unmodifiable views, and its own module changes them through setters or
+  explicit methods of the entity. Lists fetch it with `join fetch` or `@BatchSize`, never per
   row. When a module is extracted,
   master data becomes a read copy in the module and the reference points at that copy. Entities in
   service signatures across the boundary stay forbidden (ADR-0021, #1244). A reference is written from

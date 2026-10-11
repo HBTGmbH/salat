@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -54,6 +55,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             columnNames = {"EMPLOYEECONTRACT_ID", "SUPERVISOR_ID"}))
     @Fetch(FetchMode.SELECT)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
     private List<Employee> supervisors = new ArrayList<>();
 
     private LocalDate validFrom;
@@ -88,6 +90,14 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     /** Urlaubstage pro Jahr; der anteilige Anspruch eines Jahres folgt daraus (#1077) */
     @Column(nullable = false)
     private int vacationEntitlement;
+
+    /**
+     * Read only (#1371): other modules reach the contract through a reference and must not change the
+     * list Hibernate manages; it is set as a whole with {@link #setSupervisors}.
+     */
+    public List<Employee> getSupervisors() {
+        return supervisors == null ? null : Collections.unmodifiableList(supervisors);
+    }
 
     /**
      * @return Returns true, if the {@link Employeecontract} is hidden — {@code null} is not hidden
