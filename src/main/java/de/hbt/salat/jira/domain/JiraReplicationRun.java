@@ -46,16 +46,14 @@ public class JiraReplicationRun {
   public enum Status {
     RUNNING,
     SUCCEEDED,
-    /**
-     * Broken off by an exception — the run or one of its steps — or with tickets that could not be
-     * stored.
-     */
+    /** Broken off by an exception — the run, one of its steps, or the worklog sync. */
     FAILED,
     /**
-     * Gone through, but single worklogs could not be written (#1325). Not {@link #SUCCEEDED},
-     * because JIRA is missing hours; not {@link #FAILED} either, because everything else went through
-     * and the next run tries the missing ones again. Stored as text in a {@code varchar(20)} like
-     * every status, so the value needs no change to the schema.
+     * Gone through, but single tickets could not be stored or single worklogs could not be written
+     * (#1325). Not {@link #SUCCEEDED}, because tickets or hours are missing; not {@link #FAILED}
+     * either, because everything else went through and the next run tries the missing ones again —
+     * for the tickets the watermark stops below them (#841). Stored as text in a {@code varchar(20)}
+     * like every status, so the value needs no change to the schema.
      */
     INCOMPLETE,
     /**

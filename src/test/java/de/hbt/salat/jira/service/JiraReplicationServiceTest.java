@@ -161,7 +161,7 @@ class JiraReplicationServiceTest {
   }
 
   @Test
-  void aRunWithAnIssueItCouldNotStoreIsRecordedAsFailed() {
+  void aRunWithAnIssueItCouldNotStoreIsRecordedAsIncomplete() {
     JiraReplicationConfig config = createMockReplicationConfig();
     config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
@@ -171,7 +171,7 @@ class JiraReplicationServiceTest {
 
     jiraReplicationService.continueRun(77L, config.getId());
 
-    verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.INCOMPLETE,
         "2 Tickets geholt, 1 geschrieben. 1 nicht verarbeitet — der Wasserstand rückt nicht über sie hinaus.");
   }
 

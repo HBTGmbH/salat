@@ -149,8 +149,9 @@ public class JiraReplicationService {
   }
 
   /**
-   * The step „Tickets lesen". Not processed issues make it fail, as they make the run fail: the
-   * watermark stops at them (#841).
+   * The step „Tickets lesen". Issues that could not be processed make it incomplete, as they make
+   * the run incomplete (#1325): the rest went through, and the watermark stops at them, so the next
+   * run asks for them again (#841). Only a step that breaks off fails.
    */
   private TicketReading readTickets(JiraReplicationConfig cfg, JiraCredentials credentials,
                                     Consumer<JiraReplicationRunStep> steps) {
@@ -166,7 +167,7 @@ public class JiraReplicationService {
         .step(READ_TICKETS)
         .startedAt(startedAt)
         .finishedAt(DateTimeUtils.now())
-        .status(reading.failed() > 0 ? FAILED : SUCCEEDED)
+        .status(reading.failed() > 0 ? INCOMPLETE : SUCCEEDED)
         .ticketsFetched(reading.fetched())
         .ticketsWritten(reading.written())
         .ticketsFailed(reading.failed())
