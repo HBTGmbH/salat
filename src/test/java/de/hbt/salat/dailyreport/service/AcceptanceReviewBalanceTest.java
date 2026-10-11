@@ -260,7 +260,7 @@ class AcceptanceReviewBalanceTest {
       workingday.setBreakLength(Duration.ofMinutes(45));
       workingdayRepository.save(workingday);
     }
-    timereportService.createTimereports(contract, employeeorder, day, "task", false, hours, 0, 1);
+    timereportService.createTimereports(contract, employeeorder, day, "task", false, Duration.ofHours(hours), 1);
   }
 
   private void adjustment(LocalDate effective, Duration time) {

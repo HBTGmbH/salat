@@ -111,9 +111,9 @@ class DailyInlineTicketSuggestionTest {
     assertThat(suggestion.taskdescription()).isEqualTo("Fehler in abc-12 und OPS-1");
     assertThat(suggestion.remaining()).isEqualTo(1);
     verify(timereportService, never()).updateTimereport(anyLong(), anyLong(), anyLong(), any(), anyString(),
-        anyBoolean(), anyLong(), anyLong());
+        anyBoolean(), any(Duration.class));
     verify(timereportService, never()).updateTimereport(anyLong(), anyLong(), anyLong(), any(), anyString(),
-        any(List.class), anyBoolean(), anyLong(), anyLong());
+        any(List.class), anyBoolean(), any(Duration.class));
   }
 
   @Test
@@ -124,7 +124,7 @@ class DailyInlineTicketSuggestionTest {
 
     assertThat(model.get("inlineTicketSuggestion")).isNull();
     verify(timereportService).updateTimereport(TIMEREPORT_ID, CONTRACT_ID, EMPLOYEE_ORDER_ID, DATE,
-        "nur Text zu OPS-1", false, 1, 0);
+        "nur Text zu OPS-1", false, Duration.ofHours(1));
   }
 
   @Test
@@ -132,7 +132,7 @@ class DailyInlineTicketSuggestionTest {
     editComment("Fehler in ABC-12", "adopt", List.of("ABC-12"), new ExtendedModelMap());
 
     verify(timereportService).updateTimereport(TIMEREPORT_ID, CONTRACT_ID, EMPLOYEE_ORDER_ID, DATE,
-        "Fehler in ABC-12", List.of("OPS-1", "ABC-12"), false, 1, 0);
+        "Fehler in ABC-12", List.of("OPS-1", "ABC-12"), false, Duration.ofHours(1));
   }
 
   @Test
@@ -140,7 +140,7 @@ class DailyInlineTicketSuggestionTest {
     editComment("Fehler in ABC-12", "skip", null, new ExtendedModelMap());
 
     verify(timereportService).updateTimereport(TIMEREPORT_ID, CONTRACT_ID, EMPLOYEE_ORDER_ID, DATE,
-        "Fehler in ABC-12", false, 1, 0);
+        "Fehler in ABC-12", false, Duration.ofHours(1));
   }
 
   @Test
@@ -150,7 +150,7 @@ class DailyInlineTicketSuggestionTest {
     editComment("Fehler in ABC-12", null, null, new ExtendedModelMap());
 
     verify(timereportService).updateTimereport(TIMEREPORT_ID, CONTRACT_ID, EMPLOYEE_ORDER_ID, DATE,
-        "Fehler in ABC-12", false, 1, 0);
+        "Fehler in ABC-12", false, Duration.ofHours(1));
   }
 
   /** Editing the duration says nothing about the comment, so nothing is offered. */
@@ -160,7 +160,7 @@ class DailyInlineTicketSuggestionTest {
         new MockHttpServletResponse(), new ExtendedModelMap());
 
     verify(timereportService).updateTimereport(eq(TIMEREPORT_ID), eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        anyString(), eq(false), eq(2L), eq(0L));
+        anyString(), eq(false), eq(Duration.ofHours(2)));
   }
 
   @Test
@@ -169,7 +169,7 @@ class DailyInlineTicketSuggestionTest {
         new MockHttpServletRequest(), new MockHttpServletResponse(), new ExtendedModelMap());
 
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE), eq("Review"),
-        eq(List.of("ABC-1", "ABC-2")), eq(false), eq(1L), eq(30L), anyInt());
+        eq(List.of("ABC-1", "ABC-2")), eq(false), eq(Duration.ofHours(1).plusMinutes(30)), anyInt());
   }
 
   private void editComment(String comment, String choice, List<String> adopted, ExtendedModelMap model) {

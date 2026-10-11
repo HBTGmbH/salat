@@ -232,7 +232,7 @@ class TimereportServiceContractChangeTest {
   }
 
   private void update(long contractId, long employeeorderId, LocalDate day) {
-    timereportService.updateTimereport(TIMEREPORT_ID, contractId, employeeorderId, day, "comment", false, 1, 0);
+    timereportService.updateTimereport(TIMEREPORT_ID, contractId, employeeorderId, day, "comment", false, Duration.ofHours(1));
   }
 
   private TimereportsCreatedOrUpdatedEvent publishedEvent() {

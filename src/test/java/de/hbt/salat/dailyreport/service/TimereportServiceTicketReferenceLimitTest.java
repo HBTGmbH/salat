@@ -217,7 +217,7 @@ class TimereportServiceTicketReferenceLimitTest {
     customerorder.setTicketReferencePolicy(new TicketReferencePolicy(TicketReferenceMode.LIMITED, 1));
 
     assertThatThrownBy(() -> timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID,
-        DAY, "neuer Kommentar", false, 1, 0))
+        DAY, "neuer Kommentar", false, Duration.ofHours(1)))
         .isInstanceOfSatisfying(BusinessRuleException.class, ex ->
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_TICKET_REFERENCES_EXCEED_LIMIT));
     verify(timereportRepository, never()).save(any());
@@ -229,7 +229,7 @@ class TimereportServiceTicketReferenceLimitTest {
     customerorder.setTicketReferencePolicy(new TicketReferencePolicy(TicketReferenceMode.LIMITED, 1));
 
     timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, DAY, "Kommentar",
-        List.of("ABC-2"), false, 1, 0);
+        List.of("ABC-2"), false, Duration.ofHours(1));
 
     assertThat(timereport.getTicketReferences()).containsExactly("ABC-2");
   }
@@ -238,7 +238,7 @@ class TimereportServiceTicketReferenceLimitTest {
   void an_update_without_references_keeps_those_stored() {
     var timereport = givenBooking("ABC-1");
 
-    timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, DAY, "neu", false, 1, 0);
+    timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, DAY, "neu", false, Duration.ofHours(1));
 
     assertThat(timereport.getTicketReferences()).containsExactly("ABC-1");
   }
@@ -251,7 +251,7 @@ class TimereportServiceTicketReferenceLimitTest {
     when(authorizedUser.isManager()).thenReturn(true);
 
     assertThatThrownBy(() -> timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID,
-        OTHER_EMPLOYEE_ORDER_ID, DAY, "Kommentar", false, 1, 0, true))
+        OTHER_EMPLOYEE_ORDER_ID, DAY, "Kommentar", false, Duration.ofHours(1), true))
         .isInstanceOfSatisfying(ErrorCodeException.class, ex ->
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_TICKET_REFERENCES_NOT_ALLOWED));
     verify(timereportRepository, never()).save(any());
@@ -268,7 +268,7 @@ class TimereportServiceTicketReferenceLimitTest {
 
   private void create(String... references) {
     timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, DAY, "Kommentar",
-        List.of(references), false, 1, 0, 1);
+        List.of(references), false, Duration.ofHours(1), 1);
   }
 
   private Timereport saved() {

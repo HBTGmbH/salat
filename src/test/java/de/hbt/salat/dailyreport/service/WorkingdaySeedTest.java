@@ -93,7 +93,7 @@ class WorkingdaySeedTest {
   void a_full_hour_start_keeps_its_minute_when_a_booking_begins_at_a_quarter_past() {
     var stored = storedWorkingday(WORKED, 7, 0);
 
-    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, 11, 15);
+    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, LocalTime.of(11, 15));
 
     assertStart(stored, 7, 0);
   }
@@ -103,7 +103,7 @@ class WorkingdaySeedTest {
   void a_full_hour_start_keeps_its_minute_against_the_preferred_start_of_the_day() {
     var stored = storedWorkingday(WORKED, 7, 0);
 
-    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, 8, 30);
+    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, LocalTime.of(8, 30));
 
     assertStart(stored, 7, 0);
   }
@@ -113,7 +113,7 @@ class WorkingdaySeedTest {
   void a_start_at_midnight_on_a_worked_day_is_kept() {
     var stored = storedWorkingday(WORKED, 0, 0);
 
-    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, 9, 15);
+    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, LocalTime.of(9, 15));
 
     assertStart(stored, 0, 0);
   }
@@ -122,7 +122,7 @@ class WorkingdaySeedTest {
   void a_start_within_the_hour_is_kept() {
     var stored = storedWorkingday(WORKED, 8, 45);
 
-    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, 10, 0);
+    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, LocalTime.of(10, 0));
 
     assertStart(stored, 8, 45);
   }
@@ -132,7 +132,7 @@ class WorkingdaySeedTest {
   void a_day_marked_not_worked_gets_the_complete_begin_and_becomes_worked() {
     var stored = storedWorkingday(NOT_WORKED, 0, 0);
 
-    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, 9, 0);
+    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, LocalTime.of(9, 0));
 
     assertStart(stored, 9, 0);
     assertThat(stored.getType()).isEqualTo(WORKED);
@@ -140,7 +140,7 @@ class WorkingdaySeedTest {
 
   @Test
   void a_day_without_working_day_gets_one_with_the_begin() {
-    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, 9, 15);
+    workingdayService.seedWorkingday(EMPLOYEE_CONTRACT_ID, DAY, LocalTime.of(9, 15));
 
     var saved = ArgumentCaptor.forClass(Workingday.class);
     verify(workingdayRepository).save(saved.capture());

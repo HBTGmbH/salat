@@ -1,11 +1,15 @@
 package de.hbt.salat.dailyreport.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import tools.jackson.databind.ObjectMapper;
 
@@ -102,4 +106,26 @@ class DailyReportDataTest {
     assertThat(none.givenTicketReferences()).isNull();
   }
 
+  /** Hours and minutes apart exist only in this format; inside the application the duration is one value (#1400). */
+  @Test
+  void hoursAndMinutesBecomeOneDuration() {
+    assertThat(DailyReportData.builder().hours(1).minutes(45).build().toDuration())
+        .isEqualTo(Duration.ofHours(1).plusMinutes(45));
+  }
+
+  @Test
+  void aMinutesPartOfSixtyOrMoreAddsUp() {
+    assertThat(DailyReportData.builder().hours(0).minutes(90).build().toDuration())
+        .isEqualTo(Duration.ofHours(1).plusMinutes(30));
+  }
+
+  @Test
+  void negativeHoursOrMinutesAreRefusedWithTheirOwnCode() {
+    assertThatThrownBy(() -> DailyReportData.builder().hours(-1).minutes(0).build().toDuration())
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(TR_DURATION_HOURS_INVALID.getCode());
+    assertThatThrownBy(() -> DailyReportData.builder().hours(1).minutes(-5).build().toDuration())
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(TR_DURATION_MINUTES_INVALID.getCode());
+  }
 }

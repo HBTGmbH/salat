@@ -1,5 +1,6 @@
 package de.hbt.salat.favorites.domain;
 
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -16,6 +17,16 @@ public record NewFavorite(long employeeorderId, Integer hours, Integer minutes, 
 
   public NewFavorite {
     ticketReferences = ticketReferences == null ? List.of() : List.copyOf(ticketReferences);
+  }
+
+  /**
+   * A favourite for a booking of this duration (#1400). The favourite keeps hours and minutes apart,
+   * as it stores them; a caller hands over the duration as one value.
+   */
+  public static NewFavorite of(long employeeorderId, Duration duration, String comment,
+                               List<String> ticketReferences, Long groupId) {
+    return new NewFavorite(employeeorderId, Math.toIntExact(duration.toHours()), duration.toMinutesPart(), comment,
+        ticketReferences, groupId);
   }
 
   /** A favourite without a group. */

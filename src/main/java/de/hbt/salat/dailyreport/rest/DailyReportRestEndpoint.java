@@ -263,8 +263,7 @@ public class DailyReportRestEndpoint {
                 booking.getComment(),
                 booking.givenTicketReferences(),
                 booking.isTraining(),
-                booking.getHours(),
-                booking.getMinutes(),
+                booking.toDuration(),
                 1
         );
     }

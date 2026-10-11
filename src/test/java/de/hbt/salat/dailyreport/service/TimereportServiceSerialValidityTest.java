@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Year;
@@ -155,7 +156,7 @@ class TimereportServiceSerialValidityTest {
   }
 
   private void bookThreeDaysFrom(LocalDate day) {
-    timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, day, "comment", false, 1, 0, 3);
+    timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, day, "comment", false, Duration.ofHours(1), 3);
   }
 
   /** The message names the day that does not fit, so a series says which of its days is refused. */

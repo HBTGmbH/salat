@@ -158,7 +158,7 @@ class WorkingdayReportPeriodTest {
   void a_booking_attempt_in_the_released_period_does_not_seed_the_working_day() {
     loggedInAs(OWNER, false, false);
 
-    assertRefused(() -> workingdayService.seedWorkingday(CONTRACT_ID, RELEASED_DAY, 8, 0), WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER);
+    assertRefused(() -> workingdayService.seedWorkingday(CONTRACT_ID, RELEASED_DAY, LocalTime.of(8, 0)), WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER);
   }
 
   @Test

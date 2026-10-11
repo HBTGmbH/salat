@@ -2,12 +2,15 @@ package de.hbt.salat.dailyreport.rest;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
+import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.opencsv.bean.CsvBindByPosition;
 import com.opencsv.bean.CsvCustomBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -16,6 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
+import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.order.domain.Employeeorder;
@@ -203,6 +207,16 @@ public class DailyReportData {
             return ticketReferences;
         }
         return ticketReference != null ? List.of(ticketReference) : null;
+    }
+
+    /**
+     * The booked duration as one value (#1400). Hours and minutes apart exist only in this format, so
+     * they are checked here: neither may be negative, and a minutes part of 60 or more simply adds up.
+     */
+    public Duration toDuration() {
+        DataValidationUtils.isTrue(hours >= 0, TR_DURATION_HOURS_INVALID);
+        DataValidationUtils.isTrue(minutes >= 0, TR_DURATION_MINUTES_INVALID);
+        return Duration.ofHours(hours).plusMinutes(minutes);
     }
 
 }

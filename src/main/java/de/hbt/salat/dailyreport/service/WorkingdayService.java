@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
 import static de.hbt.salat.auth.domain.AccessLevel.WRITE;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
@@ -20,6 +21,7 @@ import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORK
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -62,6 +64,7 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 public class WorkingdayService {
 
   private static final String AUTH_CATEGORY_WORKINGDAY = "WORKINGDAY";
+  private static final DateTimeFormatter HOURS_AND_MINUTES = DateTimeFormatter.ofPattern("HH:mm");
 
   private final WorkingdayRepository workingdayRepository;
   private final PublicholidayRepository publicholidayRepository;
@@ -331,13 +334,10 @@ public class WorkingdayService {
         .stream()
         .map(TimereportDTO::getWorkingTime)
         .reduce(Duration.ZERO, Duration::plus);
-    if (workingday != null) {
-      elapsed = elapsed
-          .plusHours(workingday.getStartTime().getHour())
-          .plusMinutes(workingday.getStartTime().getMinute())
-          .plus(workingday.getBreakLength());
-    }
-    return LocalTime.MIDNIGHT.plus(elapsed);
+    var begin = workingday != null
+        ? workingday.getStartTime().truncatedTo(MINUTES).plus(workingday.getBreakLength())
+        : LocalTime.MIDNIGHT;
+    return begin.plus(elapsed);
   }
 
   /**
@@ -393,17 +393,15 @@ public class WorkingdayService {
         .map(TimereportDTO::getWorkingTime)
         .mapToLong(Duration::toMinutes)
         .sum();
-    return OptionalLong.of(start.getHour() * 60L + start.getMinute() + breakMinutes + workedMinutes);
+    return OptionalLong.of(Duration.between(LocalTime.MIDNIGHT, start).toMinutes() + breakMinutes + workedMinutes);
   }
 
   private String endOfDay(Workingday workingday, long employeecontractId, Duration worked) {
     var start = getEffectiveStart(workingday, employeecontractId);
-    LocalTime end = LocalTime.MIDNIGHT
-        .plusHours(start.getHour())
-        .plusMinutes(start.getMinute())
+    LocalTime end = start.truncatedTo(MINUTES)
         .plus(workingday != null ? workingday.getBreakLength() : Duration.ZERO)
         .plus(worked);
-    return "%02d:%02d".formatted(end.getHour(), end.getMinute());
+    return end.format(HOURS_AND_MINUTES);
   }
 
   public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports) {
@@ -421,16 +419,16 @@ public class WorkingdayService {
    * touched — 00:00 is a deliberate value there (#851), and comparing hour and minute with zero one
    * by one gave a start of 07:00 the minute of the next booking from 11:15 (#1274).
    */
-  public void seedWorkingday(long ecId, LocalDate date, int beginHour, int beginMinute) {
+  public void seedWorkingday(long ecId, LocalDate date, LocalTime begin) {
     var workingday = getWorkingday(ecId, date);
     if (workingday == null) {
       workingday = new Workingday();
       workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
       workingday.setRefday(date);
       workingday.setBreakLength(Duration.ZERO);
-      workingday.setStartTime(LocalTime.of(beginHour, beginMinute));
+      workingday.setStartTime(begin.truncatedTo(MINUTES));
     } else if (workingday.getType() == NOT_WORKED) {
-      workingday.setStartTime(LocalTime.of(beginHour, beginMinute));
+      workingday.setStartTime(begin.truncatedTo(MINUTES));
     }
     workingday.setType(Workingday.WorkingDayType.WORKED);
     upsertWorkingday(workingday);
