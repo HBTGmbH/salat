@@ -78,8 +78,13 @@ weiter die id.
   Moduls vorbei (ADR-0006). Für Stammdaten, die jeder angemeldete Nutzer in Auswahllisten sieht, ist
   das ohne Folgen; wo ein Modul Stammdaten zeigt, die nicht jeder sehen darf, verantwortet es die
   Prüfung selbst, wie bei einem Join nach ADR-0021 Punkt 5
-* Bad: Regel 3 erzwingt heute kein Test; eine ArchUnit-Regel gegen Setter-Aufrufe auf Entities eines
-  anderen Moduls ist ein eigenes Issue (#1371)
+* Good: Regel 3 prüft `ArchitectureTest` (#1371). `noSetterIsCalledOnAnEntityOfAnotherModule`
+  verbietet den Aufruf eines Setters auf einer Entity eines anderen Moduls; die zehn Aufrufe bei
+  Einführung sind eingefroren (`order` aus `dailyreport`, `auth` aus `employee`).
+  `noAssociationCascadesIntoAnotherModule` verbietet `cascade` auf einer Assoziation in ein anderes
+  Modul; hier war der Bestand leer, die Regel greift sofort
+* Bad: ein Ändern über die Sammlung eines Getters (`getSuborders().add(…)`) sieht keine der beiden
+  Regeln; das bleibt Sache des Reviews
 * Neutral: **ADR-0021 bleibt in Kraft und wird ergänzt.** Eine Referenz auf Stammdaten ist eine
   erlaubte Verbindung von Entities über die Grenze. Der Satz „Entities verlassen die Abfrage nicht“
   gilt weiter für Service-Signaturen: `ArchitectureTest.noEntityCrossesAModuleBoundaryThroughAService`

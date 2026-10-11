@@ -60,7 +60,11 @@ See also README.md
   soft-deleted and sensitive). Within a module the reference is the rule, transaction data included.
   A reference across the boundary is always `LAZY`, read only — no cascade, no setter called on the
   other module's entity, writing stays with events (ADR-0003) — and navigation stays within master
-  data. Lists fetch it with `join fetch` or `@BatchSize`, never per row. When a module is extracted,
+  data. `ArchitectureTest` enforces read only (#1371): `noSetterIsCalledOnAnEntityOfAnotherModule`
+  (the calls that existed when it came in are frozen in `src/test/resources/archunit_store`; a new
+  one fails the build) and `noAssociationCascadesIntoAnotherModule`. Changing through a getter's
+  collection remains a matter of review. Lists fetch it with `join fetch` or `@BatchSize`, never per
+  row. When a module is extracted,
   master data becomes a read copy in the module and the reference points at that copy. Entities in
   service signatures across the boundary stay forbidden (ADR-0021, #1244). A reference is written from
   an id through `EntityManager.getReference` in a small component of the writing module

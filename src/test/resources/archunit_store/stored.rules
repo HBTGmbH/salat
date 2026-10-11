@@ -1,3 +1,4 @@
 #
-#Sat Oct 03 17:00:19 CEST 2026
+#Sun Oct 11 15:14:36 CEST 2026
 classes\ should\ call\ no\ @Service\ method\ of\ another\ module\ that\ has\ a\ JPA\ entity\ in\ its\ signature=f47c8e17-5b2d-4003-8e29-8b0250a22724
+classes\ should\ call\ no\ setter\ of\ a\ JPA\ entity\ of\ another\ module=97672f33-89fd-47e7-8e60-6f20324043bd
