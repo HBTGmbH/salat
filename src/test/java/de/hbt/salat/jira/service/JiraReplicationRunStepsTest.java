@@ -36,15 +36,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.MessageSource;
 import org.springframework.web.client.RestClientException;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRunStep;
 import de.hbt.salat.jira.domain.JiraTicket;
@@ -95,6 +98,10 @@ class JiraReplicationRunStepsTest {
 
   @Mock
   private MessageSource messageSource;
+
+  /** JIRA switched on, as by default (#1458). */
+  @Spy
+  private JiraSwitch jiraSwitch = new JiraSwitch(new SalatProperties());
 
   @InjectMocks
   private JiraReplicationService replicationService;
