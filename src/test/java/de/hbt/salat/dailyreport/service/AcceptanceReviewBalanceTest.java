@@ -70,6 +70,7 @@ import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.persistence.EmployeecontractReferences;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
 /**
@@ -90,7 +91,7 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 @Import({AuthorizedUserAuditorAware.class, SalatProperties.class, AuthService.class,
     EmployeeService.class, EmployeeDAO.class, EmployeeAuthorization.class,
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
-    EmployeeorderService.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
+    EmployeeorderService.class, EmployeecontractReferences.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class, SpecialOrders.class,
     CustomerDAO.class, CommandPublisher.class,
     TimereportService.class, TimereportDAO.class, TimereportAuthorization.class, PublicholidayDAO.class,

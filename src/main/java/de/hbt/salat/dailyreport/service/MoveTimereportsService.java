@@ -5,7 +5,6 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_ACCEPTED_REQ_ADMIN
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,8 +23,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.dailyreport.service.MoveTimereportsPreview.NewEmployeeorderInfo;
-import de.hbt.salat.employee.service.EmployeecontractService;
-import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.NewEmployeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
 import de.hbt.salat.order.persistence.SuborderDAO;
@@ -42,7 +40,6 @@ public class MoveTimereportsService {
   private final SuborderDAO suborderDAO;
   private final EmployeeorderDAO employeeorderDAO;
   private final EmployeeorderService employeeorderService;
-  private final EmployeecontractService employeecontractService;
   private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
@@ -75,17 +72,17 @@ public class MoveTimereportsService {
     }
     var byContract = groupByContract(timereports);
 
-    // Build or find employee orders on target suborder, keyed by employeeContractId
-    Map<Long, Employeeorder> employeeOrders = new LinkedHashMap<>();
+    // Find or create the employee order on the target suborder, its id keyed by employeeContractId;
+    // a new one the order module creates from values (#1459)
+    Map<Long, Long> employeeOrderIds = new LinkedHashMap<>();
     for (var entry : byContract.entrySet()) {
       var ecId = entry.getKey();
       var existing = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(ecId, targetSuborderId);
       if (!existing.isEmpty()) {
-        employeeOrders.put(ecId, existing.get(0));
+        employeeOrderIds.put(ecId, existing.get(0).getId());
       } else {
-        var newEo = buildEmployeeOrder(ecId, targetSuborder, earliestDateFor(entry.getValue()));
-        employeeorderService.create(newEo);
-        employeeOrders.put(ecId, newEo);
+        employeeOrderIds.put(ecId, employeeorderService.createEmployeeorder(
+            new NewEmployeeorder(ecId, targetSuborderId, earliestDateFor(entry.getValue()))));
       }
     }
 
@@ -93,7 +90,7 @@ public class MoveTimereportsService {
       timereportService.updateTimereport(
           dto.getId(),
           dto.getEmployeecontractId(),
-          employeeOrders.get(dto.getEmployeecontractId()).getId(),
+          employeeOrderIds.get(dto.getEmployeecontractId()),
           dto.getReferenceday(),
           dto.getTaskdescription(),
           dto.isTraining(),
@@ -160,16 +157,6 @@ public class MoveTimereportsService {
         .map(TimereportDTO::getReferenceday)
         .min(Comparator.naturalOrder())
         .orElseThrow();
-  }
-
-  private Employeeorder buildEmployeeOrder(long ecId, Suborder targetSuborder, LocalDate fromDate) {
-    var eo = new Employeeorder();
-    eo.setFromDate(fromDate);
-    eo.setUntilDate(targetSuborder.getUntilDate());
-    eo.setSuborder(targetSuborder);
-    eo.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
-    eo.setDebithours(Duration.ZERO);
-    return eo;
   }
 
   private Suborder getSuborder(long suborderId) {

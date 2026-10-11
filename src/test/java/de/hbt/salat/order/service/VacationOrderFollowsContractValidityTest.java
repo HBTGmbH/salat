@@ -40,6 +40,7 @@ import de.hbt.salat.notification.service.NotificationService;
 import de.hbt.salat.order.auth.EmployeeorderAuthorization;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.NewEmployeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
@@ -48,6 +49,7 @@ import de.hbt.salat.order.persistence.EmployeeorderDAO;
 import de.hbt.salat.order.persistence.EmployeeorderRepository;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.EmployeecontractReferences;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
 /**
@@ -61,7 +63,7 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 @Import({AuthorizedUserAuditorAware.class, SalatProperties.class, AuthService.class,
     EmployeeService.class, EmployeeDAO.class, EmployeeAuthorization.class,
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
-    EmployeeorderService.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
+    EmployeeorderService.class, EmployeecontractReferences.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class,
     CustomerDAO.class, CommandPublisher.class, SpecialOrders.class})
 public class VacationOrderFollowsContractValidityTest {
@@ -249,6 +251,35 @@ public class VacationOrderFollowsContractValidityTest {
     assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(Duration.ofHours(10));
 
     updateContract(contractId, YEAR_START, HALF_YEAR);
+    assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(FULL_ENTITLEMENT.dividedBy(2));
+  }
+
+  /**
+   * Asked for with values by another module (#1459), e.g. when bookings are moved onto a suborder: the
+   * order runs from the given day to the end of the suborder, without a debit.
+   */
+  @Test
+  public void an_order_asked_for_with_values_runs_to_the_end_of_its_suborder_without_a_debit() {
+    long contractId = contractWithoutStandardOrders(YEAR_END);
+    var project = suborder(customerorder("PROJECT", "Projekt"), "01", "Entwicklung", false);
+
+    long id = employeeorderService.createEmployeeorder(new NewEmployeeorder(contractId, project.getId(), APRIL));
+
+    var created = employeeorderRepository.findById(id).orElseThrow();
+    assertThat(created.getEmployeecontract().getId()).isEqualTo(contractId);
+    assertThat(created.getSuborder().getId()).isEqualTo(project.getId());
+    assertThat(created.getFromDate()).isEqualTo(APRIL);
+    assertThat(created.getUntilDate()).isEqualTo(YEAR_END);
+    assertThat(created.getDebithours()).isEqualTo(Duration.ZERO);
+  }
+
+  /** On a yearly vacation suborder it gets the calculated entitlement, as one created by hand (#1341). */
+  @Test
+  public void a_vacation_order_asked_for_with_values_gets_the_calculated_entitlement() {
+    long contractId = contractWithoutStandardOrders(HALF_YEAR);
+
+    employeeorderService.createEmployeeorder(new NewEmployeeorder(contractId, yearlySuborder.getId(), YEAR_START));
+
     assertThat(vacationOrderOf(contractId).getDebithours()).isEqualTo(FULL_ENTITLEMENT.dividedBy(2));
   }
 

@@ -26,6 +26,7 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.command.CommandPublisher;
 import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.common.util.DateUtils;
@@ -38,12 +39,14 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.EmployeeorderListItemDTO;
+import de.hbt.salat.order.domain.NewEmployeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.event.EmployeeorderConflictResolutionEvent;
 import de.hbt.salat.order.event.EmployeeorderDeleteEvent;
 import de.hbt.salat.order.event.EmployeeorderUpdateEvent;
 import de.hbt.salat.order.event.SuborderDeleteEvent;
 import de.hbt.salat.order.event.SuborderUpdateEvent;
+import de.hbt.salat.order.persistence.EmployeecontractReferences;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
 import de.hbt.salat.order.persistence.EmployeeorderRepository;
 
@@ -61,6 +64,7 @@ public class EmployeeorderService {
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
   private final SpecialOrders specialOrders;
+  private final EmployeecontractReferences employeecontractReferences;
 
   /**
    * Which of the given suborders the contract may book on the day: those with an employee order valid
@@ -85,6 +89,30 @@ public class EmployeeorderService {
       applyVacationEntitlement(employeeorder);
     }
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  }
+
+  /**
+   * Creates the employee order another module asks for, from values (#1459) — moving bookings onto a
+   * suborder the person has no order on yet. It runs from the given day to the end of the suborder,
+   * without a debit; on a yearly vacation suborder it gets the calculated entitlement, as {@link #create}
+   * gives it.
+   *
+   * @return the id of the new employee order
+   */
+  @Authorized(requiresManager = true)
+  public long createEmployeeorder(NewEmployeeorder newEmployeeorder) {
+    var suborder = suborderService.getSuborderById(newEmployeeorder.suborderId());
+    if (suborder == null) {
+      throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, newEmployeeorder.suborderId());
+    }
+    var employeeorder = new Employeeorder();
+    employeeorder.setFromDate(newEmployeeorder.fromDate());
+    employeeorder.setUntilDate(suborder.getUntilDate());
+    employeeorder.setSuborder(suborder);
+    employeeorder.setEmployeecontract(employeecontractReferences.employeecontract(newEmployeeorder.employeecontractId()));
+    employeeorder.setDebithours(Duration.ZERO);
+    create(employeeorder);
+    return employeeorder.getId();
   }
 
   @Authorized(requiresManager = true)
