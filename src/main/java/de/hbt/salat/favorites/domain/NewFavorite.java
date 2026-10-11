@@ -9,29 +9,19 @@ import java.util.List;
  * always added, never written over another by an id in the request — and no person: that is the
  * person of the employee order.
  *
- * @param groupId the group it is sorted into (#1414), {@code null} for none. Either way it stands at
- *                the top of its section, where it is found again right away.
+ * @param duration the duration of the booking it stands for (#1456)
+ * @param groupId  the group it is sorted into (#1414), {@code null} for none. Either way it stands at
+ *                 the top of its section, where it is found again right away.
  */
-public record NewFavorite(long employeeorderId, Integer hours, Integer minutes, String comment,
+public record NewFavorite(long employeeorderId, Duration duration, String comment,
                           List<String> ticketReferences, Long groupId) {
 
   public NewFavorite {
     ticketReferences = ticketReferences == null ? List.of() : List.copyOf(ticketReferences);
   }
 
-  /**
-   * A favourite for a booking of this duration (#1400). The favourite keeps hours and minutes apart,
-   * as it stores them; a caller hands over the duration as one value.
-   */
-  public static NewFavorite of(long employeeorderId, Duration duration, String comment,
-                               List<String> ticketReferences, Long groupId) {
-    return new NewFavorite(employeeorderId, Math.toIntExact(duration.toHours()), duration.toMinutesPart(), comment,
-        ticketReferences, groupId);
-  }
-
   /** A favourite without a group. */
-  public NewFavorite(long employeeorderId, Integer hours, Integer minutes, String comment,
-                     List<String> ticketReferences) {
-    this(employeeorderId, hours, minutes, comment, ticketReferences, null);
+  public NewFavorite(long employeeorderId, Duration duration, String comment, List<String> ticketReferences) {
+    this(employeeorderId, duration, comment, ticketReferences, null);
   }
 }

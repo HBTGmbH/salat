@@ -5,6 +5,7 @@ import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,6 +18,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.UniqueConstraint;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ import org.hibernate.annotations.ListIndexBase;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.domain.Persistable;
+import de.hbt.salat.common.domain.DurationMinutesConverter;
 import de.hbt.salat.order.domain.Employeeorder;
 
 @Builder
@@ -53,11 +56,11 @@ public class Favorite implements Persistable<Long> {
   @JoinColumn(name = "employeeorderId", nullable = false)
   private Employeeorder employeeorder;
 
-  @Column(nullable = false)
-  private Integer hours;
-
-  @Column(nullable = false)
-  private Integer minutes;
+  /** The duration of the booking the favourite stands for, in one column (#1456). */
+  @Convert(converter = DurationMinutesConverter.class)
+  @Column(name = "duration_minutes", nullable = false)
+  @Builder.Default
+  private Duration duration = Duration.ZERO;
 
   @Lob
   @Column(columnDefinition = "text")

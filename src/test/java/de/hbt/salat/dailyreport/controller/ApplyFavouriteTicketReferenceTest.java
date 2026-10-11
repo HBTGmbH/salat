@@ -158,7 +158,7 @@ class ApplyFavouriteTicketReferenceTest {
   }
 
   private static FavoriteEntry favourite(String... ticketReferences) {
-    return new FavoriteEntry(FAVOURITE_ID, EMPLOYEE_ORDER_ID, "ORDER/01 - Wartung", 1, 30, "Daily",
+    return new FavoriteEntry(FAVOURITE_ID, EMPLOYEE_ORDER_ID, "ORDER/01 - Wartung", Duration.ofHours(1).plusMinutes(30), "Daily",
         List.of(ticketReferences), null, null, null);
   }
 

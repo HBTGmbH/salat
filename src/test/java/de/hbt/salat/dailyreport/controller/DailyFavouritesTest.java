@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -81,9 +82,9 @@ class DailyFavouritesTest {
     when(dailyService.buildDailyView(DATE, OTHER_CONTRACT_ID)).thenReturn(mock(DailyViewData.class));
     when(dailyPreferenceService.getForEmployeeContractId(anyLong()))
         .thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
-    var ungrouped = new FavoriteEntry(5L, 7L, "4711.01 - Konzept", 1, 0, "Abstimmung", List.of(),
+    var ungrouped = new FavoriteEntry(5L, 7L, "4711.01 - Konzept", Duration.ofHours(1), "Abstimmung", List.of(),
         null, null, null);
-    var grouped = new FavoriteEntry(6L, 7L, "4711.01 - Konzept", 0, 30, "Daily", List.of(),
+    var grouped = new FavoriteEntry(6L, 7L, "4711.01 - Konzept", Duration.ofMinutes(30), "Daily", List.of(),
         3L, "Wartung", null);
     when(favoriteShortListService.getForCurrentUser()).thenReturn(new FavoriteShortList(List.of(
         new FavoriteShortList.Section(null, List.of(ungrouped)),

@@ -6792,3 +6792,29 @@ databaseChangeLog:
               - column:
                   name: oauth_connection
                   type: json
+
+  - changeSet:
+      id: 183
+      author: kr
+      comment: Dauer eines Favoriten in einer Spalte duration_minutes (#1456)
+      # Wie die Buchung seit Changeset 161: Stunden und Minuten hatten keine Bedeutung fuer sich. Anders
+      # als dort entfallen die alten Spalten sofort, denn keine Report-, ETL- oder View-Definition liest
+      # sie. Die Summe aller Favoriten ist vorher und nachher gleich.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: favorite
+            columnName: hours
+        - not:
+            - columnExists:
+                tableName: favorite
+                columnName: duration_minutes
+      changes:
+        - sql:
+            sql: |-
+              ALTER TABLE favorite ADD COLUMN duration_minutes INT NOT NULL DEFAULT 0;
+              UPDATE favorite SET duration_minutes = COALESCE(hours, 0) * 60 + COALESCE(minutes, 0);
+              ALTER TABLE favorite
+                ALTER COLUMN duration_minutes DROP DEFAULT,
+                DROP COLUMN hours,
+                DROP COLUMN minutes;

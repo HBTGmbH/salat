@@ -161,8 +161,7 @@ public class FavoriteService {
         : favoriteRepository.findMinPositionInGroup(group.getId());
     var favorite = Favorite.builder()
         .employeeorder(employeeorderReferences.employeeorder(newFavorite.employeeorderId()))
-        .hours(newFavorite.hours())
-        .minutes(newFavorite.minutes())
+        .duration(newFavorite.duration())
         .comment(newFavorite.comment())
         .ticketReferences(new ArrayList<>(TicketReferences.normalize(newFavorite.ticketReferences())))
         .group(group)
@@ -345,8 +344,7 @@ public class FavoriteService {
     var group = favorite.getGroup();
     return new FavoriteEntry(favorite.getId(), favorite.getEmployeeorderId(),
         favorite.getEmployeeorder().getSuborder().getCompleteOrderSignAndDescription(),
-        favorite.getHours() == null ? 0 : favorite.getHours(),
-        favorite.getMinutes() == null ? 0 : favorite.getMinutes(),
+        favorite.getDuration(),
         favorite.getComment(), favorite.getTicketReferences(),
         group == null ? null : group.getId(), group == null ? null : group.getName(),
         favorite.getLastUsed());
