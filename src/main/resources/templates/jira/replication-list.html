@@ -36,6 +36,12 @@
 
         <!-- ── Tab 1: the replications ──────────────────────────────────── -->
         <div class="tab-pane active show" id="tab-replications">
+          <!--/* Hint and disabled buttons are a courtesy; the run is turned away in
+                 JiraReplicationRunService.startRun, over REST and on schedule as well (#1458). */-->
+          <div th:unless="${jiraEnabled}" class="alert alert-warning mb-3" role="status"
+               th:text="#{main.jira.replication.disabled.hint}">
+            Die JIRA-Anbindung ist in dieser Umgebung abgeschaltet.
+          </div>
           <div class="row g-2 align-items-center mb-3">
             <div class="col">
               <p class="text-secondary mb-0" th:text="#{main.jira.replication.list.hint}">
@@ -133,12 +139,14 @@
                     <!--/* The run goes on in the background (#1282). A replication that is still running
                            offers no second start; the lock itself is its row in the run history, which
                            also turns away a start from a second window. */-->
-                    <form th:action="@{/jira/replications/{id}/run(id=${replication.id})}" method="post">
+                    <form th:action="@{/jira/replications/{id}/run(id=${replication.id})}" method="post"
+                          th:with="running=${#sets.contains(runningReplicationIds, replication.id)}">
                       <button type="submit" class="btn btn-outline-primary btn-sm"
-                              th:disabled="${#sets.contains(runningReplicationIds, replication.id)}"
-                              th:title="${#sets.contains(runningReplicationIds, replication.id)}
-                                  ? #{main.jira.replication.action.run.running}
-                                  : #{main.jira.replication.action.run.title}"
+                              th:disabled="${!jiraEnabled or !replication.enabled or running}"
+                              th:title="${!jiraEnabled} ? #{main.jira.replication.action.run.jiradisabled}
+                                  : (${!replication.enabled} ? #{main.jira.replication.action.run.replicationdisabled}
+                                  : (${running} ? #{main.jira.replication.action.run.running}
+                                  : #{main.jira.replication.action.run.title}))"
                               th:aria-label="#{main.jira.replication.action.run.title}">
                         <i class="icon ti ti-player-play m-0"></i>
                       </button>

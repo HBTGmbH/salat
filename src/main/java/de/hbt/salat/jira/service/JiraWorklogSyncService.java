@@ -21,6 +21,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.command.CommandPublisher;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.command.GetTicketWorklogSumsCommandEvent;
 import de.hbt.salat.jira.command.TicketDaySum;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
@@ -62,6 +63,7 @@ public class JiraWorklogSyncService {
   private final JiraTicketRepository ticketRepository;
   private final JiraWorklogSyncRepository syncRepository;
   private final JiraWorklogClients worklogClients;
+  private final JiraSwitch jiraSwitch;
 
   /**
    * Brings JIRA in line with what was booked in SALAT. Does nothing at all — not one HTTP call —
@@ -69,12 +71,14 @@ public class JiraWorklogSyncService {
    *
    * @param credentials what the replication signed in with — the account the worklogs are authored by
    * @throws BusinessRuleException {@code JI-0048} when an OAuth connection was made without the scope
-   *     to write (#1417) — the run says so instead of failing on every single worklog
+   *     to write (#1417) — the run says so instead of failing on every single worklog; {@code JI-0054}
+   *     when the JIRA connection is switched off in this environment (#1458)
    */
   public void sync(JiraReplicationConfig cfg, JiraCredentials credentials) {
     if (!TRUE.equals(cfg.getWorklogSyncEnabled())) {
       return;
     }
+    jiraSwitch.requireEnabled();
     if (!credentials.writeGranted()) {
       throw new BusinessRuleException(JI_REPLICATION_OAUTH_WRITE_NOT_GRANTED);
     }

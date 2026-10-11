@@ -38,6 +38,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.etl.auth.ETLAuthorization;
+import de.hbt.salat.etl.configuration.EtlSwitch;
 import de.hbt.salat.etl.domain.ETLDefinition;
 import de.hbt.salat.etl.domain.SqlStatements;
 import de.hbt.salat.common.event.SignsRenamedEvent;
@@ -96,6 +97,7 @@ public class ETLService {
   private final ETLAuthorization authorization;
   private final SchemaDiffService schemaDiffService;
   private final RunFinisher runFinisher;
+  private final EtlSwitch etlSwitch;
 
   /**
    * Eröffnet einen Lauf: prüft den Zeitraum, weist einen zweiten gleichzeitigen Lauf ab und legt die
@@ -115,13 +117,18 @@ public class ETLService {
    * Sperre, und eine Methode, die sie schreibt, darf sich nicht darauf verlassen, dass jeder künftige
    * Aufrufer vorher fragt.
    *
+   * <p>Hier steht auch der Schalter der Umgebung (#1458): jeder Weg in einen Lauf kommt durch diese
+   * Tür, also bleibt auch ein künftiger Einstieg zu, wenn ETL abgeschaltet ist.
+   *
    * @throws AuthorizationException ohne ETL-Recht — geprüft vor allem anderen
+   * @throws BusinessRuleException {@code ETL-0010}, wenn ETL in dieser Umgebung abgeschaltet ist
    * @throws InvalidDataException wenn der Zeitraum verkehrt herum liegt — geprüft, <em>bevor</em>
    *     eine Zeile entsteht
    * @throws BusinessRuleException wenn bereits ein Lauf läuft
    */
   public synchronized ETLRunHistory startRun(LocalDateRange dateRange, Trigger trigger) {
     checkAuthorizedForAnyETL();
+    etlSwitch.requireEnabled();
     if (!dateRange.isValid()) {
       throw new InvalidDataException(ETL_INVALID_DATE_RANGE);
     }
@@ -311,6 +318,9 @@ public class ETLService {
     // die ein Test überhaupt auseinanderhalten kann — läge die Eingabeprüfung vorn, verdeckte eine
     // ungültige Eingabe jede Aussage über das Recht.
     checkAuthorizedForAnyETL();
+    // Vor der Eingabe auch der Schalter (#1458): ist ETL abgeschaltet, sagt jede Rückmeldung zur
+    // Eingabe nichts, was die Person weiterbrächte.
+    etlSwitch.requireEnabled();
     if (!dateRange.isValid()) {
       throw new InvalidDataException(ETL_INVALID_DATE_RANGE);
     }

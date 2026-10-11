@@ -32,6 +32,7 @@ import de.hbt.salat.common.SalatProperties.Jira.OAuth;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.ClockProvider;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.oauth.JiraOAuthStateCookie.Pending;
 import de.hbt.salat.jira.oauth.JiraOAuthTokenClient.TokenRequestException;
 import de.hbt.salat.secret.domain.SecretStatus;
@@ -67,6 +68,7 @@ public class JiraOAuthService {
   private final JiraOAuthStateCookie stateCookie;
   private final JiraOAuthTokenClient tokenClient;
   private final AuthorizedUser authorizedUser;
+  private final JiraSwitch jiraSwitch;
   private final SecureRandom random = new SecureRandom();
 
   /**
@@ -76,12 +78,13 @@ public class JiraOAuthService {
   private final Map<Long, ReentrantLock> renewalLocks = new ConcurrentHashMap<>();
 
   JiraOAuthService(SalatProperties properties, SecretService secretService, JiraOAuthStateCookie stateCookie,
-                   JiraOAuthTokenClient tokenClient, AuthorizedUser authorizedUser) {
+                   JiraOAuthTokenClient tokenClient, AuthorizedUser authorizedUser, JiraSwitch jiraSwitch) {
     this.properties = properties;
     this.secretService = secretService;
     this.stateCookie = stateCookie;
     this.tokenClient = tokenClient;
     this.authorizedUser = authorizedUser;
+    this.jiraSwitch = jiraSwitch;
   }
 
   /**
@@ -98,9 +101,11 @@ public class JiraOAuthService {
    * @param owner what the connection will belong to, checked again in the callback
    * @param scopes what to ask for — no more than is needed
    * @param parameters what Atlassian wants in addition: {@code audience} and {@code prompt}
-   * @throws BusinessRuleException {@code JI-0050} without a registration, {@code SC-0001} without a key
+   * @throws BusinessRuleException {@code JI-0050} without a registration, {@code SC-0001} without a key,
+   *     {@code JI-0054} when the JIRA connection is switched off in this environment (#1458)
    */
   public JiraOAuthAuthorization authorize(String owner, Collection<String> scopes, Map<String, String> parameters) {
+    jiraSwitch.requireEnabled();
     var registration = requireRegistration();
     var state = randomToken();
     var codeVerifier = randomToken();
@@ -134,10 +139,12 @@ public class JiraOAuthService {
    *
    * @param error what Atlassian sent instead of a code, {@code access_denied} when the person declined
    * @throws BusinessRuleException {@code JI-0051} as with {@link #ownerOf}, {@code JI-0052} when the
-   *     person declined or there is no code, {@code JI-0053} when Atlassian refused the code
+   *     person declined or there is no code, {@code JI-0053} when Atlassian refused the code,
+   *     {@code JI-0054} when the JIRA connection is switched off in this environment (#1458)
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public JiraOAuthGrant complete(String cookieValue, String state, String code, String error) {
+    jiraSwitch.requireEnabled();
     var pending = verify(cookieValue, state);
     if (error != null || code == null || code.isBlank()) {
       log.info("OAuth connection for {} not granted by {}: {}", pending.owner(), pending.loginSign(), error);
@@ -173,10 +180,13 @@ public class JiraOAuthService {
    *
    * @throws BusinessRuleException {@code JI-0049} when the connection has to be established again —
    *     Atlassian refused to renew it, or the refresh token cannot be read with the keys there are;
-   *     {@code JI-0053} when Atlassian could not be asked; {@code SC-0001} without any key
+   *     {@code JI-0053} when Atlassian could not be asked; {@code SC-0001} without any key;
+   *     {@code JI-0054} when the JIRA connection is switched off in this environment (#1458) — a
+   *     renewal from a copy of the data would rotate the refresh token of the source
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public String accessToken(long secretId) {
+    jiraSwitch.requireEnabled();
     var registration = requireRegistration();
     var lock = renewalLocks.computeIfAbsent(secretId, id -> new ReentrantLock());
     lock.lock();

@@ -162,6 +162,7 @@ public enum ErrorCode {
   ETL_RUN_EXECUTOR_BUSY("ETL-0007", "the etl execution thread is still occupied by an earlier run"),
   ETL_CYCLIC_DEPENDENCY("ETL-0008", "the etl definitions depend on each other in a cycle"),
   ETL_DEFINITIONS_NAME_OLD_SIGN("ETL-0009", "etl definitions name the old sign of a renamed order or suborder"),
+  ETL_DISABLED("ETL-0010", "etl runs are switched off in this environment"),
 
   SE_USER_NOT_FOUND("SE-0001", "salat user not found for current login"),
 
@@ -285,6 +286,8 @@ public enum ErrorCode {
   JI_REPLICATION_OAUTH_STATE_INVALID("JI-0051", "the oauth callback does not belong to a connection attempt of this person, or it has expired"),
   JI_REPLICATION_OAUTH_DENIED("JI-0052", "the oauth authorization was cancelled or denied"),
   JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED("JI-0053", "the oauth provider refused the token request"),
+  JI_DISABLED("JI-0054", "the jira connection is switched off in this environment"),
+  JI_REPLICATION_DISABLED("JI-0055", "the jira replication is switched off"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),

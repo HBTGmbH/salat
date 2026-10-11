@@ -47,6 +47,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
@@ -101,6 +102,9 @@ class JiraReplicationServiceTest {
   @Autowired
   private JiraReplicationService jiraReplicationService;
 
+  @Autowired
+  private SalatProperties properties;
+
   @BeforeEach
   void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -135,6 +139,25 @@ class JiraReplicationServiceTest {
     jiraReplicationService.continueRun(77L, config.getId());
 
     verify(runService).finishRun(77L, JiraReplicationRun.Status.SUCCEEDED, "1 Tickets geholt, 1 geschrieben.");
+  }
+
+  /** Carrying on a run that is open already does not reach JIRA either once it is switched off (#1458). */
+  @Test
+  void aRunCarriedOnWithJiraSwitchedOffEndsInItsRowWithoutAskingJira() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    properties.getJira().setEnabled(false);
+    try {
+      assertThrows(BusinessRuleException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
+      assertThrows(BusinessRuleException.class, () -> jiraReplicationService.runReplication(config.getId()));
+    } finally {
+      properties.getJira().setEnabled(true);
+    }
+
+    verify(searchClient, never()).search(any());
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
+        "Abgebrochen: Die JIRA-Anbindung ist in dieser Umgebung abgeschaltet. Es laufen keine Replikationen, "
+            + "kein Worklog-Abgleich und keine Anmeldung bei Atlassian.");
   }
 
   @Test

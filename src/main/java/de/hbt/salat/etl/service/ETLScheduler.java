@@ -15,6 +15,7 @@ import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.scheduling.SchedulerRequestAttributes;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.etl.configuration.EtlSwitch;
 
 /**
  * Der nächtliche ETL-Lauf.
@@ -24,6 +25,11 @@ import de.hbt.salat.common.util.DateUtils;
  * als Auslöser in der Historie landete — zwei Bedeutungen in einem Schalter, und für einen von Hand
  * angestoßenen Lauf fallen sie auseinander. Der Schalter ist damit gefallen; der geplante Lauf
  * bringt stattdessen eine Anmeldung mit, wie jeder andere geplante Job der Anwendung auch.
+ *
+ * <p>Der Zeitplan steht in {@code salat.etl.scheduler.cron}; {@code -} schaltet nur den geplanten
+ * Lauf ab. {@code salat.etl.enabled=false} schaltet ETL in der ganzen Umgebung ab (#1458) — dann
+ * entfällt der Lauf hier ohne Zeile in der Liste: eine abgeschaltete Umgebung hat keinen Ausfall
+ * festzuhalten.
  */
 @Slf4j
 @Service
@@ -32,9 +38,14 @@ public class ETLScheduler {
 
   private final ETLService etlService;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
+  private final EtlSwitch etlSwitch;
 
-  @Scheduled(cron = "0 0 2 * * *") // täglich um 02:00
+  @Scheduled(cron = "${salat.etl.scheduler.cron:0 0 2 * * *}") // Vorgabe: täglich um 02:00
   public void runDaily() {
+    if (!etlSwitch.isEnabled()) {
+      log.info("Scheduled daily ETL run skipped, ETL is switched off in this environment");
+      return;
+    }
     var today = DateUtils.today();
     var range = new LocalDateRange(today.minusMonths(3), today);
     log.info("Starting scheduled daily ETL run for date range: {}", range);

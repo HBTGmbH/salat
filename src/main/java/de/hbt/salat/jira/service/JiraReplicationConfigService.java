@@ -37,6 +37,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldCatalog;
@@ -78,6 +79,7 @@ public class JiraReplicationConfigService {
   private final AuthorizedUser authorizedUser;
   private final JiraTicketRepository ticketRepository;
   private final JiraCredentialStore credentialStore;
+  private final JiraSwitch jiraSwitch;
 
   @Transactional(readOnly = true)
   public List<JiraReplicationConfigInfo> getAll() {
@@ -229,11 +231,13 @@ public class JiraReplicationConfigService {
    * harmless — see AGENTS.md on {@code NOT_SUPPORTED} (#1282).
    *
    * @throws de.hbt.salat.common.exception.ErrorCodeException when the stored credentials cannot be
-   *     read (#1432) — that has to be told in words, not as a failed request
+   *     read (#1432) — that has to be told in words, not as a failed request; {@code JI-0054} when the
+   *     JIRA connection is switched off in this environment (#1458)
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public JiraFieldCatalog getSelectableFields(long id) {
     checkManager();
+    jiraSwitch.requireEnabled();
     var config = load(id);
     var credentials = credentialStore.credentialsOf(config);
     try {

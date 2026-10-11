@@ -28,14 +28,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.command.CommandPublisher;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.jira.command.GetTicketWorklogSumsCommandEvent;
 import de.hbt.salat.jira.command.TicketDaySum;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.JiraWorklogSync;
@@ -85,6 +88,12 @@ class JiraWorklogSyncServiceTest {
   @Mock
   private JiraWorklogClient worklogClient;
 
+  /** The switch of the environment (#1458), on as in the defaults. */
+  private final SalatProperties properties = new SalatProperties();
+
+  @Spy
+  private JiraSwitch jiraSwitch = new JiraSwitch(properties);
+
   @BeforeEach
   void setUp() {
     when(worklogClients.forFlavor(SERVER)).thenReturn(worklogClient);
@@ -103,6 +112,19 @@ class JiraWorklogSyncServiceTest {
 
     // Not one call — neither to JIRA nor to the module that owns the bookings.
     verifyNoInteractions(worklogClients, commandPublisher, ticketRepository, syncRepository);
+  }
+
+  /** An environment that must not reach JIRA writes nothing there (#1458), the sync switched on or not. */
+  @Test
+  void with_jira_switched_off_nothing_is_written() {
+    properties.getJira().setEnabled(false);
+    givenBookings(sum("ALPHA-1", "abc", 90));
+    givenReplicatedTickets("ALPHA-1");
+
+    assertThatThrownBy(() -> classUnderTest.sync(config(), CREDENTIALS))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining("JI-0054");
+    verifyNoInteractions(worklogClients, commandPublisher);
   }
 
   /** An OAuth connection made without the write scope (#1417): said once, not failed on every worklog. */

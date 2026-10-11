@@ -3,16 +3,23 @@ package de.hbt.salat.etl.rest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static de.hbt.salat.common.exception.ErrorCode.ETL_DISABLED;
+import static de.hbt.salat.etl.domain.ETLRunHistory.Trigger.MANUAL;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -21,7 +28,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.etl.service.ETLService;
 
 /**
@@ -60,6 +69,32 @@ class EtlRestEndpointTest {
             ex -> assertThat(ex.getStatusCode()).isEqualTo(FORBIDDEN));
 
     verify(etlService, never()).execute(any(), any(), any());
+  }
+
+  /** #1458: the service turns the run away, the answer names its code. */
+  @Test
+  void with_etl_switched_off_all_definitions_are_refused_with_the_code() {
+    doThrow(new BusinessRuleException(ETL_DISABLED))
+        .when(etlService).executeAll(new LocalDateRange(FROM, UNTIL), MANUAL);
+
+    assertThatThrownBy(() -> endpoint.execute(FROM, UNTIL))
+        .isInstanceOfSatisfying(ResponseStatusException.class, ex -> {
+          assertThat(ex.getStatusCode()).isEqualTo(BAD_REQUEST);
+          assertThat(ex.getReason()).contains("ETL-0010");
+        });
+  }
+
+  @Test
+  void with_etl_switched_off_a_single_definition_is_refused_with_the_code() {
+    when(etlService.isETLExisting("worked-hours")).thenReturn(true);
+    doThrow(new BusinessRuleException(ETL_DISABLED))
+        .when(etlService).execute(eq(new LocalDateRange(FROM, UNTIL)), eq(List.of("worked-hours")), eq(MANUAL));
+
+    assertThatThrownBy(() -> endpoint.executeEtl("worked-hours", FROM, UNTIL))
+        .isInstanceOfSatisfying(ResponseStatusException.class, ex -> {
+          assertThat(ex.getStatusCode()).isEqualTo(BAD_REQUEST);
+          assertThat(ex.getReason()).contains("ETL-0010");
+        });
   }
 
 }

@@ -49,6 +49,12 @@
       <h3 class="card-title" th:text="#{main.etl.run.start.title}">ETL-Lauf anstossen</h3>
     </div>
     <div class="card-body">
+      <!--/* Der Hinweis und der gesperrte Knopf sind Hoeflichkeit; abgewiesen wird der Lauf in
+             ETLService.startRun, auch ueber REST und den naechtlichen Zeitplan (#1458). */-->
+      <div th:unless="${etlEnabled}" class="alert alert-warning mb-3" role="status"
+           th:text="#{main.etl.run.disabled.hint}">
+        ETL ist in dieser Umgebung abgeschaltet.
+      </div>
       <!--/* Keine Rueckfrage vor dem Anstossen (→ ADR-0027): ein Lauf baut abgeleitete Tabellen neu
              auf, die ohnehin jede Nacht entstehen — eine Aktion ohne bleibenden Schaden fragt nicht.
 
@@ -95,17 +101,17 @@
                ETLService.startRun und weist auch den Lauf ab, der ueber die REST-Schnittstelle,
                ein zweites Fenster oder den naechtlichen Zeitplan hereinkommt. */-->
         <div class="mt-3">
-          <button type="submit" class="btn btn-primary" th:disabled="${runInProgress}">
+          <button type="submit" class="btn btn-primary" th:disabled="${runInProgress or !etlEnabled}">
             <i class="icon ti ti-player-play"></i>
             <span th:text="#{main.etl.run.start.button}">Lauf starten</span>
           </button>
         </div>
       </form>
-      <p class="text-secondary mb-0 mt-3" th:if="${runInProgress}"
+      <p class="text-secondary mb-0 mt-3" th:if="${runInProgress and etlEnabled}"
          th:text="#{main.etl.run.start.blocked}">
         Es laeuft bereits ein ETL-Lauf.
       </p>
-      <p class="text-secondary mb-0 mt-3" th:unless="${runInProgress}"
+      <p class="text-secondary mb-0 mt-3" th:unless="${runInProgress or !etlEnabled}"
          th:text="#{main.etl.run.start.hint}">
         Der Lauf laeuft im Hintergrund weiter.
       </p>

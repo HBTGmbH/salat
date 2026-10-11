@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
@@ -55,6 +56,7 @@ public class JiraReplicationService {
   private final JiraTicketImportRepository importRepo;
   private final JiraCredentialStore credentialStore;
   private final MessageSource messageSource;
+  private final JiraSwitch jiraSwitch;
 
   public List<JiraReplicationConfig> getEnabledReplications() {
     return configRepo.findByEnabledTrue();
@@ -114,6 +116,8 @@ public class JiraReplicationService {
   }
 
   private JiraReplicationResult runReplication(JiraReplicationConfig cfg, JiraCredentials credentials) {
+    // Opening the run asks already (#1458); this is for the ways that carry on a run or skip the row.
+    jiraSwitch.requireEnabled();
     requireNonNull(cfg.getBaseUrl(), "baseUrl");
     requireNonNull(cfg.getJql(), "jql");
 
