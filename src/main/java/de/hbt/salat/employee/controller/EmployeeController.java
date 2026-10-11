@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.domain.EmployeeData;
 import de.hbt.salat.employee.service.EmployeeService;
 
 @Controller
@@ -110,21 +110,9 @@ public class EmployeeController {
         boolean hasErrors = bindingResult.hasErrors();
         if (!hasErrors) {
             try {
-                Employee employee;
-                if (form.getId() != null) {
-                    employee = employeeService.getEmployeeById(form.getId());
-                } else {
-                    employee = new Employee();
-                    employee.setSalatUser(new SalatUser());
-                }
-                employee.getSalatUser().setLoginname(form.getLoginname());
-                employee.getSalatUser().setStatus(form.getStatus());
-                employee.setFirstname(form.getFirstname());
-                employee.setLastname(form.getLastname());
-                employee.setSign(form.getSign());
-                employee.setGender(form.getGender().charAt(0));
-                employee.setHide(Boolean.TRUE.equals(form.getHide()));
-                employeeService.createOrUpdate(employee);
+                employeeService.store(new EmployeeData(form.getId(), form.getFirstname(), form.getLastname(),
+                    form.getSign(), form.getGender().charAt(0), Boolean.TRUE.equals(form.getHide()),
+                    form.getLoginname(), form.getStatus()));
             } catch (ErrorCodeException ex) {
                 model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
                 hasErrors = true;

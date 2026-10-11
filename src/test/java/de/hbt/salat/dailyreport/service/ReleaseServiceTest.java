@@ -152,7 +152,6 @@ class ReleaseServiceTest {
 
         private Employeecontract endedContract() {
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             employee.setSign("xx");
             final var contract = new Employeecontract();
             setField(contract, "id", EMPLOYEE_CONTRACT_ID);
@@ -184,7 +183,6 @@ class ReleaseServiceTest {
 
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -213,7 +211,6 @@ class ReleaseServiceTest {
                 workingday));
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setValidFrom(date);
             contract.setEmployee(employee);
@@ -245,7 +242,6 @@ class ReleaseServiceTest {
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -277,7 +273,6 @@ class ReleaseServiceTest {
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -310,7 +305,6 @@ class ReleaseServiceTest {
             when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -345,7 +339,6 @@ class ReleaseServiceTest {
             when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -380,7 +373,6 @@ class ReleaseServiceTest {
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -418,7 +410,6 @@ class ReleaseServiceTest {
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -456,7 +447,6 @@ class ReleaseServiceTest {
             when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -497,7 +487,6 @@ class ReleaseServiceTest {
             //when(publicholidayDAO.getPublicHolidaysBetween(any(), any())).thenReturn(List.of());
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setValidFrom(LocalDate.of(2023, 10, 1));
             contract.setReportReleaseDate(LocalDate.of(2023, 12, 31));
@@ -538,7 +527,6 @@ class ReleaseServiceTest {
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setValidFrom(date);
             contract.setEmployee(employee);
@@ -582,7 +570,6 @@ class ReleaseServiceTest {
             when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(LocalDate.of(2023, 10, 1));
@@ -623,7 +610,6 @@ class ReleaseServiceTest {
             when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(LocalDate.of(2023, 10, 1));
@@ -652,7 +638,6 @@ class ReleaseServiceTest {
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setValidFrom(date);
             contract.setEmployee(employee);
@@ -681,7 +666,6 @@ class ReleaseServiceTest {
             when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -738,7 +722,6 @@ class ReleaseServiceTest {
 
         private void whenContractStartsAt(long employeeContractId, LocalDate date) {
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
@@ -921,7 +904,6 @@ class ReleaseServiceTest {
 
         private Employeecontract contractFrom(LocalDate validFrom) {
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(validFrom);
@@ -1286,7 +1268,6 @@ class ReleaseServiceTest {
 
         private Employeecontract contractReleasedUntil(LocalDate releasedUntil) {
             final var employee = new Employee();
-            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(CONTRACT_START);

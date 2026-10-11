@@ -25,8 +25,7 @@ import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
-import de.hbt.salat.auth.domain.SalatUser;
-import de.hbt.salat.auth.persistence.SalatUserRepository;
+import de.hbt.salat.auth.service.SalatUserService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.InvalidDataException;
@@ -34,10 +33,12 @@ import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.domain.EmployeeData;
 import de.hbt.salat.employee.event.EmployeeAnonymizedEvent;
 import de.hbt.salat.employee.event.EmployeeDeleteEvent;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
+import de.hbt.salat.employee.persistence.SalatUserReferences;
 
 @Slf4j
 @Service
@@ -48,7 +49,8 @@ public class EmployeeService {
 
   private final ApplicationEventPublisher eventPublisher;
   private final EmployeeRepository employeeRepository;
-  private final SalatUserRepository salatUserRepository;
+  private final SalatUserService salatUserService;
+  private final SalatUserReferences salatUserReferences;
   private final EmployeeDAO employeeDAO;
   private final AuthorizedUser authorizedUser;
   private final EmployeeAuthorization employeeAuthorization;
@@ -126,12 +128,12 @@ public class EmployeeService {
    */
   @Transactional(readOnly = true)
   public boolean isLoginnameTaken(String loginname, Long employeeId) {
-    var holder = salatUserRepository.findByLoginname(loginname).orElse(null);
-    if (holder == null) {
+    var holderId = salatUserService.getSalatUserIdByLoginname(loginname).orElse(null);
+    if (holderId == null) {
       return false;
     }
     var own = employeeId == null ? null : employeeDAO.getEmployeeById(employeeId);
-    return own == null || own.getSalatUser() == null || !holder.getId().equals(own.getSalatUser().getId());
+    return own == null || own.getSalatUser() == null || !holderId.equals(own.getSalatUser().getId());
   }
 
   /**
@@ -237,9 +239,9 @@ public class EmployeeService {
     // Delete the employee first (this will remove the join table entry due to cascade)
     employeeRepository.deleteById(employeeId);
     
-    // Delete the associated SalatUser if it exists
+    // Delete the associated login if it exists; the auth module owns it (#1460)
     if (employee.getSalatUser() != null) {
-      salatUserRepository.delete(employee.getSalatUser());
+      salatUserService.deleteSalatUser(employee.getSalatUser().getId());
     }
   }
 
@@ -257,8 +259,7 @@ public class EmployeeService {
     employee.setHide(true);
     eventPublisher.publishEvent(new EmployeeAnonymizedEvent(employeeId));
     if (employee.getSalatUser() != null) {
-      employee.getSalatUser().setLoginname(anonymousLoginname(employeeId));
-      salatUserRepository.save(employee.getSalatUser());
+      salatUserService.renameSalatUser(employee.getSalatUser().getId(), anonymousLoginname(employeeId));
     }
     employeeRepository.save(employee);
   }
@@ -284,18 +285,49 @@ public class EmployeeService {
     return "anon-" + employeeId;
   }
 
+  /**
+   * Saves a person from the values of the employee form, with their login (#1460). The login belongs
+   * to the auth module: it creates or changes it from the values, and the person refers to it by id.
+   */
+  @Authorized(requiresManager = true)
+  public void store(EmployeeData data) {
+    var employee = data.id() == null ? new Employee() : employeeDAO.getEmployeeById(data.id());
+    if (employee == null) {
+      throw new InvalidDataException(EM_NOT_FOUND);
+    }
+    employee.setFirstname(data.firstname());
+    employee.setLastname(data.lastname());
+    employee.setSign(data.sign());
+    employee.setGender(data.gender());
+    employee.setHide(data.hide());
+    checkWriteAllowed(employee);
+    if (employee.getSalatUser() == null) {
+      employee.setSalatUser(salatUserReferences.salatUser(
+          salatUserService.createSalatUser(data.loginname(), data.status())));
+    } else {
+      salatUserService.updateSalatUser(employee.getSalatUser().getId(), data.loginname(), data.status());
+    }
+    employeeRepository.save(employee);
+  }
+
+  /**
+   * Saves the person. A login that is not stored yet is read for its values and created by the auth
+   * module (#1460); a stored one is only referred to, never written from here.
+   */
   @Authorized(requiresManager = true)
   public void createOrUpdate(Employee employee) {
+    checkWriteAllowed(employee);
+    var login = employee.getSalatUser();
+    if (login != null && login.getId() == null) {
+      employee.setSalatUser(salatUserReferences.salatUser(
+          salatUserService.createSalatUser(login.getLoginname(), login.getStatus())));
+    }
+    employeeRepository.save(employee);
+  }
+
+  private void checkWriteAllowed(Employee employee) {
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
       throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getLoginSign());
     }
-
-    // Ensure SalatUser is persisted before saving Employee
-    if (employee.getSalatUser() != null) {
-      SalatUser salatUser = employee.getSalatUser();
-      salatUserRepository.save(salatUser);
-    }
-
-    employeeRepository.save(employee);
   }
 }

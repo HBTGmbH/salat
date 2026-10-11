@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.auth.service.SalatUserService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.command.CommandPublisher;
@@ -51,6 +52,7 @@ import de.hbt.salat.employee.domain.Overtime;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.employee.persistence.OvertimeRepository;
+import de.hbt.salat.employee.persistence.SalatUserReferences;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
@@ -89,7 +91,7 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 @FixedClock("2026-09-15T10:00:00")
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @Import({AuthorizedUserAuditorAware.class, SalatProperties.class, AuthService.class,
-    EmployeeService.class, EmployeeDAO.class, EmployeeAuthorization.class,
+    EmployeeService.class, SalatUserService.class, SalatUserReferences.class, EmployeeDAO.class, EmployeeAuthorization.class,
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
     EmployeeorderService.class, EmployeecontractReferences.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class, SpecialOrders.class,
