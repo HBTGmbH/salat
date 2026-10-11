@@ -139,11 +139,12 @@
             <th class="d-none d-lg-table-cell" th:text="#{main.etl.run.field.daterange}">Zeitraum</th>
             <th th:text="#{main.etl.run.field.message}">Meldung</th>
             <th class="w-1"></th>
+            <th class="w-1"></th>
           </tr>
         </thead>
         <tbody>
           <tr th:if="${#lists.isEmpty(runs)}">
-            <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+            <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
               Keine Einträge vorhanden
             </td>
           </tr>
@@ -174,6 +175,12 @@
             <!--/* Die Meldung eines abgebrochenen Laufs traegt den Ausnahmetext und wird lang; die
                    Zelle bricht ihn um, statt die Tabelle in die Breite zu ziehen. */-->
             <td class="text-break small" th:text="${run.message}">12 Definition(en) ausgeführt</td>
+            <td>
+              <a class="btn btn-outline-secondary" th:href="@{/etl/runs/{id}(id=${run.id})}"
+                 th:title="#{main.etl.run.action.show}" th:aria-label="#{main.etl.run.action.show}">
+                <i class="icon ti ti-notes m-0"></i>
+              </a>
+            </td>
             <!--/* Nur an einer laufenden Zeile: markiert wird ein Eintrag, den ein Absturz auf
                    „Laeuft" stehen liess und der jeden neuen Lauf abweist. Der Dialog nennt Start und
                    Zeitraum — daran unterscheiden sich zwei benachbarte Zeilen, die Datenbank-Id ist
