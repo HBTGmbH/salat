@@ -86,6 +86,8 @@ public class SalatProperties {
 
   @Data
   public static class Etl {
+    /** Whether this environment runs ETL at all, scheduled or by hand (#1458, {@code EtlSwitch}). */
+    private boolean enabled = true;
     private History history = new History();
 
     @Data
@@ -124,6 +126,8 @@ public class SalatProperties {
 
   @Data
   public static class Jira {
+    /** Whether this environment talks to JIRA at all (#1458, {@code JiraSwitch}). */
+    private boolean enabled = true;
     private History history = new History();
     private OAuth oauth = new OAuth();
 

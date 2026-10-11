@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -40,6 +41,7 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldOption;
@@ -124,6 +126,9 @@ class JiraReplicationConfigServiceTest {
   @Mock
   private JiraOAuthService oauthService;
 
+  /** The switch of the environment (#1458), on as in the defaults; the tests that need it off say so. */
+  private final SalatProperties properties = new SalatProperties();
+
   private final Map<Long, SecretValue> secrets = new HashMap<>();
   private final Map<Long, Boolean> unreadable = new HashMap<>();
 
@@ -132,7 +137,7 @@ class JiraReplicationConfigServiceTest {
     // the real resolution against a mocked order module: what is tested is the reading by id
     classUnderTest = new JiraReplicationConfigService(configRepository, jiraReplicationRunService,
         jiraSearchClients, new JiraScopes(customerorderService, suborderService), orderReferences, authorizedUser,
-        ticketRepository, new JiraCredentialStore(secretService, oauthService));
+        ticketRepository, new JiraCredentialStore(secretService, oauthService), new JiraSwitch(properties));
     givenSecretStore();
     when(authorizedUser.isManager()).thenReturn(true);
     when(orderReferences.customerorder(anyLong())).thenAnswer(invocation ->
@@ -1034,6 +1039,19 @@ class JiraReplicationConfigServiceTest {
     assertThat(catalogue.hasError()).isTrue();
     assertThat(catalogue.errorMessage()).doesNotContain(STORED_PASSWORD).contains("***");
     assertThat(catalogue.options()).isEmpty();
+  }
+
+  /** No request to JIRA from an environment that is not to reach it (#1458) — not even a reading one. */
+  @Test
+  void the_field_catalogue_is_not_fetched_while_jira_is_switched_off() {
+    properties.getJira().setEnabled(false);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+
+    assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID))
+        .isInstanceOf(BusinessRuleException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_DISABLED);
+    verifyNoInteractions(jiraSearchClients, secretService, oauthService);
   }
 
   /** Said in words by the form and the picker (#1432), not a failed request to JIRA. */

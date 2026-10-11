@@ -90,6 +90,7 @@ class JiraOAuthServiceTest {
   @AfterEach
   void tearDown() {
     when(authorizedUser.isManager()).thenReturn(true);
+    properties.getJira().setEnabled(true);
     createdSecrets.forEach(secretService::delete);
   }
 
@@ -272,6 +273,33 @@ class JiraOAuthServiceTest {
 
     assertThat(secretService.getSummary(id).status()).isEqualTo(SecretStatus.VALID);
     assertThat(secretService.read(id)).isEqualTo(new Token("refresh-0"));
+  }
+
+  /**
+   * #1458: a renewal from a copy of the data would rotate the refresh token of the source and end its
+   * connection. Switched off, Atlassian is not asked at all, and the stored token stays as it is.
+   */
+  @Test
+  void with_jira_switched_off_no_token_is_renewed() {
+    var id = storedRefreshToken();
+    properties.getJira().setEnabled(false);
+
+    assertRejected(() -> oauthService.accessToken(id), ErrorCode.JI_DISABLED);
+
+    verify(tokenClient, never()).refresh(any(), any());
+    assertThat(secretService.read(id)).isEqualTo(new Token("refresh-0"));
+  }
+
+  @Test
+  void with_jira_switched_off_no_connection_is_started_or_completed() {
+    var authorization = authorize();
+    var state = queryOf(authorization).get("state");
+    properties.getJira().setEnabled(false);
+
+    assertRejected(this::authorize, ErrorCode.JI_DISABLED);
+    assertRejected(() -> oauthService.complete(authorization.cookie().getValue(), state, "the-code", null),
+        ErrorCode.JI_DISABLED);
+    verify(tokenClient, never()).exchange(any(), any(), any());
   }
 
   @Test

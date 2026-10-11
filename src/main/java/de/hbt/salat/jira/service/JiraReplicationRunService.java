@@ -1,6 +1,8 @@
 package de.hbt.salat.jira.service;
 
 import static java.util.stream.Collectors.toSet;
+import static java.lang.Boolean.TRUE;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_DISABLED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_ALREADY_RUNNING;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_SCOPE_BUSY;
@@ -25,6 +27,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.common.util.DateTimeUtils;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Status;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
@@ -60,6 +63,7 @@ public class JiraReplicationRunService {
   private final JiraReplicationRunRepository runRepository;
   private final JiraReplicationConfigRepository configRepository;
   private final RunFinisher runFinisher;
+  private final JiraSwitch jiraSwitch;
 
   /**
    * Opens a run and is the lock at the same time: checking and writing form one section, two
@@ -68,10 +72,16 @@ public class JiraReplicationRunService {
    * <p><b>Assumes a single instance of the application</b>, as the ETL lock and every
    * {@code @Scheduled} job of the application do already.
    *
-   * @throws BusinessRuleException when this replication is already running, or another one of the
-   *     same scope
+   * <p>Every way into a run comes through here, which is why the switches stand here too (#1458):
+   * the JIRA connection of the environment, and the replication's own — a run started by hand is
+   * turned away from a switched-off replication just as the scheduled run leaves it out.
+   *
+   * @throws BusinessRuleException {@code JI-0054} when the JIRA connection is switched off in this
+   *     environment, {@code JI-0055} when the replication is switched off, or when this replication
+   *     is already running, or another one of the same scope
    */
   public synchronized JiraReplicationRun startRun(long replicationId, Trigger trigger) {
+    jiraSwitch.requireEnabled();
     runRepository.findFirstByReplicationIdAndStatusOrderByStartedAtDesc(replicationId, RUNNING)
         .ifPresent(running -> {
           throw new BusinessRuleException(JI_REPLICATION_RUN_ALREADY_RUNNING,
@@ -80,6 +90,9 @@ public class JiraReplicationRunService {
     // Loaded, not a reference: without a surrounding transaction a proxy could not tell its scope.
     var replication = configRepository.findById(replicationId)
         .orElseThrow(() -> new InvalidDataException(JI_REPLICATION_NOT_FOUND));
+    if (!TRUE.equals(replication.getEnabled())) {
+      throw new BusinessRuleException(JI_REPLICATION_DISABLED);
+    }
     runRepository.findInScopeByStatus(replication.getCustomerorderId(), replication.getSuborderId(), RUNNING)
         .stream().findFirst()
         .ifPresent(running -> {

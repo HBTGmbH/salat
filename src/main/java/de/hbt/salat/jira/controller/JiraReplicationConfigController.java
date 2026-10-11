@@ -1,6 +1,7 @@
 package de.hbt.salat.jira.controller;
 
 
+import static de.hbt.salat.common.exception.ErrorCode.JI_DISABLED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_NOT_SELECTED;
 import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE;
@@ -37,6 +38,7 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraFieldCatalog;
@@ -78,7 +80,7 @@ public class JiraReplicationConfigController {
   private static final Map<String, ErrorCode> OAUTH_FAILURES = Stream.of(
           SC_NO_KEY, JI_REPLICATION_OAUTH_NOT_CONFIGURED, JI_REPLICATION_OAUTH_STATE_INVALID, JI_REPLICATION_OAUTH_DENIED, JI_REPLICATION_OAUTH_TOKEN_REQUEST_FAILED,
           JI_REPLICATION_NOT_FOUND, JI_REPLICATION_OAUTH_NOT_SELECTED, JI_REPLICATION_OAUTH_SITE_NOT_ACCESSIBLE,
-          XX_CONCURRENT_MODIFICATION)
+          XX_CONCURRENT_MODIFICATION, JI_DISABLED)
       .collect(Collectors.toUnmodifiableMap(ErrorCode::getCode, Function.identity()));
 
   /** What an OAuth error code looks like ({@code invalid_grant}); nothing else is shown from the address. */
@@ -88,6 +90,7 @@ public class JiraReplicationConfigController {
   private final JiraReplicationLauncher jiraReplicationLauncher;
   private final JiraReplicationOAuthService jiraReplicationOAuthService;
   private final JiraReplicationRunService jiraReplicationRunService;
+  private final JiraSwitch jiraSwitch;
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
@@ -113,6 +116,9 @@ public class JiraReplicationConfigController {
         .map(JiraReplicationRunViewHelper::from)
         .toList());
     model.addAttribute("fJiraRunFailedOnly", failedOnly);
+    // The page says that JIRA is switched off here and offers no start (#1458); the lock itself is
+    // in JiraReplicationRunService.startRun.
+    model.addAttribute("jiraEnabled", jiraSwitch.isEnabled());
     return "jira/replication-list";
   }
 
@@ -421,7 +427,9 @@ public class JiraReplicationConfigController {
     model.addAttribute("oauthAvailable", oauthAvailable);
     model.addAttribute("storedAuthMethod", stored != null ? stored.authMethod() : null);
     model.addAttribute("oauthConnection", stored != null ? stored.oauthConnection() : null);
-    model.addAttribute("fieldsBlockedReason", fieldsBlockedReason(stored, oauthAvailable));
+    model.addAttribute("fieldsBlockedReason", jiraSwitch.isEnabled()
+        ? fieldsBlockedReason(stored, oauthAvailable)
+        : "main.jira.replication.fields.button.disabled.jiradisabled");
   }
 
   /**

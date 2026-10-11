@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.auth.domain.AccessLevel.EXECUTE;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_CYCLIC_DEPENDENCY;
+import static de.hbt.salat.common.exception.ErrorCode.ETL_DISABLED;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_INVALID_DATE_RANGE;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_NO_EXECUTABLE_DEFINITION;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_ALREADY_RUNNING;
@@ -54,6 +55,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.CannotCreateTransactionException;
 import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
@@ -63,6 +65,7 @@ import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.scheduling.ManualTaskScheduler;
 import de.hbt.salat.common.scheduling.RunFinisher;
 import de.hbt.salat.etl.auth.ETLAuthorization;
+import de.hbt.salat.etl.configuration.EtlSwitch;
 import de.hbt.salat.etl.domain.ETLDefinition;
 import de.hbt.salat.etl.domain.ETLDefinition.ReferencePeriod;
 import de.hbt.salat.etl.domain.ETLDefinitionOption;
@@ -115,6 +118,12 @@ public class ETLServiceTest {
 
   @Spy
   private RunFinisher runFinisher = taskScheduler.runFinisher(Duration.ofMinutes(60));
+
+  /** Der Schalter der Umgebung (#1458), wie in der Vorgabe eingeschaltet; wo es um ihn geht, schalten die Tests ab. */
+  private final SalatProperties properties = new SalatProperties();
+
+  @Spy
+  private EtlSwitch etlSwitch = new EtlSwitch(properties);
 
   @InjectMocks
   private ETLService etlService;
@@ -438,6 +447,52 @@ public class ETLServiceTest {
     when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
 
     assertThatThrownBy(() -> etlService.startRun(BACKWARDS, MANUAL)).isInstanceOf(AuthorizationException.class);
+  }
+
+  @Test
+  void switched_off_no_run_comes_into_existence() {
+    // #1458: die Tür jedes Laufs, also auch des nächtlichen und eines künftigen Einstiegs
+    properties.getEtl().setEnabled(false);
+
+    assertThatThrownBy(() -> etlService.startRun(ONE_MONTH, MANUAL))
+        .isInstanceOf(BusinessRuleException.class)
+        .satisfies(ex -> assertThat(errorCodesOf(ex)).containsExactly(ETL_DISABLED));
+
+    verify(runHistoryRepo, never()).save(any());
+  }
+
+  @Test
+  void switched_off_the_ways_of_the_rest_interface_start_nothing() {
+    properties.getEtl().setEnabled(false);
+
+    assertThatThrownBy(() -> etlService.executeAll(ONE_MONTH, MANUAL))
+        .satisfies(ex -> assertThat(errorCodesOf(ex)).containsExactly(ETL_DISABLED));
+    assertThatThrownBy(() -> etlService.execute(ONE_MONTH, List.of("worked-hours"), MANUAL))
+        .satisfies(ex -> assertThat(errorCodesOf(ex)).containsExactly(ETL_DISABLED));
+
+    verify(runHistoryRepo, never()).save(any());
+    verify(jdbcTemplate, never()).update(anyString());
+  }
+
+  @Test
+  void switched_off_a_manual_run_is_turned_away_before_its_input_is_looked_at() {
+    // Eine Rückmeldung zur Eingabe brächte nichts, solange überhaupt kein Lauf startet.
+    properties.getEtl().setEnabled(false);
+
+    assertThatThrownBy(() -> etlService.resolveManualRun(BACKWARDS, "report"))
+        .isInstanceOf(BusinessRuleException.class)
+        .satisfies(ex -> assertThat(errorCodesOf(ex)).containsExactly(ETL_DISABLED));
+
+    verify(definitionRepo, never()).findByName(anyString());
+  }
+
+  @Test
+  void switched_off_the_right_is_still_checked_first() {
+    properties.getEtl().setEnabled(false);
+    when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
+
+    assertThatThrownBy(() -> etlService.startRun(ONE_MONTH, MANUAL)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> etlService.resolveManualRun(ONE_MONTH, null)).isInstanceOf(AuthorizationException.class);
   }
 
   @Test

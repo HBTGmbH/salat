@@ -30,9 +30,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.ResponseCookie;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraAuthMethod;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
@@ -70,7 +72,8 @@ class JiraReplicationConfigControllerOAuthTest {
     messageSource.setFallbackToSystemLocale(false);
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new JiraReplicationConfigController(configService, mock(JiraReplicationLauncher.class),
-        oauthService, mock(JiraReplicationRunService.class), customerorderService, suborderService,
+        oauthService, mock(JiraReplicationRunService.class), new JiraSwitch(new SalatProperties()),
+        customerorderService, suborderService,
         new ErrorCodeViewHelper(messages), messages);
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     when(oauthService.clearedCookie()).thenReturn(ResponseCookie.from("__Host-salat-oauth", "").path("/").maxAge(0).build());
@@ -116,6 +119,19 @@ class JiraReplicationConfigControllerOAuthTest {
         .andExpect(model().attribute("toastSuccess", "Die Replikation ist mit Atlassian verbunden."));
     mockMvc.perform(get("/jira/replications/7/edit").param("oauth", "JI-0045"))
         .andExpect(model().attribute("toastError", Matchers.containsString("https://example.atlassian.net")));
+  }
+
+  /** Connecting from an environment whose JIRA connection is off is turned away, and said so (#1458). */
+  @Test
+  void a_callback_while_jira_is_switched_off_says_so_on_the_form() throws Exception {
+    when(oauthService.replicationOf(any(), any())).thenReturn(7L);
+    doThrow(new BusinessRuleException(ErrorCode.JI_DISABLED))
+        .when(oauthService).completeConnection(anyLong(), any(), any(), any(), any());
+
+    mockMvc.perform(get(CALLBACK).param("code", "the-code").param("state", "state"))
+        .andExpect(redirectedUrl("/jira/replications/7/edit?oauth=JI-0054"));
+    mockMvc.perform(get("/jira/replications/7/edit").param("oauth", "JI-0054"))
+        .andExpect(model().attribute("toastError", Matchers.startsWith("Die JIRA-Anbindung ist in dieser Umgebung abgeschaltet.")));
   }
 
   /** The address can be typed by hand: no text of its own reaches the page. */

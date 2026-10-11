@@ -19,6 +19,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.etl.configuration.EtlSwitch;
 import de.hbt.salat.etl.service.ETLRunHistoryService;
 import de.hbt.salat.etl.service.ETLRunLauncher;
 import de.hbt.salat.etl.service.ETLService;
@@ -64,6 +65,7 @@ public class ETLRunHistoryController {
   private final ETLRunHistoryService etlRunHistoryService;
   private final ETLService etlService;
   private final ETLRunLauncher etlRunLauncher;
+  private final EtlSwitch etlSwitch;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final MessageSourceAccessor messages;
 
@@ -149,6 +151,9 @@ public class ETLRunHistoryController {
     model.addAttribute("runDateUntil", today);
     model.addAttribute("etlDefinitions", etlService.getExecutableDefinitions());
     model.addAttribute("runInProgress", etlRunHistoryService.isRunInProgress());
+    // Die Seite sagt, dass ETL abgeschaltet ist, und sperrt den Knopf (#1458). Die Sperre selbst
+    // liegt in ETLService.startRun.
+    model.addAttribute("etlEnabled", etlSwitch.isEnabled());
   }
 
   /**

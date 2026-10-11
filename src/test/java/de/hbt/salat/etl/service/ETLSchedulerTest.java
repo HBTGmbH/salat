@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,6 +16,8 @@ import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_ALREADY_RUNNING;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_NOT_RUNNING;
 import static de.hbt.salat.etl.domain.ETLRunHistory.Trigger.SCHEDULED;
 
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -21,12 +25,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
+import org.springframework.scheduling.config.CronTask;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.etl.configuration.EtlSwitch;
 
 /**
  * Der nächtliche ETL-Lauf (#1071).
@@ -48,6 +61,12 @@ class ETLSchedulerTest {
 
   @Mock
   private AuthorizedUser authorizedUser;
+
+  /** Der Schalter der Umgebung (#1458), wie in der Vorgabe eingeschaltet. */
+  private final SalatProperties properties = new SalatProperties();
+
+  @Spy
+  private EtlSwitch etlSwitch = new EtlSwitch(properties);
 
   @InjectMocks
   private ETLScheduler etlScheduler;
@@ -94,6 +113,55 @@ class ETLSchedulerTest {
         .isInstanceOf(BusinessRuleException.class);
 
     verify(etlService, never()).recordSkippedRun(any(), any(), anyString());
+  }
+
+  @Test
+  void switched_off_the_nightly_run_drops_out_without_a_row() {
+    // #1458: eine abgeschaltete Umgebung hat keinen Ausfall festzuhalten — weder ein Lauf noch eine
+    // übersprungene Zeile, und auch keine Anmeldung als Job.
+    properties.getEtl().setEnabled(false);
+
+    assertThatCode(() -> etlScheduler.runDaily()).doesNotThrowAnyException();
+
+    verifyNoInteractions(etlService, authorizedUserProvider);
+  }
+
+  @Test
+  void without_a_schedule_of_its_own_the_run_starts_at_two_in_the_morning() {
+    assertThat(cronTasksWith(Map.of())).containsExactly("0 0 2 * * *");
+    assertThat(cronTasksWith(Map.of("salat.etl.scheduler.cron", "0 30 3 * * *"))).containsExactly("0 30 3 * * *");
+  }
+
+  @Test
+  void a_dash_as_schedule_switches_the_nightly_run_off() {
+    // Scheduled.CRON_DISABLED — Spring meldet die Aufgabe gar nicht erst an.
+    assertThat(cronTasksWith(Map.of("salat.etl.scheduler.cron", "-"))).isEmpty();
+  }
+
+  @Test
+  void the_defaults_in_application_yaml_keep_things_as_they_were() {
+    var yaml = new YamlPropertiesFactoryBean();
+    yaml.setResources(new ClassPathResource("application.yaml"));
+    var defaults = yaml.getObject();
+
+    assertThat(String.valueOf(defaults.get("salat.etl.enabled"))).isEqualTo("true");
+    assertThat(String.valueOf(defaults.get("salat.etl.scheduler.cron"))).isEqualTo("0 0 2 * * *");
+    assertThat(new SalatProperties().getEtl().isEnabled()).isTrue();
+  }
+
+  /** Die Ausdrücke der Aufgaben, die Spring für den nächtlichen Lauf anmeldet. */
+  @SuppressWarnings("unchecked")
+  private static List<String> cronTasksWith(Map<String, Object> properties) {
+    try (var context = new AnnotationConfigApplicationContext()) {
+      context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("test", properties));
+      context.registerBean(ETLScheduler.class, () -> new ETLScheduler(mock(ETLService.class),
+          mock(ObjectProvider.class), new EtlSwitch(new SalatProperties())));
+      context.registerBean(ScheduledAnnotationBeanPostProcessor.class);
+      context.refresh();
+      return context.getBean(ScheduledAnnotationBeanPostProcessor.class).getScheduledTasks().stream()
+          .map(task -> ((CronTask) task.getTask()).getExpression())
+          .toList();
+    }
   }
 
   private static LocalDateRange lastThreeMonths() {

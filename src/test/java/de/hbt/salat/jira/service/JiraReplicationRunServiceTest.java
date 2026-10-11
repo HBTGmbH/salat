@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
@@ -64,6 +65,10 @@ class JiraReplicationRunServiceTest {
   @Autowired
   private PlatformTransactionManager transactionManager;
 
+  /** Shared by the context: switched back on after every test (#1458). */
+  @Autowired
+  private SalatProperties properties;
+
   /** The order the replications apply to — real, because they refer to it with a foreign key (#1368). */
   private OrderTree orderTree;
   private Customerorder customerorder;
@@ -84,6 +89,7 @@ class JiraReplicationRunServiceTest {
 
   @AfterEach
   void tearDown() {
+    properties.getJira().setEnabled(true);
     runRepository.deleteByReplicationId(ALPHA);
     runRepository.deleteByReplicationId(BETA);
     runRepository.deleteByReplicationId(ALPHA_TOO);
@@ -102,6 +108,34 @@ class JiraReplicationRunServiceTest {
         .satisfies(ex -> assertThat(((BusinessRuleException) ex).getMessages())
             .extracting(message -> message.getErrorCode())
             .containsExactly(ErrorCode.JI_REPLICATION_RUN_ALREADY_RUNNING));
+  }
+
+  /** Started by hand, as the scheduled run already leaves it out (#1458). */
+  @Test
+  void a_switched_off_replication_does_not_start() {
+    var config = configRepository.findById(ALPHA).orElseThrow();
+    config.setEnabled(false);
+    configRepository.save(config);
+
+    assertThatThrownBy(() -> runService.startRun(ALPHA, MANUAL))
+        .isInstanceOf(BusinessRuleException.class)
+        .satisfies(ex -> assertThat(((BusinessRuleException) ex).getMessages())
+            .extracting(message -> message.getErrorCode())
+            .containsExactly(ErrorCode.JI_REPLICATION_DISABLED));
+    assertThat(runService.getRunningReplicationIds()).doesNotContain(ALPHA);
+  }
+
+  /** The door of every run, the launcher, the REST interface and the scheduled round alike (#1458). */
+  @Test
+  void with_jira_switched_off_no_run_is_opened() {
+    properties.getJira().setEnabled(false);
+
+    assertThatThrownBy(() -> runService.startRun(ALPHA, MANUAL))
+        .isInstanceOf(BusinessRuleException.class)
+        .satisfies(ex -> assertThat(((BusinessRuleException) ex).getMessages())
+            .extracting(message -> message.getErrorCode())
+            .containsExactly(ErrorCode.JI_DISABLED));
+    assertThat(runService.getRunningReplicationIds()).doesNotContain(ALPHA);
   }
 
   @Test

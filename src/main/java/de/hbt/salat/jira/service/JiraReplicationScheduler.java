@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.scheduling.SchedulerRequestAttributes;
+import de.hbt.salat.jira.configuration.JiraSwitch;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
 
@@ -26,13 +27,20 @@ public class JiraReplicationScheduler {
   private final JiraReplicationService replicationService;
   private final JiraReplicationRunService runService;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
+  private final JiraSwitch jiraSwitch;
 
-  // Default: hourly at :15 local time; can be overridden by property 'salat.jira.replication.cron'.
+  // Default: hourly at :15 local time; can be overridden by property 'salat.jira.replication.cron',
+  // '-' switches the scheduled run off. 'salat.jira.enabled=false' switches off JIRA altogether (#1458).
   // Since #982 the replicated tickets are offered as suggestions while booking, so a ticket created
   // in the morning has to be bookable the same day — once a night was the wrong granularity for
   // that. Not on the hour: the ETL runs at 02:00 and there is no reason to meet it there.
   @Scheduled(cron = "${salat.jira.replication.cron:0 15 * * * *}")
   public void runScheduled() {
+    if (!jiraSwitch.isEnabled()) {
+      // Every hour: the startup log says it once, JiraSwitch.
+      log.debug("Scheduled JIRA replication skipped, the JIRA connection is switched off in this environment");
+      return;
+    }
     runAll(SCHEDULED);
   }
 
@@ -40,8 +48,13 @@ public class JiraReplicationScheduler {
    * Runs every enabled replication, one after another, each with its row in the run history
    * (#1282). One that fails is in its row and in the log and does not hold up the ones behind it —
    * before the history the first failure ended the whole round.
+   *
+   * @throws de.hbt.salat.common.exception.BusinessRuleException {@code JI-0054} when the JIRA
+   *     connection is switched off in this environment (#1458) — asked before the round, since a
+   *     failure inside it only ends up in the log, and the REST interface has to answer with it
    */
   public void runAll(Trigger trigger) {
+    jiraSwitch.requireEnabled();
     log.info("JIRA replication of all enabled configs start, trigger={}", trigger);
     // A scheduled run has no HTTP request and therefore no SecurityContext, so the request-scoped
     // AuthorizedUser has to be put into job mode (→ ADR-0006). Needed since #1007: the worklog sync
