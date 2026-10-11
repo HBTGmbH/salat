@@ -686,7 +686,7 @@ public class TimereportController {
      * hold something the booking would have rejected.
      */
     static NewFavorite favoriteFrom(long employeeOrderId, Duration duration, TimereportForm form) {
-        return NewFavorite.of(employeeOrderId,
+        return new NewFavorite(employeeOrderId,
             duration,
             form.getComment(),
             TicketReferences.normalize(form.getTicketReferences()),

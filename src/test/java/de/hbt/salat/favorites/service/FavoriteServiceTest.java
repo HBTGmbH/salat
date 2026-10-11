@@ -16,6 +16,7 @@ import static de.hbt.salat.testutils.ReferenceTestUtils.employeeWithId;
 import static de.hbt.salat.testutils.ReferenceTestUtils.employeeorderWithId;
 import static de.hbt.salat.testutils.ReferenceTestUtils.suborderWithId;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,7 +120,7 @@ class FavoriteServiceTest {
 
     @Test
     void a_favourite_on_an_own_employee_order_refers_to_it() {
-      var id = favoriteService.addFavorite(new NewFavorite(MY_ORDER, 1, 30, "Daily", List.of("abc-1")));
+      var id = favoriteService.addFavorite(new NewFavorite(MY_ORDER, Duration.ofHours(1).plusMinutes(30), "Daily", List.of("abc-1")));
 
       var saved = savedFavorite();
       assertThat(id).isEqualTo(99L);
@@ -127,10 +128,18 @@ class FavoriteServiceTest {
       assertThat(saved.getTicketReferences()).containsExactly("ABC-1");
     }
 
+    /** The duration is kept as one value, minutes included (#1456). */
+    @Test
+    void a_favourite_keeps_the_duration_with_its_minutes() {
+      favoriteService.addFavorite(new NewFavorite(MY_ORDER, Duration.ofHours(1).plusMinutes(45), "Daily", null));
+
+      assertThat(savedFavorite().getDuration()).isEqualTo(Duration.ofHours(1).plusMinutes(45));
+    }
+
     /** Otherwise the favourite would appear in the list of the other person. */
     @Test
     void a_favourite_on_the_employee_order_of_somebody_else_is_refused() {
-      assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(FOREIGN_ORDER, 1, 0, null, null)))
+      assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(FOREIGN_ORDER, Duration.ofHours(1), null, null)))
           .isInstanceOf(AuthorizationException.class);
 
       verify(favoriteRepository, never()).saveAndFlush(any());
@@ -138,7 +147,7 @@ class FavoriteServiceTest {
 
     @Test
     void an_unknown_employee_order_is_refused() {
-      assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(404L, 1, 0, null, null)))
+      assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(404L, Duration.ofHours(1), null, null)))
           .isInstanceOf(AuthorizationException.class);
     }
 
@@ -147,7 +156,7 @@ class FavoriteServiceTest {
     void a_new_favourite_counts_as_just_used_and_stands_on_top_of_those_without_a_group() {
       when(favoriteRepository.findMinPositionWithoutGroup(ME)).thenReturn(0);
 
-      favoriteService.addFavorite(new NewFavorite(MY_ORDER, 1, 0, "Daily", null));
+      favoriteService.addFavorite(new NewFavorite(MY_ORDER, Duration.ofHours(1), "Daily", null));
 
       var saved = savedFavorite();
       assertThat(saved.getGroup()).isNull();
@@ -160,7 +169,7 @@ class FavoriteServiceTest {
       givenGroups(group(5L, ME, "Wartung", 0));
       when(favoriteRepository.findMinPositionInGroup(5L)).thenReturn(null);
 
-      favoriteService.addFavorite(new NewFavorite(MY_ORDER, 1, 0, "Daily", null, 5L));
+      favoriteService.addFavorite(new NewFavorite(MY_ORDER, Duration.ofHours(1), "Daily", null, 5L));
 
       var saved = savedFavorite();
       assertThat(saved.getGroupId()).isEqualTo(5L);
@@ -171,7 +180,7 @@ class FavoriteServiceTest {
     void a_new_favourite_is_not_sorted_into_the_group_of_somebody_else() {
       givenGroups(group(6L, SOMEBODY_ELSE, "Fremd", 0));
 
-      assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(MY_ORDER, 1, 0, "Daily", null, 6L)))
+      assertThatThrownBy(() -> favoriteService.addFavorite(new NewFavorite(MY_ORDER, Duration.ofHours(1), "Daily", null, 6L)))
           .isInstanceOf(AuthorizationException.class);
 
       verify(favoriteRepository, never()).saveAndFlush(any());
@@ -542,8 +551,8 @@ class FavoriteServiceTest {
   }
 
   private static Favorite favorite(long id, FavoriteGroup group, Integer position, LocalDateTime lastUsed) {
-    var favorite = Favorite.builder().employeeorder(employeeorderOnSuborder()).hours(1).minutes(30)
-        .group(group).position(position).lastUsed(lastUsed).build();
+    var favorite = Favorite.builder().employeeorder(employeeorderOnSuborder())
+        .duration(Duration.ofHours(1).plusMinutes(30)).group(group).position(position).lastUsed(lastUsed).build();
     setField(favorite, "id", id);
     return favorite;
   }
@@ -558,7 +567,7 @@ class FavoriteServiceTest {
   }
 
   private static Favorite favoriteOn(long employeeorderId) {
-    return Favorite.builder().employeeorder(employeeorderWithId(employeeorderId)).hours(1).minutes(0).build();
+    return Favorite.builder().employeeorder(employeeorderWithId(employeeorderId)).duration(Duration.ofHours(1)).build();
   }
 
   /** The ids of a section in display order. */

@@ -53,8 +53,7 @@ class FavoriteTicketReferenceTest {
     var favourite = favoriteFrom(7L, Duration.ofHours(1).plusMinutes(30), form("PROJ-123"));
 
     assertThat(favourite.employeeorderId()).isEqualTo(7L);
-    assertThat(favourite.hours()).isEqualTo(1);
-    assertThat(favourite.minutes()).isEqualTo(30);
+    assertThat(favourite.duration()).isEqualTo(Duration.ofHours(1).plusMinutes(30));
     assertThat(favourite.comment()).isEqualTo("Daily");
   }
 

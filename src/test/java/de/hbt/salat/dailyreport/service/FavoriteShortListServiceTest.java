@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor.FAVORITES_FIRST;
 
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -188,6 +189,6 @@ class FavoriteShortListServiceTest {
   }
 
   private static FavoriteEntry favourite(long id, Long groupId, String groupName) {
-    return new FavoriteEntry(id, 7L, "4711.01 - Konzept", 1, 0, "Favorit " + id, List.of(), groupId, groupName, null);
+    return new FavoriteEntry(id, 7L, "4711.01 - Konzept", Duration.ofHours(1), "Favorit " + id, List.of(), groupId, groupName, null);
   }
 }
