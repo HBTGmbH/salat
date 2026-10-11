@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,7 +22,6 @@ import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,9 +30,8 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
-import de.hbt.salat.employee.domain.Employeecontract;
-import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.NewEmployeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
 import de.hbt.salat.order.persistence.SuborderDAO;
@@ -55,8 +52,6 @@ class MoveTimereportsServiceTest {
     private EmployeeorderDAO employeeorderDAO;
     @Mock
     private EmployeeorderService employeeorderService;
-    @Mock
-    private EmployeecontractService employeecontractService;
     @Mock
     private AuthorizedUser authorizedUser;
 
@@ -196,7 +191,7 @@ class MoveTimereportsServiceTest {
                     .anyMatch(m -> m.getErrorCode() == TR_MOVE_ACCEPTED_REQ_ADMIN));
             verify(timereportService, never()).updateTimereport(anyLong(), anyLong(), anyLong(), any(), any(),
                 anyBoolean(), any(Duration.class), anyBoolean());
-            verify(employeeorderService, never()).create(any());
+            verify(employeeorderService, never()).createEmployeeorder(any());
         }
 
         @Test
@@ -364,7 +359,7 @@ class MoveTimereportsServiceTest {
 
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
-            verify(employeeorderService, never()).create(any());
+            verify(employeeorderService, never()).createEmployeeorder(any());
             verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L),
                 eq(LocalDate.of(2024, 1, 10)), any(), anyBoolean(), any(Duration.class), eq(true));
         }
@@ -379,22 +374,13 @@ class MoveTimereportsServiceTest {
             ));
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
                 .thenReturn(List.of());
-            var contract = new Employeecontract();
-            when(employeecontractService.getEmployeecontractById(10L)).thenReturn(contract);
-            doAnswer(inv -> {
-                ReflectionTestUtils.setField(inv.<Employeeorder>getArgument(0), "id", 55L);
-                return null;
-            }).when(employeeorderService).create(any());
+            when(employeeorderService.createEmployeeorder(any())).thenReturn(55L);
 
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
-            var captor = ArgumentCaptor.forClass(Employeeorder.class);
-            verify(employeeorderService).create(captor.capture());
-            var createdEo = captor.getValue();
-            assertThat(createdEo.getFromDate()).isEqualTo(LocalDate.of(2024, 1, 10));
-            assertThat(createdEo.getUntilDate()).isEqualTo(LocalDate.of(2024, 12, 31));
-            assertThat(createdEo.getSuborder()).isSameAs(target);
-            assertThat(createdEo.getEmployeecontract()).isSameAs(contract);
+            // the order module decides the rest of the new order (#1459)
+            verify(employeeorderService).createEmployeeorder(
+                new NewEmployeeorder(10L, TARGET_ID, LocalDate.of(2024, 1, 10)));
             verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(55L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
             verify(timereportService).updateTimereport(eq(101L), eq(10L), eq(55L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
         }
@@ -412,17 +398,12 @@ class MoveTimereportsServiceTest {
                 .thenReturn(List.of(existingEo));
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(20L, TARGET_ID))
                 .thenReturn(List.of());
-            when(employeecontractService.getEmployeecontractById(20L)).thenReturn(new Employeecontract());
-            doAnswer(inv -> {
-                ReflectionTestUtils.setField(inv.<Employeeorder>getArgument(0), "id", 77L);
-                return null;
-            }).when(employeeorderService).create(any());
+            when(employeeorderService.createEmployeeorder(any())).thenReturn(77L);
 
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
-            var captor = ArgumentCaptor.forClass(Employeeorder.class);
-            verify(employeeorderService).create(captor.capture());
-            assertThat(captor.getValue().getFromDate()).isEqualTo(LocalDate.of(2024, 1, 10));
+            verify(employeeorderService).createEmployeeorder(
+                new NewEmployeeorder(20L, TARGET_ID, LocalDate.of(2024, 1, 10)));
             verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
             verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
         }
