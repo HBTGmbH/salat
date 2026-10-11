@@ -1,6 +1,7 @@
 package de.hbt.salat.etl.service;
 
 import static de.hbt.salat.auth.domain.AccessLevel.EXECUTE;
+import static de.hbt.salat.auth.domain.AccessLevel.READ;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.ETL_RUN_NOT_RUNNING;
@@ -20,7 +21,10 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.etl.auth.ETLAuthorization;
+import de.hbt.salat.etl.domain.ETLExecutionHistory;
+import de.hbt.salat.etl.domain.ETLRunDetail;
 import de.hbt.salat.etl.domain.ETLRunHistory;
+import de.hbt.salat.etl.persistence.ETLExecutionHistoryRepository;
 import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
 
 /**
@@ -42,6 +46,7 @@ import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
 public class ETLRunHistoryService {
 
   private final ETLRunHistoryRepository runHistoryRepository;
+  private final ETLExecutionHistoryRepository executionHistoryRepository;
   private final ETLAuthorization etlAuthorization;
 
   /**
@@ -57,6 +62,30 @@ public class ETLRunHistoryService {
     return failedOnly
         ? runHistoryRepository.findByStatusNotOrderByStartedAtDesc(SUCCEEDED, page)
         : runHistoryRepository.findByOrderByStartedAtDesc(page);
+  }
+
+  /**
+   * Ein Lauf mit seinen Ausführungen (#1324), in der Reihenfolge, in der sie liefen.
+   *
+   * <p>Zwei Stufen: den Lauf sieht, wer die Liste sieht — er gehört keiner einzelnen Definition.
+   * Eine Ausführung dagegen gehört genau einer, und ihre Meldung nennt im Fehlerfall das SQL dieser
+   * Definition. Sie wird deshalb nur gezeigt, wenn die Person die Definition lesen darf
+   * ({@code READ}); eine Regel mit {@code EXECUTE} allein öffnet die Liste, nicht das SQL.
+   *
+   * @throws AuthorizationException ohne ETL-Recht — wie die Liste
+   * @throws InvalidDataException wenn es den Lauf nicht gibt
+   */
+  public ETLRunDetail getRunDetail(long runId) {
+    checkAuthorized();
+    var run = runHistoryRepository.findById(runId)
+        .orElseThrow(() -> new InvalidDataException(ETL_RUN_NOT_FOUND));
+    var all = executionHistoryRepository.findByRunInOrderOfExecution(runId);
+    var readable = all.stream().filter(this::isReadable).toList();
+    return new ETLRunDetail(run, readable, all.size() - readable.size());
+  }
+
+  private boolean isReadable(ETLExecutionHistory execution) {
+    return etlAuthorization.isAuthorizedForDefinitionId(execution.getEtlId(), READ);
   }
 
   /** Ob die Anzeige für die anfragende Person überhaupt offen ist — auch die Frage des Menüs. */

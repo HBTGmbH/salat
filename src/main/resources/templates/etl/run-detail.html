@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='systemsettings',
+        subSection='etl-runs',
+        startedAtText=${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')},
+        title=#{main.etl.run.detail.title(${startedAtText})},
+        pageTitle=#{main.etl.run.detail.title(${startedAtText})},
+        sectionTitle=#{main.general.mainmenu.system.text}
+">
+<main layout:fragment="content">
+
+  <!--/* Die Seite eines ETL-Laufs (#1324): oben der Lauf, wie ihn die Liste zeigt, darunter seine
+         Ausfuehrungen je Definition und Referenzperiode. Die Statusfarben sind dieselben wie in der
+         Liste, damit ein Fehlschlag hier wie dort gleich aussieht. */-->
+
+  <!-- LAUF -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.etl.run.detail.run.title}">Lauf</h3>
+    </div>
+    <div class="card-body">
+      <div class="datagrid">
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.etl.run.field.startedAt}">Start</div>
+          <div class="datagrid-content" th:text="${startedAtText}">01.10.2026 02:00:00</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.etl.run.field.finishedAt}">Ende</div>
+          <div class="datagrid-content">
+            <span th:if="${run.finishedAt != null}"
+                  th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.10.2026 02:03:12</span>
+            <span th:if="${run.finishedAt == null}" class="text-muted">&ndash;</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.etl.run.field.duration}">Dauer</div>
+          <div class="datagrid-content">
+            <span th:if="${run.duration != null}" th:text="${run.duration}">3 min 12 s</span>
+            <span th:if="${run.duration == null}" class="text-muted">&ndash;</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.etl.run.field.status}">Status</div>
+          <div class="datagrid-content">
+            <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'},skipped=${run.status.name() == 'SKIPPED'}"
+                  th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : (${skipped} ? 'bg-warning-lt' : 'bg-azure-lt'))"
+                  th:text="#{${'main.etl.run.status.' + run.status}}">Erfolgreich</span>
+          </div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.etl.run.field.trigger}">Ausgelöst durch</div>
+          <div class="datagrid-content" th:text="#{${'main.etl.run.trigger.' + run.triggeredBy}}">Nächtlich</div>
+        </div>
+        <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.etl.run.field.daterange}">Ausgewerteter Zeitraum</div>
+          <div class="datagrid-content">
+            <span th:if="${run.dateFrom != null}"
+                  th:text="|${#temporals.format(run.dateFrom, 'dd.MM.yyyy')} – ${#temporals.format(run.dateUntil, 'dd.MM.yyyy')}|">
+              01.07.2026 – 01.10.2026
+            </span>
+            <span th:if="${run.dateFrom == null}" class="text-muted">&ndash;</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <div class="datagrid-title" th:text="#{main.etl.run.field.message}">Meldung</div>
+        <div class="text-break" style="white-space: pre-wrap"
+             th:text="${#strings.isEmpty(run.message)} ? '–' : ${run.message}">12 Definition(en) ausgeführt</div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <a th:href="@{/etl/runs}" class="btn btn-secondary" th:text="#{main.general.button.back.text}">Zurück</a>
+    </div>
+  </div>
+
+  <!-- AUSFUEHRUNGEN -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.etl.run.detail.executions.title}">Ausführungen</h3>
+      <!--/* Ein laufender Lauf schreibt seine Ausfuehrungen eine nach der anderen; neu geladen zeigt
+             die Seite die hinzugekommenen. */-->
+      <div class="card-actions">
+        <a th:replace="~{fragments/refresh-button :: refreshButton(@{/etl/runs/{id}(id=${run.id})})}"></a>
+      </div>
+    </div>
+
+    <div class="card-body" th:if="${run.status.name() == 'RUNNING' or hiddenExecutions > 0}">
+      <p class="text-secondary mb-0" th:if="${run.status.name() == 'RUNNING'}"
+         th:text="#{main.etl.run.detail.running}">Der Lauf läuft noch.</p>
+      <p class="text-secondary mb-0" th:if="${hiddenExecutions > 0}"
+         th:classappend="${run.status.name() == 'RUNNING'} ? 'mt-2'"
+         th:text="#{main.etl.run.detail.executions.hidden(${hiddenExecutions})}">
+        2 Ausführung(en) sind ausgeblendet.
+      </p>
+    </div>
+
+    <!--/* Ein Lauf ohne Ausfuehrungen sagt das ausdruecklich, statt eine leere Tabelle zu zeigen:
+           uebersprungen, vor der ersten Definition abgebrochen, oder aus der Zeit, bevor die
+           Ausfuehrungen ihrem Lauf zugeordnet wurden. Sind nur alle ausgeblendet, sagt das der Satz
+           darueber — dann gab es welche. */-->
+    <div class="card-body" th:if="${#lists.isEmpty(executions) and hiddenExecutions == 0}">
+      <p class="text-secondary mb-0" th:text="#{main.etl.run.detail.executions.none}">
+        Zu diesem Lauf ist keine Ausführung verzeichnet.
+      </p>
+    </div>
+
+    <div class="table-responsive" th:unless="${#lists.isEmpty(executions)}">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th class="w-1" th:text="#{main.etl.run.detail.field.position}">Nr.</th>
+            <th th:text="#{main.etl.run.field.definition}">Definition</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.etl.run.detail.field.period}">Referenzperiode</th>
+            <th class="d-none d-lg-table-cell" th:text="#{main.etl.run.detail.field.executedAt}">Zeitpunkt</th>
+            <th th:text="#{main.etl.run.field.status}">Status</th>
+            <th th:text="#{main.etl.run.field.message}">Meldung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="execution : ${executions}">
+            <td class="text-secondary" th:text="${execution.position}">1</td>
+            <td th:text="${execution.definitionName}">Definition</td>
+            <td class="d-none d-md-table-cell text-nowrap small">
+              <span th:if="${execution.hasPeriod()}"
+                    th:text="|${#temporals.format(execution.periodFrom, 'dd.MM.yyyy')} – ${#temporals.format(execution.periodUntil, 'dd.MM.yyyy')}|">
+                01.09.2026 – 30.09.2026
+              </span>
+              <span th:unless="${execution.hasPeriod()}" class="text-muted">&ndash;</span>
+            </td>
+            <td class="d-none d-lg-table-cell text-nowrap small"
+                th:text="${#temporals.format(execution.executedAt, 'dd.MM.yyyy HH:mm:ss')}">01.10.2026 02:00:12</td>
+            <td>
+              <span class="badge" th:classappend="${execution.success} ? 'bg-green-lt' : 'bg-danger-lt'"
+                    th:text="${execution.success} ? #{main.etl.run.status.SUCCEEDED} : #{main.etl.run.status.FAILED}">Erfolgreich</span>
+            </td>
+            <!--/* Die Meldung traegt im Fehlerfall die gescheiterte Anweisung samt SQL und wird lang;
+                   sie steht deshalb eingeklappt da und bricht aufgeklappt um, statt die Tabelle in
+                   die Breite zu ziehen. */-->
+            <td class="text-break">
+              <details th:unless="${#strings.isEmpty(execution.message)}">
+                <summary class="small text-secondary" th:text="#{main.etl.run.detail.message.show}">Meldung anzeigen</summary>
+                <pre class="small mt-2 mb-0" style="white-space: pre-wrap; overflow-wrap: anywhere"
+                     th:text="${execution.message}">Date Range: 2026-09-01 - 2026-09-30</pre>
+              </details>
+              <span th:if="${#strings.isEmpty(execution.message)}" class="text-muted">&ndash;</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</html>

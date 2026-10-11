@@ -107,6 +107,28 @@ class ETLExecutionHistoryCleanupServiceTest {
         .containsExactly(withinRetention.getId());
   }
 
+  /**
+   * Die Frist misst den Lauf an seinem Start, die Ausführung an ihrem Ende (#1324). Ein Lauf, der kurz
+   * vor der Grenze begann und nach ihr noch ausführte, nimmt seine späten Ausführungen mit — sonst
+   * scheiterte das Löschen des Laufs am Fremdschlüssel, und mit ihm das ganze Aufräumen.
+   */
+  @Test
+  void a_run_that_began_before_the_limit_takes_its_later_executions_along() {
+    var limit = NOW.minusDays(14);
+    var expiredRun = saveRun(limit.minusMinutes(1));
+    save(limit.minusSeconds(30), expiredRun);
+    save(limit.plusMinutes(2), expiredRun);
+    var keptRun = saveRun(limit.plusMinutes(5));
+    var keptExecution = save(limit.plusMinutes(6), keptRun);
+
+    cleanupService.deleteExpiredExecutionHistory();
+
+    assertThat(runHistoryRepository.findAll()).extracting(ETLRunHistory::getId)
+        .containsExactly(keptRun.getId());
+    assertThat(repository.findAll()).extracting(ETLExecutionHistory::getId)
+        .containsExactly(keptExecution.getId());
+  }
+
   private ETLRunHistory saveRun(LocalDateTime startedAt) {
     return runHistoryRepository.save(ETLRunHistory.builder()
         .startedAt(startedAt)
@@ -118,7 +140,12 @@ class ETLExecutionHistoryCleanupServiceTest {
   }
 
   private ETLExecutionHistory save(LocalDateTime executedAt) {
+    return save(executedAt, null);
+  }
+
+  private ETLExecutionHistory save(LocalDateTime executedAt, ETLRunHistory run) {
     return repository.save(ETLExecutionHistory.builder()
+        .run(run)
         .etlId(1L)
         .etlName("test-etl")
         .executedAt(executedAt)

@@ -19,10 +19,19 @@ public class ETLAuthorization {
   private final AuthService authService;
 
   public boolean isAuthorized(ETLDefinition etlDefinition, AccessLevel accessLevel) {
+    return isAuthorizedForDefinitionId(etlDefinition.getId(), accessLevel);
+  }
+
+  /**
+   * Dieselbe Frage über die id der Definition — für die Einträge der Ausführungshistorie (#1324).
+   * Sie nennen ihre Definition nur über {@code etl_id}, ohne Fremdschlüssel; eine inzwischen
+   * gelöschte Definition beantwortet die Regel trotzdem, denn die Regel nennt dieselbe id.
+   */
+  public boolean isAuthorizedForDefinitionId(long etlDefinitionId, AccessLevel accessLevel) {
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isAdmin()) return true;
     // by id, not by name: a renamed definition keeps its rules (#1204)
-    return authService.isAuthorized(AUTH_CATEGORY, today(), accessLevel, String.valueOf(etlDefinition.getId()));
+    return authService.isAuthorized(AUTH_CATEGORY, today(), accessLevel, String.valueOf(etlDefinitionId));
   }
 
   /**
