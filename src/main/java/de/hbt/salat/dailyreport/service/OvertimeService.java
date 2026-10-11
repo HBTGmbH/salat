@@ -148,36 +148,10 @@ public class OvertimeService {
     return employeecontract.getReportAcceptanceDate() != null;
   }
 
+  /** The working time the contract asks for in the range (→ {@link WorkingTimeTarget}). */
   public Duration calculateWorkingTimeTarget(long employeecontractId, LocalDate requestedStart, LocalDate requestedEnd) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    final LocalDate start, end;
-    // do not consider invalid(outside of the validity of the contract) days
-    if (employeecontract.getValidFrom().isAfter(requestedStart)) {
-      start = employeecontract.getValidFrom();
-    } else {
-      start = requestedStart;
-    }
-    if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().isBefore(requestedEnd)) {
-      end = employeecontract.getValidUntil();
-    } else {
-      end = requestedEnd;
-    }
-    if (end.isBefore(start)) {
-      return Duration.ZERO;
-    }
-    long numberOfWorkingDayHolidays = publicholidayDAO.getPublicHolidaysBetween(start, end)
-        .stream()
-        .map(Publicholiday::getRefdate)
-        .map(LocalDate::getDayOfWeek)
-        .filter(dayOfWeek -> dayOfWeek != SATURDAY && dayOfWeek != SUNDAY)
-        .count();
-
-    var expectedWorkingDaysCount = DateUtils.getWorkingDayDistance(start, end);
-    // substract holidays
-    expectedWorkingDaysCount -= numberOfWorkingDayHolidays;
-    var dailyWorkingTime = employeecontract.getDailyWorkingTime();
-    var workingTimeTarget = dailyWorkingTime.multipliedBy(expectedWorkingDaysCount);
-    return workingTimeTarget;
+    return WorkingTimeTarget.between(employeecontract, requestedStart, requestedEnd, publicholidayDAO::getPublicHolidaysBetween);
   }
 
   private OvertimeInfo calculateOvertime(LocalDate requestedStart, LocalDate requestedEnd, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
