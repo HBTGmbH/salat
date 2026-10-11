@@ -20,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.auth.service.SalatUserService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.SalatProperties;
@@ -34,6 +35,7 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.event.EmployeecontractChangedEvent;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
+import de.hbt.salat.employee.persistence.SalatUserReferences;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.notification.service.NotificationService;
@@ -61,7 +63,7 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @Import({AuthorizedUserAuditorAware.class, SalatProperties.class, AuthService.class,
-    EmployeeService.class, EmployeeDAO.class, EmployeeAuthorization.class,
+    EmployeeService.class, SalatUserService.class, SalatUserReferences.class, EmployeeDAO.class, EmployeeAuthorization.class,
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
     EmployeeorderService.class, EmployeecontractReferences.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class,

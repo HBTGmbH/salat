@@ -81,13 +81,6 @@ public class Employee extends AuditedEntity implements Serializable {
         return salatUser != null ? salatUser.getLoginname() : null;
     }
 
-    @Transient
-    public void setLoginname(String loginname) {
-        if (salatUser != null) {
-            salatUser.setLoginname(loginname);
-        }
-    }
-
     public boolean isMale() {
         return Objects.equals(gender, GENDER_MALE);
     }
@@ -95,13 +88,6 @@ public class Employee extends AuditedEntity implements Serializable {
     @Transient
     public String getStatus() {
         return salatUser != null ? salatUser.getStatus() : null;
-    }
-
-    @Transient
-    public void setStatus(String status) {
-        if (salatUser != null) {
-            salatUser.setStatus(status);
-        }
     }
 
     @Transient

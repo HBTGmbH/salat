@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.auth.service.SalatUserService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.ErrorCode;
@@ -25,8 +26,10 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.domain.EmployeeData;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
+import de.hbt.salat.employee.persistence.SalatUserReferences;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
 @DataJpaTest
@@ -36,6 +39,8 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 		EmployeeDAO.class,
 		EmployeecontractDAO.class,
 		EmployeeService.class,
+		SalatUserService.class,
+		SalatUserReferences.class,
 		AuthService.class,
 		SalatProperties.class,
 		EmployeeAuthorization.class,
@@ -121,6 +126,43 @@ public class EmployeeServiceTest {
 		
 		employeeDAO.deleteEmployeeById(employeeId);
 		assertThat(employeeDAO.getEmployeeById(employeeId)).isNull();
+	}
+
+	/** The form saves person and login as values; the login is created by the auth module (#1460). */
+	@Test
+	public void storing_a_new_person_creates_their_login() {
+		employeeDAO.store(new EmployeeData(null, "Neue", "Person", "nep", GlobalConstants.GENDER_FEMALE, false,
+				"nep", GlobalConstants.EMPLOYEE_STATUS_MA));
+
+		var stored = employeeDAO.getEmployeeBySign("nep");
+		assertThat(stored.getLoginname()).isEqualTo("nep");
+		assertThat(stored.getStatus()).isEqualTo(GlobalConstants.EMPLOYEE_STATUS_MA);
+		assertThat(employeeDAO.isLoginnameTaken("nep", null)).isTrue();
+	}
+
+	@Test
+	public void storing_a_person_again_changes_their_login() {
+		employeeDAO.store(new EmployeeData(null, "Neue", "Person", "nep", GlobalConstants.GENDER_FEMALE, false,
+				"nep", GlobalConstants.EMPLOYEE_STATUS_MA));
+		var id = employeeDAO.getEmployeeBySign("nep").getId();
+
+		employeeDAO.store(new EmployeeData(id, "Neue", "Person", "nep", GlobalConstants.GENDER_FEMALE, false,
+				"nep2", GlobalConstants.EMPLOYEE_STATUS_BL));
+
+		var stored = employeeDAO.getEmployeeById(id);
+		assertThat(stored.getLoginname()).isEqualTo("nep2");
+		assertThat(stored.getStatus()).isEqualTo(GlobalConstants.EMPLOYEE_STATUS_BL);
+		assertThat(employeeDAO.isLoginnameTaken("nep", null)).isFalse();
+	}
+
+	@Test
+	public void deleting_a_person_deletes_their_login() {
+		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		employeeDAO.createOrUpdate(employee);
+
+		employeeDAO.deleteEmployeeById(employee.getId());
+
+		assertThat(employeeDAO.isLoginnameTaken(TESTY_SIGN, null)).isFalse();
 	}
 
 	/**

@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.auth.service.SalatUserService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.BusinessRuleException;
@@ -30,6 +31,7 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
+import de.hbt.salat.employee.persistence.SalatUserReferences;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.notification.service.NotificationService;
@@ -38,7 +40,7 @@ import de.hbt.salat.testutils.EmployeecontractTestUtils;
 
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
-@Import({ EmployeeService.class, EmployeeDAO.class, EmployeecontractDAO.class, EmployeecontractService.class,
+@Import({ EmployeeService.class, SalatUserService.class, SalatUserReferences.class, EmployeeDAO.class, EmployeecontractDAO.class, EmployeecontractService.class,
 		SalatProperties.class, EmployeeAuthorization.class, EmployeecontractAuthorization.class, AuthService.class})
 public class EmployeecontractServiceTest {
 
@@ -68,7 +70,7 @@ public class EmployeecontractServiceTest {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		this.employeeService.createOrUpdate(employee);
 		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
-		supervisor.setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
+		supervisor.getSalatUser().setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
 		this.employeeService.createOrUpdate(supervisor);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
@@ -159,7 +161,7 @@ public class EmployeecontractServiceTest {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		this.employeeService.createOrUpdate(employee);
 		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
-		supervisor.setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
+		supervisor.getSalatUser().setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
 		this.employeeService.createOrUpdate(supervisor);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
@@ -176,7 +178,7 @@ public class EmployeecontractServiceTest {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		this.employeeService.createOrUpdate(employee);
 		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
-		supervisor.setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
+		supervisor.getSalatUser().setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
 		this.employeeService.createOrUpdate(supervisor);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
