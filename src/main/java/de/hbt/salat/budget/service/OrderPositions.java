@@ -39,8 +39,7 @@ public class OrderPositions {
         if (suborderId == null) {
             return Optional.of(OrderPosition.orderWide(customerorderId));
         }
-        var suborder = suborderService.getSuborderById(suborderId);
-        return suborder == null ? Optional.empty() : Optional.of(OrderPosition.of(suborder));
+        return suborderService.getSuborderLocationById(suborderId).map(OrderPosition::of);
     }
 
     /**

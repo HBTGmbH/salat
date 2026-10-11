@@ -151,6 +151,17 @@ public class EmployeeService {
   }
 
   /**
+   * Whether a person carries this id — for a module that refers to a person by id and refuses an
+   * unknown one before the foreign key does (#1399, ADR-0036). Without the read rules, like
+   * {@link #getSignsByIds}: the answer decides whether a reference resolves, not what the caller may
+   * show.
+   */
+  @Transactional(readOnly = true)
+  public boolean existsEmployeeById(long employeeId) {
+    return employeeRepository.existsById(employeeId);
+  }
+
+  /**
    * The current sign of each of these employees, by id — for records that reference a person by
    * id and show the sign (#968). One statement for a whole list, and without the read rules, for
    * the reason given at {@link #getEmployeesByIds}: the caller shows the sign of a record it may

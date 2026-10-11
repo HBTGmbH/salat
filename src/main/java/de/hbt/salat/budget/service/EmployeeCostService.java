@@ -28,10 +28,8 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.CustomerorderOption;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -339,28 +337,28 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
-        var employee = employeeOf(data);
+        var employeeId = employeeIdOf(data);
         var customerorder = customerorderOf(data);
-        var suborder = suborderOf(data);
+        var suborderId = suborderIdOf(data);
         var category = categoryOf(data);
-        checkNoAssignmentOverlap(employee.getId(), customerorderIdOf(customerorder), data.suborderId(),
+        checkNoAssignmentOverlap(employeeId, customerorderIdOf(customerorder), suborderId,
             data.validFrom(), endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
-        applyAssignment(assignment, data, category, employee, customerorder, suborder);
+        applyAssignment(assignment, data, category, employeeId, customerorder, suborderId);
         return assignmentRepository.save(assignment);
     }
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
-        var employee = employeeOf(data);
+        var employeeId = employeeIdOf(data);
         var customerorder = customerorderOf(data);
-        var suborder = suborderOf(data);
+        var suborderId = suborderIdOf(data);
         var category = categoryOf(data);
         var assignment = getAssignmentById(id);
         var previous = assignment.getCategory();
-        checkNoAssignmentOverlap(employee.getId(), customerorderIdOf(customerorder), data.suborderId(),
+        checkNoAssignmentOverlap(employeeId, customerorderIdOf(customerorder), suborderId,
             data.validFrom(), endOfValidity(data.validUntil()), id);
-        applyAssignment(assignment, data, category, employee, customerorder, suborder);
+        applyAssignment(assignment, data, category, employeeId, customerorder, suborderId);
         assignmentRepository.save(assignment);
         if (!previous.equals(category)) {
             dropIfUnused(previous);
@@ -368,15 +366,14 @@ public class EmployeeCostService {
     }
 
     /**
-     * The person the assignment is for. The foreign key would refuse an id nobody carries as well,
-     * but only as a failed statement.
+     * The person the assignment is for, by id. The foreign key would refuse an id nobody carries as
+     * well, but only as a failed statement; whether it exists the employee module answers (#1399).
      */
-    private Employee employeeOf(EmployeeCostAssignmentData data) {
-        var employee = data.employeeId() == null ? null : employeeService.getEmployeeById(data.employeeId());
-        if (employee == null) {
+    private long employeeIdOf(EmployeeCostAssignmentData data) {
+        if (data.employeeId() == null || !employeeService.existsEmployeeById(data.employeeId())) {
             throw new InvalidDataException(ErrorCode.EM_NOT_FOUND, data.employeeId());
         }
-        return employee;
+        return data.employeeId();
     }
 
     /**
@@ -400,15 +397,14 @@ public class EmployeeCostService {
      * The suborder of the assignment, by id (#1205) — {@code null} unless the assignment is for a suborder. An id
      * nothing answers to is refused: the foreign key would do so too, but only as a failed statement.
      */
-    private Suborder suborderOf(EmployeeCostAssignmentData data) {
+    private Long suborderIdOf(EmployeeCostAssignmentData data) {
         if (data.suborderId() == null) {
             return null;
         }
-        var suborder = suborderService.getSuborderById(data.suborderId());
-        if (suborder == null) {
+        if (suborderService.getSuborderLocationById(data.suborderId()).isEmpty()) {
             throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
         }
-        return suborder;
+        return data.suborderId();
     }
 
     /**
@@ -416,7 +412,7 @@ public class EmployeeCostService {
      * (#958). The select of the form is no protection: a post with another value, or none at all,
      * reaches the same endpoint. An unknown name is refused here; the assignment itself then refers to
      * the category by id (#1209). Person, order and suborder are referenced by id (#968, #1343, #1205)
-     * and checked by {@link #employeeOf}, {@link #customerorderOf} and {@link #suborderOf}.
+     * and checked by {@link #employeeIdOf}, {@link #customerorderOf} and {@link #suborderIdOf}.
      *
      * <p>A category without rate periods still counts. An assignment left behind by a deleted cost
      * rate (#895) therefore stays editable, which is the way to move it onto a rate that exists.
@@ -462,15 +458,15 @@ public class EmployeeCostService {
 
     /**
      * @param customerorder the chosen customer order, {@code null} unless the assignment is for a whole order
-     * @param suborder      the chosen suborder, {@code null} unless the assignment is for a suborder
+     * @param suborderId    the chosen suborder, {@code null} unless the assignment is for a suborder
      */
     private void applyAssignment(EmployeeCostAssignment assignment, EmployeeCostAssignmentData data,
-                                 CostCategory category, Employee employee, CustomerorderOption customerorder,
-                                 Suborder suborder) {
+                                 CostCategory category, long employeeId, CustomerorderOption customerorder,
+                                 Long suborderId) {
         assignment.setCategory(category);
-        assignment.setEmployee(masterDataReferences.employee(employee.getId()));
-        assignment.setCustomerorder(masterDataReferences.customerorder(customerorder == null ? null : customerorder.id()));
-        assignment.setSuborder(masterDataReferences.suborder(suborder == null ? null : suborder.getId()));
+        assignment.setEmployee(masterDataReferences.employee(employeeId));
+        assignment.setCustomerorder(masterDataReferences.customerorder(customerorderIdOf(customerorder)));
+        assignment.setSuborder(masterDataReferences.suborder(suborderId));
         assignment.setValidFrom(data.validFrom());
         assignment.setValidUntil(endOfValidity(data.validUntil()));
     }

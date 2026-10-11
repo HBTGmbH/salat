@@ -30,9 +30,7 @@ import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
-import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -201,14 +199,14 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
-        var customerorder = customerorderOf(data);
-        var employee = employeeOf(data);
-        checkSuborderPatternMatches(customerorder, data.suborderSign());
+        var customerorderId = customerorderIdOf(data);
+        var employeeId = employeeIdOf(data);
+        checkSuborderPatternMatches(customerorderId, data.suborderSign());
         var plan = resolvePlan(data, validUntil);
-        checkNoOverlap(customerorder.getId(), data.suborderSign(), data.employeeId(),
+        checkNoOverlap(customerorderId, data.suborderSign(), employeeId,
             data.orderBudgetId(), data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
-        apply(pricing, data, customerorder, employee, plan);
+        apply(pricing, data, customerorderId, employeeId, plan);
         orderPricingRepository.save(pricing);
     }
 
@@ -220,13 +218,13 @@ public class OrderPricingService {
     public void update(long id, OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
         var pricing = getById(id);
-        var customerorder = customerorderOf(data);
-        var employee = employeeOf(data);
-        checkSuborderPatternMatches(customerorder, data.suborderSign());
+        var customerorderId = customerorderIdOf(data);
+        var employeeId = employeeIdOf(data);
+        checkSuborderPatternMatches(customerorderId, data.suborderSign());
         var plan = resolvePlan(data, validUntil);
-        checkNoOverlap(customerorder.getId(), data.suborderSign(), data.employeeId(),
+        checkNoOverlap(customerorderId, data.suborderSign(), employeeId,
             data.orderBudgetId(), data.validFrom(), validUntil, id);
-        apply(pricing, data, customerorder, employee, plan);
+        apply(pricing, data, customerorderId, employeeId, plan);
         orderPricingRepository.save(pricing);
     }
 
@@ -240,26 +238,22 @@ public class OrderPricingService {
      * case. An id nobody carries is refused here rather than by the foreign key, which would only
      * fail the statement.
      */
-    private Employee employeeOf(OrderPricingData data) {
+    private Long employeeIdOf(OrderPricingData data) {
         if (data.employeeId() == null) {
             return null;
         }
-        var employee = employeeService.getEmployeeById(data.employeeId());
-        if (employee == null) {
+        if (!employeeService.existsEmployeeById(data.employeeId())) {
             throw new InvalidDataException(ErrorCode.EM_NOT_FOUND, data.employeeId());
         }
-        return employee;
+        return data.employeeId();
     }
 
     /** The order the rate names — required, and refused here rather than by the foreign key. */
-    private Customerorder customerorderOf(OrderPricingData data) {
-        var customerorder = data.customerorderId() == null
-            ? null
-            : customerorderService.getCustomerorderById(data.customerorderId());
-        if (customerorder == null) {
+    private long customerorderIdOf(OrderPricingData data) {
+        if (data.customerorderId() == null || !customerorderService.existsCustomerorderById(data.customerorderId())) {
             throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
         }
-        return customerorder;
+        return data.customerorderId();
     }
 
     /**
@@ -267,8 +261,8 @@ public class OrderPricingService {
      * order. It would then never match during controlling and the rate would silently fall back to
      * the order-wide one, so require that it covers at least one suborder of the chosen order.
      */
-    private void checkSuborderPatternMatches(Customerorder customerorder, String suborderSign) {
-        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorder.getId(), suborderSign)) {
+    private void checkSuborderPatternMatches(long customerorderId, String suborderSign) {
+        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorderId, suborderSign)) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
     }
@@ -317,23 +311,22 @@ public class OrderPricingService {
      * list anyway (→ {@link OrderBudgetBinding}).
      */
     private PricedOrder orderOf(Long customerorderId) {
-        var customerorder = customerorderId == null ? null : customerorderService.getCustomerorderById(customerorderId);
-        if (customerorder == null || customerorder.getId() == null) {
+        if (customerorderId == null || !customerorderService.existsCustomerorderById(customerorderId)) {
             return null;
         }
-        var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId()).stream()
-            .map(suborder -> new PositionedSuborder(suborder.getCompleteOrderSign(), OrderPosition.of(suborder)))
+        var suborders = suborderService.getSuborderReadModelsByCustomerorderId(customerorderId).stream()
+            .map(suborder -> new PositionedSuborder(suborder.completeOrderSign(), OrderPosition.of(suborder)))
             .toList();
-        return new PricedOrder(customerorder.getId(), suborders);
+        return new PricedOrder(customerorderId, suborders);
     }
 
     private record PricedOrder(long customerorderId, List<PositionedSuborder> suborders) {}
 
-    private void apply(OrderPricing pricing, OrderPricingData data, Customerorder customerorder, Employee employee,
+    private void apply(OrderPricing pricing, OrderPricingData data, long customerorderId, Long employeeId,
                        OrderBudget plan) {
-        pricing.setCustomerorder(masterDataReferences.customerorder(customerorder.getId()));
+        pricing.setCustomerorder(masterDataReferences.customerorder(customerorderId));
         pricing.setSuborderSign(data.suborderSign());
-        pricing.setEmployee(masterDataReferences.employee(employee == null ? null : employee.getId()));
+        pricing.setEmployee(masterDataReferences.employee(employeeId));
         pricing.setOrderBudget(plan);
         pricing.setDescription(data.description());
         pricing.setPriceCentsPerHour(data.priceCentsPerHour());

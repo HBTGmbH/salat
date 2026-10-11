@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SuborderLocation;
 import de.hbt.salat.order.domain.SuborderReadModel;
 
 /**
@@ -43,6 +44,11 @@ public record OrderPosition(long customerorderId, List<Long> suborderPath) {
 
     /** The position of a suborder read by the order module, whose path is already built (#1339). */
     public static OrderPosition of(SuborderReadModel suborder) {
+        return new OrderPosition(suborder.customerorderId(), suborder.path());
+    }
+
+    /** The position of a suborder located by the order module (#1399). */
+    public static OrderPosition of(SuborderLocation suborder) {
         return new OrderPosition(suborder.customerorderId(), suborder.path());
     }
 

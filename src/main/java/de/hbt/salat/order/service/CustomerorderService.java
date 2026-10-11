@@ -288,6 +288,15 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerorderById(customerorderId);
   }
 
+  /**
+   * Whether an order carries this id — for a module that refers to an order by id and refuses an
+   * unknown one before the foreign key does (#1399, ADR-0036).
+   */
+  @Transactional(readOnly = true)
+  public boolean existsCustomerorderById(long customerorderId) {
+    return customerorderRepository.existsById(customerorderId);
+  }
+
   @Authorized(requiresManager = true)
   public Customerorder toggleHide(long id) {
     Customerorder co = customerorderDAO.getCustomerorderById(id);

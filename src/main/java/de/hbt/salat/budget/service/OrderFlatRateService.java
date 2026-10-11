@@ -31,9 +31,7 @@ import de.hbt.salat.budget.persistence.OrderFlatRateRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
-import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -244,27 +242,25 @@ public class OrderFlatRateService {
      * allocated to a plan, so it is refused.
      */
     private FlatRateScope scopeOf(OrderFlatRateData data) {
-        var customerorder = data.customerorderId() == null
-            ? null
-            : customerorderService.getCustomerorderById(data.customerorderId());
-        if (customerorder == null) {
+        if (data.customerorderId() == null || !customerorderService.existsCustomerorderById(data.customerorderId())) {
             throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
         }
         if (data.suborderId() == null) {
-            return new FlatRateScope(customerorder, null, OrderPosition.orderWide(customerorder.getId()));
+            return new FlatRateScope(OrderPosition.orderWide(data.customerorderId()), null);
         }
-        var suborder = suborderService.getSuborderById(data.suborderId());
-        if (suborder == null) {
-            throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
-        }
-        if (!customerorder.getId().equals(suborder.getCustomerorder().getId())) {
+        var suborder = suborderService.getSuborderLocationById(data.suborderId())
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId()));
+        if (suborder.customerorderId() != data.customerorderId()) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
-        return new FlatRateScope(customerorder, suborder, OrderPosition.of(suborder));
+        return new FlatRateScope(OrderPosition.of(suborder), suborder.id());
     }
 
-    /** @param position where the flat rate sits */
-    private record FlatRateScope(Customerorder customerorder, Suborder suborder, OrderPosition position) {}
+    /**
+     * @param position   where the flat rate sits, which names the order
+     * @param suborderId the suborder, {@code null} for the order as a whole
+     */
+    private record FlatRateScope(OrderPosition position, Long suborderId) {}
 
     /** Instalments carry their own amounts; the other two rhythms repeat the one of the definition. */
     private void checkAmountPresent(OrderFlatRateData data) {
@@ -300,8 +296,8 @@ public class OrderFlatRateService {
     }
 
     private void apply(OrderFlatRate flatRate, OrderFlatRateData data, FlatRateScope scope, OrderBudget plan) {
-        flatRate.setCustomerorder(masterDataReferences.customerorder(scope.customerorder().getId()));
-        flatRate.setSuborder(masterDataReferences.suborder(scope.suborder() == null ? null : scope.suborder().getId()));
+        flatRate.setCustomerorder(masterDataReferences.customerorder(scope.position().customerorderId()));
+        flatRate.setSuborder(masterDataReferences.suborder(scope.suborderId()));
         flatRate.setOrderBudget(plan);
         flatRate.setDescription(data.description());
         flatRate.setRhythm(data.rhythm());

@@ -36,8 +36,6 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.util.DateUtils;
-import de.hbt.salat.order.domain.Customerorder;
-import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -96,7 +94,7 @@ public class OrderBudgetService {
             return Map.of();
         }
         // the palette asks with the signs it shows; the plans are read by the id behind them (#1205)
-        var signById = customerorderIdsBySign(visible).entrySet().stream()
+        var signById = customerorderService.getCustomerorderIdsBySigns(visible).entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
         if (signById.isEmpty()) {
             return Map.of();
@@ -143,15 +141,6 @@ public class OrderBudgetService {
         }
         return filterAuthorized(
             orderBudgetRepository.findAllActiveWithAdjustmentsByCustomerorderIds(restrictToCustomerorderIds));
-    }
-
-    /** The ids behind the signs the palette asks with; a sign nobody carries is left out. */
-    private Map<String, Long> customerorderIdsBySign(Collection<String> customerorderSigns) {
-        if (customerorderSigns.isEmpty()) {
-            return Map.of();
-        }
-        return customerorderService.getCustomerordersBySigns(List.copyOf(customerorderSigns)).stream()
-            .collect(Collectors.toMap(Customerorder::getSign, Customerorder::getId, (a, b) -> a));
     }
 
     private List<OrderBudget> filterAuthorized(List<OrderBudget> budgets) {
@@ -251,7 +240,7 @@ public class OrderBudgetService {
         if (active) {
             // a plan whose suborder no longer exists covers nothing and conflicts with nothing
             orderPositions.of(budget).ifPresent(position -> checkLevelNotMixed(
-                new Scope(position, null, null), budget.getValidFrom(), budget.getValidUntil(), true, id));
+                new Scope(position, null), budget.getValidFrom(), budget.getValidUntil(), true, id));
         }
         budget.setActive(active);
         orderBudgetRepository.save(budget);
@@ -360,32 +349,30 @@ public class OrderBudgetService {
      * plans already in force.
      */
     private Scope scopeOf(OrderBudgetData data) {
-        var customerorder = data.customerorderId() == null
-            ? null
-            : customerorderService.getCustomerorderById(data.customerorderId());
-        if (customerorder == null) {
+        if (data.customerorderId() == null || !customerorderService.existsCustomerorderById(data.customerorderId())) {
             throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderId());
         }
         if (data.suborderId() == null) {
-            return new Scope(OrderPosition.orderWide(customerorder.getId()), customerorder, null);
+            return new Scope(OrderPosition.orderWide(data.customerorderId()), null);
         }
-        var suborder = suborderService.getSuborderById(data.suborderId());
-        if (suborder == null) {
-            throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
-        }
-        if (!customerorder.getId().equals(suborder.getCustomerorder().getId())) {
+        var suborder = suborderService.getSuborderLocationById(data.suborderId())
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId()));
+        if (suborder.customerorderId() != data.customerorderId()) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
-        return new Scope(OrderPosition.of(suborder), customerorder, suborder);
+        return new Scope(OrderPosition.of(suborder), suborder.id());
     }
 
-    /** The scope of a plan being saved: its position, and the order and suborder it lives on. */
-    private record Scope(OrderPosition position, Customerorder customerorder, Suborder suborder) {}
+    /**
+     * The scope of a plan being saved: its position, which names the order, and the suborder it lives
+     * on, {@code null} for the order as a whole.
+     */
+    private record Scope(OrderPosition position, Long suborderId) {}
 
     private void apply(OrderBudget budget, OrderBudgetData data, Scope scope) {
         budget.setName(data.name());
-        budget.setCustomerorder(masterDataReferences.customerorder(scope.customerorder().getId()));
-        budget.setSuborder(masterDataReferences.suborder(scope.suborder() == null ? null : scope.suborder().getId()));
+        budget.setCustomerorder(masterDataReferences.customerorder(scope.position().customerorderId()));
+        budget.setSuborder(masterDataReferences.suborder(scope.suborderId()));
         budget.setValidFrom(data.validFrom());
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));
