@@ -6980,3 +6980,58 @@ databaseChangeLog:
             referencedTableName: jira_replication_run
             referencedColumnNames: id
             onDelete: CASCADE
+
+  - changeSet:
+      id: 186
+      author: kr
+      comment: Saetze fuer Zeitzuschlaege aufs Zeitkonto an Auftrag und Unterauftrag (#1469)
+      # Je Art ein Satz in Prozent: Nacht, Wochenende, Feiertag; zur Nacht Beginn und Ende als Hinweis
+      # beim Buchen. Am Auftrag heisst leer: kein Zuschlag dieser Art. Am Unterauftrag heisst leer erben
+      # (vom naechsten Unterauftrag darueber mit Satz, sonst vom Auftrag), 0 heisst ausdruecklich keiner.
+      # Bestehende Auftraege bekommen keinen Satz, es aendert sich also nichts.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: customerorder
+                columnName: surcharge_night_percent
+      changes:
+        - sql:
+            sql: >-
+              ALTER TABLE `customerorder`
+                ADD COLUMN `surcharge_night_percent` int NULL,
+                ADD COLUMN `surcharge_night_from` time NULL,
+                ADD COLUMN `surcharge_night_until` time NULL,
+                ADD COLUMN `surcharge_weekend_percent` int NULL,
+                ADD COLUMN `surcharge_holiday_percent` int NULL
+        - sql:
+            sql: >-
+              ALTER TABLE `suborder`
+                ADD COLUMN `surcharge_night_percent` int NULL,
+                ADD COLUMN `surcharge_night_from` time NULL,
+                ADD COLUMN `surcharge_night_until` time NULL,
+                ADD COLUMN `surcharge_weekend_percent` int NULL,
+                ADD COLUMN `surcharge_holiday_percent` int NULL
+
+  - changeSet:
+      id: 187
+      author: kr
+      comment: Kennzeichen und Gutschrift eines Zeitzuschlags an der Buchung (#1469)
+      # surcharge_kind NIGHT, WEEKEND oder HOLIDAY, leer ohne Kennzeichen. surcharge_percent ist eine
+      # Kopie des Satzes beim Speichern: ein spaeter geaenderter Satz am Auftrag aendert weder Buchung
+      # noch abgenommene Monate. surcharge_credit_minutes ist Dauer mal Satz in ganzen Minuten, ohne
+      # Kennzeichen 0; das Zeitkonto summiert die Spalte. Mit DEFAULT laeuft das ALTER in MySQL 8
+      # ohne Umkopieren der Tabelle.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: timereport
+                columnName: surcharge_kind
+      changes:
+        - sql:
+            sql: >-
+              ALTER TABLE `timereport`
+                ADD COLUMN `surcharge_kind` varchar(16) NULL,
+                ADD COLUMN `surcharge_percent` int NULL,
+                ADD COLUMN `surcharge_credit_minutes` int NOT NULL DEFAULT 0

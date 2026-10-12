@@ -46,6 +46,14 @@ public class DurationUtils {
     return sb.toString();
   }
 
+  /** A duration with its sign, "+4:30"; zero without one, for it is no change. */
+  public static String formatSigned(Duration duration) {
+    if (duration.isZero() || duration.isNegative()) {
+      return format(duration);
+    }
+    return "+" + format(duration);
+  }
+
   public static Duration parseDuration(String value) {
     if(value == null || value.trim().isEmpty()) {
       return Duration.ZERO;

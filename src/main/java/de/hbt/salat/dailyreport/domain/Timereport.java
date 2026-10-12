@@ -7,6 +7,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -40,6 +42,8 @@ import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.order.domain.SurchargeRate;
 
 /**
  * A booking. Its suborder and its contract are those of its employee order (#1210): the booking
@@ -126,6 +130,30 @@ public class Timereport extends AuditedEntity implements Serializable {
     @Setter(AccessLevel.NONE)
     private List<String> ticketReferences = new ArrayList<>();
 
+    /**
+     * A night, weekend or holiday assignment (#1469), {@code null} for none. Its rate is a copy taken
+     * when the flag is set: a later change of the rate on the order must not change a booking, and
+     * with it an accepted month. Set through {@link #setSurcharge}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "surcharge_kind", columnDefinition = "varchar(16)")
+    @Setter(AccessLevel.NONE)
+    private SurchargeKind surchargeKind;
+
+    @Column(name = "surcharge_percent")
+    @Setter(AccessLevel.NONE)
+    private Integer surchargePercent;
+
+    /**
+     * The credit on the overtime account, duration × rate in whole minutes (#1469); zero without a
+     * flag. Kept in step with the duration by {@link #setDuration} and {@link #setSurcharge}, so that
+     * the overtime account sums a column rather than recomputing the rounding.
+     */
+    @Convert(converter = DurationMinutesConverter.class)
+    @Column(name = "surcharge_credit_minutes", nullable = false)
+    @Setter(AccessLevel.NONE)
+    private Duration surchargeCredit = Duration.ZERO;
+
     /** Training on the job (#836); a column with {@code NOT NULL DEFAULT false} since #1246. */
     @Column(nullable = false)
     private boolean training;
@@ -150,10 +178,27 @@ public class Timereport extends AuditedEntity implements Serializable {
         timereport.setTaskdescription(taskdescription);
         timereport.setTicketReferences(ticketReferences);
         timereport.setTraining(training);
+        timereport.setSurcharge(surchargeKind, surchargePercent);
         timereport.setSequencenumber(0);
         timereport.setEmployeeorder(employeeorder);
         timereport.setReferenceday(referenceday);
         return timereport;
+    }
+
+    public void setDuration(Duration duration) {
+        this.duration = duration;
+        this.surchargeCredit = creditOf(surchargePercent);
+    }
+
+    /** Flags the booking, or clears the flag with {@code null}, at the rate given. */
+    public void setSurcharge(SurchargeKind kind, Integer percent) {
+        this.surchargeKind = kind;
+        this.surchargePercent = kind != null ? percent : null;
+        this.surchargeCredit = creditOf(this.surchargePercent);
+    }
+
+    private Duration creditOf(Integer percent) {
+        return percent == null || duration == null ? Duration.ZERO : SurchargeRate.creditFor(duration, percent);
     }
 
     /** The contract of the booking: that of its employee order since #1210. */

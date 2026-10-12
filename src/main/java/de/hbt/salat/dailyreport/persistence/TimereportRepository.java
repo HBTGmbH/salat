@@ -178,11 +178,23 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   """ + IS_WORKING_TIME)
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
+  /**
+   * The time surcharge credit of the contract in the range (#1469), what the overtime account adds to
+   * the booked time. Standby carries no flag; the filter keeps the sum in line with the booked time.
+   */
+  @Query("""
+      select sum(tr.surchargeCredit) from Timereport tr
+      where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
+      and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
+  """ + IS_WORKING_TIME)
+  Optional<Long> getSurchargeCreditMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
+
   @Query("""
       select new de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes(
              extract(year from tr.referenceday.refdate),
              extract(month from tr.referenceday.refdate),
-             sum(tr.duration))
+             sum(tr.duration),
+             sum(tr.surchargeCredit))
       from Timereport tr
       where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end

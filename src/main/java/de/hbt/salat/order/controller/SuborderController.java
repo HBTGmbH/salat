@@ -40,6 +40,7 @@ import de.hbt.salat.common.viewhelper.NoticeViewHelper;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeInput;
 import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -185,7 +186,8 @@ public class SuborderController {
             form.getHide(),
             form.getParentId(),
             form.getTicketReferenceMode(),
-            form.getTicketReferenceLimit()
+            form.getTicketReferenceLimit(),
+            form.getSurcharges().toInput()
         );
         if (isCreate) {
           suborderService.create(data, form.getCustomerorderId());
@@ -301,6 +303,7 @@ public class SuborderController {
     model.addAttribute("parentSubordersChanged", true);
     model.addAttribute("datesChanged", true);
     model.addAttribute("inheritedTicketReferenceChanged", true);
+    model.addAttribute("inheritedSurchargesChanged", true);
     return "order/sub-order-form";
   }
 
@@ -316,6 +319,7 @@ public class SuborderController {
     model.addAttribute("parentSubordersChanged", true);
     model.addAttribute("datesChanged", true);
     model.addAttribute("inheritedTicketReferenceChanged", true);
+    model.addAttribute("inheritedSurchargesChanged", true);
     return "order/sub-order-form";
   }
 
@@ -329,6 +333,7 @@ public class SuborderController {
     model.addAttribute("htmxRequest", htmxRequest);
     model.addAttribute("datesChanged", true);
     model.addAttribute("inheritedTicketReferenceChanged", true);
+    model.addAttribute("inheritedSurchargesChanged", true);
     return "order/sub-order-form";
   }
 
@@ -567,6 +572,9 @@ public class SuborderController {
     if (currentCustomerorder != null) {
       model.addAttribute("inheritedTicketReferencePolicy",
           suborderService.getInheritedTicketReferencePolicy(currentCustomerorder.getId(), form.getParentId()));
+      // the same for the time surcharges, per kind (#1469)
+      model.addAttribute("inheritedSurcharges",
+          suborderService.getInheritedSurchargeRates(currentCustomerorder.getId(), form.getParentId()));
     }
   }
 
@@ -589,6 +597,7 @@ public class SuborderController {
       form.setTicketReferenceMode(so.getTicketReferencePolicy().mode());
       form.setTicketReferenceLimit(so.getTicketReferencePolicy().limit());
     }
+    form.setSurcharges(SurchargeFields.of(SurchargeInput.of(so::getSurchargeRate)));
     form.setValidFrom(format(so.getFromDate()));
     form.setValidUntil(so.getUntilDate() != null ? format(so.getUntilDate()) : "");
     if (so.getDebithours() != null && !so.getDebithours().isZero()) {

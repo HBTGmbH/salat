@@ -76,6 +76,11 @@ public class TimereportDAO {
         return timereportRepository.getReportedMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate).orElse(0L);
     }
 
+    /** The time surcharge credit of the contract in the range (#1469). */
+    public long getSurchargeCreditMinutesForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
+        return timereportRepository.getSurchargeCreditMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate).orElse(0L);
+    }
+
     public List<MonthlyReportedMinutes> getReportedMinutesByMonthForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
         return timereportRepository.getReportedMinutesByMonthForEmployeecontract(ecId, fromDate, untilDate);
     }
@@ -592,6 +597,9 @@ public class TimereportDAO {
             .ticketReferences(timereport.getTicketReferences())
             .sequencenumber(timereport.getSequencenumber())
             .training(timereport.isTraining())
+            .surchargeKind(timereport.getSurchargeKind())
+            .surchargePercent(timereport.getSurchargePercent())
+            .surchargeCredit(timereport.getSurchargeCredit())
             .status(timereport.getStatus())
             .billable(timereport.getSuborder().getInvoice() == YESNO_YES)
             .employeeorderId(timereport.getEmployeeorder().getId())

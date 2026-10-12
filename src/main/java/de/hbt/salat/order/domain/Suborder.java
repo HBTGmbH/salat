@@ -8,6 +8,7 @@ import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -153,6 +154,15 @@ public class Suborder extends AuditedEntity implements Serializable {
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private Integer ticketReferenceLimit;
+
+    /**
+     * Overrides the time surcharges of the order (#1469), per kind; a missing rate inherits like the
+     * ticket reference setting. Read and written through {@link #getSurchargeRate(SurchargeKind)}.
+     */
+    @Embedded
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private SurchargeRates surchargeRates;
 
     /**
      * Read only (#1371): another module reaches the suborder through a reference and must not change
@@ -432,6 +442,42 @@ public class Suborder extends AuditedEntity implements Serializable {
     public TicketReferencePolicy getEffectiveTicketReferencePolicy() {
         var own = getTicketReferencePolicy();
         return own != null ? own : TicketReferencePolicySource.inheritedBy(customerorder, parentorder).policy();
+    }
+
+    /** The rate of this suborder itself, {@code null} where it inherits (#1469). */
+    public SurchargeRate getSurchargeRate(SurchargeKind kind) {
+        return surchargeRates != null ? surchargeRates.get(kind) : null;
+    }
+
+    /** {@code null} lets the suborder inherit the rate of {@code kind} again. */
+    public void setSurchargeRate(SurchargeKind kind, SurchargeRate rate) {
+        if (surchargeRates == null) {
+            surchargeRates = new SurchargeRates();
+        }
+        surchargeRates.set(kind, rate);
+    }
+
+    /**
+     * The rate of {@code kind} that applies to a booking on this suborder (#1469): its own, else that
+     * of the next suborder above with one, else that of the order; {@code null} if none sets one.
+     */
+    public SurchargeRate getEffectiveSurchargeRate(SurchargeKind kind) {
+        var own = getSurchargeRate(kind);
+        return own != null ? own : SurchargeRateSource.inheritedBy(kind, customerorder, parentorder).rate();
+    }
+
+    /**
+     * The rate a booking on this suborder may be flagged with, {@code null} where the kind is not
+     * offered: no rate, a rate of zero, or standby — standby is no working time and earns no surcharge.
+     * No order type at all is a standard order.
+     */
+    public SurchargeRate getOfferedSurchargeRate(SurchargeKind kind) {
+        var orderType = getEffectiveOrderType();
+        if (orderType != null && !orderType.isWorkingTime()) {
+            return null;
+        }
+        var rate = getEffectiveSurchargeRate(kind);
+        return rate != null && rate.offered() ? rate : null;
     }
 
     public OrderType getEffectiveOrderType() {

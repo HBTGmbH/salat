@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +49,10 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderSearchRow;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.domain.SuborderCompleteSign;
+import de.hbt.salat.order.domain.SurchargeInput;
+import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.order.domain.SurchargeRate;
+import de.hbt.salat.order.domain.SurchargeRateSource;
 import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.domain.TicketReferencePolicySource;
@@ -98,7 +103,8 @@ public class SuborderService {
             s.getShortdescription(),
             Boolean.TRUE.equals(s.getCommentnecessary()),
             s.isTrainingFlag(),
-            s.getEffectiveTicketReferencePolicy()))
+            s.getEffectiveTicketReferencePolicy(),
+            offeredSurchargeRates(s)))
         .toList();
   }
 
@@ -111,6 +117,32 @@ public class SuborderService {
     var customerorder = customerorderService.getCustomerorderById(customerorderId);
     var parent = parentId != null ? suborderDAO.getSuborderById(parentId) : null;
     return TicketReferencePolicySource.inheritedBy(customerorder, parent);
+  }
+
+  private static Map<SurchargeKind, SurchargeRate> offeredSurchargeRates(Suborder suborder) {
+    var result = new EnumMap<SurchargeKind, SurchargeRate>(SurchargeKind.class);
+    for (var kind : SurchargeKind.values()) {
+      var rate = suborder.getOfferedSurchargeRate(kind);
+      if (rate != null) {
+        result.put(kind, rate);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * What a suborder below {@code parentId} — at the top of the order where it is {@code null} — would
+   * inherit as its surcharge rates, per kind and with where each comes from (#1469).
+   */
+  @Transactional(readOnly = true)
+  public Map<SurchargeKind, SurchargeRateSource> getInheritedSurchargeRates(long customerorderId, Long parentId) {
+    var customerorder = customerorderService.getCustomerorderById(customerorderId);
+    var parent = parentId != null ? suborderDAO.getSuborderById(parentId) : null;
+    var result = new EnumMap<SurchargeKind, SurchargeRateSource>(SurchargeKind.class);
+    for (var kind : SurchargeKind.values()) {
+      result.put(kind, SurchargeRateSource.inheritedBy(kind, customerorder, parent));
+    }
+    return result;
   }
 
   @Authorized(requiresManager = true)
@@ -167,6 +199,17 @@ public class SuborderService {
     so.setTrainingFlag(data.trainingFlag());
     so.setOrderType(data.orderType());
     so.setTicketReferencePolicy(ticketReferencePolicyOf(data.ticketReferenceMode(), data.ticketReferenceLimit()));
+    // a missing rate inherits from above (#1469)
+    var surcharges = data.surcharges();
+    if (!surcharges.percentsInRange()) {
+      throw new InvalidDataException(ErrorCode.SO_SURCHARGE_PERCENT_INVALID);
+    }
+    if (!surcharges.nightTimesComplete()) {
+      throw new InvalidDataException(ErrorCode.SO_SURCHARGE_NIGHT_TIMES_MISSING);
+    }
+    for (var kind : SurchargeKind.values()) {
+      so.setSurchargeRate(kind, surcharges.rate(kind));
+    }
 
     if (data.validFrom() != null && !data.validFrom().trim().isEmpty()) {
       LocalDate fromDate = DateUtils.parseOrNull(data.validFrom());
@@ -318,7 +361,8 @@ public class SuborderService {
         so.isHide(),
         parentId,
         so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().mode() : null,
-        so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().limit() : null
+        so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().limit() : null,
+        SurchargeInput.of(so::getSurchargeRate)
     );
   }
 
@@ -729,6 +773,9 @@ public class SuborderService {
     copy.setTrainingFlag(suborder.isTrainingFlag());
     copy.setOrderType(suborder.getOrderType());
     copy.setTicketReferencePolicy(suborder.getTicketReferencePolicy());
+    for (var kind : SurchargeKind.values()) {
+      copy.setSurchargeRate(kind, suborder.getSurchargeRate(kind));
+    }
 
     if (copyroot) {
       copy.setSign("copy_of_" + suborder.getSign());

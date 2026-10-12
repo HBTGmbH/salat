@@ -67,7 +67,8 @@ public class TimereportListExcelService {
         messages.getMessage("main.timereportlist.column.duration"),
         messages.getMessage("main.timereportlist.column.duration.decimal"),
         messages.getMessage("main.timereportlist.column.billable"),
-        messages.getMessage("main.timereportlist.column.status"));
+        messages.getMessage("main.timereportlist.column.status"),
+        messages.getMessage("main.surcharge.booking.label"));
 
     var headerRow = sheet.createRow(0);
     for (int column = 0; column < headers.size(); column++) {
@@ -96,6 +97,7 @@ public class TimereportListExcelService {
           ? "main.timereportlist.billable.yes" : "main.timereportlist.billable.no"));
       text(row, 11, messages.getMessage("main.timereportlist.status." + timereport.getStatus(),
           timereport.getStatus()));
+      text(row, 12, surchargeText(timereport));
     }
 
     for (int column = 0; column < headers.size(); column++) {
@@ -110,5 +112,15 @@ public class TimereportListExcelService {
   private static String formatDuration(TimereportDTO timereport) {
     var minutes = timereport.getDuration().toMinutes();
     return "%d:%02d".formatted(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
+  }
+
+  /** The time surcharge flag (#1469), "Nacht 25 %"; empty without one. */
+  private String surchargeText(TimereportDTO timereport) {
+    if (timereport.getSurchargeKind() == null) {
+      return "";
+    }
+    var percent = messages.getMessage("main.surcharge.percent", new Object[] {timereport.getSurchargePercent()});
+    return messages.getMessage("main.surcharge.flag",
+        new Object[] {messages.getMessage(timereport.getSurchargeKind().getLabel()), percent});
   }
 }

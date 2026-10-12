@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.controller;
 
+import de.hbt.salat.order.domain.SurchargeKind;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +70,9 @@ public class TimereportForm {
     private List<String> adoptedTicketKeys = new ArrayList<>();
 
     private boolean training;
+
+    /** A night, weekend or holiday assignment (#1469); {@code null} for none. */
+    private SurchargeKind surchargeKind;
 
     /** 1 = no repeat; > 1 = create one timereport per working day, skipping weekends/holidays */
     private int numberOfSerialDays = 1;

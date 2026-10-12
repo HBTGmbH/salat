@@ -37,6 +37,9 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SERIAL_DAYS_OUT_OF_RANGE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_NOT_OFFERED;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_WEEKEND_ON_WEEKDAY;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCES_EXCEED_LIMIT;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCES_NOT_ALLOWED;
@@ -117,6 +120,7 @@ import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.event.EmployeeorderConflictResolutionEvent;
 import de.hbt.salat.order.event.EmployeeorderDeleteEvent;
@@ -170,6 +174,17 @@ public class TimereportService {
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       List<String> ticketReferences, boolean trainingFlag, Duration duration, int numberOfSerialDays)
       throws ErrorCodeException {
+    createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, ticketReferences, trainingFlag,
+        null, duration, numberOfSerialDays);
+  }
+
+  /**
+   * @param surchargeKind the time surcharge the bookings are flagged with, {@code null} for none (#1469);
+   *                      the rate is the one the suborder offers now
+   */
+  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      List<String> ticketReferences, boolean trainingFlag, SurchargeKind surchargeKind, Duration duration,
+      int numberOfSerialDays) throws ErrorCodeException {
 
     // the form offers 1..MAX_SERIAL_BOOKING_DAYS; a hand-crafted POST must not ask for more (#826)
     if (numberOfSerialDays < 1 || numberOfSerialDays > MAX_SERIAL_BOOKING_DAYS) {
@@ -181,6 +196,7 @@ public class TimereportService {
         timereportTemplate);
     // set on the template, so getTwin() carries them to every serial day
     timereportTemplate.setTicketReferences(TicketReferences.normalize(ticketReferences));
+    applySurcharge(timereportTemplate, surchargeKind, null);
 
     // create a timereport for every serial day requested - in most cases this is 1
     List<Timereport> timereportsToSave = new ArrayList<>();
@@ -195,6 +211,23 @@ public class TimereportService {
     }
 
     checkAndSaveTimereports(timereportsToSave);
+  }
+
+  /**
+   * The time surcharges a booking on {@code day} may carry besides the night (#1469): holiday on a
+   * public holiday, weekend on a Saturday or Sunday, in this order - the first is the one the booking
+   * form preselects.
+   */
+  @Transactional(readOnly = true)
+  public List<SurchargeKind> getSurchargeDayKinds(LocalDate day) {
+    var kinds = new ArrayList<SurchargeKind>();
+    if (publicholidayDAO.getPublicHoliday(day).isPresent()) {
+      kinds.add(SurchargeKind.HOLIDAY);
+    }
+    if (!DateUtils.isWeekday(day)) {
+      kinds.add(SurchargeKind.WEEKEND);
+    }
+    return kinds;
   }
 
   /**
@@ -224,7 +257,7 @@ public class TimereportService {
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, Duration duration, boolean force) throws ErrorCodeException {
     updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
-        force, null, false);
+        force, null, false, null, false);
   }
 
   /**
@@ -234,12 +267,25 @@ public class TimereportService {
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       List<String> ticketReferences, boolean trainingFlag, Duration duration) throws ErrorCodeException {
     updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
-        false, ticketReferences == null ? List.of() : ticketReferences, true);
+        false, ticketReferences == null ? List.of() : ticketReferences, true, null, false);
+  }
+
+  /**
+   * The booking form: writes the ticket references and the time surcharge flag as given (#1469). The
+   * stored rate stays as long as the kind and the suborder do, so that a later change of the rate on
+   * the order does not reach an existing booking.
+   */
+  public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      List<String> ticketReferences, boolean trainingFlag, SurchargeKind surchargeKind, Duration duration)
+      throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
+        false, ticketReferences == null ? List.of() : ticketReferences, true, surchargeKind, true);
   }
 
   private void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, Duration duration, boolean force,
-      List<String> ticketReferences, boolean applyTicketReferences) throws ErrorCodeException {
+      List<String> ticketReferences, boolean applyTicketReferences,
+      SurchargeKind surchargeKind, boolean applySurchargeKind) throws ErrorCodeException {
     if (force && !authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);
     }
@@ -254,6 +300,8 @@ public class TimereportService {
     // taken before the booking is filled with the new values: the limit of a day with an absence compares
     // the day before and after the change (#397)
     var previousState = new StoredBooking(timereport.getEmployeeorder(), previousDate, timereport.getDuration());
+    var previousSurcharge = new StoredSurcharge(timereport.getEmployeeorder(), timereport.getSurchargeKind(),
+        timereport.getSurchargePercent());
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
         timereport);
     // across a contract boundary a booking changes its contract, never its person (#1128)
@@ -263,6 +311,8 @@ public class TimereportService {
     if (applyTicketReferences) {
       timereport.setTicketReferences(TicketReferences.normalize(ticketReferences));
     }
+    // callers that do not know about the flag - moving, shifting, the inline edit - keep it (#1469)
+    applySurcharge(timereport, applySurchargeKind ? surchargeKind : previousSurcharge.kind(), previousSurcharge);
     boolean dayChanged = !previousDate.equals(referenceDay);
     boolean contractChanged = !Objects.equals(previousContract.getId(), employeeContractId);
     if (dayChanged || contractChanged) {
@@ -380,6 +430,7 @@ public class TimereportService {
     validateContractBusinessRules(timereports);
     validateOrderBusinessRules(timereports);
     validateTicketReferences(timereports);
+    validateSurchargeDays(timereports);
     validateAbsenceDayLimit(timereports, previousStates);
     validateEmployeeorderBudget(timereports);
 
@@ -422,6 +473,39 @@ public class TimereportService {
     timereport.setTaskdescription(taskDescription.trim());
     timereport.setTraining(trainingFlag);
     timereport.setDuration(duration);
+  }
+
+  /**
+   * The flag and rate of a booking as it stood before a change (#1469).
+   */
+  private record StoredSurcharge(Employeeorder employeeorder, SurchargeKind kind, Integer percent) {
+
+    /** Whether the booking keeps its stored rate: same kind on the same suborder. */
+    boolean keptBy(SurchargeKind newKind, Suborder newSuborder) {
+      return kind != null && percent != null && kind == newKind
+          && Objects.equals(employeeorder.getSuborder().getId(), newSuborder.getId());
+    }
+  }
+
+  /**
+   * Flags {@code timereport} with {@code kind} (#1469): at the stored rate where the booking keeps it,
+   * else at the rate its suborder offers now — refused where the suborder offers none of that kind.
+   * Whether the day fits the kind is checked with the other rules on saving.
+   */
+  private static void applySurcharge(Timereport timereport, SurchargeKind kind, StoredSurcharge previous) {
+    if (kind == null) {
+      timereport.setSurcharge(null, null);
+      return;
+    }
+    if (previous != null && previous.keptBy(kind, timereport.getSuborder())) {
+      timereport.setSurcharge(kind, previous.percent());
+      return;
+    }
+    var rate = timereport.getSuborder().getOfferedSurchargeRate(kind);
+    if (rate == null) {
+      throw new BusinessRuleException(TR_SURCHARGE_NOT_OFFERED, timereport.getSuborder().getCompleteOrderSign());
+    }
+    timereport.setSurcharge(kind, rate.percent());
   }
 
   private static String contractLabel(Employeecontract employeecontract) {
@@ -737,6 +821,23 @@ public class TimereportService {
       }
       throw new BusinessRuleException(TR_TICKET_REFERENCES_EXCEED_LIMIT, sign, policy.limit(),
           DateUtils.format(timereport.getReferenceday().getRefdate()), count);
+    }
+  }
+
+  /**
+   * A weekend surcharge only on a Saturday or Sunday, a holiday surcharge only on a public holiday
+   * (#1469) - checked for every serial day, and again when a flagged booking is shifted to another day.
+   * A night can fall on any day.
+   */
+  private void validateSurchargeDays(List<Timereport> timereports) throws BusinessRuleException {
+    for (var timereport : timereports) {
+      var day = timereport.getReferenceday().getRefdate();
+      if (timereport.getSurchargeKind() == SurchargeKind.WEEKEND && DateUtils.isWeekday(day)) {
+        throw new BusinessRuleException(TR_SURCHARGE_WEEKEND_ON_WEEKDAY, DateUtils.format(day));
+      }
+      if (timereport.getSurchargeKind() == SurchargeKind.HOLIDAY && publicholidayDAO.getPublicHoliday(day).isEmpty()) {
+        throw new BusinessRuleException(TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY, DateUtils.format(day));
+      }
     }
   }
 

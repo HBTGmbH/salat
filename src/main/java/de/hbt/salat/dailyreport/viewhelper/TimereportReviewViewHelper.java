@@ -35,6 +35,8 @@ import de.hbt.salat.dailyreport.domain.TimereportReview.OrderGroup;
  *                      jeden Tag des Zeitraums, andernfalls keinen.
  * @param hasBalance    für den Zeitraum gibt es eine Bilanz, also Soll und Differenz
  * @param bookedText    die gebuchte Arbeitszeit ohne Bereitschaft
+ * @param surchargeText die Zeitgutschrift aus Nacht-, Wochenend- und Feiertagseinsätzen (#1469), mit
+ *                      Vorzeichen; sie geht in die Differenz ein
  * @param differenceText die Veränderung des Überstundenkontos, mit Vorzeichen
  * @param periodErrors  die Befunde über den ganzen Zeitraum, aufgelöst
  * @param findingDays   die Befunde der Tage, je Tag, nach Datum
@@ -46,6 +48,7 @@ public record TimereportReviewViewHelper(
     LocalDate releasedUntil, LocalDate acceptedUntil,
     LocalDate begin, LocalDate end, boolean periodEmpty, boolean detailed,
     boolean hasBalance, String targetText, String bookedText,
+    boolean hasSurcharge, String surchargeText,
     boolean hasAdjustment, String adjustmentText, String differenceText,
     boolean overtimeAccount, boolean hasStandby, String standbyText,
     List<String> periodErrors, List<FindingDay> findingDays, int findingCount,
@@ -97,6 +100,7 @@ public record TimereportReviewViewHelper(
         ? balance.workingTime()
         : review.byMonth().stream().map(MonthGroup::workingTime).reduce(Duration.ZERO, Duration::plus);
     var adjustment = balance != null ? balance.adjustment() : Duration.ZERO;
+    var surcharge = balance != null ? balance.surcharge() : Duration.ZERO;
     var findingDays = findingDays(review, errors);
     return new TimereportReviewViewHelper(
         review.employeecontractId(), review.employeeName(), review.employeeSign(), review.ownContract(),
@@ -104,8 +108,9 @@ public record TimereportReviewViewHelper(
         period.begin(), period.end(), period.isEmpty(), detailed,
         balance != null, balance != null ? DurationUtils.format(balance.target()) : null,
         DurationUtils.format(booked),
-        !adjustment.isZero(), signed(adjustment),
-        balance != null ? signed(balance.diff()) : null,
+        !surcharge.isZero(), DurationUtils.formatSigned(surcharge),
+        !adjustment.isZero(), DurationUtils.formatSigned(adjustment),
+        balance != null ? DurationUtils.formatSigned(balance.diff()) : null,
         review.overtimeAccount(), !review.standby().isZero(), DurationUtils.format(review.standby()),
         review.periodFindings().stream().map(message -> resolve(message, errors)).toList(),
         findingDays, review.dayFindings().size(),
@@ -130,14 +135,6 @@ public record TimereportReviewViewHelper(
   /** Die Sprungmarke eines Tages in der Sicht nach Tag. */
   public static String dayAnchor(LocalDate date) {
     return "day-" + date;
-  }
-
-  /** Eine Dauer mit Vorzeichen; die Null ohne, denn sie ist keine Veränderung. */
-  static String signed(Duration duration) {
-    if (duration.isZero() || duration.isNegative()) {
-      return DurationUtils.format(duration);
-    }
-    return "+" + DurationUtils.format(duration);
   }
 
   /** Der Text eines Befunds, seine Datumsangaben als {@code dd.MM.yyyy}. */

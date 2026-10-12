@@ -102,7 +102,7 @@ class TimereportEditContractTest {
         new ExtendedModelMap());
 
     verify(timereportService).updateTimereport(eq(TIMEREPORT_ID), eq(OWN_CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE),
-        anyString(), any(), anyBoolean(), eq(Duration.ofHours(1).plusMinutes(30)));
+        anyString(), any(), anyBoolean(), any(), eq(Duration.ofHours(1).plusMinutes(30)));
     verify(employeeorderService, never())
         .getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(eq(REMEMBERED_CONTRACT_ID), anyLong(), any());
   }

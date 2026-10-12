@@ -35,6 +35,7 @@ import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.persistence.CustomerDAO;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
+import de.hbt.salat.order.domain.SurchargeInput;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.domain.OrderType;
@@ -230,13 +231,13 @@ class StoredCompleteOrderSignTest {
 
   private static SuborderDTO dto(String sign, Long parentId) {
     return new SuborderDTO(null, sign, "Leistung", null, null, GlobalConstants.INVOICE_YES, false, false,
-        false, null, DateUtils.format(FROM), DateUtils.format(UNTIL), null, null, false, parentId, null, null);
+        false, null, DateUtils.format(FROM), DateUtils.format(UNTIL), null, null, false, parentId, null, null, SurchargeInput.NONE);
   }
 
   private CustomerorderDTO customerorderDto(Customerorder customerorder, String sign) {
     return new CustomerorderDTO(customerorder.getCustomer().getId(), FROM, UNTIL, sign,
         customerorder.getDescription(), null, null, null, null, List.of(responsible.getId()), responsible.getId(),
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE);
   }
 
   private Customer customer() {

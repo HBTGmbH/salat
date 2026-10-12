@@ -36,6 +36,8 @@ public enum ErrorCode {
   CO_SIGN_TAKEN("CO-0006", "another customer order already has this sign"),
   CO_SPECIAL_ORDER_LOCKED("CO-0007", "the configuration names this customer order as a special order; its sign is locked"),
   CO_TICKET_REFERENCE_LIMIT_INVALID("CO-0008", "an upper limit of ticket references per booking must be at least 1"),
+  CO_SURCHARGE_PERCENT_INVALID("CO-0009", "a time surcharge rate must lie between 0 and 1000 percent"),
+  CO_SURCHARGE_NIGHT_TIMES_MISSING("CO-0010", "a night surcharge needs the beginning and the end of the night"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
@@ -73,6 +75,8 @@ public enum ErrorCode {
   SO_SPECIAL_ORDER_LOCKED("SO-0007", "the configuration names this suborder, or one below it, as a special order; its complete sign is locked"),
   SO_TICKET_REFERENCE_LIMIT_INVALID("SO-0008", "an upper limit of ticket references per booking must be at least 1"),
   SO_COMPLETE_SIGN_TAKEN("SO-0009", "another suborder already has this complete order sign"),
+  SO_SURCHARGE_PERCENT_INVALID("SO-0010", "a time surcharge rate must lie between 0 and 1000 percent"),
+  SO_SURCHARGE_NIGHT_TIMES_MISSING("SO-0011", "a night surcharge needs the beginning and the end of the night"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
@@ -123,6 +127,9 @@ public enum ErrorCode {
   TR_EMPLOYEE_ORDER_OF_OTHER_CONTRACT("TR-0051", "the employee order belongs to another employee contract than the booking"),
   TR_ABSENCE_DAY_EXCEEDS_TARGET("TR-0052", "on a day with an absence, all bookings together exceed the daily working time"),
   TR_ABSENCE_DAY_WITHOUT_TARGET("TR-0053", "an absence is booked on a day without working time target, or time next to one"),
+  TR_SURCHARGE_NOT_OFFERED("TR-0054", "the suborder of the booking offers no time surcharge of this kind"),
+  TR_SURCHARGE_WEEKEND_ON_WEEKDAY("TR-0055", "a weekend surcharge needs a booking on a Saturday or Sunday"),
+  TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY("TR-0056", "a holiday surcharge needs a booking on a public holiday"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

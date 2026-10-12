@@ -27,6 +27,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
  * The sums the overtime account is built from (#463). Standby is booked like any other time but is
@@ -126,6 +127,31 @@ public class TimereportWorkingTimeSumTest {
         contract.getId(), DAY.withDayOfMonth(1), DAY.withDayOfMonth(30))).isEmpty();
   }
 
+  /** The time surcharge credit (#1469) is summed apart from the booked time, per range and per month. */
+  @Test
+  public void sums_the_surcharge_credit_apart_from_the_booked_time() {
+    var suborder = suborder(standardOrder, "so", null);
+    book(suborder, 4, SurchargeKind.NIGHT, 25);
+    book(suborder, 3, SurchargeKind.WEEKEND, 50);
+    book(suborder, 1, null, null);
+
+    assertThat(reportedMinutes()).isEqualTo(480);
+    assertThat(timereportRepository.getSurchargeCreditMinutesForEmployeecontractAndBetween(
+        contract.getId(), DAY.minusDays(1), DAY.plusDays(1))).contains(150L);
+    var months = timereportRepository.getReportedMinutesByMonthForEmployeecontract(
+        contract.getId(), DAY.withDayOfMonth(1), DAY.withDayOfMonth(30));
+    assertThat(months.getFirst().minutes()).isEqualTo(480);
+    assertThat(months.getFirst().surchargeMinutes()).isEqualTo(150);
+  }
+
+  @Test
+  public void a_range_without_flagged_bookings_has_no_credit() {
+    book(suborder(standardOrder, "so", null), 8);
+
+    assertThat(timereportRepository.getSurchargeCreditMinutesForEmployeecontractAndBetween(
+        contract.getId(), DAY.minusDays(1), DAY.plusDays(1))).contains(0L);
+  }
+
   private Long reportedMinutes() {
     return timereportRepository
         .getReportedMinutesForEmployeecontractAndBetween(contract.getId(), DAY.minusDays(1), DAY.plusDays(1))
@@ -133,6 +159,10 @@ public class TimereportWorkingTimeSumTest {
   }
 
   private void book(Suborder suborder, int hours) {
+    book(suborder, hours, null, null);
+  }
+
+  private void book(Suborder suborder, int hours, SurchargeKind surchargeKind, Integer surchargePercent) {
     var employeeorder = new Employeeorder();
     employeeorder.setSuborder(suborder);
     employeeorder.setEmployeecontract(contract);
@@ -148,6 +178,7 @@ public class TimereportWorkingTimeSumTest {
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription("");
     timereport.setTraining(false);
+    timereport.setSurcharge(surchargeKind, surchargePercent);
     entityManager.persist(timereport);
     entityManager.flush();
   }

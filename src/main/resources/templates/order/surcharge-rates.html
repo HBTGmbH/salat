@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* The time surcharge rates (#1469), the same fields on the order and the suborder form. On the order
+       an empty percent means no surcharge of that kind, on a suborder it inherits, and the hint under
+       the field says what. The night times belong to the night rate and only count with it. */-->
+<fieldset th:fragment="ratesInput(inheritable)" class="mb-3">
+  <legend class="form-label" th:text="#{main.surcharge.section.title}">Zeitzuschläge aufs Zeitkonto</legend>
+  <div class="row g-2">
+    <div class="col-sm-4">
+      <label class="form-label fw-normal" for="surchargeNightPercent" th:text="#{main.surcharge.kind.night}">Nacht</label>
+      <div class="input-group">
+        <input type="number" class="form-control" id="surchargeNightPercent" min="0" max="1000" step="1"
+               th:field="*{surcharges.nightPercent}"
+               th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
+        <span class="input-group-text">%</span>
+      </div>
+    </div>
+    <div class="col-6 col-sm-4">
+      <label class="form-label fw-normal" for="surchargeNightFrom" th:text="#{main.surcharge.night.from}">von</label>
+      <input type="time" class="form-control" id="surchargeNightFrom" th:field="*{surcharges.nightFrom}"/>
+    </div>
+    <div class="col-6 col-sm-4">
+      <label class="form-label fw-normal" for="surchargeNightUntil" th:text="#{main.surcharge.night.until}">bis</label>
+      <input type="time" class="form-control" id="surchargeNightUntil" th:field="*{surcharges.nightUntil}"/>
+    </div>
+  </div>
+  <th:block th:if="${inheritable}">
+    <small th:replace="~{:: inheritedHint(kind='NIGHT', oob=false)}"></small>
+  </th:block>
+  <div class="row g-2 mt-1">
+    <div class="col-sm-4">
+      <label class="form-label fw-normal" for="surchargeWeekendPercent" th:text="#{main.surcharge.kind.weekend}">Wochenende</label>
+      <div class="input-group">
+        <input type="number" class="form-control" id="surchargeWeekendPercent" min="0" max="1000" step="1"
+               th:field="*{surcharges.weekendPercent}"
+               th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
+        <span class="input-group-text">%</span>
+      </div>
+      <th:block th:if="${inheritable}">
+        <small th:replace="~{:: inheritedHint(kind='WEEKEND', oob=false)}"></small>
+      </th:block>
+    </div>
+    <div class="col-sm-4">
+      <label class="form-label fw-normal" for="surchargeHolidayPercent" th:text="#{main.surcharge.kind.holiday}">Feiertag</label>
+      <div class="input-group">
+        <input type="number" class="form-control" id="surchargeHolidayPercent" min="0" max="1000" step="1"
+               th:field="*{surcharges.holidayPercent}"
+               th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
+        <span class="input-group-text">%</span>
+      </div>
+      <th:block th:if="${inheritable}">
+        <small th:replace="~{:: inheritedHint(kind='HOLIDAY', oob=false)}"></small>
+      </th:block>
+    </div>
+  </div>
+  <small class="form-hint mt-2" th:text="${inheritable} ? #{main.surcharge.suborder.help} : #{main.surcharge.order.help}">Gilt für alle Unteraufträge ohne eigenen Satz.</small>
+</fieldset>
+
+<!--/* swapped out of band when the order or the parent changes, see SuborderController */-->
+<small th:fragment="inheritedHint(kind, oob)" class="form-hint" th:id="|surchargeInheritedHint-${kind}|"
+       th:hx-swap-oob="${oob} ? 'true' : null"
+       th:text="${@surchargeViewHelper.inherited(inheritedSurcharges, kind)}">Ohne eigenen Satz gilt: 25 %, vom Auftrag 4711.</small>
+
+</body>
+</html>

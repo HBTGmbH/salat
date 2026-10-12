@@ -6,6 +6,7 @@ import static de.hbt.salat.common.util.DateUtils.format;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -147,6 +148,28 @@ public class Customerorder extends AuditedEntity implements Serializable {
         var value = policy != null ? policy : TicketReferencePolicy.DEFAULT;
         this.ticketReferenceMode = value.mode();
         this.ticketReferenceLimit = value.limit();
+    }
+
+    /**
+     * Time surcharges on the overtime account (#1469), per kind; a missing rate means no surcharge of
+     * that kind. Hibernate leaves the embeddable {@code null} when all five columns are, hence the
+     * accessors below rather than Lombok's.
+     */
+    @Embedded
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private SurchargeRates surchargeRates;
+
+    /** {@code null} where the order pays no surcharge of {@code kind}. */
+    public SurchargeRate getSurchargeRate(SurchargeKind kind) {
+        return surchargeRates != null ? surchargeRates.get(kind) : null;
+    }
+
+    public void setSurchargeRate(SurchargeKind kind, SurchargeRate rate) {
+        if (surchargeRates == null) {
+            surchargeRates = new SurchargeRates();
+        }
+        surchargeRates.set(kind, rate);
     }
 
     public String getFormattedUntilDate() {

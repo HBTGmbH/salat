@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
  * Timereports are very sensitive information. Thus we need to care about time reports in a special kind of way
@@ -49,6 +50,13 @@ public class TimereportDTO implements Serializable {
   private final List<String> ticketReferences = List.of();
   private final String status;
   private final boolean training;
+  /** A night, weekend or holiday assignment (#1469), {@code null} for none. */
+  private final SurchargeKind surchargeKind;
+  /** The rate stored with the flag, {@code null} without one. */
+  private final Integer surchargePercent;
+  /** The credit on the overtime account, duration × rate; zero without a flag. */
+  @Builder.Default
+  private final Duration surchargeCredit = Duration.ZERO;
   private final int sequencenumber;
   private final String releasedby;
   private final LocalDateTime released;

@@ -91,6 +91,10 @@ public class DashboardController {
         // die Schwellen gelten fuer 40 Wochenstunden und werden auf den Vertrag umgerechnet (#1175)
         addOvertimeAttributes(model, overtimeStatus, OvertimeScale.TOTAL.forContract(employeecontract),
             OvertimeScale.CURRENT_MONTH.forContract(employeecontract));
+        // the part of the balance that comes from time surcharges (#1469), empty without any
+        var surcharge = overtimeStatus.isPresent()
+            ? overtimeService.calculateSurchargeCreditTotal(employeecontract.getId(), false) : Duration.ZERO;
+        model.addAttribute("overtimeSurcharge", surcharge.isZero() ? "" : DurationUtils.formatSigned(surcharge));
         model.addAttribute("vacations", vacations);
         // the hint follows the contract the page shows, and its links name it (#1124)
         model.addAttribute("unbookedDays", releaseService.getUnbookedWorkingDaysOfPreviousWeek(employeecontract.getId()));

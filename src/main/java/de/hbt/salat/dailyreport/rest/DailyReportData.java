@@ -5,6 +5,7 @@ import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.opencsv.bean.CsvBindByPosition;
@@ -23,6 +24,7 @@ import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 @Getter
 @Builder(toBuilder = true)
@@ -141,6 +143,19 @@ public class DailyReportData {
         nullable = true)
     private String employeeSign;
 
+    /**
+     * The time surcharge flag of the booking (#1469), read only: neither the API nor the CSV import
+     * sets it, and it takes no part in comparing an imported booking with a stored one — a file
+     * without the column must not turn a flagged booking into a changed one.
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @EqualsAndHashCode.Exclude
+    @Schema(description = "Zeitzuschlag der Buchung (NIGHT, WEEKEND, HOLIDAY), nur lesend; wird beim Schreiben ignoriert.",
+        example = "NIGHT",
+        nullable = true,
+        accessMode = Schema.AccessMode.READ_ONLY)
+    private SurchargeKind surchargeKind;
+
     public static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
                 .id(timeReport.getId())
@@ -157,6 +172,7 @@ public class DailyReportData {
                 .ticketReference(timeReport.getTicketReferences().isEmpty() ? null : timeReport.getTicketReferences().getFirst())
                 .ticketReferences(List.copyOf(timeReport.getTicketReferences()))
                 .employeeSign(timeReport.getEmployeeSign())
+                .surchargeKind(timeReport.getSurchargeKind())
                 .build();
     }
 
