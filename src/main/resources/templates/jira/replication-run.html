@@ -4,34 +4,30 @@
       th:with="
         section='systemsettings',
         subSection='jira-replications',
-        title=#{main.jira.replication.run.detail.title},
-        pageTitle=#{main.jira.replication.run.detail.title},
+        startedAtText=${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')},
+        title=#{main.jira.replication.run.detail.title(${startedAtText})},
+        pageTitle=#{main.jira.replication.run.detail.title(${startedAtText})},
         sectionTitle=#{main.general.mainmenu.system.text}
 ">
 <main layout:fragment="content">
 
   <!--/* The page of one run (#1325): the run as the list shows it, and below it its steps in the order
-         they ran. The badges come from the same fragment as in the list, so a status has one colour. */-->
+         they ran. The badges come from the same fragment as in the list, so a status has one colour.
+         Laid out like the page of an ETL run (#1324): the run in a card of its own with "back" in its
+         footer, the steps below with the refresh button in their header. */-->
   <div class="card mb-3">
     <div class="card-header">
-      <h3 class="card-title" th:text="${run.replicationName}">Name</h3>
-      <div class="card-actions d-flex gap-2">
-        <!--/* A running run writes its steps as they end; the page does not follow on its own. */-->
-        <th:block th:if="${run.status.name() == 'RUNNING'}">
-          <a th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications/runs/{id}(id=${run.id})})}"></a>
-        </th:block>
-        <a class="btn btn-sm btn-outline-secondary" th:href="@{/jira/replications} + '#tab-runs'">
-          <i class="icon ti ti-arrow-left" aria-hidden="true"></i>
-          <span th:text="#{main.jira.replication.run.detail.back}">Zur Laufhistorie</span>
-        </a>
-      </div>
+      <h3 class="card-title" th:text="#{main.jira.replication.run.detail.run.title}">Lauf</h3>
     </div>
     <div class="card-body">
       <div class="datagrid">
         <div class="datagrid-item">
+          <div class="datagrid-title" th:text="#{main.jira.replication.field.name}">Name</div>
+          <div class="datagrid-content" th:text="${run.replicationName}">Name</div>
+        </div>
+        <div class="datagrid-item">
           <div class="datagrid-title" th:text="#{main.jira.replication.run.field.startedAt}">Start</div>
-          <div class="datagrid-content"
-               th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</div>
+          <div class="datagrid-content" th:text="${startedAtText}">01.01.2026 10:15:00</div>
         </div>
         <div class="datagrid-item">
           <div class="datagrid-title" th:text="#{main.jira.replication.run.field.finishedAt}">Ende</div>
@@ -68,11 +64,19 @@
         </div>
       </div>
     </div>
+    <div class="card-footer">
+      <a th:href="@{/jira/replications} + '#tab-runs'" class="btn btn-secondary"
+         th:text="#{main.general.button.back.text}">Zurück</a>
+    </div>
   </div>
 
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.jira.replication.run.step.title}">Schritte</h3>
+      <!--/* A running run writes its steps as they end; reloaded, the page shows the new ones. */-->
+      <div class="card-actions">
+        <a th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications/runs/{id}(id=${run.id})})}"></a>
+      </div>
     </div>
     <div th:if="${#lists.isEmpty(steps)}" class="card-body">
       <p class="mb-1" th:text="${run.status.name() == 'RUNNING'}

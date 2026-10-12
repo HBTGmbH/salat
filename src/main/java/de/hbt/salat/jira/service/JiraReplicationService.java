@@ -95,7 +95,7 @@ public class JiraReplicationService {
       var cfg = configRepo.findById(replicationId)
           .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
       credentials = credentialStore.credentialsOf(cfg);
-      result = runReplication(cfg, credentials, step -> runService.recordStep(runId, step));
+      result = runReplication(cfg, credentials, step -> recordStep(runId, step));
     } catch (ErrorCodeException ex) {
       // A rule of the application, credentials that cannot be read above all (#1432): the history
       // says it in the words the form uses, not as a code.
@@ -107,6 +107,20 @@ public class JiraReplicationService {
     }
     runService.finishRun(runId, result.status(), result.summary());
     return result;
+  }
+
+  /**
+   * Writes a step of the run (#1325). Recording is bookkeeping: should it fail, the run goes on and
+   * ends as its work went — after the tickets the worklogs are still written, and a step that broke
+   * off keeps its own exception. What is lost is the line on the page of the run, and the log says so.
+   */
+  private void recordStep(long runId, JiraReplicationRunStep step) {
+    try {
+      runService.recordStep(runId, step);
+    } catch (RuntimeException ex) {
+      log.warn("Step {} of JIRA replication run {} could not be recorded: {}", step.getStep(), runId,
+          ex.getMessage(), ex);
+    }
   }
 
   /** A run without a row in the run history, and without steps. */
@@ -160,7 +174,7 @@ public class JiraReplicationService {
     try {
       reading = replicateTickets(cfg, credentials);
     } catch (RuntimeException ex) {
-      recordFailedStep(steps, READ_TICKETS, startedAt, reasonOf(ex, credentials), ex);
+      recordFailedStep(steps, READ_TICKETS, startedAt, reasonOf(ex, credentials));
       throw ex;
     }
     steps.accept(JiraReplicationRunStep.builder()
@@ -202,10 +216,10 @@ public class JiraReplicationService {
       outcome = worklogSyncService.sync(cfg, syncCredentials);
     } catch (ErrorCodeException ex) {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage());
-      return failedWorklogStep(steps, startedAt, germanTextOf(ex), ex);
+      return failedWorklogStep(steps, startedAt, germanTextOf(ex));
     } catch (RuntimeException ex) {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
-      return failedWorklogStep(steps, startedAt, redacted(ex, syncCredentials), ex);
+      return failedWorklogStep(steps, startedAt, redacted(ex, syncCredentials));
     }
     if (outcome.isEmpty()) {
       return WorklogWriting.NOTHING;
@@ -235,28 +249,21 @@ public class JiraReplicationService {
   }
 
   private static WorklogWriting failedWorklogStep(Consumer<JiraReplicationRunStep> steps, LocalDateTime startedAt,
-                                                  String reason, RuntimeException ex) {
-    recordFailedStep(steps, WRITE_WORKLOGS, startedAt, reason, ex);
+                                                  String reason) {
+    recordFailedStep(steps, WRITE_WORKLOGS, startedAt, reason);
     return new WorklogWriting(reason, 0);
   }
 
-  /**
-   * A step that broke off. Should writing it fail as well, the exception of the step stays the one
-   * that counts, and carries the other along.
-   */
+  /** A step that broke off. */
   private static void recordFailedStep(Consumer<JiraReplicationRunStep> steps, JiraReplicationRunStep.Step step,
-                                       LocalDateTime startedAt, String reason, RuntimeException ex) {
-    try {
-      steps.accept(JiraReplicationRunStep.builder()
-          .step(step)
-          .startedAt(startedAt)
-          .finishedAt(DateTimeUtils.now())
-          .status(FAILED)
-          .message(reason)
-          .build());
-    } catch (RuntimeException recordingFailure) {
-      ex.addSuppressed(recordingFailure);
-    }
+                                       LocalDateTime startedAt, String reason) {
+    steps.accept(JiraReplicationRunStep.builder()
+        .step(step)
+        .startedAt(startedAt)
+        .finishedAt(DateTimeUtils.now())
+        .status(FAILED)
+        .message(reason)
+        .build());
   }
 
   /** What reading the tickets did. */
