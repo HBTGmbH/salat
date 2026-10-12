@@ -117,6 +117,8 @@
         </div>
       </div>
 
+      <div th:replace="~{order/surcharge-rates :: ratesInput(inheritable=false)}"></div>
+
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(
         field='hide', label=#{main.general.hide}
       )}"></div>

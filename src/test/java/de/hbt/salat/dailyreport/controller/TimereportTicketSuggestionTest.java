@@ -127,7 +127,7 @@ class TimereportTicketSuggestionTest {
 
     assertThat(view).isEqualTo("dailyreport/timereport-form");
     assertThat(model.get("ticketSuggestions")).isEqualTo(List.of("ABC-12", "ABC-13"));
-    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
+    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(), any(Duration.class), anyInt());
   }
 
   @Test
@@ -199,7 +199,7 @@ class TimereportTicketSuggestionTest {
     controller.create(null, referenced, null, null, null, null, redirectAttributes, new ExtendedModelMap());
     controller.create(null, answered, null, null, null, null, redirectAttributes, new ExtendedModelMap());
 
-    verify(timereportService, times(3)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
+    verify(timereportService, times(3)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(), any(Duration.class), anyInt());
     verify(customerorderService, never()).getCustomerordersWithValidEmployeeOrders(anyLong(), any());
   }
 
@@ -226,7 +226,7 @@ class TimereportTicketSuggestionTest {
 
   private void verifyCreatedWith(List<String> references) {
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE), anyString(),
-        eq(references), eq(false), eq(Duration.ofHours(1).plusMinutes(30)), eq(1));
+        eq(references), eq(false), any(), eq(Duration.ofHours(1).plusMinutes(30)), eq(1));
   }
 
   private static TimereportForm booking(String comment) {

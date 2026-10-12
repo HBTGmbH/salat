@@ -53,6 +53,7 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 import de.hbt.salat.favorites.domain.NewFavorite;
 import de.hbt.salat.favorites.service.FavoriteService;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -151,7 +152,14 @@ public class TimereportController {
         // parameter comes from the share-with-colleagues deeplink and has to win over that default.
         form.setTraining(training != null ? training : trainingDefaultOf(suborders, defaultSuborderId));
 
+        // #1469: the kind of the day, holiday before weekend, where the suborder offers it
+        var defaultOption = suborders.stream().filter(o -> o.id().equals(defaultSuborderId)).findFirst();
+        form.setSurchargeKind(timereportService.getSurchargeDayKinds(effectiveDate).stream()
+                .filter(kind -> defaultOption.map(o -> o.surchargeRate(kind) != null).orElse(false))
+                .findFirst().orElse(null));
+
         populateModel(fEmployeeContractId, model, form, suborders, ecId, effectiveDate, false, returnUrl);
+        model.addAttribute("surchargePreset", true);
         // #1214: the first of the list is preselected without anybody having chosen it, so it must
         // not bring the duration of an absence along
         model.addAttribute("suborderPreselectedByDefault", chosenSuborderId == null);
@@ -197,6 +205,7 @@ public class TimereportController {
         form.setComment(tr.getTaskdescription() != null ? tr.getTaskdescription() : "");
         form.setTicketReferences(new ArrayList<>(tr.getTicketReferences()));
         form.setTraining(tr.isTraining());
+        form.setSurchargeKind(tr.getSurchargeKind());
 
         var suborders = suborderOptions(ecId, date);
 
@@ -274,6 +283,7 @@ public class TimereportController {
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
         model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
+        model.addAttribute("surchargeDayKinds", surchargeDayKindsOf(date));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
@@ -507,11 +517,12 @@ public class TimereportController {
 
             if (isEdit) {
                 timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
-                        form.getComment(), form.getTicketReferences(), form.isTraining(), bookingDuration);
+                        form.getComment(), form.getTicketReferences(), form.isTraining(), form.getSurchargeKind(),
+                        bookingDuration);
             } else {
                 timereportService.createTimereports(ecId, employeeOrderId, date,
-                        form.getComment(), form.getTicketReferences(), form.isTraining(), bookingDuration,
-                        form.getNumberOfSerialDays());
+                        form.getComment(), form.getTicketReferences(), form.isTraining(), form.getSurchargeKind(),
+                        bookingDuration, form.getNumberOfSerialDays());
                 // #844: only creating a booking teaches the preference — an edit always opens in
                 // duration mode because begin/end are not stored per booking
                 timereportPreferenceService.rememberDurationMode(form.getDurationMode());
@@ -590,6 +601,7 @@ public class TimereportController {
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
         model.addAttribute("isEdit", isEdit);
+        addSurchargeModel(model, form, suborders, date, isEdit);
         if (isEdit && form.getId() != null && timereportService.isWriteAllowed(form.getId())) {
             // the confirmation names the booking as it is stored, not what the form holds by now (#1192)
             model.addAttribute("deletableTimereport", timereportService.getTimereportById(form.getId()));
@@ -710,6 +722,34 @@ public class TimereportController {
      * form proposes nothing. Rendered on every path, including the refresh after a change of date,
      * so the value always belongs to the day the form shows.
      */
+    /**
+     * The time surcharge choice of the form (#1469): offered at all for the selected suborder, the kinds
+     * the day allows besides the night, and for an edited booking the rate it was stored with.
+     */
+    private void addSurchargeModel(Model model, TimereportForm form, List<SuborderOption> suborders, LocalDate date,
+            boolean isEdit) {
+        model.addAttribute("surchargeKinds", SurchargeKind.values());
+        model.addAttribute("surchargeOffered", suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .anyMatch(s -> !s.surchargeRates().isEmpty()));
+        model.addAttribute("surchargeDayKinds", surchargeDayKindsOf(date));
+        if (isEdit && form.getId() != null) {
+            var stored = timereportService.getTimereportById(form.getId());
+            if (stored != null && stored.getSurchargeKind() != null) {
+                model.addAttribute("storedSurchargeKind", stored.getSurchargeKind().name());
+                model.addAttribute("storedSurchargePercent", stored.getSurchargePercent());
+                model.addAttribute("storedSurchargeSuborderId", stored.getSuborderId());
+            }
+        }
+    }
+
+    private String surchargeDayKindsOf(LocalDate date) {
+        if (date == null) {
+            return "";
+        }
+        return timereportService.getSurchargeDayKinds(date).stream().map(Enum::name).collect(Collectors.joining(" "));
+    }
+
     private void addAbsenceDuration(Model model, long ecId, LocalDate date, boolean isEdit) {
         if (!isEdit && ecId > 0 && date != null) {
             model.addAttribute("absenceDurationMinutes", dailyService.getRemainingDayTarget(date, ecId).toMinutes());

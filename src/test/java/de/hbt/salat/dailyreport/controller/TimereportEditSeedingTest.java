@@ -115,7 +115,7 @@ class TimereportEditSeedingTest {
     order.verify(workingdayService).seedWorkingday(EC_ID, NEW_DATE, LocalTime.of(9, 0));
     order.verify(timereportService).updateTimereport(
         eq(TIMEREPORT_ID), anyLong(), anyLong(),
-        eq(NEW_DATE), anyString(), any(), anyBoolean(), any(Duration.class));
+        eq(NEW_DATE), anyString(), any(), anyBoolean(), any(), any(Duration.class));
   }
 
   @Test

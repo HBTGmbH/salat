@@ -379,7 +379,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign"
+                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign","surcharge"
                 });
             }
         };
@@ -426,6 +426,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getTicketReference(),
             row.getTraining(),
             row.getEmployeeSign(),
+            row.getSurcharge(),
             row.getLine()
         );
     }
@@ -447,6 +448,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 ? null : String.join(TICKET_REFERENCE_SEPARATOR, reportData.getTicketReferences()),
             reportData.isTraining(),
             reportData.getEmployeeSign(),
+            reportData.getSurchargeKind() != null ? reportData.getSurchargeKind().name() : null,
             0
         );
     }
@@ -486,6 +488,12 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         /** A new column at the end (#1142); {@code null} where the file has none. */
         @CsvBindByName
         private String employeeSign;
+        /**
+         * The time surcharge flag (#1469), written on export and ignored on import: the import books
+         * without one, as every other way of booking but the form does.
+         */
+        @CsvBindByName
+        private String surcharge;
         /** The line of the file the row begins in, for messages; not a column. */
         @CsvIgnore
         private long line;

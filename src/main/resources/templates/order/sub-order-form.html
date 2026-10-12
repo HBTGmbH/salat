@@ -172,6 +172,8 @@
         </div>
       </div>
 
+      <div th:replace="~{order/surcharge-rates :: ratesInput(inheritable=true)}"></div>
+
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(
         field='hide', label=#{main.general.hide}
       )}"></div>
@@ -236,6 +238,11 @@
 
       <small th:if="${inheritedTicketReferenceChanged}"
              th:replace="~{order/ticket-reference-policy :: inheritedHint(oob=true)}"></small>
+      <th:block th:if="${inheritedSurchargesChanged}">
+        <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='NIGHT', oob=true)}"></small>
+        <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='WEEKEND', oob=true)}"></small>
+        <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='HOLIDAY', oob=true)}"></small>
+      </th:block>
 
       <div class="row" id="suborder-dates" th:hx-swap-oob="${datesChanged}">
         <div class="col-md-6">

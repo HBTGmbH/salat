@@ -32,5 +32,7 @@ public class CustomerorderForm {
   private OrderType orderType;
   private TicketReferenceMode ticketReferenceMode;
   private Integer ticketReferenceLimit;
+  /** time surcharge rates (#1469) */
+  private SurchargeFields surcharges = new SurchargeFields();
 
 }

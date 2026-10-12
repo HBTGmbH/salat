@@ -23,5 +23,7 @@ public record SuborderDTO(
     /** {@code null} inherits from above (#1326) */
     TicketReferenceMode ticketReferenceMode,
     /** the bound for {@link TicketReferenceMode#LIMITED}, ignored otherwise */
-    Integer ticketReferenceLimit
+    Integer ticketReferenceLimit,
+    /** the time surcharge rates (#1469); never {@code null}, {@link SurchargeInput#NONE} for none */
+    SurchargeInput surcharges
 ) {}

@@ -20,6 +20,7 @@ import de.hbt.salat.common.command.CommandPublisher;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.order.domain.SurchargeInput;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
@@ -150,7 +151,7 @@ class SuborderServiceParentTest {
 
   private static SuborderDTO dto(String sign, Long parentId) {
     return new SuborderDTO(ORDER_ID, sign, "Leistung", "Leistung", null, 'y', false, false, false,
-        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null);
+        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null, SurchargeInput.NONE);
   }
 
   private static Customerorder customerorder(long id, String sign) {

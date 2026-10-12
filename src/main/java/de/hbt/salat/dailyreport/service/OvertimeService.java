@@ -75,7 +75,8 @@ public class OvertimeService {
     }
 
     var overtime = calculateOvertime(begin, end, employeecontract, true);
-    return Optional.of(new OvertimeBalance(overtime.getTarget(), overtime.getActual(), overtime.getAdjustment(), overtime.getDiff()));
+    return Optional.of(new OvertimeBalance(overtime.getTarget(), overtime.getActual(), overtime.getAdjustment(),
+        overtime.getDiff(), overtime.getSurcharge()));
   }
 
   public Optional<OvertimeStatus> calculateOvertime(long employeecontractId, boolean includeToday) {
@@ -128,6 +129,21 @@ public class OvertimeService {
     return Optional.of(status);
   }
 
+  /**
+   * The part of the total balance that comes from time surcharges (#1469): their credit from the
+   * start of the contract up to today, or up to yesterday — the range of
+   * {@link #calculateOvertime(long, boolean)}.
+   */
+  public Duration calculateSurchargeCreditTotal(long employeecontractId, boolean includeToday) {
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    var end = includeToday ? today() : today().minusDays(1);
+    if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().isBefore(end)) {
+      end = employeecontract.getValidUntil();
+    }
+    return Duration.ofMinutes(
+        timereportDAO.getSurchargeCreditMinutesForEmployeeContract(employeecontractId, employeecontract.getValidFrom(), end));
+  }
+
   private OvertimeStatusInfo toStatusInfo(LocalDate beginDate, LocalDate endDate, Duration overtime, Duration dailyWorkingTime) {
     OvertimeStatusInfo info = new OvertimeStatusInfo();
     info.setBegin(beginDate);
@@ -169,16 +185,20 @@ public class OvertimeService {
       end = requestedEnd;
     }
     if (end.isBefore(start)) {
-      return new OvertimeInfo(Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO);
+      return new OvertimeInfo(Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO);
     }
 
     var workingTimeTarget = calculateWorkingTimeTarget(employeecontract.getId(), requestedStart, requestedEnd);
     var actualWorkingTime = Duration.ofMinutes(
         timereportDAO.getTotalDurationMinutesForEmployeeContract(employeecontract.getId(), requestedStart, requestedEnd)
     );
+    // the credit for night, weekend and holiday assignments counts like booked time, but apart (#1469)
+    var surcharge = Duration.ofMinutes(
+        timereportDAO.getSurchargeCreditMinutesForEmployeeContract(employeecontract.getId(), requestedStart, requestedEnd)
+    );
     var overtimeAdjustment = Duration.ZERO;
 
-    Duration overtime = actualWorkingTime.minus(workingTimeTarget);
+    Duration overtime = actualWorkingTime.plus(surcharge).minus(workingTimeTarget);
     if (useOverTimeAdjustment) {
       var overtimes = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(employeecontract.getId());
       overtimeAdjustment = overtimes
@@ -189,7 +209,8 @@ public class OvertimeService {
       overtime = overtime.plus(overtimeAdjustment);
     }
 
-    return new OvertimeInfo(actualWorkingTime, overtimeAdjustment, actualWorkingTime.plus(overtimeAdjustment), workingTimeTarget, overtime);
+    return new OvertimeInfo(actualWorkingTime, surcharge, overtimeAdjustment,
+        actualWorkingTime.plus(surcharge).plus(overtimeAdjustment), workingTimeTarget, overtime);
   }
 
   private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
@@ -199,7 +220,7 @@ public class OvertimeService {
 
   private OvertimeInfo calculateMonthlyOvertime(LocalDate begin, LocalDate end, YearMonth month,
       Duration dailyWorkingTime, List<LocalDate> holidayWeekdays, List<Overtime> adjustments,
-      Map<YearMonth, Long> minutesByMonth) {
+      Map<YearMonth, Long> minutesByMonth, Map<YearMonth, Long> surchargeMinutesByMonth) {
 
     long weekdayHolidayCount = holidayWeekdays.stream()
         .filter(d -> !d.isBefore(begin) && !d.isAfter(end))
@@ -209,14 +230,15 @@ public class OvertimeService {
 
     long actualMinutes = minutesByMonth.getOrDefault(month, 0L);
     Duration actual = Duration.ofMinutes(actualMinutes);
+    Duration surcharge = Duration.ofMinutes(surchargeMinutesByMonth.getOrDefault(month, 0L));
 
     Duration adjustment = adjustments.stream()
         .filter(o -> isOvertimeEffectiveBetween(begin, end, o))
         .map(Overtime::getTimeMinutes)
         .reduce(Duration.ZERO, Duration::plus);
 
-    Duration diff = actual.minus(target).plus(adjustment);
-    return new OvertimeInfo(actual, adjustment, actual.plus(adjustment), target, diff);
+    Duration diff = actual.plus(surcharge).minus(target).plus(adjustment);
+    return new OvertimeInfo(actual, surcharge, adjustment, actual.plus(surcharge).plus(adjustment), target, diff);
   }
 
   public OvertimeReport createDetailedReportForEmployee(long employeecontractId, boolean includeToday) {
@@ -236,6 +258,7 @@ public class OvertimeService {
     final List<LocalDate> holidayWeekdays;
     final List<Overtime> adjustments;
     final Map<YearMonth, Long> minutesByMonth;
+    final Map<YearMonth, Long> surchargeMinutesByMonth;
     if (!rangeEnd.isBefore(rangeStart)) {
       holidayWeekdays = publicholidayDAO.getPublicHolidaysBetween(rangeStart, rangeEnd)
           .stream()
@@ -244,13 +267,17 @@ public class OvertimeService {
           .toList();
       adjustments = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(contract.getId());
       minutesByMonth = new HashMap<>();
+      surchargeMinutesByMonth = new HashMap<>();
       for (var row : timereportDAO.getReportedMinutesByMonthForEmployeeContract(contract.getId(), rangeStart, rangeEnd)) {
-        minutesByMonth.put(YearMonth.of(row.year(), row.month()), row.minutes() == null ? 0L : row.minutes());
+        var month = YearMonth.of(row.year(), row.month());
+        minutesByMonth.put(month, row.minutes() == null ? 0L : row.minutes());
+        surchargeMinutesByMonth.put(month, row.surchargeMinutes() == null ? 0L : row.surchargeMinutes());
       }
     } else {
       holidayWeekdays = List.of();
       adjustments = List.of();
       minutesByMonth = Map.of();
+      surchargeMinutesByMonth = Map.of();
     }
 
     var dailyWorkingTime = contract.getDailyWorkingTime();
@@ -279,11 +306,12 @@ public class OvertimeService {
       }
 
       var overtimeInfo = calculateMonthlyOvertime(begin, end, month, dailyWorkingTime,
-          holidayWeekdays, adjustments, minutesByMonth);
+          holidayWeekdays, adjustments, minutesByMonth, surchargeMinutesByMonth);
       diffCumulative = diffCumulative.plus(overtimeInfo.getDiff());
       months.add(
           OvertimeReportMonth.builder()
             .actual(overtimeInfo.getActual())
+            .surcharge(overtimeInfo.getSurcharge())
             .adjustment(overtimeInfo.getAdjustment())
             .sum(overtimeInfo.getSum())
             .target(overtimeInfo.getTarget())
@@ -299,12 +327,14 @@ public class OvertimeService {
     Collections.sort(months, Comparator.comparing(OvertimeReportMonth::getYearMonth).reversed());
 
     var actual = months.stream().map(OvertimeReportMonth::getActual).reduce(Duration.ZERO, Duration::plus);
+    var surcharge = months.stream().map(OvertimeReportMonth::getSurcharge).reduce(Duration.ZERO, Duration::plus);
     var adjustment = months.stream().map(OvertimeReportMonth::getAdjustment).reduce(Duration.ZERO, Duration::plus);
     var sum = months.stream().map(OvertimeReportMonth::getSum).reduce(Duration.ZERO, Duration::plus);
     var target = months.stream().map(OvertimeReportMonth::getTarget).reduce(Duration.ZERO, Duration::plus);
     var diff = months.stream().map(OvertimeReportMonth::getDiff).reduce(Duration.ZERO, Duration::plus);
     var total = OvertimeReportTotal.builder()
         .actual(actual)
+        .surcharge(surcharge)
         .adjustment(adjustment)
         .sum(sum)
         .target(target)
@@ -400,6 +430,7 @@ public class OvertimeService {
   @RequiredArgsConstructor
   private class OvertimeInfo {
     private final Duration actual;
+    private final Duration surcharge;
     private final Duration adjustment;
     private final Duration sum;
     private final Duration target;

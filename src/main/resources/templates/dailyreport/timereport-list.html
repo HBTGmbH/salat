@@ -437,8 +437,14 @@
           </td>
           <!--/* Dauer und Ticketnummer tragen in der Anwendung eine Badge — blau die Zeit, grau der
                  Ticketbezug, wie in der Einzeluebersicht. */-->
+          <!--/* the time surcharge flag (#1469) under the duration it is earned on, without a column of
+                 its own: most bookings carry none */-->
           <td class="text-end text-nowrap">
             <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}">0:00</span>
+            <th:block th:if="${tr.surchargeKind != null}">
+              <br><span class="badge bg-teal-lt mt-1" th:title="#{main.surcharge.booking.label}"
+                        th:text="${@surchargeViewHelper.flag(tr.surchargeKind, tr.surchargePercent)}">Nacht 25 %</span>
+            </th:block>
           </td>
           <td class="text-center">
             <i th:if="${tr.billable}" class="ti ti-check text-green"

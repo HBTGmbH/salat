@@ -2,7 +2,10 @@ package de.hbt.salat.dailyreport.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -19,10 +22,37 @@ import de.hbt.salat.order.viewhelper.SuborderLabelViewHelper;
  * @param standby whether its order is standby, which is no working time and therefore does not move
  *                the end of the day the form shows for the duration entered (#1263)
  * @param ticketReferencePolicy how many ticket references a booking on it may carry (#1326)
+ * @param surchargeRates the time surcharges a booking on it may be flagged with; only the kinds
+ *                       offered (#1469)
  */
 public record SuborderOption(Long id, String sign, String description, String label, String subtext,
                              boolean commentNecessary, boolean trainingFlag, boolean absence,
-                             boolean standby, TicketReferencePolicy ticketReferencePolicy) {
+                             boolean standby, TicketReferencePolicy ticketReferencePolicy,
+                             Map<SurchargeKind, SurchargeRate> surchargeRates) {
+
+    /** Without any time surcharge. */
+    public SuborderOption(Long id, String sign, String description, String label, String subtext,
+                          boolean commentNecessary, boolean trainingFlag, boolean absence,
+                          boolean standby, TicketReferencePolicy ticketReferencePolicy) {
+        this(id, sign, description, label, subtext, commentNecessary, trainingFlag, absence, standby,
+            ticketReferencePolicy, Map.of());
+    }
+
+    /** The rate of {@code kind} a booking on it may be flagged with, {@code null} where it is not offered. */
+    public SurchargeRate surchargeRate(SurchargeKind kind) {
+        return surchargeRates.get(kind);
+    }
+
+    /** {@link #surchargeRate(SurchargeKind)} by name, as the booking form asks. */
+    public SurchargeRate surchargeRate(String kind) {
+        return surchargeRate(SurchargeKind.valueOf(kind));
+    }
+
+    /** The percent of {@code kind}, {@code null} where it is not offered. */
+    public Integer surchargePercent(String kind) {
+        var rate = surchargeRate(kind);
+        return rate != null ? rate.percent() : null;
+    }
 
     /**
      * What the contract can book on the day: the suborders of its employee orders valid then. The
@@ -40,7 +70,8 @@ public record SuborderOption(Long id, String sign, String description, String la
                     SuborderLabelViewHelper.subtextOfOrder(order), s.commentNecessary(), s.trainingFlag(),
                     order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND,
                     order.getOrderType() == OrderType.BEREITSCHAFT,
-                    s.ticketReferencePolicy())))
+                    s.ticketReferencePolicy(),
+                    s.surchargeRates())))
             .toList();
     }
 }

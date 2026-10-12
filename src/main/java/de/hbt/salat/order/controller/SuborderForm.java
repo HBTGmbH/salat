@@ -30,5 +30,7 @@ public class SuborderForm {
   /** {@code null} inherits from above (#1326) */
   private TicketReferenceMode ticketReferenceMode;
   private Integer ticketReferenceLimit;
+  /** time surcharge rates (#1469) */
+  private SurchargeFields surcharges = new SurchargeFields();
 
 }

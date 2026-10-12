@@ -60,6 +60,7 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -146,8 +147,26 @@ class DailyWorkingReportServiceImportTest {
     var report = service.updateReports(read(csv), employee);
 
     assertThat(csv).startsWith("date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
-        + "workingTime,comment,ticketReference,training,employeeSign\n");
-    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser\n", ",07:30,Daily,,true,testuser\n");
+        + "workingTime,comment,ticketReference,training,employeeSign,surcharge\n");
+    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser,\n", ",07:30,Daily,,true,testuser,\n");
+    assertNothingCreatedOrDeleted();
+    assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
+  }
+
+  /**
+   * The export names the time surcharge flag (#1469), the import ignores it: a flagged booking read back
+   * unchanged - with the column or without it - is neither deleted nor created again, and keeps its flag.
+   */
+  @Test
+  void a_flagged_booking_survives_a_round_trip() throws IOException {
+    var flagged = bookingBuilder(1L, "Störung", 240, List.of(), false)
+        .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build();
+    stored(flagged);
+
+    var csv = export();
+    var report = service.updateReports(read(csv), employee);
+
+    assertThat(csv).contains(",04:00,Störung,,false,testuser,NIGHT\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
@@ -686,6 +705,11 @@ class DailyWorkingReportServiceImportTest {
   }
 
   private static TimereportDTO booking(long id, String comment, int minutes, List<String> ticketReferences, boolean training) {
+    return bookingBuilder(id, comment, minutes, ticketReferences, training).build();
+  }
+
+  private static TimereportDTO.TimereportDTOBuilder bookingBuilder(long id, String comment, int minutes,
+      List<String> ticketReferences, boolean training) {
     return TimereportDTO.builder()
         .id(id)
         .referenceday(DAY)
@@ -699,8 +723,7 @@ class DailyWorkingReportServiceImportTest {
         .duration(Duration.ofMinutes(minutes))
         .taskdescription(comment)
         .ticketReferences(ticketReferences)
-        .training(training)
-        .build();
+        .training(training);
   }
 
   private void assertNothingCreatedOrDeleted() {

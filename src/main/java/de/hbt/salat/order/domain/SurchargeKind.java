@@ -1,0 +1,21 @@
+package de.hbt.salat.order.domain;
+
+import lombok.Getter;
+
+/**
+ * The kinds of assignment that earn a time surcharge on the overtime account (#1469). A booking carries
+ * at most one of them; the rate per kind is set on the order and may differ per suborder.
+ */
+@Getter
+public enum SurchargeKind {
+
+  NIGHT("main.surcharge.kind.night"),
+  WEEKEND("main.surcharge.kind.weekend"),
+  HOLIDAY("main.surcharge.kind.holiday");
+
+  private final String label;
+
+  SurchargeKind(String label) {
+    this.label = label;
+  }
+}

@@ -210,7 +210,9 @@
                   th:classappend="'text-' + ${overtimeColorClass}"
                   th:text="${overtime}">0:00</span>
           </div>
-          <div class="text-muted small mt-2 mb-3" th:text="#{main.welcome.total.text}">gesamt</div>
+          <!--/* the part of the balance that comes from time surcharges (#1469), where there is one */-->
+          <div class="text-muted small mt-2 mb-3"
+               th:text="${#strings.isEmpty(overtimeSurcharge)} ? #{main.welcome.total.text} : #{main.welcome.total.surcharge.text(${overtimeSurcharge})}">gesamt</div>
           <a class="stretched-link small mt-auto"
              th:href="@{/my-accounts(fEmployeeContractId=${shownContractId})} + '#tab-working-time'"
              th:text="#{main.welcome.overtime.link.text}">Arbeitszeitkonto anzeigen</a>
