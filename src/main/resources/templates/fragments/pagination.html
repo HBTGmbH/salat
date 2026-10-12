@@ -7,9 +7,9 @@
   Footer der Tabellenkarte. Das Modell ist ein PageNavigation: es kennt die Seite, die Gesamtzahl und
   die Adresse der Liste samt Filter; jeder Link ersetzt nur die Seite.
 
-  Die meisten Listen werden vollstaendig gerendert oder ueber eine Obergrenze gekuerzt
-  (ui-style-guide §4.1). Blaettern ist fuer die Liste, die ueber jede sinnvolle Obergrenze wachsen
-  kann und in der jeder Eintrag zaehlt.
+  Nur im Notfall (ui-style-guide §4.1): erst vollstaendig rendern, dann filtern, dann begrenzen.
+  Blaettern nur, wenn die Liste ohne Obergrenze waechst, jeder Eintrag zaehlt und ein Filter allein
+  sie nicht klein genug macht. Ein neuer Einsatz wird im PR begruendet.
 
   Erste, vorige, naechste und letzte Seite, dazwischen „Seite x von y" — keine Seitenzahlen zum
   Anklicken: bei einigen hundert Seiten hilft keine Auswahl, der Filter tut es. Die Pfeile sind die
