@@ -11,9 +11,10 @@ import org.springframework.web.util.UriComponentsBuilder;
  * keep the filter they were built with: {@code target} carries its parameters, and only
  * {@value #PAGE_PARAM} is replaced.
  *
- * <p>Most lists are rendered in full or cut off by a limit (ui-style-guide §4.1). Paging is for a
- * list that can grow beyond any sensible limit and in which every entry matters, such as the
- * executions of one ETL run.
+ * <p>Paging is the last resort (ui-style-guide §4.1): render in full, filter, limit — and only then
+ * page. Only for a list that grows without bound, in which every entry matters and which no filter
+ * alone makes small enough, such as the executions of one ETL run. A new use is justified in the
+ * pull request.
  */
 public final class PageNavigation {
 

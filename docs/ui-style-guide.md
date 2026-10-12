@@ -419,9 +419,25 @@ sie vollständig zu rendern, folgt sie der Buchungsliste statt dem kanonischen A
 - Anlegen und weitere Aktionen stehen in den `card-actions` der Tabellenkarte, weil rechts in der
   Filterzeile Zurücksetzen und Filtern stehen.
 
-**Listen mit Blättern** (Ausführungen eines ETL-Laufs, #1324): Wo eine Liste über jede sinnvolle
-Obergrenze wachsen kann und jeder Eintrag zählt, kommt sie seitenweise aus der Datenbank. Ein Lauf
-über die ganze Historie hat mehr als zehntausend Ausführungen.
+**Listen mit Blättern — nur im Notfall** (Ausführungen eines ETL-Laufs, #1324): Blättern ist die
+letzte Wahl. Wer blättert, sieht nie alles auf einmal. Er kann nicht im Browser suchen, und was er
+sucht, liegt womöglich auf Seite 200. Eine zu lange Liste wird deshalb in dieser Reihenfolge
+handhabbar gemacht:
+
+1. vollständig rendern, wo die Liste klein bleibt (kanonischer Aufbau oben);
+2. filtern, mit Vorgaben, die das Übliche zeigen, etwa „nur gültige“;
+3. begrenzen wie die Buchungsliste (Listen mit Trefferbegrenzung, oben);
+4. erst dann blättern.
+
+Blättern ist nur zulässig, wenn alle drei Bedingungen zutreffen:
+
+- Die Liste kann ohne Obergrenze wachsen. Ein Lauf über die ganze Historie hat mehr als zehntausend
+  Ausführungen, ein nächtlicher rund 200.
+- Jeder Eintrag zählt. Eine Begrenzung schnitte ab, was jemand sehen muss.
+- Ein Filter allein macht die Liste nicht klein genug.
+
+Der Filter steht auch dann über der Tabelle. Er ist der eigentliche Weg zum gesuchten Eintrag,
+Blättern ist nur der Rest. Ein neuer Einsatz von Blättern wird im PR begründet.
 
 - Unter der Tabelle steht `fragments/pagination` als Footer der Tabellenkarte. Es zeigt „1–50 von
   15.666“, die Pfeile für erste, vorige, nächste und letzte Seite (`ti-chevrons-*`/`ti-chevron-*`) und
