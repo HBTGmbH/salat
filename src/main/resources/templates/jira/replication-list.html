@@ -217,22 +217,18 @@
                   <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.run.field.trigger}">Ausgeloest durch</th>
                   <th th:text="#{main.jira.replication.run.field.message}">Meldung</th>
                   <th class="w-1"></th>
+                  <th class="w-1"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr th:if="${#lists.isEmpty(runs)}">
-                  <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+                  <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
                     Keine Einträge vorhanden
                   </td>
                 </tr>
                 <tr th:each="run : ${runs}">
-                  <!--/* The start opens the page of the run with its steps (#1325), as the name opens a
-                         replication in the first tab. */-->
-                  <td class="text-nowrap">
-                    <a th:href="@{/jira/replications/runs/{id}(id=${run.id})}"
-                       th:title="#{main.jira.replication.run.action.details}"
-                       th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</a>
-                  </td>
+                  <td class="text-nowrap"
+                      th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</td>
                   <td class="d-none d-md-table-cell text-nowrap">
                     <span th:if="${run.finishedAt != null}"
                           th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:04</span>
@@ -250,6 +246,15 @@
                   <!--/* An aborted run carries the exception text and grows long; the cell wraps it
                          rather than stretching the table. */-->
                   <td class="text-break small" th:text="${run.message}">12 Tickets geholt, 3 geschrieben.</td>
+                  <!--/* The page of the run with its steps (#1325) — the row action "show" of the style
+                         guide (§5.2), as on the run list of the ETL. */-->
+                  <td>
+                    <a class="btn btn-outline-secondary" th:href="@{/jira/replications/runs/{id}(id=${run.id})}"
+                       th:title="#{main.jira.replication.run.action.details}"
+                       th:aria-label="#{main.jira.replication.run.action.details}">
+                      <i class="icon ti ti-notes m-0"></i>
+                    </a>
+                  </td>
                   <!--/* Only on a running row: what gets marked is an entry a crash left on
                          "running", which turns away every new start of its replication. The dialogue
                          names start and replication — the database id is no domain value. */-->

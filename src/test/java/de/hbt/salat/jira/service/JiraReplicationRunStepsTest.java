@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.MessageSource;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.web.client.RestClientException;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -315,6 +317,25 @@ class JiraReplicationRunStepsTest {
     replicationService.runReplication(REPLICATION_ID);
 
     verify(runService, never()).recordStep(anyLong(), any());
+  }
+
+  /**
+   * Recording a step is bookkeeping. Should it fail after the tickets went through, the run still
+   * writes the worklogs and ends as the work went, not as the bookkeeping did.
+   */
+  @Test
+  void a_step_that_cannot_be_recorded_does_not_break_off_the_run() {
+    config.setWorklogSyncEnabled(true);
+    when(searchClient.search(any())).thenReturn(List.of(issue("1001", "ALPHA-1")).iterator());
+    when(worklogSyncService.sync(config, CREDENTIALS)).thenReturn(Optional.of(new JiraWorklogSyncResult(
+        LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 25), null, 1, 0, 0, 0, 0, 0, List.of())));
+    doThrow(new DataAccessResourceFailureException("connection reset"))
+        .when(runService).recordStep(eq(RUN_ID), any());
+
+    replicationService.continueRun(RUN_ID, REPLICATION_ID);
+
+    verify(worklogSyncService).sync(config, CREDENTIALS);
+    verify(runService).finishRun(RUN_ID, SUCCEEDED, "1 Tickets geholt, 1 geschrieben.");
   }
 
   private JiraReplicationRunStep theOnlyStep() {
