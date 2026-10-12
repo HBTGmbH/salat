@@ -1,9 +1,10 @@
 package de.hbt.salat.etl.controller;
 
 import java.time.LocalDate;
-import java.util.stream.IntStream;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.stereotype.Controller;
@@ -14,12 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.viewhelper.PageNavigation;
 import de.hbt.salat.etl.configuration.EtlSwitch;
 import de.hbt.salat.etl.service.ETLRunHistoryService;
 import de.hbt.salat.etl.service.ETLRunLauncher;
@@ -49,6 +52,12 @@ public class ETLRunHistoryController {
 
   static final int DEFAULT_LIMIT = 100;
   static final int MAX_LIMIT = 1000;
+
+  /**
+   * Ausführungen je Seite eines Laufs (#1324). Ein nächtlicher Lauf hat rund 200, ein Lauf über die
+   * ganze Historie mehr als zehntausend; jede Zeile trägt ihre Meldung, im Fehlerfall samt SQL.
+   */
+  static final int EXECUTIONS_PER_PAGE = 50;
 
   /** Derselbe Zeitraum, mit dem der nächtliche Lauf arbeitet. */
   static final int DEFAULT_MONTHS_BACK = 3;
@@ -91,20 +100,37 @@ public class ETLRunHistoryController {
    * Ein Lauf mit seinen Ausführungen (#1324) — welche Definition in welcher Referenzperiode lief,
    * mit welchem Ergebnis und welcher Meldung.
    *
+   * <p>Seitenweise und filterbar: ein Lauf über die ganze Historie hat mehr als zehntausend
+   * Ausführungen. Die Parameter heißen nicht {@code f…}, gemerkt wird hier nichts (→ ADR-0022): die
+   * Auswahl gilt einem Lauf, und eine gemerkte Definition ergäbe im nächsten Lauf eine leere Seite.
+   *
    * <p>Welche Ausführungen die Person sieht, entscheidet {@code ETLRunHistoryService} — je
    * Definition nach dem Leserecht. Einen Lauf, den es nicht (mehr) gibt, etwa weil das Aufräumen
    * ihn inzwischen gelöscht hat, beantwortet die Liste mit einer Meldung; zur durchgereichten
    * {@code AuthorizationException} siehe {@link #run}.
    */
   @GetMapping("/{id}")
-  public String detail(@PathVariable long id, Model model, RedirectAttributes redirectAttributes) {
+  public String detail(@PathVariable long id,
+                       @RequestParam(required = false) Boolean onlyFailed,
+                       @RequestParam(required = false) Long definitionId,
+                       @RequestParam(name = PageNavigation.PAGE_PARAM, required = false) Integer page,
+                       Model model, RedirectAttributes redirectAttributes) {
+    boolean failedOnly = Boolean.TRUE.equals(onlyFailed);
     try {
-      var detail = etlRunHistoryService.getRunDetail(id);
-      var executions = detail.executions();
+      var detail = etlRunHistoryService.getRunDetail(id, failedOnly, definitionId,
+          PageRequest.of(PageNavigation.pageIndexOf(page), EXECUTIONS_PER_PAGE));
+      var executions = detail.executions()
+          .map(execution -> ETLExecutionViewHelper.from(execution.position(), execution.execution()));
       model.addAttribute("run", ETLRunViewHelper.from(detail.run()));
-      model.addAttribute("executions", IntStream.range(0, executions.size())
-          .mapToObj(i -> ETLExecutionViewHelper.from(i + 1, executions.get(i)))
-          .toList());
+      model.addAttribute("executions", executions.getContent());
+      model.addAttribute("pages", PageNavigation.of(executions, UriComponentsBuilder.fromPath("/etl/runs/" + id)
+          .queryParamIfPresent("onlyFailed", Optional.of(true).filter(on -> failedOnly))
+          .queryParamIfPresent("definitionId", Optional.ofNullable(definitionId))));
+      model.addAttribute("definitions", detail.definitions());
+      model.addAttribute("onlyFailed", failedOnly);
+      model.addAttribute("definitionId", definitionId);
+      model.addAttribute("readableExecutions", detail.readableExecutions());
+      model.addAttribute("failedExecutions", detail.failedExecutions());
       model.addAttribute("hiddenExecutions", detail.hiddenExecutions());
       return "etl/run-detail";
     } catch (AuthorizationException ex) {

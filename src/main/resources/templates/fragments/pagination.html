@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  Blaettern (#1324) unter einer Tabelle, deren Zeilen seitenweise aus der Datenbank kommen — als
+  Footer der Tabellenkarte. Das Modell ist ein PageNavigation: es kennt die Seite, die Gesamtzahl und
+  die Adresse der Liste samt Filter; jeder Link ersetzt nur die Seite.
+
+  Die meisten Listen werden vollstaendig gerendert oder ueber eine Obergrenze gekuerzt
+  (ui-style-guide §4.1). Blaettern ist fuer die Liste, die ueber jede sinnvolle Obergrenze wachsen
+  kann und in der jeder Eintrag zaehlt.
+
+  Erste, vorige, naechste und letzte Seite, dazwischen „Seite x von y" — keine Seitenzahlen zum
+  Anklicken: bei einigen hundert Seiten hilft keine Auswahl, der Filter tut es. Die Pfeile sind die
+  Chevrons, die in der Anwendung fuers Blaettern stehen (ui-style-guide §5.2). An der ersten und der
+  letzten Seite ist der Pfeil kein Link; Tabler stellt .disabled ausgegraut dar.
+*/-->
+<div th:fragment="pagination(pages)" th:if="${pages.needed}" class="card-footer d-flex flex-wrap align-items-center gap-2">
+  <p class="m-0 text-secondary"
+     th:text="#{main.general.pagination.range(${pages.firstShown}, ${pages.lastShown}, ${pages.totalElements})}">
+    1–50 von 208
+  </p>
+  <ul class="pagination m-0 ms-auto">
+    <li th:replace="~{fragments/pagination :: pageLink(${pages.first}, ${pages.firstHref}, #{main.general.pagination.first}, 'ti-chevrons-left')}"></li>
+    <li th:replace="~{fragments/pagination :: pageLink(${pages.first}, ${pages.previousHref}, #{main.general.pagination.previous}, 'ti-chevron-left')}"></li>
+    <li class="page-item active" aria-current="page">
+      <span class="page-link"
+            th:text="#{main.general.pagination.page(${pages.number}, ${pages.totalPages})}">Seite 1 von 5</span>
+    </li>
+    <li th:replace="~{fragments/pagination :: pageLink(${pages.last}, ${pages.nextHref}, #{main.general.pagination.next}, 'ti-chevron-right')}"></li>
+    <li th:replace="~{fragments/pagination :: pageLink(${pages.last}, ${pages.lastHref}, #{main.general.pagination.last}, 'ti-chevrons-right')}"></li>
+  </ul>
+</div>
+
+<!--/* Ein Pfeil. Ohne Ziel — auf der ersten oder letzten Seite — ist er ein span und kein Link: ein
+       leeres href laedt die Seite neu, und .disabled sperrt nur die Maus, nicht die Tastatur. */-->
+<li th:fragment="pageLink(disabled, href, label, icon)" class="page-item" th:classappend="${disabled} ? 'disabled'">
+  <a th:unless="${disabled}" class="page-link" th:href="@{${href}}" th:title="${label}" th:aria-label="${label}">
+    <i class="icon ti m-0" th:classappend="${icon}" aria-hidden="true"></i>
+  </a>
+  <span th:if="${disabled}" class="page-link" th:title="${label}" th:aria-label="${label}" aria-disabled="true">
+    <i class="icon ti m-0" th:classappend="${icon}" aria-hidden="true"></i>
+  </span>
+</li>
+
+</body>
+</html>

@@ -419,8 +419,20 @@ sie vollständig zu rendern, folgt sie der Buchungsliste statt dem kanonischen A
 - Anlegen und weitere Aktionen stehen in den `card-actions` der Tabellenkarte, weil rechts in der
   Filterzeile Zurücksetzen und Filtern stehen.
 
-**Sonst nicht vorhanden:** Paginierung, Mehrfachauswahl/Bulk-Aktionen, Spaltenkonfiguration. Die
-übrigen Listen werden vollständig gerendert.
+**Listen mit Blättern** (Ausführungen eines ETL-Laufs, #1324): Wo eine Liste über jede sinnvolle
+Obergrenze wachsen kann und jeder Eintrag zählt, kommt sie seitenweise aus der Datenbank. Ein Lauf
+über die ganze Historie hat mehr als zehntausend Ausführungen.
+
+- Unter der Tabelle steht `fragments/pagination` als Footer der Tabellenkarte. Es zeigt „1–50 von
+  15.666“, die Pfeile für erste, vorige, nächste und letzte Seite (`ti-chevrons-*`/`ti-chevron-*`) und
+  dazwischen „Seite x von y“. Seitenzahlen zum Anklicken gibt es nicht: Bei Hunderten Seiten hilft
+  der Filter, nicht die Auswahl.
+- Das Modell ist ein `PageNavigation`. Die Adresse zählt die Seiten ab 1 (`page`), und jeder Link
+  behält den Filter.
+- Ein neuer Filter beginnt auf der ersten Seite: Das Filterformular trägt keine Seite.
+
+**Sonst nicht vorhanden:** Mehrfachauswahl/Bulk-Aktionen, Spaltenkonfiguration. Die übrigen Listen
+werden vollständig gerendert.
 
 ### 4.2 Formular
 

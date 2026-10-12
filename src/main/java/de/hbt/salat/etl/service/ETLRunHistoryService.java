@@ -1,5 +1,7 @@
 package de.hbt.salat.etl.service;
 
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.nullsLast;
 import static de.hbt.salat.auth.domain.AccessLevel.EXECUTE;
 import static de.hbt.salat.auth.domain.AccessLevel.READ;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
@@ -10,9 +12,12 @@ import static de.hbt.salat.etl.domain.ETLRunHistory.Status.FAILED;
 import static de.hbt.salat.etl.domain.ETLRunHistory.Status.RUNNING;
 import static de.hbt.salat.etl.domain.ETLRunHistory.Status.SUCCEEDED;
 
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
@@ -21,8 +26,10 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.etl.auth.ETLAuthorization;
+import de.hbt.salat.etl.domain.ETLDefinitionInRun;
 import de.hbt.salat.etl.domain.ETLExecutionHistory;
 import de.hbt.salat.etl.domain.ETLRunDetail;
+import de.hbt.salat.etl.domain.ETLRunDetail.ExecutionInRun;
 import de.hbt.salat.etl.domain.ETLRunHistory;
 import de.hbt.salat.etl.persistence.ETLExecutionHistoryRepository;
 import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
@@ -65,27 +72,69 @@ public class ETLRunHistoryService {
   }
 
   /**
-   * Ein Lauf mit seinen Ausführungen (#1324), in der Reihenfolge, in der sie liefen.
+   * Ein Lauf mit einer Seite seiner Ausführungen (#1324), in der Reihenfolge, in der sie liefen.
    *
    * <p>Zwei Stufen: den Lauf sieht, wer die Liste sieht — er gehört keiner einzelnen Definition.
    * Eine Ausführung dagegen gehört genau einer, und ihre Meldung nennt im Fehlerfall das SQL dieser
    * Definition. Sie wird deshalb nur gezeigt, wenn die Person die Definition lesen darf
    * ({@code READ}); eine Regel mit {@code EXECUTE} allein öffnet die Liste, nicht das SQL.
    *
+   * <p>Das Recht wird je Definition gefragt, nicht je Ausführung, und die Abfrage der Seite nennt
+   * nur die lesbaren. So stimmen Seiten und Gesamtzahl, wie viele Ausführungen auch ausgeblendet
+   * sind.
+   *
+   * @param failedOnly nur die fehlgeschlagenen Ausführungen
+   * @param definitionId nur die Ausführungen dieser Definition, {@code null} für alle. Eine
+   *     Definition, die die Person nicht lesen darf, ergibt keine.
+   * @param pageable die gewünschte Seite. Eine Seite hinter der letzten, etwa aus einem Link von
+   *     vor einem Filterwechsel, wird zur letzten.
    * @throws AuthorizationException ohne ETL-Recht — wie die Liste
    * @throws InvalidDataException wenn es den Lauf nicht gibt
    */
-  public ETLRunDetail getRunDetail(long runId) {
+  public ETLRunDetail getRunDetail(long runId, boolean failedOnly, Long definitionId, Pageable pageable) {
     checkAuthorized();
     var run = runHistoryRepository.findById(runId)
         .orElseThrow(() -> new InvalidDataException(ETL_RUN_NOT_FOUND));
-    var all = executionHistoryRepository.findByRunInOrderOfExecution(runId);
-    var readable = all.stream().filter(this::isReadable).toList();
-    return new ETLRunDetail(run, readable, all.size() - readable.size());
+    var definitions = executionHistoryRepository.countByDefinitionInRun(runId);
+    var readable = definitions.stream()
+        .filter(definition -> isReadable(definition.etlId()))
+        .sorted(comparing(ETLDefinitionInRun::etlName, nullsLast(String.CASE_INSENSITIVE_ORDER)))
+        .toList();
+    var hidden = countOf(definitions) - countOf(readable);
+    var shownIds = readable.stream()
+        .map(ETLDefinitionInRun::etlId)
+        .filter(id -> definitionId == null || id.equals(definitionId))
+        .toList();
+    var page = pageOf(runId, shownIds, failedOnly, pageable);
+    var idsInRun = page.isEmpty() ? List.<Long>of() : executionHistoryRepository.findIdsByRunInOrderOfExecution(runId);
+    return new ETLRunDetail(run,
+        page.map(execution -> new ExecutionInRun(positionOf(execution, idsInRun), execution)),
+        readable, hidden);
   }
 
-  private boolean isReadable(ETLExecutionHistory execution) {
-    return etlAuthorization.isAuthorizedForDefinitionId(execution.getEtlId(), READ);
+  private Page<ETLExecutionHistory> pageOf(long runId, List<Long> etlIds, boolean failedOnly, Pageable pageable) {
+    if (etlIds.isEmpty()) {
+      return Page.empty(pageable);
+    }
+    var page = executionHistoryRepository.findByRunInOrderOfExecution(runId, etlIds, failedOnly, pageable);
+    var behindTheLast = page.isEmpty() && page.getTotalPages() > 0;
+    return behindTheLast
+        ? executionHistoryRepository.findByRunInOrderOfExecution(runId, etlIds, failedOnly,
+            pageable.withPage(page.getTotalPages() - 1))
+        : page;
+  }
+
+  /** Die Nummer im ganzen Lauf, ab 1 — auch die ausgeblendeten Ausführungen zählen mit. */
+  private static int positionOf(ETLExecutionHistory execution, List<Long> idsInRun) {
+    return Collections.binarySearch(idsInRun, execution.getId()) + 1;
+  }
+
+  private static long countOf(List<ETLDefinitionInRun> definitions) {
+    return definitions.stream().mapToLong(ETLDefinitionInRun::executions).sum();
+  }
+
+  private boolean isReadable(long etlId) {
+    return etlAuthorization.isAuthorizedForDefinitionId(etlId, READ);
   }
 
   /** Ob die Anzeige für die anfragende Person überhaupt offen ist — auch die Frage des Menüs. */

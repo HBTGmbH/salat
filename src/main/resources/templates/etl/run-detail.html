@@ -80,10 +80,48 @@
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.etl.run.detail.executions.title}">Ausführungen</h3>
       <!--/* Ein laufender Lauf schreibt seine Ausfuehrungen eine nach der anderen; neu geladen zeigt
-             die Seite die hinzugekommenen. */-->
+             die Seite die hinzugekommenen, mit Filter und Seite, wie sie gerade stehen. */-->
       <div class="card-actions">
-        <a th:replace="~{fragments/refresh-button :: refreshButton(@{/etl/runs/{id}(id=${run.id})})}"></a>
+        <a th:replace="~{fragments/refresh-button :: refreshButton(@{${pages.currentHref}})}"></a>
       </div>
+    </div>
+
+    <!--/* Filter (#1324): ein Lauf ueber die ganze Historie hat mehr als zehntausend Ausfuehrungen.
+           Zur Wahl stehen nur die Definitionen dieses Laufs, die die Person lesen darf. Die Felder
+           heissen nicht f…: gemerkt wird nichts, die Auswahl gilt diesem Lauf (→ ADR-0022). Ein
+           neuer Filter beginnt auf der ersten Seite, das Formular traegt deshalb keine Seite. */-->
+    <div class="card-body border-bottom" th:if="${readableExecutions > 0}">
+      <form method="get" th:action="@{/etl/runs/{id}(id=${run.id})}" data-filter-form="etl-run">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="definitionId" th:text="#{main.etl.run.field.definition}">Definition</label>
+            <select class="form-select tomselect" id="definitionId" name="definitionId" data-allow-empty-option="true"
+                    onchange="form.requestSubmit()">
+              <option value="" th:text="#{main.etl.run.field.definition.all}">--- Alle Definitionen ---</option>
+              <option th:each="definition : ${definitions}"
+                      th:value="${definition.etlId}"
+                      th:selected="${definition.etlId == definitionId}"
+                      th:text="#{main.etl.run.detail.filter.definition.option(${definition.etlName}, ${definition.executions})}">
+                worked-hours (12)
+              </option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary"
+                    th:title="#{main.general.button.filter.text}" th:aria-label="#{main.general.button.filter.text}">
+              <i class="icon ti ti-filter m-0"></i>
+            </button>
+          </div>
+          <div class="col-auto ms-2">
+            <label class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" name="onlyFailed" value="true"
+                     th:checked="${onlyFailed}" onchange="form.requestSubmit()"/>
+              <span class="form-check-label"
+                    th:text="#{main.etl.run.detail.filter.onlyfailed(${failedExecutions})}">Nur Fehlerhafte (2)</span>
+            </label>
+          </div>
+        </div>
+      </form>
     </div>
 
     <div class="card-body" th:if="${run.status.name() == 'RUNNING' or hiddenExecutions > 0}">
@@ -99,10 +137,15 @@
     <!--/* Ein Lauf ohne Ausfuehrungen sagt das ausdruecklich, statt eine leere Tabelle zu zeigen:
            uebersprungen, vor der ersten Definition abgebrochen, oder aus der Zeit, bevor die
            Ausfuehrungen ihrem Lauf zugeordnet wurden. Sind nur alle ausgeblendet, sagt das der Satz
-           darueber — dann gab es welche. */-->
-    <div class="card-body" th:if="${#lists.isEmpty(executions) and hiddenExecutions == 0}">
+           darueber — dann gab es welche. Laesst erst der Filter nichts uebrig, sagt die Seite das. */-->
+    <div class="card-body" th:if="${readableExecutions == 0 and hiddenExecutions == 0}">
       <p class="text-secondary mb-0" th:text="#{main.etl.run.detail.executions.none}">
         Zu diesem Lauf ist keine Ausführung verzeichnet.
+      </p>
+    </div>
+    <div class="card-body" th:if="${readableExecutions > 0 and #lists.isEmpty(executions)}">
+      <p class="text-secondary mb-0" th:text="#{main.etl.run.detail.executions.nomatch}">
+        Keine Ausführung entspricht dem Filter.
       </p>
     </div>
 
@@ -119,6 +162,8 @@
           </tr>
         </thead>
         <tbody>
+          <!--/* Die Nummer ist die im ganzen Lauf, nicht die auf der Seite oder im Filter: eine
+                 Ausfuehrung behaelt sie, gleich was gerade ausgeblendet ist. */-->
           <tr th:each="execution : ${executions}">
             <td class="text-secondary" th:text="${execution.position}">1</td>
             <td th:text="${execution.definitionName}">Definition</td>
@@ -150,6 +195,8 @@
         </tbody>
       </table>
     </div>
+
+    <div th:replace="~{fragments/pagination :: pagination(${pages})}"></div>
   </div>
 
 </main>
