@@ -167,7 +167,8 @@ public class DailyService {
         boolean monthDiffNegative = false;
         if (hasTarget) {
             Duration target = overtimeService.calculateWorkingTimeTarget(employeeContractId, first, last);
-            Duration diff = grand.minus(target);
+            // the time surcharges count against the target as on the time account (#1469), the total stays booked time
+            Duration diff = timeAccountCredit(timereports, last).minus(target);
             monthTarget = DurationUtils.format(target);
             monthDiff = (diff.isNegative() ? "" : "+") + DurationUtils.format(diff);
             monthDiffNegative = diff.isNegative();
@@ -178,12 +179,8 @@ public class DailyService {
         if (hasTarget && isInRange(today, first, last)) {
             var cutoff = today.minusDays(1);
             if (!cutoff.isBefore(first)) {
-                Duration grandPrevDay = timereports.stream()
-                    .filter(r -> !r.getReferenceday().isAfter(cutoff))
-                    .map(TimereportDTO::getWorkingTime)
-                    .reduce(Duration.ZERO, Duration::plus);
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, first, cutoff);
-                Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
+                Duration prevDayDiff = timeAccountCredit(timereports, cutoff).minus(targetPrevDay);
                 prevDayDiffString = (prevDayDiff.isNegative() ? "" : "+") + DurationUtils.format(prevDayDiff);
                 prevDayDiffNegative = prevDayDiff.isNegative();
             }
@@ -239,4 +236,11 @@ public class DailyService {
         return timereportAuthorization.isWriteAllowed(contract, tr.getStatus());
     }
 
+    /** Working time plus time surcharge credit of the bookings up to {@code until} (#1469). */
+    private static Duration timeAccountCredit(List<TimereportDTO> timereports, LocalDate until) {
+        return timereports.stream()
+            .filter(r -> !r.getReferenceday().isAfter(until))
+            .map(TimereportDTO::getTimeAccountCredit)
+            .reduce(Duration.ZERO, Duration::plus);
+    }
 }

@@ -85,4 +85,12 @@ public class TimereportDTO implements Serializable {
     return isStandby() ? Duration.ZERO : duration;
   }
 
+  /**
+   * What the booking adds to the time account and holds against the target: its working time plus its time
+   * surcharge credit (#1469), as the overtime account counts it. The booked hours stay {@link #getWorkingTime}.
+   */
+  public Duration getTimeAccountCredit() {
+    return getWorkingTime().plus(surchargeCredit);
+  }
+
 }
