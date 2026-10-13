@@ -167,7 +167,14 @@ public class MatrixService {
             }
         }
 
-        return new MatrixData(dayHeaders, rows, standbyRows, footerDays, totalString, targetString, diffString, diffNegative, prevDayDiffString, prevDayDiffNegative);
+        Map<LocalDate, Duration> surchargeByDay = reports.stream()
+            .collect(Collectors.groupingBy(TimereportDTO::getReferenceday,
+                Collectors.reducing(Duration.ZERO, TimereportDTO::getSurchargeCredit, Duration::plus)));
+        var surchargeDays = days.stream().map(d -> surchargeByDay.getOrDefault(d, Duration.ZERO)).toList();
+        var surchargeTotal = surchargeDays.stream().reduce(Duration.ZERO, Duration::plus);
+
+        return new MatrixData(dayHeaders, rows, standbyRows, footerDays, totalString, targetString, diffString, diffNegative,
+            prevDayDiffString, prevDayDiffNegative, surchargeDays, surchargeTotal);
     }
 
     /**
@@ -276,8 +283,7 @@ public class MatrixService {
                 duration.isZero(),
                 isWeekend(day),
                 holidays.containsKey(day),
-                details,
-                dayReports.stream().map(TimereportDTO::getSurchargeCredit).reduce(Duration.ZERO, Duration::plus)));
+                details));
         }
 
         return new MatrixData.Row(customerOrderSign, suborderSign, customer, customerOrderDesc, suborderDesc, cells, DurationUtils.format(rowTotal));

@@ -19,7 +19,14 @@ public record MatrixData(
     String diffString,
     boolean diffNegative,
     String prevDayDiffString,
-    boolean prevDayDiffNegative) {
+    boolean prevDayDiffNegative,
+    /**
+     * The time surcharge credit per day, in the order of {@link #dayHeaders}, and of the month (#1469):
+     * a row of its own above the sum row, shown only where the month has some. It counts towards the
+     * time account, not towards the booked hours of the sum row.
+     */
+    List<Duration> surchargeDays,
+    Duration surchargeTotal) {
 
     public record DayHeader(
         int day,
@@ -56,8 +63,7 @@ public record MatrixData(
         boolean empty,
         boolean weekend,
         boolean publicHoliday,
-        List<ReportDetail> details,
-        Duration surchargeCredit) {}
+        List<ReportDetail> details) {}
 
     public record FooterDay(
         String workingTimeString,

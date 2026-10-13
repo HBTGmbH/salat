@@ -159,6 +159,20 @@
         <tr th:replace="~{fragments/matrix-row :: matrixRow(${row}, ${rs.even}, ${matrixData.dayHeaders}, false)}"></tr>
       </th:block>
 
+      <!--/* the time surcharge credit (#1469) above the sum row it is no part of: it counts towards the
+             time account, not towards the booked hours */-->
+      <tr th:if="${matrixData.surchargeTotal != null and !matrixData.surchargeTotal.zero}" data-surcharge-row>
+        <td class="matrix-first-col text-nowrap text-end text-teal" th:text="#{main.matrixoverview.table.surcharge.text}">Zeitzuschläge</td>
+        <td th:each="credit, cs : ${matrixData.surchargeDays}"
+            class="text-center px-1"
+            th:classappend="${matrixData.dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${matrixData.dayHeaders[cs.index].publicHoliday ? 'bg-warning-lt' : (matrixData.dayHeaders[cs.index].weekend ? 'bg-azure-lt' : '')}">
+          <span th:unless="${credit.zero}" class="text-teal" th:text="${@surchargeViewHelper.credit(credit)}">+2:00</span>
+        </td>
+        <td class="matrix-last-col text-center px-1 fw-medium">
+          <span class="text-teal" th:text="${@surchargeViewHelper.credit(matrixData.surchargeTotal)}">+2:00</span>
+        </td>
+      </tr>
+
     </tbody>
 
     <tfoot>

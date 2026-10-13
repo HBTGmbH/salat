@@ -21,19 +21,15 @@
       class="text-center px-1"
       th:classappend="${dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.publicHoliday ? 'bg-warning-lt' : (cell.weekend ? 'bg-azure-lt' : '')}">
     <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
-    <!--/* #1469: the cell earns a time surcharge, the details below name each flag */-->
-    <i th:if="${cell.surchargeCredit != null and !cell.surchargeCredit.zero}" class="ti ti-percentage text-teal ms-1"
-       th:with="surchargeTitle=#{main.surcharge.matrix.title(${@surchargeViewHelper.credit(cell.surchargeCredit)})}"
-       th:title="${surchargeTitle}" th:aria-label="${surchargeTitle}"></i>
-    <!--/* the ticket references stand before the comment, as they did in it before #1326 */-->
+    <!--/* the ticket references stand before the comment, as they did in it before #1326, the time
+           surcharge flag after it (#1469); the credit of the day has a row of its own above the sum */-->
     <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail d-none">
       <div th:each="d : ${cell.details}"
-           th:with="label=${#strings.trim(#strings.listJoin(d.ticketReferences, ' ') + ' ' + (d.taskDescription ?: ''))}"
-           class="text-start py-1">
-        <span th:text="${d.durationString + (label ne '' ? ': ' + label : '')}">1:00: MOS-16345 did something</span>
-        <span th:if="${d.surchargeKind != null}" class="badge bg-teal-lt ms-1"
-              th:text="${@surchargeViewHelper.flagWithCredit(d.surchargeKind, d.surchargePercent, d.surchargeCredit)}">Nacht 25 % · +1:00</span>
-      </div>
+           th:with="label=${#strings.trim(#strings.listJoin(d.ticketReferences, ' ') + ' ' + (d.taskDescription ?: ''))},
+                    flag=${d.surchargeKind != null} ? ${@surchargeViewHelper.flagWithCredit(d.surchargeKind, d.surchargePercent, d.surchargeCredit)} : '',
+                    text=${#strings.trim(label + (flag ne '' ? ' (' + flag + ')' : ''))}"
+           class="text-start py-1"
+           th:text="${d.durationString + (text ne '' ? ': ' + text : '')}">1:00: MOS-16345 did something (Nacht 25 % · +1:00)</div>
     </div>
   </td>
   <td class="matrix-last-col text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>

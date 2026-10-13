@@ -64,7 +64,7 @@ class MatrixTableFragmentTest {
           new FooterDay("7:30", false, false, false, false, "08:00", "0:30", "16:00", false, false, false),
           new FooterDay("0:00", true, false, false, true, null, null, null, false, false, false),
           new FooterDay("0:00", false, false, false, true, null, null, null, false, false, false)),
-      "7:30", null, null, false, null, false);
+      "7:30", null, null, false, null, false, List.of(Duration.ZERO, Duration.ZERO, Duration.ZERO), Duration.ZERO);
 
   /** Freitag mit zu viel Arbeitszeit, Samstag ein Feiertag, Sonntag nur Wochenende. */
   private static final MatrixData HOLIDAY_WEEKEND = new MatrixData(
@@ -74,15 +74,15 @@ class MatrixTableFragmentTest {
               "Tag der Deutschen Einheit", false),
           new DayHeader(4, LocalDate.of(2026, 10, 4), "main.matrixoverview.weekdays.sunday.text", true, false, null, false)),
       List.of(new Row("A1", "A1/01", "Kunde", "Auftrag", "Unterauftrag", List.of(
-          new Cell("11:00", false, false, false, List.of(), Duration.ZERO),
-          new Cell("1:00", false, true, true, List.of(), Duration.ZERO),
-          new Cell(null, true, true, false, List.of(), Duration.ZERO)), "12:00")),
+          new Cell("11:00", false, false, false, List.of()),
+          new Cell("1:00", false, true, true, List.of()),
+          new Cell(null, true, true, false, List.of())), "12:00")),
       List.of(),
       List.of(
           new FooterDay("11:00", false, false, false, false, "07:00", "0:30", "18:30", false, false, true),
           new FooterDay("1:00", false, true, true, false, "10:00", "0:00", "11:00", false, false, false),
           new FooterDay("0:00", false, true, false, true, null, null, null, false, false, false)),
-      "12:00", null, null, false, null, false);
+      "12:00", null, null, false, null, false, List.of(Duration.ZERO, Duration.ZERO, Duration.ZERO), Duration.ZERO);
 
   /** Samstag mit zwei Buchungen, eine mit Tickets und Zeitzuschlag; Sonntag ohne. */
   private static final MatrixData DETAILS = new MatrixData(
@@ -92,30 +92,38 @@ class MatrixTableFragmentTest {
       List.of(new Row("A1", "A1/01", "Kunde", "Auftrag", "Unterauftrag", List.of(
           new Cell("4:00", false, true, false, List.of(
               new ReportDetail("3:00", "Einspielen", List.of("ABC-12", "ABC-13"), SurchargeKind.SATURDAY, 50, Duration.ofMinutes(90)),
-              new ReportDetail("1:00", "", List.of(), null, null, Duration.ZERO)), Duration.ofMinutes(90)),
+              new ReportDetail("1:00", "", List.of(), null, null, Duration.ZERO))),
           new Cell("2:00", false, true, false, List.of(
-              new ReportDetail("2:00", "Nacharbeit", List.of(), null, null, Duration.ZERO)), Duration.ZERO)), "6:00")),
+              new ReportDetail("2:00", "Nacharbeit", List.of(), null, null, Duration.ZERO)))), "6:00")),
       List.of(),
       List.of(
           new FooterDay("4:00", false, true, false, false, null, null, null, false, false, false),
           new FooterDay("2:00", false, true, false, false, null, null, null, false, false, false)),
-      "6:00", null, null, false, null, false);
+      "6:00", null, null, false, null, false, List.of(Duration.ofMinutes(90), Duration.ZERO), Duration.ofMinutes(90));
 
   @Test
-  void the_details_of_a_cell_name_the_tickets_before_the_comment() {
+  void the_details_of_a_cell_name_the_tickets_before_the_comment_and_the_surcharge_after_it() {
     var saturday = row(render(DETAILS, false, false), "A1/01 · Unterauftrag").get(1);
 
-    assertThat(saturday).containsPattern(">3:00: ABC-12 ABC-13 Einspielen</span>");
-    assertThat(saturday).containsPattern(">1:00</span>");
+    assertThat(saturday).containsPattern(">3:00: ABC-12 ABC-13 Einspielen \\(Samstag 50\u00a0% · \\+1:30\\)</div>");
+    assertThat(saturday).containsPattern(">1:00</div>");
+    assertThat(saturday).doesNotContain("badge").doesNotContain("ti-percentage");
   }
 
   @Test
-  void a_flagged_booking_carries_its_flag_and_its_cell_the_credit() {
-    var cells = row(render(DETAILS, false, false), "A1/01 · Unterauftrag");
+  void the_credit_of_each_day_has_a_row_above_the_sum_row() {
+    var html = render(DETAILS, false, false);
 
-    assertThat(cells.get(1)).contains("Samstag 50\u00a0% · +1:30")
-        .contains("ti-percentage").contains("title=\"Zeitzuschlag aufs Zeitkonto: +1:30\"");
-    assertThat(cells.get(2)).doesNotContain("ti-percentage").doesNotContain("bg-teal-lt");
+    var surcharge = row(html, "Zeitzuschläge");
+    assertThat(surcharge.get(1)).contains(">+1:30<");
+    assertThat(surcharge.get(2)).doesNotContain("+");
+    assertThat(surcharge.getLast()).contains(">+1:30<");
+    assertThat(html.indexOf(">Zeitzuschläge<")).isLessThan(html.indexOf(">GESAMT<"));
+  }
+
+  @Test
+  void a_month_without_credit_has_no_surcharge_row() {
+    assertThat(render(true, true)).doesNotContain(">Zeitzuschläge<");
   }
 
   @Test
