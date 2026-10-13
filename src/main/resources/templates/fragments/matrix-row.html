@@ -26,10 +26,10 @@
     <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail d-none">
       <div th:each="d : ${cell.details}"
            th:with="label=${#strings.trim(#strings.listJoin(d.ticketReferences, ' ') + ' ' + (d.taskDescription ?: ''))},
-                    flag=${d.surchargeKind != null} ? ${@surchargeViewHelper.flagWithCredit(d.surchargeKind, d.surchargePercent, d.surchargeCredit)} : '',
+                    flag=${d.surchargeKind != null} ? ${@surchargeViewHelper.badge(d.surchargeCredit)} : '',
                     text=${#strings.trim(label + (flag ne '' ? ' (' + flag + ')' : ''))}"
            class="text-start py-1"
-           th:text="${d.durationString + (text ne '' ? ': ' + text : '')}">1:00: MOS-16345 did something (Nacht 25 % · +1:00)</div>
+           th:text="${d.durationString + (text ne '' ? ': ' + text : '')}">1:00: MOS-16345 did something (Zuschlag +1:00)</div>
     </div>
   </td>
   <td class="matrix-last-col text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>

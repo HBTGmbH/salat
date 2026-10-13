@@ -85,7 +85,7 @@ public class TimereportListService {
     var timereports = timereportListDAO.findRows(expanded, visibility);
     var rows = timereportDAO.getDtosOf(timereports);
     return new TimereportListResult(rows, totals.count(), totals.duration(), totals.billableDuration(),
-        totals.employees(), totals.orders(), editableIds(timereports));
+        totals.employees(), totals.orders(), editableIds(timereports), totals.surchargeCredit());
   }
 
   /**

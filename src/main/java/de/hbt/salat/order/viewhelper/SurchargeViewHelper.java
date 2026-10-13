@@ -45,18 +45,17 @@ public class SurchargeViewHelper {
     return messages.getMessage("main.surcharge.flag", new Object[] {kind(kind), percent(percent)});
   }
 
-  /** The flag with the credit it earns, "Nacht 25 % · +1:00" — the reviews and the daily view. */
-  public String flagWithCredit(SurchargeKind kind, Integer percent, Duration credit) {
-    if (kind == null) {
-      return "";
-    }
-    return messages.getMessage("main.surcharge.flag.credit",
-        new Object[] {flag(kind, percent), DurationUtils.formatSigned(credit != null ? credit : Duration.ZERO)});
-  }
-
-  /** The credit on the time account with its sign, "+1:30" — the matrix cell. */
+  /** The credit on the time account with its sign, "+1:30" — the matrix row and the sums. */
   public String credit(Duration credit) {
     return DurationUtils.formatSigned(credit != null ? credit : Duration.ZERO);
+  }
+
+  /**
+   * The badge of a flagged booking, "Zuschlag +1:30": what counts is how much it adds to the time
+   * account, kind and rate are the title ({@link #flag}).
+   */
+  public String badge(Duration credit) {
+    return messages.getMessage("main.surcharge.badge", new Object[] {credit(credit)});
   }
 
   /** The rate, with the night for a night rate: "25 %, 20:00–6:00 Uhr". */

@@ -34,6 +34,11 @@ public record DailyViewData(
     // open, committed or closed: the period the day lies in, shown in the heading of the day (#1164)
     String reportStatus
 ) {
+    /** The time surcharge credit of the day's bookings (#1469), shown next to the total. */
+    public Duration surchargeTotal() {
+        return timereports.stream().map(TimereportDTO::getSurchargeCredit).reduce(Duration.ZERO, Duration::plus);
+    }
+
     public record WeekStripDay(
         LocalDate date,
         Duration booked,

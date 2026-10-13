@@ -6,6 +6,7 @@ import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
 import static de.hbt.salat.order.domain.SurchargeKind.SATURDAY;
 import static de.hbt.salat.order.domain.SurchargeKind.SUNDAY;
 
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.Locale;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -29,6 +30,11 @@ class SurchargeViewHelperTest {
   private static final String NBSP = "\u00a0";
 
   private final SurchargeViewHelper viewHelper = new SurchargeViewHelper(messages());
+
+  @Test
+  void the_badge_of_a_booking_names_the_credit_in_hours() {
+    assertThat(viewHelper.badge(Duration.ofMinutes(90))).isEqualTo("Zuschlag +1:30");
+  }
 
   @Test
   void the_order_names_its_rates_above_zero() {

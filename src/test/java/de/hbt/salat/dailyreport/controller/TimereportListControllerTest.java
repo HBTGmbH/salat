@@ -59,6 +59,8 @@ import de.hbt.salat.dailyreport.domain.TimereportListFilter.Sort;
 import de.hbt.salat.dailyreport.domain.TimereportListResult;
 import de.hbt.salat.dailyreport.service.TimereportListExcelService;
 import de.hbt.salat.dailyreport.service.TimereportListService;
+import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.order.viewhelper.SurchargeViewHelper;
 
 /**
  * Opening the booking list without parameters, with a filter remembered from an earlier visit (#1127).
@@ -255,7 +257,7 @@ class TimereportListControllerTest {
         .taskdescription("Pflege").duration(Duration.ofMinutes(90)).status("open")
         .build();
     when(timereportListService.search(any())).thenReturn(new TimereportListResult(
-        List.of(booking), 3399, Duration.ofHours(9406), Duration.ofHours(4999), 1, 1, Set.of()));
+        List.of(booking), 3399, Duration.ofHours(9406), Duration.ofHours(4999), 1, 1, Set.of(), Duration.ZERO));
 
     var html = renderFragment(get("/dailyreport/list")
         .header("HX-Request", "true")
@@ -278,6 +280,29 @@ class TimereportListControllerTest {
    * Editing is offered where saving would succeed, and only there (#1190). The way back is the bare list: it restores
    * its filter itself. On paper there is neither button nor column.
    */
+  /**
+   * A flagged booking shows how much its time surcharge adds to the time account, kind and rate are the title; the
+   * sum row adds the credit of all hits (#1469).
+   */
+  @Test
+  void a_flagged_booking_and_the_sum_row_show_the_surcharge_in_hours() throws Exception {
+    var flagged = TimereportDTO.builder().id(11L)
+        .referenceday(LocalDate.of(2026, 10, 10)).employeeName("Berta Beispiel").employeeSign("bb")
+        .completeOrderSign("ORD-42/01").duration(Duration.ofHours(3)).status("open")
+        .surchargeKind(SurchargeKind.SATURDAY).surchargePercent(50).surchargeCredit(Duration.ofMinutes(90)).build();
+    when(timereportListService.search(any())).thenReturn(new TimereportListResult(
+        List.of(flagged), 1, Duration.ofHours(3), Duration.ZERO, 1, 1, Set.of(), Duration.ofMinutes(90)));
+
+    var html = renderFragment(get("/dailyreport/list")
+        .header("HX-Request", "true")
+        .param("fBookingsFrom", "2026-10-01")
+        .param("fBookingsUntil", "2026-10-31"));
+
+    assertThat(html)
+        .containsPattern("title=\"Samstag 50\u00a0%\"\\s*>Zuschlag \\+1:30</span>")
+        .containsSubsequence("<tfoot", ">Zuschlag +1:30</span>", "</tfoot>");
+  }
+
   @Test
   void only_an_editable_row_offers_editing_and_the_printout_leaves_it_out() throws Exception {
     var editable = TimereportDTO.builder().id(11L)
@@ -287,7 +312,7 @@ class TimereportListControllerTest {
         .referenceday(LocalDate.of(2026, 9, 2)).employeeName("Berta Beispiel").employeeSign("bb")
         .completeOrderSign("ORD-42/01").duration(Duration.ofMinutes(60)).status("committed").build();
     when(timereportListService.search(any())).thenReturn(new TimereportListResult(
-        List.of(editable, released), 2, Duration.ofMinutes(150), Duration.ZERO, 1, 1, Set.of(11L)));
+        List.of(editable, released), 2, Duration.ofMinutes(150), Duration.ZERO, 1, 1, Set.of(11L), Duration.ZERO));
 
     var html = renderFragment(get("/dailyreport/list")
         .header("HX-Request", "true")
@@ -324,10 +349,12 @@ class TimereportListControllerTest {
         .setLocaleResolver(new FixedLocaleResolver(Locale.GERMANY))
         .addFilters(uiStateFilter)
         .build();
-    // Die Vorlage liest @durationUtils. Der Standalone-Aufbau rendert gegen einen Stub-Kontext ohne
+    // Die Vorlage liest @durationUtils und @surchargeViewHelper. Der Standalone-Aufbau rendert gegen einen Stub-Kontext ohne
     // Bohnen; dessen addBean ist nicht oeffentlich erreichbar, die Klasse ist paketprivat.
     ReflectionTestUtils.invokeMethod(viewResolver.getApplicationContext(), "addBean", "durationUtils",
         new DurationUtilsBean());
+    ReflectionTestUtils.invokeMethod(viewResolver.getApplicationContext(), "addBean", "surchargeViewHelper",
+        new SurchargeViewHelper(new MessageSourceAccessor(messageSource, Locale.GERMANY)));
     return cssUnescaped(mockMvc.perform(request).andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(UTF_8));
   }
