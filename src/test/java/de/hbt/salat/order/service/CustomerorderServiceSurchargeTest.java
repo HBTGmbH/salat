@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.order.domain.SurchargeKind.HOLIDAY;
 import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
-import static de.hbt.salat.order.domain.SurchargeKind.WEEKEND;
+import static de.hbt.salat.order.domain.SurchargeKind.SATURDAY;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -66,29 +66,29 @@ class CustomerorderServiceSurchargeTest {
 
   @Test
   void the_rates_are_stored_and_an_empty_percent_means_none() {
-    customerorderService.update(ORDER_ID, dto(new SurchargeInput(25, TWENTY, SIX, 50, null)));
+    customerorderService.update(ORDER_ID, dto(new SurchargeInput(25, TWENTY, SIX, 50, null, null)));
 
     assertThat(order.getSurchargeRate(NIGHT)).isEqualTo(new SurchargeRate(25, TWENTY, SIX));
-    assertThat(order.getSurchargeRate(WEEKEND)).isEqualTo(SurchargeRate.of(50));
+    assertThat(order.getSurchargeRate(SATURDAY)).isEqualTo(SurchargeRate.of(50));
     assertThat(order.getSurchargeRate(HOLIDAY)).isNull();
   }
 
   /** The form fills the night times in advance; without a night percent they are not stored. */
   @Test
   void night_times_without_a_night_percent_are_dropped() {
-    customerorderService.update(ORDER_ID, dto(new SurchargeInput(null, TWENTY, SIX, null, null)));
+    customerorderService.update(ORDER_ID, dto(new SurchargeInput(null, TWENTY, SIX, null, null, null)));
 
     assertThat(order.getSurchargeRate(NIGHT)).isNull();
   }
 
   @Test
   void a_rate_out_of_range_is_refused() {
-    assertRefused(new SurchargeInput(null, null, null, null, 1001), ErrorCode.CO_SURCHARGE_PERCENT_INVALID);
+    assertRefused(new SurchargeInput(null, null, null, null, null, 1001), ErrorCode.CO_SURCHARGE_PERCENT_INVALID);
   }
 
   @Test
   void a_night_rate_without_its_night_is_refused() {
-    assertRefused(new SurchargeInput(25, TWENTY, null, null, null), ErrorCode.CO_SURCHARGE_NIGHT_TIMES_MISSING);
+    assertRefused(new SurchargeInput(25, TWENTY, null, null, null, null), ErrorCode.CO_SURCHARGE_NIGHT_TIMES_MISSING);
     assertThat(order.getSurchargeRate(NIGHT)).isNull();
   }
 

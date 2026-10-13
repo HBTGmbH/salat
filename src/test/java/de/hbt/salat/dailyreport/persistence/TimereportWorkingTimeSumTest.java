@@ -132,7 +132,7 @@ public class TimereportWorkingTimeSumTest {
   public void sums_the_surcharge_credit_apart_from_the_booked_time() {
     var suborder = suborder(standardOrder, "so", null);
     book(suborder, 4, SurchargeKind.NIGHT, 25);
-    book(suborder, 3, SurchargeKind.WEEKEND, 50);
+    book(suborder, 3, SurchargeKind.SATURDAY, 50);
     book(suborder, 1, null, null);
 
     assertThat(reportedMinutes()).isEqualTo(480);

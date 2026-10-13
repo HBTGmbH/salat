@@ -31,15 +31,27 @@
   </th:block>
   <div class="row g-2 mt-1">
     <div class="col-sm-4">
-      <label class="form-label fw-normal" for="surchargeWeekendPercent" th:text="#{main.surcharge.kind.weekend}">Wochenende</label>
+      <label class="form-label fw-normal" for="surchargeSaturdayPercent" th:text="#{main.surcharge.kind.saturday}">Samstag</label>
       <div class="input-group">
-        <input type="number" class="form-control" id="surchargeWeekendPercent" min="0" max="1000" step="1"
-               th:field="*{surcharges.weekendPercent}"
+        <input type="number" class="form-control" id="surchargeSaturdayPercent" min="0" max="1000" step="1"
+               th:field="*{surcharges.saturdayPercent}"
                th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
         <span class="input-group-text">%</span>
       </div>
       <th:block th:if="${inheritable}">
-        <small th:replace="~{:: inheritedHint(kind='WEEKEND', oob=false)}"></small>
+        <small th:replace="~{:: inheritedHint(kind='SATURDAY', oob=false)}"></small>
+      </th:block>
+    </div>
+    <div class="col-sm-4">
+      <label class="form-label fw-normal" for="surchargeSundayPercent" th:text="#{main.surcharge.kind.sunday}">Sonntag</label>
+      <div class="input-group">
+        <input type="number" class="form-control" id="surchargeSundayPercent" min="0" max="1000" step="1"
+               th:field="*{surcharges.sundayPercent}"
+               th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
+        <span class="input-group-text">%</span>
+      </div>
+      <th:block th:if="${inheritable}">
+        <small th:replace="~{:: inheritedHint(kind='SUNDAY', oob=false)}"></small>
       </th:block>
     </div>
     <div class="col-sm-4">

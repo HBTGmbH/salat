@@ -4,7 +4,7 @@ package de.hbt.salat.order.domain;
  * An inherited surcharge rate of one kind and where it comes from (#1469) — what the suborder form shows
  * under the field, "Ohne eigenen Satz gilt: 25 %, vom Auftrag 4711". The same walk upwards as
  * {@link TicketReferencePolicySource}, but per kind: a suborder may set the night rate and inherit the
- * weekend rate.
+ * Sunday rate.
  *
  * @param rate {@code null} where neither a suborder above nor the order sets one
  * @param suborder the suborder above that carries the rate; {@code null} when it is the order's

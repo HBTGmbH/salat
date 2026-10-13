@@ -10,7 +10,8 @@ import lombok.Getter;
 public enum SurchargeKind {
 
   NIGHT("main.surcharge.kind.night"),
-  WEEKEND("main.surcharge.kind.weekend"),
+  SATURDAY("main.surcharge.kind.saturday"),
+  SUNDAY("main.surcharge.kind.sunday"),
   HOLIDAY("main.surcharge.kind.holiday");
 
   private final String label;

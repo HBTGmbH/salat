@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.order.domain.SurchargeKind.HOLIDAY;
 import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
-import static de.hbt.salat.order.domain.SurchargeKind.WEEKEND;
+import static de.hbt.salat.order.domain.SurchargeKind.SATURDAY;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -62,9 +62,9 @@ class SuborderServiceSurchargeTest {
     order.setSign("4711");
     order.setFromDate(FROM);
     order.setSurchargeRate(NIGHT, new SurchargeRate(25, TWENTY, SIX));
-    order.setSurchargeRate(WEEKEND, SurchargeRate.of(50));
+    order.setSurchargeRate(SATURDAY, SurchargeRate.of(50));
     parent = suborder(PARENT_ID, "01", null);
-    parent.setSurchargeRate(WEEKEND, SurchargeRate.of(75));
+    parent.setSurchargeRate(SATURDAY, SurchargeRate.of(75));
     suborder = suborder(SUBORDER_ID, "02", null);
 
     when(customerorderService.getCustomerorderById(ORDER_ID)).thenReturn(order);
@@ -75,11 +75,11 @@ class SuborderServiceSurchargeTest {
 
   @Test
   void own_rates_are_stored_and_an_empty_percent_inherits() {
-    suborderService.update(SUBORDER_ID, dto(new SurchargeInput(30, LocalTime.of(22, 0), SIX, null, 0)), ORDER_ID);
+    suborderService.update(SUBORDER_ID, dto(new SurchargeInput(30, LocalTime.of(22, 0), SIX, null, null, 0)), ORDER_ID);
 
     assertThat(suborder.getSurchargeRate(NIGHT)).isEqualTo(new SurchargeRate(30, LocalTime.of(22, 0), SIX));
-    assertThat(suborder.getSurchargeRate(WEEKEND)).isNull();
-    assertThat(suborder.getEffectiveSurchargeRate(WEEKEND)).isEqualTo(SurchargeRate.of(50));
+    assertThat(suborder.getSurchargeRate(SATURDAY)).isNull();
+    assertThat(suborder.getEffectiveSurchargeRate(SATURDAY)).isEqualTo(SurchargeRate.of(50));
     assertThat(suborder.getSurchargeRate(HOLIDAY)).isEqualTo(SurchargeRate.of(0));
   }
 
@@ -95,13 +95,13 @@ class SuborderServiceSurchargeTest {
 
   @Test
   void a_rate_out_of_range_is_refused() {
-    assertRefused(new SurchargeInput(null, null, null, 1001, null), ErrorCode.SO_SURCHARGE_PERCENT_INVALID);
-    assertRefused(new SurchargeInput(-5, TWENTY, SIX, null, null), ErrorCode.SO_SURCHARGE_PERCENT_INVALID);
+    assertRefused(new SurchargeInput(null, null, null, 1001, null, null), ErrorCode.SO_SURCHARGE_PERCENT_INVALID);
+    assertRefused(new SurchargeInput(-5, TWENTY, SIX, null, null, null), ErrorCode.SO_SURCHARGE_PERCENT_INVALID);
   }
 
   @Test
   void a_night_rate_without_its_night_is_refused() {
-    assertRefused(new SurchargeInput(25, null, SIX, null, null), ErrorCode.SO_SURCHARGE_NIGHT_TIMES_MISSING);
+    assertRefused(new SurchargeInput(25, null, SIX, null, null, null), ErrorCode.SO_SURCHARGE_NIGHT_TIMES_MISSING);
   }
 
   /** What the form shows under each field, from the parent chosen in the form. */
@@ -111,8 +111,8 @@ class SuborderServiceSurchargeTest {
 
     assertThat(inherited.get(NIGHT).rate()).isEqualTo(new SurchargeRate(25, TWENTY, SIX));
     assertThat(inherited.get(NIGHT).fromOrder()).isTrue();
-    assertThat(inherited.get(WEEKEND).rate()).isEqualTo(SurchargeRate.of(75));
-    assertThat(inherited.get(WEEKEND).suborder()).isSameAs(parent);
+    assertThat(inherited.get(SATURDAY).rate()).isEqualTo(SurchargeRate.of(75));
+    assertThat(inherited.get(SATURDAY).suborder()).isSameAs(parent);
     assertThat(inherited.get(HOLIDAY).rate()).isNull();
   }
 

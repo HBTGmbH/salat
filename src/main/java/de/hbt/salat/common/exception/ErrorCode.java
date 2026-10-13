@@ -128,8 +128,9 @@ public enum ErrorCode {
   TR_ABSENCE_DAY_EXCEEDS_TARGET("TR-0052", "on a day with an absence, all bookings together exceed the daily working time"),
   TR_ABSENCE_DAY_WITHOUT_TARGET("TR-0053", "an absence is booked on a day without working time target, or time next to one"),
   TR_SURCHARGE_NOT_OFFERED("TR-0054", "the suborder of the booking offers no time surcharge of this kind"),
-  TR_SURCHARGE_WEEKEND_ON_WEEKDAY("TR-0055", "a weekend surcharge needs a booking on a Saturday or Sunday"),
+  TR_SURCHARGE_SATURDAY_ON_OTHER_DAY("TR-0055", "a Saturday surcharge needs a booking on a Saturday"),
   TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY("TR-0056", "a holiday surcharge needs a booking on a public holiday"),
+  TR_SURCHARGE_SUNDAY_ON_OTHER_DAY("TR-0057", "a Sunday surcharge needs a booking on a Sunday"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
