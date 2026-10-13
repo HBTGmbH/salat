@@ -248,6 +248,11 @@
     <span th:text="#{main.matrixoverview.headline.actualtime.text}">IST-Stunden:</span>
     <strong th:text="${matrixData.totalString}">0:00</strong>
   </span>
+  <!--/* #1469: what the time surcharges add to the time account, apart from the booked hours */-->
+  <span th:if="${matrixData.surchargeTotal != null and !matrixData.surchargeTotal.zero}" class="text-teal">
+    <span th:text="#{main.matrixoverview.headline.surcharge.text}">Zeitzuschläge:</span>
+    <strong th:text="${@surchargeViewHelper.credit(matrixData.surchargeTotal)}">+0:00</strong>
+  </span>
   <span th:if="${matrixData.targetString != null}">
     <span th:text="#{main.matrixoverview.headline.targettime.text}">SOLL-Stunden:</span>
     <strong th:text="${matrixData.targetString}">0:00</strong>

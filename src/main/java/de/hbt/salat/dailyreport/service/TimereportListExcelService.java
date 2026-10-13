@@ -114,13 +114,12 @@ public class TimereportListExcelService {
     return "%d:%02d".formatted(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
   }
 
-  /** The time surcharge flag (#1469), "Nacht 25 %"; empty without one. */
-  private String surchargeText(TimereportDTO timereport) {
-    if (timereport.getSurchargeKind() == null) {
-      return "";
-    }
-    var percent = messages.getMessage("main.surcharge.percent", new Object[] {timereport.getSurchargePercent()});
-    return messages.getMessage("main.surcharge.flag",
-        new Object[] {messages.getMessage(timereport.getSurchargeKind().getLabel()), percent});
+  /**
+   * The time surcharge credit (#1469) in hours, "1:30", like the duration: what counts is how much it adds
+   * to the time account, not its kind. Empty without one.
+   */
+  private static String surchargeText(TimereportDTO timereport) {
+    var minutes = timereport.getSurchargeCredit().toMinutes();
+    return minutes == 0 ? "" : "%d:%02d".formatted(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
   }
 }

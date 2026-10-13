@@ -123,13 +123,15 @@ public class TimereportListDAO {
     Expression<Long> billableMinutes = builder.<Long>selectCase()
         .when(builder.equal(joins.suborder().get(Suborder_.invoice), YESNO_YES), minutes)
         .otherwise(0L);
+    Expression<Long> surchargeMinutes = root.get(Timereport_.surchargeCredit).as(Long.class);
 
     query.multiselect(
         builder.count(root),
         builder.sum(minutes),
         builder.sum(billableMinutes),
         builder.countDistinct(joins.employee()),
-        builder.countDistinct(joins.customerorder()));
+        builder.countDistinct(joins.customerorder()),
+        builder.sum(surchargeMinutes));
     query.where(conditions(filter, visibility, query, root, joins, builder));
 
     var row = entityManager.createQuery(query).getSingleResult();
@@ -138,7 +140,8 @@ public class TimereportListDAO {
         minutesToDuration(row[1]),
         minutesToDuration(row[2]),
         toLong(row[3]),
-        toLong(row[4]));
+        toLong(row[4]),
+        minutesToDuration(row[5]));
   }
 
   /**
@@ -313,11 +316,15 @@ public class TimereportListDAO {
     return Duration.ofMinutes(toLong(value));
   }
 
-  /** @param count how many bookings, over all hits rather than over the rows shown */
-  public record Totals(long count, Duration duration, Duration billableDuration, long employees, long orders) {
+  /**
+   * @param count how many bookings, over all hits rather than over the rows shown
+   * @param surchargeCredit the time surcharge credit of the hits (#1469)
+   */
+  public record Totals(long count, Duration duration, Duration billableDuration, long employees, long orders,
+                       Duration surchargeCredit) {
 
     public static Totals none() {
-      return new Totals(0, Duration.ZERO, Duration.ZERO, 0, 0);
+      return new Totals(0, Duration.ZERO, Duration.ZERO, 0, 0, Duration.ZERO);
     }
   }
 

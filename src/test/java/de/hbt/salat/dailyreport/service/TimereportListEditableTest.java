@@ -69,7 +69,7 @@ class TimereportListEditableTest {
   void setUp() {
     when(visibilityService.forPeriod(any())).thenReturn(TimereportVisibility.all());
     when(timereportListDAO.findTotals(any(), any()))
-        .thenReturn(new Totals(5, Duration.ofHours(5), Duration.ZERO, 2, 1));
+        .thenReturn(new Totals(5, Duration.ofHours(5), Duration.ZERO, 2, 1, Duration.ZERO));
   }
 
   @Test

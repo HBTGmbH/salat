@@ -32,6 +32,7 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
  * The values the booking list offers in its filters, asked of the employee orders instead of the bookings (#1127).
@@ -176,6 +177,21 @@ class TimereportListFilterValuesTest {
         .extracting(Timereport::getId)
         .containsExactlyInAnyOrder(own.getId(), onMyOrder.getId());
     assertThat(timereportListDAO.findTotals(wholeMonth(), visibility).count()).isEqualTo(2);
+  }
+
+  /** The sum row of the list adds the time surcharge credit of all hits (#1469). */
+  @Test
+  void the_totals_add_the_surcharge_credit_of_the_hits() {
+    var reader = employeecontract("aaa");
+    var suborder = suborder(customerorder(customer, "ALPHA"), "ALPHA/01", true);
+    var flagged = book(reader, suborder);
+    flagged.setSurcharge(SurchargeKind.NIGHT, 50);
+    entityManager.flush();
+    book(reader, suborder);
+
+    var visibility = TimereportVisibility.of(List.of(Clause.forEmployees(Set.of(reader.getEmployee().getId()))));
+
+    assertThat(timereportListDAO.findTotals(wholeMonth(), visibility).surchargeCredit()).isEqualTo(Duration.ofMinutes(30));
   }
 
   @Test

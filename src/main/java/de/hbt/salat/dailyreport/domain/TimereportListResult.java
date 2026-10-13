@@ -18,6 +18,7 @@ import java.util.Set;
  * @param orderCount      over how many customer orders
  * @param editableIds     the shown rows the current user may change — the answer the booking form gets when saving,
  *                        so the list offers editing only where saving would succeed (#1190)
+ * @param surchargeCredit the time surcharge credit of the hits (#1469), shown in the sum row
  */
 public record TimereportListResult(
     List<TimereportDTO> timereports,
@@ -26,11 +27,12 @@ public record TimereportListResult(
     Duration billableDuration,
     long employeeCount,
     long orderCount,
-    Set<Long> editableIds
+    Set<Long> editableIds,
+    Duration surchargeCredit
 ) {
 
   public static TimereportListResult empty() {
-    return new TimereportListResult(List.of(), 0, Duration.ZERO, Duration.ZERO, 0, 0, Set.of());
+    return new TimereportListResult(List.of(), 0, Duration.ZERO, Duration.ZERO, 0, 0, Set.of(), Duration.ZERO);
   }
 
   public boolean isEditable(long timereportId) {

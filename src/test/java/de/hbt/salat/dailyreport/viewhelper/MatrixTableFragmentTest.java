@@ -105,7 +105,7 @@ class MatrixTableFragmentTest {
   void the_details_of_a_cell_name_the_tickets_before_the_comment_and_the_surcharge_after_it() {
     var saturday = row(render(DETAILS, false, false), "A1/01 · Unterauftrag").get(1);
 
-    assertThat(saturday).containsPattern(">3:00: ABC-12 ABC-13 Einspielen \\(Samstag 50\u00a0% · \\+1:30\\)</div>");
+    assertThat(saturday).containsPattern(">3:00: ABC-12 ABC-13 Einspielen \\(Zuschlag \\+1:30\\)</div>");
     assertThat(saturday).containsPattern(">1:00</div>");
     assertThat(saturday).doesNotContain("badge").doesNotContain("ti-percentage");
   }
@@ -119,6 +119,7 @@ class MatrixTableFragmentTest {
     assertThat(surcharge.get(2)).doesNotContain("+");
     assertThat(surcharge.getLast()).contains(">+1:30<");
     assertThat(html.indexOf(">Zeitzuschläge<")).isLessThan(html.indexOf(">GESAMT<"));
+    assertThat(html).containsPattern(">Zeitzuschläge:</span>\\s*<strong\\s*>\\+1:30</strong>");
   }
 
   @Test
