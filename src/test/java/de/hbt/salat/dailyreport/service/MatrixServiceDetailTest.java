@@ -100,6 +100,21 @@ class MatrixServiceDetailTest {
     assertThat(matrix().surchargeDays()).hasSize(MONTH.lengthOfMonth()).allSatisfy(credit -> assertThat(credit).isZero());
   }
 
+  /**
+   * The time surcharge counts against the target, as on the time account: the difference of the month is booked plus
+   * surcharge minus target, while the booked total stays the booked time.
+   */
+  @Test
+  void the_difference_counts_the_surcharge_against_the_target() {
+    givenBookings(booking(1L, 3, "Einspielen").surchargeKind(SurchargeKind.SATURDAY).surchargePercent(50)
+        .surchargeCredit(Duration.ofMinutes(90)).build());
+
+    var matrix = matrix();
+
+    assertThat(matrix.totalString()).isEqualTo("3:00");
+    assertThat(matrix.diffString()).isEqualTo("-155:30");
+  }
+
   private MatrixData matrix() {
     return classUnderTest.buildMatrix(MONTH, CONTRACT_ID);
   }

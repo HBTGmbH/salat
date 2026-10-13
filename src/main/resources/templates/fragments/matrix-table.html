@@ -162,7 +162,8 @@
       <!--/* the time surcharge credit (#1469) above the sum row it is no part of: it counts towards the
              time account, not towards the booked hours */-->
       <tr th:if="${matrixData.surchargeTotal != null and !matrixData.surchargeTotal.zero}" data-surcharge-row>
-        <td class="matrix-first-col text-nowrap text-end text-teal" th:text="#{main.matrixoverview.table.surcharge.text}">Zeitzuschläge</td>
+        <td class="matrix-first-col text-nowrap text-end text-teal" th:text="#{main.matrixoverview.table.surcharge.text}"
+            th:title="#{main.matrixoverview.table.surcharge.title}">Zeitzuschläge</td>
         <td th:each="credit, cs : ${matrixData.surchargeDays}"
             class="text-center px-1"
             th:classappend="${matrixData.dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${matrixData.dayHeaders[cs.index].publicHoliday ? 'bg-warning-lt' : (matrixData.dayHeaders[cs.index].weekend ? 'bg-azure-lt' : '')}">
@@ -258,11 +259,13 @@
     <strong th:text="${matrixData.targetString}">0:00</strong>
   </span>
   <span th:if="${matrixData.diffString != null}"
+        th:title="#{main.matrixoverview.headline.difference.title}"
         th:classappend="${matrixData.diffNegative ? 'text-warning' : 'text-success'}">
     <span th:text="#{main.matrixoverview.headline.difference.text}">Differenz:</span>
     <strong th:text="${matrixData.diffString}">+0:00</strong>
   </span>
   <span th:if="${matrixData.prevDayDiffString != null}"
+        th:title="#{main.matrixoverview.headline.difference.title}"
         th:classappend="${matrixData.prevDayDiffNegative ? 'text-warning' : 'text-success'}">
     <span th:text="#{main.matrixoverview.headline.prevdaydiff.text}">Stand gestern:</span>
     <strong th:text="${matrixData.prevDayDiffString}">+0:00</strong>

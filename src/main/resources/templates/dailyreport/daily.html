@@ -912,11 +912,13 @@
         <strong th:text="${listData.monthTarget}">0:00</strong>
       </span>
       <span th:if="${listData.monthDiff != null}"
+            th:title="#{main.matrixoverview.headline.difference.title}"
             th:classappend="${listData.monthDiffNegative} ? 'text-warning' : 'text-success'">
         <span th:text="#{main.matrixoverview.headline.difference.text}">Differenz:</span>
         <strong th:text="${listData.monthDiff}">+0:00</strong>
       </span>
       <span th:if="${listData.prevDayDiffString != null}"
+            th:title="#{main.matrixoverview.headline.difference.title}"
             th:classappend="${listData.prevDayDiffNegative} ? 'text-warning' : 'text-success'">
         <span th:text="#{main.matrixoverview.headline.prevdaydiff.text}">Stand gestern:</span>
         <strong th:text="${listData.prevDayDiffString}">+0:00</strong>

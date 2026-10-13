@@ -145,7 +145,8 @@ public class MatrixService {
         boolean diffNegative = false;
         if (hasTarget) {
             Duration target = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, dateLast);
-            Duration diff = grand.minus(target);
+            // the time surcharges count against the target as on the time account (#1469), GESAMT stays booked time
+            Duration diff = timeAccountCredit(reports, dateLast).minus(target);
             targetString = DurationUtils.format(target);
             diffString = (diff.isNegative() ? "" : "+") + DurationUtils.format(diff);
             diffNegative = diff.isNegative();
@@ -156,12 +157,8 @@ public class MatrixService {
         if (hasTarget && isInRange(today, dateFirst, dateLast)) {
             var cutoff = today.minusDays(1);
             if (!cutoff.isBefore(dateFirst)) {
-                Duration grandPrevDay = reports.stream()
-                    .filter(r -> !r.getReferenceday().isAfter(cutoff))
-                    .map(TimereportDTO::getWorkingTime)
-                    .reduce(Duration.ZERO, Duration::plus);
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, cutoff);
-                Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
+                Duration prevDayDiff = timeAccountCredit(reports, cutoff).minus(targetPrevDay);
                 prevDayDiffString = (prevDayDiff.isNegative() ? "" : "+") + DurationUtils.format(prevDayDiff);
                 prevDayDiffNegative = prevDayDiff.isNegative();
             }
@@ -287,6 +284,14 @@ public class MatrixService {
         }
 
         return new MatrixData.Row(customerOrderSign, suborderSign, customer, customerOrderDesc, suborderDesc, cells, DurationUtils.format(rowTotal));
+    }
+
+    /** Working time plus time surcharge credit of the bookings up to {@code until} (#1469). */
+    private static Duration timeAccountCredit(List<TimereportDTO> reports, LocalDate until) {
+        return reports.stream()
+            .filter(r -> !r.getReferenceday().isAfter(until))
+            .map(TimereportDTO::getTimeAccountCredit)
+            .reduce(Duration.ZERO, Duration::plus);
     }
 
     private String weekdayKey(DayOfWeek dow) {
