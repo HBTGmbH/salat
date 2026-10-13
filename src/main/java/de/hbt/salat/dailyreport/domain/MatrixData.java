@@ -1,7 +1,9 @@
 package de.hbt.salat.dailyreport.domain;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 public record MatrixData(
     List<DayHeader> dayHeaders,
@@ -37,14 +39,25 @@ public record MatrixData(
         List<Cell> cells,
         String totalString) {}
 
-    public record ReportDetail(String durationString, String taskDescription) {}
+    /**
+     * One booking behind a cell: its ticket references, which since #1326 are no part of the comment,
+     * and its time surcharge (#1469), {@code null} kind for none.
+     */
+    public record ReportDetail(
+        String durationString,
+        String taskDescription,
+        List<String> ticketReferences,
+        SurchargeKind surchargeKind,
+        Integer surchargePercent,
+        Duration surchargeCredit) {}
 
     public record Cell(
         String durationString,
         boolean empty,
         boolean weekend,
         boolean publicHoliday,
-        List<ReportDetail> details) {}
+        List<ReportDetail> details,
+        Duration surchargeCredit) {}
 
     public record FooterDay(
         String workingTimeString,

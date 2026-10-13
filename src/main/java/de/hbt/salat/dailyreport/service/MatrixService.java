@@ -268,14 +268,16 @@ public class MatrixService {
             Duration duration = dayReports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
             rowTotal = rowTotal.plus(duration);
             var details = dayReports.stream()
-                .map(r -> new MatrixData.ReportDetail(DurationUtils.format(r.getDuration()), r.getTaskdescription()))
+                .map(r -> new MatrixData.ReportDetail(DurationUtils.format(r.getDuration()), r.getTaskdescription(),
+                    r.getTicketReferences(), r.getSurchargeKind(), r.getSurchargePercent(), r.getSurchargeCredit()))
                 .toList();
             cells.add(new MatrixData.Cell(
                 DurationUtils.format(duration, false),
                 duration.isZero(),
                 isWeekend(day),
                 holidays.containsKey(day),
-                details));
+                details,
+                dayReports.stream().map(TimereportDTO::getSurchargeCredit).reduce(Duration.ZERO, Duration::plus)));
         }
 
         return new MatrixData.Row(customerOrderSign, suborderSign, customer, customerOrderDesc, suborderDesc, cells, DurationUtils.format(rowTotal));
