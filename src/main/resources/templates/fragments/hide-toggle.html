@@ -40,6 +40,10 @@
 
 <!--/* Customer-order hide-toggle flags cell */-->
 <td class="d-none d-lg-table-cell" th:fragment="customerorderHideFlag">
+  <!--/* #1469: the order or suborder offers a time surcharge; the title names the rates */-->
+  <th:block th:with="surcharges=${@surchargeViewHelper.summary(co)}">
+    <span th:if="${!#strings.isEmpty(surcharges)}" class="badge bg-teal-lt" th:title="${surcharges}"><i class="bi bi-percent"></i></span>
+  </th:block>
   <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
     <form th:action="@{/orders/customerorders/{id}/toggle-hide(id=${co.id})}" method="post">
       <button type="submit"
@@ -70,6 +74,10 @@
   <span th:if="${so.standard}" class="badge bg-warning-lt" th:title="#{main.suborder.standard.text}"><i class="bi-bookmark-star-fill"></i></span>
   <span th:if="${so.commentnecessary}" class="badge bg-danger-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-square-text"></i></span>
   <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+  <!--/* #1469: the order or suborder offers a time surcharge; the title names the rates */-->
+  <th:block th:with="surcharges=${@surchargeViewHelper.summary(so)}">
+    <span th:if="${!#strings.isEmpty(surcharges)}" class="badge bg-teal-lt" th:title="${surcharges}"><i class="bi bi-percent"></i></span>
+  </th:block>
   <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
     <form th:action="@{/orders/suborders/{id}/toggle-hide(id=${so.id})}" method="post">
       <button type="submit"

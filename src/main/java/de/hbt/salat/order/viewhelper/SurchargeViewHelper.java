@@ -1,5 +1,7 @@
 package de.hbt.salat.order.viewhelper;
 
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.domain.SurchargeRateSource;
@@ -7,7 +9,10 @@ import de.hbt.salat.common.util.DurationUtils;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
@@ -49,6 +54,11 @@ public class SurchargeViewHelper {
         new Object[] {flag(kind, percent), DurationUtils.formatSigned(credit != null ? credit : Duration.ZERO)});
   }
 
+  /** The credit on the time account with its sign, "+1:30" — the matrix cell. */
+  public String credit(Duration credit) {
+    return DurationUtils.formatSigned(credit != null ? credit : Duration.ZERO);
+  }
+
   /** The rate, with the night for a night rate: "25 %, 20:00–6:00 Uhr". */
   public String rate(SurchargeRate rate) {
     if (rate == null) {
@@ -59,6 +69,35 @@ public class SurchargeViewHelper {
     }
     return messages.getMessage("main.surcharge.rate.night",
         new Object[] {percent(rate.percent()), time(rate.nightFrom()), time(rate.nightUntil())});
+  }
+
+  /**
+   * The rates the order sets, "Zeitzuschläge: Nacht 25 %, 20:00–6:00 Uhr; Samstag 50 %" — the flag in
+   * the order list. Empty where it sets none above 0; rates only its suborders set do not count here.
+   */
+  public String summary(Customerorder customerorder) {
+    return summary(customerorder::getSurchargeRate);
+  }
+
+  /**
+   * The rates a booking on the suborder may be flagged with, inherited ones included — the flag in the
+   * suborder list. Empty where it offers none: no rate, 0 % or standby.
+   */
+  public String summary(Suborder suborder) {
+    return summary(suborder::getOfferedSurchargeRate);
+  }
+
+  private String summary(Function<SurchargeKind, SurchargeRate> rates) {
+    var offered = Arrays.stream(SurchargeKind.values())
+        .map(kind -> {
+          var rate = rates.apply(kind);
+          return rate != null && rate.offered()
+              ? messages.getMessage("main.surcharge.flag", new Object[] {kind(kind), rate(rate)})
+              : null;
+        })
+        .filter(Objects::nonNull)
+        .toList();
+    return offered.isEmpty() ? "" : messages.getMessage("main.surcharge.summary", new Object[] {String.join("; ", offered)});
   }
 
   /** When the night counts on the suborder of the booking, a hint next to the flag. */

@@ -71,7 +71,7 @@ public class TimereportForm {
 
     private boolean training;
 
-    /** A night, weekend or holiday assignment (#1469); {@code null} for none. */
+    /** A night, Saturday, Sunday or holiday assignment (#1469); {@code null} for none. */
     private SurchargeKind surchargeKind;
 
     /** 1 = no repeat; > 1 = create one timereport per working day, skipping weekends/holidays */

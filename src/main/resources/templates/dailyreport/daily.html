@@ -531,6 +531,10 @@
                   <!--/* standby is booked here but counts towards no sum of this day (#463) */-->
                   <span th:if="${tr.standby}" class="badge bg-orange-lt text-orange ms-1" data-standby-badge
                         th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
+                  <!--/* the time surcharge flag with its credit (#1469), as in release and acceptance */-->
+                  <span th:if="${tr.surchargeKind != null}" class="badge bg-teal-lt text-teal d-block mt-1"
+                        th:title="#{main.surcharge.booking.label}"
+                        th:text="${@surchargeViewHelper.flagWithCredit(tr.surchargeKind, tr.surchargePercent, tr.surchargeCredit)}">Nacht 25 % · +1:00</span>
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">

@@ -131,7 +131,7 @@ public class Timereport extends AuditedEntity implements Serializable {
     private List<String> ticketReferences = new ArrayList<>();
 
     /**
-     * A night, weekend or holiday assignment (#1469), {@code null} for none. Its rate is a copy taken
+     * A night, Saturday, Sunday or holiday assignment (#1469), {@code null} for none. Its rate is a copy taken
      * when the flag is set: a later change of the rate on the order must not change a booking, and
      * with it an accepted month. Set through {@link #setSurcharge}.
      */

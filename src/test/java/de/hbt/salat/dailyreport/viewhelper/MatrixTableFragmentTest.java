@@ -2,6 +2,7 @@ package de.hbt.salat.dailyreport.viewhelper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,18 +13,24 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.context.support.StaticApplicationContext;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.context.IExpressionContext;
 import org.thymeleaf.linkbuilder.StandardLinkBuilder;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.expression.ThymeleafEvaluationContext;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.StringTemplateResolver;
 import de.hbt.salat.dailyreport.domain.MatrixData;
 import de.hbt.salat.dailyreport.domain.MatrixData.Cell;
 import de.hbt.salat.dailyreport.domain.MatrixData.DayHeader;
 import de.hbt.salat.dailyreport.domain.MatrixData.FooterDay;
+import de.hbt.salat.dailyreport.domain.MatrixData.ReportDetail;
 import de.hbt.salat.dailyreport.domain.MatrixData.Row;
+import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.order.viewhelper.SurchargeViewHelper;
 
 /**
  * „Nicht gearbeitet" hatte in der Matrix eine eigene Zeile unter Beginn, Pause und Ende, mit einem Punkt ohne Text
@@ -33,6 +40,9 @@ import de.hbt.salat.dailyreport.domain.MatrixData.Row;
  *
  * <p>Ein Feiertag am Wochenende ist ein Feiertag: In der Matrix gewann das Wochenende, in der Einzelübersicht der
  * Feiertag (#1261). Der Kopf nennt seinen Namen, und eine Fehlerzelle ist gefüllt statt getönt.
+ *
+ * <p>Die Details einer Zelle nennen je Buchung die Ticketnummern vor dem Kommentar, wie früher, als sie darin
+ * standen (#1326), und das Kennzeichen eines Zeitzuschlags; die Zelle selbst trägt dann ein Symbol (#1469).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class MatrixTableFragmentTest {
@@ -64,15 +74,49 @@ class MatrixTableFragmentTest {
               "Tag der Deutschen Einheit", false),
           new DayHeader(4, LocalDate.of(2026, 10, 4), "main.matrixoverview.weekdays.sunday.text", true, false, null, false)),
       List.of(new Row("A1", "A1/01", "Kunde", "Auftrag", "Unterauftrag", List.of(
-          new Cell("11:00", false, false, false, List.of()),
-          new Cell("1:00", false, true, true, List.of()),
-          new Cell(null, true, true, false, List.of())), "12:00")),
+          new Cell("11:00", false, false, false, List.of(), Duration.ZERO),
+          new Cell("1:00", false, true, true, List.of(), Duration.ZERO),
+          new Cell(null, true, true, false, List.of(), Duration.ZERO)), "12:00")),
       List.of(),
       List.of(
           new FooterDay("11:00", false, false, false, false, "07:00", "0:30", "18:30", false, false, true),
           new FooterDay("1:00", false, true, true, false, "10:00", "0:00", "11:00", false, false, false),
           new FooterDay("0:00", false, true, false, true, null, null, null, false, false, false)),
       "12:00", null, null, false, null, false);
+
+  /** Samstag mit zwei Buchungen, eine mit Tickets und Zeitzuschlag; Sonntag ohne. */
+  private static final MatrixData DETAILS = new MatrixData(
+      List.of(
+          new DayHeader(10, LocalDate.of(2026, 10, 10), "main.matrixoverview.weekdays.saturday.text", true, false, null, false),
+          new DayHeader(11, LocalDate.of(2026, 10, 11), "main.matrixoverview.weekdays.sunday.text", true, false, null, false)),
+      List.of(new Row("A1", "A1/01", "Kunde", "Auftrag", "Unterauftrag", List.of(
+          new Cell("4:00", false, true, false, List.of(
+              new ReportDetail("3:00", "Einspielen", List.of("ABC-12", "ABC-13"), SurchargeKind.SATURDAY, 50, Duration.ofMinutes(90)),
+              new ReportDetail("1:00", "", List.of(), null, null, Duration.ZERO)), Duration.ofMinutes(90)),
+          new Cell("2:00", false, true, false, List.of(
+              new ReportDetail("2:00", "Nacharbeit", List.of(), null, null, Duration.ZERO)), Duration.ZERO)), "6:00")),
+      List.of(),
+      List.of(
+          new FooterDay("4:00", false, true, false, false, null, null, null, false, false, false),
+          new FooterDay("2:00", false, true, false, false, null, null, null, false, false, false)),
+      "6:00", null, null, false, null, false);
+
+  @Test
+  void the_details_of_a_cell_name_the_tickets_before_the_comment() {
+    var saturday = row(render(DETAILS, false, false), "A1/01 · Unterauftrag").get(1);
+
+    assertThat(saturday).containsPattern(">3:00: ABC-12 ABC-13 Einspielen</span>");
+    assertThat(saturday).containsPattern(">1:00</span>");
+  }
+
+  @Test
+  void a_flagged_booking_carries_its_flag_and_its_cell_the_credit() {
+    var cells = row(render(DETAILS, false, false), "A1/01 · Unterauftrag");
+
+    assertThat(cells.get(1)).contains("Samstag 50\u00a0% · +1:30")
+        .contains("ti-percentage").contains("title=\"Zeitzuschlag aufs Zeitkonto: +1:30\"");
+    assertThat(cells.get(2)).doesNotContain("ti-percentage").doesNotContain("bg-teal-lt");
+  }
 
   @Test
   void a_not_worked_day_takes_the_place_of_begin_break_and_end_with_one_marker() {
@@ -186,6 +230,13 @@ class MatrixTableFragmentTest {
 
     var context = new Context(Locale.GERMANY, Map.of(
         "matrixData", matrixData, "showBeginBreakEnd", showBeginBreakEnd, "showNotWorked", showNotWorked));
+    // the cells name time surcharges through their view helper (#1469)
+    var beans = new StaticApplicationContext();
+    beans.getBeanFactory().registerSingleton("surchargeViewHelper",
+        new SurchargeViewHelper(new MessageSourceAccessor(messageSource, Locale.GERMANY)));
+    beans.refresh();
+    context.setVariable(ThymeleafEvaluationContext.THYMELEAF_EVALUATION_CONTEXT_CONTEXT_VARIABLE_NAME,
+        new ThymeleafEvaluationContext(beans, null));
     return engine.process(
         "<th:block th:replace=\"~{fragments/matrix-table :: matrixTable(${matrixData}, ${showBeginBreakEnd}, ${showNotWorked})}\"></th:block>",
         context);
