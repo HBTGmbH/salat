@@ -442,8 +442,8 @@
           <td class="text-end text-nowrap">
             <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}">0:00</span>
             <th:block th:if="${tr.surchargeKind != null}">
-              <br><span class="badge bg-teal-lt mt-1" th:title="${@surchargeViewHelper.flag(tr.surchargeKind, tr.surchargePercent)}"
-                        th:text="${@surchargeViewHelper.badge(tr.surchargeCredit)}">Zuschlag +1:00</span>
+              <br><span class="badge bg-teal-lt mt-1" th:title="${@surchargeViewHelper.title(tr.surchargeKind, tr.surchargePercent, tr.surchargeCredit)}"
+                        th:text="${@surchargeViewHelper.credit(tr.surchargeCredit)}">+1:00</span>
             </th:block>
           </td>
           <td class="text-center">
@@ -480,7 +480,8 @@
                            + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</span>
             <!--/* the time surcharge credit of all hits (#1469), apart from the booked hours */-->
             <th:block th:if="${result.surchargeCredit != null and !result.surchargeCredit.zero}">
-              <br><span class="badge bg-teal-lt mt-1" th:text="${@surchargeViewHelper.badge(result.surchargeCredit)}">Zuschlag +1:00</span>
+              <br><span class="badge bg-teal-lt mt-1" th:title="#{main.surcharge.total.title}"
+                    th:text="${@surchargeViewHelper.credit(result.surchargeCredit)}">+1:00</span>
             </th:block>
           </td>
           <td colspan="2"></td>

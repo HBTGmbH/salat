@@ -533,8 +533,8 @@
                         th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
                   <!--/* the time surcharge flag with its credit (#1469), as in release and acceptance */-->
                   <span th:if="${tr.surchargeKind != null}" class="badge bg-teal-lt text-teal d-block mt-1"
-                        th:title="${@surchargeViewHelper.flag(tr.surchargeKind, tr.surchargePercent)}"
-                        th:text="${@surchargeViewHelper.badge(tr.surchargeCredit)}">Zuschlag +1:00</span>
+                        th:title="${@surchargeViewHelper.title(tr.surchargeKind, tr.surchargePercent, tr.surchargeCredit)}"
+                        th:text="${@surchargeViewHelper.credit(tr.surchargeCredit)}">+1:00</span>
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
@@ -585,7 +585,8 @@
                 <td class="text-muted" th:text="#{main.daily.column.total}" style="text-align: right">Gesamt</td>
                 <td><span class="badge bg-blue-lt" th:text="${@durationUtils.format(dailyData.totalBooked)}"></span>
                   <span th:unless="${dailyData.surchargeTotal().zero}" class="badge bg-teal-lt text-teal d-block mt-1"
-                        th:text="${@surchargeViewHelper.badge(dailyData.surchargeTotal())}">Zuschlag +1:00</span></td>
+                        th:title="#{main.surcharge.total.title}"
+                        th:text="${@surchargeViewHelper.credit(dailyData.surchargeTotal())}">+1:00</span></td>
                 <td></td>
               </tr>
             </tfoot>

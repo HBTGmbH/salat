@@ -346,8 +346,8 @@
         th:title="#{main.daily.timereport.ticketreference.title}" th:text="${reference}">PROJ-1</span>
   <span th:if="${tr.training}" class="badge bg-purple-lt me-1" th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
   <span th:if="${tr.surchargeKind != null}" class="badge bg-teal-lt me-1"
-        th:title="${@surchargeViewHelper.flag(tr.surchargeKind, tr.surchargePercent)}"
-        th:text="${@surchargeViewHelper.badge(tr.surchargeCredit)}">Zuschlag +1:00</span>
+        th:title="${@surchargeViewHelper.title(tr.surchargeKind, tr.surchargePercent, tr.surchargeCredit)}"
+        th:text="${@surchargeViewHelper.credit(tr.surchargeCredit)}">+1:00</span>
   <span th:if="${tr.standby}" class="badge bg-orange-lt me-1" th:title="#{main.daily.standby.hint}">
     <i class="ti ti-bell me-1" aria-hidden="true"></i><span th:text="#{main.release.review.standby.text}">Bereitschaft</span>
   </span>

@@ -51,11 +51,16 @@ public class SurchargeViewHelper {
   }
 
   /**
-   * The badge of a flagged booking, "Zuschlag +1:30": what counts is how much it adds to the time
-   * account, kind and rate are the title ({@link #flag}).
+   * The title of a flagged booking's badge, "Zuschlag: Sonntag 100 % +2:30". The badge itself shows
+   * nothing but the credit ({@link #credit}): what counts is how much it adds to the time account.
    */
-  public String badge(Duration credit) {
-    return messages.getMessage("main.surcharge.badge", new Object[] {credit(credit)});
+  public String title(SurchargeKind kind, Integer percent, Duration credit) {
+    return messages.getMessage("main.surcharge.badge.title", new Object[] {flag(kind, percent), credit(credit)});
+  }
+
+  /** The credit named in running text, "Zuschlag +2:30" — the details of a matrix cell. */
+  public String named(Duration credit) {
+    return messages.getMessage("main.surcharge.named", new Object[] {credit(credit)});
   }
 
   /** The rate, with the night for a night rate: "25 %, 20:00–6:00 Uhr". */
