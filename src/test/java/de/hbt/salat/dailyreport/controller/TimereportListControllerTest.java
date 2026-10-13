@@ -281,8 +281,8 @@ class TimereportListControllerTest {
    * its filter itself. On paper there is neither button nor column.
    */
   /**
-   * A flagged booking shows how much its time surcharge adds to the time account, kind and rate are the title; the
-   * sum row adds the credit of all hits (#1469).
+   * A flagged booking shows nothing but how much its time surcharge adds to the time account, kind and rate are the
+   * title; the sum row adds the credit of all hits (#1469).
    */
   @Test
   void a_flagged_booking_and_the_sum_row_show_the_surcharge_in_hours() throws Exception {
@@ -299,8 +299,8 @@ class TimereportListControllerTest {
         .param("fBookingsUntil", "2026-10-31"));
 
     assertThat(html)
-        .containsPattern("title=\"Samstag 50\u00a0%\"\\s*>Zuschlag \\+1:30</span>")
-        .containsSubsequence("<tfoot", ">Zuschlag +1:30</span>", "</tfoot>");
+        .containsPattern("title=\"Zuschlag: Samstag 50\u00a0% \\+1:30\"\\s*>\\+1:30</span>")
+        .containsSubsequence("<tfoot", "title=\"Zeitzuschläge gesamt\"", ">+1:30</span>", "</tfoot>");
   }
 
   @Test

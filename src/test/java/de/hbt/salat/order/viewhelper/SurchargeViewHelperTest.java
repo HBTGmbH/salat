@@ -32,8 +32,10 @@ class SurchargeViewHelperTest {
   private final SurchargeViewHelper viewHelper = new SurchargeViewHelper(messages());
 
   @Test
-  void the_badge_of_a_booking_names_the_credit_in_hours() {
-    assertThat(viewHelper.badge(Duration.ofMinutes(90))).isEqualTo("Zuschlag +1:30");
+  void the_badge_of_a_booking_shows_the_credit_and_names_kind_and_rate_in_its_title() {
+    assertThat(viewHelper.credit(Duration.ofMinutes(150))).isEqualTo("+2:30");
+    assertThat(viewHelper.title(SUNDAY, 100, Duration.ofMinutes(150))).isEqualTo("Zuschlag: Sonntag 100" + NBSP + "% +2:30");
+    assertThat(viewHelper.named(Duration.ofMinutes(150))).isEqualTo("Zuschlag +2:30");
   }
 
   @Test

@@ -99,8 +99,8 @@
               th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
         <!--/* the time surcharge flag with its credit (#1469), as in release and acceptance */-->
         <span th:if="${singleTr.surchargeKind != null}" class="badge bg-teal-lt text-teal"
-              th:title="${@surchargeViewHelper.flag(singleTr.surchargeKind, singleTr.surchargePercent)}"
-              th:text="${@surchargeViewHelper.badge(singleTr.surchargeCredit)}">Zuschlag +1:00</span>
+              th:title="${@surchargeViewHelper.title(singleTr.surchargeKind, singleTr.surchargePercent, singleTr.surchargeCredit)}"
+              th:text="${@surchargeViewHelper.credit(singleTr.surchargeCredit)}">+1:00</span>
       </div>
     </div>
     <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">
