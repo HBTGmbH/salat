@@ -19,11 +19,12 @@ public class SurchargeFields {
   private LocalTime nightFrom;
   @DateTimeFormat(pattern = "HH:mm")
   private LocalTime nightUntil;
-  private Integer weekendPercent;
+  private Integer saturdayPercent;
+  private Integer sundayPercent;
   private Integer holidayPercent;
 
   public SurchargeInput toInput() {
-    return new SurchargeInput(nightPercent, nightFrom, nightUntil, weekendPercent, holidayPercent);
+    return new SurchargeInput(nightPercent, nightFrom, nightUntil, saturdayPercent, sundayPercent, holidayPercent);
   }
 
   public static SurchargeFields of(SurchargeInput input) {
@@ -31,7 +32,8 @@ public class SurchargeFields {
     fields.nightPercent = input.nightPercent();
     fields.nightFrom = input.nightFrom();
     fields.nightUntil = input.nightUntil();
-    fields.weekendPercent = input.weekendPercent();
+    fields.saturdayPercent = input.saturdayPercent();
+    fields.sundayPercent = input.sundayPercent();
     fields.holidayPercent = input.holidayPercent();
     return fields;
   }

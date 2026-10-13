@@ -152,7 +152,7 @@ public class TimereportController {
         // parameter comes from the share-with-colleagues deeplink and has to win over that default.
         form.setTraining(training != null ? training : trainingDefaultOf(suborders, defaultSuborderId));
 
-        // #1469: the kind of the day, holiday before weekend, where the suborder offers it
+        // #1469: the kind of the day, holiday before Saturday or Sunday, where the suborder offers it
         var defaultOption = suborders.stream().filter(o -> o.id().equals(defaultSuborderId)).findFirst();
         form.setSurchargeKind(timereportService.getSurchargeDayKinds(effectiveDate).stream()
                 .filter(kind -> defaultOption.map(o -> o.surchargeRate(kind) != null).orElse(false))

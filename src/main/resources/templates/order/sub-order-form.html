@@ -240,7 +240,8 @@
              th:replace="~{order/ticket-reference-policy :: inheritedHint(oob=true)}"></small>
       <th:block th:if="${inheritedSurchargesChanged}">
         <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='NIGHT', oob=true)}"></small>
-        <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='WEEKEND', oob=true)}"></small>
+        <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='SATURDAY', oob=true)}"></small>
+        <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='SUNDAY', oob=true)}"></small>
         <small th:replace="~{order/surcharge-rates :: inheritedHint(kind='HOLIDAY', oob=true)}"></small>
       </th:block>
 

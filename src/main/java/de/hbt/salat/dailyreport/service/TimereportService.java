@@ -39,7 +39,8 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_SERIAL_DAYS_OUT_OF_RANG
 import static de.hbt.salat.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_NOT_OFFERED;
-import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_WEEKEND_ON_WEEKDAY;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_SATURDAY_ON_OTHER_DAY;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_SUNDAY_ON_OTHER_DAY;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCES_EXCEED_LIMIT;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TICKET_REFERENCES_NOT_ALLOWED;
@@ -60,6 +61,7 @@ import static de.hbt.salat.common.util.DateUtils.getYear;
 import static de.hbt.salat.common.util.DateUtils.getYearMonth;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -215,8 +217,8 @@ public class TimereportService {
 
   /**
    * The time surcharges a booking on {@code day} may carry besides the night (#1469): holiday on a
-   * public holiday, weekend on a Saturday or Sunday, in this order - the first is the one the booking
-   * form preselects.
+   * public holiday, Saturday on a Saturday, Sunday on a Sunday, in this order - the first is the one the
+   * booking form preselects. Saturday and Sunday have rates of their own.
    */
   @Transactional(readOnly = true)
   public List<SurchargeKind> getSurchargeDayKinds(LocalDate day) {
@@ -224,8 +226,10 @@ public class TimereportService {
     if (publicholidayDAO.getPublicHoliday(day).isPresent()) {
       kinds.add(SurchargeKind.HOLIDAY);
     }
-    if (!DateUtils.isWeekday(day)) {
-      kinds.add(SurchargeKind.WEEKEND);
+    switch (day.getDayOfWeek()) {
+      case SATURDAY -> kinds.add(SurchargeKind.SATURDAY);
+      case SUNDAY -> kinds.add(SurchargeKind.SUNDAY);
+      default -> { }
     }
     return kinds;
   }
@@ -825,15 +829,18 @@ public class TimereportService {
   }
 
   /**
-   * A weekend surcharge only on a Saturday or Sunday, a holiday surcharge only on a public holiday
-   * (#1469) - checked for every serial day, and again when a flagged booking is shifted to another day.
-   * A night can fall on any day.
+   * A Saturday surcharge only on a Saturday, a Sunday surcharge only on a Sunday, a holiday surcharge
+   * only on a public holiday (#1469) - checked for every serial day, and again when a flagged booking is
+   * shifted to another day. A night can fall on any day.
    */
   private void validateSurchargeDays(List<Timereport> timereports) throws BusinessRuleException {
     for (var timereport : timereports) {
       var day = timereport.getReferenceday().getRefdate();
-      if (timereport.getSurchargeKind() == SurchargeKind.WEEKEND && DateUtils.isWeekday(day)) {
-        throw new BusinessRuleException(TR_SURCHARGE_WEEKEND_ON_WEEKDAY, DateUtils.format(day));
+      if (timereport.getSurchargeKind() == SurchargeKind.SATURDAY && day.getDayOfWeek() != DayOfWeek.SATURDAY) {
+        throw new BusinessRuleException(TR_SURCHARGE_SATURDAY_ON_OTHER_DAY, DateUtils.format(day));
+      }
+      if (timereport.getSurchargeKind() == SurchargeKind.SUNDAY && day.getDayOfWeek() != DayOfWeek.SUNDAY) {
+        throw new BusinessRuleException(TR_SURCHARGE_SUNDAY_ON_OTHER_DAY, DateUtils.format(day));
       }
       if (timereport.getSurchargeKind() == SurchargeKind.HOLIDAY && publicholidayDAO.getPublicHoliday(day).isEmpty()) {
         throw new BusinessRuleException(TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY, DateUtils.format(day));

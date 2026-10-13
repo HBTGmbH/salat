@@ -3,7 +3,8 @@ package de.hbt.salat.order.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static de.hbt.salat.order.domain.SurchargeKind.HOLIDAY;
 import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
-import static de.hbt.salat.order.domain.SurchargeKind.WEEKEND;
+import static de.hbt.salat.order.domain.SurchargeKind.SATURDAY;
+import static de.hbt.salat.order.domain.SurchargeKind.SUNDAY;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -63,26 +64,26 @@ class SurchargeRateTest {
   @Test
   void the_nearest_suborder_above_with_a_rate_wins_over_the_order() {
     var order = order();
-    order.setSurchargeRate(WEEKEND, SurchargeRate.of(50));
+    order.setSurchargeRate(SATURDAY, SurchargeRate.of(50));
     var top = suborder(order, null);
-    top.setSurchargeRate(WEEKEND, SurchargeRate.of(75));
+    top.setSurchargeRate(SATURDAY, SurchargeRate.of(75));
     var middle = suborder(order, top);
     var bottom = suborder(order, middle);
 
-    assertThat(bottom.getEffectiveSurchargeRate(WEEKEND)).isEqualTo(SurchargeRate.of(75));
-    middle.setSurchargeRate(WEEKEND, SurchargeRate.of(60));
-    assertThat(bottom.getEffectiveSurchargeRate(WEEKEND)).isEqualTo(SurchargeRate.of(60));
+    assertThat(bottom.getEffectiveSurchargeRate(SATURDAY)).isEqualTo(SurchargeRate.of(75));
+    middle.setSurchargeRate(SATURDAY, SurchargeRate.of(60));
+    assertThat(bottom.getEffectiveSurchargeRate(SATURDAY)).isEqualTo(SurchargeRate.of(60));
   }
 
   @Test
   void each_kind_inherits_on_its_own() {
     var order = order();
-    order.setSurchargeRate(WEEKEND, SurchargeRate.of(50));
+    order.setSurchargeRate(SATURDAY, SurchargeRate.of(50));
     order.setSurchargeRate(HOLIDAY, SurchargeRate.of(100));
     var suborder = suborder(order, null);
-    suborder.setSurchargeRate(WEEKEND, SurchargeRate.of(75));
+    suborder.setSurchargeRate(SATURDAY, SurchargeRate.of(75));
 
-    assertThat(suborder.getEffectiveSurchargeRate(WEEKEND)).isEqualTo(SurchargeRate.of(75));
+    assertThat(suborder.getEffectiveSurchargeRate(SATURDAY)).isEqualTo(SurchargeRate.of(75));
     assertThat(suborder.getEffectiveSurchargeRate(HOLIDAY)).isEqualTo(SurchargeRate.of(100));
   }
 
@@ -101,13 +102,13 @@ class SurchargeRateTest {
   @Test
   void inheriting_again_drops_the_own_rate() {
     var order = order();
-    order.setSurchargeRate(WEEKEND, SurchargeRate.of(50));
+    order.setSurchargeRate(SATURDAY, SurchargeRate.of(50));
     var suborder = suborder(order, null);
-    suborder.setSurchargeRate(WEEKEND, SurchargeRate.of(75));
+    suborder.setSurchargeRate(SATURDAY, SurchargeRate.of(75));
 
-    suborder.setSurchargeRate(WEEKEND, null);
+    suborder.setSurchargeRate(SATURDAY, null);
 
-    assertThat(suborder.getEffectiveSurchargeRate(WEEKEND)).isEqualTo(SurchargeRate.of(50));
+    assertThat(suborder.getEffectiveSurchargeRate(SATURDAY)).isEqualTo(SurchargeRate.of(50));
   }
 
   @Test
@@ -145,40 +146,44 @@ class SurchargeRateTest {
     assertThat(atTheTop.fromOrder()).isTrue();
     assertThat(atTheTop.sourceSign()).isEqualTo("4711");
 
-    assertThat(SurchargeRateSource.inheritedBy(WEEKEND, order, middle).rate()).isNull();
+    assertThat(SurchargeRateSource.inheritedBy(SATURDAY, order, middle).rate()).isNull();
   }
 
   @Test
   void the_form_input_checks_range_and_night_times() {
-    assertThat(new SurchargeInput(25, TWENTY, SIX, 50, 100).percentsInRange()).isTrue();
-    assertThat(new SurchargeInput(null, null, null, -1, null).percentsInRange()).isFalse();
-    assertThat(new SurchargeInput(null, null, null, null, 1001).percentsInRange()).isFalse();
+    assertThat(new SurchargeInput(25, TWENTY, SIX, 50, null, 100).percentsInRange()).isTrue();
+    assertThat(new SurchargeInput(null, null, null, -1, null, null).percentsInRange()).isFalse();
+    assertThat(new SurchargeInput(null, null, null, null, 1001, null).percentsInRange()).isFalse();
+    assertThat(new SurchargeInput(null, null, null, null, null, 1001).percentsInRange()).isFalse();
 
-    assertThat(new SurchargeInput(25, TWENTY, SIX, null, null).nightTimesComplete()).isTrue();
-    assertThat(new SurchargeInput(25, null, SIX, null, null).nightTimesComplete()).isFalse();
-    assertThat(new SurchargeInput(25, SIX, SIX, null, null).nightTimesComplete()).isFalse();
+    assertThat(new SurchargeInput(25, TWENTY, SIX, null, null, null).nightTimesComplete()).isTrue();
+    assertThat(new SurchargeInput(25, null, SIX, null, null, null).nightTimesComplete()).isFalse();
+    assertThat(new SurchargeInput(25, SIX, SIX, null, null, null).nightTimesComplete()).isFalse();
     // without a night surcharge the times do not matter
-    assertThat(new SurchargeInput(null, null, null, null, null).nightTimesComplete()).isTrue();
-    assertThat(new SurchargeInput(0, null, null, null, null).nightTimesComplete()).isTrue();
+    assertThat(new SurchargeInput(null, null, null, null, null, null).nightTimesComplete()).isTrue();
+    assertThat(new SurchargeInput(0, null, null, null, null, null).nightTimesComplete()).isTrue();
   }
 
   @Test
   void the_form_input_becomes_the_stored_rates() {
-    var input = new SurchargeInput(0, TWENTY, SIX, null, 100);
+    var input = new SurchargeInput(0, TWENTY, SIX, null, 75, 100);
 
     assertThat(input.rate(NIGHT)).isEqualTo(SurchargeRate.of(0));
-    assertThat(input.rate(WEEKEND)).isNull();
+    assertThat(input.rate(SATURDAY)).isNull();
+    assertThat(input.rate(SUNDAY)).isEqualTo(SurchargeRate.of(75));
     assertThat(input.rate(HOLIDAY)).isEqualTo(SurchargeRate.of(100));
-    assertThat(new SurchargeInput(25, TWENTY, SIX, null, null).rate(NIGHT)).isEqualTo(new SurchargeRate(25, TWENTY, SIX));
+    assertThat(new SurchargeInput(25, TWENTY, SIX, null, null, null).rate(NIGHT)).isEqualTo(new SurchargeRate(25, TWENTY, SIX));
   }
 
   @Test
   void the_stored_rates_read_back_for_the_form() {
     var order = order();
     order.setSurchargeRate(NIGHT, new SurchargeRate(25, TWENTY, SIX));
+    order.setSurchargeRate(SATURDAY, SurchargeRate.of(50));
+    order.setSurchargeRate(SUNDAY, SurchargeRate.of(75));
     order.setSurchargeRate(HOLIDAY, SurchargeRate.of(100));
 
-    assertThat(SurchargeInput.of(order::getSurchargeRate)).isEqualTo(new SurchargeInput(25, TWENTY, SIX, null, 100));
+    assertThat(SurchargeInput.of(order::getSurchargeRate)).isEqualTo(new SurchargeInput(25, TWENTY, SIX, 50, 75, 100));
   }
 
   private static Customerorder order() {

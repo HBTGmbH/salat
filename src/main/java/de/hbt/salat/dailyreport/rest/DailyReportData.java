@@ -150,7 +150,7 @@ public class DailyReportData {
      */
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @EqualsAndHashCode.Exclude
-    @Schema(description = "Zeitzuschlag der Buchung (NIGHT, WEEKEND, HOLIDAY), nur lesend; wird beim Schreiben ignoriert.",
+    @Schema(description = "Zeitzuschlag der Buchung (NIGHT, SATURDAY, SUNDAY, HOLIDAY), nur lesend; wird beim Schreiben ignoriert.",
         example = "NIGHT",
         nullable = true,
         accessMode = Schema.AccessMode.READ_ONLY)

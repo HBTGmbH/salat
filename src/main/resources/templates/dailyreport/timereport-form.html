@@ -169,7 +169,8 @@
                         th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby},
                                  data-ticket-mode=${s.ticketReferencePolicy.mode().name()},data-ticket-limit=${s.ticketReferencePolicy.limit()},
                                  data-ticket-policy-text=${ticketPolicyText},
-                                 data-surcharge-night=${s.surchargePercent('NIGHT')},data-surcharge-weekend=${s.surchargePercent('WEEKEND')},
+                                 data-surcharge-night=${s.surchargePercent('NIGHT')},data-surcharge-saturday=${s.surchargePercent('SATURDAY')},
+                                 data-surcharge-sunday=${s.surchargePercent('SUNDAY')},
                                  data-surcharge-holiday=${s.surchargePercent('HOLIDAY')},data-surcharge-night-hint=${nightHint}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
@@ -212,7 +213,7 @@
 
             <!--/* Time surcharge (#1469): at most one kind per booking, only the kinds the selected
                    suborder offers - the options carry their rates, setSurchargeOptions() follows a change
-                   of the suborder or the day. Weekend and holiday only on such a day, and there the
+                   of the suborder or the day. Saturday, Sunday and holiday only on such a day, and there the
                    kind is preselected as long as nobody touched the choice. An edited booking shows
                    the rate it was stored with while kind and suborder stay; that is the rate it keeps.
                    data-preset only on a freshly opened new booking: a form rendered again after an
@@ -628,7 +629,7 @@
       document.getElementById('ticketReferences')?.tomselect?.clearOptions();
     }
     // #1469: which time surcharges the selected suborder offers and at what rate, from its option;
-    // weekend and holiday only on such a day, which the select carries for the day in the form. A new
+    // Saturday, Sunday and holiday only on such a day, which the select carries for the day in the form. A new
     // booking preselects the kind of the day while the choice is untouched; a kind no longer offered
     // falls back to none, which the server would refuse otherwise.
     var surchargeTouched = false;
@@ -639,7 +640,7 @@
       var opt = sel.options[sel.selectedIndex];
       var dayKinds = (sel.dataset.surchargeDayKinds || '').split(' ').filter(Boolean);
       var offered = false;
-      ['NIGHT', 'WEEKEND', 'HOLIDAY'].forEach(function (kind) {
+      ['NIGHT', 'SATURDAY', 'SUNDAY', 'HOLIDAY'].forEach(function (kind) {
         var radio = document.getElementById('surchargeKind-' + kind);
         if (!radio) return;
         var percent = surchargePercentOf(block, opt, kind);
@@ -743,7 +744,7 @@
       applyAbsenceDuration();
       // the swapped select may have fallen back to another suborder with another setting
       setTicketReferenceLimit();
-      // ... and the new day may be a weekend or a holiday
+      // ... and the new day may be a Saturday, a Sunday or a holiday
       setSurchargeOptions();
     });
     function updateDurationBadge() {

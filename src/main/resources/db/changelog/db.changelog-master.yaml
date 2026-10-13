@@ -6985,8 +6985,8 @@ databaseChangeLog:
       id: 186
       author: kr
       comment: Saetze fuer Zeitzuschlaege aufs Zeitkonto an Auftrag und Unterauftrag (#1469)
-      # Je Art ein Satz in Prozent: Nacht, Wochenende, Feiertag; zur Nacht Beginn und Ende als Hinweis
-      # beim Buchen. Am Auftrag heisst leer: kein Zuschlag dieser Art. Am Unterauftrag heisst leer erben
+      # Je Art ein Satz in Prozent: Nacht, Samstag, Sonntag, Feiertag; zur Nacht Beginn und Ende als
+      # Hinweis beim Buchen. Am Auftrag heisst leer: kein Zuschlag dieser Art. Am Unterauftrag heisst leer erben
       # (vom naechsten Unterauftrag darueber mit Satz, sonst vom Auftrag), 0 heisst ausdruecklich keiner.
       # Bestehende Auftraege bekommen keinen Satz, es aendert sich also nichts.
       preConditions:
@@ -7002,7 +7002,8 @@ databaseChangeLog:
                 ADD COLUMN `surcharge_night_percent` int NULL,
                 ADD COLUMN `surcharge_night_from` time NULL,
                 ADD COLUMN `surcharge_night_until` time NULL,
-                ADD COLUMN `surcharge_weekend_percent` int NULL,
+                ADD COLUMN `surcharge_saturday_percent` int NULL,
+                ADD COLUMN `surcharge_sunday_percent` int NULL,
                 ADD COLUMN `surcharge_holiday_percent` int NULL
         - sql:
             sql: >-
@@ -7010,14 +7011,15 @@ databaseChangeLog:
                 ADD COLUMN `surcharge_night_percent` int NULL,
                 ADD COLUMN `surcharge_night_from` time NULL,
                 ADD COLUMN `surcharge_night_until` time NULL,
-                ADD COLUMN `surcharge_weekend_percent` int NULL,
+                ADD COLUMN `surcharge_saturday_percent` int NULL,
+                ADD COLUMN `surcharge_sunday_percent` int NULL,
                 ADD COLUMN `surcharge_holiday_percent` int NULL
 
   - changeSet:
       id: 187
       author: kr
       comment: Kennzeichen und Gutschrift eines Zeitzuschlags an der Buchung (#1469)
-      # surcharge_kind NIGHT, WEEKEND oder HOLIDAY, leer ohne Kennzeichen. surcharge_percent ist eine
+      # surcharge_kind NIGHT, SATURDAY, SUNDAY oder HOLIDAY, leer ohne Kennzeichen. surcharge_percent ist eine
       # Kopie des Satzes beim Speichern: ein spaeter geaenderter Satz am Auftrag aendert weder Buchung
       # noch abgenommene Monate. surcharge_credit_minutes ist Dauer mal Satz in ganzen Minuten, ohne
       # Kennzeichen 0; das Zeitkonto summiert die Spalte. Mit DEFAULT laeuft das ALTER in MySQL 8

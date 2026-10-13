@@ -12,11 +12,12 @@ public record SurchargeInput(
     Integer nightPercent,
     LocalTime nightFrom,
     LocalTime nightUntil,
-    Integer weekendPercent,
+    Integer saturdayPercent,
+    Integer sundayPercent,
     Integer holidayPercent
 ) {
 
-  public static final SurchargeInput NONE = new SurchargeInput(null, null, null, null, null);
+  public static final SurchargeInput NONE = new SurchargeInput(null, null, null, null, null, null);
 
   /** The highest rate accepted, a typo guard rather than a business rule. */
   public static final int MAX_PERCENT = 1000;
@@ -24,7 +25,8 @@ public record SurchargeInput(
   public Integer percent(SurchargeKind kind) {
     return switch (kind) {
       case NIGHT -> nightPercent;
-      case WEEKEND -> weekendPercent;
+      case SATURDAY -> saturdayPercent;
+      case SUNDAY -> sundayPercent;
       case HOLIDAY -> holidayPercent;
     };
   }
@@ -32,13 +34,15 @@ public record SurchargeInput(
   /** What an order or suborder carries now, read back for the form: {@code co::getSurchargeRate}. */
   public static SurchargeInput of(Function<SurchargeKind, SurchargeRate> rates) {
     var night = rates.apply(SurchargeKind.NIGHT);
-    var weekend = rates.apply(SurchargeKind.WEEKEND);
+    var saturday = rates.apply(SurchargeKind.SATURDAY);
+    var sunday = rates.apply(SurchargeKind.SUNDAY);
     var holiday = rates.apply(SurchargeKind.HOLIDAY);
     return new SurchargeInput(
         night != null ? night.percent() : null,
         night != null ? night.nightFrom() : null,
         night != null ? night.nightUntil() : null,
-        weekend != null ? weekend.percent() : null,
+        saturday != null ? saturday.percent() : null,
+        sunday != null ? sunday.percent() : null,
         holiday != null ? holiday.percent() : null);
   }
 
