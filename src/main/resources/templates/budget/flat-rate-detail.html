@@ -13,8 +13,8 @@
   <div class="card mb-3">
     <div class="card-header d-flex align-items-center">
       <h3 class="card-title me-auto" th:text="${flatRate.description} ?: #{main.flatrate.list.title}">Pauschale</h3>
-      <span class="badge ms-2" th:classappend="${flatRate.currentlyValid} ? 'bg-success-lt' : 'bg-secondary-lt'"
-            th:text="${flatRate.currentlyValid} ? #{main.general.active.text} : #{main.general.inactive.text}">Aktiv</span>
+      <!--/* A flat rate is never inactive, only its order can be (#1438): the badge of the list. */-->
+      <span th:replace="~{fragments/inactive-badge :: badge(${!flatRate.customerorder.currentlyValid})}"></span>
       <div class="ms-3">
         <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/flat-rate/{id}/edit(id=${flatRate.id})}">
           <i class="icon ti ti-pencil"></i>
