@@ -28,7 +28,7 @@ import de.hbt.salat.order.domain.SurchargeKind;
 /**
  * What a cell of the matrix overview knows about the bookings behind it: each booking with its
  * ticket references, which since #1326 are no part of the comment any more, and its time surcharge
- * (#1469); the cell itself the credit of all of them.
+ * (#1469). The credit of a day goes to a row of its own above the sum row.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -74,15 +74,18 @@ class MatrixServiceDetailTest {
   }
 
   @Test
-  void a_flagged_booking_brings_its_surcharge_and_the_cell_the_credit_of_all() {
+  void a_flagged_booking_brings_its_surcharge_and_the_day_the_credit_of_all() {
     givenBookings(
         booking(1L, 3, "Einspielen").surchargeKind(SurchargeKind.SATURDAY).surchargePercent(50)
             .surchargeCredit(Duration.ofMinutes(90)).build(),
         booking(2L, 1, "Nacharbeit").build());
 
+    var matrix = matrix();
     var cell = cell();
 
-    assertThat(cell.surchargeCredit()).isEqualTo(Duration.ofMinutes(90));
+    assertThat(matrix.surchargeDays().get(SATURDAY.getDayOfMonth() - 1)).isEqualTo(Duration.ofMinutes(90));
+    assertThat(matrix.surchargeDays().get(SATURDAY.getDayOfMonth())).isZero();
+    assertThat(matrix.surchargeTotal()).isEqualTo(Duration.ofMinutes(90));
     assertThat(cell.details()).extracting(MatrixData.ReportDetail::surchargeKind)
         .containsExactly(SurchargeKind.SATURDAY, null);
     assertThat(cell.details().getFirst().surchargePercent()).isEqualTo(50);
@@ -90,14 +93,19 @@ class MatrixServiceDetailTest {
   }
 
   @Test
-  void a_cell_without_a_flagged_booking_has_no_credit() {
+  void a_month_without_a_flagged_booking_has_no_credit() {
     givenBookings(booking(1L, 2, "Einspielen").build());
 
-    assertThat(cell().surchargeCredit()).isZero();
+    assertThat(matrix().surchargeTotal()).isZero();
+    assertThat(matrix().surchargeDays()).hasSize(MONTH.lengthOfMonth()).allSatisfy(credit -> assertThat(credit).isZero());
+  }
+
+  private MatrixData matrix() {
+    return classUnderTest.buildMatrix(MONTH, CONTRACT_ID);
   }
 
   private MatrixData.Cell cell() {
-    return classUnderTest.buildMatrix(MONTH, CONTRACT_ID).rows().getFirst().cells().get(SATURDAY.getDayOfMonth() - 1);
+    return matrix().rows().getFirst().cells().get(SATURDAY.getDayOfMonth() - 1);
   }
 
   private void givenBookings(TimereportDTO... reports) {
