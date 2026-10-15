@@ -43,7 +43,6 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SurchargeKind;
-import de.hbt.salat.order.domain.SurchargeRate;
 
 /**
  * A booking. Its suborder and its contract are those of its employee order (#1210): the booking
@@ -198,7 +197,15 @@ public class Timereport extends AuditedEntity implements Serializable {
     }
 
     private Duration creditOf(Integer percent) {
-        return percent == null || duration == null ? Duration.ZERO : SurchargeRate.creditFor(duration, percent);
+        return percent == null || duration == null ? Duration.ZERO : surchargeCreditFor(duration, percent);
+    }
+
+    /**
+     * The time surcharge credit for {@code duration} at {@code percent} (#1469): duration × rate, rounded to
+     * whole minutes. A rule of the booking and its time account; the order only sets the rate.
+     */
+    public static Duration surchargeCreditFor(Duration duration, int percent) {
+        return Duration.ofMinutes(Math.round(duration.toMinutes() * percent / 100.0));
     }
 
     /** The contract of the booking: that of its employee order since #1210. */

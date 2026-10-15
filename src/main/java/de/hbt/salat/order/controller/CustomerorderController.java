@@ -8,7 +8,6 @@ import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.CUSTOMER_
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -55,9 +54,6 @@ import de.hbt.salat.order.viewhelper.CustomerOrderViewDecorator;
 @RequiredArgsConstructor
 @Authorized(requireUnrestricted = true)
 public class CustomerorderController {
-
-  private static final LocalTime DEFAULT_NIGHT_FROM = LocalTime.of(20, 0);
-  private static final LocalTime DEFAULT_NIGHT_UNTIL = LocalTime.of(6, 0);
 
   private final CustomerorderService customerorderService;
   private final CustomerService customerService;
@@ -112,7 +108,7 @@ public class CustomerorderController {
     form.setOrderType(OrderType.STANDARD);
     form.setTicketReferenceMode(TicketReferencePolicy.DEFAULT.mode());
     form.setTicketReferenceLimit(TicketReferencePolicy.DEFAULT.limit());
-    form.setSurcharges(surchargeFieldsOf(SurchargeInput.NONE));
+    form.setSurchargeRates(SurchargeFields.ofOrder(SurchargeInput.NONE));
     form.setResponsibleHbtIds(new java.util.ArrayList<>(List.of(authorizedEmployee.getEmployeeId())));
     form.setRespContrEmployeeId(authorizedEmployee.getEmployeeId());
     form.setCustomerId(fCustomerId);
@@ -158,7 +154,7 @@ public class CustomerorderController {
             form.getResponsibleCustomerContractually(), form.getResponsibleCustomerTechnical(),
             form.getResponsibleHbtIds(), form.getRespContrEmployeeId(),
             form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType(),
-            form.getTicketReferenceMode(), form.getTicketReferenceLimit(), form.getSurcharges().toInput());
+            form.getTicketReferenceMode(), form.getTicketReferenceLimit(), form.getSurchargeRates().toInput());
         if (form.getId() == null) {
           newId = customerorderService.create(dto).getId();
         } else {
@@ -234,6 +230,7 @@ public class CustomerorderController {
   }
 
   private void validateForm(CustomerorderForm form, BindingResult bindingResult) {
+    form.getSurchargeRates().validate(bindingResult, messages);
     if (form.getSign() == null || form.getSign().isEmpty()) {
       bindingResult.rejectValue("sign", "error.sign",
           messages.getMessage("form.customerorder.error.sign.required", "Sign is required"));
@@ -389,21 +386,7 @@ public class CustomerorderController {
     form.setOrderType(co.getOrderType() != null ? co.getOrderType() : OrderType.STANDARD);
     form.setTicketReferenceMode(co.getTicketReferencePolicy().mode());
     form.setTicketReferenceLimit(co.getTicketReferencePolicy().limit());
-    form.setSurcharges(surchargeFieldsOf(SurchargeInput.of(co::getSurchargeRate)));
+    form.setSurchargeRates(SurchargeFields.ofOrder(SurchargeInput.of(co::getSurchargeRate)));
     return form;
   }
-
-  /**
-   * The order's rates for the form (#1469). Where it pays no night surcharge, the times start out as
-   * the usual night, so that entering a percent is all it takes.
-   */
-  private static SurchargeFields surchargeFieldsOf(SurchargeInput input) {
-    var fields = SurchargeFields.of(input);
-    if (fields.getNightFrom() == null && fields.getNightUntil() == null) {
-      fields.setNightFrom(DEFAULT_NIGHT_FROM);
-      fields.setNightUntil(DEFAULT_NIGHT_UNTIL);
-    }
-    return fields;
-  }
-
 }

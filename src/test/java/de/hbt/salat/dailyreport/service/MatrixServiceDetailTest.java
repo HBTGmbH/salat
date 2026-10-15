@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.dailyreport.domain.MatrixData;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.employee.domain.Employeecontract;
@@ -83,9 +84,9 @@ class MatrixServiceDetailTest {
     var matrix = matrix();
     var cell = cell();
 
-    assertThat(matrix.surchargeDays().get(SATURDAY.getDayOfMonth() - 1)).isEqualTo(Duration.ofMinutes(90));
-    assertThat(matrix.surchargeDays().get(SATURDAY.getDayOfMonth())).isZero();
-    assertThat(matrix.surchargeTotal()).isEqualTo(Duration.ofMinutes(90));
+    assertThat(matrix.footerDays().get(SATURDAY.getDayOfMonth() - 1).surchargeCredit()).isEqualTo(Duration.ofMinutes(90));
+    assertThat(matrix.footerDays().get(SATURDAY.getDayOfMonth()).surchargeCredit()).isZero();
+    assertThat(matrix.surchargeCreditTotal()).isEqualTo(Duration.ofMinutes(90));
     assertThat(cell.details()).extracting(MatrixData.ReportDetail::surchargeKind)
         .containsExactly(SurchargeKind.SATURDAY, null);
     assertThat(cell.details().getFirst().surchargePercent()).isEqualTo(50);
@@ -96,8 +97,9 @@ class MatrixServiceDetailTest {
   void a_month_without_a_flagged_booking_has_no_credit() {
     givenBookings(booking(1L, 2, "Einspielen").build());
 
-    assertThat(matrix().surchargeTotal()).isZero();
-    assertThat(matrix().surchargeDays()).hasSize(MONTH.lengthOfMonth()).allSatisfy(credit -> assertThat(credit).isZero());
+    assertThat(matrix().surchargeCreditTotal()).isZero();
+    assertThat(matrix().footerDays()).hasSize(MONTH.lengthOfMonth())
+        .allSatisfy(day -> assertThat(day.surchargeCredit()).isZero());
   }
 
   /**
@@ -113,6 +115,33 @@ class MatrixServiceDetailTest {
 
     assertThat(matrix.totalString()).isEqualTo("3:00");
     assertThat(matrix.diffString()).isEqualTo("-155:30");
+  }
+
+  /* "Stand gestern" counts the credit up to yesterday: a credit after it is no part of it yet. */
+  @Test
+  @FixedClock("2026-10-12T10:00:00")
+  void the_balance_of_yesterday_counts_the_surcharge_up_to_yesterday() {
+    givenBookings(
+        booking(1L, 3, "Einspielen").surchargeKind(SurchargeKind.SATURDAY).surchargePercent(50)
+            .surchargeCredit(Duration.ofMinutes(90)).build(),
+        booking(2L, 2, "Störung").referenceday(MONTH.atDay(20)).surchargeKind(SurchargeKind.NIGHT).surchargePercent(25)
+            .surchargeCredit(Duration.ofMinutes(30)).build());
+    when(overtimeService.calculateWorkingTimeTarget(CONTRACT_ID, MONTH.atDay(1), MONTH.atDay(11)))
+        .thenReturn(Duration.ofHours(56));
+
+    // 3:00 booked + 1:30 credit - 56:00 target
+    assertThat(matrix().prevDayDiffString()).isEqualTo("-51:30");
+  }
+
+  @Test
+  void a_flagged_standby_booking_earns_no_credit_in_the_matrix() {
+    givenBookings(booking(1L, 3, "Rufbereitschaft").orderType(OrderType.BEREITSCHAFT).surchargeKind(SurchargeKind.SATURDAY)
+        .surchargePercent(50).surchargeCredit(Duration.ofMinutes(90)).build());
+
+    var matrix = matrix();
+
+    assertThat(matrix.surchargeCreditTotal()).isZero();
+    assertThat(matrix.diffString()).isEqualTo("-160:00");
   }
 
   private MatrixData matrix() {

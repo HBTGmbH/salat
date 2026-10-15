@@ -468,12 +468,12 @@ public class Suborder extends AuditedEntity implements Serializable {
 
     /**
      * The rate a booking on this suborder may be flagged with, {@code null} where the kind is not
-     * offered: no rate, a rate of zero, or standby — standby is no working time and earns no surcharge.
-     * No order type at all is a standard order.
+     * offered: no rate, a rate of zero, or an order type that earns none ({@link OrderType#earnsSurcharge}:
+     * standby and absences). No order type at all is a standard order.
      */
     public SurchargeRate getOfferedSurchargeRate(SurchargeKind kind) {
         var orderType = getEffectiveOrderType();
-        if (orderType != null && !orderType.isWorkingTime()) {
+        if (orderType != null && !orderType.earnsSurcharge()) {
             return null;
         }
         var rate = getEffectiveSurchargeRate(kind);

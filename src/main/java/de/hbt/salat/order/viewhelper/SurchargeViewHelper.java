@@ -5,27 +5,27 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.domain.SurchargeRateSource;
-import de.hbt.salat.common.util.DurationUtils;
-import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
 
 /**
- * Time surcharges in words (#1469) — "Nacht 25 %", "25 %, 20:00–6:00 Uhr". One place, because the order
- * forms, the booking form, the reviews and the booking list all name them.
+ * Time surcharge rates in words (#1469) — "Nacht 25 %", "25 %, 20:00–06:00 Uhr". One place, because the order
+ * forms, the order lists and the booking form all name them; the credit a booking earns is shown by
+ * {@code SurchargeCreditViewHelper} of the bookings.
  */
 @Component
 @RequiredArgsConstructor
 public class SurchargeViewHelper {
 
-  private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("H:mm");
+  private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
 
   private final MessageSourceAccessor messages;
 
@@ -45,24 +45,6 @@ public class SurchargeViewHelper {
     return messages.getMessage("main.surcharge.flag", new Object[] {kind(kind), percent(percent)});
   }
 
-  /** The credit on the time account with its sign, "+1:30" — the matrix row and the sums. */
-  public String credit(Duration credit) {
-    return DurationUtils.formatSigned(credit != null ? credit : Duration.ZERO);
-  }
-
-  /**
-   * The title of a flagged booking's badge, "Zuschlag: Sonntag 100 % +2:30". The badge itself shows
-   * nothing but the credit ({@link #credit}): what counts is how much it adds to the time account.
-   */
-  public String title(SurchargeKind kind, Integer percent, Duration credit) {
-    return messages.getMessage("main.surcharge.badge.title", new Object[] {flag(kind, percent), credit(credit)});
-  }
-
-  /** The credit named in running text, "Zuschlag +2:30" — the details of a matrix cell. */
-  public String named(Duration credit) {
-    return messages.getMessage("main.surcharge.named", new Object[] {credit(credit)});
-  }
-
   /** The rate, with the night for a night rate: "25 %, 20:00–6:00 Uhr". */
   public String rate(SurchargeRate rate) {
     if (rate == null) {
@@ -76,16 +58,21 @@ public class SurchargeViewHelper {
   }
 
   /**
-   * The rates the order sets, "Zeitzuschläge: Nacht 25 %, 20:00–6:00 Uhr; Samstag 50 %" — the flag in
-   * the order list. Empty where it sets none above 0; rates only its suborders set do not count here.
+   * The rates the order sets, "Zeitzuschläge: Nacht 25 %, 20:00–06:00 Uhr; Samstag 50 %" — the flag in
+   * the order list. Empty where it sets none above 0 or its type earns none (standby, absences); rates only
+   * its suborders set do not count here.
    */
   public String summary(Customerorder customerorder) {
+    var orderType = customerorder.getOrderType();
+    if (orderType != null && !orderType.earnsSurcharge()) {
+      return "";
+    }
     return summary(customerorder::getSurchargeRate);
   }
 
   /**
    * The rates a booking on the suborder may be flagged with, inherited ones included — the flag in the
-   * suborder list. Empty where it offers none: no rate, 0 % or standby.
+   * suborder list. Empty where it offers none: no rate, 0 %, standby or an absence.
    */
   public String summary(Suborder suborder) {
     return summary(suborder::getOfferedSurchargeRate);
@@ -104,17 +91,28 @@ public class SurchargeViewHelper {
     return offered.isEmpty() ? "" : messages.getMessage("main.surcharge.summary", new Object[] {String.join("; ", offered)});
   }
 
-  /** When the night counts on the suborder of the booking, a hint next to the flag. */
-  public String nightHint(SurchargeRate rate) {
+  /**
+   * The rates a suborder of the booking form offers, as its option carries them for the script of the form:
+   * "NIGHT=25 SUNDAY=100", a kind not offered left out.
+   */
+  public String ratesAttribute(Map<SurchargeKind, SurchargeRate> offered) {
+    return offered.entrySet().stream()
+        .map(entry -> entry.getKey().name() + "=" + entry.getValue().percent())
+        .collect(Collectors.joining(" "));
+  }
+
+  /** When the night counts on the suborder of the booking, a hint next to the flag; empty without a night rate. */
+  public String nightHint(Map<SurchargeKind, SurchargeRate> offered) {
+    var rate = offered.get(SurchargeKind.NIGHT);
     if (rate == null || rate.nightFrom() == null || rate.nightUntil() == null) {
       return "";
     }
     return messages.getMessage("main.surcharge.night.hint", new Object[] {time(rate.nightFrom()), time(rate.nightUntil())});
   }
 
-  /** {@link #inherited(SurchargeRateSource)} of {@code kind}, by name, as the suborder form asks. */
-  public String inherited(Map<SurchargeKind, SurchargeRateSource> sources, String kind) {
-    return sources == null ? "" : inherited(sources.get(SurchargeKind.valueOf(kind)));
+  /** {@link #inherited(SurchargeRateSource)} of {@code kind}, as the suborder form asks for it per field. */
+  public String inherited(Map<SurchargeKind, SurchargeRateSource> sources, SurchargeKind kind) {
+    return sources == null ? "" : inherited(sources.get(kind));
   }
 
   /** What a suborder without a rate of its own inherits, and from where. */

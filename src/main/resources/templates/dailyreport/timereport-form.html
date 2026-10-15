@@ -159,19 +159,18 @@
                       hx-trigger="change">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
                 <!--/* th:with: th:attr reaches no bean (AGENTS.md, "Globally Accessible Objects") */-->
-                <!--/* data-surcharge-* (#1469): the rates the suborder offers, as percent, and the night it
-                       counts; a kind it does not offer has no attribute */-->
+                <!--/* data-surcharge-rates (#1469): the rates the suborder offers, "NIGHT=25 SUNDAY=100", a kind
+                       it does not offer left out; data-surcharge-night-hint: when the night counts there */-->
                 <option th:each="s : ${suborders}"
                         th:with="ticketPolicyText=${@ticketReferencePolicyViewHelper.label(s.ticketReferencePolicy)},
-                                 nightHint=${@surchargeViewHelper.nightHint(s.surchargeRate('NIGHT'))}"
+                                 surchargeRates=${@surchargeViewHelper.ratesAttribute(s.surchargeRates)},
+                                 nightHint=${@surchargeViewHelper.nightHint(s.surchargeRates)}"
                         th:value="${s.id}"
                         th:text="${s.label}"
                         th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby},
                                  data-ticket-mode=${s.ticketReferencePolicy.mode().name()},data-ticket-limit=${s.ticketReferencePolicy.limit()},
                                  data-ticket-policy-text=${ticketPolicyText},
-                                 data-surcharge-night=${s.surchargePercent('NIGHT')},data-surcharge-saturday=${s.surchargePercent('SATURDAY')},
-                                 data-surcharge-sunday=${s.surchargePercent('SUNDAY')},
-                                 data-surcharge-holiday=${s.surchargePercent('HOLIDAY')},data-surcharge-night-hint=${nightHint}"
+                                 data-surcharge-rates=${surchargeRates},data-surcharge-night-hint=${nightHint}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
@@ -211,37 +210,46 @@
                      th:text="#{main.timereport.form.ticketreference.help}"></small>
             </div>
 
-            <!--/* Time surcharge (#1469): at most one kind per booking, only the kinds the selected
-                   suborder offers - the options carry their rates, setSurchargeOptions() follows a change
-                   of the suborder or the day. Saturday, Sunday and holiday only on such a day, and there the
-                   kind is preselected as long as nobody touched the choice. An edited booking shows
-                   the rate it was stored with while kind and suborder stay; that is the rate it keeps.
-                   data-preset only on a freshly opened new booking: a form rendered again after an
-                   error shows what was sent. */-->
+            <!--/* Time surcharge (#1469): at most one kind per booking, only the kinds that may be chosen - the
+                   suborder offers them, and Saturday, Sunday and holiday fall on the day. Rendered so by
+                   TimereportController.addSurchargeModel; setSurchargeOptions() applies the same rule when the
+                   suborder or the day changes. A new booking preselects the kind of the day as long as nobody
+                   touched the choice; a form rendered again after an error shows what was sent (data-preset
+                   only on a freshly opened new booking). An edited booking keeps the rate it was stored with
+                   while kind and suborder stay, and on its own day its kind. The hint names the night, the
+                   credit, and a kind that had to be deselected. */-->
             <div class="mb-3" id="surchargeBlock"
-                 th:classappend="${surchargeOffered} ? '' : 'd-none'"
+                 th:classappend="${surchargeSelectable} ? '' : 'd-none'"
                  th:attr="data-percent-format=#{main.surcharge.percent},
                           data-flag-format=#{main.surcharge.flag},
                           data-credit-format=#{main.surcharge.credit.hint},
+                          data-dropped-format=#{main.surcharge.dropped.hint},
                           data-stored-kind=${storedSurchargeKind},
                           data-stored-percent=${storedSurchargePercent},
                           data-stored-suborder=${storedSurchargeSuborderId},
+                          data-stored-day=${storedSurchargeDay},
                           data-preset=${surchargePreset == true} ? 'true' : null">
               <div class="form-label" id="surchargeLabel" th:text="#{main.surcharge.booking.label}">Zeitzuschlag</div>
-              <div class="btn-group flex-wrap" role="radiogroup" aria-labelledby="surchargeLabel">
+              <!--/* single buttons rather than a btn-group: up to five of them wrap on a narrow screen */-->
+              <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-labelledby="surchargeLabel"
+                   aria-describedby="surchargeHint">
                 <input type="radio" class="btn-check" name="surchargeKind" id="surchargeKindNone" value=""
                        th:checked="${timereportForm.surchargeKind == null}"/>
                 <label class="btn" for="surchargeKindNone" th:text="#{main.surcharge.none}">Kein Zuschlag</label>
-                <th:block th:each="kind : ${surchargeKinds}">
+                <th:block th:each="option : ${surchargeOptions}">
                   <input type="radio" class="btn-check" name="surchargeKind"
-                         th:id="|surchargeKind-${kind.name()}|" th:value="${kind.name()}"
-                         th:checked="${timereportForm.surchargeKind == kind}"/>
-                  <label class="btn" th:for="|surchargeKind-${kind.name()}|"
-                         th:attr="data-kind-label=#{${kind.label}}"
-                         th:text="#{${kind.label}}">Nacht</label>
+                         th:id="|surchargeKind-${option.kind().name()}|" th:value="${option.kind().name()}"
+                         th:checked="${timereportForm.surchargeKind == option.kind()}"
+                         th:disabled="${!option.selectable()}"
+                         th:attr="data-bound-to-day=${option.kind().boundToDay}"/>
+                  <label class="btn" th:for="|surchargeKind-${option.kind().name()}|"
+                         th:classappend="${option.selectable()} ? '' : 'd-none'"
+                         th:with="kindLabel=${@surchargeViewHelper.kind(option.kind())}"
+                         th:attr="data-kind-label=${kindLabel}"
+                         th:text="${option.percent() != null} ? ${@surchargeViewHelper.flag(option.kind(), option.percent())} : ${kindLabel}">Nacht 25 %</label>
                 </th:block>
               </div>
-              <small class="form-hint mt-1" id="surchargeHint"></small>
+              <small class="form-text text-muted mt-1" id="surchargeHint" aria-live="polite"></small>
             </div>
 
             <!-- Comment -->
@@ -322,6 +330,10 @@
                   </select>
                   <span class="text-muted small" th:text="#{main.timereport.form.serial.hint}"></span>
                 </div>
+                <!--/* #1469: the serial days are working days, which a Saturday, Sunday or holiday surcharge does
+                       not fit - the service would refuse them */-->
+                <small class="form-text text-muted mt-1 d-none" id="serialSurchargeHint"
+                       th:text="#{main.timereport.form.serial.surcharge.hint}">Mit einem Samstags-, Sonntags- oder Feiertagszuschlag lässt sich nicht wiederholen.</small>
               </div>
             </div>
 
@@ -488,6 +500,7 @@
       document.getElementById('btnBeginEnd').classList.remove('active');
       document.getElementById('durationModeField').value = 'duration';
       toggleDurationChips(true);
+      updateSurchargeHint();
     }
     function showBeginEnd() {
       document.getElementById('durationSection').classList.add('d-none');
@@ -496,6 +509,7 @@
       document.getElementById('btnBeginEnd').classList.add('active');
       document.getElementById('durationModeField').value = 'beginEnd';
       toggleDurationChips(false);
+      updateSurchargeHint();
     }
     function toggleSaveAsFav() {
       document.getElementById('saveAsFavSection').classList.toggle('d-none');
@@ -628,49 +642,63 @@
     function clearTicketSuggestions() {
       document.getElementById('ticketReferences')?.tomselect?.clearOptions();
     }
-    // #1469: which time surcharges the selected suborder offers and at what rate, from its option;
-    // Saturday, Sunday and holiday only on such a day, which the select carries for the day in the form. A new
-    // booking preselects the kind of the day while the choice is untouched; a kind no longer offered
-    // falls back to none, which the server would refuse otherwise.
+    // #1469: which time surcharges may be chosen - the rates of the selected suborder from its option, a kind
+    // bound to a day only on that day, which the select carries for the day in the form. The same rule as
+    // TimereportController.addSurchargeModel, applied when the suborder or the day changes. A new booking
+    // preselects the kind of the day while the choice is untouched. A chosen kind that may no longer be chosen
+    // gives way to the kind of the new day where it was one of a day, else to none - and the hint says so,
+    // so that no credit is lost unnoticed.
     var surchargeTouched = false;
+    var surchargeDropped = null;
+    function surchargeRadios() {
+      return Array.from(document.querySelectorAll('#surchargeBlock input[name="surchargeKind"]'))
+        .filter(function (radio) { return radio.value !== ''; });
+    }
     function setSurchargeOptions() {
       var block = document.getElementById('surchargeBlock');
       var sel = document.getElementById('suborderId');
       if (!block || !sel) return;
       var opt = sel.options[sel.selectedIndex];
       var dayKinds = (sel.dataset.surchargeDayKinds || '').split(' ').filter(Boolean);
-      var offered = false;
-      ['NIGHT', 'SATURDAY', 'SUNDAY', 'HOLIDAY'].forEach(function (kind) {
-        var radio = document.getElementById('surchargeKind-' + kind);
-        if (!radio) return;
+      var day = document.getElementById('referenceday')?.value;
+      var dropped = null;
+      var selectable = [];
+      surchargeRadios().forEach(function (radio) {
+        var kind = radio.value;
         var percent = surchargePercentOf(block, opt, kind);
+        var onItsDay = radio.dataset.boundToDay !== 'true' || dayKinds.indexOf(kind) >= 0
+          || (isStoredSurcharge(block, opt, kind) && block.dataset.storedDay === day);
         var label = block.querySelector('label[for="' + radio.id + '"]');
-        label.classList.toggle('d-none', percent === null);
-        radio.disabled = percent === null || (kind !== 'NIGHT' && dayKinds.indexOf(kind) < 0);
-        if (percent !== null) {
-          offered = true;
+        radio.disabled = percent === null || !onItsDay;
+        label.classList.toggle('d-none', radio.disabled);
+        if (!radio.disabled) {
+          selectable.push(kind);
           label.textContent = block.dataset.flagFormat.replace('{0}', label.dataset.kindLabel)
             .replace('{1}', block.dataset.percentFormat.replace('{0}', percent));
         }
-        if (radio.disabled && radio.checked) document.getElementById('surchargeKindNone').checked = true;
+        if (radio.disabled && radio.checked) dropped = radio;
       });
-      block.classList.toggle('d-none', !offered);
-      if (block.dataset.preset === 'true' && !surchargeTouched) {
-        var preset = dayKinds.find(function (kind) {
-          var radio = document.getElementById('surchargeKind-' + kind);
-          return radio && !radio.disabled;
-        });
+      var preset = dayKinds.find(function (kind) { return selectable.indexOf(kind) >= 0; });
+      if (dropped) {
+        var replacement = dropped.dataset.boundToDay === 'true' ? preset : null;
+        document.getElementById(replacement ? 'surchargeKind-' + replacement : 'surchargeKindNone').checked = true;
+        surchargeDropped = block.querySelector('label[for="' + dropped.id + '"]').dataset.kindLabel;
+      } else if (block.dataset.preset === 'true' && !surchargeTouched) {
         document.getElementById(preset ? 'surchargeKind-' + preset : 'surchargeKindNone').checked = true;
       }
+      block.classList.toggle('d-none', selectable.length === 0 && surchargeDropped === null);
       updateSurchargeHint();
+    }
+    function isStoredSurcharge(block, opt, kind) {
+      return !!opt && block.dataset.storedKind === kind && block.dataset.storedSuborder === opt.value;
     }
     function surchargePercentOf(block, opt, kind) {
       if (!opt) return null;
-      if (block.dataset.storedKind === kind && block.dataset.storedSuborder === opt.value) {
-        return Number(block.dataset.storedPercent);
-      }
-      var value = opt.dataset['surcharge' + kind.charAt(0) + kind.slice(1).toLowerCase()];
-      return value === undefined || value === '' ? null : Number(value);
+      if (isStoredSurcharge(block, opt, kind)) return Number(block.dataset.storedPercent);
+      var rate = (opt.dataset.surchargeRates || '').split(' ').find(function (entry) {
+        return entry.split('=')[0] === kind;
+      });
+      return rate ? Number(rate.split('=')[1]) : null;
     }
     function updateSurchargeHint() {
       var block = document.getElementById('surchargeBlock');
@@ -681,16 +709,29 @@
       var checked = block.querySelector('input[name="surchargeKind"]:checked');
       var kind = checked ? checked.value : '';
       var parts = [];
+      if (surchargeDropped !== null) parts.push(block.dataset.droppedFormat.replace('{0}', surchargeDropped));
       if (kind === 'NIGHT' && opt && opt.dataset.surchargeNightHint) parts.push(opt.dataset.surchargeNightHint);
       var percent = kind ? surchargePercentOf(block, opt, kind) : null;
       var minutes = bookingMinutes();
       if (percent !== null && minutes > 0) {
+        // the credit as TimereportService saves it: Timereport.surchargeCreditFor, rounded to whole minutes
         var credit = Math.round(minutes * percent / 100);
-        parts.push(block.dataset.creditFormat.replace('{0}', durationText(credit))
-          .replace('{1}', durationText(minutes))
+        parts.push(block.dataset.creditFormat.replace('{0}', paletteFormatDuration(credit))
+          .replace('{1}', paletteFormatDuration(minutes))
           .replace('{2}', block.dataset.percentFormat.replace('{0}', percent)));
       }
       hint.textContent = parts.join(' ');
+      syncSerialWithSurcharge(checked);
+    }
+    // a kind bound to a day books that day only: the serial days are working days (#1469)
+    function syncSerialWithSurcharge(checked) {
+      var serial = document.getElementById('numberOfSerialDays');
+      var serialHint = document.getElementById('serialSurchargeHint');
+      if (!serial || !serialHint) return;
+      var boundToDay = !!checked && checked.dataset.boundToDay === 'true';
+      if (boundToDay) serial.value = '1';
+      serial.disabled = boundToDay;
+      serialHint.classList.toggle('d-none', !boundToDay);
     }
     function bookingMinutes() {
       if (!document.getElementById('beginEndSection').classList.contains('d-none')) {
@@ -699,9 +740,6 @@
         return begin !== null && end !== null ? end - begin : 0;
       }
       return parseDurationValue(document.getElementById('durationTime').value) || 0;
-    }
-    function durationText(minutes) {
-      return Math.floor(minutes / 60) + ':' + String(minutes % 60).padStart(2, '0');
     }
     document.addEventListener('DOMContentLoaded', function() {
       var sel = document.getElementById('suborderId');
@@ -720,7 +758,11 @@
       document.getElementById('beginTimeInput').addEventListener('change', applyAbsenceDuration);
       updateCommentRequired();
       document.querySelectorAll('input[name="surchargeKind"]').forEach(function (radio) {
-        radio.addEventListener('change', function () { surchargeTouched = true; updateSurchargeHint(); });
+        radio.addEventListener('change', function () {
+          surchargeTouched = true;
+          surchargeDropped = null;
+          updateSurchargeHint();
+        });
       });
       ['durationTime', 'beginTimeInput', 'endTimeInput'].forEach(function (id) {
         document.getElementById(id)?.addEventListener('input', updateSurchargeHint);

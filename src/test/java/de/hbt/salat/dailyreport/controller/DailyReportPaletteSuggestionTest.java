@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -176,7 +177,7 @@ class DailyReportPaletteSuggestionTest {
     ownCurrentContract();
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(OWN_CONTRACT_ID, TODAY)).thenReturn(List.of(order()));
     when(suborderService.getSuborderSummaries(OWN_CONTRACT_ID, ORDER_ID, TODAY))
-        .thenReturn(List.of(new SuborderSummary(MAINTENANCE_ID, "MUSTER-01.03", "Wartung", true, false, TicketReferencePolicy.DEFAULT)));
+        .thenReturn(List.of(new SuborderSummary(MAINTENANCE_ID, "MUSTER-01.03", "Wartung", true, false, TicketReferencePolicy.DEFAULT, Map.of())));
     favourite(null);
     bookedLately();
 
@@ -380,7 +381,7 @@ class DailyReportPaletteSuggestionTest {
   }
 
   private static SuborderSummary summary(long id, String sign, String description) {
-    return new SuborderSummary(id, sign, description, false, false, TicketReferencePolicy.DEFAULT);
+    return new SuborderSummary(id, sign, description, false, false, TicketReferencePolicy.DEFAULT, Map.of());
   }
 
   private static Customerorder order() {

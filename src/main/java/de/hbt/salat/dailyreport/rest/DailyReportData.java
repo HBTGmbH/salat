@@ -4,8 +4,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_KIND_INVALID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.opencsv.bean.CsvBindByPosition;
@@ -14,12 +14,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
@@ -144,17 +146,21 @@ public class DailyReportData {
     private String employeeSign;
 
     /**
-     * The time surcharge flag of the booking (#1469), read only: neither the API nor the CSV import
-     * sets it, and it takes no part in comparing an imported booking with a stored one — a file
-     * without the column must not turn a flagged booking into a changed one.
+     * The time surcharge flag of the booking (#1469), a kind's name. Like the ticket reference, {@code null} says
+     * nothing about it — a file without the column, a client that does not know the field — and an empty text
+     * says "none"; {@link de.hbt.salat.dailyreport.service.DailyWorkingReportService} resolves the former against
+     * the stored booking. A new column at the end: positions 0-11 stay where existing clients expect them.
      */
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @EqualsAndHashCode.Exclude
-    @Schema(description = "Zeitzuschlag der Buchung (NIGHT, SATURDAY, SUNDAY, HOLIDAY), nur lesend; wird beim Schreiben ignoriert.",
+    @CsvBindByPosition(position = 12)
+    @Schema(description = "Zeitzuschlag der Buchung: NIGHT, SATURDAY, SUNDAY oder HOLIDAY, null ohne Zuschlag. Beim Schreiben "
+        + "setzt ein Wert die Art, ein leerer Text heißt \"kein Zuschlag\". Fehlt das Feld oder ist es null, behält eine "
+        + "vorhandene Buchung, die der übergebenen bis auf Zuschlag und Referenzen gleicht, ihren Zuschlag. Angeboten wird "
+        + "eine Art nur, wo der Unterauftrag einen Satz für sie hat; SATURDAY, SUNDAY und HOLIDAY nur an ihrem Tag. Den "
+        + "Satz bestimmt der Unterauftrag; ersetzt die Buchung eine gespeicherte derselben Art, behält sie deren Satz.",
         example = "NIGHT",
         nullable = true,
-        accessMode = Schema.AccessMode.READ_ONLY)
-    private SurchargeKind surchargeKind;
+        allowableValues = {"NIGHT", "SATURDAY", "SUNDAY", "HOLIDAY", ""})
+    private String surchargeKind;
 
     public static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
@@ -172,7 +178,7 @@ public class DailyReportData {
                 .ticketReference(timeReport.getTicketReferences().isEmpty() ? null : timeReport.getTicketReferences().getFirst())
                 .ticketReferences(List.copyOf(timeReport.getTicketReferences()))
                 .employeeSign(timeReport.getEmployeeSign())
-                .surchargeKind(timeReport.getSurchargeKind())
+                .surchargeKind(timeReport.getSurchargeKind() != null ? timeReport.getSurchargeKind().name() : null)
                 .build();
     }
 
@@ -223,6 +229,32 @@ public class DailyReportData {
             return ticketReferences;
         }
         return ticketReference != null ? List.of(ticketReference) : null;
+    }
+
+    /** This booking flagged with {@code kind}; {@code null} for none, which is also how one compares that says nothing. */
+    public DailyReportData withSurchargeKind(SurchargeKind kind) {
+        return toBuilder().surchargeKind(kind != null ? kind.name() : null).build();
+    }
+
+    /** Whether the booking says anything about its time surcharge flag (#1469), an empty text for "none" included. */
+    public boolean givesSurchargeKind() {
+        return surchargeKind != null;
+    }
+
+    /**
+     * The kind the booking names (#1469), {@code null} for none or nothing said.
+     *
+     * @throws InvalidDataException if the text names no kind
+     */
+    public SurchargeKind givenSurchargeKind() {
+        if (surchargeKind == null || surchargeKind.isBlank()) {
+            return null;
+        }
+        try {
+            return SurchargeKind.valueOf(surchargeKind.strip().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new InvalidDataException(TR_SURCHARGE_KIND_INVALID, surchargeKind);
+        }
     }
 
     /**

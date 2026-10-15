@@ -146,7 +146,8 @@ public class MyAccountsController {
         }
 
         model.addAttribute("balance", balance);
-        model.addAttribute("balanceSurcharge", overtimeStatus.isPresent() ? surchargeText(contract.getId()) : "");
+        // the share of the time surcharges in the balance (#1469), named under it where there is one
+        model.addAttribute("balanceSurchargeCredit", overtimeStatus.map(s -> s.getTotal().getSurchargeCredit()).orElse(null));
         model.addAttribute("balanceIsNegative", balanceIsNegative);
         model.addAttribute("balanceColorClass", balanceColorClass);
         model.addAttribute("previousYearCarryover", previousYearCarryover);
@@ -513,11 +514,5 @@ public class MyAccountsController {
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
             .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
-    }
-
-    /** The part of the balance that comes from time surcharges (#1469), empty without any. */
-    private String surchargeText(long employeecontractId) {
-        var surcharge = overtimeService.calculateSurchargeCreditTotal(employeecontractId, false);
-        return surcharge.isZero() ? "" : DurationUtils.formatSigned(surcharge);
     }
 }

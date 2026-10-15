@@ -37,6 +37,7 @@ import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
 import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.FavoriteShortListService;
+import de.hbt.salat.dailyreport.service.SurchargeChoice;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employee;
@@ -169,7 +170,8 @@ class DailyInlineTicketSuggestionTest {
         new MockHttpServletRequest(), new MockHttpServletResponse(), new ExtendedModelMap());
 
     verify(timereportService).createTimereports(eq(CONTRACT_ID), eq(EMPLOYEE_ORDER_ID), eq(DATE), eq("Review"),
-        eq(List.of("ABC-1", "ABC-2")), eq(false), eq(Duration.ofHours(1).plusMinutes(30)), anyInt());
+        eq(List.of("ABC-1", "ABC-2")), eq(false), eq(SurchargeChoice.DAY_PRESET), eq(Duration.ofHours(1).plusMinutes(30)),
+        anyInt());
   }
 
   private void editComment(String comment, String choice, List<String> adopted, ExtendedModelMap model) {

@@ -55,8 +55,10 @@ public class MoveTimereportsService {
     var byContract = groupByContract(timereports);
     var newOrders = computeNewEmployeeOrders(byContract, targetSuborderId, targetSuborder);
 
+    var surchargeChanges = surchargeChangesOf(timereports, targetSuborder);
+    boolean surchargesFit = surchargeChanges.stream().noneMatch(MoveTimereportsPreview.SurchargeChange::refused);
     return new MoveTimereportsPreview(timereports, newOrders, sourceSuborder, targetSuborder, fromDate, toDate,
-        mayMove(timereports));
+        mayMove(timereports) && surchargesFit, surchargeChanges);
   }
 
   public void move(
@@ -97,6 +99,21 @@ public class MoveTimereportsService {
           dto.getDuration(),
           true);
     }
+  }
+
+  /**
+   * What the move does to the time surcharge of each flagged booking (#1469): it takes the rate the target offers
+   * for its kind - saving refuses a kind the target does not offer, and the preview says so beforehand.
+   */
+  private static List<MoveTimereportsPreview.SurchargeChange> surchargeChangesOf(List<TimereportDTO> timereports,
+      Suborder targetSuborder) {
+    return timereports.stream()
+        .filter(timereport -> timereport.getSurchargeKind() != null)
+        .map(timereport -> {
+          var rate = targetSuborder.getOfferedSurchargeRate(timereport.getSurchargeKind());
+          return new MoveTimereportsPreview.SurchargeChange(timereport, rate != null ? rate.percent() : null);
+        })
+        .toList();
   }
 
   /**

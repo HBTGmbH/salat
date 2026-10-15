@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
@@ -26,6 +27,7 @@ import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -218,6 +220,14 @@ class TimereportServiceSurchargeTest {
     assertRefused(() -> create(WEEKDAY, NIGHT, Duration.ofHours(4)), TR_SURCHARGE_NOT_OFFERED);
   }
 
+  /** A vacation on a Saturday is no Saturday assignment: absences earn no surcharge, like standby. */
+  @Test
+  void an_absence_is_refused_a_surcharge() {
+    suborder.setOrderType(OrderType.KRANK_URLAUB_ABWESEND);
+
+    assertRefused(() -> create(A_SATURDAY, SATURDAY, Duration.ofHours(8)), TR_SURCHARGE_NOT_OFFERED);
+  }
+
   @Test
   void saturday_only_on_a_saturday() {
     assertRefused(() -> create(WEEKDAY, SATURDAY, Duration.ofHours(4)), TR_SURCHARGE_SATURDAY_ON_OTHER_DAY);
@@ -238,16 +248,16 @@ class TimereportServiceSurchargeTest {
   @Test
   void a_serial_booking_with_a_saturday_flag_is_refused_on_the_following_weekdays() {
     assertRefused(() -> timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, A_SATURDAY, "Kommentar",
-        List.of(), false, SATURDAY, Duration.ofHours(4), 2), TR_SURCHARGE_SATURDAY_ON_OTHER_DAY);
+        List.of(), false, SurchargeChoice.of(SATURDAY), Duration.ofHours(4), 2), TR_SURCHARGE_SATURDAY_ON_OTHER_DAY);
   }
 
   @Test
   void a_serial_night_booking_flags_every_day() {
     timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, WEEKDAY, "Kommentar",
-        List.of(), false, NIGHT, Duration.ofHours(4), 2);
+        List.of(), false, SurchargeChoice.of(NIGHT), Duration.ofHours(4), 2);
 
     var captor = ArgumentCaptor.forClass(Timereport.class);
-    verify(timereportRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+    verify(timereportRepository, times(2)).save(captor.capture());
     assertThat(captor.getAllValues()).allSatisfy(timereport -> {
       assertThat(timereport.getSurchargeKind()).isEqualTo(NIGHT);
       assertThat(timereport.getSurchargeCredit()).isEqualTo(Duration.ofHours(1));
@@ -333,6 +343,72 @@ class TimereportServiceSurchargeTest {
         WEEKDAY, "Kommentar", false, Duration.ofHours(4), true), TR_SURCHARGE_NOT_OFFERED);
   }
 
+  /* A holiday taken off the calendar after the booking was flagged must not lock the booking against every
+     change: on its own day it keeps its flag and its rate. */
+  @Test
+  void a_holiday_booking_stays_editable_where_the_day_is_no_holiday_any_more() {
+    var timereport = givenBooking(WEEKDAY, HOLIDAY, 100, Duration.ofHours(2));
+
+    timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, WEEKDAY, "neu", false,
+        Duration.ofHours(3));
+
+    assertThat(timereport.getSurchargeKind()).isEqualTo(HOLIDAY);
+    assertThat(timereport.getSurchargeCredit()).isEqualTo(Duration.ofHours(3));
+  }
+
+  @Test
+  void a_holiday_booking_moved_to_another_day_that_is_no_holiday_is_refused() {
+    givenBooking(WEEKDAY, HOLIDAY, 100, Duration.ofHours(2));
+
+    assertRefused(() -> timereportService.updateTimereport(TIMEREPORT_ID, EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID,
+        WEEKDAY.plusDays(1), "Kommentar", List.of(), false, HOLIDAY, Duration.ofHours(2)), TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY);
+  }
+
+  /** A favourite or "wie vorher" on a Saturday is flagged as the booking form preselects it. */
+  @Test
+  void a_one_click_booking_takes_the_kind_of_the_day() {
+    timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, A_SATURDAY, "Kommentar",
+        List.of(), false, SurchargeChoice.DAY_PRESET, Duration.ofHours(2), 1);
+
+    assertThat(saved().getSurchargeKind()).isEqualTo(SATURDAY);
+    assertThat(saved().getSurchargePercent()).isEqualTo(50);
+  }
+
+  @Test
+  void a_one_click_booking_on_a_weekday_or_without_a_rate_has_no_flag() {
+    suborder.setSurchargeRate(SUNDAY, SurchargeRate.of(0));
+
+    timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, WEEKDAY, "Kommentar",
+        List.of(), false, SurchargeChoice.DAY_PRESET, Duration.ofHours(2), 1);
+    timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, A_SUNDAY, "Kommentar",
+        List.of(), false, SurchargeChoice.DAY_PRESET, Duration.ofHours(2), 1);
+
+    var captor = ArgumentCaptor.forClass(Timereport.class);
+    verify(timereportRepository, times(2)).save(captor.capture());
+    assertThat(captor.getAllValues()).extracting(Timereport::getSurchargeKind).containsOnlyNulls();
+  }
+
+  /** An import creates a changed booking again; of the same kind it keeps the rate of the one it replaces. */
+  @Test
+  void a_booking_created_again_keeps_the_stored_rate_of_its_kind() {
+    customerorder.setSurchargeRate(NIGHT, new SurchargeRate(40, TWENTY, SIX));
+
+    timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, WEEKDAY, "Kommentar",
+        List.of(), false, SurchargeChoice.keeping(NIGHT, 25), Duration.ofHours(4), 1);
+
+    assertThat(saved().getSurchargePercent()).isEqualTo(25);
+    assertThat(saved().getSurchargeCredit()).isEqualTo(Duration.ofHours(1));
+  }
+
+  @Test
+  void the_preset_is_the_first_kind_of_the_day_on_offer() {
+    when(publicholidayDAO.getPublicHoliday(A_SUNDAY)).thenReturn(Optional.of(new Publicholiday(A_SUNDAY, "Ostersonntag")));
+
+    assertThat(timereportService.getPresetSurchargeKind(A_SUNDAY, Set.of(SUNDAY, HOLIDAY))).isEqualTo(HOLIDAY);
+    assertThat(timereportService.getPresetSurchargeKind(A_SUNDAY, Set.of(SUNDAY, NIGHT))).isEqualTo(SUNDAY);
+    assertThat(timereportService.getPresetSurchargeKind(WEEKDAY, Set.of(NIGHT))).isNull();
+  }
+
   @Test
   void the_kinds_of_a_day_holiday_before_saturday_or_sunday() {
     when(publicholidayDAO.getPublicHoliday(A_SUNDAY)).thenReturn(Optional.of(new Publicholiday(A_SUNDAY, "Ostersonntag")));
@@ -344,7 +420,7 @@ class TimereportServiceSurchargeTest {
 
   private void create(LocalDate day, SurchargeKind kind, Duration duration) {
     timereportService.createTimereports(EMPLOYEE_CONTRACT_ID, EMPLOYEE_ORDER_ID, day, "Kommentar",
-        List.of(), false, kind, duration, 1);
+        List.of(), false, SurchargeChoice.of(kind), duration, 1);
   }
 
   private void assertRefused(Runnable call, ErrorCode errorCode) {

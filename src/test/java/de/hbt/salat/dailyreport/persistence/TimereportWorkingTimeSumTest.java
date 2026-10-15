@@ -20,6 +20,7 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
+import de.hbt.salat.dailyreport.domain.ReportedMinutes;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
@@ -136,26 +137,27 @@ public class TimereportWorkingTimeSumTest {
     book(suborder, 1, null, null);
 
     assertThat(reportedMinutes()).isEqualTo(480);
-    assertThat(timereportRepository.getSurchargeCreditMinutesForEmployeecontractAndBetween(
-        contract.getId(), DAY.minusDays(1), DAY.plusDays(1))).contains(150L);
+    assertThat(reported().surchargeCreditMinutes()).isEqualTo(150L);
     var months = timereportRepository.getReportedMinutesByMonthForEmployeecontract(
         contract.getId(), DAY.withDayOfMonth(1), DAY.withDayOfMonth(30));
     assertThat(months.getFirst().minutes()).isEqualTo(480);
-    assertThat(months.getFirst().surchargeMinutes()).isEqualTo(150);
+    assertThat(months.getFirst().surchargeCreditMinutes()).isEqualTo(150);
   }
 
   @Test
   public void a_range_without_flagged_bookings_has_no_credit() {
     book(suborder(standardOrder, "so", null), 8);
 
-    assertThat(timereportRepository.getSurchargeCreditMinutesForEmployeecontractAndBetween(
-        contract.getId(), DAY.minusDays(1), DAY.plusDays(1))).contains(0L);
+    assertThat(reported().surchargeCreditMinutes()).isZero();
   }
 
   private Long reportedMinutes() {
+    return reported().workingTime().toMinutes();
+  }
+
+  private ReportedMinutes reported() {
     return timereportRepository
-        .getReportedMinutesForEmployeecontractAndBetween(contract.getId(), DAY.minusDays(1), DAY.plusDays(1))
-        .orElse(0L);
+        .getReportedMinutesForEmployeecontractAndBetween(contract.getId(), DAY.minusDays(1), DAY.plusDays(1));
   }
 
   private void book(Suborder suborder, int hours) {

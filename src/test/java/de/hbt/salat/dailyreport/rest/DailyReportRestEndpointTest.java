@@ -39,6 +39,7 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.BookingOrderResolver;
 import de.hbt.salat.dailyreport.service.DailyWorkingReportService;
+import de.hbt.salat.dailyreport.service.SurchargeChoice;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employee;
@@ -46,6 +47,7 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.service.EmployeeorderService;
 
 @ExtendWith(MockitoExtension.class)
@@ -265,7 +267,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                List.of(), false, Duration.ofHours(1), 1);
+                List.of(), false, SurchargeChoice.NONE, Duration.ofHours(1), 1);
     }
 
     @Test
@@ -300,7 +302,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                List.of(), false, Duration.ofHours(1), 1);
+                List.of(), false, SurchargeChoice.NONE, Duration.ofHours(1), 1);
     }
 
     @Test
@@ -373,7 +375,32 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                List.of("ERP-1"), false, Duration.ofHours(1), 1);
+                List.of("ERP-1"), false, SurchargeChoice.NONE, Duration.ofHours(1), 1);
+    }
+
+    /* The time surcharge flag is written like the ticket references (#1469): a kind's name sets it. */
+    @Test
+    void shouldCreateBookingWithSurchargeKind() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var booking = valueOf(TimereportDTO.builder()
+                .employeeorderId(1L).referenceday(day)
+                .taskdescription("test").duration(Duration.ofHours(1))
+                .surchargeKind(SurchargeKind.SATURDAY)
+                .build());
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeeorderService.getEmployeeorderById(1L)).thenReturn(employeeOrder);
+
+        // when
+        dailyReportRestEndpoint.createBooking(booking);
+
+        // then
+        assertThat(booking.getSurchargeKind()).isEqualTo("SATURDAY");
+        verify(timereportService, times(1)).createTimereports(
+                employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
+                List.of(), false, SurchargeChoice.of(SurchargeKind.SATURDAY), Duration.ofHours(1), 1);
     }
 
     /* The length check sits in the service; over the API its rejection is the caller's error (#1140). */
@@ -391,7 +418,8 @@ class DailyReportRestEndpointTest {
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(employeeorderService.getEmployeeorderById(1L)).thenReturn(employeeOrder);
         doThrow(new InvalidDataException(TR_TICKET_REFERENCE_INVALID_LENGTH)).when(timereportService).createTimereports(
-                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
+                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(SurchargeChoice.class), any(Duration.class),
+                anyInt());
 
         // when
         assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))
@@ -419,7 +447,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                null, false, Duration.ofHours(1), 1);
+                null, false, SurchargeChoice.NONE, Duration.ofHours(1), 1);
     }
 
     /* A client that sends the id together with signs of an older read keeps working: the id wins, and the
@@ -443,7 +471,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService).createTimereports(
                 employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
-                null, false, Duration.ofHours(1), 1);
+                null, false, SurchargeChoice.NONE, Duration.ofHours(1), 1);
         verifyNoInteractions(bookingOrderResolver);
     }
 
@@ -481,7 +509,8 @@ class DailyReportRestEndpointTest {
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(bookingOrderResolver.resolve(booking, day)).thenReturn(employeeOrder);
         doThrow(new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE)).when(timereportService).createTimereports(
-                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
+                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(SurchargeChoice.class), any(Duration.class),
+                anyInt());
 
         // when / then
         assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))

@@ -147,7 +147,7 @@ class DailyWorkingReportServiceImportTest {
     var report = service.updateReports(read(csv), employee);
 
     assertThat(csv).startsWith("date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
-        + "workingTime,comment,ticketReference,training,employeeSign,surcharge\n");
+        + "workingTime,comment,ticketReference,training,employeeSign,surchargeKind\n");
     assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser,\n", ",07:30,Daily,,true,testuser,\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
@@ -209,7 +209,7 @@ class DailyWorkingReportServiceImportTest {
         """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, Duration.ofMinutes(45), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(45), 1);
   }
 
   @Test
@@ -222,7 +222,7 @@ class DailyWorkingReportServiceImportTest {
         """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-2"), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-2"), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
     assertThat(report.days()).singleElement().satisfies(day ->
         assertThat(day.bookingsUpdated()).singleElement().satisfies(updated -> {
           assertThat(updated.from().ticketReferences()).containsExactly("ERP-1");
@@ -241,7 +241,7 @@ class DailyWorkingReportServiceImportTest {
         """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   @Test
@@ -253,7 +253,7 @@ class DailyWorkingReportServiceImportTest {
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ERP-1
         """), employee);
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-1"), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-1"), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   /* Several references in one cell become the references of the booking, normalized (#1326). */
@@ -267,7 +267,7 @@ class DailyWorkingReportServiceImportTest {
         """), employee);
 
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-1", "ERP-2"),
-        false, Duration.ofMinutes(30), 1);
+        false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   /* A file without the column keeps every reference of a booking that is otherwise the same (#1140, #1326). */
@@ -280,7 +280,8 @@ class DailyWorkingReportServiceImportTest {
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag
         """), employee);
 
-    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
+    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(SurchargeChoice.class),
+        any(Duration.class), anyInt());
     verify(timereportService, never()).deleteTimereportsById(any());
   }
 
@@ -335,6 +336,92 @@ class DailyWorkingReportServiceImportTest {
     });
   }
 
+  /* PUT /list deletes the bookings of the day and creates them again (#1469): a client that does not
+     know the flag must not take it away from a booking it sends back unchanged. */
+  @Test
+  void replacing_via_the_api_keeps_the_surcharge_flag_of_a_booking_without_the_field() {
+    stored(bookingBuilder(1L, "Störung", 240, List.of(), false)
+        .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build());
+
+    service.replaceDailyReports(DAY, employeeorder, List.of(
+        DailyReportData.valueOf(booking(1L, "Störung", 240, null)).withoutId().withTicketReferences(null)));
+
+    verify(timereportService).deleteTimeReports(DAY, ORDER_ID);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Störung", List.of(), false,
+        SurchargeChoice.keeping(SurchargeKind.NIGHT, 25), Duration.ofHours(4), 1);
+  }
+
+  /* A changed booking is created again; the flag the file names comes along (#1469). */
+  @Test
+  void a_changed_booking_keeps_the_surcharge_flag_the_file_names() throws IOException {
+    stored(bookingBuilder(1L, "Störung", 240, List.of(), false)
+        .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build());
+
+    service.updateReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference,surchargeKind
+        2024-11-04,WORKED,09:00,00:30,183209,04:00,Störung behoben,,NIGHT
+        """), employee);
+
+    verify(timereportService).deleteTimereportsById(List.of(1L));
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Störung behoben", List.of(), false,
+        SurchargeChoice.keeping(SurchargeKind.NIGHT, 25), Duration.ofHours(4), 1);
+  }
+
+  /* An empty cell is not a missing column: it says "no surcharge" and replaces the flagged booking (#1469). */
+  @Test
+  void an_empty_surcharge_cell_removes_the_flag() throws IOException {
+    stored(flaggedBooking());
+
+    service.updateReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference,surchargeKind
+        2024-11-04,WORKED,09:00,00:30,183209,04:00,Störung,,
+        """), employee);
+
+    verify(timereportService).deleteTimereportsById(List.of(1L));
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Störung", List.of(), false,
+        SurchargeChoice.NONE, Duration.ofHours(4), 1);
+  }
+
+  /* An older file without the column says nothing about the flag: the unchanged booking stays as it is. */
+  @Test
+  void a_file_without_the_surcharge_column_leaves_a_flagged_booking_alone() throws IOException {
+    stored(flaggedBooking());
+
+    var report = service.updateReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        2024-11-04,WORKED,09:00,00:30,183209,04:00,Störung,
+        """), employee);
+
+    assertNothingCreatedOrDeleted();
+    assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
+  }
+
+  @Test
+  void a_new_booking_is_flagged_as_the_file_says_at_the_rate_offered() throws IOException {
+    stored();
+
+    service.createReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,surchargeKind
+        2024-11-04,WORKED,09:00,00:30,183209,02:00,Rufeinsatz,night
+        """), employee);
+
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Rufeinsatz", List.of(), false,
+        SurchargeChoice.of(SurchargeKind.NIGHT), Duration.ofHours(2), 1);
+  }
+
+  @Test
+  void rejects_a_surcharge_that_names_no_kind() {
+    stored();
+
+    assertThatThrownBy(() -> service.createReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,surchargeKind
+        2024-11-04,WORKED,09:00,00:30,183209,02:00,Rufeinsatz,WEEKEND
+        """), employee))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+            assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(ErrorCode.TR_SURCHARGE_KIND_INVALID));
+    assertNothingCreatedOrDeleted();
+  }
+
   /* PUT /list replaces the bookings of the day and order; a client that does not know the field
      must not delete the references it never saw. */
   @Test
@@ -345,7 +432,7 @@ class DailyWorkingReportServiceImportTest {
         DailyReportData.valueOf(booking(1L, "Team-Mittag", 30, null)).withoutId().withTicketReferences(null)));
 
     verify(timereportService).deleteTimeReports(DAY, ORDER_ID);
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-1"), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of("ERP-1"), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   @Test
@@ -356,7 +443,7 @@ class DailyWorkingReportServiceImportTest {
         DailyReportData.valueOf(booking(1L, "Team-Mittag", 30, null)).withoutId().withTicketReferences(null)
             .toBuilder().ticketReference("").build()));
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   @Test
@@ -368,7 +455,7 @@ class DailyWorkingReportServiceImportTest {
         2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung,true
         """), employee);
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", List.of(), true, Duration.ofHours(1), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", List.of(), true, SurchargeChoice.NONE, Duration.ofHours(1), 1);
   }
 
   /* The agreed fallback: without the column a booking is an ordinary one, so replacing turns a
@@ -383,7 +470,7 @@ class DailyWorkingReportServiceImportTest {
         """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", List.of(), false, Duration.ofHours(1), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", List.of(), false, SurchargeChoice.NONE, Duration.ofHours(1), 1);
     assertThat(report.days()).singleElement().satisfies(day ->
         assertThat(day.bookingsUpdated()).singleElement().satisfies(updated -> {
           assertThat(updated.from().training()).isTrue();
@@ -402,7 +489,7 @@ class DailyWorkingReportServiceImportTest {
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag,testuser
         """), employee);
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   /* The order is resolved before the bookings are grouped and compared: a file naming the orders by
@@ -457,8 +544,9 @@ class DailyWorkingReportServiceImportTest {
         2024-11-05,WORKED,09:00,00:30,111/01,00:45,neuer Vertrag
         """), employee);
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "alter Vertrag", List.of(), false, Duration.ofMinutes(30), 1);
-    verify(timereportService).createTimereports(8L, 183210L, nextDay, "neuer Vertrag", List.of(), false, Duration.ofMinutes(45), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "alter Vertrag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(8L, 183210L, nextDay, "neuer Vertrag", List.of(), false, SurchargeChoice.NONE,
+        Duration.ofMinutes(45), 1);
   }
 
   @Test
@@ -511,7 +599,7 @@ class DailyWorkingReportServiceImportTest {
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
         """), employee);
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   @Test
@@ -552,7 +640,7 @@ class DailyWorkingReportServiceImportTest {
 
     service.createReports(List.of(report));
 
-    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, Duration.ofMinutes(30), 1);
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", List.of(), false, SurchargeChoice.NONE, Duration.ofMinutes(30), 1);
   }
 
   /* Without an id the API names the order by its signs; a missing employee sign is the one logged in. */
@@ -616,7 +704,7 @@ class DailyWorkingReportServiceImportTest {
     var inOrder = inOrder(timereportService);
     inOrder.verify(timereportService, times(2)).deleteTimereportsById(any());
     inOrder.verify(timereportService, times(2)).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(),
-        any(Duration.class), anyInt());
+        any(SurchargeChoice.class), any(Duration.class), anyInt());
   }
 
   // fixtures
@@ -726,8 +814,14 @@ class DailyWorkingReportServiceImportTest {
         .training(training);
   }
 
+  private static TimereportDTO flaggedBooking() {
+    return bookingBuilder(1L, "Störung", 240, List.of(), false)
+        .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build();
+  }
+
   private void assertNothingCreatedOrDeleted() {
     verify(timereportService, never()).deleteTimereportsById(any());
-    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(Duration.class), anyInt());
+    verify(timereportService, never()).createTimereports(anyLong(), anyLong(), any(), any(), any(), anyBoolean(), any(SurchargeChoice.class),
+        any(Duration.class), anyInt());
   }
 }

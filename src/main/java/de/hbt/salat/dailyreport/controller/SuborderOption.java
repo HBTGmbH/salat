@@ -30,30 +30,6 @@ public record SuborderOption(Long id, String sign, String description, String la
                              boolean standby, TicketReferencePolicy ticketReferencePolicy,
                              Map<SurchargeKind, SurchargeRate> surchargeRates) {
 
-    /** Without any time surcharge. */
-    public SuborderOption(Long id, String sign, String description, String label, String subtext,
-                          boolean commentNecessary, boolean trainingFlag, boolean absence,
-                          boolean standby, TicketReferencePolicy ticketReferencePolicy) {
-        this(id, sign, description, label, subtext, commentNecessary, trainingFlag, absence, standby,
-            ticketReferencePolicy, Map.of());
-    }
-
-    /** The rate of {@code kind} a booking on it may be flagged with, {@code null} where it is not offered. */
-    public SurchargeRate surchargeRate(SurchargeKind kind) {
-        return surchargeRates.get(kind);
-    }
-
-    /** {@link #surchargeRate(SurchargeKind)} by name, as the booking form asks. */
-    public SurchargeRate surchargeRate(String kind) {
-        return surchargeRate(SurchargeKind.valueOf(kind));
-    }
-
-    /** The percent of {@code kind}, {@code null} where it is not offered. */
-    public Integer surchargePercent(String kind) {
-        var rate = surchargeRate(kind);
-        return rate != null ? rate.percent() : null;
-    }
-
     /**
      * What the contract can book on the day: the suborders of its employee orders valid then. The
      * booking form offers exactly these, and so does the palette's {@code buchen} (#1158) — one source,

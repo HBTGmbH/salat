@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -221,7 +222,7 @@ class TimereportTicketSuggestionTest {
 
   private void givenPolicy(TicketReferencePolicy policy) {
     when(suborderService.getSuborderSummaries(CONTRACT_ID, ORDER_ID, DATE))
-        .thenReturn(List.of(new SuborderSummary(SUBORDER_ID, "4711/01", "Entwicklung", false, false, policy)));
+        .thenReturn(List.of(new SuborderSummary(SUBORDER_ID, "4711/01", "Entwicklung", false, false, policy, Map.of())));
   }
 
   private void verifyCreatedWith(List<String> references) {

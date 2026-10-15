@@ -40,6 +40,11 @@ public class OvertimeStatus {
 
     @Schema(description = "Gibt an, ob es sich um negative Überstunden (=Unterstunden) handelt", example = "false")
     private boolean negative;
+
+    /** The share of the time surcharges in {@link #duration} (#1469). */
+    @Schema(description = "Darin enthaltene Zeitgutschrift aus Nacht-, Wochenend- und Feiertagseinsätzen als Duration",
+        example = "PT2H30M")
+    private Duration surchargeCredit;
   }
 
 }

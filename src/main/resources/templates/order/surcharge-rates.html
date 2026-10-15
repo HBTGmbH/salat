@@ -4,66 +4,67 @@
 
 <!--/* The time surcharge rates (#1469), the same fields on the order and the suborder form. On the order
        an empty percent means no surcharge of that kind, on a suborder it inherits, and the hint under
-       the field says what. The night times belong to the night rate and only count with it. */-->
+       the field says what. The night times belong to the night rate and only count with it: a night
+       percent above 0 makes them required (data-surcharge-night-percent, handled in salat.js). The unit
+       stands next to the number as in the ticket reference setting of the same forms (#1326). */-->
 <fieldset th:fragment="ratesInput(inheritable)" class="mb-3">
-  <legend class="form-label" th:text="#{main.surcharge.section.title}">Zeitzuschläge aufs Zeitkonto</legend>
+  <legend class="form-label" th:text="#{main.surcharge.section.title}">Zeitzuschläge aufs Arbeitszeitkonto</legend>
   <div class="row g-2">
-    <div class="col-sm-4">
-      <label class="form-label fw-normal" for="surchargeNightPercent" th:text="#{main.surcharge.kind.night}">Nacht</label>
-      <div class="input-group">
+    <div class="col-md-4">
+      <label class="form-label" for="surchargeNightPercent" th:text="#{main.surcharge.kind.night}">Nacht</label>
+      <div class="input-group" th:classappend="${#fields.hasErrors('surchargeRates.nightPercent')} ? 'has-validation'">
         <input type="number" class="form-control" id="surchargeNightPercent" min="0" max="1000" step="1"
-               th:field="*{surcharges.nightPercent}"
+               th:field="*{surchargeRates.nightPercent}" th:errorclass="is-invalid"
+               data-surcharge-night-percent
                th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
         <span class="input-group-text">%</span>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('surchargeRates.nightPercent')}"
+             th:errors="*{surchargeRates.nightPercent}"></div>
       </div>
     </div>
-    <div class="col-6 col-sm-4">
-      <label class="form-label fw-normal" for="surchargeNightFrom" th:text="#{main.surcharge.night.from}">von</label>
-      <input type="time" class="form-control" id="surchargeNightFrom" th:field="*{surcharges.nightFrom}"/>
+    <div class="col-6 col-md-4">
+      <label class="form-label" for="surchargeNightFrom" th:text="#{main.surcharge.night.from}">Nacht von</label>
+      <input type="text" class="form-control" id="surchargeNightFrom" th:field="*{surchargeRates.nightFrom}"
+             th:errorclass="is-invalid" data-surcharge-night-time
+             oninput="timeMask(event)" onblur="timeBlur(event)"
+             inputmode="numeric" maxlength="5" placeholder="HH:MM"
+             data-time-mode="time" data-time-step="15"
+             th:attr="data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                      data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('surchargeRates.nightFrom')}"
+           th:errors="*{surchargeRates.nightFrom}"></div>
     </div>
-    <div class="col-6 col-sm-4">
-      <label class="form-label fw-normal" for="surchargeNightUntil" th:text="#{main.surcharge.night.until}">bis</label>
-      <input type="time" class="form-control" id="surchargeNightUntil" th:field="*{surcharges.nightUntil}"/>
+    <div class="col-6 col-md-4">
+      <label class="form-label" for="surchargeNightUntil" th:text="#{main.surcharge.night.until}">bis</label>
+      <input type="text" class="form-control" id="surchargeNightUntil" th:field="*{surchargeRates.nightUntil}"
+             th:errorclass="is-invalid" data-surcharge-night-time
+             oninput="timeMask(event)" onblur="timeBlur(event)"
+             inputmode="numeric" maxlength="5" placeholder="HH:MM"
+             data-time-mode="time" data-time-step="15"
+             th:attr="data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                      data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('surchargeRates.nightUntil')}"
+           th:errors="*{surchargeRates.nightUntil}"></div>
     </div>
   </div>
   <th:block th:if="${inheritable}">
     <small th:replace="~{:: inheritedHint(kind='NIGHT', oob=false)}"></small>
   </th:block>
   <div class="row g-2 mt-1">
-    <div class="col-sm-4">
-      <label class="form-label fw-normal" for="surchargeSaturdayPercent" th:text="#{main.surcharge.kind.saturday}">Samstag</label>
-      <div class="input-group">
-        <input type="number" class="form-control" id="surchargeSaturdayPercent" min="0" max="1000" step="1"
-               th:field="*{surcharges.saturdayPercent}"
+    <div class="col-md-4" th:each="field : ${ {'saturday', 'sunday', 'holiday'} }"
+         th:with="path=|surchargeRates.${field}Percent|">
+      <label class="form-label" th:for="|surcharge${#strings.capitalize(field)}Percent|"
+             th:text="#{|main.surcharge.kind.${field}|}">Samstag</label>
+      <div class="input-group" th:classappend="${#fields.hasErrors(path)} ? 'has-validation'">
+        <input type="number" class="form-control" th:id="|surcharge${#strings.capitalize(field)}Percent|"
+               min="0" max="1000" step="1"
+               th:field="*{__${path}__}" th:errorclass="is-invalid"
                th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
         <span class="input-group-text">%</span>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors(path)}" th:errors="*{__${path}__}"></div>
       </div>
       <th:block th:if="${inheritable}">
-        <small th:replace="~{:: inheritedHint(kind='SATURDAY', oob=false)}"></small>
-      </th:block>
-    </div>
-    <div class="col-sm-4">
-      <label class="form-label fw-normal" for="surchargeSundayPercent" th:text="#{main.surcharge.kind.sunday}">Sonntag</label>
-      <div class="input-group">
-        <input type="number" class="form-control" id="surchargeSundayPercent" min="0" max="1000" step="1"
-               th:field="*{surcharges.sundayPercent}"
-               th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
-        <span class="input-group-text">%</span>
-      </div>
-      <th:block th:if="${inheritable}">
-        <small th:replace="~{:: inheritedHint(kind='SUNDAY', oob=false)}"></small>
-      </th:block>
-    </div>
-    <div class="col-sm-4">
-      <label class="form-label fw-normal" for="surchargeHolidayPercent" th:text="#{main.surcharge.kind.holiday}">Feiertag</label>
-      <div class="input-group">
-        <input type="number" class="form-control" id="surchargeHolidayPercent" min="0" max="1000" step="1"
-               th:field="*{surcharges.holidayPercent}"
-               th:placeholder="${inheritable} ? #{main.surcharge.inherit.placeholder} : null"/>
-        <span class="input-group-text">%</span>
-      </div>
-      <th:block th:if="${inheritable}">
-        <small th:replace="~{:: inheritedHint(kind='HOLIDAY', oob=false)}"></small>
+        <small th:replace="~{:: inheritedHint(kind=${#strings.toUpperCase(field)}, oob=false)}"></small>
       </th:block>
     </div>
   </div>

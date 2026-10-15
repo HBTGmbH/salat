@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -86,11 +87,32 @@ public class TimereportDTO implements Serializable {
   }
 
   /**
+   * The time surcharge credit as the overtime account counts it (#1469): none on standby, which is no working
+   * time — a flag kept from before its order became standby earns nothing there either.
+   */
+  public Duration getCountedSurchargeCredit() {
+    return isStandby() ? Duration.ZERO : surchargeCredit;
+  }
+
+  /**
    * What the booking adds to the time account and holds against the target: its working time plus its time
    * surcharge credit (#1469), as the overtime account counts it. The booked hours stay {@link #getWorkingTime}.
    */
-  public Duration getTimeAccountCredit() {
-    return getWorkingTime().plus(surchargeCredit);
+  public Duration getTimeAccountTime() {
+    return getWorkingTime().plus(getCountedSurchargeCredit());
+  }
+
+  /** {@link #getTimeAccountTime} of {@code timereports} up to {@code until} - what matrix and month hold against the target. */
+  public static Duration timeAccountTimeUntil(Collection<TimereportDTO> timereports, LocalDate until) {
+    return timereports.stream()
+        .filter(r -> !r.getReferenceday().isAfter(until))
+        .map(TimereportDTO::getTimeAccountTime)
+        .reduce(Duration.ZERO, Duration::plus);
+  }
+
+  /** {@link #getCountedSurchargeCredit} of {@code timereports} - the sum next to a total. */
+  public static Duration surchargeCreditOf(Collection<TimereportDTO> timereports) {
+    return timereports.stream().map(TimereportDTO::getCountedSurchargeCredit).reduce(Duration.ZERO, Duration::plus);
   }
 
 }

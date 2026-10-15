@@ -46,6 +46,7 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.BookingOrderResolver;
 import de.hbt.salat.dailyreport.service.DailyWorkingReportService;
+import de.hbt.salat.dailyreport.service.SurchargeChoice;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.EmployeecontractPeriod;
@@ -263,6 +264,7 @@ public class DailyReportRestEndpoint {
                 booking.getComment(),
                 booking.givenTicketReferences(),
                 booking.isTraining(),
+                SurchargeChoice.of(booking.givenSurchargeKind()),
                 booking.toDuration(),
                 1
         );

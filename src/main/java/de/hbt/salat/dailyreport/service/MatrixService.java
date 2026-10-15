@@ -98,6 +98,11 @@ public class MatrixService {
             ? timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast)
             : Map.of();
 
+        // the time surcharge credit of the day (#1469), a row of its own above the sum row
+        Map<LocalDate, Duration> surchargeCreditByDay = reports.stream()
+            .collect(Collectors.groupingBy(TimereportDTO::getReferenceday,
+                Collectors.reducing(Duration.ZERO, TimereportDTO::getCountedSurchargeCredit, Duration::plus)));
+
         List<MatrixData.FooterDay> footerDays = days.stream()
             .map(d -> {
                 Duration duration = durationByDay.getOrDefault(d, Duration.ZERO);
@@ -125,7 +130,8 @@ public class MatrixService {
                     endString,
                     beginErrors.containsKey(d),
                     breakErrors.containsKey(d),
-                    workingdayService.checkLaborTimeMaximum(duration));
+                    workingdayService.checkLaborTimeMaximum(duration),
+                    surchargeCreditByDay.getOrDefault(d, Duration.ZERO));
             })
             .toList();
 
@@ -146,7 +152,7 @@ public class MatrixService {
         if (hasTarget) {
             Duration target = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, dateLast);
             // the time surcharges count against the target as on the time account (#1469), GESAMT stays booked time
-            Duration diff = timeAccountCredit(reports, dateLast).minus(target);
+            Duration diff = TimereportDTO.timeAccountTimeUntil(reports, dateLast).minus(target);
             targetString = DurationUtils.format(target);
             diffString = (diff.isNegative() ? "" : "+") + DurationUtils.format(diff);
             diffNegative = diff.isNegative();
@@ -158,20 +164,14 @@ public class MatrixService {
             var cutoff = today.minusDays(1);
             if (!cutoff.isBefore(dateFirst)) {
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, cutoff);
-                Duration prevDayDiff = timeAccountCredit(reports, cutoff).minus(targetPrevDay);
+                Duration prevDayDiff = TimereportDTO.timeAccountTimeUntil(reports, cutoff).minus(targetPrevDay);
                 prevDayDiffString = (prevDayDiff.isNegative() ? "" : "+") + DurationUtils.format(prevDayDiff);
                 prevDayDiffNegative = prevDayDiff.isNegative();
             }
         }
 
-        Map<LocalDate, Duration> surchargeByDay = reports.stream()
-            .collect(Collectors.groupingBy(TimereportDTO::getReferenceday,
-                Collectors.reducing(Duration.ZERO, TimereportDTO::getSurchargeCredit, Duration::plus)));
-        var surchargeDays = days.stream().map(d -> surchargeByDay.getOrDefault(d, Duration.ZERO)).toList();
-        var surchargeTotal = surchargeDays.stream().reduce(Duration.ZERO, Duration::plus);
-
         return new MatrixData(dayHeaders, rows, standbyRows, footerDays, totalString, targetString, diffString, diffNegative,
-            prevDayDiffString, prevDayDiffNegative, surchargeDays, surchargeTotal);
+            prevDayDiffString, prevDayDiffNegative, TimereportDTO.surchargeCreditOf(reports));
     }
 
     /**
@@ -284,14 +284,6 @@ public class MatrixService {
         }
 
         return new MatrixData.Row(customerOrderSign, suborderSign, customer, customerOrderDesc, suborderDesc, cells, DurationUtils.format(rowTotal));
-    }
-
-    /** Working time plus time surcharge credit of the bookings up to {@code until} (#1469). */
-    private static Duration timeAccountCredit(List<TimereportDTO> reports, LocalDate until) {
-        return reports.stream()
-            .filter(r -> !r.getReferenceday().isAfter(until))
-            .map(TimereportDTO::getTimeAccountCredit)
-            .reduce(Duration.ZERO, Duration::plus);
     }
 
     private String weekdayKey(DayOfWeek dow) {

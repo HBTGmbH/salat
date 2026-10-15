@@ -730,6 +730,12 @@ tragen dunkle Schrift auf voller Farbe. Großflächige getönte Bereiche bleiben
 | Standard | `bg-warning-lt` | `bi-bookmark-star-fill` |
 | Kommentar erforderlich | `bg-danger-lt` | `bi-chat-square-text` |
 | Schulung | `bg-purple-lt` | `bi-mortarboard` |
+| Zeitzuschlag (#1469): der Auftrag hat einen Satz über 0, auf dem Unterauftrag lässt sich einer buchen | `bg-teal-lt` | `bi-percent` |
+
+An einer **Buchung** zeigt die Zeitzuschlags-Plakette kein Icon, sondern die Gutschrift aufs
+Arbeitszeitkonto (`+1:30`) — entscheidend ist die Menge, nicht die Art. Art und Satz stehen im
+`title` („Zuschlag: Sonntag 100 % +2:30“), ein `visually-hidden` „Zeitzuschlag“ sagt einem Screenreader,
+wofür die Zahl steht. Summenzeilen tragen dieselbe Plakette mit der Summe.
 
 Für Manager ist die `hide`-Badge ein **klickbarer Inline-Toggle** (HTMX-POST, tauscht nur die
 Zelle) — realisiert in `fragments/hide-toggle.html`, dem einzigen verbliebenen Fragment mit
@@ -1136,15 +1142,16 @@ Dialog gezeigt und sein Inhalt geladen ist.
 | Ja/Nein | `input type="checkbox"` in `form-check form-switch` | 42 | **immer als Schalter**, nie als klassische Checkbox-Optik |
 | Datum | `input type="date"` | 19 | **native Browser-Datumsauswahl**, kein JS-Datepicker im Projekt |
 | Monat | `input type="month"` | 6 | für monatsbezogene Vorgänge (Freigabe, Abnahme, Rechnung, Matrix) |
-| Uhrzeit | `input type="text"` + `data-time-mode="time"` | 4 | Von/Bis der Buchungserfassung, Start der Tagesansicht; native `type="time"` nur noch für den Arbeitsbeginn in den Einstellungen |
+| Uhrzeit | `input type="text"` + `data-time-mode="time"` | 6 | Von/Bis der Buchungserfassung, Start der Tagesansicht, Beginn und Ende der Nacht an Auftrag und Unterauftrag (#1469); native `type="time"` nur noch für den Arbeitsbeginn in den Einstellungen |
 | Dauer | `input type="text"` + Eingabemaske | — | Sonderfall, siehe unten |
 | Zahl | `input type="number"` | 3 | mit `step="0.01"` (Betrag) bzw. `min="0" max="100"` (Prozent) |
 | Geldbetrag | `input type="text"` | — | `priceEuro` / `costEuro` als **Text**, Einheit nur im Label („€/h") |
 | Datei | `input type="file"` | 2 | CSV-Import, Umsatz-Upload |
 | Einfachauswahl aus 2 Optionen | `input type="radio"` | 2 | seltene Ausnahme |
 
-**Kein** Datentyp verwendet `input-group` (Prefix/Suffix-Addons) — Einheiten wie €, Stunden oder
-Prozent stehen ausschließlich im Label, nicht am Feld.
+Einheiten wie €, Stunden oder Prozent stehen im Label, nicht am Feld. Ausnahme sind die Zahlen der
+Auftragseinstellungen, deren Feld ohne Einheit nichts sagt: die Grenze der Ticket-Referenzen (#1326,
+„Stück") und die Sätze der Zeitzuschläge (#1469, „%") tragen sie als `input-group-text`.
 
 ### Dauer — der Sonderfall
 
@@ -1194,6 +1201,7 @@ ohne Format-Hinweis.
 | `secondary` (grau) | neutral/inaktiv, Abbrechen |
 | `purple` | Rollen-Badge, Schulung, „Beta"-Markierung |
 | `azure` / `blue` | informative Kennzeichnung in Listen; `azure` zusätzlich Wochenende und „Nicht gearbeitet" (freie Tage) |
+| `teal` | Zeitzuschläge (#1469): Plakette mit der Gutschrift an der Buchung, Flag an Auftrag und Unterauftrag; daneben „freigegeben bis" in der Monatstabelle von „Meine Konten" (`bi-send`). Als Füllung gemessen ([§7.1](#badges-gefüllt-statt-getönt)); Zahlen in Tabellenzellen bleiben in der Textfarbe, weil sie auf den getönten Wochenend- und Feiertagsspalten der Matrix stehen |
 
 `bg-*-lt` für Badges und getönte Flächen — an einer Badge färbt die Klasse allerdings voll, nicht
 getönt ([§7.1](#badges-gefüllt-statt-getönt)). `text-*` für Zahlen und Fließtext-Akzente,

@@ -14,11 +14,4 @@ import java.util.Map;
 public record SuborderSummary(Long id, String completeOrderSign,
                                String shortdescription, boolean commentNecessary,
                                boolean trainingFlag, TicketReferencePolicy ticketReferencePolicy,
-                               Map<SurchargeKind, SurchargeRate> surchargeRates) {
-
-  /** Without any time surcharge. */
-  public SuborderSummary(Long id, String completeOrderSign, String shortdescription, boolean commentNecessary,
-                         boolean trainingFlag, TicketReferencePolicy ticketReferencePolicy) {
-    this(id, completeOrderSign, shortdescription, commentNecessary, trainingFlag, ticketReferencePolicy, Map.of());
-  }
-}
+                               Map<SurchargeKind, SurchargeRate> surchargeRates) {}

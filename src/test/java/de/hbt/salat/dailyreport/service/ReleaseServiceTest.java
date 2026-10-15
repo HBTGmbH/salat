@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -1639,7 +1640,7 @@ class ReleaseServiceTest {
             final var contract = releasableContract();
             contract.setDailyWorkingTime(Duration.ofHours(8));
             givenBookings(MONDAY, FRIDAY, week());
-            final var balance = new OvertimeBalance(Duration.ofHours(40), Duration.ofHours(40), Duration.ZERO, Duration.ZERO);
+            final var balance = new OvertimeBalance(Duration.ofHours(40), Duration.ofHours(40), Duration.ZERO, Duration.ZERO, Duration.ZERO);
             when(overtimeService.calculateOvertimeBalance(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(Optional.of(balance));
 
             final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
@@ -2377,7 +2378,7 @@ class ReleaseServiceTest {
             final var contract = acceptableContract();
             contract.setDailyWorkingTime(Duration.ofHours(8));
             givenBookings(MONDAY, FRIDAY, week());
-            final var balance = new OvertimeBalance(Duration.ofHours(40), Duration.ofHours(40), Duration.ZERO, Duration.ZERO);
+            final var balance = new OvertimeBalance(Duration.ofHours(40), Duration.ofHours(40), Duration.ZERO, Duration.ZERO, Duration.ZERO);
             when(overtimeService.calculateOvertimeBalance(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(Optional.of(balance));
 
             final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);

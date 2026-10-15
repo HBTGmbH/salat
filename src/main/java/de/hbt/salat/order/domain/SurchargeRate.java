@@ -1,7 +1,6 @@
 package de.hbt.salat.order.domain;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.time.LocalTime;
 
 /**
@@ -14,6 +13,11 @@ import java.time.LocalTime;
  */
 public record SurchargeRate(int percent, LocalTime nightFrom, LocalTime nightUntil) implements Serializable {
 
+  /** The night an order form proposes until somebody sets another: 20:00 to 06:00. */
+  public static final LocalTime USUAL_NIGHT_FROM = LocalTime.of(20, 0);
+
+  public static final LocalTime USUAL_NIGHT_UNTIL = LocalTime.of(6, 0);
+
   public static SurchargeRate of(int percent) {
     return new SurchargeRate(percent, null, null);
   }
@@ -21,14 +25,5 @@ public record SurchargeRate(int percent, LocalTime nightFrom, LocalTime nightUnt
   /** Whether a booking can be flagged with this kind at all — not at a rate of zero. */
   public boolean offered() {
     return percent > 0;
-  }
-
-  /** The credit for {@code duration}: duration × rate, rounded to whole minutes. */
-  public Duration creditFor(Duration duration) {
-    return creditFor(duration, percent);
-  }
-
-  public static Duration creditFor(Duration duration, int percent) {
-    return Duration.ofMinutes(Math.round(duration.toMinutes() * percent / 100.0));
   }
 }
