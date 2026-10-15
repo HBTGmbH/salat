@@ -3172,6 +3172,31 @@ document.addEventListener('change', function (event) {
   if (limited && input && !input.value) input.value = '1';
 });
 
+/* Zeitzuschlaege an Auftrag und Unterauftrag (#1469): Beginn und Ende der Nacht gehoeren zum Nachtsatz.
+ * Mit einem Satz ueber 0 sind sie Pflicht, sonst zaehlen sie nicht - der Service prueft dasselbe. */
+function syncSurchargeNightTimes(percentInput) {
+  const fieldset = percentInput.closest('fieldset');
+  if (!fieldset) return;
+  const required = Number(percentInput.value) > 0;
+  fieldset.querySelectorAll('input[data-surcharge-night-time]').forEach(function (input) {
+    input.required = required;
+    const label = fieldset.querySelector('label[for="' + input.id + '"]');
+    if (label) label.classList.toggle('required', required);
+  });
+}
+
+document.addEventListener('input', function (event) {
+  const input = event.target.closest && event.target.closest('input[data-surcharge-night-percent]');
+  if (input) syncSurchargeNightTimes(input);
+});
+
+function initSurchargeNightTimes() {
+  document.querySelectorAll('input[data-surcharge-night-percent]').forEach(syncSurchargeNightTimes);
+}
+
+initSurchargeNightTimes();
+document.addEventListener('htmx:after:swap', initSurchargeNightTimes);
+
 /* Ticket-Schluessel aus dem Kommentar, die beim Speichern als Referenz angeboten werden (#1326),
  * im Buchungsformular wie in der Inline-Bearbeitung der Tagesansicht. Angehakt werden darf, was der
  * Unterauftrag noch zulaesst (data-remaining); die uebrigen Kaestchen sperren sich, sobald das

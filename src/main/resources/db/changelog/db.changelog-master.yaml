@@ -6984,11 +6984,13 @@ databaseChangeLog:
   - changeSet:
       id: 186
       author: kr
-      comment: Saetze fuer Zeitzuschlaege aufs Zeitkonto an Auftrag und Unterauftrag (#1469)
+      comment: Saetze fuer Zeitzuschlaege aufs Zeitkonto am Auftrag (#1469)
       # Je Art ein Satz in Prozent: Nacht, Samstag, Sonntag, Feiertag; zur Nacht Beginn und Ende als
       # Hinweis beim Buchen. Am Auftrag heisst leer: kein Zuschlag dieser Art. Am Unterauftrag heisst leer erben
       # (vom naechsten Unterauftrag darueber mit Satz, sonst vom Auftrag), 0 heisst ausdruecklich keiner.
       # Bestehende Auftraege bekommen keinen Satz, es aendert sich also nichts.
+      # Je Tabelle ein Changeset mit eigener Bedingung: MySQL schreibt jedes ALTER fuer sich fest, und
+      # scheiterte ein zweites nach dem ersten, gaelte die Bedingung schon als erfuellt (MARK_RAN).
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -7005,6 +7007,19 @@ databaseChangeLog:
                 ADD COLUMN `surcharge_saturday_percent` int NULL,
                 ADD COLUMN `surcharge_sunday_percent` int NULL,
                 ADD COLUMN `surcharge_holiday_percent` int NULL
+
+  - changeSet:
+      id: 187
+      author: kr
+      comment: Saetze fuer Zeitzuschlaege aufs Zeitkonto am Unterauftrag (#1469)
+      # Dieselben Spalten wie am Auftrag (Changeset 186); leer heisst erben, 0 ausdruecklich kein Zuschlag.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: suborder
+                columnName: surcharge_night_percent
+      changes:
         - sql:
             sql: >-
               ALTER TABLE `suborder`
@@ -7016,7 +7031,7 @@ databaseChangeLog:
                 ADD COLUMN `surcharge_holiday_percent` int NULL
 
   - changeSet:
-      id: 187
+      id: 188
       author: kr
       comment: Kennzeichen und Gutschrift eines Zeitzuschlags an der Buchung (#1469)
       # surcharge_kind NIGHT, SATURDAY, SUNDAY oder HOLIDAY, leer ohne Kennzeichen. surcharge_percent ist eine

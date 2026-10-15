@@ -7,6 +7,7 @@ import static de.hbt.salat.dailyreport.controller.TimereportController.trainingD
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 
@@ -18,9 +19,9 @@ import de.hbt.salat.order.domain.TicketReferencePolicy;
 class TimereportControllerTest {
 
   private static final SuborderOption TRAINING =
-      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false, false, TicketReferencePolicy.DEFAULT);
+      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false, false, TicketReferencePolicy.DEFAULT, Map.of());
   private static final SuborderOption PROJECT =
-      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false, false, TicketReferencePolicy.DEFAULT);
+      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false, false, TicketReferencePolicy.DEFAULT, Map.of());
   private static final LocalDate DATE = LocalDate.parse("2026-06-18");
 
   @Test

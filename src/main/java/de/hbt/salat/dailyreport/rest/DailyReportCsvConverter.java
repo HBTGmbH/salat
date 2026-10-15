@@ -64,7 +64,7 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
                 var first = csvToBean.getCapturedExceptions().getFirst();
                 throw new HttpMessageNotReadableException("unable to read CSV line " + first.getLineNumber(), first, inputMessage);
             }
-            return bookings;
+            return bookings.stream().map(DailyReportCsvConverter::withReferencesOfTheCell).toList();
         }
     }
 
@@ -75,9 +75,31 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
                     .withSeparator(COLUMN_SEPARATOR)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(DailyReportData.class, () -> DailyReportData.builder().build()))
                     .build()
-                    .write(dailyReportData);
+                    .write(dailyReportData == null ? List.of() : dailyReportData.stream()
+                        .map(DailyReportCsvConverter::withAllReferencesInTheCell).toList());
         }  catch (CsvException  e) {
             throw new HttpMessageNotWritableException("unable to write CSV", e);
         }
+    }
+
+    /**
+     * The column {@code ticketReference} carries every reference of a booking, separated by
+     * {@value DailyWorkingReportCsvConverter#TICKET_REFERENCE_SEPARATOR} as in the CSV of the working days
+     * (#1472); in JSON the field of that name stays the first reference for clients that know only one.
+     */
+    private static DailyReportData withAllReferencesInTheCell(DailyReportData booking) {
+        var references = booking.getTicketReferences();
+        return booking.toBuilder()
+            .ticketReference(references == null || references.isEmpty()
+                ? null : String.join(DailyWorkingReportCsvConverter.TICKET_REFERENCE_SEPARATOR, references))
+            .build();
+    }
+
+    /** The references of the cell (#1472): {@code null} where the file has no such column, none for an empty cell. */
+    private static DailyReportData withReferencesOfTheCell(DailyReportData booking) {
+        if (booking.getTicketReference() == null) {
+            return booking;
+        }
+        return booking.withTicketReferences(DailyWorkingReportCsvConverter.ticketReferencesOf(booking.getTicketReference()));
     }
 }

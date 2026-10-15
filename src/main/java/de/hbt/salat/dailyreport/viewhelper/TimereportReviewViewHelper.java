@@ -100,7 +100,7 @@ public record TimereportReviewViewHelper(
         ? balance.workingTime()
         : review.byMonth().stream().map(MonthGroup::workingTime).reduce(Duration.ZERO, Duration::plus);
     var adjustment = balance != null ? balance.adjustment() : Duration.ZERO;
-    var surcharge = balance != null ? balance.surcharge() : Duration.ZERO;
+    var surchargeCredit = balance != null ? balance.surchargeCredit() : Duration.ZERO;
     var findingDays = findingDays(review, errors);
     return new TimereportReviewViewHelper(
         review.employeecontractId(), review.employeeName(), review.employeeSign(), review.ownContract(),
@@ -108,7 +108,7 @@ public record TimereportReviewViewHelper(
         period.begin(), period.end(), period.isEmpty(), detailed,
         balance != null, balance != null ? DurationUtils.format(balance.target()) : null,
         DurationUtils.format(booked),
-        !surcharge.isZero(), DurationUtils.formatSigned(surcharge),
+        !surchargeCredit.isZero(), DurationUtils.formatSigned(surchargeCredit),
         !adjustment.isZero(), DurationUtils.formatSigned(adjustment),
         balance != null ? DurationUtils.formatSigned(balance.diff()) : null,
         review.overtimeAccount(), !review.standby().isZero(), DurationUtils.format(review.standby()),

@@ -19,4 +19,9 @@ public enum SurchargeKind {
   SurchargeKind(String label) {
     this.label = label;
   }
+
+  /** Whether the kind belongs to a day of its own — Saturday, Sunday, holiday — rather than any day like the night. */
+  public boolean isBoundToDay() {
+    return this != NIGHT;
+  }
 }

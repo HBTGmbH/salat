@@ -28,4 +28,13 @@ public enum OrderType {
         return this != BEREITSCHAFT;
     }
 
+    /**
+     * Whether a booking on an order of this type may earn a time surcharge (#1469): only work does.
+     * Standby is no working time, and sickness, vacation and absence count as working time only
+     * because they stand in for it — a vacation on a Saturday is no Saturday assignment.
+     */
+    public boolean earnsSurcharge() {
+        return this == STANDARD;
+    }
+
 }

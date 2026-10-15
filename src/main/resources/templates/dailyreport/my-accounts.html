@@ -62,7 +62,8 @@
                   </div>
                   <!--/* the part of the balance that comes from time surcharges (#1469), where there is one */-->
                   <div class="text-muted small mt-2"
-                       th:text="${#strings.isEmpty(balanceSurcharge)} ? #{main.my.accounts.working.balance.subtitle} : #{main.my.accounts.working.balance.subtitle.surcharge(${balanceSurcharge})}">kumuliert</div>
+                       th:with="surchargeShare=${@surchargeCreditViewHelper.creditOrEmpty(balanceSurchargeCredit)}"
+                       th:text="${#strings.isEmpty(surchargeShare)} ? #{main.my.accounts.working.balance.subtitle} : #{main.my.accounts.working.balance.subtitle.surcharge(${surchargeShare})}">kumuliert</div>
                 </div>
               </div>
             </div>
@@ -357,7 +358,7 @@
                 <tr class="fw-bold">
                   <td th:text="#{main.headlinedescription.overtime.report.total.text}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.actual)}"></td>
-                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.surcharge)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.surchargeCredit)}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.adjustment)}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.sum)}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.target)}"></td>
@@ -385,7 +386,7 @@
                     </span>
                   </td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.actual)}"></td>
-                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.surcharge)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.surchargeCredit)}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.adjustment)}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.sum)}"></td>
                   <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.target)}"></td>

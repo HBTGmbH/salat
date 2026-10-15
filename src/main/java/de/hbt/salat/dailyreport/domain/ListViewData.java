@@ -20,9 +20,8 @@ public record ListViewData(
     ReportPeriod.Month reportPeriod
 ) {
     /** The time surcharge credit of the month's bookings (#1469), shown next to the totals. */
-    public Duration surchargeTotal() {
-        return days.stream().flatMap(day -> day.timereports().stream())
-            .map(TimereportDTO::getSurchargeCredit).reduce(Duration.ZERO, Duration::plus);
+    public Duration surchargeCreditTotal() {
+        return TimereportDTO.surchargeCreditOf(days.stream().flatMap(day -> day.timereports().stream()).toList());
     }
 
     public record ListDay(

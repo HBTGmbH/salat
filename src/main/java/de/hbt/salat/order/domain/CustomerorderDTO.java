@@ -27,5 +27,5 @@ public record CustomerorderDTO(
     /** the bound for {@link TicketReferenceMode#LIMITED}, ignored otherwise */
     Integer ticketReferenceLimit,
     /** the time surcharge rates (#1469); never {@code null}, {@link SurchargeInput#NONE} for none */
-    SurchargeInput surcharges
+    SurchargeInput surchargeRates
 ) {}

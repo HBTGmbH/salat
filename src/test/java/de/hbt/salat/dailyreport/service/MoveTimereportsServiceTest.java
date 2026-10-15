@@ -30,9 +30,13 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
+import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.NewEmployeeorder;
+import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.service.EmployeeorderService;
@@ -406,6 +410,60 @@ class MoveTimereportsServiceTest {
                 new NewEmployeeorder(20L, TARGET_ID, LocalDate.of(2024, 1, 10)));
             verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
             verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), any(Duration.class), eq(true));
+        }
+    }
+
+    /**
+     * Auf dem Ziel gilt dessen Satz für die Art einer gekennzeichneten Buchung (#1469). Bietet es die Art nicht an,
+     * lehnt das Verschieben ab - die Vorschau sagt es vorher und bietet das Verschieben nicht an.
+     */
+    @Nested
+    class Surcharges {
+
+        private Suborder target;
+
+        private void rangeWith(TimereportDTO... timereports) {
+            var order = new Customerorder();
+            order.setOrderType(OrderType.STANDARD);
+            target = suborder(TARGET_ID, LocalDate.of(2024, 1, 1), null);
+            target.setCustomerorder(order);
+            lenient().when(suborderDAO.getSuborderById(SOURCE_ID)).thenReturn(suborder(SOURCE_ID, LocalDate.of(2023, 1, 1), null));
+            when(suborderDAO.getSuborderById(TARGET_ID)).thenReturn(target);
+            when(timereportDAO.getTimereportsByDatesAndSuborderId(FROM, TO, SOURCE_ID)).thenReturn(List.of(timereports));
+            lenient().when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
+                .thenReturn(List.of(new Employeeorder()));
+        }
+
+        private TimereportDTO flagged(long id, SurchargeKind kind, int percent) {
+            return TimereportDTO.builder().id(id).employeecontractId(10L).employeeName("Mustermann")
+                .referenceday(LocalDate.of(2024, 1, 13)).duration(Duration.ofHours(2))
+                .surchargeKind(kind).surchargePercent(percent).surchargeCredit(Duration.ofMinutes(30)).build();
+        }
+
+        @Test
+        void a_kind_the_target_does_not_offer_blocks_the_move_in_the_preview() {
+            var night = flagged(1L, SurchargeKind.NIGHT, 25);
+            rangeWith(night, dto(2L, 10L, "Mustermann", LocalDate.of(2024, 1, 14)));
+
+            var preview = classUnderTest.preview(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
+
+            assertThat(preview.refusedSurcharges()).extracting(MoveTimereportsPreview.SurchargeChange::timereport)
+                .containsExactly(night);
+            assertThat(preview.moveAllowed()).isFalse();
+        }
+
+        @Test
+        void another_rate_on_the_target_is_named_but_does_not_block() {
+            rangeWith(flagged(1L, SurchargeKind.SATURDAY, 50), flagged(2L, SurchargeKind.NIGHT, 25));
+            target.getCustomerorder().setSurchargeRate(SurchargeKind.SATURDAY, SurchargeRate.of(100));
+            target.getCustomerorder().setSurchargeRate(SurchargeKind.NIGHT, SurchargeRate.of(25));
+
+            var preview = classUnderTest.preview(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
+
+            assertThat(preview.changedSurchargeRates()).singleElement()
+                .satisfies(change -> assertThat(change.targetPercent()).isEqualTo(100));
+            assertThat(preview.refusedSurcharges()).isEmpty();
+            assertThat(preview.moveAllowed()).isTrue();
         }
     }
 }

@@ -72,13 +72,9 @@ public class TimereportDAO {
         return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
     }
 
-    public long getTotalDurationMinutesForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
-        return timereportRepository.getReportedMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate).orElse(0L);
-    }
-
-    /** The time surcharge credit of the contract in the range (#1469). */
-    public long getSurchargeCreditMinutesForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
-        return timereportRepository.getSurchargeCreditMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate).orElse(0L);
+    /** The booked working time of the contract in the range and the time surcharge credit on it (#1469). */
+    public ReportedMinutes getReportedMinutesForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
+        return timereportRepository.getReportedMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate);
     }
 
     public List<MonthlyReportedMinutes> getReportedMinutesByMonthForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {

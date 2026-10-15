@@ -6,9 +6,10 @@ import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
 import static de.hbt.salat.order.domain.SurchargeKind.SATURDAY;
 import static de.hbt.salat.order.domain.SurchargeKind.SUNDAY;
 
-import java.time.Duration;
 import java.time.LocalTime;
+import java.util.EnumMap;
 import java.util.Locale;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.SurchargeRate;
 
 /**
@@ -32,20 +34,13 @@ class SurchargeViewHelperTest {
   private final SurchargeViewHelper viewHelper = new SurchargeViewHelper(messages());
 
   @Test
-  void the_badge_of_a_booking_shows_the_credit_and_names_kind_and_rate_in_its_title() {
-    assertThat(viewHelper.credit(Duration.ofMinutes(150))).isEqualTo("+2:30");
-    assertThat(viewHelper.title(SUNDAY, 100, Duration.ofMinutes(150))).isEqualTo("Zuschlag: Sonntag 100" + NBSP + "% +2:30");
-    assertThat(viewHelper.named(Duration.ofMinutes(150))).isEqualTo("Zuschlag +2:30");
-  }
-
-  @Test
   void the_order_names_its_rates_above_zero() {
     var order = order();
     order.setSurchargeRate(NIGHT, new SurchargeRate(25, LocalTime.of(20, 0), LocalTime.of(6, 0)));
     order.setSurchargeRate(SATURDAY, SurchargeRate.of(0));
     order.setSurchargeRate(SUNDAY, SurchargeRate.of(50));
 
-    assertThat(viewHelper.summary(order)).isEqualTo("Zeitzuschläge: Nacht 25" + NBSP + "%, 20:00–6:00 Uhr; Sonntag 50" + NBSP + "%");
+    assertThat(viewHelper.summary(order)).isEqualTo("Zeitzuschläge: Nacht 25" + NBSP + "%, 20:00–06:00 Uhr; Sonntag 50" + NBSP + "%");
   }
 
   @Test
@@ -75,6 +70,28 @@ class SurchargeViewHelperTest {
     suborder.setOrderType(OrderType.BEREITSCHAFT);
 
     assertThat(viewHelper.summary(suborder)).isEmpty();
+  }
+
+  /** Standby and absences earn no surcharge (#1469): such an order has no flag, whatever rates it carries. */
+  @Test
+  void an_order_whose_type_earns_no_surcharge_has_no_flag() {
+    var order = order();
+    order.setOrderType(OrderType.KRANK_URLAUB_ABWESEND);
+    order.setSurchargeRate(SATURDAY, SurchargeRate.of(50));
+
+    assertThat(viewHelper.summary(order)).isEmpty();
+  }
+
+  /** What the booking form carries on a suborder's option for its script: the rates on offer and the night. */
+  @Test
+  void the_option_of_a_suborder_carries_its_rates_and_its_night() {
+    var offered = new EnumMap<SurchargeKind, SurchargeRate>(SurchargeKind.class);
+    offered.put(NIGHT, new SurchargeRate(25, LocalTime.of(22, 0), LocalTime.of(6, 0)));
+    offered.put(SUNDAY, SurchargeRate.of(100));
+
+    assertThat(viewHelper.ratesAttribute(offered)).isEqualTo("NIGHT=25 SUNDAY=100");
+    assertThat(viewHelper.nightHint(offered)).isEqualTo("Nacht gilt bei diesem Unterauftrag von 22:00 bis 06:00 Uhr.");
+    assertThat(viewHelper.nightHint(Map.of(SUNDAY, SurchargeRate.of(100)))).isEmpty();
   }
 
   private static Customerorder order() {

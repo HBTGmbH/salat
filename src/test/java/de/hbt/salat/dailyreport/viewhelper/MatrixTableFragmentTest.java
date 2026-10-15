@@ -61,10 +61,10 @@ class MatrixTableFragmentTest {
       List.of(),
       List.of(),
       List.of(
-          new FooterDay("7:30", false, false, false, false, "08:00", "0:30", "16:00", false, false, false),
-          new FooterDay("0:00", true, false, false, true, null, null, null, false, false, false),
-          new FooterDay("0:00", false, false, false, true, null, null, null, false, false, false)),
-      "7:30", null, null, false, null, false, List.of(Duration.ZERO, Duration.ZERO, Duration.ZERO), Duration.ZERO);
+          new FooterDay("7:30", false, false, false, false, "08:00", "0:30", "16:00", false, false, false, Duration.ZERO),
+          new FooterDay("0:00", true, false, false, true, null, null, null, false, false, false, Duration.ZERO),
+          new FooterDay("0:00", false, false, false, true, null, null, null, false, false, false, Duration.ZERO)),
+      "7:30", null, null, false, null, false, Duration.ZERO);
 
   /** Freitag mit zu viel Arbeitszeit, Samstag ein Feiertag, Sonntag nur Wochenende. */
   private static final MatrixData HOLIDAY_WEEKEND = new MatrixData(
@@ -79,10 +79,10 @@ class MatrixTableFragmentTest {
           new Cell(null, true, true, false, List.of())), "12:00")),
       List.of(),
       List.of(
-          new FooterDay("11:00", false, false, false, false, "07:00", "0:30", "18:30", false, false, true),
-          new FooterDay("1:00", false, true, true, false, "10:00", "0:00", "11:00", false, false, false),
-          new FooterDay("0:00", false, true, false, true, null, null, null, false, false, false)),
-      "12:00", null, null, false, null, false, List.of(Duration.ZERO, Duration.ZERO, Duration.ZERO), Duration.ZERO);
+          new FooterDay("11:00", false, false, false, false, "07:00", "0:30", "18:30", false, false, true, Duration.ZERO),
+          new FooterDay("1:00", false, true, true, false, "10:00", "0:00", "11:00", false, false, false, Duration.ZERO),
+          new FooterDay("0:00", false, true, false, true, null, null, null, false, false, false, Duration.ZERO)),
+      "12:00", null, null, false, null, false, Duration.ZERO);
 
   /** Samstag mit zwei Buchungen, eine mit Tickets und Zeitzuschlag; Sonntag ohne. */
   private static final MatrixData DETAILS = new MatrixData(
@@ -97,9 +97,9 @@ class MatrixTableFragmentTest {
               new ReportDetail("2:00", "Nacharbeit", List.of(), null, null, Duration.ZERO)))), "6:00")),
       List.of(),
       List.of(
-          new FooterDay("4:00", false, true, false, false, null, null, null, false, false, false),
-          new FooterDay("2:00", false, true, false, false, null, null, null, false, false, false)),
-      "6:00", null, null, false, null, false, List.of(Duration.ofMinutes(90), Duration.ZERO), Duration.ofMinutes(90));
+          new FooterDay("4:00", false, true, false, false, null, null, null, false, false, false, Duration.ofMinutes(90)),
+          new FooterDay("2:00", false, true, false, false, null, null, null, false, false, false, Duration.ZERO)),
+      "6:00", null, null, false, null, false, Duration.ofMinutes(90));
 
   @Test
   void the_details_of_a_cell_name_the_tickets_before_the_comment_and_the_surcharge_after_it() {
@@ -241,8 +241,9 @@ class MatrixTableFragmentTest {
         "matrixData", matrixData, "showBeginBreakEnd", showBeginBreakEnd, "showNotWorked", showNotWorked));
     // the cells name time surcharges through their view helper (#1469)
     var beans = new StaticApplicationContext();
-    beans.getBeanFactory().registerSingleton("surchargeViewHelper",
-        new SurchargeViewHelper(new MessageSourceAccessor(messageSource, Locale.GERMANY)));
+    var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
+    beans.getBeanFactory().registerSingleton("surchargeCreditViewHelper",
+        new SurchargeCreditViewHelper(messages, new SurchargeViewHelper(messages)));
     beans.refresh();
     context.setVariable(ThymeleafEvaluationContext.THYMELEAF_EVALUATION_CONTEXT_CONTEXT_VARIABLE_NAME,
         new ThymeleafEvaluationContext(beans, null));

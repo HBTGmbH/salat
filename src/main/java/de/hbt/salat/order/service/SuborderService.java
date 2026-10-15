@@ -200,16 +200,8 @@ public class SuborderService {
     so.setOrderType(data.orderType());
     so.setTicketReferencePolicy(ticketReferencePolicyOf(data.ticketReferenceMode(), data.ticketReferenceLimit()));
     // a missing rate inherits from above (#1469)
-    var surcharges = data.surcharges();
-    if (!surcharges.percentsInRange()) {
-      throw new InvalidDataException(ErrorCode.SO_SURCHARGE_PERCENT_INVALID);
-    }
-    if (!surcharges.nightTimesComplete()) {
-      throw new InvalidDataException(ErrorCode.SO_SURCHARGE_NIGHT_TIMES_MISSING);
-    }
-    for (var kind : SurchargeKind.values()) {
-      so.setSurchargeRate(kind, surcharges.rate(kind));
-    }
+    data.surchargeRates().applyTo(so::setSurchargeRate,
+        ErrorCode.SO_SURCHARGE_PERCENT_INVALID, ErrorCode.SO_SURCHARGE_NIGHT_TIMES_MISSING);
 
     if (data.validFrom() != null && !data.validFrom().trim().isEmpty()) {
       LocalDate fromDate = DateUtils.parseOrNull(data.validFrom());

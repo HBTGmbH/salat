@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes;
+import de.hbt.salat.dailyreport.domain.ReportedMinutes;
 import de.hbt.salat.dailyreport.persistence.PublicholidayDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.employee.domain.Employeecontract;
@@ -45,6 +46,7 @@ class OvertimeServiceSurchargeTest {
   // a past year, so that the monthly report covers both months whatever day the test runs
   private static final int YEAR = Year.now().getValue() - 1;
   private static final LocalDate JULY = LocalDate.of(YEAR, 7, 1);
+  private static final LocalDate END_OF_JULY = LocalDate.of(YEAR, 7, 31);
   private static final LocalDate AUGUST = LocalDate.of(YEAR, 8, 1);
   private static final LocalDate END_OF_AUGUST = LocalDate.of(YEAR, 8, 31);
 
@@ -74,21 +76,20 @@ class OvertimeServiceSurchargeTest {
     when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
     when(publicholidayDAO.getPublicHolidaysBetween(any(), any())).thenReturn(List.of());
     when(employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(anyLong())).thenReturn(List.of());
+    when(timereportDAO.getReportedMinutesForEmployeeContract(anyLong(), any(), any())).thenReturn(new ReportedMinutes(null, null));
   }
 
   @Test
   void the_credit_raises_the_balance_and_stands_apart_from_the_booked_time() {
     var target = overtimeService.calculateWorkingTimeTarget(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST);
     var booked = target.plusHours(2);
-    when(timereportDAO.getTotalDurationMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST))
-        .thenReturn(booked.toMinutes());
-    when(timereportDAO.getSurchargeCreditMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST))
-        .thenReturn(150L);
+    when(timereportDAO.getReportedMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST))
+        .thenReturn(new ReportedMinutes(booked.toMinutes(), 150L));
 
     var balance = overtimeService.calculateOvertimeBalance(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST).orElseThrow();
 
     assertThat(balance.workingTime()).isEqualTo(booked);
-    assertThat(balance.surcharge()).isEqualTo(Duration.ofMinutes(150));
+    assertThat(balance.surchargeCredit()).isEqualTo(Duration.ofMinutes(150));
     // 170:00 booked - 168:00 target + 2:30 credit, in whatever month
     assertThat(balance.diff()).isEqualTo(Duration.ofMinutes(4 * 60 + 30));
   }
@@ -96,12 +97,12 @@ class OvertimeServiceSurchargeTest {
   @Test
   void without_a_credit_the_balance_is_what_it_was() {
     var target = overtimeService.calculateWorkingTimeTarget(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST);
-    when(timereportDAO.getTotalDurationMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST))
-        .thenReturn(target.toMinutes());
+    when(timereportDAO.getReportedMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST))
+        .thenReturn(new ReportedMinutes(target.toMinutes(), 0L));
 
     var balance = overtimeService.calculateOvertimeBalance(EMPLOYEE_CONTRACT_ID, AUGUST, END_OF_AUGUST).orElseThrow();
 
-    assertThat(balance.surcharge()).isZero();
+    assertThat(balance.surchargeCredit()).isZero();
     assertThat(balance.diff()).isZero();
   }
 
@@ -117,21 +118,38 @@ class OvertimeServiceSurchargeTest {
     var report = overtimeService.createDetailedReportForEmployee(EMPLOYEE_CONTRACT_ID, false);
 
     var august = report.getMonths().getFirst();
-    assertThat(august.getSurcharge()).isEqualTo(Duration.ofMinutes(150));
+    assertThat(august.getSurchargeCredit()).isEqualTo(Duration.ofMinutes(150));
     assertThat(august.getSum()).isEqualTo(augustTarget.plusHours(2).plusMinutes(150));
     assertThat(august.getDiff()).isEqualTo(Duration.ofMinutes(4 * 60 + 30));
     assertThat(august.getDiffCumulative()).isEqualTo(Duration.ofMinutes(8 * 60 + 30));
-    assertThat(report.getTotal().getSurcharge()).isEqualTo(Duration.ofMinutes(390));
+    assertThat(report.getTotal().getSurchargeCredit()).isEqualTo(Duration.ofMinutes(390));
     assertThat(report.getTotal().getDiff()).isEqualTo(Duration.ofMinutes(8 * 60 + 30));
   }
 
+  /*
+   * The total names its share of the credit from the same calculation as itself (#1469): the part up to the
+   * acceptance is frozen in the static balance and read apart, the rest comes with the dynamic part.
+   */
   @Test
-  void the_credit_within_the_total_runs_from_the_start_of_the_contract() {
-    when(timereportDAO.getSurchargeCreditMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, JULY, END_OF_AUGUST))
-        .thenReturn(390L);
+  void the_share_of_the_credit_in_the_total_covers_the_accepted_and_the_open_part() {
+    var contract = employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID);
+    contract.setReportAcceptanceDate(END_OF_JULY);
+    contract.setOvertimeStatic(Duration.ofHours(4));
+    when(timereportDAO.getReportedMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, JULY, END_OF_JULY))
+        .thenReturn(new ReportedMinutes(0L, 240L));
+    when(timereportDAO.getReportedMinutesForEmployeeContract(eq(EMPLOYEE_CONTRACT_ID), eq(AUGUST), any()))
+        .thenReturn(new ReportedMinutes(0L, 150L));
 
-    assertThat(overtimeService.calculateSurchargeCreditTotal(EMPLOYEE_CONTRACT_ID, false))
-        .isEqualTo(Duration.ofMinutes(390));
-    verify(timereportDAO).getSurchargeCreditMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, JULY, END_OF_AUGUST);
+    var total = overtimeService.calculateOvertime(EMPLOYEE_CONTRACT_ID, false).orElseThrow().getTotal();
+
+    assertThat(total.getSurchargeCredit()).isEqualTo(Duration.ofMinutes(390));
+    verify(timereportDAO).getReportedMinutesForEmployeeContract(EMPLOYEE_CONTRACT_ID, JULY, END_OF_JULY);
+  }
+
+  @Test
+  void a_balance_without_any_credit_has_no_share() {
+    var total = overtimeService.calculateOvertime(EMPLOYEE_CONTRACT_ID, false).orElseThrow().getTotal();
+
+    assertThat(total.getSurchargeCredit()).isZero();
   }
 }

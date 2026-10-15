@@ -168,7 +168,7 @@ public class DailyService {
         if (hasTarget) {
             Duration target = overtimeService.calculateWorkingTimeTarget(employeeContractId, first, last);
             // the time surcharges count against the target as on the time account (#1469), the total stays booked time
-            Duration diff = timeAccountCredit(timereports, last).minus(target);
+            Duration diff = TimereportDTO.timeAccountTimeUntil(timereports, last).minus(target);
             monthTarget = DurationUtils.format(target);
             monthDiff = (diff.isNegative() ? "" : "+") + DurationUtils.format(diff);
             monthDiffNegative = diff.isNegative();
@@ -180,7 +180,7 @@ public class DailyService {
             var cutoff = today.minusDays(1);
             if (!cutoff.isBefore(first)) {
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, first, cutoff);
-                Duration prevDayDiff = timeAccountCredit(timereports, cutoff).minus(targetPrevDay);
+                Duration prevDayDiff = TimereportDTO.timeAccountTimeUntil(timereports, cutoff).minus(targetPrevDay);
                 prevDayDiffString = (prevDayDiff.isNegative() ? "" : "+") + DurationUtils.format(prevDayDiff);
                 prevDayDiffNegative = prevDayDiff.isNegative();
             }
@@ -234,13 +234,5 @@ public class DailyService {
     public boolean isTimereportEditable(TimereportDTO tr, long employeeContractId) {
         var contract = employeecontractService.getEmployeecontractById(employeeContractId);
         return timereportAuthorization.isWriteAllowed(contract, tr.getStatus());
-    }
-
-    /** Working time plus time surcharge credit of the bookings up to {@code until} (#1469). */
-    private static Duration timeAccountCredit(List<TimereportDTO> timereports, LocalDate until) {
-        return timereports.stream()
-            .filter(r -> !r.getReferenceday().isAfter(until))
-            .map(TimereportDTO::getTimeAccountCredit)
-            .reduce(Duration.ZERO, Duration::plus);
     }
 }

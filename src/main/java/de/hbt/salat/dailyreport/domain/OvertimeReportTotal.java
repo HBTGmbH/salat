@@ -10,7 +10,7 @@ public class OvertimeReportTotal {
 
   private final Duration actual;
   /** the time surcharge credit (#1469), part of {@code sum} and {@code diff} */
-  private final Duration surcharge;
+  private final Duration surchargeCredit;
   private final Duration adjustment;
   private final Duration sum;
   private final Duration target;

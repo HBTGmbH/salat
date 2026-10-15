@@ -40,7 +40,6 @@ import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
-import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.domain.ResponsibleOption;
 import de.hbt.salat.order.domain.SearchHits;
@@ -157,16 +156,8 @@ public class CustomerorderService {
     co.setTicketReferencePolicy(ticketReferencePolicy);
 
     // a missing rate means no surcharge of that kind (#1469)
-    var surcharges = dto.surcharges();
-    if (!surcharges.percentsInRange()) {
-      throw new InvalidDataException(ErrorCode.CO_SURCHARGE_PERCENT_INVALID);
-    }
-    if (!surcharges.nightTimesComplete()) {
-      throw new InvalidDataException(ErrorCode.CO_SURCHARGE_NIGHT_TIMES_MISSING);
-    }
-    for (var kind : SurchargeKind.values()) {
-      co.setSurchargeRate(kind, surcharges.rate(kind));
-    }
+    dto.surchargeRates().applyTo(co::setSurchargeRate,
+        ErrorCode.CO_SURCHARGE_PERCENT_INVALID, ErrorCode.CO_SURCHARGE_NIGHT_TIMES_MISSING);
 
     if(!co.isNew()) {
       var event = new CustomerorderUpdateEvent(co);

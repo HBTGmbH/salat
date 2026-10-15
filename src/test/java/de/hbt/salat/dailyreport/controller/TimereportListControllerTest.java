@@ -60,6 +60,7 @@ import de.hbt.salat.dailyreport.domain.TimereportListResult;
 import de.hbt.salat.dailyreport.service.TimereportListExcelService;
 import de.hbt.salat.dailyreport.service.TimereportListService;
 import de.hbt.salat.order.domain.SurchargeKind;
+import de.hbt.salat.dailyreport.viewhelper.SurchargeCreditViewHelper;
 import de.hbt.salat.order.viewhelper.SurchargeViewHelper;
 
 /**
@@ -299,7 +300,9 @@ class TimereportListControllerTest {
         .param("fBookingsUntil", "2026-10-31"));
 
     assertThat(html)
-        .containsPattern("title=\"Zuschlag: Samstag 50\u00a0% \\+1:30\"\\s*>\\+1:30</span>")
+        // the badge shows the credit, a screen reader hears what it is (#1469)
+        .containsPattern("title=\"Zuschlag: Samstag 50\u00a0% \\+1:30\"\\s*><span\\s+class=\"visually-hidden\"\\s*>Zeitzuschlag</span> "
+            + "<span\\s*>\\+1:30</span></span>")
         .containsSubsequence("<tfoot", "title=\"Zeitzuschläge gesamt\"", ">+1:30</span>", "</tfoot>");
   }
 
@@ -349,12 +352,13 @@ class TimereportListControllerTest {
         .setLocaleResolver(new FixedLocaleResolver(Locale.GERMANY))
         .addFilters(uiStateFilter)
         .build();
-    // Die Vorlage liest @durationUtils und @surchargeViewHelper. Der Standalone-Aufbau rendert gegen einen Stub-Kontext ohne
+    // Die Vorlage liest @durationUtils und @surchargeCreditViewHelper. Der Standalone-Aufbau rendert gegen einen Stub-Kontext ohne
     // Bohnen; dessen addBean ist nicht oeffentlich erreichbar, die Klasse ist paketprivat.
     ReflectionTestUtils.invokeMethod(viewResolver.getApplicationContext(), "addBean", "durationUtils",
         new DurationUtilsBean());
-    ReflectionTestUtils.invokeMethod(viewResolver.getApplicationContext(), "addBean", "surchargeViewHelper",
-        new SurchargeViewHelper(new MessageSourceAccessor(messageSource, Locale.GERMANY)));
+    var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
+    ReflectionTestUtils.invokeMethod(viewResolver.getApplicationContext(), "addBean", "surchargeCreditViewHelper",
+        new SurchargeCreditViewHelper(messages, new SurchargeViewHelper(messages)));
     return cssUnescaped(mockMvc.perform(request).andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(UTF_8));
   }

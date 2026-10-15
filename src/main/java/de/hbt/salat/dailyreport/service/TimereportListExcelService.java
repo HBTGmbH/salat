@@ -16,6 +16,7 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 
 /**
@@ -97,7 +98,9 @@ public class TimereportListExcelService {
           ? "main.timereportlist.billable.yes" : "main.timereportlist.billable.no"));
       text(row, 11, messages.getMessage("main.timereportlist.status." + timereport.getStatus(),
           timereport.getStatus()));
-      text(row, 12, surchargeText(timereport));
+      // the time surcharge credit (#1469) in hours like the duration, empty without one: what counts is how much
+      // it adds to the time account, not its kind
+      text(row, 12, DurationUtils.format(timereport.getSurchargeCredit(), false));
     }
 
     for (int column = 0; column < headers.size(); column++) {
@@ -112,14 +115,5 @@ public class TimereportListExcelService {
   private static String formatDuration(TimereportDTO timereport) {
     var minutes = timereport.getDuration().toMinutes();
     return "%d:%02d".formatted(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
-  }
-
-  /**
-   * The time surcharge credit (#1469) in hours, "1:30", like the duration: what counts is how much it adds
-   * to the time account, not its kind. Empty without one.
-   */
-  private static String surchargeText(TimereportDTO timereport) {
-    var minutes = timereport.getSurchargeCredit().toMinutes();
-    return minutes == 0 ? "" : "%d:%02d".formatted(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
   }
 }

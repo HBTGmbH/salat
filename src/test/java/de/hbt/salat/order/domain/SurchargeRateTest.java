@@ -6,7 +6,6 @@ import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
 import static de.hbt.salat.order.domain.SurchargeKind.SATURDAY;
 import static de.hbt.salat.order.domain.SurchargeKind.SUNDAY;
 
-import java.time.Duration;
 import java.time.LocalTime;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -14,28 +13,13 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Time surcharge rates (#1469): set per kind on the order, overridden per kind by a suborder, inherited
- * from the nearest suborder above with a rate, else from the order; the credit is duration × rate.
+ * from the nearest suborder above with a rate, else from the order; the credit itself is a rule of the booking ({@code TimereportSurchargeCreditTest}).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class SurchargeRateTest {
 
   private static final LocalTime TWENTY = LocalTime.of(20, 0);
   private static final LocalTime SIX = LocalTime.of(6, 0);
-
-  @Test
-  void the_credit_is_duration_times_rate_per_kind() {
-    assertThat(new SurchargeRate(25, TWENTY, SIX).creditFor(Duration.ofHours(4))).isEqualTo(Duration.ofHours(1));
-    assertThat(SurchargeRate.of(50).creditFor(Duration.ofHours(3))).isEqualTo(Duration.ofMinutes(90));
-    assertThat(SurchargeRate.of(100).creditFor(Duration.ofMinutes(75))).isEqualTo(Duration.ofMinutes(75));
-  }
-
-  @Test
-  void the_credit_is_rounded_to_whole_minutes() {
-    // 1:30 × 25 % = 22,5 minutes
-    assertThat(SurchargeRate.of(25).creditFor(Duration.ofMinutes(90))).isEqualTo(Duration.ofMinutes(23));
-    // 0:10 × 33 % = 3,3 minutes
-    assertThat(SurchargeRate.of(33).creditFor(Duration.ofMinutes(10))).isEqualTo(Duration.ofMinutes(3));
-  }
 
   @Test
   void a_rate_of_zero_is_not_offered() {

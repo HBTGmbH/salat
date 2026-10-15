@@ -91,10 +91,6 @@ public class DashboardController {
         // die Schwellen gelten fuer 40 Wochenstunden und werden auf den Vertrag umgerechnet (#1175)
         addOvertimeAttributes(model, overtimeStatus, OvertimeScale.TOTAL.forContract(employeecontract),
             OvertimeScale.CURRENT_MONTH.forContract(employeecontract));
-        // the part of the balance that comes from time surcharges (#1469), empty without any
-        var surcharge = overtimeStatus.isPresent()
-            ? overtimeService.calculateSurchargeCreditTotal(employeecontract.getId(), false) : Duration.ZERO;
-        model.addAttribute("overtimeSurcharge", surcharge.isZero() ? "" : DurationUtils.formatSigned(surcharge));
         model.addAttribute("vacations", vacations);
         // the hint follows the contract the page shows, and its links name it (#1124)
         model.addAttribute("unbookedDays", releaseService.getUnbookedWorkingDaysOfPreviousWeek(employeecontract.getId()));
@@ -254,6 +250,9 @@ public class DashboardController {
         model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus, monthScale));
         model.addAttribute("monthlyOvertimeScale", monthScale);
         model.addAttribute("overtimeMonth", currentMonth.map(info -> DateUtils.format(info.getBegin(), "yyyy-MM")).orElse(""));
+        // the share of the time surcharges in either balance (#1469), named under it where there is one
+        model.addAttribute("overtimeSurchargeCredit", total.map(OvertimeStatusInfo::getSurchargeCredit).orElse(null));
+        model.addAttribute("monthlyOvertimeSurchargeCredit", currentMonth.map(OvertimeStatusInfo::getSurchargeCredit).orElse(null));
     }
 
     /* Die Dauer ist bereits vorzeichenbehaftet (OvertimeService.toStatusInfo); isNegative daneben ist

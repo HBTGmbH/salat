@@ -443,7 +443,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                     List.of(TWO_BOOKINGS),
                     """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surcharge
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind
                     2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,,false,,
                     2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,,
                     """,
@@ -452,7 +452,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                 List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surcharge
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind
                 2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,,false,,
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,,
                 """,
@@ -461,7 +461,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                 List.of(TWO_BOOKINGS_WITH_TICKET_REFERENCE),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surcharge
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind
                 2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,,
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,true,,
                 """,
@@ -470,7 +470,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                 List.of(TWO_BOOKINGS_WITH_TWO_TICKET_REFERENCES),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surcharge
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind
                 2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1;ERP-2,false,,
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,,
                 """,

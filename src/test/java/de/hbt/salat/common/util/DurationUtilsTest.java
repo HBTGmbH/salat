@@ -234,4 +234,12 @@ public class DurationUtilsTest {
     assertThat(decimalFormat(Duration.ofMinutes(-145))).isEqualTo("-2,42");
   }
 
+
+  /** A change with its sign (#1469): a credit "+2:30", a deficit "-1:15", and no change without one. */
+  @Test
+  void a_signed_duration_shows_its_sign_but_zero_none() {
+    assertThat(DurationUtils.formatSigned(Duration.ofMinutes(150))).isEqualTo("+2:30");
+    assertThat(DurationUtils.formatSigned(Duration.ofMinutes(-75))).isEqualTo("-1:15");
+    assertThat(DurationUtils.formatSigned(Duration.ZERO)).isEqualTo("0:00");
+  }
 }

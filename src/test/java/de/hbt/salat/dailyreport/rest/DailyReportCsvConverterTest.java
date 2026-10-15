@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
 
 import java.io.IOException;
 import java.util.List;
@@ -87,8 +88,8 @@ class DailyReportCsvConverterTest {
         var result = dailyReportCsvConverter.read(null, inputMessage);
 
         // then
-        assertThat(result).extracting(DailyReportData::getComment, DailyReportData::getTicketReference, DailyReportData::isTraining)
-                .containsExactly(tuple("test1", "ERP-1", true), tuple("test2", "", false));
+        assertThat(result).extracting(DailyReportData::getComment, DailyReportData::givenTicketReferences, DailyReportData::isTraining)
+                .containsExactly(tuple("test1", List.of("ERP-1"), true), tuple("test2", List.of(), false));
     }
 
     /* The employee sign is a new column at the end (#1142); with it and the suborder sign a line needs no
@@ -114,9 +115,9 @@ class DailyReportCsvConverterTest {
     void shouldWriteToCsv() throws IOException {
         // given
         var rawData = """
-                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false",""
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true","abc"
+                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign","surchargeKind"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false","",""
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true","abc","NIGHT"
                 """;
         var dailyReport1 = DailyReportData.builder()
                 .date("2024-10-29").employeeorderId(183209L)
@@ -130,9 +131,72 @@ class DailyReportCsvConverterTest {
 
         // when
         dailyReportCsvConverter.write(List.of(dailyReport1,
-                dailyReport1.toBuilder().comment("test2").ticketReference("ERP-1").training(true).employeeSign("abc").build()), null, outputMessage);
+                dailyReport1.toBuilder().comment("test2").training(true).employeeSign("abc").surchargeKind("NIGHT").build()
+                        .withTicketReferences(List.of("ERP-1"))), null, outputMessage);
 
         // then
         assertThat(IOUtils.toString(outputStream.toByteArray(), "UTF-8")).isEqualTo(rawData);
+    }
+
+    /* All references of a booking, separated by ";" like the CSV of the working days (#1472): one in the
+       cell is what a single reference has always been. */
+    @Test
+    void shouldReadSeveralTicketReferencesFromOneCell() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","ERP-1;ERP-2","false"
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when
+        var result = dailyReportCsvConverter.read(null, inputMessage);
+
+        // then
+        assertThat(result).singleElement().satisfies(booking ->
+                assertThat(booking.givenTicketReferences()).containsExactly("ERP-1", "ERP-2"));
+    }
+
+    @Test
+    void shouldWriteAllTicketReferencesOfABooking() throws IOException {
+        // given
+        var booking = DailyReportData.builder()
+                .date("2024-10-29").employeeorderId(183209L)
+                .orderSign("111").orderLabel("Rumsitzen")
+                .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
+                .hours(1).minutes(0).comment("test1")
+                .build()
+                .withTicketReferences(List.of("ERP-1", "ERP-2"));
+        var outputStream = new ByteArrayOutputStream();
+        when(outputMessage.getBody()).thenReturn(outputStream);
+
+        // when
+        dailyReportCsvConverter.write(List.of(booking), null, outputMessage);
+
+        // then
+        assertThat(IOUtils.toString(outputStream.toByteArray(), "UTF-8"))
+                .contains("\"test1\",\"ERP-1;ERP-2\",\"false\"");
+    }
+
+    /* The time surcharge flag is a new column at the end (#1469): a file without it says nothing about the flag,
+       an empty cell says "none". */
+    @Test
+    void shouldReadTheSurchargeFlagFromTheLastColumn() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign","surchargeKind"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","4","0","test1","","false","","NIGHT"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","2","0","test2","","false","",""
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test3","","false",""
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when
+        var result = dailyReportCsvConverter.read(null, inputMessage);
+
+        // then
+        assertThat(result).extracting(DailyReportData::getComment, DailyReportData::givesSurchargeKind,
+                DailyReportData::givenSurchargeKind)
+                .containsExactly(tuple("test1", true, NIGHT), tuple("test2", true, null), tuple("test3", false, null));
     }
 }

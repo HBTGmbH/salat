@@ -342,6 +342,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                         .minutes(row.getWorkingTime().getMinute())
                         .comment(row.getComment())
                         .training(Boolean.TRUE.equals(row.getTraining()))
+                        .surchargeKind(row.getSurchargeKind())
                         .build()
                         .withTicketReferences(ticketReferencesOf(row.getTicketReference()))))
                 .toList();
@@ -379,7 +380,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign","surcharge"
+                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign","surchargeKind"
                 });
             }
         };
@@ -426,7 +427,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getTicketReference(),
             row.getTraining(),
             row.getEmployeeSign(),
-            row.getSurcharge(),
+            row.getSurchargeKind(),
             row.getLine()
         );
     }
@@ -448,7 +449,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 ? null : String.join(TICKET_REFERENCE_SEPARATOR, reportData.getTicketReferences()),
             reportData.isTraining(),
             reportData.getEmployeeSign(),
-            reportData.getSurchargeKind() != null ? reportData.getSurchargeKind().name() : null,
+            reportData.getSurchargeKind(),
             0
         );
     }
@@ -489,11 +490,11 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         @CsvBindByName
         private String employeeSign;
         /**
-         * The time surcharge flag (#1469), written on export and ignored on import: the import books
-         * without one, as every other way of booking but the form does.
+         * The time surcharge flag (#1469), a kind's name: a new column at the end. Missing it says nothing
+         * about the flag, an empty cell says "none" - as for the ticket reference.
          */
         @CsvBindByName
-        private String surcharge;
+        private String surchargeKind;
         /** The line of the file the row begins in, for messages; not a column. */
         @CsvIgnore
         private long line;

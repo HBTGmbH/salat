@@ -24,11 +24,13 @@ import org.mockito.quality.Strictness;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
@@ -94,5 +96,43 @@ class DailyServiceSurchargeTest {
 
     assertThat(list.monthTotal()).isEqualTo("3:00");
     assertThat(list.monthDiff()).isEqualTo("-155:30");
+  }
+
+  /* "Stand gestern" counts the credit of the bookings up to yesterday, the target up to yesterday as well. */
+  @Test
+  @FixedClock("2026-05-20T10:00:00")
+  void the_balance_of_yesterday_counts_the_surcharge_up_to_yesterday() {
+    when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, MONTH.atDay(1), MONTH.atEndOfMonth()))
+        .thenReturn(List.of(
+            booking(1L, MONTH.atDay(9), 3).surchargeKind(SurchargeKind.SATURDAY).surchargePercent(50)
+                .surchargeCredit(Duration.ofMinutes(90)).build(),
+            booking(2L, MONTH.atDay(25), 2).surchargeKind(SurchargeKind.NIGHT).surchargePercent(25)
+                .surchargeCredit(Duration.ofMinutes(30)).build()));
+    when(overtimeService.calculateWorkingTimeTarget(CONTRACT_ID, MONTH.atDay(1), MONTH.atDay(19)))
+        .thenReturn(Duration.ofHours(104));
+
+    var list = dailyService.buildListView(MONTH, CONTRACT_ID);
+
+    // 3:00 booked + 1:30 credit - 104:00 target; the night of the 25th lies after yesterday
+    assertThat(list.prevDayDiffString()).isEqualTo("-99:30");
+    assertThat(list.surchargeCreditTotal()).isEqualTo(Duration.ofHours(2));
+  }
+
+  /* A flag kept from before its order became standby earns nothing there, as on the time account. */
+  @Test
+  void a_flagged_standby_booking_counts_towards_no_sum() {
+    when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, MONTH.atDay(1), MONTH.atEndOfMonth()))
+        .thenReturn(List.of(booking(1L, MONTH.atDay(9), 3).orderType(OrderType.BEREITSCHAFT)
+            .surchargeKind(SurchargeKind.SATURDAY).surchargePercent(50).surchargeCredit(Duration.ofMinutes(90)).build()));
+
+    var list = dailyService.buildListView(MONTH, CONTRACT_ID);
+
+    assertThat(list.monthDiff()).isEqualTo("-160:00");
+    assertThat(list.surchargeCreditTotal()).isZero();
+  }
+
+  private static TimereportDTO.TimereportDTOBuilder booking(long id, LocalDate day, int hours) {
+    return TimereportDTO.builder().id(id).employeecontractId(CONTRACT_ID).referenceday(day)
+        .status(TIMEREPORT_STATUS_OPEN).duration(Duration.ofHours(hours));
   }
 }

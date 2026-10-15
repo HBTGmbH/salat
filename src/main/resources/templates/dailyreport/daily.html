@@ -532,9 +532,10 @@
                   <span th:if="${tr.standby}" class="badge bg-orange-lt text-orange ms-1" data-standby-badge
                         th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
                   <!--/* the time surcharge flag with its credit (#1469), as in release and acceptance */-->
-                  <span th:if="${tr.surchargeKind != null}" class="badge bg-teal-lt text-teal d-block mt-1"
-                        th:title="${@surchargeViewHelper.title(tr.surchargeKind, tr.surchargePercent, tr.surchargeCredit)}"
-                        th:text="${@surchargeViewHelper.credit(tr.surchargeCredit)}">+1:00</span>
+                  <span th:if="${tr.surchargeKind != null}" class="badge bg-teal-lt d-block mt-1"
+                        th:title="${@surchargeCreditViewHelper.title(tr.surchargeKind, tr.surchargePercent, tr.surchargeCredit)}"><span
+                      class="visually-hidden" th:text="#{main.surcharge.booking.label}">Zeitzuschlag</span> <span
+                      th:text="${@surchargeCreditViewHelper.credit(tr.surchargeCredit)}">+1:00</span></span>
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
@@ -584,9 +585,9 @@
                 <td class="d-none d-md-table-cell"></td>
                 <td class="text-muted" th:text="#{main.daily.column.total}" style="text-align: right">Gesamt</td>
                 <td><span class="badge bg-blue-lt" th:text="${@durationUtils.format(dailyData.totalBooked)}"></span>
-                  <span th:unless="${dailyData.surchargeTotal().zero}" class="badge bg-teal-lt text-teal d-block mt-1"
+                  <span th:unless="${dailyData.surchargeCreditTotal().zero}" class="badge bg-teal-lt d-block mt-1"
                         th:title="#{main.surcharge.total.title}"
-                        th:text="${@surchargeViewHelper.credit(dailyData.surchargeTotal())}">+1:00</span></td>
+                        th:text="${@surchargeCreditViewHelper.credit(dailyData.surchargeCreditTotal())}">+1:00</span></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -903,9 +904,9 @@
         <span th:text="#{main.matrixoverview.headline.actualtime.text}">IST-Stunden:</span>
         <strong th:text="${listData.monthTotal}">0:00</strong>
       </span>
-      <span th:unless="${listData.surchargeTotal().zero}" class="text-teal">
+      <span th:unless="${listData.surchargeCreditTotal().zero}">
         <span th:text="#{main.matrixoverview.headline.surcharge.text}">Zeitzuschläge:</span>
-        <strong th:text="${@surchargeViewHelper.credit(listData.surchargeTotal())}">+0:00</strong>
+        <strong th:text="${@surchargeCreditViewHelper.credit(listData.surchargeCreditTotal())}">+0:00</strong>
       </span>
       <span th:if="${listData.monthTarget != null}">
         <span th:text="#{main.matrixoverview.headline.targettime.text}">SOLL-Stunden:</span>

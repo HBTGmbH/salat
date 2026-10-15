@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -52,7 +53,7 @@ class TimereportReviewViewHelperTest {
   @Test
   void the_balance_is_formatted_as_the_overtime_account_computed_it() {
     var review = helper(new OvertimeBalance(Duration.ofHours(16), Duration.ofHours(15), Duration.ofHours(4),
-        Duration.ofHours(3)));
+        Duration.ofHours(3), Duration.ZERO));
 
     assertThat(review.hasBalance()).isTrue();
     assertThat(review.targetText()).isEqualTo("16:00");
@@ -60,6 +61,17 @@ class TimereportReviewViewHelperTest {
     assertThat(review.hasAdjustment()).isTrue();
     assertThat(review.adjustmentText()).isEqualTo("+4:00");
     assertThat(review.differenceText()).isEqualTo("+3:00");
+  }
+
+  /* Gebucht - Soll + Zeitzuschlaege = Differenz (#1469): die Zuschlaege stehen nur da, wo es welche gibt. */
+  @Test
+  void the_time_surcharges_are_shown_with_their_sign_where_there_are_any() {
+    var review = helper(new OvertimeBalance(Duration.ofHours(16), Duration.ofHours(15), Duration.ZERO,
+        Duration.ofMinutes(90), Duration.ofMinutes(150)));
+
+    assertThat(review.hasSurcharge()).isTrue();
+    assertThat(review.surchargeText()).isEqualTo("+2:30");
+    assertThat(helper(balance(Duration.ZERO, Duration.ZERO)).hasSurcharge()).isFalse();
   }
 
   @Test
@@ -185,7 +197,7 @@ class TimereportReviewViewHelperTest {
   }
 
   private static OvertimeBalance balance(Duration adjustment, Duration diff) {
-    return new OvertimeBalance(Duration.ofHours(16), Duration.ofHours(16).plus(diff).minus(adjustment), adjustment, diff);
+    return new OvertimeBalance(Duration.ofHours(16), Duration.ofHours(16).plus(diff).minus(adjustment), adjustment, diff, Duration.ZERO);
   }
 
   private static TimereportReview review(OvertimeBalance balance, boolean overtimeAccount,

@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 import static de.hbt.salat.common.exception.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_BOOKING_NO_CONTRACT;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
@@ -16,6 +17,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +33,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.TicketReferences;
+import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
@@ -41,6 +44,7 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
 
 @Service
@@ -261,10 +265,11 @@ public class DailyWorkingReportService {
             throw new InvalidDataException(TR_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
-        var existingBookings = storedBookings(day, employeeOrderId);
+        var stored = timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId);
+        var existingBookings = stored.stream().map(DailyReportData::valueOf).toList();
         var existingBookingsWithoutId = existingBookings
                 .stream().map(DailyReportData::withoutId).toList();
-        var bookings = withResolvedTicketReferences(incomingBookings, existingBookings);
+        var bookings = withResolvedUnsaidFields(incomingBookings, existingBookings);
 
         var newBookings = bookings.stream().filter(not(existingBookingsWithoutId::contains)).toList();
         var oldBookings = existingBookings.stream().filter(booking -> !bookings.contains(booking.withoutId())).toList();
@@ -279,13 +284,19 @@ public class DailyWorkingReportService {
             .toList();
         var pureCreated = newBookings.subList(pairCount, newBookings.size()).stream().map(DailyWorkingReportService::toBookingDetail).toList();
         var pureDeleted = upsert ? oldBookings.subList(pairCount, oldBookings.size()).stream().map(DailyWorkingReportService::toBookingDetail).toList() : List.<ImportReport.BookingDetail>of();
-        return new DayChanges(day, employeeOrder, replacedIds, newBookings,
+        return new DayChanges(day, employeeOrder, replacedIds, newBookings, storedSurchargePercents(stored),
             new BookingCounts(pureCreated, pureDeleted, updatedDetails));
     }
 
-    /** What the file changes on one day for one employee order, carried out in two steps (#397). */
+    /**
+     * What the file changes on one day for one employee order, carried out in two steps (#397).
+     *
+     * @param storedSurchargePercents the rate per kind the stored bookings of the day and order are flagged with
+     *                                (#1469), which a new booking of the same kind keeps
+     */
     private record DayChanges(LocalDate day, Employeeorder employeeorder, List<Long> replacedIds,
-                              List<DailyReportData> newBookings, BookingCounts counts) {
+                              List<DailyReportData> newBookings, Map<SurchargeKind, Integer> storedSurchargePercents,
+                              BookingCounts counts) {
     }
 
     private void deleteReplaced(DayChanges changes) {
@@ -295,61 +306,90 @@ public class DailyWorkingReportService {
     }
 
     private void createNew(DayChanges changes) {
-        changes.newBookings().forEach(booking ->
-            doCreateDailyReport(changes.day(), booking, changes.employeeorder(), changes.employeeorder().getEmployeecontract()));
+        changes.newBookings().forEach(booking -> doCreateDailyReport(changes.day(), booking, changes.employeeorder(),
+            changes.employeeorder().getEmployeecontract(), changes.storedSurchargePercents()));
     }
 
     /**
      * Replaces the bookings of one employee order on one day with {@code bookings} — the
      * {@code PUT /list} of the REST API. A booking that does not say anything about its ticket
-     * reference keeps the one stored for it, exactly as the import does (#1140).
+     * reference or its time surcharge flag keeps the one stored for it, exactly as the import does (#1140,
+     * #1469) - the endpoint deletes the bookings of the day and creates them again.
      */
     public void replaceDailyReports(LocalDate day, Employeeorder employeeorder, List<DailyReportData> bookings) {
         var employeeOrderId = requireNonNull(employeeorder.getId(), "ID of order is required");
         var assigned = bookings.stream().map(booking -> booking.assignedTo(employeeorder, day)).toList();
-        var resolved = withResolvedTicketReferences(assigned, storedBookings(day, employeeOrderId));
+        var stored = timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId);
+        var resolved = withResolvedUnsaidFields(assigned, stored.stream().map(DailyReportData::valueOf).toList());
+        var storedPercents = storedSurchargePercents(stored);
         timereportService.deleteTimeReports(day, employeeOrderId);
-        resolved.forEach(booking -> doCreateDailyReport(day, booking, employeeorder, employeeorder.getEmployeecontract()));
-    }
-
-    private List<DailyReportData> storedBookings(LocalDate day, long employeeOrderId) {
-        return timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId)
-                .stream().map(DailyReportData::valueOf).toList();
+        resolved.forEach(booking ->
+            doCreateDailyReport(day, booking, employeeorder, employeeorder.getEmployeecontract(), storedPercents));
     }
 
     /**
-     * Settles what each incoming booking says about its ticket references (#1140, #1326), so that it can
-     * be compared with the stored bookings of the same day and employee order by plain equality.
+     * The rate per kind the stored bookings of one day and employee order are flagged with (#1469): a booking
+     * deleted and created again by an import keeps its rate as an edit would, as long as kind and suborder stay
+     * - and the suborder is that of the employee order. Of two stored bookings of one kind at different rates
+     * the first one's counts.
+     */
+    private static Map<SurchargeKind, Integer> storedSurchargePercents(List<TimereportDTO> stored) {
+        return stored.stream()
+            .filter(booking -> booking.getSurchargeKind() != null && booking.getSurchargePercent() != null)
+            .collect(toMap(TimereportDTO::getSurchargeKind, TimereportDTO::getSurchargePercent, (first, second) -> first,
+                () -> new EnumMap<>(SurchargeKind.class)));
+    }
+
+    /**
+     * Settles what each incoming booking says about its ticket references (#1140, #1326) and its time surcharge
+     * flag (#1469), so that it can be compared with the stored bookings of the same day and employee order by
+     * plain equality.
      *
      * <p>Given references — the list, or the single reference of an older client — are normalized as in
-     * the booking form; an empty list or text means "no reference". Missing ones ({@code null}: a file
-     * without the column, a client that does not know the field) say nothing about the references, and
-     * dropping stored ones for that reason would lose them on every import of an older file. Such a
-     * booking therefore takes over the references of a stored booking that equals it apart from them,
-     * preferring one not taken yet, so that two stored bookings differing only in their references both
-     * keep theirs.
+     * the booking form; an empty list or text means "no reference". A given flag is a kind's name, an empty
+     * text means "no surcharge". Missing ones ({@code null}: a file without the column, a client that does
+     * not know the field) say nothing, and dropping stored ones for that reason would lose them on every
+     * import of an older file. Such a booking therefore takes over what it leaves unsaid from a stored
+     * booking that equals it apart from that, preferring one not taken yet, so that two stored bookings
+     * differing only in their references both keep theirs.
      *
-     * <p>Where no stored booking matches, the booking is new or changed, and it stays without
-     * references: several bookings per order and day are normal, so which stored one a changed booking
-     * replaces cannot be told — the pairing in the import report is a display aid, not a decision.
+     * <p>Where no stored booking matches, the booking is new or changed, and what it leaves unsaid stays
+     * empty: several bookings per order and day are normal, so which stored one a changed booking replaces
+     * cannot be told — the pairing in the import report is a display aid, not a decision.
      */
-    private static List<DailyReportData> withResolvedTicketReferences(List<DailyReportData> bookings, List<DailyReportData> stored) {
+    private static List<DailyReportData> withResolvedUnsaidFields(List<DailyReportData> bookings, List<DailyReportData> stored) {
         var taken = new ArrayList<DailyReportData>();
         var resolved = new ArrayList<DailyReportData>();
         for (var booking : bookings) {
             var given = booking.givenTicketReferences();
-            if (given != null) {
-                resolved.add(booking.withTicketReferences(TicketReferences.normalize(given)));
+            var referencesUnsaid = given == null;
+            var surchargeUnsaid = !booking.givesSurchargeKind();
+            var said = booking
+                .withTicketReferences(referencesUnsaid ? null : TicketReferences.normalize(given))
+                .withSurchargeKind(surchargeUnsaid ? null : booking.givenSurchargeKind());
+            if (!referencesUnsaid && !surchargeUnsaid) {
+                resolved.add(said);
                 continue;
             }
-            var unsaid = booking.withoutId().withTicketReferences(null);
-            var matching = stored.stream()
-                .filter(candidate -> candidate.withoutId().withTicketReferences(null).equals(unsaid))
-                .toList();
+            Function<DailyReportData, DailyReportData> comparable = candidate -> {
+                var withoutUnsaid = candidate.withoutId();
+                if (referencesUnsaid) {
+                    withoutUnsaid = withoutUnsaid.withTicketReferences(null);
+                }
+                return surchargeUnsaid ? withoutUnsaid.withSurchargeKind(null) : withoutUnsaid;
+            };
+            var unsaid = comparable.apply(said);
+            var matching = stored.stream().filter(candidate -> comparable.apply(candidate).equals(unsaid)).toList();
             var chosen = matching.stream().filter(not(taken::contains)).findFirst()
                 .or(() -> matching.stream().findFirst());
             chosen.ifPresent(taken::add);
-            resolved.add(booking.withTicketReferences(chosen.map(DailyReportData::getTicketReferences).orElse(List.of())));
+            if (referencesUnsaid) {
+                said = said.withTicketReferences(chosen.map(DailyReportData::getTicketReferences).orElse(List.of()));
+            }
+            if (surchargeUnsaid) {
+                said = said.withSurchargeKind(chosen.map(DailyReportData::givenSurchargeKind).orElse(null));
+            }
+            resolved.add(said);
         }
         return resolved;
     }
@@ -369,7 +409,9 @@ public class DailyWorkingReportService {
         }
     }
 
-    private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder, Employeecontract employeeContract) {
+    private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder,
+            Employeecontract employeeContract, Map<SurchargeKind, Integer> storedSurchargePercents) {
+        var kind = booking.givenSurchargeKind();
         timereportService.createTimereports(
                 requireNonNull(employeeContract.getId(), "ID of contract is required"),
                 requireNonNull(employeeorder.getId(), "ID of order is required"),
@@ -377,6 +419,7 @@ public class DailyWorkingReportService {
                 booking.getComment(),
                 booking.getTicketReferences(),
                 booking.isTraining(),
+                SurchargeChoice.keeping(kind, storedSurchargePercents.get(kind)),
                 booking.toDuration(),
                 1
         );

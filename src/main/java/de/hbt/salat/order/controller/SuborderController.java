@@ -187,7 +187,7 @@ public class SuborderController {
             form.getParentId(),
             form.getTicketReferenceMode(),
             form.getTicketReferenceLimit(),
-            form.getSurcharges().toInput()
+            form.getSurchargeRates().toInput()
         );
         if (isCreate) {
           suborderService.create(data, form.getCustomerorderId());
@@ -378,6 +378,7 @@ public class SuborderController {
   }
 
   private void validateForm(SuborderForm form, BindingResult bindingResult) {
+    form.getSurchargeRates().validate(bindingResult, messages);
     // Sign
     if (form.getSign() == null || form.getSign().isEmpty()) {
       bindingResult.rejectValue("sign", "error.sign",
@@ -597,7 +598,7 @@ public class SuborderController {
       form.setTicketReferenceMode(so.getTicketReferencePolicy().mode());
       form.setTicketReferenceLimit(so.getTicketReferencePolicy().limit());
     }
-    form.setSurcharges(SurchargeFields.of(SurchargeInput.of(so::getSurchargeRate)));
+    form.setSurchargeRates(SurchargeFields.of(SurchargeInput.of(so::getSurchargeRate)));
     form.setValidFrom(format(so.getFromDate()));
     form.setValidUntil(so.getUntilDate() != null ? format(so.getUntilDate()) : "");
     if (so.getDebithours() != null && !so.getDebithours().isZero()) {

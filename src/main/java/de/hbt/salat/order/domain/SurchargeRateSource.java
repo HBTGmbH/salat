@@ -9,7 +9,7 @@ package de.hbt.salat.order.domain;
  * @param rate {@code null} where neither a suborder above nor the order sets one
  * @param suborder the suborder above that carries the rate; {@code null} when it is the order's
  */
-public record SurchargeRateSource(SurchargeKind kind, SurchargeRate rate, Suborder suborder, Customerorder customerorder) {
+public record SurchargeRateSource(SurchargeRate rate, Suborder suborder, Customerorder customerorder) {
 
   /**
    * What a suborder below {@code parent} — or at the top of {@code customerorder} where {@code parent}
@@ -20,10 +20,10 @@ public record SurchargeRateSource(SurchargeKind kind, SurchargeRate rate, Subord
     for (var current = parent; current != null; current = current.getParentorder()) {
       var own = current.getSurchargeRate(kind);
       if (own != null) {
-        return new SurchargeRateSource(kind, own, current, customerorder);
+        return new SurchargeRateSource(own, current, customerorder);
       }
     }
-    return new SurchargeRateSource(kind, customerorder.getSurchargeRate(kind), null, customerorder);
+    return new SurchargeRateSource(customerorder.getSurchargeRate(kind), null, customerorder);
   }
 
   /** The complete sign of whatever carries the rate. */

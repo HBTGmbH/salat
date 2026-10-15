@@ -36,7 +36,7 @@ public enum ErrorCode {
   CO_SIGN_TAKEN("CO-0006", "another customer order already has this sign"),
   CO_SPECIAL_ORDER_LOCKED("CO-0007", "the configuration names this customer order as a special order; its sign is locked"),
   CO_TICKET_REFERENCE_LIMIT_INVALID("CO-0008", "an upper limit of ticket references per booking must be at least 1"),
-  CO_SURCHARGE_PERCENT_INVALID("CO-0009", "a time surcharge rate must lie between 0 and 1000 percent"),
+  CO_SURCHARGE_PERCENT_INVALID("CO-0009", "a time surcharge rate must lie between 0 and SurchargeInput.MAX_PERCENT"),
   CO_SURCHARGE_NIGHT_TIMES_MISSING("CO-0010", "a night surcharge needs the beginning and the end of the night"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
@@ -75,7 +75,7 @@ public enum ErrorCode {
   SO_SPECIAL_ORDER_LOCKED("SO-0007", "the configuration names this suborder, or one below it, as a special order; its complete sign is locked"),
   SO_TICKET_REFERENCE_LIMIT_INVALID("SO-0008", "an upper limit of ticket references per booking must be at least 1"),
   SO_COMPLETE_SIGN_TAKEN("SO-0009", "another suborder already has this complete order sign"),
-  SO_SURCHARGE_PERCENT_INVALID("SO-0010", "a time surcharge rate must lie between 0 and 1000 percent"),
+  SO_SURCHARGE_PERCENT_INVALID("SO-0010", "a time surcharge rate must lie between 0 and SurchargeInput.MAX_PERCENT"),
   SO_SURCHARGE_NIGHT_TIMES_MISSING("SO-0011", "a night surcharge needs the beginning and the end of the night"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
@@ -131,6 +131,7 @@ public enum ErrorCode {
   TR_SURCHARGE_SATURDAY_ON_OTHER_DAY("TR-0055", "a Saturday surcharge needs a booking on a Saturday"),
   TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY("TR-0056", "a holiday surcharge needs a booking on a public holiday"),
   TR_SURCHARGE_SUNDAY_ON_OTHER_DAY("TR-0057", "a Sunday surcharge needs a booking on a Sunday"),
+  TR_SURCHARGE_KIND_INVALID("TR-0058", "the time surcharge kind is none of NIGHT, SATURDAY, SUNDAY, HOLIDAY or empty"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

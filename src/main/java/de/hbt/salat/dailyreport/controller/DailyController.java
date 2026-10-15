@@ -44,6 +44,7 @@ import de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor;
 import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.MatrixService;
+import de.hbt.salat.dailyreport.service.SurchargeChoice;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -428,8 +429,9 @@ public class DailyController {
             // the overload with the references (#1029): without it the favourite would hand back
             // everything but the tickets it was made for. More than the suborder allows by now is
             // refused with a message, not cut short (#1326).
+            // a Saturday, Sunday or holiday is flagged as the booking form would preselect it (#1469)
             timereportService.createTimereports(ecId, fav.employeeorderId(), date,
-                fav.comment(), fav.ticketReferences(), false, fav.duration(), 1);
+                fav.comment(), fav.ticketReferences(), false, SurchargeChoice.DAY_PRESET, fav.duration(), 1);
             // only a booking that was created counts as a use (#1414)
             favoriteService.markUsed(favoriteId);
             betas.count(DailyReportBetaFeatureContributor.FAVORITES_FIRST, DailyBetaEvents.FAVORITE_APPLIED);
@@ -482,7 +484,7 @@ public class DailyController {
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime);
             timereportService.createTimereports(ecId, employeeorderId, date,
-                comment != null ? comment : "", ticketReferences, false,
+                comment != null ? comment : "", ticketReferences, false, SurchargeChoice.DAY_PRESET,
                 Duration.ofMinutes(durationMinutes), 1);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()

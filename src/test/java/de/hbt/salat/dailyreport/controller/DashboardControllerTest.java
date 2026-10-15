@@ -136,6 +136,23 @@ public class DashboardControllerTest {
     assertThat(model.getAttribute("overtimeMonth")).isEqualTo("2026-09");
   }
 
+  /* Der Anteil der Zeitzuschlaege an beiden Salden (#1469) kommt aus derselben Rechnung wie der Saldo. */
+  @Test
+  void both_balances_hand_their_share_of_time_surcharges_on() {
+    var status = new OvertimeStatus();
+    status.setTotal(info(10));
+    status.getTotal().setSurchargeCredit(Duration.ofMinutes(150));
+    status.setCurrentMonth(info(2));
+    status.getCurrentMonth().setBegin(LocalDate.parse("2026-09-01"));
+    status.getCurrentMonth().setSurchargeCredit(Duration.ofMinutes(90));
+    var model = new ExtendedModelMap();
+
+    DashboardController.addOvertimeAttributes(model, Optional.of(status), OvertimeScale.TOTAL, OvertimeScale.CURRENT_MONTH);
+
+    assertThat(model.getAttribute("overtimeSurchargeCredit")).isEqualTo(Duration.ofMinutes(150));
+    assertThat(model.getAttribute("monthlyOvertimeSurchargeCredit")).isEqualTo(Duration.ofMinutes(90));
+  }
+
   /* Der Hinweis auf Arbeitstage der Vorwoche ohne Buchung bezieht sich auf den Vertrag, den das
      Dashboard zeigt: den aus fEmployeeContractId, sonst den aktuellen der angemeldeten Person. Die
      Links des Hinweises nennen denselben Vertrag (#1124). Die Mocks sind nachsichtig, weil die

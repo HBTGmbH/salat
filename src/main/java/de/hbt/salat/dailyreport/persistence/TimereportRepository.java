@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes;
+import de.hbt.salat.dailyreport.domain.ReportedMinutes;
 import de.hbt.salat.dailyreport.domain.Timereport;
 
 @Repository
@@ -171,23 +172,18 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   """)
   Optional<Long> getReportedMinutesForEmployeeorder(long employeeorderId);
 
-  @Query("""
-      select sum(tr.duration) from Timereport tr
-      where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
-      and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
-  """ + IS_WORKING_TIME)
-  Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
-
   /**
-   * The time surcharge credit of the contract in the range (#1469), what the overtime account adds to
-   * the booked time. Standby carries no flag; the filter keeps the sum in line with the booked time.
+   * The booked working time of the contract in the range and, over the same bookings, the time surcharge
+   * credit (#1469) the overtime account adds to it. Standby carries no flag; the filter keeps both sums in
+   * line all the same.
    */
   @Query("""
-      select sum(tr.surchargeCredit) from Timereport tr
+      select new de.hbt.salat.dailyreport.domain.ReportedMinutes(sum(tr.duration), sum(tr.surchargeCredit))
+      from Timereport tr
       where tr.deleted = false and tr.employeeorder.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
   """ + IS_WORKING_TIME)
-  Optional<Long> getSurchargeCreditMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
+  ReportedMinutes getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
   @Query("""
       select new de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes(
