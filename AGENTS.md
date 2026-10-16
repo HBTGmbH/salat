@@ -388,6 +388,11 @@ performance-relevant setting in `application-production.yaml`, it must change
 stating why (currently: actuator `metrics` exposure, Azure auth).
 
 ## GitHub Workflow
+- **Repository**: `HBTGmbH/salat` on GitHub (`git@github.com:HBTGmbH/salat.git`). Issues, pull
+  requests, Actions runs and releases live there. Links take the form
+  `https://github.com/HBTGmbH/salat/issues/NNN` (`/pull/NNN` for pull requests); `gh` resolves the
+  repository from the `origin` remote, outside a checkout pass `-R HBTGmbH/salat`. Never derive the
+  owner from the company name or the mail domain — take it from `git remote get-url origin`.
 - **No operating environment details in GitHub artifacts**: nothing that describes the concrete
   runtime environment may end up on GitHub — not in issues, PRs, commit messages, code, comments,
   documentation or screenshots. This covers resource, subscription, tenant, host and account names,
