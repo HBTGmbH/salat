@@ -380,7 +380,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign","surchargeKind"
+                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign","surchargeKind","surchargePercent","surchargeCreditMinutes"
                 });
             }
         };
@@ -428,6 +428,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getTraining(),
             row.getEmployeeSign(),
             row.getSurchargeKind(),
+            row.getSurchargePercent(),
+            row.getSurchargeCreditMinutes(),
             row.getLine()
         );
     }
@@ -450,6 +452,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             reportData.isTraining(),
             reportData.getEmployeeSign(),
             reportData.getSurchargeKind(),
+            reportData.getSurchargePercent(),
+            reportData.getSurchargeCreditMinutes(),
             0
         );
     }
@@ -495,6 +499,12 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
          */
         @CsvBindByName
         private String surchargeKind;
+        /** The rate the flag was stored with (#1469), written on export and ignored on import. */
+        @CsvBindByName
+        private Integer surchargePercent;
+        /** The credit in minutes (#1469), written on export and ignored on import. */
+        @CsvBindByName
+        private Long surchargeCreditMinutes;
         /** The line of the file the row begins in, for messages; not a column. */
         @CsvIgnore
         private long line;

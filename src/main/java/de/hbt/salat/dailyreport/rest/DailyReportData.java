@@ -6,6 +6,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_KIND_INVALID;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.opencsv.bean.CsvBindByPosition;
@@ -162,6 +163,30 @@ public class DailyReportData {
         allowableValues = {"NIGHT", "SATURDAY", "SUNDAY", "HOLIDAY", ""})
     private String surchargeKind;
 
+    /**
+     * The rate the flag was stored with (#1469), read only: the rate follows from the suborder, nobody sends it. It
+     * takes no part in comparing an imported booking with a stored one.
+     */
+    @CsvBindByPosition(position = 13)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @EqualsAndHashCode.Exclude
+    @Schema(description = "Satz des Zeitzuschlags in Prozent, wie er beim Kennzeichnen an der Buchung festgehalten wurde; "
+        + "null ohne Zuschlag. Nur lesend, beim Schreiben ignoriert.",
+        example = "25", nullable = true, accessMode = Schema.AccessMode.READ_ONLY)
+    private Integer surchargePercent;
+
+    /**
+     * The credit on the working time account in minutes, duration × rate (#1469), read only like the rate. In
+     * minutes rather than as a time of day: a credit is an amount.
+     */
+    @CsvBindByPosition(position = 14)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @EqualsAndHashCode.Exclude
+    @Schema(description = "Gutschrift des Zeitzuschlags aufs Arbeitszeitkonto in Minuten (Dauer × Satz, ganze Minuten); "
+        + "0 ohne Zuschlag. Nur lesend, beim Schreiben ignoriert.",
+        example = "60", nullable = true, accessMode = Schema.AccessMode.READ_ONLY)
+    private Long surchargeCreditMinutes;
+
     public static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
                 .id(timeReport.getId())
@@ -179,6 +204,8 @@ public class DailyReportData {
                 .ticketReferences(List.copyOf(timeReport.getTicketReferences()))
                 .employeeSign(timeReport.getEmployeeSign())
                 .surchargeKind(timeReport.getSurchargeKind() != null ? timeReport.getSurchargeKind().name() : null)
+                .surchargePercent(timeReport.getSurchargePercent())
+                .surchargeCreditMinutes(timeReport.getSurchargeCredit().toMinutes())
                 .build();
     }
 

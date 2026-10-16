@@ -115,9 +115,9 @@ class DailyReportCsvConverterTest {
     void shouldWriteToCsv() throws IOException {
         // given
         var rawData = """
-                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign","surchargeKind"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false","",""
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true","abc","NIGHT"
+                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign","surchargeKind","surchargePercent","surchargeCreditMinutes"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false","","","",""
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true","abc","NIGHT","25","15"
                 """;
         var dailyReport1 = DailyReportData.builder()
                 .date("2024-10-29").employeeorderId(183209L)
@@ -131,7 +131,8 @@ class DailyReportCsvConverterTest {
 
         // when
         dailyReportCsvConverter.write(List.of(dailyReport1,
-                dailyReport1.toBuilder().comment("test2").training(true).employeeSign("abc").surchargeKind("NIGHT").build()
+                dailyReport1.toBuilder().comment("test2").training(true).employeeSign("abc").surchargeKind("NIGHT")
+                        .surchargePercent(25).surchargeCreditMinutes(15L).build()
                         .withTicketReferences(List.of("ERP-1"))), null, outputMessage);
 
         // then

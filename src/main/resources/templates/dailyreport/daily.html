@@ -320,6 +320,9 @@
                       <span th:text="#{main.daily.duration.unit}">h</span>
                     </th:block>
                   </span>
+                  <!--/* the time surcharges apart from the booked time; "noch" already takes them into account (#1469) */-->
+                  <span class="text-nowrap" th:unless="${dailyData.progress.surcharge().zero}"
+                        th:text="#{main.welcome.kpi.surcharge.text(${@surchargeCreditViewHelper.credit(dailyData.progress.surcharge())})}">+1:30 Zeitzuschläge</span>
                   <!--/* what is left to the target, and once it is reached what lies beyond it, with
                          a sign instead of a label (#1236) */-->
                   <span class="text-nowrap" th:if="${dailyData.targetDifference != null}">
@@ -357,7 +360,11 @@
                 <div class="progress-bar" th:if="${dailyData.hasDayTarget}"
                      th:classappend="${dailyData.overMaxHours} ? 'bg-danger' : 'bg-primary'"
                      role="progressbar"
-                     th:style="'width:' + ${dailyData.progressPercent} + '%'">
+                     th:style="'width:' + ${dailyData.progress.bookedBar()} + '%'">
+                </div>
+                <!--/* the time surcharges on top of the booked time: they count against the target at once (#1469) */-->
+                <div class="progress-bar bg-teal" th:if="${dailyData.hasDayTarget and !dailyData.progress.surcharge().zero}"
+                     th:style="'width:' + ${dailyData.progress.surchargeBar()} + '%'">
                 </div>
               </div>
             </div>

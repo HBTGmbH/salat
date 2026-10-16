@@ -29,9 +29,10 @@ import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
-import de.hbt.salat.dailyreport.domain.OvertimeStatus;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import de.hbt.salat.dailyreport.domain.OvertimeStatus;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
+import de.hbt.salat.dailyreport.domain.TargetProgress;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.UnbookedWorkingDays;
 import de.hbt.salat.dailyreport.domain.VacationInfo;
@@ -137,27 +138,20 @@ public class DashboardController {
                       && h.getRefdate().getDayOfWeek() != DayOfWeek.SUNDAY)
             .count();
 
-        // Week hours
+        // Week and month: the booked working time, standby left out (#463), and the time surcharges on top of it, which
+        // count against the target at once (#1469)
         var week = new LocalDateRange(weekStart, weekEnd);
-        var weekLogged =recentReports.stream()
-            .filter(r -> week.contains(r.getReferenceday()))
-            .map(TimereportDTO::getDuration)
-            .reduce(Duration.ZERO, Duration::plus);
+        var weekReports = recentReports.stream().filter(r -> week.contains(r.getReferenceday())).toList();
         var weekTarget = employeecontract.getDailyWorkingTime().multipliedBy(Math.max(0, 5 - weekPublicHolidays));
-        int weekPercent = weekTarget.isZero() ? 0
-            : (int) (weekLogged.toMinutes() * 100 / weekTarget.toMinutes());
+        var weekProgress = new TargetProgress(workingTimeOf(weekReports), TimereportDTO.surchargeCreditOf(weekReports), weekTarget);
 
-        // Month hours
         var month = new LocalDateRange(monthStart, monthEnd);
-        var monthLogged = recentReports.stream()
-            .filter(r -> month.contains(r.getReferenceday()))
-            .map(TimereportDTO::getDuration)
-            .reduce(Duration.ZERO, Duration::plus);
+        var monthReports = recentReports.stream().filter(r -> month.contains(r.getReferenceday())).toList();
         long totalWorkingDaysInMonth = getWorkingDayDistance(monthStart, monthEnd);
         var monthTarget = employeecontract.getDailyWorkingTime()
             .multipliedBy(Math.max(0, totalWorkingDaysInMonth - monthPublicHolidays));
-        int monthPercent = monthTarget.isZero() ? 0
-            : (int) (monthLogged.toMinutes() * 100 / monthTarget.toMinutes());
+        var monthProgress = new TargetProgress(workingTimeOf(monthReports), TimereportDTO.surchargeCreditOf(monthReports),
+            monthTarget);
 
         // Last log: geplante Buchungen in der Zukunft verdecken keinen Rueckstand bis heute
         var lastLogOpt = recentReports.stream()
@@ -172,18 +166,16 @@ public class DashboardController {
 
         model.addAttribute("weekStart", weekStart);
         model.addAttribute("weekEnd", weekEnd);
-        model.addAttribute("weekColorClass", DashboardGrades.progress(weekPercent));
+        model.addAttribute("weekColorClass", DashboardGrades.progress(weekProgress.percent()));
         model.addAttribute("monthStart", monthStart);
         model.addAttribute("monthEnd", monthEnd);
-        model.addAttribute("monthColorClass", DashboardGrades.progress(monthPercent));
-        model.addAttribute("weekLogged", DurationUtils.format(weekLogged));
+        model.addAttribute("monthColorClass", DashboardGrades.progress(monthProgress.percent()));
+        model.addAttribute("weekLogged", DurationUtils.format(weekProgress.booked()));
         model.addAttribute("weekTarget", DurationUtils.format(weekTarget));
-        model.addAttribute("weekPercent", weekPercent);
-        model.addAttribute("weekPercentCapped", Math.min(100, weekPercent));
-        model.addAttribute("monthLogged", DurationUtils.format(monthLogged));
+        model.addAttribute("weekProgress", weekProgress);
+        model.addAttribute("monthLogged", DurationUtils.format(monthProgress.booked()));
         model.addAttribute("monthTarget", DurationUtils.format(monthTarget));
-        model.addAttribute("monthPercent", monthPercent);
-        model.addAttribute("monthPercentCapped", Math.min(100, monthPercent));
+        model.addAttribute("monthProgress", monthProgress);
         model.addAttribute("lastLogDate", lastLogOpt.orElse(null));
         model.addAttribute("lastLogDaysAgo", lastLogOpt.map(day -> DAYS.between(day, todayDate)).orElse(0L));
         model.addAttribute("openWorkingDays", openDays.size());
@@ -272,4 +264,7 @@ public class DashboardController {
             .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 
+    private static Duration workingTimeOf(List<TimereportDTO> reports) {
+        return reports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
+    }
 }

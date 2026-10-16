@@ -22,13 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
-import de.hbt.salat.dailyreport.domain.DailyViewData;
 import de.hbt.salat.dailyreport.domain.DailyViewData.WeekStripDay;
-import de.hbt.salat.dailyreport.domain.ListViewData;
+import de.hbt.salat.dailyreport.domain.DailyViewData;
 import de.hbt.salat.dailyreport.domain.ListViewData.ListDay;
+import de.hbt.salat.dailyreport.domain.ListViewData;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
 import de.hbt.salat.dailyreport.domain.ReportPeriod;
 import de.hbt.salat.dailyreport.domain.TargetEnd;
+import de.hbt.salat.dailyreport.domain.TargetProgress;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.employee.service.EmployeecontractService;
@@ -69,8 +70,10 @@ public class DailyService {
         String quittingTime = workingdayService.calculateQuittingTime(employeeContractId, date);
         boolean overMaxHours = workingdayService.checkLaborTimeMaximum(timereports);
 
-        long targetMinutes = dayTarget.toMinutes();
-        int progressPercent = targetMinutes > 0 ? (int) Math.min(100, totalBooked.toMinutes() * 100 / targetMinutes) : 0;
+        // the time surcharges count against the target at once (#1469): the bar shows them on top of the booked
+        // time, what is left to the target and when it is fulfilled take them into account. The quitting time
+        // does not, it follows the time worked.
+        var progress = new TargetProgress(totalBooked, TimereportDTO.surchargeCreditOf(timereports), dayTarget);
 
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
 
@@ -83,8 +86,14 @@ public class DailyService {
         String targetDifference = null;
         boolean targetReached = false;
         if (hasDayTarget && !notWorked) {
-            targetEnd = workingdayService.calculateTargetEnd(workingday, employeeContractId, dayTarget);
-            Duration remaining = dayTarget.minus(totalBooked);
+            // the work it still takes once the credit is off: fulfilled earlier, and the mandatory break follows
+            // the hours actually worked
+            var workToTarget = dayTarget.minus(progress.surcharge());
+            if (workToTarget.isNegative()) {
+                workToTarget = Duration.ZERO;
+            }
+            targetEnd = workingdayService.calculateTargetEnd(workingday, employeeContractId, workToTarget);
+            Duration remaining = progress.remaining();
             targetReached = !remaining.isPositive();
             targetDifference = targetReached ? "+" + DurationUtils.format(remaining.negated()) : DurationUtils.format(remaining);
         }
@@ -110,7 +119,7 @@ public class DailyService {
         boolean canCreate = canWriteDay;
 
         return new DailyViewData(timereports, totalBooked, workingday, quittingTime,
-            targetEnd, targetDifference, targetReached, hasTarget, hasDayTarget, overMaxHours, progressPercent, weekStrip,
+            targetEnd, targetDifference, targetReached, hasTarget, hasDayTarget, overMaxHours, progress, weekStrip,
             notWorked, startTime, breakTime, dailyWorkingTimeFormatted,
             editableIds, workingdayEditable, canCreate, ReportPeriod.statusOn(contract, date));
     }

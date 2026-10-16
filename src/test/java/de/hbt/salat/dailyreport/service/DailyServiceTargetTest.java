@@ -34,6 +34,7 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
  * Vertrag-Soll und Differenz zum Tagessoll in der Tagesansicht (#1236). Gerechnet wird gegen das
@@ -160,6 +161,25 @@ class DailyServiceTargetTest {
 
     assertThat(view.targetEnd()).isNull();
     assertThat(view.targetDifference()).isNull();
+  }
+
+  /* Zeitzuschlaege zaehlen sofort gegen das Soll (#1469): "noch" rechnet sie mit, der Balken zeigt sie als
+     eigenes Stueck auf der gebuchten Zeit. Der Feierabend folgt weiter der gearbeiteten Zeit. */
+  @Test
+  void the_time_surcharges_count_towards_what_is_left_and_stand_apart_in_the_bar() {
+    when(timereportService.getTimereportsByDateAndEmployeeContractId(CONTRACT_ID, DAY))
+        .thenReturn(List.of(TimereportDTO.builder().id(1L).employeecontractId(CONTRACT_ID).referenceday(DAY).status("open")
+            .duration(Duration.ofHours(4)).surchargeKind(SurchargeKind.NIGHT).surchargePercent(25)
+            .surchargeCredit(Duration.ofHours(1)).build()));
+
+    var view = dailyService.buildDailyView(DAY, CONTRACT_ID);
+
+    assertThat(view.totalBooked()).isEqualTo(Duration.ofHours(4));
+    assertThat(view.targetDifference()).isEqualTo("2:00");
+    assertThat(view.progress().bookedBar()).isEqualTo(57.1);
+    assertThat(view.progress().surchargeBar()).isEqualTo(14.3);
+    // fulfilled after 6 hours of work instead of 7: the credit of 1 hour is off
+    verify(workingdayService).calculateTargetEnd(any(), eq(CONTRACT_ID), eq(Duration.ofHours(6)));
   }
 
   private void booked(Duration duration) {
