@@ -53,6 +53,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
@@ -444,5 +445,16 @@ class TimereportServiceAbsenceDayLimitTest {
     var referenceday = new Referenceday();
     referenceday.setRefdate(date);
     return referenceday;
+  }
+
+  /* The limit is about the time worked and taken off; a time surcharge is neither (#1469): 4 hours of night
+     work with a credit of 1 hour leave 4 hours for the absence. */
+  @Test
+  void a_time_surcharge_does_not_count_towards_the_limit() {
+    given(workOrder, MONDAY, Duration.ofHours(4)).setSurcharge(SurchargeKind.NIGHT, 25);
+
+    create(sicknessOrder, MONDAY, Duration.ofHours(4));
+
+    verify(timereportRepository).save(any());
   }
 }

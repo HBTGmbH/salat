@@ -662,7 +662,8 @@ public class TimereportService {
    * {@link DailyService#getRemainingDayTarget}), computed by {@link WorkingTimeTarget}: the daily working time
    * of the contract on a weekday within its validity that is no public holiday, nothing otherwise. Standby
    * is no working time (#463) and counts neither here nor there. So the proposal is exactly what this check
-   * still lets through.
+   * still lets through. Time surcharges (#1469) do not count either: the limit is about the time worked and
+   * taken off, and a credit for a night or a Sunday is neither.
    *
    * <p>Checked on every save, whichever way the booking comes — the form, the inline edit, a favourite, a
    * previous booking, serial days, shifting and moving, the CSV import and the REST API all come through

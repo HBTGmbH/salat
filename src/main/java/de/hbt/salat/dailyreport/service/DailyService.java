@@ -129,7 +129,8 @@ public class DailyService {
      * — the duration the booking form proposes for an absence (#1214). It is the target of the day,
      * not the daily working time of the contract (#857), so a weekend, a public holiday or a day
      * outside the contract leaves nothing, and so does a contract without daily working time. Standby
-     * is no working time and leaves the rest untouched (#463). The rest never turns negative: on a
+     * is no working time and leaves the rest untouched (#463), and so does a time surcharge (#1469): an
+     * absence stands in for time worked, which a credit is not - the same rule as the limit it has to keep. The rest never turns negative: on a
      * day booked to the target or beyond, a proposal would already break #397.
      */
     @Transactional(readOnly = true)

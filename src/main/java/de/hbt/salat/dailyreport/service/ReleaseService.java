@@ -966,7 +966,13 @@ public class ReleaseService {
     return empty();
   }
 
-  private Optional<ServiceFeedbackMessage> validateWorkingDayLength(LocalDate date,
+  /**
+   * The working time of one day must not exceed the legal maximum. The time worked only: a time surcharge (#1469)
+   * is a credit on the account, not time worked, and counts here no more than in
+   * {@link WorkingdayService#checkLaborTimeMaximum}.
+   */
+  @VisibleForTesting
+  static Optional<ServiceFeedbackMessage> validateWorkingDayLength(LocalDate date,
       HashMap<LocalDate, List<TimereportDTO>> timeReports) {
     if(noTimeReportsFound(timeReports, date)) return empty();
     Duration workDurationSum = timeReports.get(date).stream()
