@@ -22,7 +22,8 @@ public record DailyViewData(
     // validity of the contract (#857)
     boolean hasDayTarget,
     boolean overMaxHours,
-    int progressPercent,
+    // the bar towards the target of the day, the time surcharges as a piece of their own (#1469)
+    TargetProgress progress,
     List<WeekStripDay> weekStrip,
     boolean notWorked,
     String startTime,

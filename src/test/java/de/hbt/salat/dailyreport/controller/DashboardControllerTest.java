@@ -22,11 +22,12 @@ import org.mockito.quality.Strictness;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
 import de.hbt.salat.common.test.FixedClock;
-import de.hbt.salat.dailyreport.domain.OvertimeStatus;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import de.hbt.salat.dailyreport.domain.OvertimeStatus;
+import de.hbt.salat.dailyreport.domain.TargetProgress;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
-import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
+import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.service.MatrixService;
 import de.hbt.salat.dailyreport.service.OvertimeService;
 import de.hbt.salat.dailyreport.service.PublicholidayService;
@@ -39,6 +40,8 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 public class DashboardControllerTest {
 
@@ -323,6 +326,44 @@ public class DashboardControllerTest {
       dashboardController.dashboard(42L, model);
 
       assertThat(model.getAttribute("weekLogged")).isEqualTo("8:00");
+    }
+
+    /* Bereitschaft ist keine Arbeitszeit (#463): sie zaehlt in den Kacheln Woche und Monat nicht, wie
+       nirgends sonst gegen das Soll. */
+    @Test
+    void standby_counts_neither_in_the_week_nor_in_the_month() {
+      contractFrom(LocalDate.parse("2020-01-01"), Duration.ofHours(8));
+      when(timereportService.getTimereportsByDatesAndEmployeeContractId(eq(42L), any(), any())).thenReturn(List.of(
+          TimereportDTO.builder().referenceday(LocalDate.parse("2026-09-28")).duration(Duration.ofHours(8)).build(),
+          TimereportDTO.builder().referenceday(LocalDate.parse("2026-09-28")).duration(Duration.ofHours(4))
+              .orderType(OrderType.BEREITSCHAFT).build()));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("weekLogged")).isEqualTo("8:00");
+      assertThat(model.getAttribute("monthLogged")).isEqualTo("8:00");
+    }
+
+    /* Zeitzuschlaege zaehlen sofort gegen das Soll (#1469): sie stehen neben der gebuchten Zeit und gehen in
+       Prozent und Farbe ein - 36 h gebucht und 4 h Zuschlag erfuellen die 40 h der Woche. */
+    @Test
+    void the_time_surcharges_complete_the_week_on_top_of_the_booked_time() {
+      contractFrom(LocalDate.parse("2020-01-01"), Duration.ofHours(8));
+      when(timereportService.getTimereportsByDatesAndEmployeeContractId(eq(42L), any(), any())).thenReturn(List.of(
+          TimereportDTO.builder().referenceday(LocalDate.parse("2026-09-28")).duration(Duration.ofHours(36)).build(),
+          TimereportDTO.builder().referenceday(LocalDate.parse("2026-09-28")).duration(Duration.ofHours(0))
+              .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(4)).build()));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      var week = (TargetProgress) model.getAttribute("weekProgress");
+      assertThat(model.getAttribute("weekLogged")).isEqualTo("36:00");
+      assertThat(week.percent()).isEqualTo(100);
+      assertThat(week.bookedBar()).isEqualTo(90.0);
+      assertThat(week.surchargeBar()).isEqualTo(10.0);
+      assertThat(model.getAttribute("weekColorClass")).isEqualTo("success");
     }
 
     /* Ohne Buchung zaehlt der Rueckstand ab Vertragsbeginn: ein Vertrag, der heute beginnt, hat nur

@@ -85,15 +85,23 @@
             <div class="text-muted" th:text="'/ ' + ${weekTarget}">/ 40:00</div>
             <div class="ms-auto">
               <span class="fw-semibold" th:classappend="'text-' + ${weekColorClass}"
-                    th:text="${weekPercent} + '%'">0%</span>
+                    th:text="${weekProgress.percent()} + '%'">0%</span>
             </div>
           </div>
-          <div class="progress mb-3" style="height: 6px;">
+          <!--/* the time surcharges count against the target at once (#1469): a piece of their own on top of the
+                 booked time, and named under the bar where there are any */-->
+          <div class="progress" style="height: 6px;"
+               th:classappend="${weekProgress.surcharge().zero} ? 'mb-3' : 'mb-1'">
             <div class="progress-bar"
                  th:classappend="${weekColorClass == 'success'} ? 'bg-success' : 'bg-azure'"
-                 th:style="'width: ' + ${weekPercentCapped} + '%'">
+                 th:style="'width: ' + ${weekProgress.bookedBar()} + '%'">
+            </div>
+            <div class="progress-bar bg-teal" th:unless="${weekProgress.surcharge().zero}"
+                 th:style="'width: ' + ${weekProgress.surchargeBar()} + '%'">
             </div>
           </div>
+          <div class="text-muted small mb-3" th:unless="${weekProgress.surcharge().zero}"
+               th:text="#{main.welcome.kpi.surcharge.text(${@surchargeCreditViewHelper.credit(weekProgress.surcharge())})}">+1:30 Zeitzuschläge</div>
           <a th:if="${bookingListAllowed}" class="stretched-link small mt-auto"
              th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${weekStart},fBookingsUntil=${weekEnd})}"
              th:text="#{main.welcome.kpi.week.link.text}">Buchungen der Woche anzeigen</a>
@@ -114,15 +122,23 @@
             <div class="text-muted" th:text="'/ ' + ${monthTarget}">/ 160:00</div>
             <div class="ms-auto">
               <span class="fw-semibold" th:classappend="'text-' + ${monthColorClass}"
-                    th:text="${monthPercent} + '%'">0%</span>
+                    th:text="${monthProgress.percent()} + '%'">0%</span>
             </div>
           </div>
-          <div class="progress mb-3" style="height: 6px;">
+          <!--/* the time surcharges count against the target at once (#1469): a piece of their own on top of the
+                 booked time, and named under the bar where there are any */-->
+          <div class="progress" style="height: 6px;"
+               th:classappend="${monthProgress.surcharge().zero} ? 'mb-3' : 'mb-1'">
             <div class="progress-bar"
                  th:classappend="${monthColorClass == 'success'} ? 'bg-success' : 'bg-azure'"
-                 th:style="'width: ' + ${monthPercentCapped} + '%'">
+                 th:style="'width: ' + ${monthProgress.bookedBar()} + '%'">
+            </div>
+            <div class="progress-bar bg-teal" th:unless="${monthProgress.surcharge().zero}"
+                 th:style="'width: ' + ${monthProgress.surchargeBar()} + '%'">
             </div>
           </div>
+          <div class="text-muted small mb-3" th:unless="${monthProgress.surcharge().zero}"
+               th:text="#{main.welcome.kpi.surcharge.text(${@surchargeCreditViewHelper.credit(monthProgress.surcharge())})}">+1:30 Zeitzuschläge</div>
           <a th:if="${bookingListAllowed}" class="stretched-link small mt-auto"
              th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${monthStart},fBookingsUntil=${monthEnd})}"
              th:text="#{main.welcome.kpi.month.link.text}">Buchungen des Monats anzeigen</a>

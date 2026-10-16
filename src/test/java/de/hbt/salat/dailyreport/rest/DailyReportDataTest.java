@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SURCHARGE_KIND_INVALID;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
+import de.hbt.salat.order.domain.SurchargeKind;
 import tools.jackson.databind.ObjectMapper;
 
 class DailyReportDataTest {
@@ -127,5 +129,31 @@ class DailyReportDataTest {
     assertThatThrownBy(() -> DailyReportData.builder().hours(1).minutes(-5).build().toDuration())
         .isInstanceOf(InvalidDataException.class)
         .hasMessageContaining(TR_DURATION_MINUTES_INVALID.getCode());
+  }
+
+  /* The time surcharge (#1469): the kind goes both ways, rate and credit are read only - they follow from the
+     suborder and the duration, no client sets them. */
+  @Test
+  void writesKindRateAndCreditButReadsTheKindOnly() {
+    var booking = TimereportDTO.builder().duration(Duration.ofHours(4))
+        .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build();
+    ObjectMapper mapper = new ObjectMapper();
+
+    var json = mapper.writeValueAsString(DailyReportData.valueOf(booking));
+    var read = mapper.readValue(json, DailyReportData.class);
+
+    assertThat(json).contains("\"surchargeKind\":\"NIGHT\"", "\"surchargePercent\":25", "\"surchargeCreditMinutes\":60");
+    assertThat(read.givenSurchargeKind()).isEqualTo(SurchargeKind.NIGHT);
+    assertThat(read.getSurchargePercent()).isNull();
+    assertThat(read.getSurchargeCreditMinutes()).isNull();
+  }
+
+  @Test
+  void rejectsASurchargeKindThatNamesNoKind() {
+    var data = DailyReportData.builder().surchargeKind("WEEKEND").build();
+
+    assertThatThrownBy(data::givenSurchargeKind)
+        .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+            assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_SURCHARGE_KIND_INVALID));
   }
 }

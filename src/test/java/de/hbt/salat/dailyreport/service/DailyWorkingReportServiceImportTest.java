@@ -147,8 +147,9 @@ class DailyWorkingReportServiceImportTest {
     var report = service.updateReports(read(csv), employee);
 
     assertThat(csv).startsWith("date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
-        + "workingTime,comment,ticketReference,training,employeeSign,surchargeKind\n");
-    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser,\n", ",07:30,Daily,,true,testuser,\n");
+        + "workingTime,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCreditMinutes\n");
+    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser,,,0\n",
+        ",07:30,Daily,,true,testuser,,,0\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
@@ -166,7 +167,8 @@ class DailyWorkingReportServiceImportTest {
     var csv = export();
     var report = service.updateReports(read(csv), employee);
 
-    assertThat(csv).contains(",04:00,Störung,,false,testuser,NIGHT\n");
+    // kind, the rate it was stored with and the credit in minutes; the import reads the kind only (#1469)
+    assertThat(csv).contains(",04:00,Störung,,false,testuser,NIGHT,25,60\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
