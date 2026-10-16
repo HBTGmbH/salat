@@ -404,6 +404,10 @@ public class WorkingdayService {
     return end.format(HOURS_AND_MINUTES);
   }
 
+  /**
+   * Whether the working time of the day exceeds the legal maximum of ten hours. The time worked only: standby is
+   * none (#463), and a time surcharge (#1469) is a credit on the account, not time worked.
+   */
   public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports) {
     Duration actual = timereports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
     return checkLaborTimeMaximum(actual);

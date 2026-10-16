@@ -19,6 +19,7 @@ import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
  * Der Rest des Tagessolls, mit dem das Buchungsformular eine Abwesenheit vorbelegt (#1214): das
@@ -130,5 +131,16 @@ class DailyServiceRemainingDayTargetTest {
         .orderType(orderType)
         .duration(duration)
         .build();
+  }
+
+  /* An absence stands in for time worked; a time surcharge is a credit, no time worked (#1469). It leaves the rest
+     untouched, as the limit of a day with an absence does. */
+  @Test
+  void a_time_surcharge_leaves_the_rest_untouched() {
+    booked(TimereportDTO.builder().employeecontractId(CONTRACT_ID).referenceday(DAY).status("open")
+        .orderType(OrderType.STANDARD).duration(Duration.ofHours(4))
+        .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build());
+
+    assertThat(dailyService.getRemainingDayTarget(DAY, CONTRACT_ID)).isEqualTo(Duration.ofHours(4));
   }
 }
