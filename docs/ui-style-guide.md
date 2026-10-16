@@ -1201,7 +1201,7 @@ ohne Format-Hinweis.
 | `secondary` (grau) | neutral/inaktiv, Abbrechen |
 | `purple` | Rollen-Badge, Schulung, „Beta"-Markierung |
 | `azure` / `blue` | informative Kennzeichnung in Listen; `azure` zusätzlich Wochenende und „Nicht gearbeitet" (freie Tage) |
-| `teal` | Zeitzuschläge (#1469): Plakette mit der Gutschrift an der Buchung, Flag an Auftrag und Unterauftrag; daneben „freigegeben bis" in der Monatstabelle von „Meine Konten" (`bi-send`). Als Füllung gemessen ([§7.1](#badges-gefüllt-statt-getönt)); Zahlen in Tabellenzellen bleiben in der Textfarbe, weil sie auf den getönten Wochenend- und Feiertagsspalten der Matrix stehen |
+| `teal` | Zeitzuschläge (#1469): Plakette mit der Gutschrift an der Buchung, Flag an Auftrag und Unterauftrag, eigenes Stück oben auf den Ist-Stunden im Diagramm von „Meine Konten"; daneben „freigegeben bis" in der Monatstabelle von „Meine Konten" (`bi-send`). Als Füllung gemessen ([§7.1](#badges-gefüllt-statt-getönt)); Zahlen in Tabellenzellen bleiben in der Textfarbe, weil sie auf den getönten Wochenend- und Feiertagsspalten der Matrix stehen |
 
 `bg-*-lt` für Badges und getönte Flächen — an einer Badge färbt die Klasse allerdings voll, nicht
 getönt ([§7.1](#badges-gefüllt-statt-getönt)). `text-*` für Zahlen und Fließtext-Akzente,

@@ -439,6 +439,8 @@
     (function () {
       const chartLabels = [[${chartLabels}]];
       const chartActual = [[${chartActual}]];
+      // leer, wenn kein Monat Zeitzuschlaege hat (#1469): dann bleibt das Diagramm, wie es war
+      const chartSurcharge = [[${chartSurcharge}]];
       const chartTarget = [[${chartTarget}]];
       const vacationMonthLabels = [[${vacationMonthLabels}]];
       const vacationMonthDays = [[${vacationMonthDays}]];
@@ -513,44 +515,49 @@
 
       /* Arbeitszeit als "Column with Markers": die Ist-Stunden als Saeule, das Soll als Markierung
          quer ueber ihr (ApexCharts goals). Ob ein Monat darueber oder darunter liegt, steht so an
-         einer Saeule statt im Vergleich zweier nebeneinander. Die Legende nennt beide, auch wenn
-         es nur eine Reihe gibt. */
+         einer Saeule statt im Vergleich zweier nebeneinander. Die Legende nennt alle Teile, auch wenn
+         es nur eine Reihe gibt. Zeitzuschlaege (#1469) wirken sofort aufs Arbeitszeitkonto und stehen
+         deshalb als eigenes Stueck in Teal oben auf den gebuchten Stunden; die Markierung des Solls
+         und die Differenz beziehen sich auf den ganzen Stapel. */
       const workingTimeChart = document.getElementById('workingTimeChart');
       if (workingTimeChart) {
         const actualName = /*[[#{main.my.accounts.working.chart.actual}]]*/ 'Ist';
+        const surchargeName = /*[[#{main.my.accounts.working.chart.surcharge}]]*/ 'Zeitzuschläge';
         const targetName = /*[[#{main.my.accounts.working.chart.target}]]*/ 'Soll';
         const actualColor = tblrColor('primary');
+        const surchargeColor = tblrColor('teal');
         const targetColor = tblrColor('orange');
         const differenceName = /*[[#{main.my.accounts.working.chart.difference}]]*/ 'Differenz';
+        const hasSurcharge = chartSurcharge.length > 0;
+        const counted = (index) => chartActual[index] + (hasSurcharge ? chartSurcharge[index] : 0);
         const hours = (value) => number(value) + ' h';
         const signedHours = (value) => (value > 0 ? '+' : value < 0 ? '−' : '±') + hours(Math.abs(value));
         /* Eigenes Popup statt des eingebauten: das stellt den Sollwert einer Markierung anders dar
            als die Saeule - ohne Doppelpunkt, mit einem Zeichen zwischen den Zeilen. Hier stehen
-           Ist, Soll und ihre Differenz gleich aufgebaut untereinander, jede Zeile mit dem Zeichen
-           aus der Legende (Kaestchen fuer die Saeule, Strich fuer die Markierung). */
+           Ist, Zeitzuschlaege, Soll und ihre Differenz gleich aufgebaut untereinander, jede Zeile mit
+           dem Zeichen aus der Legende (Kaestchen fuer die Saeule, Strich fuer die Markierung). */
         const row = (marker, label, value) => '<div class="chart-tooltip-row">' + marker
             + '<span>' + label + '</span><span class="chart-tooltip-value">' + value + '</span></div>';
-        const workingTimeTooltip = ({ dataPointIndex }) => {
-          const actual = chartActual[dataPointIndex];
-          const target = chartTarget[dataPointIndex];
-          return '<div class="chart-tooltip">'
-              + '<div class="chart-tooltip-title">' + chartLabels[dataPointIndex] + '</div>'
-              + row('<span class="chart-tooltip-marker" style="background:' + actualColor + '"></span>', actualName, hours(actual))
-              + row('<span class="chart-tooltip-marker chart-tooltip-marker-line" style="background:' + targetColor + '"></span>', targetName, hours(target))
-              + row('<span class="chart-tooltip-marker"></span>', differenceName, signedHours(Math.round((actual - target) * 10) / 10))
-              + '</div>';
-        };
+        const box = (color) => '<span class="chart-tooltip-marker" style="background:' + color + '"></span>';
+        const line = (color) => '<span class="chart-tooltip-marker chart-tooltip-marker-line" style="background:' + color + '"></span>';
+        const difference = (index) => Math.round((counted(index) - chartTarget[index]) * 10) / 10;
+        const workingTimeTooltip = ({ dataPointIndex }) => '<div class="chart-tooltip">'
+            + '<div class="chart-tooltip-title">' + chartLabels[dataPointIndex] + '</div>'
+            + row(box(actualColor), actualName, hours(chartActual[dataPointIndex]))
+            + (hasSurcharge ? row(box(surchargeColor), surchargeName, hours(chartSurcharge[dataPointIndex])) : '')
+            + row(line(targetColor), targetName, hours(chartTarget[dataPointIndex]))
+            + row('<span class="chart-tooltip-marker"></span>', differenceName, signedHours(difference(dataPointIndex)))
+            + '</div>';
         /* Die Differenz steht als Etikett ueber jeder Saeule, ueber Saeule oder Markierung, was
            hoeher ist. Schrift in Textfarbe (salat.css), die Flaeche nur getoent: gruen, wenn das
            Soll erreicht ist, orange - der Ton der Soll-Markierung -, wenn Stunden fehlen, grau bei
            genau null. Eine Flaeche fuer die Differenz in der Saeule selbst waere bei einer Stunde
            auf 150 kaum einen Pixel hoch. Die y-Achse bekommt oben Luft fuer die Etiketten. */
-        const difference = (index) => Math.round((chartActual[index] - chartTarget[index]) * 10) / 10;
         const differenceTint = (value) => withAlpha(tblrColor(value > 0 ? 'green' : value < 0 ? 'orange' : 'gray-500'), 0.18);
-        const highest = Math.max(0, ...chartActual, ...chartTarget);
+        const highest = Math.max(0, ...chartLabels.map((label, index) => counted(index)), ...chartTarget);
         const differenceLabels = { points: chartLabels.map((label, index) => ({
           x: label,
-          y: Math.max(chartActual[index], chartTarget[index]),
+          y: Math.max(counted(index), chartTarget[index]),
           // der Ankerpunkt des Etiketts bliebe sonst als Punkt auf der Saeule stehen
           marker: { size: 0, strokeWidth: 0, fillColor: 'transparent', strokeColor: 'transparent' },
           label: {
@@ -559,24 +566,32 @@
               padding: { left: 6, right: 6, top: 2, bottom: 3 } }
           }
         })) };
+        /* Beide Reihen als {x, y}: gestapelt zeichnet ApexCharts eine Reihe aus blossen Zahlen neben einer
+           aus Punkten nicht. Das Soll haengt am obersten Stueck; die Markierung steht bei seinem Wert. */
+        const points = (values, withTarget) => values.map((value, index) => ({
+          x: chartLabels[index], y: value,
+          goals: withTarget
+            ? [{ name: targetName, value: chartTarget[index], strokeHeight: 4, strokeLineCap: 'round', strokeColor: targetColor }]
+            : []
+        }));
+        const series = hasSurcharge
+          ? [{ name: actualName, data: points(chartActual, false) }, { name: surchargeName, data: points(chartSurcharge, true) }]
+          : [{ name: actualName, data: points(chartActual, true) }];
+        const legendItems = hasSurcharge ? [actualName, surchargeName, targetName] : [actualName, targetName];
+        // Leerzeichen nach der eckigen Klammer: ohne laese Thymeleaf sie mit der runden als Inline-Ausdruck
+        const legendMarkers = hasSurcharge
+          ? [ () => box(actualColor), () => box(surchargeColor), () => line(targetColor) ]
+          : [ () => box(actualColor), () => line(targetColor) ];
         renderWhenShown('tab-working-time', () => barChart(workingTimeChart, {
           categories: chartLabels,
           annotations: differenceLabels,
           yMax: Math.ceil(highest * 1.15 / 50) * 50,
-          series: [{
-            name: actualName,
-            data: chartActual.map((value, index) => ({
-              x: chartLabels[index], y: value,
-              goals: [{ name: targetName, value: chartTarget[index], strokeHeight: 4, strokeLineCap: 'round', strokeColor: targetColor }]
-            }))
-          }],
-          colors: [actualColor],
-          legend: { show: true, showForSingleSeries: true, customLegendItems: [actualName, targetName],
+          stacked: hasSurcharge,
+          series: series,
+          colors: hasSurcharge ? [actualColor, surchargeColor] : [actualColor],
+          legend: { show: true, showForSingleSeries: true, customLegendItems: legendItems,
             // dieselben Zeichen wie im Popup; ApexCharts' eigene Linienform bliebe ohne Strichstaerke unsichtbar
-            markers: { customHTML: [
-              () => '<span class="chart-tooltip-marker" style="background:' + actualColor + '"></span>',
-              () => '<span class="chart-tooltip-marker chart-tooltip-marker-line" style="background:' + targetColor + '"></span>'
-            ] } },
+            markers: { customHTML: legendMarkers } },
           tooltip: { custom: workingTimeTooltip }
         }));
       }

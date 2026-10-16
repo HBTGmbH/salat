@@ -35,6 +35,7 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.VacationService;
 import de.hbt.salat.dailyreport.viewhelper.OvertimeScale;
 import de.hbt.salat.dailyreport.viewhelper.VacationViewHelper;
+import de.hbt.salat.dailyreport.viewhelper.WorkingTimeChart;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
@@ -130,20 +131,8 @@ public class MyAccountsController {
             previousYearCarryoverIsNegative = prevYearOpt.map(Duration::isNegative).orElse(false);
         }
 
-        // Bar chart: last 6 months in ascending order
-        var overtimeReport = overtimeService.createDetailedReportForEmployee(contract.getId(), false);
-        var monthsDesc = overtimeReport.getMonths(); // already sorted descending
-        int count = Math.min(6, monthsDesc.size());
-        var chartLabels = new ArrayList<String>();
-        var chartActual = new ArrayList<Double>();
-        var chartTarget = new ArrayList<Double>();
-        for (int i = count - 1; i >= 0; i--) {
-            var m = monthsDesc.get(i);
-            chartLabels.add(m.getYearMonth().getMonth().getDisplayName(TextStyle.SHORT, Locale.GERMAN)
-                    + " '" + String.valueOf(m.getYearMonth().getYear()).substring(2));
-            chartActual.add(Math.round(m.getActual().toMinutes() / 6.0) / 10.0);
-            chartTarget.add(Math.round(m.getTarget().toMinutes() / 6.0) / 10.0);
-        }
+        // Bar chart: last 6 months in ascending order, the time surcharges stacked on the booked hours (#1469)
+        var chart = WorkingTimeChart.of(overtimeService.createDetailedReportForEmployee(contract.getId(), false).getMonths(), 6);
 
         model.addAttribute("balance", balance);
         // the share of the time surcharges in the balance (#1469), named under it where there is one
@@ -152,9 +141,10 @@ public class MyAccountsController {
         model.addAttribute("balanceColorClass", balanceColorClass);
         model.addAttribute("previousYearCarryover", previousYearCarryover);
         model.addAttribute("previousYearCarryoverIsNegative", previousYearCarryoverIsNegative);
-        model.addAttribute("chartLabels", chartLabels);
-        model.addAttribute("chartActual", chartActual);
-        model.addAttribute("chartTarget", chartTarget);
+        model.addAttribute("chartLabels", chart.labels());
+        model.addAttribute("chartActual", chart.actual());
+        model.addAttribute("chartSurcharge", chart.hasSurcharge() ? chart.surcharge() : List.of());
+        model.addAttribute("chartTarget", chart.target());
     }
 
     private void populateVacationTab(Model model, Employeecontract contract,
