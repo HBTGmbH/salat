@@ -35,6 +35,9 @@
                       th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
             </select>
           </div>
+          <div class="col-auto">
+            <th:block th:replace="~{fragments/list-limit :: select('fSuborderLimit')}"></th:block>
+          </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a id="create-button" class="btn btn-success" th:href="@{/orders/suborders/create}">
               <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
@@ -95,8 +98,14 @@
     </div>
   </div>
   <div id="results-container" th:fragment="results">
-  <div class="table-responsive card">
-    <table class="table table-vcenter card-table">
+  <div class="card">
+    <!--/* Like the booking list, the list shows its first rows only and says so where it hides some (#1380). */-->
+    <th:block th:if="${hits.truncated}">
+      <div th:replace="~{fragments/list-limit :: truncated(#{main.general.list.truncated(${hits.rows.size()},${hits.total})})}"></div>
+    </th:block>
+  <div class="table-responsive">
+    <!--/* The role once per table, not once per cell: a list of five hundred rows asked it a thousand times (#1380). */-->
+    <table class="table table-vcenter card-table" th:with="manager=${#authorization.expression('hasRole(''MANAGER'')')}">
       <thead>
         <tr>
           <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.customer.text}">Customer</th>
@@ -107,9 +116,9 @@
           <th class="d-none d-lg-table-cell" th:if="${fSuborderShowActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
           <th class="d-none d-lg-table-cell" th:if="${fSuborderShowActualHours}" th:text="#{main.general.difference.text}">Diff</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
         </tr>
       </thead>
       <tbody>
@@ -159,19 +168,19 @@
             <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
           </td>
           <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: suborderHideFlag}"></td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <a class="btn btn-outline-primary" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
               <i class="icon ti ti-pencil m-0"></i>
             </a>
           </td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <form th:action="@{'/orders/suborders/' + ${so.id} + '/copy'}" method="post">
               <button type="submit" class="btn btn-outline-secondary" title="Copy">
                 <i class="icon ti ti-copy m-0"></i>
               </button>
             </form>
           </td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <form th:action="@{'/orders/suborders/' + ${so.id} + '/delete'}" method="post"
                   data-confirm
                   th:data-confirm-title="#{main.suborder.delete.confirm.title}"
@@ -190,6 +199,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
   <div th:if="${htmxRequest}">
     <div id="order-select-wrapper" class="col-md-4" hx-swap-oob="true">

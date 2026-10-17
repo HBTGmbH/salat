@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* The maximum number of rows of a list (#1380), the steps of ListLimits: label and select, reading `limits` and
+       `limit` (ListLimit#addTo). `name` is the filter parameter where the select submits with its form; null where
+       the page copies the value into a hidden field of its own before submitting. */-->
+<th:block th:fragment="select(name)">
+  <label class="form-label" for="limit-select" th:text="#{main.general.list.limit}">Maximale Anzahl Treffer</label>
+  <select class="form-select tomselect" id="limit-select" autocomplete="off" th:name="${name}">
+    <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
+            th:text="${option == 0} ? #{main.general.list.limit.all} : ${option}">500</option>
+  </select>
+</th:block>
+
+<!--/* The hint that the list is cut, at the top of the card of the table; `text` names how many rows are shown of how
+       many hits. */-->
+<div th:fragment="truncated(text)"
+     class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert">
+  <!--/* Symbol und Text in einer Zeilenbox: als eigene Flex-Kinder haben sie verschiedene
+         Zeilenhoehen, und das Zeichen saesse oben in seiner Box statt auf der Schriftlinie. */-->
+  <div>
+    <i class="ti ti-alert-triangle me-2"></i><span th:text="${text}">Die Anzeige ist begrenzt.</span>
+  </div>
+</div>
+
+</body>
+</html>

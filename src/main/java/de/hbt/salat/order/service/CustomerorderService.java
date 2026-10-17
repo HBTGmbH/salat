@@ -448,6 +448,13 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerordersByFilters(showInactive, filter, customerId, showHidden);
   }
 
+  /** The first {@code maxRows} orders of the order list and how many the filters hit (#1380). */
+  @Transactional(readOnly = true)
+  public SearchHits<Customerorder> searchCustomerorders(Boolean showInactive, String filter, Long customerId,
+      Boolean showHidden, int maxRows) {
+    return customerorderDAO.findCustomerorders(showInactive, filter, customerId, showHidden, maxRows);
+  }
+
   @EventListener
   void onCustomerDelete(CustomerDeleteEvent event) {
     var customerorders = customerorderRepository.findAllByCustomerId(event.getId());

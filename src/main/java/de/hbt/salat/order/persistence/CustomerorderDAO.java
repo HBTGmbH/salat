@@ -1,27 +1,34 @@
 package de.hbt.salat.order.persistence;
 
 import static java.lang.Boolean.TRUE;
+import static de.hbt.salat.common.util.ContainsPattern.like;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import com.google.common.collect.Lists;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.ListJoin;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.common.Hiding;
 import de.hbt.salat.common.Validity;
+import de.hbt.salat.common.util.ContainsPattern;
 import de.hbt.salat.customer.domain.Customer_;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.domain.Employee_;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Employeecontract_;
 import de.hbt.salat.order.domain.Customerorder;
@@ -29,6 +36,7 @@ import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.Customerorder_;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Employeeorder_;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
 
@@ -120,29 +128,47 @@ public class CustomerorderDAO {
         return (root, query, builder) -> builder.equal(root.join(Customerorder_.customer).get(Customer_.id), customerId);
     }
 
-    private boolean filterMatchesInMemory(Customerorder co, String filter) {
-        var upper = filter.toUpperCase();
-        var customer = co.getCustomer();
-        return containsIgnoreCase(customer.getShortname(), upper)
-            || containsIgnoreCase(customer.getName(), upper)
-            || containsIgnoreCase(co.getSign(), upper)
-            || containsIgnoreCase(co.getDescription(), upper)
-            || co.getResponsibleHbt().stream().anyMatch(e -> containsIgnoreCase(e.getName(), upper))
-            || (co.getRespEmpHbtContract() != null && containsIgnoreCase(co.getRespEmpHbtContract().getName(), upper));
-    }
-
-    private static boolean containsIgnoreCase(String value, String upper) {
-        return value != null && value.toUpperCase().contains(upper);
-    }
-
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
      */
     public List<Customerorder> getCustomerordersByFilters(final Boolean showInactive, final String filter, final Long customerId, final Boolean showHidden) {
-        boolean isFilter = filter != null && !filter.trim().isEmpty();
-        var order = new Order(ASC, Customerorder_.SIGN).ignoreCase();
-        return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
-            Set<Predicate> predicates = new HashSet<>();
+        if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
+            return List.of();
+        }
+        return customerorderRepository.findAll(byFilters(showInactive, filter, customerId, showHidden), bySign());
+    }
+
+    /**
+     * The first rows of the order list (#1380) and how many the filters hit, both counted in the database: the list
+     * shows something without any filter, so it must not load every order to show the first few.
+     */
+    public SearchHits<Customerorder> findCustomerorders(Boolean showInactive, String filter, Long customerId,
+        Boolean showHidden, int maxRows) {
+        if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
+            return SearchHits.none();
+        }
+        var filters = byFilters(showInactive, filter, customerId, showHidden);
+        // what every row shows, in the query of the rows; the count reads the filters alone
+        Specification<Customerorder> withShownAssociations = filters.and((root, query, builder) -> {
+            root.fetch(Customerorder_.customer);
+            root.fetch(Customerorder_.respEmpHbtContract, JoinType.LEFT);
+            return null;
+        });
+        var page = customerorderRepository.findAll(withShownAssociations, filters,
+            PageRequest.of(0, maxRows, bySign()));
+        return new SearchHits<>(page.getContent(), page.getTotalElements());
+    }
+
+    /** By sign regardless of case, the id deciding between equal ones so that the limit always cuts the same rows. */
+    private static Sort bySign() {
+        return Sort.by(new Order(ASC, Customerorder_.SIGN).ignoreCase(), new Order(ASC, Customerorder_.ID));
+    }
+
+    private Specification<Customerorder> byFilters(Boolean showInactive, String filter, Long customerId,
+        Boolean showHidden) {
+        var pattern = ContainsPattern.of(filter);
+        return (root, query, builder) -> {
+            List<Predicate> predicates = new ArrayList<>();
             if(!TRUE.equals(showInactive)) {
                 predicates.add(Validity.<Customerorder>notInactive(Customerorder_.untilDate).toPredicate(root, query, builder));
             }
@@ -152,10 +178,39 @@ public class CustomerorderDAO {
             if(customerId != null && customerId > 0) {
                 predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
             }
+            if(pattern != null) {
+                predicates.add(containing(pattern).toPredicate(root, query, builder));
+            }
             return builder.and(predicates.toArray(new Predicate[0]));
-        }, Sort.by(order)).stream()
-            .filter(co -> !isFilter || filterMatchesInMemory(co, filter))
-            .collect(Collectors.toList());
+        };
+    }
+
+    /**
+     * The search text of the order lists (#1380), in the query rather than over the loaded orders: customer, sign,
+     * descriptions and the names of the responsible employees. A name is {@link Employee#getName()}, first and last
+     * name with a blank between them. The responsible employees are asked through {@code exists}, so that an order with
+     * two of them stays one row.
+     */
+    private static Specification<Customerorder> containing(String pattern) {
+        return (root, query, builder) -> {
+            var customer = root.join(Customerorder_.customer);
+            var contractually = root.join(Customerorder_.respEmpHbtContract, JoinType.LEFT);
+            var responsible = query.subquery(Integer.class);
+            var employee = responsible.correlate(root).join(Customerorder_.responsibleHbt);
+            responsible.select(builder.literal(1)).where(like(builder, name(builder, employee), pattern));
+            return builder.or(
+                like(builder, customer.get(Customer_.shortname), pattern),
+                like(builder, customer.get(Customer_.name), pattern),
+                like(builder, root.get(Customerorder_.sign), pattern),
+                like(builder, root.get(Customerorder_.shortdescription), pattern),
+                like(builder, root.get(Customerorder_.description), pattern),
+                like(builder, name(builder, contractually), pattern),
+                builder.exists(responsible));
+        };
+    }
+
+    private static Expression<String> name(CriteriaBuilder builder, From<?, Employee> employee) {
+        return builder.concat(builder.concat(employee.get(Employee_.firstname), " "), employee.get(Employee_.lastname));
     }
 
     public List<Customerorder> getCustomerordersByCustomerId(long customerId) {

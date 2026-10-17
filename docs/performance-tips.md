@@ -64,7 +64,9 @@ werden, und wenn das Autorisierungsprädikat eine Assoziation dereferenziert, ko
 (siehe 2.).
 
 Zu finden u. a. in `EmployeeService.getLoginEmployees`, `EmployeecontractDAO`, `EmployeeDAO`,
-`EmployeeorderDAO`, `TimereportDAO`. Neue Abfragen sollten das Prädikat in die Query ziehen.
+`TimereportDAO`. Neue Abfragen sollten das Prädikat in die Query ziehen. Vorbild:
+`EmployeeorderAuthorization.readable()` (#1380) — dieselbe Regel wie `isAuthorized` als
+`Specification`, und ein Test (`EmployeeorderReadableTest`) hält beide für jede Rolle gleich.
 
 ## 4. ViewHelper werden pro Render mehrfach aufgerufen
 

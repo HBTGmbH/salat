@@ -10,19 +10,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.common.Hiding;
 import de.hbt.salat.common.Validity;
+import de.hbt.salat.common.util.ContainsPattern;
 import de.hbt.salat.customer.domain.Customer_;
 import de.hbt.salat.order.domain.Customerorder_;
 import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
 
@@ -106,10 +108,17 @@ public class SuborderDAO {
     }
 
     /**
-     * Get a list of all suborders fitting to the given filters ordered by their sign.
+     * The first rows of the suborder list (#1380) and how many the filters hit, both counted in the database: the list
+     * shows something without any filter, so it must not load seven thousand suborders to show the first few. Ordered
+     * by the complete sign, the id deciding between equal ones so that the limit always cuts the same rows.
      */
-    public List<Suborder> getSubordersByFilters(Boolean showInactive, String filter, Long customerorderId, Long customerId, Boolean showHidden) {
-        return suborderRepository.findAll((root, query, builder) -> {
+    public SearchHits<Suborder> findSuborders(Boolean showInactive, String filter, Long customerorderId, Long customerId,
+        Boolean showHidden, int maxRows) {
+        if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
+            return SearchHits.none();
+        }
+        var pattern = ContainsPattern.of(filter);
+        Specification<Suborder> byFilters = (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
             if(!TRUE.equals(showInactive)) {
                 predicates.add(Validity.<Suborder>notInactive(Suborder_.untilDate).toPredicate(root, query, builder));
@@ -123,34 +132,19 @@ public class SuborderDAO {
             if(customerId != null && customerId > 0) {
                 predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
             }
+            if(pattern != null) {
+                predicates.add(SuborderSearchText.containing(root, query, builder, pattern));
+            }
             return builder.and(predicates.toArray(new Predicate[0]));
-        }).stream()
-            .filter(suborder -> matchesFilter(suborder, filter))
-            .sorted(comparing(Suborder::getCompleteOrderSign))
-            .toList();
-    }
-
-    private static boolean matchesFilter(Suborder suborder, String filter) {
-        if(filter == null || filter.trim().isEmpty()) {
-            return true;
-        }
-        var co = suborder.getCustomerorder();
-        var customer = co.getCustomer();
-        var matchCandidates = List.of(
-            customer.getShortname(),
-            customer.getName(),
-            co.getSign(),
-            co.getShortdescription(),
-            suborder.getCompleteOrderSign(),
-            suborder.getCompleteOrderDescription(true, false),
-            suborder.getShortdescription()
-        );
-
-        final var filterValue = filter.toLowerCase();
-        return matchCandidates.stream()
-            .filter(Objects::nonNull)
-            .map(String::toLowerCase)
-            .anyMatch(candidate -> candidate.contains(filterValue));
+        };
+        // what every row shows, in the query of the rows; the count reads the filters alone
+        Specification<Suborder> withShownAssociations = byFilters.and((root, query, builder) -> {
+            root.fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
+            return null;
+        });
+        var page = suborderRepository.findAll(withShownAssociations, byFilters, PageRequest.of(0, maxRows,
+            Sort.by(Suborder_.COMPLETE_ORDER_SIGN, Suborder_.ID)));
+        return new SearchHits<>(page.getContent(), page.getTotalElements());
     }
 
     /**

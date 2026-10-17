@@ -34,6 +34,7 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.common.viewhelper.NoticeViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -64,6 +65,7 @@ public class CustomerorderController {
   private final FilterHintViewHelper filterHintViewHelper;
   private final NoticeViewHelper noticeViewHelper;
   private final SpecialOrders specialOrders;
+  private final ListLimits listLimits;
 
   @GetMapping
   public String list(
@@ -72,10 +74,14 @@ public class CustomerorderController {
       @RequestParam(required = false) Boolean fCustomerOrderShowInactive,
       @RequestParam(required = false) Boolean fCustomerOrderShowActualHours,
       @RequestParam(required = false) Boolean fCustomerOrderShowHidden,
+      @RequestParam(required = false) String fCustomerOrderLimit,
       HttpServletRequest request,
       Model model) {
-    var filterSet = (fCustomerOrderFilter != null && !fCustomerOrderFilter.isEmpty()) || fCustomerId != null;
-    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(fCustomerOrderShowInactive, fCustomerOrderFilter, fCustomerId, fCustomerOrderShowHidden) : List.<Customerorder>of();
+    // Like the booking list, the page lists orders right away, up to the limit (#1380).
+    var limit = listLimits.parse(fCustomerOrderLimit);
+    var hits = customerorderService.searchCustomerorders(fCustomerOrderShowInactive, fCustomerOrderFilter, fCustomerId,
+        fCustomerOrderShowHidden, limit.maxRows());
+    var customerorders = hits.rows();
     if (Boolean.TRUE.equals(fCustomerOrderShowActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
       for (Customerorder co : customerorders) {
@@ -85,6 +91,8 @@ public class CustomerorderController {
     } else {
       model.addAttribute("customerorders", customerorders);
     }
+    model.addAttribute("hits", hits);
+    limit.addTo(model);
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
     model.addAttribute("fCustomerOrderFilter", fCustomerOrderFilter);
     model.addAttribute("fCustomerId", fCustomerId);

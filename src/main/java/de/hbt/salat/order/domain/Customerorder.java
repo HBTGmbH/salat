@@ -27,6 +27,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
@@ -72,7 +73,8 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String responsible_customer_contractually;
 
     /**
-     * Responsible employees of HBT
+     * Responsible employees of HBT. Read with every order, and a list of orders reads them for many orders at once
+     * rather than one statement per order (#1380).
      */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "customerorder_responsible_hbt",
@@ -81,6 +83,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
         uniqueConstraints = @UniqueConstraint(name = "uk_customerorder_responsible_hbt",
             columnNames = {"CUSTOMERORDER_ID", "EMPLOYEE_ID"}))
     @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 100)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @Getter(AccessLevel.NONE)
     private List<Employee> responsibleHbt = new ArrayList<>();

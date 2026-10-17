@@ -23,6 +23,9 @@
                       th:selected="${fCustomerId != null and fCustomerId == c.id}"></option>
             </select>
           </div>
+          <div class="col-auto">
+            <th:block th:replace="~{fragments/list-limit :: select('fCustomerOrderLimit')}"></th:block>
+          </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a id="create-button" class="btn btn-success" th:href="@{/orders/customerorders/create}" hx-swap-oob="true">
               <i class="icon ti ti-briefcase"></i> <span th:text="#{main.general.button.createcustomerorder.text}">New Customer Order</span>
@@ -85,8 +88,14 @@
 
   <!-- Table -->
   <div id="results-container" th:fragment="results">
-  <div class="table-responsive card">
-    <table class="table table-vcenter card-table">
+  <div class="card">
+    <!--/* Like the booking list, the list shows its first rows only and says so where it hides some (#1380). */-->
+    <th:block th:if="${hits.truncated}">
+      <div th:replace="~{fragments/list-limit :: truncated(#{main.general.list.truncated(${hits.rows.size()},${hits.total})})}"></div>
+    </th:block>
+  <div class="table-responsive">
+    <!--/* The role once per table, not once per cell: a list of five hundred rows asked it a thousand times (#1380). */-->
+    <table class="table table-vcenter card-table" th:with="manager=${#authorization.expression('hasRole(''MANAGER'')')}">
       <thead>
         <tr>
           <th class="d-none d-md-table-cell" th:text="#{main.customerorder.customer.text}">Customer</th>
@@ -97,8 +106,8 @@
           <th class="d-none d-lg-table-cell" th:if="${fCustomerOrderShowActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
           <th class="d-none d-lg-table-cell" th:if="${fCustomerOrderShowActualHours}" th:text="#{main.general.difference.text}">Diff</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
         </tr>
       </thead>
       <tbody>
@@ -153,12 +162,12 @@
                   th:text="${@durationUtils.format(co.difference)}">0:00</span>
           </td>
           <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerorderHideFlag}"></td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <a class="btn btn-outline-primary" th:href="@{/orders/customerorders/edit(id=${co.id})}">
               <i class="icon ti ti-pencil m-0"></i>
             </a>
           </td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <form th:action="@{'/orders/customerorders/' + ${co.id} + '/delete'}" method="post"
                   data-confirm
                   th:data-confirm-title="#{main.customerorder.delete.confirm.title}"
@@ -177,6 +186,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
   </div>
 

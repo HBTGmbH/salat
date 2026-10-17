@@ -712,8 +712,11 @@ public class SuborderService {
     suborderRepository.deleteById(suborderId);
   }
 
-  public List<Suborder> getSubordersByFilters(Boolean showInactive, String filter, Long customerOrderId, Long customerId, Boolean showHidden) {
-    return suborderDAO.getSubordersByFilters(showInactive, filter, customerOrderId, customerId, showHidden);
+  /** The first {@code maxRows} suborders of the suborder list and how many the filters hit (#1380). */
+  @Transactional(readOnly = true)
+  public SearchHits<Suborder> searchSuborders(Boolean showInactive, String filter, Long customerOrderId,
+      Long customerId, Boolean showHidden, int maxRows) {
+    return suborderDAO.findSuborders(showInactive, filter, customerOrderId, customerId, showHidden, maxRows);
   }
 
   public List<Suborder> getSuborderChildren(Long parentSuborderId) {

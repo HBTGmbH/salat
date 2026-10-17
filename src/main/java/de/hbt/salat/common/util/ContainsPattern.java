@@ -1,5 +1,8 @@
 package de.hbt.salat.common.util;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import java.util.Locale;
 
 /**
@@ -33,6 +36,11 @@ public final class ContainsPattern {
       pattern.append(c);
     }
     return pattern.append('%').toString();
+  }
+
+  /** {@code lower(value) like pattern escape '!'} in the criteria API (#1380); the pattern comes from {@link #of}. */
+  public static Predicate like(CriteriaBuilder builder, Expression<String> value, String pattern) {
+    return builder.like(builder.lower(value), pattern, ESCAPE);
   }
 
   /**

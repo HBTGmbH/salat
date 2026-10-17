@@ -56,6 +56,9 @@
                       th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
             </select>
           </div>
+          <div class="col-auto">
+            <th:block th:replace="~{fragments/list-limit :: select('fEmployeeOrderLimit')}"></th:block>
+          </div>
         </div>
 
         <!-- Advanced toggle -->
@@ -126,8 +129,14 @@
 
   <!-- Table -->
   <div id="results-container" th:fragment="results">
-  <div class="table-responsive card">
-    <table class="table table-vcenter card-table">
+  <div class="card">
+    <!--/* Like the booking list, the list shows its first rows only and says so where it hides some (#1380). */-->
+    <th:block th:if="${hits.truncated}">
+      <div th:replace="~{fragments/list-limit :: truncated(#{main.general.list.truncated(${hits.rows.size()},${hits.total})})}"></div>
+    </th:block>
+  <div class="table-responsive">
+    <!--/* The role once per table, not once per cell: a list of five hundred rows asked it a thousand times (#1380). */-->
+    <table class="table table-vcenter card-table" th:with="manager=${#authorization.expression('hasRole(''MANAGER'')')}">
       <thead>
         <tr>
           <th th:text="#{main.employeeorder.employee.text}">Employee</th>
@@ -138,8 +147,8 @@
           <th class="d-none d-md-table-cell" th:if="${fEmployeeOrderShowActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
           <th class="d-none d-md-table-cell" th:if="${fEmployeeOrderShowActualHours}" th:text="#{main.general.difference.text}">Diff</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
+          <th th:if="${manager}" class="w-1"></th>
         </tr>
       </thead>
       <tbody>
@@ -182,12 +191,12 @@
           <td class="d-none d-lg-table-cell">
             <span th:if="${eo.hidden}" class="badge bg-danger-lt"><i class="bi bi-eye-slash"></i></span>
           </td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <a th:href="@{/orders/employeeorders/edit(id=${eo.id})}" class="btn btn-outline-primary">
               <i class="icon ti ti-pencil m-0"></i>
             </a>
           </td>
-          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <td th:if="${manager}">
             <form th:action="@{/orders/employeeorders/{id}/delete(id=${eo.id})}" method="post"
                   data-confirm
                   th:data-confirm-title="#{main.employeeorder.delete.confirm.title}"
@@ -203,6 +212,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
   <div th:if="${htmxRequest}">
     <div id="order-select-wrapper" class="col-md-4" hx-swap-oob="true">

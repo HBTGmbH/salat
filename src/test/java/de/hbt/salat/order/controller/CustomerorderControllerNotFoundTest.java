@@ -27,11 +27,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.common.viewhelper.NoticeViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.service.EmployeeService;
@@ -64,7 +66,7 @@ class CustomerorderControllerNotFoundTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new CustomerorderController(customerorderService, mock(CustomerService.class),
         mock(EmployeeService.class), messages, new ErrorCodeViewHelper(messages), mock(AuthorizedEmployee.class),
-        mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class), mock(SpecialOrders.class));
+        mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class), mock(SpecialOrders.class), new ListLimits(new SalatProperties()));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     when(customerorderService.getCustomerorderById(UNKNOWN_ID)).thenReturn(null);
