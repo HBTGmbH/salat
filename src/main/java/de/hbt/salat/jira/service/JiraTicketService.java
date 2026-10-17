@@ -72,7 +72,8 @@ public class JiraTicketService {
   }
 
   private static JiraTicketInfo toInfo(JiraTicket ticket) {
-    return new JiraTicketInfo(ticket.getKey(), ticket.getSummary(), ticket.getIssueType(), ticket.getParentKey());
+    return new JiraTicketInfo(ticket.getKey(), ticket.getSummary(), ticket.getIssueType(), ticket.getParentKey(),
+        ticket.getCustomerorderId(), ticket.getSuborderId(), ticket.getUpdatedTs());
   }
 
   private static String normalise(String key) {

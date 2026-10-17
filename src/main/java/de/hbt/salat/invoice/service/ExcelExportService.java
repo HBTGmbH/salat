@@ -14,7 +14,6 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +31,15 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.invoice.domain.InvoiceData;
-import de.hbt.salat.invoice.domain.InvoiceSuborder;
-import de.hbt.salat.invoice.domain.InvoiceTimereport;
+import de.hbt.salat.invoice.domain.InvoiceGroup;
+import de.hbt.salat.invoice.domain.InvoiceLine;
+import de.hbt.salat.invoice.domain.InvoiceTicketDisplay;
 import de.hbt.salat.invoice.service.InvoiceService.InvoiceOptions;
 
 /**
@@ -77,38 +78,60 @@ public class ExcelExportService {
         };
     }
 
+    private final MessageSourceAccessor messages;
+
     public byte[] exportToExcel(InvoiceData invoiceData, InvoiceOptions displayOptions, InvoiceColumnHeaders headers) throws IOException {
         var factory = getXSSFFactory();
-        try(Workbook workbook = createInvoiceExcel(invoiceData, displayOptions, headers, factory);
+        var layout = new Layout(displayOptions,
+            displayOptions.getTicketDisplay() == InvoiceTicketDisplay.COLUMN && invoiceData.isTicketReferencesPresent(),
+            displayOptions.isShowTimereports() && (!invoiceData.getGrouping().isByTicket() || displayOptions.isShowTicketLines()),
+            messages.getMessage("main.invoice.ticket.none", "ohne Ticket"));
+        try(Workbook workbook = createInvoiceExcel(invoiceData, layout, headers, factory);
             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             workbook.write(out);
             return out.toByteArray();
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static Workbook createInvoiceExcel(InvoiceData invoiceData, InvoiceOptions displayOptions, InvoiceColumnHeaders headers, InstanceFactory factory) {
+    /**
+     * What the sheet shows besides the columns the options switch.
+     *
+     * @param ticketColumn whether the column „Ticket“ is there (#1390)
+     * @param lines        whether the bookings are listed under their groups, or only the subtotals
+     */
+    private record Layout(InvoiceOptions options, boolean ticketColumn, boolean lines, String noTicketLabel) {}
+
+    private static Workbook createInvoiceExcel(InvoiceData invoiceData, Layout layout, InvoiceColumnHeaders headers, InstanceFactory factory) {
         Workbook workbook = factory.createWorkbook();
         createCellStyles(workbook);
         workbook.createSheet(INVOICE_EXCEL_SHEET_NAME);
-        addTitleRow(workbook, displayOptions, headers, factory);
+        addTitleRow(workbook, layout, headers, factory);
         int rowIndex = 1;
-        var invoiceSuborders = invoiceData.getSuborders();
-        for (var invoiceSuborder : invoiceSuborders) {
-            if (invoiceSuborder.isVisible()) {
-                rowIndex = addSuborderDataRow(workbook, rowIndex, invoiceSuborder, displayOptions, factory);
-                if (displayOptions.isShowTimereports()) {
-                    for (var invoiceTimereport : invoiceSuborder.getTimereports()) {
-                        if (invoiceTimereport.isVisible()) {
-                            rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereport, displayOptions, factory);
-                        }
-                    }
+        for (var group : invoiceData.getGroups()) {
+            rowIndex = addGroup(workbook, rowIndex, group, layout, factory);
+        }
+        addSumRow(workbook, rowIndex, invoiceData, layout);
+        setColumnWidths(workbook.getSheet(INVOICE_EXCEL_SHEET_NAME), factory);
+        return workbook;
+    }
+
+    /** The group's row with its subtotal, its own bookings, then the groups below it. */
+    private static int addGroup(Workbook workbook, int rowIndex, InvoiceGroup group, Layout layout, InstanceFactory factory) {
+        if (!group.isVisible()) {
+            return rowIndex;
+        }
+        rowIndex = addGroupDataRow(workbook, rowIndex, group, layout, factory);
+        if (layout.lines()) {
+            for (var line : group.getLines()) {
+                if (line.isVisible()) {
+                    rowIndex = addLineDataRow(workbook, rowIndex, line, layout, factory);
                 }
             }
         }
-        addSumRow(workbook, rowIndex, invoiceData, displayOptions);
-        setColumnWidths(workbook.getSheet(INVOICE_EXCEL_SHEET_NAME), factory);
-        return workbook;
+        for (var child : group.getChildren()) {
+            rowIndex = addGroup(workbook, rowIndex, child, layout, factory);
+        }
+        return rowIndex;
     }
 
     private static void createCellStyles(Workbook workbook) {
@@ -174,12 +197,14 @@ public class ExcelExportService {
         return factory.createRichTextString(str);
     }
 
-    private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborder invoiceSuborder, InvoiceOptions options, InstanceFactory factory) {
+    private static int addGroupDataRow(Workbook workbook, int rowIndex, InvoiceGroup group, Layout layout, InstanceFactory factory) {
+        var options = layout.options();
         Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 0;
         Cell cell = row.createCell(colIndex, STRING);
-        cell.setCellValue(createRTS(invoiceSuborder.getOrderDescription(), factory));
+        var heading = group.isNoTicketGroup() ? layout.noTicketLabel() : group.getHeading();
+        cell.setCellValue(createRTS("  ".repeat(group.getDepth()) + heading, factory));
         colIndex++;
         if (options.isShowTimereports()) {
             colIndex++;
@@ -191,27 +216,34 @@ public class ExcelExportService {
                 cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
                 colIndex++;
             }
+            if (layout.ticketColumn()) {
+                colIndex++;
+            }
         }
         if (options.isShowBudget()) {
-            cell = row.createCell(colIndex, NUMERIC);
-            if (invoiceSuborder.getBudget() != null) {
-                cell.setCellValue((double) invoiceSuborder.getBudget().toMinutes() / MINUTES_PER_DAY);
-            } else {
-                cell.setCellValue(0L);
+            if (group.isSuborderGroup()) {
+                cell = row.createCell(colIndex, NUMERIC);
+                if (group.getBudget() != null) {
+                    cell.setCellValue((double) group.getBudget().toMinutes() / MINUTES_PER_DAY);
+                } else {
+                    cell.setCellValue(0L);
+                }
+                cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             }
-            cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             colIndex++;
         }
         cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue((double) invoiceSuborder.getTotalDurationVisible().toMinutes() / MINUTES_PER_DAY);
+        cell.setCellValue((double) group.getTotalDurationVisible().toMinutes() / MINUTES_PER_DAY);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
         colIndex++;
         cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue((double) invoiceSuborder.getTotalDurationVisible().toMinutes() / MINUTES_PER_HOUR);
+        cell.setCellValue((double) group.getTotalDurationVisible().toMinutes() / MINUTES_PER_HOUR);
         return rowIndex;
     }
 
-    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereport invoiceTimereport, InvoiceOptions invoiceOptions, InstanceFactory factory) {
+    private static int addLineDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceLine line, Layout layout, InstanceFactory factory) {
+        var invoiceOptions = layout.options();
+        var invoiceTimereport = line.getTimereport();
         Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 1;
@@ -236,33 +268,33 @@ public class ExcelExportService {
         }
         if (invoiceOptions.isShowTaskdescriptions()) {
             cell = row.createCell(colIndex, STRING);
-            cell.setCellValue(createRTS(invoiceTimereport.getTaskDescription(), factory));
+            var description = invoiceOptions.getTicketDisplay() == InvoiceTicketDisplay.COMMENT
+                ? line.getTaskDescriptionWithTickets()
+                : invoiceTimereport.getTaskDescription();
+            cell.setCellValue(createRTS(description, factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
+            colIndex++;
+        }
+        if (layout.ticketColumn()) {
+            cell = row.createCell(colIndex, STRING);
+            cell.setCellValue(createRTS(line.getTicketText(), factory));
             colIndex++;
         }
         if (invoiceOptions.isShowBudget()) {
             colIndex++;
         }
         cell = row.createCell(colIndex, NUMERIC);
-        if (invoiceTimereport.getDuration() != null) {
-            double duration = invoiceTimereport.getDuration().toMinutes();
-            cell.setCellValue(duration / MINUTES_PER_DAY);
-        } else {
-            cell.setCellValue(0L);
-        }
+        double duration = line.getShare().toMinutes();
+        cell.setCellValue(duration / MINUTES_PER_DAY);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
         colIndex++;
         cell = row.createCell(colIndex, NUMERIC);
-        if (invoiceTimereport.getDuration() != null) {
-            double duration = invoiceTimereport.getDuration().toMinutes();
-            cell.setCellValue(duration / MINUTES_PER_HOUR);
-        } else {
-            cell.setCellValue(0L);
-        }
+        cell.setCellValue(duration / MINUTES_PER_HOUR);
         return rowIndex;
     }
 
-    private static void addTitleRow(Workbook workbook, InvoiceOptions options, InvoiceColumnHeaders headers, InstanceFactory factory) {
+    private static void addTitleRow(Workbook workbook, Layout layout, InvoiceColumnHeaders headers, InstanceFactory factory) {
+        var options = layout.options();
         int colIndex = 0;
         Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(0);
         Cell cell = row.createCell(colIndex, STRING);
@@ -286,6 +318,12 @@ public class ExcelExportService {
                 cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
                 colIndex++;
             }
+            if (layout.ticketColumn()) {
+                cell = row.createCell(colIndex, STRING);
+                cell.setCellValue(createRTS(headers.getTicketHeader(), factory));
+                cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
+                colIndex++;
+            }
         }
 
         if (options.isShowBudget()) {
@@ -304,7 +342,8 @@ public class ExcelExportService {
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
     }
 
-    private static void addSumRow(Workbook workbook, int rowIndex, InvoiceData invoiceData, InvoiceOptions displayOptions) {
+    private static void addSumRow(Workbook workbook, int rowIndex, InvoiceData invoiceData, Layout layout) {
+        var displayOptions = layout.options();
         Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         int colIndex = 1;
         if (displayOptions.isShowTimereports()) {
@@ -313,6 +352,9 @@ public class ExcelExportService {
                 colIndex++;
             }
             if (displayOptions.isShowTaskdescriptions()) {
+                colIndex++;
+            }
+            if (layout.ticketColumn()) {
                 colIndex++;
             }
         }
@@ -375,6 +417,7 @@ public class ExcelExportService {
         String getDateHeader();
         String getEmployeeHeader();
         String getTaskDescriptionHeader();
+        String getTicketHeader();
         String getBudgetHeader();
         String getDurationHeader();
         String getHoursHeader();

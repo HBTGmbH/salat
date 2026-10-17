@@ -64,7 +64,7 @@ class TimereportListTicketScopesTest {
   void setUp() {
     when(visibilityService.anyTime()).thenReturn(TimereportVisibility.all());
     when(jiraTicketService.getTickets(any(), any())).thenReturn(List.of(
-        new JiraTicketInfo("ALPHA-1", "Login", "Story", null)));
+        new JiraTicketInfo("ALPHA-1", "Login", "Story", null, ORDER, null, null)));
     when(suborderService.getSuborderLocationsByIds(List.of(SUBORDER))).thenReturn(Map.of(SUBORDER,
         new SuborderLocation(SUBORDER, ORDER, List.of(SUBORDER), "ALPHA/01")));
   }

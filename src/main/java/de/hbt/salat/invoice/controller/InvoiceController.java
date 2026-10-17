@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -23,8 +24,10 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.invoice.domain.InvoiceData;
+import de.hbt.salat.invoice.domain.InvoiceGrouping;
 import de.hbt.salat.invoice.domain.InvoiceSettings;
 import de.hbt.salat.invoice.domain.InvoiceSuborder;
+import de.hbt.salat.invoice.domain.InvoiceTicketDisplay;
 import de.hbt.salat.invoice.service.ExcelExportService;
 import de.hbt.salat.invoice.service.InvoiceService;
 import de.hbt.salat.invoice.service.InvoiceService.InvoiceOptions;
@@ -70,6 +73,9 @@ public class InvoiceController {
         if (form.getTitlesubordertext() == null || form.getTitlesubordertext().isBlank()) {
             initColumnHeaders(form);
         }
+        if (form.getTitletickettext() == null || form.getTitletickettext().isBlank()) {
+            form.setTitletickettext(messages.getMessage("main.invoice.title.ticket.text", "Ticket"));
+        }
         prefillPeriodFromBudget(form);
         form.setPreviousOrderBudgetId(form.getOrderBudgetId());
         if (rejectAmbiguousScope(form, model)) {
@@ -78,7 +84,13 @@ public class InvoiceController {
             return "invoice/invoice-form";
         }
         if (form.getOrderId() != null) {
-            var invoiceData = buildInvoiceData(form);
+            // Loading the data starts with everything in it; regrouping keeps what was deselected (#1390).
+            var regroup = form.isRegroup();
+            var invoiceData = buildInvoiceData(form, regroup);
+            if (regroup) {
+                updateVisibleFlags(form, invoiceData);
+            }
+            form.setRegroup(false);
 
             form.setSuborderIdArray(invoiceData.getSuborders().stream()
                 .filter(InvoiceSuborder::isVisible)
@@ -111,7 +123,7 @@ public class InvoiceController {
             addCommonModel(model, form);
             return "invoice/invoice-form";
         }
-        var invoiceData = buildInvoiceData(form);
+        var invoiceData = buildInvoiceData(form, true);
         updateVisibleFlags(form, invoiceData);
         model.addAttribute("invoiceData", invoiceData);
 
@@ -125,7 +137,11 @@ public class InvoiceController {
         model.addAttribute("claimUrl", invoiceSettings.getImageUrl(CLAIM));
         model.addAttribute("customCss", invoiceSettings.getCustomCss());
         model.addAttribute("today", today());
-        model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form));
+        var showTicketColumn = showTicketColumn(form, invoiceData);
+        model.addAttribute("showTicketColumn", showTicketColumn);
+        model.addAttribute("showLines", form.isTimereportsbox()
+            && (!invoiceData.getGrouping().isByTicket() || form.isTicketlinesbox()));
+        model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form) + (showTicketColumn ? 1 : 0));
         model.addAttribute("targethoursbox", form.isTargethoursbox());
         return "invoice/invoice-print";
     }
@@ -138,13 +154,15 @@ public class InvoiceController {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        var invoiceData = buildInvoiceData(form);
+        var invoiceData = buildInvoiceData(form, true);
         updateVisibleFlags(form, invoiceData);
         var displayOptions = InvoiceOptions.builder()
             .showTimereports(form.isTimereportsbox())
             .showEmployee(form.isEmployeesignbox())
             .showTaskdescriptions(form.isTimereportdescriptionbox())
             .showBudget(form.isTargethoursbox())
+            .ticketDisplay(form.getTicketdisplay())
+            .showTicketLines(form.isTicketlinesbox())
             .build();
         var bytes = excelExportService.exportToExcel(invoiceData, displayOptions, form);
         var fileName = createFileName(invoiceData);
@@ -174,6 +192,7 @@ public class InvoiceController {
         form.setTitleactualdurationtext(messages.getMessage("main.invoice.title.actualduration.text", "Duration"));
         form.setTitledatetext(messages.getMessage("main.invoice.title.date.text", "Date"));
         form.setTitledescriptiontext(messages.getMessage("main.invoice.title.description.text", "Description"));
+        form.setTitletickettext(messages.getMessage("main.invoice.title.ticket.text", "Ticket"));
         form.setTitleemployeesigntext(messages.getMessage("main.invoice.title.employeesign.text", "Employee"));
         form.setTitlesubordertext(messages.getMessage("main.invoice.title.suborder.text", "Suborder"));
         form.setTitletargethourstext(messages.getMessage("main.invoice.title.targethours.text", "Budget"));
@@ -209,7 +228,16 @@ public class InvoiceController {
         return count;
     }
 
-    private InvoiceData buildInvoiceData(InvoiceForm form) {
+    /** The column „Ticket“ is there when it is chosen and there is anything to put in it (#1390). */
+    private static boolean showTicketColumn(InvoiceForm form, InvoiceData invoiceData) {
+        return form.getTicketdisplay() == InvoiceTicketDisplay.COLUMN && invoiceData.isTicketReferencesPresent();
+    }
+
+    /**
+     * @param keepTicketSelection whether the ticket selection of the form applies — otherwise every
+     *                            booked ticket gets its group, as when the data is first loaded
+     */
+    private InvoiceData buildInvoiceData(InvoiceForm form, boolean keepTicketSelection) {
         LocalDate dateFirst;
         LocalDate dateLast;
 
@@ -237,6 +265,11 @@ public class InvoiceController {
             .showEmployee(form.isEmployeesignbox())
             .showTaskdescriptions(form.isTimereportdescriptionbox())
             .shortDescriptions("shortdescription".equals(form.getSuborderdescription()))
+            .grouping(form.getGrouping() == null ? InvoiceGrouping.SUBORDER : form.getGrouping())
+            .ticketSelection(keepTicketSelection && form.isTicketSelectionSubmitted()
+                ? Set.copyOf(form.getTicketSelection()) : null)
+            .ticketDisplay(form.getTicketdisplay())
+            .showTicketLines(form.isTicketlinesbox())
             .build();
 
         return invoiceService.generateInvoiceData(
