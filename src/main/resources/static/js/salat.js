@@ -3275,3 +3275,23 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('htmx:after:swap', function () {
   document.querySelectorAll('[data-ticket-suggestions]').forEach(syncTicketSuggestions);
 });
+
+/* Die Vorschlaege gelten fuer den Kommentar und die Referenzen, mit denen gespeichert werden sollte
+ * (#1476). Aendert sich eins davon (data-ticket-suggestions-source), sind sie veraltet: Die Box geht
+ * samt ihren Haken, und gespeichert wird wieder normal - ob der Kommentar dann noch Tickets nennt,
+ * prueft der Server beim Absenden neu. Mit der Box geht ein vorgemerktes "Speichern und neu"
+ * (data-ticket-suggestions-pending), die Knoepfe des Formulars waehlen dann wieder. */
+function releaseTicketSuggestions(event) {
+  const field = event.target;
+  if (!field.matches || !field.matches('[data-ticket-suggestions-source]') || !field.form) return;
+  const form = field.form;
+  const box = form.querySelector('[data-ticket-suggestions]');
+  if (!box) return;
+  box.remove();
+  form.querySelectorAll('[data-ticket-suggestions-pending]').forEach(input => input.remove());
+  form.querySelectorAll('[data-ticket-suggestions-held]').forEach(button => { button.disabled = false; });
+  form.querySelectorAll('[data-ticket-suggestions-released]').forEach(block => block.classList.remove('d-none'));
+}
+
+document.addEventListener('input', releaseTicketSuggestions);
+document.addEventListener('change', releaseTicketSuggestions);

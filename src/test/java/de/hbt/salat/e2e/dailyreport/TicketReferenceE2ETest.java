@@ -4,6 +4,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,6 +34,8 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
   private static final LocalDate DAY = LocalDate.parse("2026-06-30");
   private static final LocalDate OTHER_DAY = LocalDate.parse("2026-07-01");
   private static final LocalDate PROPOSAL_DAY = LocalDate.parse("2026-07-02");
+  private static final LocalDate CORRECTION_DAY = LocalDate.parse("2026-07-03");
+  private static final LocalDate INLINE_CORRECTION_DAY = LocalDate.parse("2026-07-06");
   private static final String TICKET_KEY = "ALPHA-4711";
   private static final String TICKET_SUMMARY = "Anmeldung schlägt bei langen Namen fehl";
   private static final String OTHER_TICKET_KEY = "ALPHA-4712";
@@ -165,8 +168,117 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * #1476: the proposal belongs to the comment it was made for. Corrected, the comment needs none -
+   * the proposal goes and plain "Speichern" saves straight away. "Speichern und neu" from the first
+   * submit is not carried along: it is a button of its own again.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void correcting_the_comment_releases_saving(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(CORRECTION_DAY), page -> {
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+      pickTicketSuggestion(page, TICKET_KEY);
+      page.fill("#commentField", "Korrektur " + browser + ": Arbeit an GAMMA-3");
+      page.fill("#durationTime", "00:30");
+      page.click("#timereportMainForm button[name=saveAndNew]");
+      assertThat(page.locator("[data-ticket-suggestions]")).isVisible();
+
+      page.fill("#commentField", "Korrektur " + browser + ": Arbeit an " + TICKET_KEY);
+
+      assertThat(page.locator("[data-ticket-suggestions]")).hasCount(0);
+      assertThat(saveButton(page)).isEnabled();
+      assertThat(page.locator("#timereportMainForm button[name=saveAndNew]")).isEnabled();
+      saveButton(page).click();
+
+      // saved, and the day is shown - not the form for the next booking
+      assertThat(page.locator("#daily-bookings-area tbody tr")
+          .filter(new Locator.FilterOptions().setHasText("Korrektur " + browser))).hasCount(1);
+    });
+  }
+
+  /** #1476: a change of the references makes the proposal just as stale as one of the comment. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void changing_the_references_releases_saving(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(CORRECTION_DAY), page -> {
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+      page.fill("#commentField", "Referenz " + browser + ": Arbeit an " + TICKET_KEY);
+      page.fill("#durationTime", "00:30");
+      saveButton(page).click();
+      assertThat(page.locator("[data-ticket-suggestions]")).isVisible();
+
+      pickTicketSuggestion(page, TICKET_KEY);
+
+      assertThat(page.locator("[data-ticket-suggestions]")).hasCount(0);
+      assertThat(saveButton(page)).isEnabled();
+    });
+  }
+
+  /**
+   * #1476: the browser does not decide whether the corrected comment still names a ticket - saving asks
+   * the server again, here by Ctrl+Enter, and the proposal it comes back with has the keys of the
+   * comment as it is now.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_changed_comment_is_checked_anew_on_saving(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(CORRECTION_DAY), page -> {
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+      page.fill("#commentField", "Neu geprüft " + browser + ": Arbeit an GAMMA-3");
+      page.fill("#durationTime", "00:30");
+      saveButton(page).click();
+      assertThat(page.locator("[data-ticket-suggestions] input[value='GAMMA-3']")).hasCount(1);
+
+      page.fill("#commentField", "Neu geprüft " + browser + ": Arbeit an DELTA-5");
+      page.locator("#commentField").press("ControlOrMeta+Enter");
+
+      var proposal = page.locator("[data-ticket-suggestions]");
+      assertThat(proposal.locator("input[type=checkbox]")).hasCount(1);
+      assertThat(proposal.locator("input[value='DELTA-5']")).hasCount(1);
+      assertThat(saveButton(page)).isDisabled();
+    });
+  }
+
+  /**
+   * #1476 in the inline edit of the daily view: held, the row has no plain save button of its own. Once
+   * the comment is changed, the proposal goes and one appears; the server checks the comment anew.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void correcting_the_comment_inline_saves_it_without_the_stale_proposal(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(INLINE_CORRECTION_DAY), page -> {
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+      page.fill("#commentField", "Inline " + browser);
+      page.fill("#durationTime", "00:30");
+      saveButton(page).click();
+
+      var wrap = page.locator("#daily-bookings-area .inline-edit-wrap:has(textarea[name='taskdescription'])")
+          .filter(new Locator.FilterOptions().setHasText("Inline " + browser));
+      wrap.locator(".inline-edit-display").click();
+      wrap.locator(".inline-edit-input").fill("Inline " + browser + ": Arbeit an GAMMA-3");
+      page.locator("h3").first().click();
+
+      var held = page.locator("#daily-bookings-area form:has([data-ticket-suggestions-released])");
+      assertThat(held.locator("[data-ticket-suggestions] input[value='GAMMA-3']")).hasCount(1);
+
+      held.locator("textarea[name='taskdescription']").fill("Inline " + browser + ": ohne Ticket");
+
+      assertThat(held.locator("[data-ticket-suggestions]")).hasCount(0);
+      held.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Speichern").setExact(true)).click();
+
+      assertThat(page.locator("#daily-bookings-area .inline-edit-display")
+          .filter(new Locator.FilterOptions().setHasText("Inline " + browser + ": ohne Ticket"))).isVisible();
+      assertThat(page.locator("[data-ticket-suggestions]")).hasCount(0);
+    });
+  }
+
   private String bookingFormPath(LocalDate day) {
     return "/dailyreport/timereports/new?date=" + day;
+  }
+
+  private Locator saveButton(Page page) {
+    return page.locator("#timereportMainForm button[data-submit-shortcut]");
   }
 
   private Locator ticketReferenceControl(Page page) {

@@ -194,6 +194,7 @@
                       th:text="${policy != null and policy.allowsAny()} ? '(' + ${@ticketReferencePolicyViewHelper.label(policy)} + ')' : ''"></span>
               </label>
               <select class="form-select tomselect tomselect-multi" id="ticketReferences" name="ticketReferences" multiple
+                      data-ticket-suggestions-source
                       data-remote-url="/jira/tickets/suggestions"
                       data-remote-context-field="#suborderId"
                       data-remote-context-param="suborderId"
@@ -260,7 +261,7 @@
               <!--/* Tabler Autosize (#1295): starts at three rows and grows with the text; the
                      prefills (ticket, recent comments) fire input, so they resize it as well. */-->
               <textarea id="commentField" class="form-control" th:field="*{comment}" rows="3"
-                        data-bs-toggle="autosize"
+                        data-bs-toggle="autosize" data-ticket-suggestions-source
                         th:attr="required=${commentNecessary == true ? 'required' : null},
                                  data-entry-focus=${entryFocus != null and entryFocus.name() == 'COMMENT'} ? 'true' : null"
                         th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>
@@ -269,7 +270,9 @@
             <!--/* Saving held (#1326): the comment names ticket keys that are no reference yet. The
                    answer submits the form again with everything it held before - "Speichern und neu"
                    and the colleagues to share with come along as hidden fields, because they are
-                   request parameters and not part of the form object. */-->
+                   request parameters and not part of the form object. A change of the comment or the
+                   references removes the box and "Speichern und neu" with it (#1476): the footer's
+                   buttons choose again then. The colleagues stay, the form has no other place for them. */-->
             <!--/* th:with: the parameters of a fragment reach no bean, like th:attr */-->
             <th:block th:if="${ticketSuggestions != null}"
                       th:with="suggestionPolicyText=${@ticketReferencePolicyViewHelper.label(ticketReferencePolicy)},
@@ -281,7 +284,8 @@
                      limited=${suggestionLimited},
                      policyText=${suggestionPolicyText},
                      small=false, discardHref=null)}"></div>
-              <input type="hidden" name="saveAndNew" value="true" th:if="${pendingSaveAndNew}"/>
+              <input type="hidden" name="saveAndNew" value="true" th:if="${pendingSaveAndNew}"
+                     data-ticket-suggestions-pending/>
               <th:block th:unless="${#lists.isEmpty(pendingShareRecipientIds)}">
                 <input type="hidden" name="shareWithColleagues" value="true"/>
                 <input type="hidden" name="recipientUserIds" th:each="recipientId : ${pendingShareRecipientIds}"
@@ -344,9 +348,10 @@
           <div class="card-footer d-flex flex-wrap gap-2">
             <!--/* data-submit-shortcut: Ctrl+Enter bzw. ⌘Enter speichert von jedem Feld des
                    Formulars aus, auch aus dem Kommentar (#1016) */-->
-            <!--/* while the ticket proposals are open, only their two buttons save (#1326) */-->
+            <!--/* while the ticket proposals are open, only their two buttons save (#1326) - until the
+                   comment or the references change (#1476, data-ticket-suggestions-held) */-->
             <button type="submit" class="btn btn-primary" data-submit-shortcut
-                    th:disabled="${ticketSuggestions != null}"
+                    th:disabled="${ticketSuggestions != null}" data-ticket-suggestions-held
                     th:attr="data-entry-focus=${entryFocus != null and entryFocus.name() == 'SAVE'} ? 'true' : null">
               <i class="ti ti-device-floppy me-1"></i>
               <span th:text="#{main.timereport.form.save}">Speichern</span>
@@ -354,13 +359,13 @@
             <!--/* #843: a named submit button, so the server can tell the two save actions apart
                    without a hidden field. Enter still triggers plain "Speichern" (the first one). */-->
             <button type="submit" class="btn btn-outline-primary" th:unless="${isEdit}"
-                    name="saveAndNew" value="true" th:disabled="${ticketSuggestions != null}"
+                    name="saveAndNew" value="true" th:disabled="${ticketSuggestions != null}" data-ticket-suggestions-held
                     th:title="#{main.timereport.form.saveandnew.tooltip}">
               <i class="ti ti-clock-plus me-1"></i>
               <span th:text="#{main.timereport.form.saveandnew}">Speichern und neu</span>
             </button>
             <button type="button" class="btn btn-outline-secondary" onclick="toggleSaveAsFav()"
-                    th:if="${canSaveAsFavorite}" th:disabled="${ticketSuggestions != null}">
+                    th:if="${canSaveAsFavorite}" th:disabled="${ticketSuggestions != null}" data-ticket-suggestions-held>
               <i class="ti ti-star me-1"></i>
               <span th:text="#{main.timereport.form.savefav.button}">Als Favorit speichern</span>
             </button>
