@@ -358,6 +358,9 @@ public class ExcelExportService {
                 colIndex++;
             }
         }
+        if (displayOptions.isShowBudget()) {
+            colIndex++;
+        }
 
         Cell cell = row.createCell(colIndex, NUMERIC);
         cell.setCellValue(((double)invoiceData.getTotalDurationVisible().toMinutes()) / MINUTES_PER_DAY);
