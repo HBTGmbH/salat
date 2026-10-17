@@ -21,12 +21,14 @@
         <!-- task description: editable or read-only -->
         <!--/* held (#1326), as in daily.html: the edited comment names tickets that are no reference yet */-->
         <form th:if="${inlineTicketSuggestion != null and inlineTicketSuggestion.timereportId() == singleTr.id}"
+              th:with="discardHref=@{/dailyreport/daily(mode='list',fMonth=${singleTrYearMonth.monthValue},fYear=${singleTrYearMonth.year})}"
               class="mt-1"
               th:action="@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})}" method="post"
               th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
               hx-swap="outerHTML">
           <textarea class="form-control form-control-sm mb-2" rows="2" style="font-size:0.85rem; resize:none"
-                    name="taskdescription" th:attr="aria-label=#{main.daily.column.taskdescription}"
+                    name="taskdescription" data-ticket-suggestions-source
+                    th:attr="aria-label=#{main.daily.column.taskdescription}"
                     th:text="${inlineTicketSuggestion.taskdescription()}"></textarea>
           <div th:replace="~{fragments/ticket-suggestions :: suggestionBox(
                  keys=${inlineTicketSuggestion.keys()},
@@ -34,7 +36,8 @@
                  limited=${inlineTicketSuggestion.limited()},
                  policyText=${inlineTicketSuggestion.policyText()},
                  small=true,
-                 discardHref=@{/dailyreport/daily(mode='list',fMonth=${singleTrYearMonth.monthValue},fYear=${singleTrYearMonth.year})})}"></div>
+                 discardHref=${discardHref})}"></div>
+          <div th:replace="~{fragments/ticket-suggestions :: releasedSave(discardHref=${discardHref})}"></div>
         </form>
         <div th:if="${singleTrEditable and (inlineTicketSuggestion == null or inlineTicketSuggestion.timereportId() != singleTr.id)}"
              class="inline-edit-wrap mt-1">

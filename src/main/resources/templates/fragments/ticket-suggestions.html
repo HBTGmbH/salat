@@ -49,5 +49,16 @@
   </div>
 </div>
 
+<!--/* The plain save of the inline edit, hidden while the proposals stand (#1476). Changing the comment
+       makes them stale: salat.js removes the box and shows this instead, which submits without
+       ticketSuggestionChoice - so the server checks the comment anew. */-->
+<div th:fragment="releasedSave(discardHref)" class="d-none" data-ticket-suggestions-released>
+  <div class="d-flex flex-wrap gap-2">
+    <button type="submit" class="btn btn-primary btn-sm" th:text="#{main.timereport.form.save}">Speichern</button>
+    <a th:href="${discardHref}" class="btn btn-outline-secondary btn-sm"
+       th:text="#{main.ticketreferences.suggestions.discard}">Verwerfen</a>
+  </div>
+</div>
+
 </body>
 </html>
