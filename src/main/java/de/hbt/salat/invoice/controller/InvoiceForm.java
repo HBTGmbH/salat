@@ -6,6 +6,8 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+import de.hbt.salat.invoice.domain.InvoiceGrouping;
+import de.hbt.salat.invoice.domain.InvoiceTicketDisplay;
 import de.hbt.salat.invoice.service.ExcelExportService.InvoiceColumnHeaders;
 
 @Getter
@@ -52,10 +54,31 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     private boolean showInactive;
     private List<Long> suborderIdArray = new ArrayList<>();
     private List<Long> timereportIdArray = new ArrayList<>();
+
+    private InvoiceGrouping grouping = InvoiceGrouping.SUBORDER;
+    private InvoiceTicketDisplay ticketdisplay = InvoiceTicketDisplay.COLUMN;
+    /** With a grouping by ticket: the bookings under each ticket, or only its subtotal. */
+    private boolean ticketlinesbox = true;
+
+    /** The tickets that get a group of their own (#1390), meaningful only with {@link #ticketSelectionSubmitted}. */
+    private List<String> ticketSelection = new ArrayList<>();
+
+    /**
+     * Whether {@link #ticketSelection} came from the form. A list nobody ticked arrives exactly like a
+     * list that was never sent, and only the latter means "every booked ticket".
+     */
+    private boolean ticketSelectionSubmitted;
+
+    /**
+     * Set by „Gruppierung anwenden“: rebuild with what was deselected and selected, instead of loading
+     * the data afresh with everything in it.
+     */
+    private boolean regroup;
     private String titlesubordertext;
     private String titledatetext;
     private String titleemployeesigntext;
     private String titledescriptiontext;
+    private String titletickettext;
     private String titletargethourstext;
     private String titleactualdurationtext;
     private String titleactualhourstext;
@@ -94,6 +117,11 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     @Override
     public String getTaskDescriptionHeader() {
         return titledescriptiontext;
+    }
+
+    @Override
+    public String getTicketHeader() {
+        return titletickettext;
     }
 
     @Override

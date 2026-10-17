@@ -109,6 +109,43 @@ public final class TicketReferences {
     return keysIn(text).stream().filter(key -> !referenced.contains(comparable(key))).toList();
   }
 
+  /** Whether a reference has the shape of a ticket key, {@code ABC-12}, in whatever case. */
+  public static boolean isKey(String reference) {
+    return reference != null && WHOLE_KEY.matcher(reference.trim()).matches();
+  }
+
+  /**
+   * The project key of a reference shaped like a ticket key — the part before the hyphen, in
+   * capitals: {@code ABC} for {@code ABC-12}. {@code null} for free text, which belongs to no project.
+   */
+  public static String projectKeyOf(String reference) {
+    if (!isKey(reference)) {
+      return null;
+    }
+    var key = comparable(reference);
+    return key.substring(0, key.lastIndexOf('-'));
+  }
+
+  /**
+   * The references that a comment does not already name, in the order given (#1390) — the other
+   * direction of {@link #keysNotReferenced}. A reference shaped like a key counts as named when
+   * {@link #keysIn} finds it; free text, which {@code keysIn} never finds, when the comment contains
+   * it regardless of case.
+   */
+  public static List<String> referencesNotIn(String text, Collection<String> references) {
+    if (references == null || references.isEmpty()) {
+      return List.of();
+    }
+    var keys = new HashSet<>(keysIn(text));
+    var comparableText = text == null ? "" : text.toUpperCase(Locale.ROOT);
+    return references.stream()
+        .filter(reference -> reference != null && !reference.isBlank())
+        .filter(reference -> isKey(reference)
+            ? !keys.contains(comparable(reference))
+            : !comparableText.contains(comparable(reference)))
+        .toList();
+  }
+
   /**
    * What two references are compared by: without surrounding blanks and without regard to case — the
    * comparison the worklog sync matches a reference against a replicated ticket with.

@@ -95,4 +95,30 @@ class TicketReferencesTest {
     assertThat(TicketReferences.keysNotReferenced("ABC-1, abc-2 und ABC-3", List.of("abc-1", " ABC-2 ")))
         .containsExactly("ABC-3");
   }
+
+  @Test
+  void the_project_key_is_the_part_before_the_hyphen_and_free_text_has_none() {
+    assertThat(TicketReferences.projectKeyOf("abc-12")).isEqualTo("ABC");
+    assertThat(TicketReferences.projectKeyOf("A1_B-7")).isEqualTo("A1_B");
+    assertThat(TicketReferences.projectKeyOf("Wartung")).isNull();
+    assertThat(TicketReferences.projectKeyOf("A-1")).isNull();
+  }
+
+  @Test
+  void a_reference_the_comment_already_names_is_not_mentioned_again() {
+    assertThat(TicketReferences.referencesNotIn("Fix eingespielt abc-15", List.of("ABC-12", "ABC-15")))
+        .containsExactly("ABC-12");
+  }
+
+  @Test
+  void free_text_counts_as_named_when_the_comment_contains_it_regardless_of_case() {
+    assertThat(TicketReferences.referencesNotIn("monatliche wartung", List.of("Wartung", "Betrieb")))
+        .containsExactly("Betrieb");
+    assertThat(TicketReferences.referencesNotIn(null, List.of("Wartung"))).containsExactly("Wartung");
+  }
+
+  @Test
+  void a_key_inside_a_longer_word_does_not_count_as_named() {
+    assertThat(TicketReferences.referencesNotIn("x-ABC-3", List.of("ABC-3"))).containsExactly("ABC-3");
+  }
 }

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  The groups of an invoice (#1390, #1393), one fragment per output. Groups nest — a suborder holds
+  ticket groups, an epic the groups of its stories — so both fragments call themselves for the
+  groups below. A group's own bookings come right below its heading, its subgroups after them.
+*/-->
+
+<!--/*
+  Preview: one row per group with its subtotal, one row per line. A line carries the ids of every
+  group it stands in (data-groups), which is how the script recomputes all levels at once; a booking
+  divided among several tickets has one checkbox per line, all with its id.
+*/-->
+<th:block th:fragment="previewGroup(group)">
+  <tr th:if="${group.suborderGroup}" class="invoice-row"
+      th:classappend="${group.suborder.visible} ? '' : ' row-excluded'"
+      th:attr="data-group=${group.id}"
+      onclick="handleRowClick(event, this)">
+    <td class="col-selection align-middle">
+      <input class="form-check-input" type="checkbox" name="suborderIdArray"
+             th:value="${group.suborder.id}"
+             th:checked="${group.suborder.visible}"
+             th:attr="data-suborder-input=${group.suborder.id}"
+             onchange="toggleSuborder(this)">
+    </td>
+    <td class="col-suborder fw-bold align-middle" th:text="${group.heading}"></td>
+    <td class="col-date"></td>
+    <td class="col-employee"></td>
+    <td class="col-description"></td>
+    <td class="col-ticket"></td>
+    <td class="col-budget text-end align-middle"
+        th:text="${group.budget != null ? @durationUtils.format(group.budget) : ''}"></td>
+    <td class="col-duration text-end align-middle fw-bold"
+        th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
+    <td class="col-hours text-end align-middle fw-bold"
+        th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
+  </tr>
+  <tr th:unless="${group.suborderGroup}" class="invoice-group-row" th:attr="data-group=${group.id}">
+    <td class="col-selection"></td>
+    <td class="col-suborder align-middle fw-semibold"
+        th:style="'padding-left: ' + ${0.75 + group.depth * 1.25} + 'rem'">
+      <th:block th:if="${group.ticketGroup}">
+        <i class="ti me-1" th:classappend="${group.ancestor} ? 'ti-sitemap' : 'ti-ticket'" aria-hidden="true"></i>
+        <span th:text="${group.heading}"></span>
+      </th:block>
+      <em th:if="${group.noTicketGroup}" th:text="#{main.invoice.ticket.none}">ohne Ticket</em>
+    </td>
+    <td class="col-date"></td>
+    <td class="col-employee"></td>
+    <td class="col-description"></td>
+    <td class="col-ticket"></td>
+    <td class="col-budget"></td>
+    <td class="col-duration text-end align-middle fw-semibold"
+        th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
+    <td class="col-hours text-end align-middle fw-semibold"
+        th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
+  </tr>
+  <tr class="invoice-row"
+      th:each="line : ${group.lines}"
+      th:classappend="${line.visible} ? '' : ' row-excluded'"
+      th:attr="data-groups=${line.groupPath},data-suborder=${line.suborder.id},data-minutes=${line.share.toMinutes()}"
+      onclick="handleRowClick(event, this)">
+    <td class="col-selection align-middle">
+      <input class="form-check-input" type="checkbox" name="timereportIdArray"
+             th:value="${line.timereport.id}"
+             th:checked="${line.visible}"
+             onchange="toggleRowExclusion(this)">
+    </td>
+    <td class="col-suborder"></td>
+    <td class="col-date align-middle"
+        th:text="${#temporals.format(line.timereport.referenceDay, 'dd.MM.yyyy')}"></td>
+    <td class="col-employee align-middle" th:text="${line.timereport.employeeName}"></td>
+    <td class="col-description align-middle">
+      <span class="ticket-desc-plain" th:text="${line.timereport.taskDescription}"></span>
+      <span class="ticket-desc-mixed" th:text="${line.taskDescriptionWithTickets}"></span>
+    </td>
+    <td class="col-ticket align-middle text-nowrap" th:text="${line.ticketText}"></td>
+    <td class="col-budget"></td>
+    <td class="col-duration text-end align-middle">
+      <span th:text="${@durationUtils.format(line.share)}"></span>
+      <div th:if="${line.shared}" class="small text-secondary"
+           th:text="#{main.invoice.ticket.share(${@durationUtils.format(line.timereport.duration)})}"></div>
+    </td>
+    <td class="col-hours text-end align-middle"
+        th:text="${#numbers.formatDecimal(line.hours, 1, 2)}"></td>
+  </tr>
+  <th:block th:each="child : ${group.children}">
+    <th:block th:replace="~{invoice/invoice-groups :: previewGroup(${child})}"></th:block>
+  </th:block>
+</th:block>
+
+<!--/*
+  Print, for the groupings by ticket. The grouping by suborder keeps the layout it always had and
+  does not come through here. A ticket without bookings to list and without subgroups is one row
+  with its subtotal — „nur Summenzeile“ would otherwise double every ticket.
+*/-->
+<th:block th:fragment="printGroup(group)">
+  <th:block th:if="${group.visible}"
+            th:with="heading=${group.noTicketGroup} ? #{main.invoice.ticket.none} : ${group.heading},
+                     indent=${'padding-left: ' + (0.5 + group.depth * 1.5) + 'em'},
+                     visibleLines=${group.lines.?[visible]}">
+    <tbody th:if="${!showLines and group.children.isEmpty() and !group.suborderGroup}">
+      <tr class="invoice_booking_row">
+        <td class="invoice_booking_row wrap" th:colspan="${dynamicColumnCount}" th:style="${indent}" th:text="${heading}"></td>
+        <td class="invoice_booking_row nonproportional right" style="min-width: 2cm"
+            th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
+        <td class="invoice_booking_row nonproportional right" style="min-width: 2cm"
+            th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
+      </tr>
+    </tbody>
+    <th:block th:unless="${!showLines and group.children.isEmpty() and !group.suborderGroup}">
+      <tbody>
+        <tr class="invoice_suborder_row">
+          <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount + 2}" th:style="${indent}">
+            <span th:text="${heading}"></span>
+            <th:block th:if="${targethoursbox and group.budget != null}">
+              / <span th:text="#{main.invoice.budget}">Budget</span>: <span th:text="${@durationUtils.format(group.budget)}"></span>
+            </th:block>
+          </td>
+        </tr>
+        <th:block th:if="${showLines and !visibleLines.isEmpty()}">
+          <tr th:replace="~{invoice/invoice-groups :: printHeader}"></tr>
+          <th:block th:each="line, iterStat : ${visibleLines}">
+            <tr th:replace="~{invoice/invoice-groups :: printLine(${line}, ${iterStat.last})}"></tr>
+          </th:block>
+        </th:block>
+      </tbody>
+      <th:block th:each="child : ${group.children}">
+        <th:block th:replace="~{invoice/invoice-groups :: printGroup(${child})}"></th:block>
+      </th:block>
+      <tbody>
+        <tr class="invoice_subordersum_row">
+          <td class="invoice_subordersum_row right" th:colspan="${dynamicColumnCount}" style="width: 100%"
+              th:text="#{main.invoice.ticket.sum.text(${heading})}"></td>
+          <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
+          <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
+        </tr>
+      </tbody>
+    </th:block>
+  </th:block>
+</th:block>
+
+<tr th:fragment="printHeader" class="invoice_header">
+  <th:block th:if="${invoiceForm.timereportsbox}">
+    <th class="invoice_header" th:text="${invoiceForm.titledatetext}"></th>
+    <th th:if="${invoiceForm.employeesignbox}" class="invoice_header" th:text="${invoiceForm.titleemployeesigntext}"></th>
+    <th th:if="${invoiceForm.timereportdescriptionbox}" class="invoice_header" width="100%" th:text="${invoiceForm.titledescriptiontext}"></th>
+    <th th:if="${showTicketColumn}" class="invoice_header" th:text="${invoiceForm.titletickettext}"></th>
+  </th:block>
+  <th class="invoice_header right" th:text="${invoiceForm.titleactualdurationtext}"></th>
+  <th class="invoice_header right" th:text="${invoiceForm.titleactualhourstext}"></th>
+</tr>
+
+<tr th:fragment="printLine(line, last)"
+    th:classappend="${last} ? 'invoice_booking_row last_timereport' : 'invoice_booking_row'">
+  <td th:classappend="${last} ? 'invoice_booking_row nonproportional last_timereport' : 'invoice_booking_row nonproportional'"
+      th:text="${#temporals.format(line.timereport.referenceDay, 'dd.MM.yyyy')}"></td>
+  <td th:if="${invoiceForm.employeesignbox}"
+      th:classappend="${last} ? 'invoice_booking_row last_timereport' : 'invoice_booking_row'"
+      th:text="${line.timereport.employeeName}"></td>
+  <td th:if="${invoiceForm.timereportdescriptionbox}"
+      th:classappend="${last} ? 'invoice_booking_row wrap last_timereport' : 'invoice_booking_row wrap'"
+      style="width: 100%"
+      th:text="${invoiceForm.ticketdisplay.name() == 'COMMENT'} ? ${line.taskDescriptionWithTickets} : ${line.timereport.taskDescription}"></td>
+  <td th:if="${showTicketColumn}"
+      th:classappend="${last} ? 'invoice_booking_row last_timereport' : 'invoice_booking_row'"
+      th:text="${line.ticketText}"></td>
+  <td th:classappend="${last} ? 'invoice_booking_row nonproportional right last_timereport' : 'invoice_booking_row nonproportional right'"
+      style="min-width: 2cm"
+      th:text="${@durationUtils.format(line.share)}"></td>
+  <td th:classappend="${last} ? 'invoice_booking_row nonproportional right last_timereport' : 'invoice_booking_row nonproportional right'"
+      style="min-width: 2cm"
+      th:text="${#numbers.formatDecimal(line.hours, 1, 2)}"></td>
+</tr>
+
+</body>
+</html>

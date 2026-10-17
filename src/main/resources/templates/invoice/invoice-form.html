@@ -10,6 +10,11 @@
     .row-excluded { opacity: 0.35; }
     .invoice-row { cursor: pointer; }
     .table .invoice-last-row > * { border-bottom-width: 0; }
+    .invoice-group-row > * { background-color: var(--tblr-bg-surface-secondary); }
+    .ticket-desc-mixed { display: none; }
+    .ticket-display-comment .ticket-desc-mixed { display: inline; }
+    .ticket-display-comment .ticket-desc-plain { display: none; }
+    .ticket-option { cursor: pointer; }
   </style>
 
   <div th:if="${invoiceError != null}" class="alert alert-danger mb-3" th:text="${invoiceError}"></div>
@@ -206,13 +211,154 @@
             </div>
 
           </div>
+          <div class="mt-3" th:if="${invoiceData.ticketReferencesPresent}">
+            <div class="form-label" th:text="#{main.invoice.ticketdisplay.text}">Ticketangabe je Zeile</div>
+            <div class="btn-group" role="group" th:aria-label="#{main.invoice.ticketdisplay.text}">
+              <input type="radio" class="btn-check" id="ticketdisplay-column" th:field="*{ticketdisplay}" value="COLUMN"
+                     onchange="updateColumnVisibility()">
+              <label class="btn btn-outline-primary" for="ticketdisplay-column"
+                     th:text="#{main.invoice.ticketdisplay.column}">eigene Spalte „Ticket“</label>
+              <input type="radio" class="btn-check" id="ticketdisplay-comment" th:field="*{ticketdisplay}" value="COMMENT"
+                     onchange="updateColumnVisibility()">
+              <label class="btn btn-outline-primary" for="ticketdisplay-comment"
+                     th:text="#{main.invoice.ticketdisplay.comment}">im Kommentar</label>
+              <input type="radio" class="btn-check" id="ticketdisplay-none" th:field="*{ticketdisplay}" value="NONE"
+                     onchange="updateColumnVisibility()">
+              <label class="btn btn-outline-primary" for="ticketdisplay-none"
+                     th:text="#{main.invoice.ticketdisplay.none}">keine Ticketangabe</label>
+            </div>
+          </div>
           <p class="text-muted small mt-2 mb-0" th:text="#{main.invoice.columntitles.hint}">
             Spaltenüberschriften können direkt in der Tabellenkopfzeile bearbeitet werden.
           </p>
         </div>
       </div>
 
-      <!-- ─── 2B: Entry selection table ─── -->
+      <!-- ─── 2B: Ticket references (only when a booking has one) ─── -->
+      <div class="card mb-3" id="ticket-card" th:if="${invoiceData.ticketReferencesPresent}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0" th:text="#{main.invoice.tickets.text}">Ticket-Referenzen</h3>
+          <!--/* Grouping needs the server; regroup keeps what was deselected, unlike loading the data (#1390) */-->
+          <button type="submit" class="btn btn-primary btn-sm" name="regroup" value="true">
+            <i class="ti ti-refresh me-1" aria-hidden="true"></i>
+            <span th:text="#{main.invoice.tickets.apply}">Gruppierung anwenden</span>
+          </button>
+        </div>
+        <div class="card-body">
+          <input type="hidden" name="ticketSelectionSubmitted" value="true">
+          <div class="row g-4">
+
+            <!-- Col 1: Grouping -->
+            <div class="col-12 col-lg-4">
+              <div class="form-label" th:text="#{main.invoice.grouping.text}">Gruppierung</div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" id="grouping-suborder" th:field="*{grouping}" value="SUBORDER"
+                       onchange="onGroupingChange()">
+                <label class="form-check-label" for="grouping-suborder">
+                  <span th:text="#{main.invoice.grouping.suborder}">Unterauftrag</span>
+                  <span class="text-secondary small" th:text="#{main.invoice.grouping.suborder.hint}">(wie bisher)</span>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" id="grouping-suborder-ticket" th:field="*{grouping}" value="SUBORDER_TICKET"
+                       onchange="onGroupingChange()">
+                <label class="form-check-label" for="grouping-suborder-ticket"
+                       th:text="#{main.invoice.grouping.subordertickets}">Unterauftrag → Ticket</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" id="grouping-ticket" th:field="*{grouping}" value="TICKET"
+                       onchange="onGroupingChange()">
+                <label class="form-check-label" for="grouping-ticket">
+                  <span th:text="#{main.invoice.grouping.ticket}">Ticket</span>
+                  <span class="text-secondary small" th:text="#{main.invoice.grouping.ticket.hint}">(über Unteraufträge hinweg)</span>
+                </label>
+              </div>
+
+              <div class="mt-3 ticket-grouping-only">
+                <div class="form-label" th:text="#{main.invoice.ticketlines.text}">Je Ticket</div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="ticketlines-all" th:field="*{ticketlinesbox}" value="true">
+                  <label class="form-check-label" for="ticketlines-all" th:text="#{main.invoice.ticketlines.all}">mit Einzelbuchungen</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="ticketlines-sum" th:field="*{ticketlinesbox}" value="false">
+                  <label class="form-check-label" for="ticketlines-sum" th:text="#{main.invoice.ticketlines.sum}">nur Summenzeile</label>
+                </div>
+                <p class="text-secondary small mb-0" th:text="#{main.invoice.ticketlines.hint}"></p>
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-8 ticket-grouping-none">
+              <p class="text-secondary small mb-0">
+                <i class="ti ti-info-circle me-1" aria-hidden="true"></i>
+                <span th:text="#{main.invoice.grouping.hint}"></span>
+              </p>
+            </div>
+
+            <!-- Col 2: Project keys -->
+            <div class="col-12 col-lg-3 ticket-grouping-only">
+              <div class="form-label" th:text="#{main.invoice.projectkeys.text}">Projektkürzel</div>
+              <div class="form-check" th:each="projectKey : ${invoiceData.projectKeys}">
+                <input class="form-check-input" type="checkbox" th:id="'project-' + ${projectKey.key}"
+                       th:attr="data-project-toggle=${projectKey.key}" onchange="toggleProject(this)">
+                <label class="form-check-label" th:for="'project-' + ${projectKey.key}">
+                  <code th:text="${projectKey.key}"></code>
+                  <span class="text-secondary" th:text="#{main.invoice.projectkeys.count(${projectKey.ticketCount})}"></span>
+                </label>
+              </div>
+              <p class="text-secondary small mb-0" th:text="#{main.invoice.projectkeys.hint}"></p>
+            </div>
+
+            <!-- Col 3: Ticket selection -->
+            <div class="col-12 col-lg-5 ticket-grouping-only">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="form-label mb-0" th:text="#{main.invoice.ticketselection.text}">Tickets mit eigener Gruppe</div>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-secondary" onclick="selectTickets('all')"
+                          th:text="#{main.invoice.selection.all}">Alle</button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="selectTickets('none')"
+                          th:text="#{main.invoice.selection.none}">Keine</button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="selectTickets('booked')"
+                          th:text="#{main.invoice.ticketselection.booked}">Nur gebuchte</button>
+                </div>
+              </div>
+              <div class="list-group" style="max-height: 24rem; overflow-y: auto">
+                <label class="list-group-item ticket-option d-flex align-items-center gap-2"
+                       th:each="option : ${invoiceData.ticketOptions}"
+                       th:style="'padding-left: ' + ${1 + option.level * 1.5} + 'rem'">
+                  <input class="form-check-input m-0 flex-shrink-0" type="checkbox" name="ticketSelection"
+                         th:value="${option.key}" th:checked="${option.selected}"
+                         th:attr="data-project=${option.projectKey},data-booked=${option.booked != null}"
+                         onchange="onTicketChange()">
+                  <span class="flex-fill">
+                    <strong th:text="${option.key}"></strong>
+                    <span th:if="${option.summary != null}" th:text="${option.summary}"></span>
+                    <span th:if="${option.issueType != null}" class="text-secondary small"
+                          th:text="'(' + ${option.issueType} + ')'"></span>
+                    <em th:if="${option.unknown}" class="text-secondary"
+                        th:text="#{main.invoice.ticketselection.unknown}">nicht repliziert</em>
+                    <em th:if="${option.freeText}" class="text-secondary"
+                        th:text="#{main.invoice.ticketselection.freetext}">freier Text</em>
+                  </span>
+                  <span class="text-secondary small text-nowrap"
+                        th:text="${option.booked} ? ${@durationUtils.format(option.booked)} : #{main.invoice.ticketselection.ancestor}"></span>
+                </label>
+              </div>
+              <p class="text-secondary small mt-2 mb-0">
+                <i class="ti ti-info-circle me-1" aria-hidden="true"></i>
+                <span th:text="#{main.invoice.ticketselection.hint}"></span>
+              </p>
+            </div>
+
+          </div>
+          <p class="text-secondary small mt-3 mb-0 d-none" id="regroup-pending">
+            <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>
+            <span th:text="#{main.invoice.tickets.pending}"></span>
+          </p>
+        </div>
+      </div>
+
+      <!-- ─── 2C: Entry selection table ─── -->
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h3 class="card-title mb-0" th:text="#{main.invoice.entries.text}">Einträge</h3>
@@ -224,8 +370,16 @@
           </div>
         </div>
         <div class="card-body p-0">
+          <!--/* Without suborder rows the deselection of a suborder still has to survive regrouping (#1390) */-->
+          <th:block th:unless="${invoiceData.suborderRows}">
+            <input type="hidden" name="suborderIdArray"
+                   th:each="invoiceSuborder : ${invoiceData.suborders}"
+                   th:value="${invoiceSuborder.id}"
+                   th:disabled="${!invoiceSuborder.visible}"
+                   th:attr="data-suborder-input=${invoiceSuborder.id}">
+          </th:block>
           <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0" id="invoice-table">
               <thead>
                 <tr>
                   <th class="col-selection" style="width: 2.5rem"></th>
@@ -241,6 +395,9 @@
                   <th class="col-description">
                     <input type="text" class="form-control form-control-sm" th:field="*{titledescriptiontext}">
                   </th>
+                  <th class="col-ticket">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titletickettext}">
+                  </th>
                   <th class="col-budget">
                     <input type="text" class="form-control form-control-sm" th:field="*{titletargethourstext}">
                   </th>
@@ -253,53 +410,8 @@
                 </tr>
               </thead>
               <tbody>
-                <th:block th:each="invoiceSuborder : ${invoiceData.suborders}">
-                  <!-- Suborder row — full row is clickable -->
-                  <tr class="invoice-row"
-                      th:classappend="${!invoiceForm.suborderIdArray.contains(invoiceSuborder.id)} ? ' row-excluded' : ''"
-                      th:attr="data-suborder-id=${invoiceSuborder.id}"
-                      onclick="handleRowClick(event, this)">
-                    <td class="col-selection align-middle">
-                      <input class="form-check-input" type="checkbox" name="suborderIdArray"
-                             th:value="${invoiceSuborder.id}"
-                             th:checked="${invoiceForm.suborderIdArray.contains(invoiceSuborder.id)}"
-                             onchange="toggleSuborder(this)">
-                    </td>
-                    <td class="col-suborder fw-bold align-middle"
-                        th:text="${invoiceSuborder.orderDescription}"></td>
-                    <td class="col-date"></td>
-                    <td class="col-employee"></td>
-                    <td class="col-description"></td>
-                    <td class="col-budget text-end align-middle"
-                        th:text="${invoiceSuborder.budget != null ? @durationUtils.format(invoiceSuborder.budget) : ''}"></td>
-                    <td class="col-duration text-end align-middle"
-                        th:text="${@durationUtils.format(invoiceSuborder.totalDuration)}"></td>
-                    <td class="col-hours text-end align-middle"
-                        th:text="${#numbers.formatDecimal(invoiceSuborder.totalHours, 1, 2)}"></td>
-                  </tr>
-                  <!-- Timereport rows — full row is clickable -->
-                  <tr class="invoice-row"
-                      th:each="invoiceTimereport : ${invoiceSuborder.timereports}"
-                      th:classappend="${!invoiceForm.timereportIdArray.contains(invoiceTimereport.id)} ? ' row-excluded' : ''"
-                      th:attr="data-parent-suborder=${invoiceSuborder.id},data-minutes=${invoiceTimereport.duration.toMinutes()}"
-                      onclick="handleRowClick(event, this)">
-                    <td class="col-selection align-middle">
-                      <input class="form-check-input" type="checkbox" name="timereportIdArray"
-                             th:value="${invoiceTimereport.id}"
-                             th:checked="${invoiceForm.timereportIdArray.contains(invoiceTimereport.id)}"
-                             onchange="toggleRowExclusion(this)">
-                    </td>
-                    <td class="col-suborder"></td>
-                    <td class="col-date align-middle"
-                        th:text="${#temporals.format(invoiceTimereport.referenceDay, 'dd.MM.yyyy')}"></td>
-                    <td class="col-employee align-middle" th:text="${invoiceTimereport.employeeName}"></td>
-                    <td class="col-description align-middle" th:text="${invoiceTimereport.taskDescription}"></td>
-                    <td class="col-budget"></td>
-                    <td class="col-duration text-end align-middle"
-                        th:text="${@durationUtils.format(invoiceTimereport.duration)}"></td>
-                    <td class="col-hours text-end align-middle"
-                        th:text="${#numbers.formatDecimal(invoiceTimereport.hours, 1, 2)}"></td>
-                  </tr>
+                <th:block th:each="group : ${invoiceData.groups}">
+                  <th:block th:replace="~{invoice/invoice-groups :: previewGroup(${group})}"></th:block>
                 </th:block>
               </tbody>
               <tfoot th:attr="data-total-minutes=${invoiceData.totalDuration.toMinutes()}">
@@ -309,6 +421,7 @@
                   <th class="col-date"></th>
                   <th class="col-employee"></th>
                   <th class="col-description"></th>
+                  <th class="col-ticket"></th>
                   <th class="col-budget"></th>
                   <th class="col-duration text-end" id="footer-total-duration"
                       th:text="${@durationUtils.format(invoiceData.totalDurationVisible)}"></th>
@@ -325,6 +438,7 @@
                   <td class="col-date"></td>
                   <td class="col-employee"></td>
                   <td class="col-description"></td>
+                  <td class="col-ticket"></td>
                   <td class="col-budget"></td>
                   <td class="col-duration text-end text-secondary">
                     (<span th:text="${@durationUtils.format(invoiceData.totalDuration)}"></span>)
@@ -339,7 +453,7 @@
         </div>
       </div>
 
-      <!-- ─── 2C: Document & Export ─── -->
+      <!-- ─── 2D: Document & Export ─── -->
       <div class="card mb-3">
         <div class="card-header">
           <h3 class="card-title mb-0" th:text="#{main.invoice.document.export.text}">Dokument &amp; Export</h3>
@@ -400,6 +514,11 @@
       setColVisible('col-employee',    empEl.checked);
       setColVisible('col-description', descEl.checked);
       setColVisible('col-budget',      budEl.checked);
+
+      // Without any ticket reference the choice is not rendered and there is no ticket to show.
+      const ticketDisplay = document.querySelector('input[name="ticketdisplay"]:checked')?.value || 'NONE';
+      setColVisible('col-ticket', ticketDisplay === 'COLUMN');
+      document.getElementById('invoice-table')?.classList.toggle('ticket-display-comment', ticketDisplay === 'COMMENT');
     }
 
     function setColVisible(cls, visible) {
@@ -443,20 +562,28 @@
       return (minutes / 60).toFixed(2).replace('.', ',');
     }
 
+    /**
+     * Every line carries the ids of all groups it stands in, so one pass adds it to each level at
+     * once; a booking divided among tickets counts with the share of each of its lines.
+     */
     function recomputeTotals() {
+      const groupMinutes = {};
       let grandMinutes = 0;
 
-      document.querySelectorAll('tr[data-suborder-id]').forEach(suborderRow => {
-        const suborderId = suborderRow.dataset.suborderId;
-        let suborderMinutes = 0;
-        document.querySelectorAll(`tr[data-parent-suborder="${suborderId}"] input[name="timereportIdArray"]`).forEach(cb => {
-          if (cb.checked) {
-            suborderMinutes += parseInt(cb.closest('tr').dataset.minutes || '0', 10);
-          }
+      document.querySelectorAll('tr[data-groups]').forEach(row => {
+        const cb = row.querySelector('input[name="timereportIdArray"]');
+        if (!cb || !cb.checked) return;
+        const minutes = parseInt(row.dataset.minutes || '0', 10);
+        grandMinutes += minutes;
+        row.dataset.groups.split(' ').forEach(id => {
+          groupMinutes[id] = (groupMinutes[id] || 0) + minutes;
         });
-        suborderRow.querySelector('.col-duration').textContent = fmtDuration(suborderMinutes);
-        suborderRow.querySelector('.col-hours').textContent = fmtHours(suborderMinutes);
-        grandMinutes += suborderMinutes;
+      });
+
+      document.querySelectorAll('tr[data-group]').forEach(groupRow => {
+        const minutes = groupMinutes[groupRow.dataset.group] || 0;
+        groupRow.querySelector('.col-duration').textContent = fmtDuration(minutes);
+        groupRow.querySelector('.col-hours').textContent = fmtHours(minutes);
       });
 
       document.getElementById('footer-total-duration').textContent = fmtDuration(grandMinutes);
@@ -466,30 +593,35 @@
       document.getElementById('footer-gesamt-row').classList.toggle('d-none', grandMinutes === totalMinutes);
     }
 
-    // ── Row exclusion feedback ──────────────────────────────────────────
-    function toggleRowExclusion(checkbox) {
-      checkbox.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
-      if (checkbox.checked) {
-        const parentSuborderId = checkbox.closest('tr').dataset.parentSuborder;
-        if (parentSuborderId) {
-          const suborderRow = document.querySelector(`tr[data-suborder-id="${parentSuborderId}"]`);
-          if (suborderRow) {
-            const suborderCb = suborderRow.querySelector('input[name="suborderIdArray"]');
-            if (suborderCb && !suborderCb.checked) {
-              suborderCb.checked = true;
-              suborderRow.classList.remove('row-excluded');
-            }
-          }
+    /** The suborder's checkbox, or its hidden field where the grouping shows no suborder rows. */
+    function includeSuborder(suborderId) {
+      document.querySelectorAll(`[data-suborder-input="${suborderId}"]`).forEach(input => {
+        if (input.type === 'checkbox') {
+          input.checked = true;
+          input.closest('tr').classList.remove('row-excluded');
+        } else {
+          input.disabled = false;
         }
+      });
+    }
+
+    // ── Row exclusion feedback ──────────────────────────────────────────
+    /** A booking under several tickets has a checkbox in each; it is in the invoice whole or not at all. */
+    function toggleRowExclusion(checkbox) {
+      document.querySelectorAll(`input[name="timereportIdArray"][value="${checkbox.value}"]`).forEach(cb => {
+        cb.checked = checkbox.checked;
+        cb.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
+      });
+      if (checkbox.checked) {
+        includeSuborder(checkbox.closest('tr').dataset.suborder);
       }
       recomputeTotals();
       updateLastRowBorder();
     }
 
     function toggleSuborder(checkbox) {
-      const row = checkbox.closest('tr');
-      row.classList.toggle('row-excluded', !checkbox.checked);
-      document.querySelectorAll(`tr[data-parent-suborder="${row.dataset.suborderId}"]`).forEach(trRow => {
+      checkbox.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
+      document.querySelectorAll(`tr[data-suborder="${checkbox.value}"]`).forEach(trRow => {
         const cb = trRow.querySelector('input[name="timereportIdArray"]');
         if (cb) {
           cb.checked = checkbox.checked;
@@ -501,26 +633,78 @@
     }
 
     // ── Bulk select / deselect ──────────────────────────────────────────
-    function selectAll() {
+    function setAllEntries(checked) {
       document.querySelectorAll(
         'input[name="timereportIdArray"], input[name="suborderIdArray"]'
-      ).forEach(cb => {
-        cb.checked = true;
-        cb.closest('tr').classList.remove('row-excluded');
+      ).forEach(input => {
+        if (input.type === 'hidden') {
+          input.disabled = !checked;
+          return;
+        }
+        input.checked = checked;
+        input.closest('tr').classList.toggle('row-excluded', !checked);
       });
       recomputeTotals();
       updateLastRowBorder();
     }
 
+    function selectAll() {
+      setAllEntries(true);
+    }
+
     function deselectAll() {
-      document.querySelectorAll(
-        'input[name="timereportIdArray"], input[name="suborderIdArray"]'
-      ).forEach(cb => {
-        cb.checked = false;
-        cb.closest('tr').classList.add('row-excluded');
+      setAllEntries(false);
+    }
+
+    // ── Ticket references: grouping and selection ───────────────────────
+    function ticketCheckboxes() {
+      return [...document.querySelectorAll('input[name="ticketSelection"]')];
+    }
+
+    function updateTicketCard() {
+      const grouping = document.querySelector('input[name="grouping"]:checked')?.value;
+      const byTicket = grouping !== undefined && grouping !== 'SUBORDER';
+      document.querySelectorAll('.ticket-grouping-only').forEach(el => el.classList.toggle('d-none', !byTicket));
+      document.querySelectorAll('.ticket-grouping-none').forEach(el => el.classList.toggle('d-none', byTicket));
+    }
+
+    /** The preview changes only with „Gruppierung anwenden“; until then it says so. */
+    function markRegroupPending() {
+      document.getElementById('regroup-pending')?.classList.remove('d-none');
+    }
+
+    function onGroupingChange() {
+      updateTicketCard();
+      markRegroupPending();
+    }
+
+    function onTicketChange() {
+      syncProjectKeys();
+      markRegroupPending();
+    }
+
+    function selectTickets(mode) {
+      ticketCheckboxes().forEach(cb => {
+        cb.checked = mode === 'all' || (mode === 'booked' && cb.dataset.booked === 'true');
       });
-      recomputeTotals();
-      updateLastRowBorder();
+      onTicketChange();
+    }
+
+    /** A project key is no state of its own: it ticks or unticks its tickets and shows how many are ticked. */
+    function toggleProject(projectCheckbox) {
+      ticketCheckboxes()
+        .filter(cb => cb.dataset.project === projectCheckbox.dataset.projectToggle)
+        .forEach(cb => { cb.checked = projectCheckbox.checked; });
+      onTicketChange();
+    }
+
+    function syncProjectKeys() {
+      document.querySelectorAll('[data-project-toggle]').forEach(projectCheckbox => {
+        const own = ticketCheckboxes().filter(cb => cb.dataset.project === projectCheckbox.dataset.projectToggle);
+        const ticked = own.filter(cb => cb.checked).length;
+        projectCheckbox.checked = ticked > 0 && ticked === own.length;
+        projectCheckbox.indeterminate = ticked > 0 && ticked < own.length;
+      });
     }
 
     // ── Form submission ─────────────────────────────────────────────────
@@ -581,6 +765,9 @@
     // ── Initialize on page load ─────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
       updateColumnVisibility();
+      updateTicketCard();
+      syncProjectKeys();
+      if (document.getElementById('invoice-table')) recomputeTotals();
       updateLastRowBorder();
     });
   </script>
