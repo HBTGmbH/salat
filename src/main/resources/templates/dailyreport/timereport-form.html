@@ -158,7 +158,7 @@
                       hx-swap="outerHTML"
                       hx-trigger="change">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
-                <!--/* th:with: th:attr reaches no bean (AGENTS.md, "Globally Accessible Objects") */-->
+                <!--/* th:with: th:attr reaches no bean (docs/guides/ui.md, "Globally Accessible Objects") */-->
                 <!--/* data-surcharge-rates (#1469): the rates the suborder offers, "NIGHT=25 SUNDAY=100", a kind
                        it does not offer left out; data-surcharge-night-hint: when the night counts there */-->
                 <option th:each="s : ${suborders}"

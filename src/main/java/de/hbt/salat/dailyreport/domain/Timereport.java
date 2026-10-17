@@ -91,7 +91,7 @@ public class Timereport extends AuditedEntity implements Serializable {
      * ({@code Suborder#getEffectiveTicketReferencePolicy}); {@code TimereportService} checks that and
      * stores them under the rule of {@code TicketReferences}.
      *
-     * <p>A deliberate exception to the rule that a record refers to another by id (AGENTS.md, #1205):
+     * <p>A deliberate exception to the rule that a record refers to another by id (docs/guides/backend-patterns.md, #1205):
      * a key is matched against {@code JiraTicket.key} as text, ignoring case, and there is no
      * foreign key. An id would not do —
      * <ul>

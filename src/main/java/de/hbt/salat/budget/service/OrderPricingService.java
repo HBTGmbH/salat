@@ -66,7 +66,7 @@ public class OrderPricingService {
 
     /**
      * The rows of the list view (#949, #957), optionally narrowed to one customer order. Two filters
-     * apply independently (→ AGENTS.md, "List View Filter Toggles"): unless asked otherwise, rates
+     * apply independently (→ docs/guides/ui.md, "List View Filter Toggles"): unless asked otherwise, rates
      * that have expired themselves are left out — see {@link OrderPricing#getCurrentlyValid()} —
      * and so are the rates of orders whose own validity has expired.
      *

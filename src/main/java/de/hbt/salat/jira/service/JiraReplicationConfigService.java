@@ -228,7 +228,7 @@ public class JiraReplicationConfigService {
    *
    * <p>Outside a transaction: a foreign system's response time must not hold a database connection.
    * Nothing is written here, so the empty transaction scope this leaves inside the request is
-   * harmless — see AGENTS.md on {@code NOT_SUPPORTED} (#1282).
+   * harmless — see docs/guides/backend-patterns.md on {@code NOT_SUPPORTED} (#1282).
    *
    * @throws de.hbt.salat.common.exception.ErrorCodeException when the stored credentials cannot be
    *     read (#1432) — that has to be told in words, not as a failed request; {@code JI-0054} when the

@@ -23,7 +23,7 @@
   Im Controlling steht der ganze Block in einem Modal (#1435), geöffnet über den Link „Kalkulation“
   im Kopf des Abschnitts. Unter der Tabelle machte er den Abschnitt lang, auch für den, der nur die
   Tabelle lesen wollte. Der Titel nennt Plan und Auftrag: das Modal verdeckt den Kopf, an dem man
-  sonst ablesen würde, wessen Kalkulation es ist (→ AGENTS.md, modale Dialoge).
+  sonst ablesen würde, wessen Kalkulation es ist (→ docs/guides/ui.md, modale Dialoge).
 */-->
 <div th:fragment="modal(fp, modalId, planName, orderLabel)" class="modal fade" th:id="${modalId}"
      tabindex="-1" aria-hidden="true" th:attr="aria-labelledby=${modalId + '-title'}">

@@ -13,7 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
  * Whether a record is hidden — the one place that rule is written down in code (#1104).
  *
  * <p>{@code hide} is the manual decision to take a record out of the select boxes, independent of
- * any date (see AGENTS.md, „The {@code hide} Flag", → ADR-0012). The column is {@code bit(1)} with
+ * any date (see docs/guides/domain-rules.md, „The {@code hide} Flag", → ADR-0012). The column is {@code bit(1)} with
  * default {@code false} but <em>without</em> {@code NOT NULL}, so it has three states, and the
  * middle one is the trap:
  *
