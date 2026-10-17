@@ -41,16 +41,14 @@ Nachschlagewissen zu einzelnen Themen steht unter `docs/guides/` und gilt ebenso
   - Events should carry stable, minimal data contracts to reduce coupling.
 - **Reading across a module boundary that the import direction allows** (→ ADR-0021): a module may
   join another module's entities in its own query, but those entities must not leave the query —
-  the result is a record or DTO of plain values and ids, a controlled copy. That copy is what makes
-  extracting a module later a replication task instead of a remodelling. Four constraints come with
-  it:
+  the result is a record or DTO of plain values and ids, a controlled copy. Four constraints come
+  with it:
   - Every module the query **traverses** must be import-legal too, not just the one it names — a
     path over `Timereport.employeeorder.employeecontract.employee` reads `order` and `employee`.
   - No entity as a record component, no interface projection that navigates in the caller, no
-    `Object[]`/`Tuple` — each hands the association graph back out.
+    `Object[]`/`Tuple`.
   - Read only: no `@Modifying`, no DML, no cascade across the boundary. Writing stays with events.
-  - JPQL, never `nativeQuery = true`: a JPQL query at least breaks at application start when the
-    other module renames something.
+  - JPQL, never `nativeQuery = true`.
 
   Authorization is then the reading service's responsibility; where a per-row filter of the owning
   module no longer applies, say at the call site why it is moot or covered otherwise, and name the
@@ -61,13 +59,12 @@ Nachschlagewissen zu einzelnen Themen steht unter `docs/guides/` und gilt ebenso
   return a record instead of adding it to the store. The contents of a `@Query` are a string, and
   remain a matter of review.
 - **Read model of the owning module** (→ ADR-0021, Nachtrag #1338): where a value is logic of the
-  entity rather than a column — the path in the order tree, the effective order type — the join
-  would have to rebuild that rule. Instead the owning module offers a record
-  through its service, computed with its own rules (`SuborderReadModel`, `CustomerorderOption`,
-  `PublicholidayService.getPublicHolidayDatesBetween`). The entity does not change for it: no new
-  field, `@Formula` or fetch strategy for another module's needs. The join stays the right choice
-  where the reading module needs columns only and bounds the set in its own query (#997); a read
-  model must not load per row.
+  entity rather than a column — the path in the order tree, the effective order type — the owning
+  module offers a record through its service, computed with its own rules (`SuborderReadModel`,
+  `CustomerorderOption`, `PublicholidayService.getPublicHolidayDatesBetween`). The entity does not
+  change for it: no new field, `@Formula` or fetch strategy for another module's needs. The join
+  stays the right choice where the reading module needs columns only and bounds the set in its own
+  query (#997); a read model must not load per row.
 - **References across a module boundary** (→ ADR-0036): a reference to **master data** of another
   module — customer, customer order, suborder, employee order, employee, employee contract, login
   (`SalatUser`) — may be a real `@ManyToOne`, in the import direction `ArchitectureTest` allows.
@@ -81,11 +78,10 @@ Nachschlagewissen zu einzelnen Themen steht unter `docs/guides/` und gilt ebenso
   `collectionsReachableFromAnotherModuleAreHandedOutReadOnly`: an entity another module reaches hands
   out its collections only as unmodifiable views, and its own module changes them through setters or
   explicit methods of the entity. Lists fetch it with `join fetch` or `@BatchSize`, never per
-  row. When a module is extracted,
-  master data becomes a read copy in the module and the reference points at that copy. Entities in
-  service signatures across the boundary stay forbidden (ADR-0021, #1244). A reference is written from
-  an id through `EntityManager.getReference` in a small component of the writing module
-  (`MasterDataReferences`, `OrderReferences`), never through a service of the owning module.
+  row. Entities in service signatures across the boundary stay forbidden (ADR-0021, #1244). A
+  reference is written from an id through `EntityManager.getReference` in a small component of the
+  writing module (`MasterDataReferences`, `OrderReferences`), never through a service of the owning
+  module.
 - **A repository asks about its own aggregate** (#1369): every query of `XRepository` starts at its
   own entity or yields values, and no method returns an entity of another module — not even inside an
   `Optional` or a list (`ArchitectureTest.noRepositoryReturnsAnEntityOfAnotherModule`). A join along a

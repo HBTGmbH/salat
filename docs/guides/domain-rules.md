@@ -53,7 +53,7 @@ Entities are divided into two categories (→ ADR-0011):
 ---
 
 ## The `hide` Flag (UX Declutter)
-The `hide` boolean flag is a UX feature: it removes an entity from all dropdown select inputs in forms, keeping the app compact when a customer, order, or suborder is no longer actively used but must not be deleted (e.g. historical records still referenced by time reports). Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.
+The `hide` boolean flag is a UX feature (→ ADR-0012): it removes an entity from all dropdown select inputs in forms without deleting it. Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.
 
 Rules:
 - Entities with a `hide` flag: `Customer`, `Customerorder`, `Suborder`, `Employee`, `Employeecontract`.
@@ -132,16 +132,13 @@ allein über das **Ende**:
   (`LocalDateRange.FINIT_UNTIL_BOUNDARY`) abgelegt ist. Der Sentinel braucht keinen eigenen Fall:
   kein wirklicher Tag liegt danach, also kann er nie vor heute liegen.
 - Ein **Beginn in der Zukunft** ist **nicht** inaktiv, sondern noch nicht aktiv. Der Beginn gehört
-  deshalb nicht in das Prädikat. Solche Datensätze bleiben sichtbar: eine im Voraus angelegte
-  Änderung darf nicht aus der Liste verschwinden, sonst wird sie ein zweites Mal angelegt.
+  deshalb nicht in das Prädikat. Solche Datensätze bleiben sichtbar.
 
 Warum nur das Ende zählt, steht in [ADR-0029](../adr/0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md)
-samt der verworfenen Alternative: wer eine Änderung im Voraus anlegt und sie danach nicht mehr
-sieht, legt sie ein zweites Mal an.
+samt der verworfenen Alternative.
 
 **Die Regel steht genau einmal im Code: `de.hbt.salat.common.Validity`.** Beide Seiten derselben Frage
-liegen dort nebeneinander, damit eine Liste und die Zeile, die sie rendert, nicht auseinanderlaufen
-können:
+liegen dort nebeneinander:
 
 ```java
 // in Java, auf der Entität
@@ -190,9 +187,8 @@ eine weitere Filterliste baut, ruft die passende, statt einer bestehenden einen 
 - **„Gilt am Tag X"** — eine Stichtagsfrage, die den Beginn **mitprüft**
   (`Suborder.isValidAt(date)`, `Employeeorder.isValidAt(date)`,
   `Validity.isInactiveOn(untilDate, date)` prüft ihn gerade nicht). Sie ist für
-  Geschäftsregeln richtig („darf an diesem Tag gebucht werden") und als Aktiv-Filter falsch: sie
-  blendet den im Voraus angelegten Datensatz aus. Ein `isValidAt` hinter einem Schalter namens
-  `showInactive` ist ein Fehler.
+  Geschäftsregeln richtig („darf an diesem Tag gebucht werden") und als Aktiv-Filter falsch. Ein
+  `isValidAt` hinter einem Schalter namens `showInactive` ist ein Fehler.
 
 Entitäten mit Gültigkeitszeitraum: `Customerorder`, `Suborder`, `Employeeorder`,
 `Employeecontract`, `OrderBudget`, `OrderPricing`, `OrderFlatRate` (+ `OrderFlatRateInstalment`),

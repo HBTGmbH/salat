@@ -63,21 +63,21 @@ Service vergleicht erneut (ADR-0027, Nachtrag #1424).
 
 **Ein modaler Dialog nennt in seiner Meldung die fachlichen Schlüsselinformationen des betroffenen
 Geschäftsobjekts** — so viel, dass zwei benachbarte Zeilen derselben Liste auseinanderzuhalten
-sind, denn der Dialog verdeckt genau die Zeile, an der man gegenprüfen würde. Das gilt für **jeden**
-Dialog mit einer Meldung, nicht nur für Bestätigungen. Die Datenbank-ID ist keine fachliche
-Information. Wo es kein einzelnes Objekt gibt, benennt der Text den **Umfang** der Aktion (Zeitraum,
-Anzahl, Bereich); wo der Umfang erst eingegeben wird, holt `data-confirm-detail-input` ihn aus dem
-Feld. Die Attributliste steht in [`docs/ui-style-guide.md` §5.5](../ui-style-guide.md).
+sind. Das gilt für **jeden** Dialog mit einer Meldung, nicht nur für Bestätigungen. Die
+Datenbank-ID ist keine fachliche Information. Wo es kein einzelnes Objekt gibt, benennt der Text
+den **Umfang** der Aktion (Zeitraum, Anzahl, Bereich); wo der Umfang erst eingegeben wird, holt
+`data-confirm-detail-input` ihn aus dem Feld. Die Attributliste steht in
+[`docs/ui-style-guide.md` §5.5](../ui-style-guide.md).
 
 Zwei Fallstricke, die beide daher kommen, dass der Dialog zwischen Klick und Aktion steht:
 
 - **`th:attr` wertet seine Ausdrücke eingeschränkt aus** — eine Bohne (`${@durationUtils…}`) ist
   dort so wenig erreichbar wie in einem Nachrichtenparameter (siehe „Globally Accessible Objects").
   Erst mit `th:with` binden, dann im Attribut verwenden.
-- **Der Handler hängt am `submit`-Ereignis in der Capture-Phase** und stoppt es dort. HTMX
-  registriert seinen Auslöser am Formular selbst; alles andere als Capture ließe ein `hx-post`
-  abgehen, bevor die Frage beantwortet ist. Ausgelöst wird danach mit `requestSubmit()`, nicht mit
-  `submit()`: nur das erste behält den auslösenden Knopf und die HTML5-Validierung.
+- **Der Handler hängt am `submit`-Ereignis in der Capture-Phase** und stoppt es dort; alles andere
+  als Capture ließe ein `hx-post` abgehen, bevor die Frage beantwortet ist. Ausgelöst wird danach
+  mit `requestSubmit()`, nicht mit `submit()`: nur das erste behält den auslösenden Knopf und die
+  HTML5-Validierung.
 
 ---
 
@@ -91,17 +91,17 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
   kein Formular ab** — gespeichert wird mit dem Knopf der Seite, Freigabe und Abnahme laufen über
   ihre Prüfseiten. Deshalb braucht kein Befehl eine Rückfrage. Das gilt für jeden Befehl, der
   dazukommt. Einzige Ausnahme ist die Anmeldung selbst (#1231, ADR-0030, Nachtrag): Benutzerwechsel
-  und dessen Ende lösen das Formular des Wechseldialogs bzw. des Nutzermenüs aus — sie ändern keine
-  Daten. Sie und das Abmelden werden nicht unter „Zuletzt verwendet" gemerkt (`data-palette-forget`).
+  und dessen Ende lösen das Formular des Wechseldialogs bzw. des Nutzermenüs aus. Sie und das
+  Abmelden werden nicht unter „Zuletzt verwendet" gemerkt (`data-palette-forget`).
 - **Was sie anbietet, liest sie aus der gerenderten Seite**, statt eine zweite Liste zu führen: die
   Navigation aus `#sidebar-menu .dropdown-item[href]`, die Einstellungen aus den Bedienelementen
   mit `data-palette-command` (die Einträge des Nutzermenüs, der Faltknopf der Sidebar, die
   Tastenkürzel im Fuß), die Personen für den Benutzerwechsel aus den Formularen von
   `#loginSwitchModal`. Ein Bedienelement wird nur angeboten, solange es angezeigt wird — im
-  Nutzermenü (`data-palette-menu`), sobald es gerendert ist, denn das geschlossene Menü verbirgt
-  alles. Die Rollenfrage beantwortet damit allein die Sidebar; eine
-  Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein Element der Seite das bessere
-  Ziel kennt, verweist der Sidebar-Eintrag mit `data-palette-href-from` darauf.
+  Nutzermenü (`data-palette-menu`), sobald es gerendert ist. Die Rollenfrage beantwortet damit
+  allein die Sidebar; eine Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein
+  Element der Seite das bessere Ziel kennt, verweist der Sidebar-Eintrag mit
+  `data-palette-href-from` darauf.
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
   des Servers, nicht der des Browsers: der Dialog trägt Zeitpunkt und Zeitzone des Servers
   (`data-now`, `data-time-zone`), und die Uhr des Browsers zählt von dort weiter.
@@ -155,9 +155,9 @@ kein eigenes Modell. Attribute und Regeln in [`docs/ui-style-guide.md` §5.9](..
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene
 Marken-Palette. Ein Literal im Stylesheet oder in einem Template ist ein Fehler, solange es nicht
 in der Ausnahmeliste von [`docs/ui-style-guide.md` §7.1](../ui-style-guide.md) steht — dort sind
-die vier verbliebenen benannt und begründet. Eines davon ist das Gelb selbst: Tabler kennt nur
-`#f59f00`, einen Bernstein, deshalb setzt `salat.css` `--tblr-yellow` und `--tblr-warning` auf
-`#ffcc00`. Alles Abgeleitete mischt Tabler aus dem Token und folgt von selbst.
+die vier verbliebenen benannt und begründet. Eines davon ist das Gelb selbst: `salat.css` setzt
+`--tblr-yellow` und `--tblr-warning` auf `#ffcc00`. Alles Abgeleitete mischt Tabler aus dem Token
+und folgt von selbst.
 
 Wo ein Wert zur Laufzeit gebraucht wird (Diagramme), wird das Token gelesen statt abgeschrieben:
 `--tblr-<name>` vom `body`. **Seit Tabler 1.6 steht dort `oklch(…)`, kein Hex** — wer daraus eine
@@ -392,10 +392,9 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 `UiStateFilter` remembers a selection across page changes and puts every remembered value **under
 the request as a fallback parameter** — `getParameter`, `getParameterValues` and `getParameterMap`
 answer with it wherever the request itself brings none. The mapping is global across all modules
-and applies to every request, whatever its method or path.
-
-A name registered in a `UiStateKeyContributor` therefore acts in every form of the application.
-That is why the two namespaces are kept disjoint:
+and applies to every request, whatever its method or path. A name registered in a
+`UiStateKeyContributor` therefore acts in every form of the application; the two namespaces are
+kept disjoint:
 
 - **Every registered parameter name is `f` + a capital letter**: `fYear`, `fMonth`,
   `fCustomerOrderId`, `fCustomerFilter`, `fEmployeeOrderShowHidden`. `UiStateKeyRegistry` refuses a
@@ -407,16 +406,15 @@ That is why the two namespaces are kept disjoint:
 - **Filter forms carry the parameters directly** — `<input name="fCustomerFilter">`, not a bound
   form object. A filter has no `*FilterForm`.
 - **A create form may use the filter values as optional input**: `createForm(@RequestParam(required
-  = false) Long fCustomerId, …)` prefills the new entry with what the list has selected. That is
-  the wanted half of the mechanism — but the **link** to that form passes nothing (see below).
+  = false) Long fCustomerId, …)` prefills the new entry with what the list has selected. The
+  **link** to that form passes nothing (see below).
 
 ---
 
 ## Saving Never Changes the Filter (→ ADR-0023)
 
-A filter is the user's setting; adding or editing an entry is no reason to change it. A store
-method therefore never calls `uiState.clearState(...)`. Where the filter may hide what was just
-saved, the success message says so:
+Creating or editing never changes the filter: a store method never calls `uiState.clearState(...)`.
+Where the filter may hide what was just saved, the success message says so:
 
 ```java
 filterHintViewHelper.addSuccess(redirectAttributes,
@@ -424,11 +422,10 @@ filterHintViewHelper.addSuccess(redirectAttributes,
     SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
 ```
 
-The hint travels as its own flash attribute (`toastSuccessHint`) and the toast gives it a line of
-its own — it is about the list, not about the saving.
+The hint travels as its own flash attribute (`toastSuccessHint`); the toast gives it its own line.
 
-Pass only the filters that can **exclude** an entry — search text and selections. `showHidden` and
-`showInactive` only ever widen a list and can never be the reason something is missing.
+Pass only the filters that can **exclude** an entry — search text and selections, not `showHidden`
+or `showInactive`.
 
 **A link to a create form carries no filter parameter either** — the click would rewrite the
 filter, and an *empty* value (the usual case: the link renders whatever the list had) is a
