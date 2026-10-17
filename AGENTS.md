@@ -157,7 +157,14 @@ stating why (currently: actuator `metrics` exposure, Azure auth).
   itself. A later correction does not help — GitHub keeps the edit history and git keeps the commit;
   delete and recreate the issue, and coordinate before rewriting already pushed history.
 - **Branch naming**: `feature/<issue-number>-<short-description>` (e.g. `feature/606-move-fromDBtimeToString-to-DurationUtils`)
-- **One issue per branch / PR**: do not bundle unrelated changes.
+- **One issue per branch / PR**: do not bundle unrelated changes. Exception: small faults found on the way (next rule).
+- **Kleine Fehler unterwegs direkt korrigieren (Pfadfinderprinzip)**: Wer bei der Arbeit an einem
+  Ticket auf einen kleinen Fehler stößt, korrigiert ihn im selben PR, solange das das Ticket nicht
+  gefährdet. Klein heißt: der Fix ist für sich verständlich, ändert nichts an dem, was das Ticket
+  vereinbart, und braucht keine eigene fachliche Entscheidung. Wie bei jedem Fehler steht zuerst ein
+  Test, der ihn zeigt. Der Fix bekommt einen eigenen Commit und im PR einen eigenen Absatz. Was größer
+  ist, eine Entscheidung braucht oder das Ticket verzögern würde, wird ein eigenes Issue. Für
+  Refactorings gilt weiter die Regel unten.
 - **Commit messages**: every commit message starts with the issue ID, then ` - `, then a short
   description in the imperative or nominal style used so far, e.g.
   `#930 - Anfangsueberstunden mit dem Vertragsbeginn als Stichtag anlegen`. This applies to every
