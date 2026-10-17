@@ -1,16 +1,23 @@
 package de.hbt.salat.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static de.hbt.salat.common.util.DurationUtils.decimalFormat;
 import static de.hbt.salat.common.util.DurationUtils.format;
+import static de.hbt.salat.common.util.DurationUtils.formatHoursMinutes;
+import static de.hbt.salat.common.util.DurationUtils.formatSignedHoursMinutes;
 import static de.hbt.salat.common.util.DurationUtils.parseDuration;
 import static de.hbt.salat.common.util.DurationUtils.parseFlexibleMinutes;
+import static de.hbt.salat.common.util.DurationUtils.parseHoursMinutes;
 import static de.hbt.salat.common.util.DurationUtils.validateDuration;
 
 import java.time.Duration;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class DurationUtilsTest {
@@ -241,5 +248,34 @@ public class DurationUtilsTest {
     assertThat(DurationUtils.formatSigned(Duration.ofMinutes(150))).isEqualTo("+2:30");
     assertThat(DurationUtils.formatSigned(Duration.ofMinutes(-75))).isEqualTo("-1:15");
     assertThat(DurationUtils.formatSigned(Duration.ZERO)).isEqualTo("0:00");
+  }
+  /* The format of every interface (#1398): two digits at least, hours beyond a day, no sign. */
+  @Test
+  public void hours_and_minutes_are_formatted_for_the_interfaces() {
+    assertThat(formatHoursMinutes(Duration.ZERO)).isEqualTo("00:00");
+    assertThat(formatHoursMinutes(Duration.ofMinutes(5))).isEqualTo("00:05");
+    assertThat(formatHoursMinutes(Duration.ofHours(25).plusMinutes(30))).isEqualTo("25:30");
+    assertThat(formatHoursMinutes(Duration.ofHours(123).plusSeconds(59))).isEqualTo("123:00");
+    assertThatThrownBy(() -> formatHoursMinutes(Duration.ofMinutes(-1))).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void a_balance_is_formatted_with_its_sign() {
+    assertThat(formatSignedHoursMinutes(Duration.ofHours(-12).minusMinutes(30))).isEqualTo("-12:30");
+    assertThat(formatSignedHoursMinutes(Duration.ofMinutes(-5))).isEqualTo("-00:05");
+    assertThat(formatSignedHoursMinutes(Duration.ofHours(40).plusMinutes(30))).isEqualTo("40:30");
+    assertThat(formatSignedHoursMinutes(Duration.ZERO)).isEqualTo("00:00");
+  }
+
+  @ParameterizedTest
+  @CsvSource({"00:00, 0", "04:30, 270", "4:30, 270", "25:30, 1530", "123:05, 7385", "08:15:59, 495", "' 01:00 ', 60"})
+  public void hours_and_minutes_are_read_from_the_interfaces(String value, long minutes) {
+    assertThat(parseHoursMinutes(value)).contains(Duration.ofMinutes(minutes));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "1", "01:60", "-01:00", "+01:00", "1:5", "01:5", "1,5", "1h30", "PT1H", "01:30:60", "1234567:00"})
+  public void anything_else_is_no_duration_of_the_interfaces(String value) {
+    assertThat(parseHoursMinutes(value)).isEmpty();
   }
 }

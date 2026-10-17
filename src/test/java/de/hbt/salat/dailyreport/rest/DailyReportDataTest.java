@@ -10,11 +10,16 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.order.domain.SurchargeKind;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+// the fields from before #1398 are tested on purpose: they stay readable and writable until they go
+@SuppressWarnings("deprecation")
 class DailyReportDataTest {
 
   @Test
@@ -27,8 +32,7 @@ class DailyReportDataTest {
         .orderLabel("test")
         .suborderLabel("test")
         .comment("test")
-        .hours(1)
-        .minutes(30)
+        .duration(Duration.ofHours(1).plusMinutes(30))
         .orderSign("17")
         .suborderSign("17/01")
         .training(true)
@@ -111,13 +115,13 @@ class DailyReportDataTest {
   /** Hours and minutes apart exist only in this format; inside the application the duration is one value (#1400). */
   @Test
   void hoursAndMinutesBecomeOneDuration() {
-    assertThat(DailyReportData.builder().hours(1).minutes(45).build().toDuration())
+    assertThat(DailyReportData.builder().duration(Duration.ofHours(1).plusMinutes(45)).build().toDuration())
         .isEqualTo(Duration.ofHours(1).plusMinutes(45));
   }
 
   @Test
   void aMinutesPartOfSixtyOrMoreAddsUp() {
-    assertThat(DailyReportData.builder().hours(0).minutes(90).build().toDuration())
+    assertThat(DailyReportData.builder().duration(Duration.ofMinutes(90)).build().toDuration())
         .isEqualTo(Duration.ofHours(1).plusMinutes(30));
   }
 
@@ -142,10 +146,10 @@ class DailyReportDataTest {
     var json = mapper.writeValueAsString(DailyReportData.valueOf(booking));
     var read = mapper.readValue(json, DailyReportData.class);
 
-    assertThat(json).contains("\"surchargeKind\":\"NIGHT\"", "\"surchargePercent\":25", "\"surchargeCreditMinutes\":60");
+    assertThat(json).contains("\"surchargeKind\":\"NIGHT\"", "\"surchargePercent\":25", "\"surchargeCredit\":\"01:00\"");
     assertThat(read.givenSurchargeKind()).isEqualTo(SurchargeKind.NIGHT);
     assertThat(read.getSurchargePercent()).isNull();
-    assertThat(read.getSurchargeCreditMinutes()).isNull();
+    assertThat(read.getSurchargeCredit()).isNull();
   }
 
   @Test
@@ -155,5 +159,60 @@ class DailyReportDataTest {
     assertThatThrownBy(data::givenSurchargeKind)
         .isInstanceOfSatisfying(InvalidDataException.class, ex ->
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_SURCHARGE_KIND_INVALID));
+  }
+  /* Read, a booking carries its duration as HH:mm and, for older clients, as hours and minutes (#1398). */
+  @Test
+  void readsTheDurationInTheNewAndTheFormerFields() {
+    var booking = TimereportDTO.builder().duration(Duration.ofHours(25).plusMinutes(30)).ticketReferences(List.of()).build();
+
+    var json = new ObjectMapper().writeValueAsString(DailyReportData.valueOf(booking));
+
+    assertThat(json).contains("\"duration\":\"25:30\"", "\"hours\":25", "\"minutes\":30");
+  }
+
+  @Test
+  void writesTheDurationWithTheNewField() {
+    var booking = new ObjectMapper().readValue("{\"employeeorderId\":1,\"duration\":\"04:30\"}", DailyReportData.class);
+
+    assertThat(booking.toDuration()).isEqualTo(Duration.ofHours(4).plusMinutes(30));
+    assertThat(booking.getHours()).isEqualTo(4);
+    assertThat(booking.getMinutes()).isEqualTo(30);
+  }
+
+  @Test
+  void writesTheDurationWithTheFormerFields() {
+    var booking = new ObjectMapper().readValue("{\"employeeorderId\":1,\"hours\":4,\"minutes\":30}", DailyReportData.class);
+
+    assertThat(booking.toDuration()).isEqualTo(Duration.ofHours(4).plusMinutes(30));
+    assertThat(booking.getDuration()).isEqualTo(Duration.ofHours(4).plusMinutes(30));
+  }
+
+  @Test
+  void theNewFieldWinsOverTheFormerOnes() {
+    var booking = new ObjectMapper().readValue("{\"employeeorderId\":1,\"duration\":\"01:15\",\"hours\":4,\"minutes\":30}",
+        DailyReportData.class);
+
+    assertThat(booking.toDuration()).isEqualTo(Duration.ofHours(1).plusMinutes(15));
+    assertThat(booking.getHours()).isEqualTo(1);
+    assertThat(booking.getMinutes()).isEqualTo(15);
+  }
+
+  /* Import and REST API compare an incoming booking with a stored one; which fields it came in must not matter. */
+  @Test
+  void aBookingEqualsTheSameBookingGivenWithTheFormerFields() {
+    var mapper = new ObjectMapper();
+    var given = mapper.readValue("{\"employeeorderId\":1,\"duration\":\"01:30\"}", DailyReportData.class);
+    var former = mapper.readValue("{\"employeeorderId\":1,\"hours\":0,\"minutes\":90}", DailyReportData.class);
+
+    assertThat(given).isEqualTo(former).hasSameHashCodeAs(former);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"01:60", "-01:00", "1", "1:5", "PT1H", "01:30 h"})
+  void rejectsADurationThatIsNotHoursAndMinutes(String duration) {
+    var json = "{\"employeeorderId\":1,\"duration\":\"" + duration + "\"}";
+
+    assertThatThrownBy(() -> new ObjectMapper().readValue(json, DailyReportData.class))
+        .isInstanceOf(JacksonException.class);
   }
 }

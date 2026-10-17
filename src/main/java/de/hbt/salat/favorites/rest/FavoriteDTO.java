@@ -2,14 +2,18 @@ package de.hbt.salat.favorites.rest;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
+import de.hbt.salat.common.json.HoursMinutes;
 
 @Builder
 @AllArgsConstructor
@@ -24,10 +28,25 @@ public class FavoriteDTO implements Serializable {
   @Schema(description = "ID des zugehörigen Mitarbeiterauftrags", example = "42", requiredMode = REQUIRED)
   private Long employeeorderId;
 
-  @Schema(description = "Anzahl der Stunden für die Zeitbuchung", example = "8", minimum = "0", maximum = "24", requiredMode = REQUIRED)
+  /**
+   * The duration of the booking (#1398). Where it is missing, {@link #hours} and {@link #minutes} of an older
+   * client stand for it; where it is given, it wins over them.
+   */
+  @HoursMinutes
+  @Schema(description = "Dauer der Zeitbuchung im Format HH:mm. Hat beim Schreiben Vorrang vor hours und minutes; "
+      + "fehlt sie, gelten diese.", type = "string", pattern = HoursMinutes.PATTERN, example = "08:30", nullable = true)
+  private Duration duration;
+
+  @Deprecated
+  @JsonSetter(nulls = Nulls.AS_EMPTY)
+  @Schema(description = "Abgekündigt, ersetzt durch duration: Stunden der Zeitbuchung. Beim Schreiben nur ausgewertet, "
+      + "wenn duration fehlt.", example = "8", minimum = "0", deprecated = true)
   private int hours;
 
-  @Schema(description = "Anzahl der Minuten für die Zeitbuchung", example = "30", minimum = "0", maximum = "59", requiredMode = REQUIRED)
+  @Deprecated
+  @JsonSetter(nulls = Nulls.AS_EMPTY)
+  @Schema(description = "Abgekündigt, ersetzt durch duration: Minuten der Zeitbuchung zusätzlich zu den Stunden. Beim "
+      + "Schreiben nur ausgewertet, wenn duration fehlt.", example = "30", minimum = "0", maximum = "59", deprecated = true)
   private int minutes;
 
   @Schema(description = "Kommentar zur Zeitbuchung", example = "API-4511 Entwicklung neuer Features", maxLength = 255)
@@ -51,4 +70,21 @@ public class FavoriteDTO implements Serializable {
       + "Nur lesend: Gruppen werden in der Anwendung angelegt und geordnet, ein neuer Favorit steht ohne Gruppe.",
       example = "Wartung", nullable = true, accessMode = Schema.AccessMode.READ_ONLY)
   private String groupName;
+
+  /** The duration the favourite states: {@link #duration}, or else what {@link #hours} and {@link #minutes} add up to. */
+  public Duration getDuration() {
+    return duration != null ? duration : Duration.ofHours(hours).plusMinutes(minutes);
+  }
+
+  /** The hours of {@link #getDuration()}, for clients from before #1398. */
+  @Deprecated
+  public int getHours() {
+    return Math.toIntExact(getDuration().toHours());
+  }
+
+  /** The minutes part of {@link #getDuration()}, for clients from before #1398. */
+  @Deprecated
+  public int getMinutes() {
+    return getDuration().toMinutesPart();
+  }
 }

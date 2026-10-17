@@ -351,8 +351,7 @@ class MyAccountsControllerTest {
 
   private void balanceOf(Duration balance) {
     var info = new OvertimeStatusInfo();
-    info.setDuration(balance);
-    info.setNegative(balance.isNegative());
+    info.setBalance(balance);
     var status = new OvertimeStatus();
     status.setTotal(info);
     when(overtimeService.calculateOvertime(CONTRACT_ID, false)).thenReturn(Optional.of(status));

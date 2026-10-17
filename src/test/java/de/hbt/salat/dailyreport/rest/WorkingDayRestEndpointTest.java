@@ -36,6 +36,8 @@ import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 
 @ExtendWith(MockitoExtension.class)
+// the fields from before #1398 are tested on purpose: they stay readable and writable until they go
+@SuppressWarnings("deprecation")
 class WorkingDayRestEndpointTest {
     @Mock
     EmployeecontractService employeecontractService;

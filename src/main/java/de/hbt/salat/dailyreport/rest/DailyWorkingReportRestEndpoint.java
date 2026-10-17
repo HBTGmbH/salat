@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -144,9 +143,8 @@ public class DailyWorkingReportRestEndpoint {
         if(workingDay != null) {
             builder.type(workingDay.getType());
             if(workingDay.getType() != WorkingDayType.NOT_WORKED) {
-                var bd = workingDay.getBreakLength();
                 builder.startTime(workingDay.getStartOfWorkingDay().toLocalTime());
-                builder.breakDuration(LocalTime.of(bd.toHoursPart(), bd.toMinutesPart()));
+                builder.breakDuration(workingDay.getBreakLength());
             }
         }
 

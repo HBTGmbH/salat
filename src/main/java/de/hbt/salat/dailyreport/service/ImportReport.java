@@ -1,6 +1,7 @@
 package de.hbt.salat.dailyreport.service;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -12,8 +13,7 @@ public record ImportReport(List<DayResult> days, int linesRead) implements Seria
     public record BookingDetail(
         String suborderSign,
         String suborderLabel,
-        long hours,
-        long minutes,
+        Duration duration,
         String comment,
         List<String> ticketReferences,
         boolean training
@@ -29,7 +29,7 @@ public record ImportReport(List<DayResult> days, int linesRead) implements Seria
         boolean workingDayCreated,
         boolean workingDayDataChanged,
         LocalTime startTime,
-        LocalTime breakDuration,
+        Duration breakDuration,
         List<BookingDetail> bookingsCreated,
         List<BookingDetail> bookingsDeleted,
         List<UpdatedBookingDetail> bookingsUpdated

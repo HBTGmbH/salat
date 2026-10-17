@@ -44,7 +44,7 @@
             <span class="text-muted small font-monospace" th:if="${day.startTime() != null}">
               <th:block th:text="${#temporals.format(day.startTime(), 'HH:mm')}">08:00</th:block>
               &middot;
-              <th:block th:text="${day.breakDuration() != null ? #temporals.format(day.breakDuration(), 'HH:mm') : '00:00'}">00:30</th:block>
+              <th:block th:text="${day.breakDuration() != null ? @durationUtils.formatHoursMinutes(day.breakDuration()) : '00:00'}">00:30</th:block>
             </span>
           </th:block>
           <th:block th:if="${day.workingDayDataChanged()}">
@@ -54,7 +54,7 @@
               <th:block th:text="${#temporals.format(day.startTime(), 'HH:mm')}">08:00</th:block>
               &middot;
               <th:block th:text="#{main.daily.workingday.break.label}">Break</th:block>
-              <th:block th:text="${day.breakDuration() != null ? #temporals.format(day.breakDuration(), 'HH:mm') : '00:00'}">00:30</th:block>
+              <th:block th:text="${day.breakDuration() != null ? @durationUtils.formatHoursMinutes(day.breakDuration()) : '00:00'}">00:30</th:block>
             </span>
           </th:block>
         </div>
@@ -77,7 +77,7 @@
                 <span th:if="${b.training()}" class="badge bg-purple-lt ms-1" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
               </td>
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
-              <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
+              <td class="text-nowrap small" th:text="${@durationUtils.formatHoursMinutes(b.duration())}">03:00</td>
               <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">initial setup</td>
               <td class="text-nowrap font-monospace small" th:text="${#strings.listJoin(b.ticketReferences(), ';')}">PROJ-123</td>
             </tr>
@@ -105,10 +105,10 @@
               </td>
               <td class="small" th:text="${u.to().suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small">
-                  <span th:if="${u.from().hours() != u.to().hours() or u.from().minutes() != u.to().minutes()}"
+                  <span th:if="${u.from().duration() != u.to().duration()}"
                         class="text-muted text-decoration-line-through me-1"
-                        th:text="${#numbers.formatInteger(u.from().hours(),2,'NONE') + ':' + #numbers.formatInteger(u.from().minutes(),2,'NONE')}">02:00</span>
-                <th:block th:text="${#numbers.formatInteger(u.to().hours(),2,'NONE') + ':' + #numbers.formatInteger(u.to().minutes(),2,'NONE')}">03:00</th:block>
+                        th:text="${@durationUtils.formatHoursMinutes(u.from().duration())}">02:00</span>
+                <th:block th:text="${@durationUtils.formatHoursMinutes(u.to().duration())}">03:00</th:block>
               </td>
               <td class="small text-muted">
                   <span th:if="${u.from().comment() ne u.to().comment()}"
@@ -146,7 +146,7 @@
                 <span th:if="${b.training()}" class="badge bg-purple-lt ms-1" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
               </td>
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
-              <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
+              <td class="text-nowrap small" th:text="${@durationUtils.formatHoursMinutes(b.duration())}">03:00</td>
               <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">initial setup</td>
               <td class="text-nowrap font-monospace small" th:text="${#strings.listJoin(b.ticketReferences(), ';')}">PROJ-123</td>
             </tr>
@@ -172,6 +172,23 @@
         </div>
         <form th:action="@{/dailyreport/csv/import}" method="post" enctype="multipart/form-data">
           <div class="card-body">
+            <!--/* The format changed with #1398. Confirmed once, the notice stays away on this device (salat.js,
+                   data-notice): it is news for the time after the change, not part of the page, and goes again
+                   together with the old fields of the REST interfaces. */-->
+            <div class="alert alert-warning" role="region" data-notice="csv-format-1398" hidden
+                 th:aria-label="#{main.dailyreport.csv.format.changed.title}">
+              <div class="d-flex align-items-start gap-2">
+                <i class="ti ti-alert-triangle mt-1"></i>
+                <div class="flex-fill">
+                  <h4 class="alert-title mb-1" th:text="#{main.dailyreport.csv.format.changed.title}">The CSV format has changed</h4>
+                  <div class="text-secondary" th:text="#{main.dailyreport.csv.format.changed.text}">What changed.</div>
+                  <div class="btn-list mt-2">
+                    <button type="button" class="btn btn-warning" data-notice-confirm
+                            th:text="#{main.dailyreport.csv.format.changed.confirm}">Got it</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <p class="text-muted" th:text="#{main.dailyreport.csv.import.desc.text}">
               Upload a CSV file to load working day data and time bookings.
             </p>
@@ -328,11 +345,11 @@
             </tr>
             <tr class="table-active">
               <td class="text-muted">3</td>
-              <td class="fw-medium">breakTime</td>
+              <td class="fw-medium">breakDuration</td>
               <td class="text-muted">HH:mm</td>
               <td class="font-monospace small">00:30</td>
               <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.if.worked.text}">If WORKED</td>
-              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.breaktime.notes.text}">Break duration; empty if not set</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.breakduration.notes.text}">Break duration; empty if not set</td>
             </tr>
             <tr>
               <td class="text-muted">4</td>
@@ -376,11 +393,11 @@
             </tr>
             <tr>
               <td class="text-muted">9</td>
-              <td class="fw-medium">workingTime</td>
+              <td class="fw-medium">duration</td>
               <td class="text-muted">HH:mm</td>
               <td class="font-monospace small">03:00</td>
               <td class="text-nowrap small fw-medium text-red" th:text="#{main.dailyreport.csv.format.import.if.booking.text}">If booking</td>
-              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.workingtime.notes.text}">Booked duration</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.duration.notes.text}">Booked duration</td>
             </tr>
             <tr>
               <td class="text-muted">10</td>
@@ -414,11 +431,35 @@
               <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeesign.notes.text}">Employee sign; if absent, the employee of the selected contract</td>
             </tr>
+            <tr>
+              <td class="text-muted">14</td>
+              <td class="fw-medium">surchargeKind</td>
+              <td class="text-muted">NIGHT · SATURDAY · SUNDAY · HOLIDAY</td>
+              <td class="font-monospace small">NIGHT</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.surchargekind.notes.text}">Time surcharge; empty means none</td>
+            </tr>
+            <tr>
+              <td class="text-muted">15</td>
+              <td class="fw-medium">surchargePercent</td>
+              <td class="text-muted">integer</td>
+              <td class="font-monospace small">25</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.ignored.text}">Ignored</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.surchargepercent.notes.text}">Rate; export only</td>
+            </tr>
+            <tr>
+              <td class="text-muted">16</td>
+              <td class="fw-medium">surchargeCredit</td>
+              <td class="text-muted">HH:mm</td>
+              <td class="font-monospace small">00:45</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.ignored.text}">Ignored</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.surchargecredit.notes.text}">Credit; export only</td>
+            </tr>
           </tbody>
         </table>
       </div>
       <p class="text-muted small mb-1 mt-3" th:text="#{main.dailyreport.csv.format.example.two.bookings.text}">Example &mdash; day with two bookings:</p>
-      <pre class="rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign
+      <pre class="rounded p-3 small mb-2">date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment,ticketReference,training,employeeSign
 2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,ALPHA/BE,Backend Development,03:00,initial setup,PROJ-123,false,abc
 2026-06-02,,,,,,,ALPHA/FE,,01:30,refactoring,,true,abc</pre>
       <p class="text-muted small mb-1" th:text="#{main.dailyreport.csv.format.example.not.worked.text}">Example &mdash; not-worked day (no bookings):</p>

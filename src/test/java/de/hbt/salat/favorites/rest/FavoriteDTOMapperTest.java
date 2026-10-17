@@ -9,11 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.server.ResponseStatusException;
 import de.hbt.salat.favorites.domain.FavoriteEntry;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * A favourite carries several ticket references (#1326); a client from before that knows one
  * reference only and keeps working with the first.
  */
+@SuppressWarnings("deprecation")
 class FavoriteDTOMapperTest {
 
   private final FavoriteDTOMapper mapper = Mappers.getMapper(FavoriteDTOMapper.class);
@@ -49,14 +52,45 @@ class FavoriteDTOMapperTest {
     assertThat(dto.getGroupName()).isEqualTo("Wartung");
   }
 
-  /** The interface keeps hours and minutes apart until #1398; the favourite has one duration (#1456). */
+  /** Read, the duration is one value (#1398) and, for older clients, hours and minutes apart. */
   @Test
-  void reading_splits_the_duration_into_hours_and_minutes() {
+  void reading_gives_the_duration_and_splits_it_into_hours_and_minutes() {
     var dto = mapper.map(new FavoriteEntry(5L, 7L, "ABC/01 - Wartung", Duration.ofHours(1).plusMinutes(45), null,
         null, null, null, null));
 
+    assertThat(dto.getDuration()).isEqualTo(Duration.ofHours(1).plusMinutes(45));
     assertThat(dto.getHours()).isEqualTo(1);
     assertThat(dto.getMinutes()).isEqualTo(45);
+  }
+
+  @Test
+  void writing_takes_the_duration() {
+    var dto = FavoriteDTO.builder().employeeorderId(7L).duration(Duration.ofHours(25).plusMinutes(30)).build();
+
+    assertThat(mapper.map(dto).duration()).isEqualTo(Duration.ofHours(25).plusMinutes(30));
+  }
+
+  @Test
+  void the_duration_wins_over_hours_and_minutes() {
+    var dto = FavoriteDTO.builder().employeeorderId(7L).duration(Duration.ofMinutes(15)).hours(1).minutes(45).build();
+
+    assertThat(mapper.map(dto).duration()).isEqualTo(Duration.ofMinutes(15));
+  }
+
+  /** In JSON the duration is HH:mm (#1398); the former fields come along and go in without it. */
+  @Test
+  void in_json_the_duration_is_hours_and_minutes() {
+    var json = new ObjectMapper();
+    var read = json.writeValueAsString(mapper.map(new FavoriteEntry(5L, 7L, "ABC/01 - Wartung", Duration.ofHours(1).plusMinutes(45),
+        null, null, null, null, null)));
+
+    assertThat(read).contains("\"duration\":\"01:45\"", "\"hours\":1", "\"minutes\":45");
+    assertThat(json.readValue("{\"employeeorderId\":7,\"duration\":\"02:30\"}", FavoriteDTO.class).getDuration())
+        .isEqualTo(Duration.ofHours(2).plusMinutes(30));
+    assertThat(json.readValue("{\"employeeorderId\":7,\"hours\":2,\"minutes\":30}", FavoriteDTO.class).getDuration())
+        .isEqualTo(Duration.ofHours(2).plusMinutes(30));
+    assertThatThrownBy(() -> json.readValue("{\"employeeorderId\":7,\"duration\":\"02:60\"}", FavoriteDTO.class))
+        .isInstanceOf(JacksonException.class);
   }
 
   @Test

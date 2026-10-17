@@ -132,6 +132,7 @@ public enum ErrorCode {
   TR_SURCHARGE_HOLIDAY_ON_NON_HOLIDAY("TR-0056", "a holiday surcharge needs a booking on a public holiday"),
   TR_SURCHARGE_SUNDAY_ON_OTHER_DAY("TR-0057", "a Sunday surcharge needs a booking on a Sunday"),
   TR_SURCHARGE_KIND_INVALID("TR-0058", "the time surcharge kind is none of NIGHT, SATURDAY, SUNDAY, HOLIDAY or empty"),
+  TR_CSV_FORMAT_CHANGED("TR-0059", "the uploaded CSV file names a column of the format before durations became HH:mm"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

@@ -77,9 +77,8 @@ public class DailyWorkingReportService {
         if (workingDay != null) {
             builder.type(workingDay.getType());
             if (workingDay.getType() != WorkingDayType.NOT_WORKED) {
-                var bd = workingDay.getBreakLength();
                 builder.startTime(workingDay.getStartOfWorkingDay().toLocalTime());
-                builder.breakDuration(LocalTime.MIDNIGHT.plus(bd.truncatedTo(MINUTES)));
+                builder.breakDuration(workingDay.getBreakLength().truncatedTo(MINUTES));
             }
         }
         return builder.build();
@@ -226,7 +225,7 @@ public class DailyWorkingReportService {
         var oldType = workingDay.getType();
 
         ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
-            workingDay.setBreakLength(Duration.between(LocalTime.MIDNIGHT, bd.truncatedTo(MINUTES)));
+            workingDay.setBreakLength(bd.truncatedTo(MINUTES));
         }, () -> {
             workingDay.setBreakLength(Duration.ZERO);
         });
@@ -245,11 +244,11 @@ public class DailyWorkingReportService {
         );
         boolean worked = workingDay.getType() != WorkingDayType.NOT_WORKED;
         LocalTime startTime = worked ? report.getStartTime() : null;
-        LocalTime breakDuration = worked ? report.getBreakDuration() : null;
+        Duration breakDuration = worked ? report.getBreakDuration() : null;
         return new WorkingDayResult(created, dataChanged, startTime, breakDuration);
     }
 
-    private record WorkingDayResult(boolean created, boolean dataChanged, LocalTime startTime, LocalTime breakDuration) {}
+    private record WorkingDayResult(boolean created, boolean dataChanged, LocalTime startTime, Duration breakDuration) {}
 
     private DayChanges changesOf(LocalDate day, Long employeeOrderId, List<DailyReportData> incomingBookings, boolean upsert, long contractId) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
@@ -395,7 +394,7 @@ public class DailyWorkingReportService {
     }
 
     private static ImportReport.BookingDetail toBookingDetail(DailyReportData b) {
-        return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment(),
+        return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getDuration(), b.getComment(),
             b.getTicketReferences() == null ? List.of() : b.getTicketReferences(), b.isTraining());
     }
 

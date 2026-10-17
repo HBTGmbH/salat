@@ -233,12 +233,12 @@ public class DashboardController {
                                       OvertimeScale monthScale) {
         var total = overtimeStatus.map(OvertimeStatus::getTotal);
         var currentMonth = overtimeStatus.map(OvertimeStatus::getCurrentMonth);
-        model.addAttribute("overtime", total.map(info -> DurationUtils.format(info.getDuration())).orElse(""));
-        model.addAttribute("overtimeIsNegative", total.map(OvertimeStatusInfo::isNegative).orElse(false));
+        model.addAttribute("overtime", total.map(info -> DurationUtils.format(info.getBalance())).orElse(""));
+        model.addAttribute("overtimeIsNegative", total.map(info -> info.getBalance().isNegative()).orElse(false));
         model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus, totalScale));
         model.addAttribute("overtimeScale", totalScale);
-        model.addAttribute("monthlyOvertime", currentMonth.map(info -> DurationUtils.format(info.getDuration())).orElse(""));
-        model.addAttribute("monthlyOvertimeIsNegative", currentMonth.map(OvertimeStatusInfo::isNegative).orElse(false));
+        model.addAttribute("monthlyOvertime", currentMonth.map(info -> DurationUtils.format(info.getBalance())).orElse(""));
+        model.addAttribute("monthlyOvertimeIsNegative", currentMonth.map(info -> info.getBalance().isNegative()).orElse(false));
         model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus, monthScale));
         model.addAttribute("monthlyOvertimeScale", monthScale);
         model.addAttribute("overtimeMonth", currentMonth.map(info -> DateUtils.format(info.getBegin(), "yyyy-MM")).orElse(""));
@@ -247,20 +247,20 @@ public class DashboardController {
         model.addAttribute("monthlyOvertimeSurchargeCredit", currentMonth.map(OvertimeStatusInfo::getSurchargeCredit).orElse(null));
     }
 
-    /* Die Dauer ist bereits vorzeichenbehaftet (OvertimeService.toStatusInfo); isNegative daneben ist
+    /* Der Saldo ist bereits vorzeichenbehaftet (OvertimeService.toStatusInfo); sein Vorzeichen ist daneben
        nur die Pfeilrichtung. Wer es hier ein zweites Mal anwendet, prueft bei Minusstunden die
        positive Seite der Skala - genau die Richtung, in der die Warnung gebraucht wird (#1030). */
     static String overtimeColorClass(Optional<OvertimeStatus> overtimeStatus, OvertimeScale scale) {
         return overtimeStatus
             .map(OvertimeStatus::getTotal)
-            .map(info -> scale.colorClass(info.getDuration()))
+            .map(info -> scale.colorClass(info.getBalance()))
             .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 
     static String monthlyOvertimeColorClass(Optional<OvertimeStatus> overtimeStatus, OvertimeScale scale) {
         return overtimeStatus
             .map(OvertimeStatus::getCurrentMonth)
-            .map(info -> scale.colorClass(info.getDuration()))
+            .map(info -> scale.colorClass(info.getBalance()))
             .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 

@@ -5,20 +5,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
+import static de.hbt.salat.common.exception.ErrorCode.TR_CSV_FORMAT_CHANGED;
 import static de.hbt.salat.order.domain.SurchargeKind.NIGHT;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import de.hbt.salat.common.exception.InvalidDataException;
 
 @ExtendWith(MockitoExtension.class)
 class DailyReportCsvConverterTest {
@@ -35,14 +40,14 @@ class DailyReportCsvConverterTest {
     void shouldReadFromCsv() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1"
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test1"
                 """;
         var dailyReport1 = DailyReportData.builder()
                 .date("2024-10-29").employeeorderId(183209L)
                 .orderSign("111").orderLabel("Rumsitzen")
                 .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
-                .hours(1).minutes(0).comment("test1")
+                .duration(Duration.ofHours(1)).comment("test1")
                 .build();
 
         var inputStream = toInputStream(rawData, "UTF-8");
@@ -62,8 +67,8 @@ class DailyReportCsvConverterTest {
     void shouldRejectAnUnreadableTrainingFlag() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","ja"
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test1","","ja"
                 """;
         when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
 
@@ -72,15 +77,14 @@ class DailyReportCsvConverterTest {
                 .isInstanceOf(HttpMessageNotReadableException.class);
     }
 
-    /* Reference and training flag are new columns at the end (#1140): positions 0-8 stay where existing clients
-       expect them, and a file without it still reads as before. */
+    /* Reference and training flag are new columns at the end (#1140): a file without them still reads as before. */
     @Test
     void shouldReadTicketReferenceFromTheLastColumn() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","ERP-1","true"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","2","0","test2","",""
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test1","ERP-1","true"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","02:00","test2","",""
                 """;
         when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
 
@@ -98,8 +102,8 @@ class DailyReportCsvConverterTest {
     void shouldReadABookingNamedBySignsWithoutAnId() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign"
-                    "2024-10-29","","","","111/01","","1","0","test1","","","abc"
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training","employeeSign"
+                    "2024-10-29","","","","111/01","","01:00","test1","","","abc"
                 """;
         when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
 
@@ -115,15 +119,15 @@ class DailyReportCsvConverterTest {
     void shouldWriteToCsv() throws IOException {
         // given
         var rawData = """
-                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign","surchargeKind","surchargePercent","surchargeCreditMinutes"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false","","","",""
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true","abc","NIGHT","25","15"
+                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training","employeeSign","surchargeKind","surchargePercent","surchargeCredit"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test1","","false","","","",""
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test2","ERP-1","true","abc","NIGHT","25","00:15"
                 """;
         var dailyReport1 = DailyReportData.builder()
                 .date("2024-10-29").employeeorderId(183209L)
                 .orderSign("111").orderLabel("Rumsitzen")
                 .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
-                .hours(1).minutes(0).comment("test1")
+                .duration(Duration.ofHours(1)).comment("test1")
                 .build();
 
         var outputStream = new ByteArrayOutputStream();
@@ -132,7 +136,7 @@ class DailyReportCsvConverterTest {
         // when
         dailyReportCsvConverter.write(List.of(dailyReport1,
                 dailyReport1.toBuilder().comment("test2").training(true).employeeSign("abc").surchargeKind("NIGHT")
-                        .surchargePercent(25).surchargeCreditMinutes(15L).build()
+                        .surchargePercent(25).surchargeCredit(Duration.ofMinutes(15)).build()
                         .withTicketReferences(List.of("ERP-1"))), null, outputMessage);
 
         // then
@@ -145,8 +149,8 @@ class DailyReportCsvConverterTest {
     void shouldReadSeveralTicketReferencesFromOneCell() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","ERP-1;ERP-2","false"
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test1","ERP-1;ERP-2","false"
                 """;
         when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
 
@@ -165,7 +169,7 @@ class DailyReportCsvConverterTest {
                 .date("2024-10-29").employeeorderId(183209L)
                 .orderSign("111").orderLabel("Rumsitzen")
                 .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
-                .hours(1).minutes(0).comment("test1")
+                .duration(Duration.ofHours(1)).comment("test1")
                 .build()
                 .withTicketReferences(List.of("ERP-1", "ERP-2"));
         var outputStream = new ByteArrayOutputStream();
@@ -185,10 +189,10 @@ class DailyReportCsvConverterTest {
     void shouldReadTheSurchargeFlagFromTheLastColumn() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign","surchargeKind"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","4","0","test1","","false","","NIGHT"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","2","0","test2","","false","",""
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test3","","false",""
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training","employeeSign","surchargeKind"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","04:00","test1","","false","","NIGHT"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","02:00","test2","","false","",""
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","01:00","test3","","false",""
                 """;
         when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
 
@@ -199,5 +203,94 @@ class DailyReportCsvConverterTest {
         assertThat(result).extracting(DailyReportData::getComment, DailyReportData::givesSurchargeKind,
                 DailyReportData::givenSurchargeKind)
                 .containsExactly(tuple("test1", true, NIGHT), tuple("test2", true, null), tuple("test3", false, null));
+    }
+    /* The duration is one column HH:mm since #1398, beyond a day included. */
+    @Test
+    void shouldReadADurationOfMoreThanADay() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","25:30","test1"
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when
+        var result = dailyReportCsvConverter.read(null, inputMessage);
+
+        // then
+        assertThat(result).singleElement().satisfies(booking -> {
+            assertThat(booking.getDuration()).isEqualTo(Duration.ofHours(25).plusMinutes(30));
+            assertThat(booking.toDuration()).isEqualTo(Duration.ofHours(25).plusMinutes(30));
+        });
+    }
+
+    /* Minutes of 60 or more, a sign or plain hours are no duration HH:mm: the caller's error, 400 (#1398). */
+    @ParameterizedTest
+    @ValueSource(strings = {"01:60", "-01:00", "1", "1,5", "abc"})
+    void shouldRejectAValueThatIsNoDuration(String duration) throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","%s","test1"
+                """.formatted(duration);
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when / then
+        assertThatThrownBy(() -> dailyReportCsvConverter.read(null, inputMessage))
+                .isInstanceOf(HttpMessageNotReadableException.class);
+    }
+
+    /* A file from before #1398 has hours and minutes in two columns; read by position it would come out shifted,
+       so it is rejected by its header, naming the column that replaces them. */
+    @Test
+    void shouldRejectAFileOfTheFormerFormat() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1"
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when / then
+        assertThatThrownBy(() -> dailyReportCsvConverter.read(null, inputMessage))
+                .isInstanceOf(HttpMessageNotReadableException.class)
+                .hasRootCauseInstanceOf(InvalidDataException.class)
+                .rootCause()
+                .satisfies(cause -> assertThat(((InvalidDataException) cause).getMessages().getFirst().getErrorCode())
+                        .isEqualTo(TR_CSV_FORMAT_CHANGED));
+    }
+
+    /* Export, then import: the same bookings, durations beyond a day included (#1398). */
+    @Test
+    void shouldReadWhatItWrites() throws IOException {
+        // given
+        var bookings = List.of(
+                DailyReportData.builder()
+                        .date("2024-10-29").employeeorderId(183209L)
+                        .orderSign("111").orderLabel("Rumsitzen")
+                        .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
+                        .duration(Duration.ofHours(25).plusMinutes(30)).comment("lang, mit Komma")
+                        .training(true).employeeSign("abc").surchargeKind("NIGHT")
+                        .build()
+                        .withTicketReferences(List.of("ERP-1", "ERP-2")),
+                // an empty cell reads as an empty text, so every text is set: an empty surcharge kind is "none"
+                DailyReportData.builder()
+                        .date("2024-10-30").employeeorderId(183209L)
+                        .orderSign("111").orderLabel("Rumsitzen")
+                        .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
+                        .duration(Duration.ofMinutes(5)).comment("kurz")
+                        .employeeSign("abc").surchargeKind("")
+                        .build()
+                        .withTicketReferences(List.of()));
+        var outputStream = new ByteArrayOutputStream();
+        when(outputMessage.getBody()).thenReturn(outputStream);
+        dailyReportCsvConverter.write(bookings, null, outputMessage);
+        when(inputMessage.getBody()).thenReturn(outputStream.toInputStream());
+
+        // when
+        var result = dailyReportCsvConverter.read(null, inputMessage);
+
+        // then
+        assertThat(result).isEqualTo(bookings);
     }
 }

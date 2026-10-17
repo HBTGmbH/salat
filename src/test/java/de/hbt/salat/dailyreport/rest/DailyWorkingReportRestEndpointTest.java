@@ -90,7 +90,7 @@ class DailyWorkingReportRestEndpointTest {
                         DailyWorkingReportData::getBreakDuration, DailyWorkingReportData::getDailyReports)
                 .containsExactly(
                         tuple(lastDayOfOldContract, null, null, List.of(valueOf(bookingOnOldContract))),
-                        tuple(firstDayOfNewContract, LocalTime.of(8, 30), LocalTime.of(0, 45), List.of(valueOf(bookingOnNewContract))));
+                        tuple(firstDayOfNewContract, LocalTime.of(8, 30), Duration.ofMinutes(45), List.of(valueOf(bookingOnNewContract))));
     }
 
     @Test

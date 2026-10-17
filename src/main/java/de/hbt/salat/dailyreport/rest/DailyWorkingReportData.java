@@ -5,6 +5,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -15,6 +16,8 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
+import de.hbt.salat.common.json.HoursMinutes;
+import de.hbt.salat.common.json.TimeOfDay;
 import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
 
 @Getter
@@ -31,13 +34,16 @@ public class DailyWorkingReportData {
     @Schema(description = "Leistungsdatum", example = "2025-09-09", requiredMode = REQUIRED)
     private LocalDate date;
 
-    @JsonFormat(pattern="HH:mm")
-    @Schema(description = "Startzeit des Arbeitstages im Format HH:mm", example = "08:00", nullable = true)
+    @TimeOfDay
+    @Schema(description = "Startzeit des Arbeitstages im Format HH:mm, 00:00 bis 23:59", type = "string",
+        example = "08:00", nullable = true)
     private LocalTime startTime;
 
-    @JsonFormat(pattern="HH:mm")
-    @Schema(description = "Dauer der Pause im Format HH:mm", example = "00:30", nullable = true)
-    private LocalTime breakDuration;
+    /** A duration, not a time of day (#1398): the format stays HH:mm, a break of 24 hours or more is one too. */
+    @HoursMinutes
+    @Schema(description = "Dauer der Pause im Format HH:mm", type = "string", pattern = HoursMinutes.PATTERN,
+        example = "00:30", nullable = true)
+    private Duration breakDuration;
 
     @Schema(description = "Typ des Arbeitstages", example = "WORKED", nullable = true,
         allowableValues = {"WORKED", "NOT_WORKED" })

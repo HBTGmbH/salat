@@ -3,12 +3,15 @@ package de.hbt.salat.dailyreport.service;
 import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
 import static org.apache.poi.ss.usermodel.CellType.STRING;
 import static de.hbt.salat.common.GlobalConstants.DEFAULT_EXCEL_DATE_FORMAT;
+import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_DAY;
 import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -16,7 +19,6 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 
 /**
@@ -26,14 +28,19 @@ import de.hbt.salat.dailyreport.domain.TimereportDTO;
  * only cuts what is on screen. No summary sheet: a spreadsheet sums for itself, and a second sheet would freeze one
  * grouping out of the many somebody might want.
  *
- * <p>The duration is written twice on purpose: {@code h:mm} reads like the table, the decimal hours are what anybody
- * calculates with. Both as text and number respectively, so no locale turns 7:30 into a date.
+ * <p>The duration is written twice on purpose: {@code [hh]:mm} reads like the table, the decimal hours are what anybody
+ * calculates with. Both are numbers (#1398): the duration a fraction of a day with the cell format {@code [hh]:mm}, as
+ * in the invoice export — no locale turns it into a date, a duration of 24 hours or more stays one, and the sheet can
+ * sum it.
  */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Authorized(requireUnrestricted = true)
 public class TimereportListExcelService {
+
+  /** Hours beyond a day, not a time of day: {@code [hh]} keeps counting past 24. */
+  static final String DURATION_FORMAT = "[hh]:mm";
 
   private final MessageSourceAccessor messages;
 
@@ -55,6 +62,9 @@ public class TimereportListExcelService {
 
     var dateStyle = workbook.createCellStyle();
     dateStyle.setDataFormat(workbook.createDataFormat().getFormat(DEFAULT_EXCEL_DATE_FORMAT));
+
+    var durationStyle = workbook.createCellStyle();
+    durationStyle.setDataFormat(workbook.createDataFormat().getFormat(DURATION_FORMAT));
 
     var headers = List.of(
         messages.getMessage("main.timereportlist.column.date"),
@@ -91,7 +101,7 @@ public class TimereportListExcelService {
       text(row, 5, timereport.getCompleteOrderSign() + " - " + timereport.getSuborderDescription());
       text(row, 6, timereport.getTaskdescription());
       text(row, 7, String.join(", ", timereport.getTicketReferences()));
-      text(row, 8, formatDuration(timereport));
+      duration(row, 8, timereport.getDuration(), durationStyle);
       var decimal = row.createCell(9, NUMERIC);
       decimal.setCellValue(timereport.getDuration().toMinutes() / (double) MINUTES_PER_HOUR);
       text(row, 10, messages.getMessage(timereport.isBillable()
@@ -100,7 +110,11 @@ public class TimereportListExcelService {
           timereport.getStatus()));
       // the time surcharge credit (#1469) in hours like the duration, empty without one: what counts is how much
       // it adds to the time account, not its kind
-      text(row, 12, DurationUtils.format(timereport.getSurchargeCredit(), false));
+      if (!timereport.getSurchargeCredit().isZero()) {
+        duration(row, 12, timereport.getSurchargeCredit(), durationStyle);
+      } else {
+        text(row, 12, "");
+      }
     }
 
     for (int column = 0; column < headers.size(); column++) {
@@ -112,8 +126,10 @@ public class TimereportListExcelService {
     row.createCell(column, STRING).setCellValue(value == null ? "" : value);
   }
 
-  private static String formatDuration(TimereportDTO timereport) {
-    var minutes = timereport.getDuration().toMinutes();
-    return "%d:%02d".formatted(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
+  /** A duration as Excel counts it, in days, shown {@link #DURATION_FORMAT}. */
+  private static void duration(Row row, int column, Duration duration, CellStyle style) {
+    var cell = row.createCell(column, NUMERIC);
+    cell.setCellValue((double) duration.toMinutes() / MINUTES_PER_DAY);
+    cell.setCellStyle(style);
   }
 }

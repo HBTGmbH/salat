@@ -10,4 +10,9 @@ public class DurationUtilsBean {
     return DurationUtils.format(duration);
   }
 
+  /** {@code HH:mm}, as the CSV import reads and writes it (#1398); empty for none. */
+  public String formatHoursMinutes(Duration duration) {
+    return duration == null ? "" : DurationUtils.formatHoursMinutes(duration);
+  }
+
 }

@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.json.HoursMinutes;
 import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
@@ -79,19 +80,35 @@ public class DailyReportData {
     @Schema(description = "Bezeichnung des Unterauftrags. Beim Schreiben ignoriert.", example = "API-Entwicklung")
     private String suborderLabel;
 
-    @CsvBindByPosition(position = 6)
-    @Schema(description = "Anzahl der gebuchten Stunden ohne Minuten",
-        example = "4",
-        requiredMode = REQUIRED)
+    /**
+     * The booked duration (#1398). Where it is missing, {@link #hours} and {@link #minutes} of an older client
+     * stand for it; where it is given, it wins over them. In CSV it is the only form: column 6, the minutes
+     * column that followed it is gone.
+     */
+    @HoursMinutes
+    @CsvCustomBindByPosition(position = 6, converter = DailyWorkingReportCsvConverter.DurationConverter.class)
+    @Schema(description = "Gebuchte Dauer im Format HH:mm, auch ab 24 Stunden. Hat beim Schreiben Vorrang vor hours und "
+        + "minutes; fehlt sie, gelten diese.",
+        type = "string", pattern = HoursMinutes.PATTERN, example = "04:30", nullable = true)
+    private Duration duration;
+
+    /** Kept for clients from before #1398, read from {@link #getDuration()}; not in CSV. */
+    @Deprecated
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    @Schema(description = "Abgekündigt, ersetzt durch duration: Stunden der gebuchten Dauer ohne Minuten. Beim Schreiben "
+        + "nur ausgewertet, wenn duration fehlt.",
+        example = "4", deprecated = true)
     private long hours;
 
-    @CsvBindByPosition(position = 7)
-    @Schema(description = "Anzahl der gebuchten Minuten (zusätzlich zu den Stunden)",
-        example = "30",
-        requiredMode = REQUIRED)
+    /** Kept for clients from before #1398, read from {@link #getDuration()}; not in CSV. */
+    @Deprecated
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    @Schema(description = "Abgekündigt, ersetzt durch duration: Minuten der gebuchten Dauer zusätzlich zu den Stunden. "
+        + "Beim Schreiben nur ausgewertet, wenn duration fehlt.",
+        example = "30", deprecated = true)
     private long minutes;
 
-    @CsvBindByPosition(position = 8)
+    @CsvBindByPosition(position = 7)
     @Schema(description = "Kommentar oder Beschreibung der durchgeführten Arbeit", example = "ERP-3032 Implementierung der REST-API für Zeiterfassung")
     private String comment;
 
@@ -101,7 +118,7 @@ public class DailyReportData {
      * they never saw. {@link de.hbt.salat.dailyreport.service.DailyWorkingReportService} resolves it against
      * the stored booking; an empty text is what says "no reference".
      */
-    @CsvBindByPosition(position = 9)
+    @CsvBindByPosition(position = 8)
     @Schema(description = "Erste Ticket-Referenz, für Clients, die nur eine kennen; höchstens "
         + TICKET_REFERENCE_MAX_LENGTH + " Zeichen. Beim Lesen die erste aus ticketReferences, null ohne Referenz. "
         + "Beim Schreiben nur ausgewertet, wenn ticketReferences fehlt: dann die einzige Referenz, ein leerer Text "
@@ -130,15 +147,15 @@ public class DailyReportData {
      * property: without it a missing primitive is rejected.
      */
     @JsonSetter(nulls = Nulls.AS_EMPTY)
-    @CsvCustomBindByPosition(position = 10, converter = DailyWorkingReportCsvConverter.TrainingFlagConverter.class)
+    @CsvCustomBindByPosition(position = 9, converter = DailyWorkingReportCsvConverter.TrainingFlagConverter.class)
     @Schema(description = "Gibt an, ob in dieser Zeit eine besondere Lernleistung ähnlich einer Schulung stattgefunden hat. "
         + "Fehlt das Feld oder ist es null, gilt false.",
         example = "false",
         nullable = true)
     private boolean training;
 
-    /** A new column at the end (#1142): positions 0-10 stay where existing clients expect them. */
-    @CsvBindByPosition(position = 11)
+    /** A new column at the end (#1142). */
+    @CsvBindByPosition(position = 10)
     @Schema(description = "Kürzel des Mitarbeiters, dem die Buchung gehört. Beim Schreiben ohne employeeorderId "
         + "bestimmt es zusammen mit suborderSign und dem Leistungsdatum den Mitarbeiterauftrag; fehlt es, gilt der "
         + "angemeldete Mitarbeiter. Gebucht werden darf nur, wofür die Berechtigung auch über die ID reicht.",
@@ -150,9 +167,9 @@ public class DailyReportData {
      * The time surcharge flag of the booking (#1469), a kind's name. Like the ticket reference, {@code null} says
      * nothing about it — a file without the column, a client that does not know the field — and an empty text
      * says "none"; {@link de.hbt.salat.dailyreport.service.DailyWorkingReportService} resolves the former against
-     * the stored booking. A new column at the end: positions 0-11 stay where existing clients expect them.
+     * the stored booking. A new column at the end.
      */
-    @CsvBindByPosition(position = 12)
+    @CsvBindByPosition(position = 11)
     @Schema(description = "Zeitzuschlag der Buchung: NIGHT, SATURDAY, SUNDAY oder HOLIDAY, null ohne Zuschlag. Beim Schreiben "
         + "setzt ein Wert die Art, ein leerer Text heißt \"kein Zuschlag\". Fehlt das Feld oder ist es null, behält eine "
         + "vorhandene Buchung, die der übergebenen bis auf Zuschlag und Referenzen gleicht, ihren Zuschlag. Angeboten wird "
@@ -167,7 +184,7 @@ public class DailyReportData {
      * The rate the flag was stored with (#1469), read only: the rate follows from the suborder, nobody sends it. It
      * takes no part in comparing an imported booking with a stored one.
      */
-    @CsvBindByPosition(position = 13)
+    @CsvBindByPosition(position = 12)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @EqualsAndHashCode.Exclude
     @Schema(description = "Satz des Zeitzuschlags in Prozent, wie er beim Kennzeichnen an der Buchung festgehalten wurde; "
@@ -176,16 +193,18 @@ public class DailyReportData {
     private Integer surchargePercent;
 
     /**
-     * The credit on the working time account in minutes, duration × rate (#1469), read only like the rate. In
-     * minutes rather than as a time of day: a credit is an amount.
+     * The credit on the working time account, duration × rate (#1469), read only like the rate. A duration like
+     * every other one at the interface (#1398): HH:mm, not minutes as a number.
      */
-    @CsvBindByPosition(position = 14)
+    @HoursMinutes
+    @CsvCustomBindByPosition(position = 13, converter = DailyWorkingReportCsvConverter.DurationConverter.class)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @EqualsAndHashCode.Exclude
-    @Schema(description = "Gutschrift des Zeitzuschlags aufs Arbeitszeitkonto in Minuten (Dauer × Satz, ganze Minuten); "
-        + "0 ohne Zuschlag. Nur lesend, beim Schreiben ignoriert.",
-        example = "60", nullable = true, accessMode = Schema.AccessMode.READ_ONLY)
-    private Long surchargeCreditMinutes;
+    @Schema(description = "Gutschrift des Zeitzuschlags aufs Arbeitszeitkonto im Format HH:mm (Dauer × Satz, ganze Minuten); "
+        + "00:00 ohne Zuschlag. Nur lesend, beim Schreiben ignoriert.",
+        type = "string", pattern = HoursMinutes.PATTERN, example = "01:00", nullable = true,
+        accessMode = Schema.AccessMode.READ_ONLY)
+    private Duration surchargeCredit;
 
     public static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
@@ -196,8 +215,7 @@ public class DailyReportData {
                 .suborderLabel(timeReport.getSuborderDescription())
                 .comment(timeReport.getTaskdescription())
                 .training(timeReport.isTraining())
-                .hours(timeReport.getDuration().toHours())
-                .minutes(timeReport.getDuration().toMinutesPart())
+                .duration(timeReport.getDuration())
                 .suborderSign(timeReport.getCompleteOrderSign())
                 .orderSign(timeReport.getCustomerorderSign())
                 .ticketReference(timeReport.getTicketReferences().isEmpty() ? null : timeReport.getTicketReferences().getFirst())
@@ -205,7 +223,7 @@ public class DailyReportData {
                 .employeeSign(timeReport.getEmployeeSign())
                 .surchargeKind(timeReport.getSurchargeKind() != null ? timeReport.getSurchargeKind().name() : null)
                 .surchargePercent(timeReport.getSurchargePercent())
-                .surchargeCreditMinutes(timeReport.getSurchargeCredit().toMinutes())
+                .surchargeCredit(timeReport.getSurchargeCredit())
                 .build();
     }
 
@@ -284,14 +302,36 @@ public class DailyReportData {
         }
     }
 
+    /** The duration the booking states: {@link #duration}, or else what {@link #hours} and {@link #minutes} add up to. */
+    public Duration getDuration() {
+        return duration != null ? duration : Duration.ofHours(hours).plusMinutes(minutes);
+    }
+
+    /** The hours of {@link #getDuration()}, for clients from before #1398. */
+    @Deprecated
+    public long getHours() {
+        return getDuration().toHours();
+    }
+
+    /** The minutes part of {@link #getDuration()}, for clients from before #1398. */
+    @Deprecated
+    public long getMinutes() {
+        return getDuration().toMinutesPart();
+    }
+
     /**
-     * The booked duration as one value (#1400). Hours and minutes apart exist only in this format, so
-     * they are checked here: neither may be negative, and a minutes part of 60 or more simply adds up.
+     * The booked duration, checked (#1400, #1398). {@link #duration} comes checked from JSON and CSV; hours and
+     * minutes apart exist only for older clients: neither may be negative, and a minutes part of 60 or more
+     * simply adds up.
      */
     public Duration toDuration() {
+        if (duration != null) {
+            DataValidationUtils.isTrue(!duration.isNegative(), TR_DURATION_HOURS_INVALID);
+            return duration;
+        }
         DataValidationUtils.isTrue(hours >= 0, TR_DURATION_HOURS_INVALID);
         DataValidationUtils.isTrue(minutes >= 0, TR_DURATION_MINUTES_INVALID);
-        return Duration.ofHours(hours).plusMinutes(minutes);
+        return getDuration();
     }
 
 }

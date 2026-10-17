@@ -132,8 +132,15 @@ public class WorkingDayRestEndpoint {
         }
     }
 
-    /** Plain numbers from the client: what is no time of day is its mistake, answered with 400. */
+    /**
+     * The start as the client gives it (#1398): {@code startTime}, checked by Jackson, or else the plain numbers of
+     * an older client — what is no time of day is its mistake, answered with 400.
+     */
+    @SuppressWarnings("deprecation")
     private static LocalTime startTimeOf(WorkingDayData data) {
+        if (data.getStartTime() != null) {
+            return data.getStartTime();
+        }
         try {
             return LocalTime.of(data.getStarthour(), data.getStartminute());
         } catch (DateTimeException e) {
@@ -141,8 +148,12 @@ public class WorkingDayRestEndpoint {
         }
     }
 
-    /** As documented in {@link WorkingDayData}: no negative hours, minutes from 0 to 59. */
+    /** {@code breakDuration} where it is given (#1398), or else as documented in {@link WorkingDayData}: no negative hours, minutes from 0 to 59. */
+    @SuppressWarnings("deprecation")
     private static Duration breakLengthOf(WorkingDayData data) {
+        if (data.getBreakDuration() != null) {
+            return data.getBreakDuration();
+        }
         if (data.getBreakhours() < 0 || data.getBreakminutes() < 0 || data.getBreakminutes() > 59) {
             throw new ResponseStatusException(BAD_REQUEST, "invalid break: hours must not be negative, minutes from 0 to 59");
         }

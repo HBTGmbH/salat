@@ -1,12 +1,16 @@
 package de.hbt.salat.dailyreport.rest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
@@ -17,6 +21,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.common.csv.PositionAwareColumnMappingStrategy;
+import de.hbt.salat.common.exception.InvalidDataException;
 
 @Component
 public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyReportData>> {
@@ -26,6 +31,15 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
             TEXT_CSV_DAILY_REPORT_VALUE.split("/")[0],
             TEXT_CSV_DAILY_REPORT_VALUE.split("/")[1]
     );
+
+    /**
+     * Since #1398 column 6 carries the duration as HH:mm, and the minutes column after it is gone. The columns are
+     * bound by position and the header row is skipped; a file of the former format would be read shifted by one. It
+     * is rejected by its header instead, with the column that replaces it.
+     */
+    private static final Map<String, String> FORMER_COLUMNS = Map.of(
+        "hours", "duration",
+        "minutes", "duration");
 
     @Override
     public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
@@ -49,7 +63,13 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
         if (inputMessage == null) {
             return List.of();
         }
-        try (InputStreamReader reader = new InputStreamReader(inputMessage.getBody(), "UTF-8")) {
+        var content = inputMessage.getBody().readAllBytes();
+        try {
+            DailyWorkingReportCsvConverter.rejectFormerColumns(content, COLUMN_SEPARATOR, FORMER_COLUMNS);
+        } catch (InvalidDataException e) {
+            throw new HttpMessageNotReadableException(e.getMessage(), e, inputMessage);
+        }
+        try (InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(content), UTF_8)) {
             var csvToBean = new CsvToBeanBuilder<DailyReportData>(reader)
                     .withSeparator(COLUMN_SEPARATOR)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(DailyReportData.class, () -> DailyReportData.builder().build()))

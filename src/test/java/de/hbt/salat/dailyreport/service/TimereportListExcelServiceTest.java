@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -24,6 +26,7 @@ import de.hbt.salat.order.domain.SurchargeKind;
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class TimereportListExcelServiceTest {
 
+  private static final int DURATION_COLUMN = 8;
   private static final int SURCHARGE_COLUMN = 12;
 
   private final TimereportListExcelService service = new TimereportListExcelService(messages());
@@ -36,8 +39,24 @@ class TimereportListExcelServiceTest {
     try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(service.export(List.of(flagged, booking(2L).build()))))) {
       var sheet = workbook.getSheetAt(0);
       assertThat(sheet.getRow(0).getCell(SURCHARGE_COLUMN).getStringCellValue()).isEqualTo("Zeitzuschlag");
-      assertThat(sheet.getRow(1).getCell(SURCHARGE_COLUMN).getStringCellValue()).isEqualTo("1:30");
+      assertThat(sheet.getRow(1).getCell(SURCHARGE_COLUMN).getNumericCellValue()).isEqualTo(90 / (24.0 * 60));
+      assertThat(sheet.getRow(1).getCell(SURCHARGE_COLUMN).getCellStyle().getDataFormatString()).isEqualTo("[hh]:mm");
       assertThat(sheet.getRow(2).getCell(SURCHARGE_COLUMN).getStringCellValue()).isEmpty();
+    }
+  }
+
+  /* A number of days shown [hh]:mm, not a text (#1398): Excel sums it, and beyond a day it keeps counting hours. */
+  @Test
+  void the_duration_is_a_time_value_that_counts_past_a_day() throws IOException {
+    var longBooking = booking(1L).duration(Duration.ofHours(25).plusMinutes(30)).build();
+
+    try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(service.export(List.of(longBooking))))) {
+      var cell = workbook.getSheetAt(0).getRow(1).getCell(DURATION_COLUMN);
+      assertThat(cell.getCellType()).isEqualTo(CellType.NUMERIC);
+      assertThat(cell.getNumericCellValue()).isEqualTo((25 * 60 + 30) / (24.0 * 60));
+      assertThat(cell.getCellStyle().getDataFormatString()).isEqualTo("[hh]:mm");
+      assertThat(new DataFormatter(Locale.GERMANY).formatCellValue(cell)).isEqualTo("25:30");
+      assertThat(workbook.getSheetAt(0).getRow(1).getCell(DURATION_COLUMN + 1).getNumericCellValue()).isEqualTo(25.5);
     }
   }
 
