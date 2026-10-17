@@ -642,6 +642,26 @@ document.addEventListener('hidden.bs.modal', function (event) {
   if (!bySubmit && modal.querySelector('[data-changed="true"]')) window.location.reload();
 });
 
+/* Bootstrap ignores a hide while a dialog is still fading in: Modal.hide() returns as long as the show
+   transition runs. A dismiss that comes that early - Enter in the search of "Favoriten" right after htmx
+   focused it - would book and leave the dialog open. It is caught up as soon as the dialog stands. */
+document.addEventListener('show.bs.modal', function (event) {
+  event.target.salatShowing = true;
+});
+
+document.addEventListener('click', function (event) {
+  const modal = event.target.closest('[data-bs-dismiss="modal"]')?.closest('.modal');
+  if (modal && modal.salatShowing) modal.salatHideWhenShown = true;
+});
+
+document.addEventListener('shown.bs.modal', function (event) {
+  const modal = event.target;
+  modal.salatShowing = false;
+  if (!modal.salatHideWhenShown) return;
+  modal.salatHideWhenShown = false;
+  tabler.bootstrap.Modal.getInstance(modal)?.hide();
+});
+
 /* A dialog whose content asks for the first keystroke carries autofocus there. Bootstrap focuses the
    dialog itself once it is shown, after htmx may already have honoured autofocus in the loaded body. */
 document.addEventListener('shown.bs.modal', function (event) {
