@@ -435,7 +435,7 @@ class DailyReportRestEndpointTest {
         var employeeOrder = employeeOrder(employeeContract(employee()));
         var booking = DailyReportData.builder()
                 .date("2024-07-06").suborderSign("4711/01").employeeSign("abc")
-                .hours(1).minutes(0).comment("test")
+                .duration(Duration.ofHours(1)).comment("test")
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -459,7 +459,7 @@ class DailyReportRestEndpointTest {
         var employeeOrder = employeeOrder(employeeContract(employee()));
         var booking = DailyReportData.builder()
                 .date("2024-07-06").employeeorderId(1L).orderSign("999").suborderSign("999/99").employeeSign("niemand")
-                .hours(1).minutes(0).comment("test")
+                .duration(Duration.ofHours(1)).comment("test")
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -481,7 +481,7 @@ class DailyReportRestEndpointTest {
         // given
         var day = DateUtils.parse("2024-07-06");
         var booking = DailyReportData.builder()
-                .date("2024-07-06").suborderSign("4711/1").employeeSign("abc").hours(1).minutes(0)
+                .date("2024-07-06").suborderSign("4711/1").employeeSign("abc").duration(Duration.ofHours(1))
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -503,7 +503,7 @@ class DailyReportRestEndpointTest {
         var day = DateUtils.parse("2024-07-06");
         var employeeOrder = employeeOrder(employeeContract(employee()));
         var booking = DailyReportData.builder()
-                .date("2024-07-06").suborderSign("4711/01").employeeSign("fremd").hours(1).minutes(0).comment("test")
+                .date("2024-07-06").suborderSign("4711/01").employeeSign("fremd").duration(Duration.ofHours(1)).comment("test")
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -525,9 +525,9 @@ class DailyReportRestEndpointTest {
         var day = DateUtils.parse("2024-07-06");
         var employeeOrder = employeeOrder(employeeContract(employee()));
         var byId = DailyReportData.builder().date("2024-07-06").employeeorderId(employeeOrder.getId())
-                .hours(1).minutes(0).comment("test1").build();
+                .duration(Duration.ofHours(1)).comment("test1").build();
         var bySigns = DailyReportData.builder().date("2024-07-06").suborderSign("4711/01").employeeSign("abc")
-                .hours(2).minutes(0).comment("test2").build();
+                .duration(Duration.ofHours(2)).comment("test2").build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(employeeorderService.getEmployeeorderById(employeeOrder.getId())).thenReturn(employeeOrder);

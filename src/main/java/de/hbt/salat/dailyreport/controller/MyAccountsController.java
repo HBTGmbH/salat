@@ -109,14 +109,14 @@ public class MyAccountsController {
     private void populateWorkingTimeTab(Model model, Employeecontract contract, int currentYear) {
         var overtimeStatus = overtimeService.calculateOvertime(contract.getId(), false);
 
-        String balance = overtimeStatus.map(s -> DurationUtils.format(s.getTotal().getDuration())).orElse("0:00");
-        boolean balanceIsNegative = overtimeStatus.map(s -> s.getTotal().isNegative()).orElse(false);
-        // dieselbe Skala wie die Kachel im Dashboard, die hierher verlinkt: die Dauer traegt ihr
-        // Vorzeichen schon, isNegative ist nur die Pfeilrichtung (#1030, #1175)
+        String balance = overtimeStatus.map(s -> DurationUtils.format(s.getTotal().getBalance())).orElse("0:00");
+        boolean balanceIsNegative = overtimeStatus.map(s -> s.getTotal().getBalance().isNegative()).orElse(false);
+        // dieselbe Skala wie die Kachel im Dashboard, die hierher verlinkt: der Saldo traegt sein
+        // Vorzeichen schon und wird nicht ein zweites Mal gewendet (#1030, #1175)
         var scale = OvertimeScale.TOTAL.forContract(contract);
         String balanceColorClass = overtimeStatus
             .map(OvertimeStatus::getTotal)
-            .map(total -> scale.colorClass(total.getDuration()))
+            .map(total -> scale.colorClass(total.getBalance()))
             .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
 
         // Cumulative balance as of Dec 31 of the previous year
@@ -450,7 +450,7 @@ public class MyAccountsController {
         var storedOvertime = overtimeService.calculateOvertime(ecId, false);
         if (storedOvertime.isPresent()) {
             Duration detailed = report.getTotal().getDiffCumulative();
-            Duration stored = storedOvertime.get().getTotal().getDuration();
+            Duration stored = storedOvertime.get().getTotal().getBalance();
             if (!detailed.equals(stored)) {
                 overtimeMismatch = detailed.minus(stored);
             }

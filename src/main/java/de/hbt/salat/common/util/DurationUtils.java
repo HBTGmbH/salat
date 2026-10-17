@@ -6,6 +6,7 @@ import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
@@ -212,6 +213,47 @@ public class DurationUtils {
     } catch (NumberFormatException e) {
       return false;
     }
+  }
+
+  private static final Pattern HOURS_MINUTES = Pattern.compile("^(\\d{1,6}):([0-5]\\d)(?::[0-5]\\d)?$");
+
+  /**
+   * A duration as the interfaces exchange it (#1398): {@code HH:mm}, the hours at least two digits and
+   * not bounded by a day — {@code 25:30} is a duration, not a time of day. Seconds are dropped.
+   *
+   * @throws IllegalArgumentException for a negative duration, which no interface carries
+   */
+  public static String formatHoursMinutes(Duration duration) {
+    if (duration.isNegative()) {
+      throw new IllegalArgumentException("negative duration " + duration);
+    }
+    return "%02d:%02d".formatted(duration.toHours(), duration.toMinutesPart());
+  }
+
+  /**
+   * A balance as the interfaces hand it out (#1398): {@link #formatHoursMinutes} with a leading minus where it is
+   * negative, {@code -12:30}; zero and positive without a sign.
+   */
+  public static String formatSignedHoursMinutes(Duration duration) {
+    return duration.isNegative() ? "-" + formatHoursMinutes(duration.negated()) : formatHoursMinutes(duration);
+  }
+
+  /**
+   * Reads what {@link #formatHoursMinutes} writes (#1398): hours of any length up to six digits, minutes
+   * {@code 00}–{@code 59}; a seconds part, as older files carry it, is accepted and dropped. No sign, no
+   * blanks, no other format — an interface rejects a value that this does not read instead of guessing.
+   *
+   * @return empty for anything else
+   */
+  public static Optional<Duration> parseHoursMinutes(String value) {
+    if (value == null) {
+      return Optional.empty();
+    }
+    var matcher = HOURS_MINUTES.matcher(value.strip());
+    if (!matcher.matches()) {
+      return Optional.empty();
+    }
+    return Optional.of(Duration.ofHours(Long.parseLong(matcher.group(1))).plusMinutes(Long.parseLong(matcher.group(2))));
   }
 
   public static String formatWithWorkingdays(Duration duration, Duration dailyWorkingTime) {

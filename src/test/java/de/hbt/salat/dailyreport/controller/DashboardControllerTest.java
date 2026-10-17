@@ -65,7 +65,7 @@ public class DashboardControllerTest {
   public void keeps_arrow_and_colour_from_contradicting_each_other() {
     var status = status(-25, 0);
 
-    assertThat(status.get().getTotal().isNegative()).isTrue();
+    assertThat(status.get().getTotal().getBalance().isNegative()).isTrue();
     assertThat(DashboardController.overtimeColorClass(status, OvertimeScale.TOTAL)).isNotEqualTo("success");
   }
 
@@ -508,8 +508,7 @@ public class DashboardControllerTest {
   private static OvertimeStatusInfo info(long hours) {
     var info = new OvertimeStatusInfo();
     var duration = Duration.ofHours(hours);
-    info.setDuration(duration);
-    info.setNegative(duration.isNegative());
+    info.setBalance(duration);
     return info;
   }
 

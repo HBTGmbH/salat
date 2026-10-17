@@ -146,10 +146,10 @@ class DailyWorkingReportServiceImportTest {
     var csv = export();
     var report = service.updateReports(read(csv), employee);
 
-    assertThat(csv).startsWith("date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
-        + "workingTime,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCreditMinutes\n");
-    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser,,,0\n",
-        ",07:30,Daily,,true,testuser,,,0\n");
+    assertThat(csv).startsWith("date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
+        + "duration,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCredit\n");
+    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser,,,00:00\n",
+        ",07:30,Daily,,true,testuser,,,00:00\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
@@ -168,7 +168,7 @@ class DailyWorkingReportServiceImportTest {
     var report = service.updateReports(read(csv), employee);
 
     // kind, the rate it was stored with and the credit in minutes; the import reads the kind only (#1469)
-    assertThat(csv).contains(",04:00,Störung,,false,testuser,NIGHT,25,60\n");
+    assertThat(csv).contains(",04:00,Störung,,false,testuser,NIGHT,25,01:00\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
@@ -178,7 +178,7 @@ class DailyWorkingReportServiceImportTest {
     stored(booking(1L, "Team-Mittag", 30, "ERP-1"), booking(2L, "Daily", 450, "ERP-2"));
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,duration,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag
         2024-11-04,,,,183209,07:30,Daily
         """), employee);
@@ -191,7 +191,7 @@ class DailyWorkingReportServiceImportTest {
     stored(booking(1L, "Daily", 15, "ERP-1"), booking(2L, "Daily", 15, "ERP-2"));
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,duration,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:15,Daily
         2024-11-04,,,,183209,00:15,Daily
         """), employee);
@@ -206,7 +206,7 @@ class DailyWorkingReportServiceImportTest {
     stored(booking(1L, "Team-Mittag", 30, "ERP-1"));
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,duration,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:45,Team-Mittag
         """), employee);
 
@@ -219,7 +219,7 @@ class DailyWorkingReportServiceImportTest {
     stored(booking(1L, "Team-Mittag", 30, "ERP-1"));
 
     var report = service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag, ERP-2\s
         """), employee);
 
@@ -238,7 +238,7 @@ class DailyWorkingReportServiceImportTest {
     stored(booking(1L, "Team-Mittag", 30, "ERP-1"));
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,
         """), employee);
 
@@ -251,7 +251,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ERP-1
         """), employee);
 
@@ -264,7 +264,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,erp-1;ERP-2
         """), employee);
 
@@ -278,7 +278,7 @@ class DailyWorkingReportServiceImportTest {
     stored(bookingWithReferences(1L, "Team-Mittag", 30, List.of("ERP-1", "ERP-2")));
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,duration,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag
         """), employee);
 
@@ -292,7 +292,7 @@ class DailyWorkingReportServiceImportTest {
   void rejects_a_too_long_reference_before_saving_anything() {
     stored(booking(1L, "Team-Mittag", 30, "ERP-1"));
     var report = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(30))
         .dailyReports(List.of(DailyReportData.builder()
             .date("2024-11-04").employeeorderId(ORDER_ID).hours(0).minutes(30).comment("Team-Mittag")
             .ticketReferences(List.of("X".repeat(65)))
@@ -309,7 +309,7 @@ class DailyWorkingReportServiceImportTest {
   @Test
   void imports_start_and_break_with_their_minutes() {
     var report = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(7, 15)).breakDuration(LocalTime.of(1, 45))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(7, 15)).breakDuration(Duration.ofHours(1).plusMinutes(45))
         .dailyReports(List.of())
         .build();
 
@@ -334,7 +334,7 @@ class DailyWorkingReportServiceImportTest {
 
     assertThat(reports).singleElement().satisfies(day -> {
       assertThat(day.getStartTime()).isEqualTo(LocalTime.of(7, 15));
-      assertThat(day.getBreakDuration()).isEqualTo(LocalTime.of(1, 45));
+      assertThat(day.getBreakDuration()).isEqualTo(Duration.ofHours(1).plusMinutes(45));
     });
   }
 
@@ -360,7 +360,7 @@ class DailyWorkingReportServiceImportTest {
         .surchargeKind(SurchargeKind.NIGHT).surchargePercent(25).surchargeCredit(Duration.ofHours(1)).build());
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference,surchargeKind
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference,surchargeKind
         2024-11-04,WORKED,09:00,00:30,183209,04:00,Störung behoben,,NIGHT
         """), employee);
 
@@ -375,7 +375,7 @@ class DailyWorkingReportServiceImportTest {
     stored(flaggedBooking());
 
     service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference,surchargeKind
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference,surchargeKind
         2024-11-04,WORKED,09:00,00:30,183209,04:00,Störung,,
         """), employee);
 
@@ -390,7 +390,7 @@ class DailyWorkingReportServiceImportTest {
     stored(flaggedBooking());
 
     var report = service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,04:00,Störung,
         """), employee);
 
@@ -403,7 +403,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,surchargeKind
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,surchargeKind
         2024-11-04,WORKED,09:00,00:30,183209,02:00,Rufeinsatz,night
         """), employee);
 
@@ -416,7 +416,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     assertThatThrownBy(() -> service.createReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,surchargeKind
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,surchargeKind
         2024-11-04,WORKED,09:00,00:30,183209,02:00,Rufeinsatz,WEEKEND
         """), employee))
         .isInstanceOfSatisfying(InvalidDataException.class, ex ->
@@ -453,7 +453,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,training
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,training
         2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung,true
         """), employee);
 
@@ -467,7 +467,7 @@ class DailyWorkingReportServiceImportTest {
     stored(trainingBooking(1L, "Schulung", 60, null));
 
     var report = service.updateReports(read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,duration,comment
         2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung
         """), employee);
 
@@ -487,7 +487,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment,employeeSign
+        date,type,startTime,breakDuration,suborderSign,duration,comment,employeeSign
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag,testuser
         """), employee);
 
@@ -519,7 +519,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     assertThatThrownBy(() -> read("""
-        date,type,startTime,breakTime,employeeorderId,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,suborderSign,duration,comment
         2024-11-04,WORKED,09:00,00:30,183209,111/02,00:30,Team-Mittag
         """))
         .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_ORDER_CONTRADICTS_SIGN));
@@ -541,7 +541,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,suborderSign,duration,comment
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,alter Vertrag
         2024-11-05,WORKED,09:00,00:30,111/01,00:45,neuer Vertrag
         """), employee);
@@ -556,7 +556,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     assertThatThrownBy(() -> read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,suborderSign,duration,comment
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
         2024-11-04,,,,111/1,00:15,Daily
         """))
@@ -569,7 +569,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     assertThatThrownBy(() -> read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,suborderSign,duration,comment
         2024-11-06,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
         """))
         .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_NO_CONTRACT));
@@ -583,7 +583,7 @@ class DailyWorkingReportServiceImportTest {
         .thenReturn(List.of(employeeorder, second));
 
     assertThatThrownBy(() -> read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,suborderSign,duration,comment
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
         """))
         .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_AMBIGUOUS_EMPLOYEE_ORDER));
@@ -597,7 +597,7 @@ class DailyWorkingReportServiceImportTest {
     stored();
 
     service.createReports(read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,suborderSign,duration,comment
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
         """), employee);
 
@@ -609,7 +609,7 @@ class DailyWorkingReportServiceImportTest {
     when(employeeService.getEmployeeBySign("chef")).thenReturn(employee(43L, "chef"));
 
     assertThatThrownBy(() -> read("""
-        date,type,startTime,breakTime,suborderSign,workingTime,comment,employeeSign
+        date,type,startTime,breakDuration,suborderSign,duration,comment,employeeSign
         2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag,chef
         """))
         .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_OF_OTHER_EMPLOYEE));
@@ -622,7 +622,7 @@ class DailyWorkingReportServiceImportTest {
     when(employeeorderService.getEmployeeorderById(999L)).thenReturn(other);
 
     assertThatThrownBy(() -> read("""
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        date,type,startTime,breakDuration,employeeorderId,duration,comment
         2024-11-04,WORKED,09:00,00:30,999,00:30,Team-Mittag
         """))
         .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_OF_OTHER_EMPLOYEE));
@@ -633,7 +633,7 @@ class DailyWorkingReportServiceImportTest {
   void the_api_books_on_the_id_even_where_its_signs_do_not_fit() {
     stored();
     var report = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(30))
         .dailyReports(List.of(DailyReportData.builder()
             .date("2024-11-04").employeeorderId(ORDER_ID).suborderSign("999/99").employeeSign("niemand")
             .hours(0).minutes(30).comment("Team-Mittag")
@@ -651,7 +651,7 @@ class DailyWorkingReportServiceImportTest {
     when(authorizedEmployee.getSign()).thenReturn("testuser");
     stored(booking(1L, "Team-Mittag", 30, null));
     var report = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(30))
         .dailyReports(List.of(DailyReportData.builder()
             .suborderSign("111/01").hours(0).minutes(30).comment("Team-Mittag")
             .build()))
@@ -665,7 +665,7 @@ class DailyWorkingReportServiceImportTest {
   @Test
   void the_api_rejects_a_suborder_sign_without_a_matching_order() {
     var report = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(30))
         .dailyReports(List.of(DailyReportData.builder()
             .suborderSign("111/1").employeeSign("testuser").hours(0).minutes(30).comment("Team-Mittag")
             .build()))
@@ -695,7 +695,7 @@ class DailyWorkingReportServiceImportTest {
             .employeeSign("testuser").customerorderSign("222").completeOrderSign("222/01")
             .duration(Duration.ofHours(4)).taskdescription("Urlaub").ticketReferences(List.of()).build()));
     var report = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(30))
         .dailyReports(List.of(
             DailyReportData.builder().employeeorderId(ORDER_ID).hours(5).minutes(0).comment("Arbeit").build(),
             DailyReportData.builder().employeeorderId(otherOrderId).hours(3).minutes(0).comment("Urlaub").build()))
@@ -763,7 +763,7 @@ class DailyWorkingReportServiceImportTest {
     var stored = timereportDAO.getTimereportsByDateAndEmployeeOrderId(DAY, ORDER_ID).stream()
         .map(DailyReportData::valueOf).toList();
     var day = DailyWorkingReportData.builder()
-        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(30))
         .dailyReports(stored)
         .build();
     var out = new ByteArrayOutputStream();

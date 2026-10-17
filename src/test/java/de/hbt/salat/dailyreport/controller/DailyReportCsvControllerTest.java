@@ -51,7 +51,7 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 class DailyReportCsvControllerTest {
 
   private static final String CSV_WITH_UNREADABLE_TIME = """
-      date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+      date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment
       2024-11-04,WORKED,9 Uhr,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
       """;
 
@@ -139,7 +139,7 @@ class DailyReportCsvControllerTest {
   @Test
   void names_line_and_column_of_a_too_long_ticket_reference() throws Exception {
     var csv = """
-        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s
         """.formatted("X".repeat(65));
 
@@ -158,7 +158,7 @@ class DailyReportCsvControllerTest {
   @Test
   void names_the_line_of_a_booking_without_a_matching_order() throws Exception {
     var csv = """
-        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        date,type,startTime,breakDuration,suborderSign,duration,comment
         2024-11-04,WORKED,09:00,00:30,111/1,00:30,Team-Mittag
         """;
     when(bookingOrderResolver.resolveFor(eq(employee), any(), eq(LocalDate.of(2024, 11, 4))))
@@ -180,7 +180,7 @@ class DailyReportCsvControllerTest {
   @Test
   void imports_for_the_employee_of_the_selected_contract() throws Exception {
     var csv = """
-        date,type,startTime,breakTime
+        date,type,startTime,breakDuration
         2024-11-04,NOT_WORKED,,
         """;
     when(dailyWorkingReportService.updateReports(any(), eq(employee))).thenReturn(new ImportReport(List.of()));

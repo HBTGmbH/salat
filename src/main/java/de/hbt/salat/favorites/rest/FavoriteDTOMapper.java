@@ -1,6 +1,5 @@
 package de.hbt.salat.favorites.rest;
 
-import java.time.Duration;
 import java.util.List;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
@@ -17,8 +16,8 @@ import de.hbt.salat.favorites.domain.NewFavorite;
 public interface FavoriteDTOMapper {
 
     /**
-     * By hand: the single {@code ticketReference} of older clients is derived from the list (#1326), and
-     * the duration is split into hours and minutes, as the interface still has them (#1398).
+     * By hand: the single {@code ticketReference} of older clients is derived from the list (#1326); hours and
+     * minutes of older clients follow from the duration in {@link FavoriteDTO} (#1398).
      * The group (#1414) is read only — it is arranged in the application, not through the interface.
      */
     default FavoriteDTO map(FavoriteEntry favorite) {
@@ -29,8 +28,7 @@ public interface FavoriteDTOMapper {
         return FavoriteDTO.builder()
             .id(favorite.id())
             .employeeorderId(favorite.employeeorderId())
-            .hours(Math.toIntExact(favorite.duration().toHours()))
-            .minutes(favorite.duration().toMinutesPart())
+            .duration(favorite.duration())
             .comment(favorite.comment())
             .ticketReference(references.isEmpty() ? null : references.getFirst())
             .ticketReferences(references)
@@ -52,9 +50,8 @@ public interface FavoriteDTOMapper {
         List<String> references = favorite.getTicketReferences() != null ? favorite.getTicketReferences()
             : favorite.getTicketReference() != null ? List.of(favorite.getTicketReference())
             : List.of();
-        // hours and minutes apart exist only in this format (#1456); a minutes part of 60 or more adds up
-        var duration = Duration.ofHours(favorite.getHours()).plusMinutes(favorite.getMinutes());
-        return new NewFavorite(favorite.getEmployeeorderId(), duration, favorite.getComment(), references);
+        // the duration, or for an older client its hours and minutes, of which a minutes part of 60 or more adds up (#1456, #1398)
+        return new NewFavorite(favorite.getEmployeeorderId(), favorite.getDuration(), favorite.getComment(), references);
     }
 
     List<FavoriteDTO> map(List<FavoriteEntry> favorites);

@@ -113,6 +113,34 @@ document.addEventListener('click', event => {
   }
 });
 
+/* A notice on a change that someone confirms once (#1398, data-notice="<key>"): rendered hidden, shown unless it
+ * was confirmed on this device. Like the beta hint, in localStorage rather than in the preferences - it is news for
+ * the weeks after the change and goes again with a later commit. */
+function noticeStorageKey(notice) {
+  return `salat-notice-${notice.dataset.notice}`;
+}
+
+document.querySelectorAll('[data-notice]').forEach(notice => {
+  let confirmed = false;
+  try {
+    confirmed = localStorage.getItem(noticeStorageKey(notice)) === 'confirmed';
+  } catch (e) {
+    // private mode: the notice shows, it only cannot be confirmed for good
+  }
+  if (!confirmed) notice.hidden = false;
+});
+
+document.addEventListener('click', event => {
+  const notice = event.target.closest('[data-notice-confirm]')?.closest('[data-notice]');
+  if (!notice) return;
+  notice.hidden = true;
+  try {
+    localStorage.setItem(noticeStorageKey(notice), 'confirmed');
+  } catch (e) {
+    // private mode: gone until the next page load
+  }
+});
+
 /* Settings that apply only within a beta stand under its switch in a fieldset
  * data-beta-settings="<key>" (#1442): shown and sent only while the switch is on, so that switching
  * the beta off neither shows nor stores them. */

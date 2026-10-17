@@ -16,8 +16,10 @@ import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.D
 import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_WITH_TICKET_REFERENCE;
 import static de.hbt.salat.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_WITH_TWO_TICKET_REFERENCES;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -28,7 +30,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -74,7 +78,7 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+                    date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment
                     ,,,,,,,,,,some comment
                     2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
                     2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
@@ -84,7 +88,7 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date;type;startTime;breakTime;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;workingTime;comment
+                    date;type;startTime;breakDuration;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;duration;comment
                     2024-11-04;WORKED;09:00;00:30;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30;Team-Mittag
                     2024-11-04;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30;Daily
                     """,
@@ -93,7 +97,7 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date;type;startTime;breakTime;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;workingTime;comment
+                    date;type;startTime;breakDuration;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;duration;comment
                     04.11.2024;WORKED;09:00:00;00:30:00;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30:00;Team-Mittag
                     04.11.2024;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30:00;Daily
                     """,
@@ -102,7 +106,7 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date;type;startTime;breakTime;suborderSign;workingTime;comment
+                    date;type;startTime;breakDuration;suborderSign;duration;comment
                     2024-11-04;WORKED;09:00;00:30;111/01;00:30;Team-Mittag
                     2024-11-04;;;;111/01;07:30;Daily
                     """,
@@ -111,7 +115,7 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date;type;startTime;breakTime;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;workingTime;comment
+                    date;type;startTime;breakDuration;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;duration;comment
                     04.11.2024;WORKED;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30:00;Team-Mittag
                     04.11.2024;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30:00;Daily
                     """,
@@ -120,7 +124,7 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
+                    date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment,ticketReference,training
                     2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,
                     2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,TRUE
                     """,
@@ -150,7 +154,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void assigns_each_booking_of_the_ui_import_its_order() throws IOException {
         var csv = """
-            date,type,startTime,breakTime,suborderSign,workingTime,comment,employeeSign
+            date,type,startTime,breakDuration,suborderSign,duration,comment,employeeSign
             2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag,testuser
             """;
         var employee = employee();
@@ -177,7 +181,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void reports_a_booking_that_cannot_be_assigned_with_its_line() {
         var csv = """
-            date,type,startTime,breakTime,suborderSign,workingTime,comment
+            date,type,startTime,breakDuration,suborderSign,duration,comment
             2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
             2024-11-05,WORKED,09:00,00:30,111/1,00:30,Daily
             """;
@@ -200,7 +204,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void counts_the_lines_of_a_comment_spanning_several() {
         var csv = """
-            date,type,startTime,breakTime,suborderSign,workingTime,comment
+            date,type,startTime,breakDuration,suborderSign,duration,comment
             2024-11-04,WORKED,09:00,00:30,111/01,00:30,"erste Zeile
             zweite Zeile"
             2024-11-05,WORKED,09:00,00:30,111/1,00:30,Daily
@@ -219,7 +223,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void hands_a_booking_without_an_order_on_instead_of_dropping_it() throws IOException {
         var csv = """
-            date,type,startTime,breakTime,workingTime,comment
+            date,type,startTime,breakDuration,duration,comment
             2024-11-04,WORKED,09:00,00:30,00:30,Team-Mittag
             """;
 
@@ -231,13 +235,106 @@ class DailyWorkingReportCsvConverterTest {
         });
     }
 
+    /* Break and booked time are durations since #1398, beyond a day included, under the names of the JSON fields. */
+    @Test
+    void reads_durations_of_a_day_and_more() throws IOException {
+        var csv = """
+            date,type,startTime,breakDuration,employeeorderId,duration,comment
+            2024-11-04,WORKED,09:00,24:15,183209,25:30,Lang
+            """;
+
+        var day = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)).reports().getFirst();
+
+        assertThat(day.getBreakDuration()).isEqualTo(Duration.ofHours(24).plusMinutes(15));
+        assertThat(day.getDailyReports()).singleElement()
+            .satisfies(booking -> assertThat(booking.toDuration()).isEqualTo(Duration.ofHours(25).plusMinutes(30)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"00:60", "-00:30", "1", "1.5", "PT30M"})
+    void rejects_a_duration_that_is_no_duration(String duration) {
+        var csv = """
+            date,type,startTime,breakDuration,employeeorderId,duration,comment
+            2024-11-04,WORKED,09:00,00:30,183209,%s,Lang
+            """.formatted(duration);
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_FORMAT_INVALID);
+                    assertThat(message.getArguments()).containsExactly(2L, "duration", duration, "HH:mm, HH:mm:ss");
+                }));
+    }
+
+    /* A start is a time of day: 24:00 is none, though a lenient reader would take it for midnight (#1398). */
+    @Test
+    void rejects_a_start_of_24_00() {
+        var csv = """
+            date,type,startTime,breakDuration,employeeorderId,duration,comment
+            2024-11-04,WORKED,24:00,00:30,183209,04:00,Spät
+            """;
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_FORMAT_INVALID));
+    }
+
+    /*
+     * A file from before #1398 names breakTime and workingTime. opencsv passes over columns it does not know, so it
+     * would read as days without a break and lines without a booking - the bookings lost without a word. It is
+     * rejected with the new name instead, whatever the case of the header and the separator.
+     */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "date,type,startTime,breakTime,employeeorderId,duration,comment | breakTime | breakDuration",
+        "date;type;startTime;breakDuration;employeeorderId;WORKINGTIME;comment | WORKINGTIME | duration",
+        "\uFEFFdate,type,startTime,breakTime,employeeorderId,workingTime,comment | breakTime | breakDuration",
+    })
+    void rejects_a_file_of_the_former_format_with_the_new_column_name(String header, String former, String renamed) {
+        var csv = header + "\n2024-11-04,WORKED,09:00,00:30,183209,04:00,Daily\n";
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_FORMAT_CHANGED);
+                    assertThat(message.getArguments()).containsExactly(former, renamed);
+                }));
+    }
+
+    /* Export, then import: the same days and bookings, durations beyond a day included (#1398). */
+    @Test
+    void reads_what_it_writes() throws IOException {
+        var reports = List.of(DailyWorkingReportData.builder()
+            .date(LocalDate.of(2024, 11, 4)).type(Workingday.WorkingDayType.WORKED)
+            .startTime(LocalTime.of(9, 0)).breakDuration(Duration.ofMinutes(45))
+            .dailyReports(List.of(
+                DailyReportData.builder().date("2024-11-04").employeeorderId(183209L)
+                    .orderSign("111").orderLabel("Rumsitzen").suborderSign("111/01").suborderLabel("Stuhlpolsterung")
+                    .duration(Duration.ofHours(25).plusMinutes(30)).comment("Lang").training(true)
+                    .employeeSign("testuser").surchargeKind("NIGHT").build()
+                    .withTicketReferences(List.of("ERP-1", "ERP-2")),
+                DailyReportData.builder().date("2024-11-04").employeeorderId(183209L)
+                    .orderSign("111").orderLabel("Rumsitzen").suborderSign("111/01").suborderLabel("Stuhlpolsterung")
+                    .duration(Duration.ofMinutes(5)).comment("Kurz").training(false)
+                    .employeeSign("testuser").surchargeKind("").build()
+                    .withTicketReferences(List.of())))
+            .build());
+        var outputStream = new ByteArrayOutputStream();
+        when(httpOutputMessage.getBody()).thenReturn(outputStream);
+        dailyWorkingReportCsvConverter.write(reports, null, httpOutputMessage);
+
+        var read = dailyWorkingReportCsvConverter.read(new ByteArrayInputStream(outputStream.toByteArray())).reports();
+
+        assertThat(read).isEqualTo(reports);
+    }
+
     /**
      * Die Datei, an der sich #1112 zeigt: ein einziger Wert passt in keines der erwarteten Formate.
      * Alles andere an der Zeile ist lesbar - und nichts davon gehört in die Rückmeldung.
      */
     private static String csvWithUnreadable(String date, String startTime) {
         return """
-            date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+            date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment
             %s,WORKED,%s,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
             """.formatted(date, startTime);
     }
@@ -309,7 +406,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void leaves_the_reference_unknown_when_the_column_is_missing() throws IOException {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment
+            date,type,startTime,breakDuration,employeeorderId,duration,comment
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag
             """;
 
@@ -327,7 +424,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void reports_a_too_long_ticket_reference_with_line_and_column() {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s
             """.formatted("X".repeat(65));
 
@@ -343,7 +440,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void reads_several_references_separated_by_semicolons() throws IOException {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ERP-1;erp-2; ;otp dev meeting
             """;
 
@@ -360,7 +457,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void checks_the_length_of_each_reference_in_the_cell() {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s;%s
             """.formatted("A".repeat(60), "X".repeat(65));
 
@@ -374,7 +471,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void accepts_a_reference_that_only_exceeds_the_length_by_surrounding_blanks() throws IOException {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,"  %s  "
             """.formatted("X".repeat(64));
 
@@ -388,7 +485,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void reports_an_unreadable_training_flag_as_an_input_error() {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment,training
+            date,type,startTime,breakDuration,employeeorderId,duration,comment,training
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ja
             """;
 
@@ -404,7 +501,7 @@ class DailyWorkingReportCsvConverterTest {
     @Test
     void answers_a_too_long_reference_over_the_api_as_not_readable() throws IOException {
         var csv = """
-            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            date,type,startTime,breakDuration,employeeorderId,duration,comment,ticketReference
             2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s
             """.formatted("X".repeat(65));
         var inputMessage = new MockHttpInputMessage(csv.getBytes(UTF_8));
@@ -443,7 +540,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                     List.of(TWO_BOOKINGS),
                     """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCreditMinutes
+                    date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCredit
                     2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,,false,,,,
                     2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,,,,
                     """,
@@ -452,7 +549,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                 List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCreditMinutes
+                date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCredit
                 2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,,false,,,,
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,,,,
                 """,
@@ -461,7 +558,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                 List.of(TWO_BOOKINGS_WITH_TICKET_REFERENCE),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCreditMinutes
+                date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCredit
                 2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,,,,
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,true,,,,
                 """,
@@ -470,7 +567,7 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                 List.of(TWO_BOOKINGS_WITH_TWO_TICKET_REFERENCES),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCreditMinutes
+                date,type,startTime,breakDuration,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,duration,comment,ticketReference,training,employeeSign,surchargeKind,surchargePercent,surchargeCredit
                 2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1;ERP-2,false,,,,
                 2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false,,,,
                 """,
@@ -499,7 +596,7 @@ class DailyWorkingReportCsvConverterTest {
           .type(Workingday.WorkingDayType.WORKED)
           .date(LocalDate.of(2024,11,3))
           .startTime(LocalTime.of(8,0))
-          .breakDuration(LocalTime.of(0,45))
+          .breakDuration(Duration.ofMinutes(45))
           .dailyReports(List.of(
               DailyReportData.builder()
                   .date("2024-11-03")
@@ -508,8 +605,7 @@ class DailyWorkingReportCsvConverterTest {
                   .orderLabel("Rumsitzen")
                   .suborderSign("111/01")
                   .suborderLabel("Stuhlpolsterung")
-                  .hours(8)
-                  .minutes(0)
+                  .duration(Duration.ofHours(8))
                   .comment("schlafen")
                   .build()
           ))
@@ -518,7 +614,7 @@ class DailyWorkingReportCsvConverterTest {
           .type(Workingday.WorkingDayType.WORKED)
           .date(LocalDate.of(2024,11,4))
           .startTime(LocalTime.of(9,0))
-          .breakDuration(LocalTime.of(0,30))
+          .breakDuration(Duration.ofMinutes(30))
           .dailyReports(List.of(
               DailyReportData.builder()
                   .date("2024-11-04")
@@ -527,8 +623,7 @@ class DailyWorkingReportCsvConverterTest {
                   .orderLabel("Rumsitzen")
                   .suborderSign("111/01")
                   .suborderLabel("Stuhlpolsterung")
-                  .hours(0)
-                  .minutes(30)
+                  .duration(Duration.ofMinutes(30))
                   .comment("Team-Mittag")
                   .build(),
               DailyReportData.builder()
@@ -538,8 +633,7 @@ class DailyWorkingReportCsvConverterTest {
                   .orderLabel("Rumsitzen")
                   .suborderSign("111/01")
                   .suborderLabel("Stuhlpolsterung")
-                  .hours(7)
-                  .minutes(30)
+                  .duration(Duration.ofHours(7).plusMinutes(30))
                   .comment("Daily")
                   .build()
           ))
@@ -576,8 +670,7 @@ class DailyWorkingReportCsvConverterTest {
                     .orderLabel("Rumsitzen")
                     .suborderSign("111/01")
                     .suborderLabel("Stuhlpolsterung")
-                    .hours(0)
-                    .minutes(30)
+                    .duration(Duration.ofMinutes(30))
                     .comment("Team-Mittag")
                     .build(),
                 DailyReportData.builder()
@@ -587,8 +680,7 @@ class DailyWorkingReportCsvConverterTest {
                     .orderLabel("Rumsitzen")
                     .suborderSign("111/01")
                     .suborderLabel("Stuhlpolsterung")
-                    .hours(7)
-                    .minutes(30)
+                    .duration(Duration.ofHours(7).plusMinutes(30))
                     .comment("Daily")
                     .build()
             ))
@@ -598,20 +690,18 @@ class DailyWorkingReportCsvConverterTest {
         .type(Workingday.WorkingDayType.WORKED)
         .date(LocalDate.of(2024,11,4))
         .startTime(LocalTime.of(9,0))
-        .breakDuration(LocalTime.of(0,30))
+        .breakDuration(Duration.ofMinutes(30))
         .dailyReports(List.of(
             DailyReportData.builder()
                 .date("2024-11-04")
                 .suborderSign("111/01")
-                .hours(0)
-                .minutes(30)
+                .duration(Duration.ofMinutes(30))
                 .comment("Team-Mittag")
                 .build(),
             DailyReportData.builder()
                 .date("2024-11-04")
                 .suborderSign("111/01")
-                .hours(7)
-                .minutes(30)
+                .duration(Duration.ofHours(7).plusMinutes(30))
                 .comment("Daily")
                 .build()
         ))

@@ -1588,6 +1588,18 @@ stecken in `AbstractHttpMessageConverter`, das die Konverter hier nicht erweiter
 Für eine bean-basierte `MappingStrategy` von opencsv braucht es eine Klasse mit festen Feldern. Wo
 die Spalten erst zur Laufzeit feststehen (Reportergebnisse), wird über die Spaltenliste geschrieben.
 
+### Dauer und Uhrzeit an einer Schnittstelle (#1398)
+
+Eine Dauer steht in JSON, CSV und jedem anderen Import oder Export als **ein** Wert `HH:mm`,
+auch ab 24 Stunden (`25:30`); im Java-Code ist sie ein `Duration`, nie ein `LocalTime` und
+nie zwei Felder für Stunden und Minuten. JSON nimmt dafür `@HoursMinutes` (ein Saldo mit Vorzeichen
+`@HoursMinutes.Signed`), CSV den `DurationConverter` von `DailyWorkingReportCsvConverter`, Excel eine
+Zahl in Tagen mit dem Zellformat `[hh]:mm`. Ein Beginn ist ein `LocalTime` mit `HH:mm`, in JSON über
+`@TimeOfDay` und streng gelesen — `@JsonFormat(pattern = "HH:mm")` nähme `24:00` als Mitternacht. Ein Wert,
+den das Format nicht liest — Minuten ab 60, ein Vorzeichen, ein Beginn außerhalb von 00:00–23:59 —,
+wird mit 400 abgelehnt. Ein abgelöstes Feld bleibt übergangsweise lesbar und schreibbar, steht im
+OpenAPI-Schema als `deprecated` und nennt das Feld, das es ersetzt; das neue hat Vorrang.
+
 ### Reserviert in den Parametern einer REST-Schnittstelle
 
 Eine Methode, die freie Anfrageparameter durchreicht (`@RequestParam Map<String, String>`), reicht

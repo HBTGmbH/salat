@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static de.hbt.salat.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
+import static de.hbt.salat.common.exception.ErrorCode.TR_CSV_FORMAT_CHANGED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_CSV_LINE_NOT_READABLE;
 import static de.hbt.salat.common.exception.ErrorCode.TR_CSV_LINE_REJECTED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_CSV_VALUE_FORMAT_INVALID;
@@ -30,10 +31,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +63,7 @@ import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
 import de.hbt.salat.dailyreport.service.BookingOrderResolver;
 import de.hbt.salat.employee.domain.Employee;
@@ -136,6 +140,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         // copy input stream intro byte array
         var contentBytes = IOUtils.toByteArray(inputStream);
         char separator = evalSeparator(contentBytes);
+        rejectFormerColumns(contentBytes, separator, FORMER_COLUMNS);
 
         try (InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(contentBytes), UTF_8)) {
             var csvToBean = new CsvToBeanBuilder<CsvRow>(reader)
@@ -164,6 +169,35 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             return rows;
         }
     }
+
+    /**
+     * Eine Datei aus der Zeit vor #1398 trägt Pause und Dauer in den Spalten {@code breakTime} und
+     * {@code workingTime}. Spalten, die opencsv nicht kennt, übergeht es still; gelesen ergäbe eine solche
+     * Datei Tage ohne Pause und Zeilen ohne Buchung, und die Buchungen gingen verloren, ohne dass jemand es
+     * merkt. Abgelehnt wird sie deshalb mit dem neuen Namen der Spalte, bevor irgendetwas gelesen ist.
+     */
+    static void rejectFormerColumns(byte[] content, char separator, Map<String, String> formerColumns) throws IOException {
+        try (var reader = new CSVReaderBuilder(new InputStreamReader(new ByteArrayInputStream(content), UTF_8))
+                .withCSVParser(new CSVParserBuilder().withSeparator(separator).build())
+                .build()) {
+            var header = reader.readNextSilently();
+            if (header == null) {
+                return;
+            }
+            for (var column : header) {
+                var name = column.replace("\uFEFF", "").strip();
+                var renamed = formerColumns.get(name.toLowerCase(Locale.ROOT));
+                if (renamed != null) {
+                    throw new InvalidDataException(TR_CSV_FORMAT_CHANGED, name, renamed);
+                }
+            }
+        }
+    }
+
+    /** The columns renamed by #1398, in lower case, with their new name. */
+    private static final Map<String, String> FORMER_COLUMNS = Map.of(
+        "breaktime", "breakDuration",
+        "workingtime", "duration");
 
     /**
      * Die Zeile, in der jeder Datensatz der Datei beginnt, in der Reihenfolge, in der opencsv sie zu
@@ -296,7 +330,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                     .date(entry.getKey().getDate())
                     .startTime(entry.getKey().getStartTime())
                     .type(entry.getKey().getType())
-                    .breakDuration(entry.getKey().getBreakTime())
+                    .breakDuration(entry.getKey().getBreakDuration())
                     .dailyReports(timeReportsFromRows(entry.getKey().getDate(), entry.getValue(), assignment))
                     .build()
         ).toList();
@@ -323,7 +357,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         if(authorizedUser.isRestricted()) return row.getType() == null; // for external users, only the type is relevant
 
         // if start time or break time is missing, it is considered empty for other work types
-        return row.getStartTime() == null || row.getBreakTime() == null;
+        return row.getStartTime() == null || row.getBreakDuration() == null;
     }
 
     private List<DailyReportData> timeReportsFromRows(LocalDate date, List<CsvRow> rows, BookingAssignment assignment){
@@ -338,8 +372,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                         .suborderSign(row.getSuborderSign())
                         .suborderLabel(row.getSuborderLabel())
                         .employeeSign(row.getEmployeeSign())
-                        .hours(row.getWorkingTime().getHour())
-                        .minutes(row.getWorkingTime().getMinute())
+                        .duration(row.getDuration())
                         .comment(row.getComment())
                         .training(Boolean.TRUE.equals(row.getTraining()))
                         .surchargeKind(row.getSurchargeKind())
@@ -368,7 +401,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
      * assignment rejects it instead.
      */
     private static boolean isEmptyTimeReport(CsvRow row){
-        return row.getWorkingTime() == null;
+        return row.getDuration() == null;
     }
 
     @Override
@@ -380,7 +413,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign","surchargeKind","surchargePercent","surchargeCreditMinutes"
+                    "date","type","startTime","breakDuration","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","duration","comment","ticketReference","training","employeeSign","surchargeKind","surchargePercent","surchargeCredit"
                 });
             }
         };
@@ -422,14 +455,14 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getOrderLabel(),
             row.getSuborderSign(),
             row.getSuborderLabel(),
-            row.getWorkingTime(),
+            row.getDuration(),
             row.getComment(),
             row.getTicketReference(),
             row.getTraining(),
             row.getEmployeeSign(),
             row.getSurchargeKind(),
             row.getSurchargePercent(),
-            row.getSurchargeCreditMinutes(),
+            row.getSurchargeCredit(),
             row.getLine()
         );
     }
@@ -445,7 +478,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             reportData.getOrderLabel(),
             reportData.getSuborderSign(),
             reportData.getSuborderLabel(),
-            LocalTime.of((int)reportData.getHours(), (int)reportData.getMinutes()),
+            reportData.getDuration(),
             reportData.getComment(),
             reportData.getTicketReferences() == null || reportData.getTicketReferences().isEmpty()
                 ? null : String.join(TICKET_REFERENCE_SEPARATOR, reportData.getTicketReferences()),
@@ -453,7 +486,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             reportData.getEmployeeSign(),
             reportData.getSurchargeKind(),
             reportData.getSurchargePercent(),
-            reportData.getSurchargeCreditMinutes(),
+            reportData.getSurchargeCredit(),
             0
         );
     }
@@ -468,8 +501,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         private WorkingDayType type;
         @CsvCustomBindByName(converter = LocalTimeConverter.class)
         private LocalTime startTime;
-        @CsvCustomBindByName(converter = LocalTimeConverter.class)
-        private LocalTime breakTime;
+        /** Renamed from {@code breakTime} with #1398, a duration rather than a time of day. */
+        @CsvCustomBindByName(converter = DurationConverter.class)
+        private Duration breakDuration;
         @CsvBindByName
         private Long employeeorderId;
         @CsvBindByName
@@ -480,8 +514,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         private String suborderSign;
         @CsvBindByName
         private String suborderLabel;
-        @CsvCustomBindByName(converter = LocalTimeConverter.class)
-        private LocalTime workingTime;
+        /** Renamed from {@code workingTime} with #1398, as in JSON; a duration of 24 hours or more is one too. */
+        @CsvCustomBindByName(converter = DurationConverter.class)
+        private Duration duration;
         @CsvBindByName
         private String comment;
         /** {@code null} where the file has no such column, empty where the column is empty (#1140). */
@@ -502,9 +537,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         /** The rate the flag was stored with (#1469), written on export and ignored on import. */
         @CsvBindByName
         private Integer surchargePercent;
-        /** The credit in minutes (#1469), written on export and ignored on import. */
-        @CsvBindByName
-        private Long surchargeCreditMinutes;
+        /** The credit (#1469) as HH:mm (#1398), written on export and ignored on import. */
+        @CsvCustomBindByName(converter = DurationConverter.class)
+        private Duration surchargeCredit;
         /** The line of the file the row begins in, for messages; not a column. */
         @CsvIgnore
         private long line;
@@ -628,9 +663,32 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         }
     }
 
+    /**
+     * A duration as {@code HH:mm} (#1398), read and written by {@link DurationUtils#parseHoursMinutes}, hours
+     * beyond a day included; a seconds part, as before, is accepted and dropped. Used for the CSV of the working
+     * days and of the bookings alike.
+     */
+    public static class DurationConverter extends AbstractBeanField<Duration, String> {
+        static final String EXPECTED_FORMATS = "HH:mm, HH:mm:ss";
+
+        @Override
+        protected Duration convert(String value) throws CsvDataTypeMismatchException {
+            if (value == null || value.isBlank()) return null;
+            return DurationUtils.parseHoursMinutes(value)
+                .orElseThrow(() -> new CsvValueFormatException(columnOf(this), value, Duration.class, EXPECTED_FORMATS));
+        }
+
+        @Override
+        protected String convertToWrite(Object value) {
+            if (value == null) return "";
+            return DurationUtils.formatHoursMinutes((Duration) value);
+        }
+    }
+
     public static class LocalTimeConverter extends AbstractBeanField<LocalTime, String> {
-        private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
-        private static final DateTimeFormatter HH_MM_SS = DateTimeFormatter.ofPattern("HH:mm:ss");
+        // strict, as in JSON (#1398): the default resolver would take 24:00 for midnight
+        private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
+        private static final DateTimeFormatter HH_MM_SS = DateTimeFormatter.ofPattern("HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
         static final String EXPECTED_FORMATS = "HH:mm, HH:mm:ss";
 
 

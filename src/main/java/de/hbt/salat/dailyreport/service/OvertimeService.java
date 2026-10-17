@@ -136,6 +136,8 @@ public class OvertimeService {
     return Optional.of(status);
   }
 
+  // the fields that split the balance stay filled until they go (#1398)
+  @SuppressWarnings("deprecation")
   private OvertimeStatusInfo toStatusInfo(LocalDate beginDate, LocalDate endDate, Duration overtime, Duration surchargeCredit,
       Duration dailyWorkingTime) {
     OvertimeStatusInfo info = new OvertimeStatusInfo();
@@ -149,6 +151,7 @@ public class OvertimeService {
     info.setHours(hours);
     info.setMinutes(minutes);
     info.setNegative(overtime.isNegative());
+    info.setBalance(overtime);
     info.setDuration(overtime);
     info.setSurchargeCredit(surchargeCredit);
     return info;
