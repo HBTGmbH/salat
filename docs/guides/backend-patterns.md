@@ -176,7 +176,7 @@ return command.getResult().values().stream().reduce(Duration::plus).orElse(Durat
 
 ---
 
-## Exception Hierarchy
+## Exception Hierarchy (→ ADR-0008)
 ```
 RuntimeException
 ├── TechnicalException                — unexpected system errors
@@ -194,7 +194,7 @@ RuntimeException
   - `VetoedException` — raised by an event listener to block a destructive operation
 - Error codes are defined in `ErrorCode` enum (`common/exception/ErrorCode.java`).
   - Format: two-letter module prefix + four-digit number, e.g. `CU-0001` for customer.
-  - Module prefixes in use: `AA` (auth), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `SO` (suborder), `TR` (time report), `RL` (release), `WD` (working day), `FA` (favorites), `ETL`, `SE` (secret), `XX` (generic).
+  - Module prefixes in use: `AA` (auth), `AR` (authorization rule), `BU` (budget), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `ETL`, `FA` (favorites), `JI` (jira), `RL` (release), `RP` (reporting), `SC` (secret), `SE` (Salat user), `SO` (suborder), `TR` (time report), `WD` (working day), `XX` (generic). The enum is authoritative.
   - When adding a new error code, append it to the enum; never reuse or renumber existing codes.
 - `ServiceFeedbackMessage` (`common/exception/ServiceFeedbackMessage.java`) wraps an `ErrorCode` + severity + optional positional arguments (`{0}`, `{1}`, …); used to accumulate messages when building veto responses.
   - Factory methods: `ServiceFeedbackMessage.error(errorCode, args…)` / `.warning(…)`.
@@ -308,6 +308,9 @@ beantwortet**:
   Ebenso übersetzt er die Verletzung eines Unique-Schlüssels, `XX-0004` oder den eigenen Befund
   des Schlüssels (#1208). Ein neuer Unique-Schlüssel heißt in Changeset und Entität gleich
   (`uk_<tabelle>_<spalten>`). Braucht er eine eigene Meldung, kommt er in die Tabelle des Aspekts.
+- **Einen Zusammenstoß, der sich auflösen lässt, löst weiter der Service auf, in dem er entsteht**
+  (ADR-0033, Nachtrag): #1111 fängt so den doppelt angelegten Arbeitstag und schreibt ihn fort. Der
+  Aspekt greift nur, wo vorher niemand fängt.
 - **Ein Formular, dessen Antwort spürbar dauert und dessen zweites Absenden kollidiert oder etwas
   doppelt anlegt, trägt `data-submit-once`** (heute die Prüfseiten von Freigabe und Abnahme, das
   Öffnen auf der Seite der Abnahme und das Buchungsformular). Einzelheiten in

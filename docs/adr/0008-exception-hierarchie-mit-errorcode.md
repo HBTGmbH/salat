@@ -3,6 +3,11 @@
 Date: 2026-05-24
 Status: Accepted
 
+> **Nachtrag 2026-10-17 (#1486):** Die Liste der Präfixe unter „ErrorCode-Konvention" ist der Stand
+> vom 2026-05-24. Seitdem sind weitere Module mit eigenem Präfix dazugekommen. Die aktuelle Liste
+> steht in `docs/guides/backend-patterns.md`, „Exception Hierarchy"; maßgeblich ist das Enum
+> `ErrorCode`. Die Entscheidung selbst ist unverändert.
+
 ## Context and Problem Statement
 
 Services müssen Fehlerzustände an Controller und UI kommunizieren: Validierungsfehler, verletzte Geschäftsregeln, fehlende Berechtigungen. Eine einheitliche Fehlerstruktur fehlt ohne explizite Entscheidung — jeder Service könnte eigene Exception-Typen oder rohe `RuntimeException`s verwenden, was die UI-Schicht zwingt, untypisierte Fehlermeldungen zu verarbeiten und i18n selbst zu koordinieren.
