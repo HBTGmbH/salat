@@ -33,12 +33,14 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.common.viewhelper.NoticeViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
@@ -78,7 +80,7 @@ class SuborderControllerNotFoundTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new SuborderController(suborderService, customerorderService, customerService, messages,
         new ErrorCodeViewHelper(messages), mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class),
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), new ListLimits(new SalatProperties()));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     var customer = new Customer();

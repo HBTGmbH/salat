@@ -1,6 +1,7 @@
 package de.hbt.salat.order.persistence;
 
 import static java.lang.Boolean.TRUE;
+import static de.hbt.salat.common.util.ContainsPattern.like;
 import static java.util.Comparator.comparing;
 
 import jakarta.persistence.criteria.Predicate;
@@ -13,18 +14,22 @@ import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.common.Hiding;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.Validity;
+import de.hbt.salat.common.util.ContainsPattern;
 import de.hbt.salat.customer.domain.Customer_;
+import de.hbt.salat.employee.domain.Employee_;
 import de.hbt.salat.employee.domain.Employeecontract_;
 import de.hbt.salat.order.auth.EmployeeorderAuthorization;
 import de.hbt.salat.order.domain.Customerorder_;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Employeeorder_;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
 
@@ -33,6 +38,17 @@ import de.hbt.salat.order.domain.Suborder_;
 public class EmployeeorderDAO {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeorderDAO.class);
+
+    /**
+     * The order of the employee order list (#1380): by order, suborder and begin, then by employee — the id last, so
+     * that the limit always cuts the same rows.
+     */
+    private static final Sort LIST_ORDER = Sort.by(
+        Employeeorder_.SUBORDER + "." + Suborder_.CUSTOMERORDER + "." + Customerorder_.SIGN,
+        Employeeorder_.SUBORDER + "." + Suborder_.COMPLETE_ORDER_SIGN,
+        Employeeorder_.FROM_DATE,
+        Employeeorder_.EMPLOYEECONTRACT + "." + Employeecontract_.EMPLOYEE + "." + Employee_.SIGN,
+        Employeeorder_.ID);
 
     private final EmployeeorderRepository employeeorderRepository;
     private final EmployeeorderAuthorization employeeorderAuthorization;
@@ -204,69 +220,101 @@ public class EmployeeorderDAO {
         return (root, query, builder) -> root.join(Employeeorder_.suborder).get(Suborder_.id).in(suborderIds);
     }
 
-    private boolean filterMatchesInMemory(Employeeorder eo, String filter) {
-        var upper = filter.toUpperCase();
-        var sub = eo.getSuborder();
-        var emp = eo.getEmployeecontract().getEmployee();
-        var co = sub.getCustomerorder();
-        var customer = co.getCustomer();
-        return containsIgnoreCase(emp.getSign(), upper)
-            || containsIgnoreCase(emp.getFirstname(), upper)
-            || containsIgnoreCase(emp.getLastname(), upper)
-            || containsIgnoreCase(customer.getShortname(), upper)
-            || containsIgnoreCase(customer.getName(), upper)
-            || containsIgnoreCase(co.getSign(), upper)
-            || containsIgnoreCase(co.getShortdescription(), upper)
-            || containsIgnoreCase(sub.getSign(), upper)
-            || containsIgnoreCase(sub.getShortdescription(), upper)
-            || containsIgnoreCase(sub.getCompleteOrderSign(), upper)
-            || containsIgnoreCase(sub.getCompleteOrderDescription(true, false), upper);
-    }
-
-    private static boolean containsIgnoreCase(String value, String upper) {
-        return value != null && value.toUpperCase().contains(upper);
+    /**
+     * Get a list of all Employeeorders fitting to the given filters that the user may read, ordered like the list.
+     */
+    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInactive, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
+        if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
+            return List.of();
+        }
+        return employeeorderRepository.findAll(
+            byFilters(showInactive, filter, employeeContractId, customerId, customerOrderId, customerSuborderId, showHidden),
+            LIST_ORDER);
     }
 
     /**
-     * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, and suborder.
+     * The first rows of the employee order list (#1380) and how many the filters hit, both counted in the database:
+     * the list shows something without any filter, so it must not load twenty thousand employee orders to show the
+     * first few. Only the rows the user may read are asked for ({@link EmployeeorderAuthorization#readable()}).
      */
-    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInactive, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
-        boolean isFilter = filter != null && !filter.trim().isEmpty();
-        return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
-                Set<Predicate> predicates = new HashSet<>();
-                if(!TRUE.equals(showInactive)) {
-                    predicates.add(Validity.<Employeeorder>notInactive(Employeeorder_.untilDate).toPredicate(root, query, builder));
-                }
-                if(!TRUE.equals(showHidden)) {
-                    predicates.add(notHidden().toPredicate(root, query, builder));
-                }
-                if(employeeContractId != null && employeeContractId > 0) {
-                    predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
-                }
-                if(customerId != null && customerId > 0) {
-                    predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
-                }
-                if(customerOrderId != null && customerOrderId > 0) {
-                    predicates.add(matchingCustomerorderId(customerOrderId).toPredicate(root, query, builder));
-                }
-                if(customerSuborderId != null && customerSuborderId > 0) {
-                    var suborder = suborderDAO.getSuborderById(customerSuborderId);
-                    if(suborder != null) {
-                        var ids = suborder.getAllChildren().stream()
-                            .map(Suborder::getId)
-                            .collect(Collectors.toSet());
-                        predicates.add(matchingSuborderIds(ids).toPredicate(root, query, builder));
-                    }
-                }
-                return builder.and(predicates.toArray(new Predicate[0]));
-            }).stream()
-            .filter(eo -> employeeorderAuthorization.isAuthorized(eo, AccessLevel.READ))
-            .filter(eo -> !isFilter || filterMatchesInMemory(eo, filter))
-            .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
-                .thenComparing(Employeeorder::getFromDate))
-            .collect(Collectors.toList());
+    public SearchHits<Employeeorder> findEmployeeorders(Boolean showInactive, String filter, Long employeeContractId,
+        Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden, int maxRows) {
+        if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
+            return SearchHits.none();
+        }
+        var filters = byFilters(showInactive, filter, employeeContractId, customerId, customerOrderId,
+            customerSuborderId, showHidden);
+        // what every row shows, in the query of the rows; the count reads the filters alone
+        Specification<Employeeorder> withShownAssociations = filters.and((root, query, builder) -> {
+            root.fetch(Employeeorder_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
+            root.fetch(Employeeorder_.employeecontract).fetch(Employeecontract_.employee);
+            return null;
+        });
+        var page = employeeorderRepository.findAll(withShownAssociations, filters,
+            PageRequest.of(0, maxRows, LIST_ORDER));
+        return new SearchHits<>(page.getContent(), page.getTotalElements());
+    }
+
+    private Specification<Employeeorder> byFilters(Boolean showInactive, String filter, Long employeeContractId,
+        Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
+        var pattern = ContainsPattern.of(filter);
+        var suborderIds = branchOf(customerSuborderId);
+        var readable = employeeorderAuthorization.readable();
+        return (root, query, builder) -> {
+            Set<Predicate> predicates = new HashSet<>();
+            predicates.add(readable.toPredicate(root, query, builder));
+            if(!TRUE.equals(showInactive)) {
+                predicates.add(Validity.<Employeeorder>notInactive(Employeeorder_.untilDate).toPredicate(root, query, builder));
+            }
+            if(!TRUE.equals(showHidden)) {
+                predicates.add(notHidden().toPredicate(root, query, builder));
+            }
+            if(employeeContractId != null && employeeContractId > 0) {
+                predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
+            }
+            if(customerId != null && customerId > 0) {
+                predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
+            }
+            if(customerOrderId != null && customerOrderId > 0) {
+                predicates.add(matchingCustomerorderId(customerOrderId).toPredicate(root, query, builder));
+            }
+            if(suborderIds != null) {
+                predicates.add(matchingSuborderIds(suborderIds).toPredicate(root, query, builder));
+            }
+            if(pattern != null) {
+                predicates.add(containing(pattern).toPredicate(root, query, builder));
+            }
+            return builder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    /** The suborder and every one below it; {@code null} for none or an unknown one, which then filters nothing. */
+    private Set<Long> branchOf(Long suborderId) {
+        if(suborderId == null || suborderId <= 0) {
+            return null;
+        }
+        var suborder = suborderDAO.getSuborderById(suborderId);
+        if(suborder == null) {
+            return null;
+        }
+        return suborder.getAllChildren().stream()
+            .map(Suborder::getId)
+            .collect(Collectors.toSet());
+    }
+
+    /**
+     * The search text of the employee order list (#1380): the employee's sign and name, and everything the suborder
+     * list searches ({@link SuborderSearchText#containing}).
+     */
+    private static Specification<Employeeorder> containing(String pattern) {
+        return (root, query, builder) -> {
+            var employee = root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee);
+            return builder.or(
+                like(builder, employee.get(Employee_.sign), pattern),
+                like(builder, employee.get(Employee_.firstname), pattern),
+                like(builder, employee.get(Employee_.lastname), pattern),
+                SuborderSearchText.containing(root.join(Employeeorder_.suborder), query, builder, pattern));
+        };
     }
 
     public List<Employeeorder> getEmployeeordersByEmployeeContractIdAndValidAt(long employeeContractId,

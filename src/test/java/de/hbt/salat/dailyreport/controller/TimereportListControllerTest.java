@@ -44,6 +44,7 @@ import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.filter.UiStateFilter;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DurationUtilsBean;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.common.web.LoginSignProvider;
 import de.hbt.salat.common.web.UiState;
 import de.hbt.salat.common.web.UiStateKeyRegistry;
@@ -98,7 +99,7 @@ class TimereportListControllerTest {
     messageSource.setDefaultEncoding("UTF-8");
     messageSource.setFallbackToSystemLocale(false);
     controller = new TimereportListController(timereportListService, excelService,
-        new MessageSourceAccessor(messageSource, Locale.GERMANY), new SalatProperties());
+        new MessageSourceAccessor(messageSource, Locale.GERMANY), new ListLimits(new SalatProperties()));
 
     when(loginSignProvider.getEffectiveLoginSign()).thenReturn(LOGIN);
     when(timereportListService.search(any())).thenReturn(TimereportListResult.empty());
@@ -138,7 +139,7 @@ class TimereportListControllerTest {
     var properties = new SalatProperties();
     properties.getBookingList().setAllMaxRows(250);
     controller = new TimereportListController(timereportListService, excelService,
-        new MessageSourceAccessor(messageSource, Locale.GERMANY), properties);
+        new MessageSourceAccessor(messageSource, Locale.GERMANY), new ListLimits(properties));
 
     perform(get("/dailyreport/list").param("fBookingsLimit", "0"));
 
@@ -274,7 +275,7 @@ class TimereportListControllerTest {
         .containsSubsequence("<th>Fakturierbar</th>", ">4.999:00</td>")
         .containsSubsequence("<th>Nicht fakturierbar</th>", ">4.407:00</td>")
         .doesNotContain("Maximale Anzahl Treffer</th>")
-        .contains("alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0 d-print-none");
+        .containsPattern("<div class=\"d-print-none\">\\s*<div class=\"alert alert-warning ");
   }
 
   /**

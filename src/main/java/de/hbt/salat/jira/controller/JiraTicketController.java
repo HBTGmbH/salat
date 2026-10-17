@@ -26,11 +26,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
-import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.common.web.UiStateKey;
 import de.hbt.salat.jira.auth.JiraTicketAuthorization;
 import de.hbt.salat.jira.domain.JiraImportTarget;
@@ -56,7 +56,7 @@ public class JiraTicketController {
   private final JiraTicketMaintenanceService maintenanceService;
   private final JiraTicketAuthorization authorization;
   private final AuthorizedUser authorizedUser;
-  private final SalatProperties salatProperties;
+  private final ListLimits listLimits;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final FilterHintViewHelper filterHintViewHelper;
   private final MessageSourceAccessor messages;
@@ -64,10 +64,6 @@ public class JiraTicketController {
   /** The filters that can leave out a ticket just saved — not the limit, the sort or the switch. */
   private static final UiStateKey[] TICKET_FILTERS = {JIRA_TICKET_CUSTOMERORDER, JIRA_TICKET_SUBORDER,
       JIRA_TICKET_KEYS, JIRA_TICKET_TITLE, JIRA_TICKET_TYPES};
-
-  /** The limit steps of the list, as in the booking list; 0 is "all", capped like there (#1153). */
-  static final List<Integer> LIMITS = List.of(50, 100, 500, 1000, 0);
-  static final int DEFAULT_LIMIT = 500;
 
   /**
    * The order filters, the suborder narrows to its branch; key, title and type narrow further, and
@@ -95,7 +91,7 @@ public class JiraTicketController {
     // Checked, the switch sends "true" next to the hidden "false", which arrive as "true,false".
     boolean withChildren = fJiraTicketChildren == null || fJiraTicketChildren.isBlank()
         || fJiraTicketChildren.contains("true");
-    int limit = limit(fJiraTicketLimit);
+    var limit = listLimits.parse(fJiraTicketLimit);
     var sort = JiraTicketSort.parse(fJiraTicketSort);
     boolean descending = JiraTicketSort.descending(fJiraTicketSort);
 
@@ -116,16 +112,14 @@ public class JiraTicketController {
     model.addAttribute("fJiraTicketChildren", withChildren);
     model.addAttribute("fJiraTicketTitle", fJiraTicketTitle == null ? "" : fJiraTicketTitle.trim());
     model.addAttribute("selectedTypes", types);
-    model.addAttribute("limits", LIMITS);
-    model.addAttribute("limit", limit);
+    limit.addTo(model);
     model.addAttribute("sort", sort.name());
     model.addAttribute("sortDescending", descending);
     model.addAttribute("isManager", authorizedUser.isManager());
     // Like the booking list, the page lists tickets right away: without an order, those of every order
     // the user may see (#1386).
-    int maxResults = limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit;
     model.addAttribute("result", maintenanceService.search(new JiraTicketListFilter(customerorderId, suborderId,
-        keys, withChildren, fJiraTicketTitle, types, maxResults, sort, descending)));
+        keys, withChildren, fJiraTicketTitle, types, limit.maxRows(), sort, descending)));
     model.addAttribute("coveringReplications", customerorderId == null ? List.of()
         : maintenanceService.getCoveringReplications(customerorderId, suborderId));
     // Like the booking list: a change of the filter swaps the results, not the page.
@@ -289,14 +283,6 @@ public class JiraTicketController {
     return Arrays.stream(value.split(",")).map(String::trim).filter(part -> !part.isEmpty()).distinct().toList();
   }
 
-  private static int limit(String value) {
-    try {
-      int parsed = Integer.parseInt(value == null ? "" : value.trim());
-      return LIMITS.contains(parsed) ? parsed : DEFAULT_LIMIT;
-    } catch (NumberFormatException ex) {
-      return DEFAULT_LIMIT;
-    }
-  }
 
   private List<String> toMessages(ErrorCodeException ex) {
     return errorCodeViewHelper.toViewMessages(ex).stream().map(message -> message.resolved()).toList();

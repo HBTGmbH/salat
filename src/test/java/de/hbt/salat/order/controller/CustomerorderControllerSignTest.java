@@ -22,9 +22,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BindingResult;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.common.viewhelper.NoticeViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.service.EmployeeService;
@@ -59,7 +61,7 @@ class CustomerorderControllerSignTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new CustomerorderController(customerorderService, customerService, employeeService, messages,
         new ErrorCodeViewHelper(messages), mock(AuthorizedEmployee.class), mock(FilterHintViewHelper.class),
-        mock(NoticeViewHelper.class), mock(SpecialOrders.class));
+        mock(NoticeViewHelper.class), mock(SpecialOrders.class), new ListLimits(new SalatProperties()));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     var holder = new Customerorder();

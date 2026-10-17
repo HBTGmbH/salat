@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.common.SalatProperties;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
 import de.hbt.salat.dailyreport.service.TimereportListExcelService;
@@ -45,21 +45,13 @@ import de.hbt.salat.dailyreport.viewhelper.TimereportListPrintHeader;
 @Authorized(requireUnrestricted = true)
 public class TimereportListController {
 
-  /**
-   * Offered as the maximum number of rows; {@code 0} is the "all of them" entry. All means the whole filter, but at most
-   * {@code salat.booking-list.all-max-rows} rows on the page (#1153) — beyond that the list says it is cut, like with
-   * every other limit. The export is not limited.
-   */
-  static final List<Integer> LIMITS = List.of(50, 100, 500, 1000, 0);
-  private static final int DEFAULT_LIMIT = 500;
-
   /** How many rows a dialog renders at once. More than this is not scanned, it is searched. */
   private static final int DIALOG_ROWS = 200;
 
   private final TimereportListService timereportListService;
   private final TimereportListExcelService excelService;
   private final MessageSourceAccessor messages;
-  private final SalatProperties salatProperties;
+  private final ListLimits listLimits;
 
   @GetMapping
   public String show(
@@ -84,13 +76,13 @@ public class TimereportListController {
     var ticketKeys = strings(fBookingsTickets);
     var period = period(fBookingsFrom, fBookingsUntil);
     var billable = billable(fBookingsBillable);
-    var limit = limit(fBookingsLimit);
+    // The export is not limited.
+    var limit = listLimits.parse(fBookingsLimit);
 
     var ticketChildren = ticketDescendants(fBookingsTicketChildren);
     var order = sortOrder(fBookingsSort);
     var filter = new TimereportListFilter(employeeIds, customerIds, orderIds, suborderIds, ticketKeys, ticketChildren,
-        period.from(), period.until(), billable, order.sort(), order.descending(),
-        limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit);
+        period.from(), period.until(), billable, order.sort(), order.descending(), limit.maxRows());
 
     // Ein Filterwechsel tauscht nur den Ergebnisbereich. Die Seite selbst bleibt stehen — mit ihr das
     // offene Modal, das ein Seitenwechsel mitgerissen haette, und die Auswahllisten, die das Fragment
@@ -121,8 +113,7 @@ public class TimereportListController {
     model.addAttribute("billable", billable.name());
     model.addAttribute("sort", order.sort().name());
     model.addAttribute("sortDescending", order.descending());
-    model.addAttribute("limits", LIMITS);
-    model.addAttribute("limit", limit);
+    limit.addTo(model);
 
     model.addAttribute("section", "dailyreport");
     model.addAttribute("subSection", "list");
@@ -283,16 +274,6 @@ public class TimereportListController {
       return Billable.valueOf(value.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
       return Billable.ALL;
-    }
-  }
-
-  private static int limit(String value) {
-    if (value == null || value.isBlank()) return DEFAULT_LIMIT;
-    try {
-      var limit = Integer.parseInt(value.trim());
-      return LIMITS.contains(limit) ? limit : DEFAULT_LIMIT;
-    } catch (NumberFormatException e) {
-      return DEFAULT_LIMIT;
     }
   }
 

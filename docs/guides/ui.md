@@ -478,6 +478,23 @@ der Schalter den gemerkten Stand nicht mehr an.
 
 ---
 
+## Listen mit Obergrenze (#1092, #1380)
+
+Eine Liste, die ohne Filter zu groß würde, zeigt trotzdem sofort etwas — begrenzt, nicht leer.
+Buchungsliste, Ticketliste und die drei Auftragslisten teilen dafür eine Mechanik:
+
+- **`ListLimits`** (`common.web`) liest die Stufe aus dem Request-Parameter (50, 100, 500, 1000,
+  „Alle“; Vorgabe 500) und deckelt „Alle“ auf `salat.booking-list.all-max-rows`. Die Stufe ist ein
+  Filter mit eigenem `f…Limit`-Schlüssel je Liste (ADR-0022).
+- **Die Datenbank begrenzt und zählt**: `findAll(Specification, Pageable)` bzw. eine eigene Zähl-
+  und Zeilenabfrage, nie alle Treffer laden und in Java abschneiden. Berechtigung und Suchtext
+  gehören dafür in die Abfrage. Was jede Zeile zeigt, holt die Zeilenabfrage per `join fetch`;
+  die Zählabfrage liest die Filter allein (`findAll(spec, countSpec, pageable)`).
+- **`fragments/list-limit.html`**: `select(name)` für die Auswahl, `truncated(text)` für den
+  Hinweis oben in der Karte der Tabelle, wenn mehr Treffer da sind als Zeilen.
+
+---
+
 ## Grouped List View Pattern
 When a list should be partitioned by a categorical field, render one card+table per group instead of a single flat table.
 

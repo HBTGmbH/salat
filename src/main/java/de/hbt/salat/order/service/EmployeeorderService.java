@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.EmployeeorderListItemDTO;
 import de.hbt.salat.order.domain.NewEmployeeorder;
+import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.event.EmployeeorderConflictResolutionEvent;
 import de.hbt.salat.order.event.EmployeeorderDeleteEvent;
@@ -403,14 +405,22 @@ public class EmployeeorderService {
     return employeeorderDAO.getEmployeeordersByFilters(showInactive, filter, employeeContractId, null, customerOrderId, suborderId, showHidden);
   }
 
-  public List<EmployeeorderListItemDTO> getEmployeeorderListItemsByFilters(Boolean showInactive, String filter,
-      Long employeeContractId, Long customerId, Long customerOrderId, Long suborderId, boolean showActualHours, Boolean showHidden) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInactive, filter, employeeContractId, customerId, customerOrderId, suborderId, showHidden)
-        .stream()
+  /**
+   * The first {@code maxRows} rows of the employee order list and how many the filters hit (#1380), only those the user
+   * may read. The booked hours of the shown rows are asked for in one command, not one per row.
+   */
+  @Transactional(readOnly = true)
+  public SearchHits<EmployeeorderListItemDTO> searchEmployeeorderListItems(Boolean showInactive, String filter,
+      Long employeeContractId, Long customerId, Long customerOrderId, Long suborderId, boolean showActualHours,
+      Boolean showHidden, int maxRows) {
+    var hits = employeeorderDAO.findEmployeeorders(showInactive, filter, employeeContractId, customerId,
+        customerOrderId, suborderId, showHidden, maxRows);
+    var durations = showActualHours ? getTotalDurations(hits.rows()) : Map.<Long, Duration>of();
+    var rows = hits.rows().stream()
         .map(eo -> {
-          Duration duration = showActualHours ? getTotalDuration(eo.getId()) : null;
+          Duration duration = showActualHours ? durations.getOrDefault(eo.getId(), Duration.ZERO) : null;
           Duration difference = null;
-          if (showActualHours && duration != null
+          if (showActualHours
               && eo.getDebithours() != null && eo.getDebithours().toMinutes() > 0
               && (eo.getDebithoursunit() == null || eo.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
             difference = eo.getDebithours().minus(duration);
@@ -434,6 +444,19 @@ public class EmployeeorderService {
           );
         })
         .toList();
+    return new SearchHits<>(rows, hits.total());
+  }
+
+  private Map<Long, Duration> getTotalDurations(List<Employeeorder> employeeorders) {
+    if (employeeorders.isEmpty()) {
+      return Map.of();
+    }
+    var command = GetTimereportMinutesCommandEvent.builder()
+        .orderType(EMPLOYEE)
+        .orderIds(employeeorders.stream().map(Employeeorder::getId).toList())
+        .build();
+    commandPublisher.publish(command);
+    return command.getResult();
   }
 
   public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId,

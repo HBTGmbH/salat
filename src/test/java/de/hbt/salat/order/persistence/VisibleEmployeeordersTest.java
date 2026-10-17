@@ -1,7 +1,6 @@
 package de.hbt.salat.order.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
@@ -71,7 +70,7 @@ class VisibleEmployeeordersTest {
   void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.getLoginSign()).thenReturn("test");
-    when(employeeorderAuthorization.isAuthorized(any(), any())).thenReturn(true);
+    when(employeeorderAuthorization.readable()).thenReturn((root, query, builder) -> builder.conjunction());
     contract = contract();
   }
 

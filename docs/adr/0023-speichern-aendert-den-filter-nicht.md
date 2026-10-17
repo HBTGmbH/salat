@@ -3,6 +3,11 @@
 Date: 2026-09-14
 Status: Accepted
 
+> **Nachtrag 2026-10-17 (#1380):** Die offene Frage aus den Consequences ist beantwortet: Aufträge,
+> Unteraufträge und Mitarbeiteraufträge zeigen auch ohne Filter eine Liste, begrenzt wie die
+> Buchungsliste. Nach dem Speichern steht der Benutzer also nicht mehr vor einer leeren Liste; die
+> Entscheidung — Speichern ändert den Filter nicht — bleibt unverändert.
+
 ## Context and Problem Statement
 
 Nach dem Anlegen eines Eintrags leitet jedes Formular auf seine Liste zurück. Diese Liste ist

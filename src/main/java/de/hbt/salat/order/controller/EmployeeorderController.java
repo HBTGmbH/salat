@@ -36,13 +36,13 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.comparator.SubOrderComparator;
-import de.hbt.salat.order.domain.EmployeeorderListItemDTO;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
@@ -62,6 +62,7 @@ public class EmployeeorderController {
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final FilterHintViewHelper filterHintViewHelper;
+    private final ListLimits listLimits;
 
     @GetMapping
     public String list(
@@ -73,6 +74,7 @@ public class EmployeeorderController {
             @RequestParam(required = false) Boolean fEmployeeOrderShowInactive,
             @RequestParam(required = false) Boolean fEmployeeOrderShowActualHours,
             @RequestParam(required = false) Boolean fEmployeeOrderShowHidden,
+            @RequestParam(required = false) String fEmployeeOrderLimit,
             HttpServletRequest request,
             Model model) {
         var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
@@ -81,17 +83,11 @@ public class EmployeeorderController {
         }
         var orders = customerorderService.getCustomerordersByFilters(fEmployeeOrderShowInactive, fEmployeeOrderFilter, fCustomerId, fEmployeeOrderShowHidden);
 
-        var filterSet = (fEmployeeOrderFilter != null && !fEmployeeOrderFilter.isEmpty()) ||
-                        fCustomerId != null ||
-                        fEmployeeOrderEmployeeContractId != null ||
-                        fCustomerOrderId != null ||
-                        fSuborderId != null;
-
-        List<EmployeeorderListItemDTO> employeeOrders = List.of();
-        if(filterSet) {
-            employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                fEmployeeOrderShowInactive, fEmployeeOrderFilter, fEmployeeOrderEmployeeContractId, fCustomerId, fCustomerOrderId, fSuborderId, Boolean.TRUE.equals(fEmployeeOrderShowActualHours), fEmployeeOrderShowHidden);
-        }
+        // Like the booking list, the page lists employee orders right away, up to the limit (#1380).
+        var limit = listLimits.parse(fEmployeeOrderLimit);
+        var hits = employeeorderService.searchEmployeeorderListItems(
+            fEmployeeOrderShowInactive, fEmployeeOrderFilter, fEmployeeOrderEmployeeContractId, fCustomerId, fCustomerOrderId, fSuborderId, Boolean.TRUE.equals(fEmployeeOrderShowActualHours), fEmployeeOrderShowHidden,
+            limit.maxRows());
 
         List<Suborder> suborders = List.of();
         if (fCustomerOrderId != null) {
@@ -102,7 +98,9 @@ public class EmployeeorderController {
         model.addAttribute("employeecontracts", employeeContracts);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
-        model.addAttribute("employeeorders", employeeOrders);
+        model.addAttribute("employeeorders", hits.rows());
+        model.addAttribute("hits", hits);
+        limit.addTo(model);
         model.addAttribute("fEmployeeOrderEmployeeContractId", fEmployeeOrderEmployeeContractId);
         model.addAttribute("fCustomerOrderId", fCustomerOrderId);
         model.addAttribute("fSuborderId", fSuborderId);

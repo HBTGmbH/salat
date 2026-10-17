@@ -180,11 +180,7 @@
       </div>
 
       <div class="col-auto">
-        <label class="form-label" for="limit-select" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
-        <select class="form-select tomselect" id="limit-select" autocomplete="off" style="width: 10rem">
-          <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
-                  th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
-        </select>
+        <th:block th:replace="~{fragments/list-limit :: select(null)}"></th:block>
       </div>
 
       <div class="col-auto ms-auto">
@@ -375,16 +371,8 @@
   </div>
 
   <!--/* Im Druck steht die Begrenzung im Filterblock: sie sagt, was das Blatt zeigt, wie die Filter. */-->
-  <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0 d-print-none"
-       role="alert">
-    <!--/* Symbol und Text in einer Zeilenbox: als eigene Flex-Kinder haben sie verschiedene
-           Zeilenhoehen, und das Zeichen saesse oben in seiner Box statt auf der Schriftlinie. */-->
-    <div>
-      <i class="ti ti-alert-triangle me-2"></i><span
-         th:text="#{main.timereportlist.truncated(${result.timereports.size()},${result.totalCount})}">
-        Die Anzeige ist begrenzt.
-      </span>
-    </div>
+  <div th:if="${result.truncated}" class="d-print-none">
+    <div th:replace="~{fragments/list-limit :: truncated(#{main.timereportlist.truncated(${result.timereports.size()},${result.totalCount})})}"></div>
   </div>
 
   <div class="table-responsive">

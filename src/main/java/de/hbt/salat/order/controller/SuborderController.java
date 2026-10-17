@@ -37,6 +37,7 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.common.viewhelper.NoticeViewHelper;
+import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.OrderType;
@@ -63,6 +64,7 @@ public class SuborderController {
   private final FilterHintViewHelper filterHintViewHelper;
   private final NoticeViewHelper noticeViewHelper;
   private final SpecialOrders specialOrders;
+  private final ListLimits listLimits;
 
   @GetMapping
   public String list(
@@ -72,10 +74,14 @@ public class SuborderController {
       @RequestParam(required = false) Boolean fSuborderShowInactive,
       @RequestParam(required = false) Boolean fSuborderShowActualHours,
       @RequestParam(required = false) Boolean fSuborderShowHidden,
+      @RequestParam(required = false) String fSuborderLimit,
       HttpServletRequest request,
       Model model) {
-    var filterSet = (fSuborderFilter != null && !fSuborderFilter.isEmpty()) || fCustomerId != null || fCustomerOrderId != null;
-    var suborders = filterSet ? suborderService.getSubordersByFilters(fSuborderShowInactive, fSuborderFilter, fCustomerOrderId, fCustomerId, fSuborderShowHidden) : List.<Suborder>of();
+    // Like the booking list, the page lists suborders right away, up to the limit (#1380).
+    var limit = listLimits.parse(fSuborderLimit);
+    var hits = suborderService.searchSuborders(fSuborderShowInactive, fSuborderFilter, fCustomerOrderId, fCustomerId,
+        fSuborderShowHidden, limit.maxRows());
+    var suborders = hits.rows();
     if (Boolean.TRUE.equals(fSuborderShowActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {
@@ -92,6 +98,8 @@ public class SuborderController {
           .filter(co -> co.getCustomer().getId().equals(selectedCustomerId))
           .toList();
     }
+    model.addAttribute("hits", hits);
+    limit.addTo(model);
     model.addAttribute("customers", customerService.getSelectableCustomers(fCustomerId));
     model.addAttribute("visibleCustomerOrders", visibleCustomerOrders);
     model.addAttribute("fSuborderFilter", fSuborderFilter);
