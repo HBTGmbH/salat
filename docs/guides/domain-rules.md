@@ -152,7 +152,7 @@ if (!TRUE.equals(showInactive)) {
 }
 ```
 
-Eine fünfte Kopie des Prädikats ist damit ein Fehler. Wer eine weitere Entität mit
+Jede weitere Kopie des Prädikats ist damit ein Fehler. Wer eine weitere Entität mit
 Gültigkeitszeitraum anlegt, ruft `Validity`, statt `untilDate >= today` noch einmal zu schreiben.
 
 **Nicht jede Liste ist eine Auswahlliste (#1106).** Ob das Zeitkriterium überhaupt gilt, entscheidet

@@ -3,6 +3,12 @@
 Date: 2026-06-04
 Status: Accepted
 
+> **Nachtrag 2026-10-17 (#1486):** Das Beispiel unter „Entitäten ohne eigenes `hide`-Flag" ist
+> überholt. `hide` ist nullbar, und `NULL` heißt nicht verborgen (#1104); `notEqual(…, TRUE)` lässt
+> solche Zeilen aber fallen, weil `NULL <> TRUE` in SQL nicht wahr ist. Gefiltert wird über
+> `Hiding.notHidden(builder, path)`. Die geltende Regel steht in `docs/guides/domain-rules.md`,
+> „The `hide` Flag". Die Entscheidung selbst ist unverändert.
+
 ## Context and Problem Statement
 
 Stammdaten (Kunden, Aufträge, Unteraufträge, Mitarbeiter, Verträge …) werden von Bewegungsdaten

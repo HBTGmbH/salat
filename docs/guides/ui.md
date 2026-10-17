@@ -79,6 +79,10 @@ Zwei Fallstricke, die beide daher kommen, dass der Dialog zwischen Klick und Akt
   mit `requestSubmit()`, nicht mit `submit()`: nur das erste behält den auslösenden Knopf und die
   HTML5-Validierung.
 
+Solange `salat.js` nicht geladen ist, gibt es keinen bestätigungspflichtigen Absendeknopf:
+`salat.css` blendet ihn aus, bis `body` die Klasse `salat-confirm-ready` trägt. Die Selektoren dort
+decken einen Absendeknopf in einem Formular mit `data-confirm` und einen Knopf mit `data-confirm` ab.
+
 ---
 
 ## Befehlspalette (→ ADR-0030, ADR-0031, ADR-0032)
@@ -99,7 +103,8 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
   Tastenkürzel im Fuß), die Personen für den Benutzerwechsel aus den Formularen von
   `#loginSwitchModal`. Ein Bedienelement wird nur angeboten, solange es angezeigt wird — im
   Nutzermenü (`data-palette-menu`), sobald es gerendert ist. Die Rollenfrage beantwortet damit
-  allein die Sidebar; eine Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein
+  allein die Sidebar; eine Seite, die dort nicht steht, findet auch die Palette nicht.
+  `CommandPaletteE2ETest` vergleicht je Rolle die Einträge der Palette mit denen der Sidebar. Wo ein
   Element der Seite das bessere Ziel kennt, verweist der Sidebar-Eintrag mit
   `data-palette-href-from` darauf.
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
@@ -408,6 +413,9 @@ kept disjoint:
 - **A create form may use the filter values as optional input**: `createForm(@RequestParam(required
   = false) Long fCustomerId, …)` prefills the new entry with what the list has selected. The
   **link** to that form passes nothing (see below).
+- **Whether a form was submitted or the page merely called is told by a marker of its own**
+  (`evaluate`, #1009), never by the presence of an `f…` parameter
+  (→ [backend-patterns](backend-patterns.md), Controller Pattern).
 
 ---
 
@@ -434,6 +442,8 @@ with nothing preselected. `th:href="@{/orders/suborders/create}"`, not `@{/order
 the fallback prefills the form anyway. Where the form must start with something *other* than the
 current selection, the link names the **form field** — `/orders/suborders/create?customerorderId=42`
 after creating an order — and the controller falls back to the remembered value without it.
+`UiStateParameterNamingTest.noCreateLinkCarriesAFilterParameter` checks this across templates and
+Java sources.
 
 ---
 
