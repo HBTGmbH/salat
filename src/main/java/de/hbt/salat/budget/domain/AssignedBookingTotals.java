@@ -12,6 +12,15 @@ import java.time.Duration;
  */
 public record AssignedBookingTotals(Long count, Long minutes) {
 
+    /**
+     * The shape the query builds: the time surcharge credit is summed separately and counts as part of
+     * the hours (#1470).
+     */
+    public AssignedBookingTotals(Long count, Long minutes, Long surchargeMinutes) {
+        this(count, minutes == null && surchargeMinutes == null ? null
+            : (minutes == null ? 0 : minutes) + (surchargeMinutes == null ? 0 : surchargeMinutes));
+    }
+
     public long bookings() {
         return count == null ? 0 : count;
     }

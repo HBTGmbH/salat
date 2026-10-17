@@ -62,7 +62,9 @@ public interface TimereportBudgetAssignmentRepository
                eo.employeecontract.employee.id,
                eo.employeecontract.employee.sign,
                concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname),
-               t.duration, t.taskdescription)
+               t.duration, t.surchargeCredit,
+               coalesce(eo.suborder.orderType, eo.suborder.customerorder.orderType),
+               t.taskdescription)
         FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
@@ -81,11 +83,18 @@ public interface TimereportBudgetAssignmentRepository
      * How many bookings the plan holds in the period and how long they are — over the whole period,
      * not over the capped list of {@link #findAssignedBookings} (#997). Derived from the list, the
      * figures would understate every plan that has more bookings than the cap shows.
+     *
+     * <p>The time surcharge credit counts as part of the hours, as everywhere in the budget (#1470),
+     * summed apart and none on standby — the effective order type is that of the suborder before
+     * that of the order, as {@code TimereportDTO#durationWithSurcharge} has it.
      */
     @Query("""
         SELECT new de.hbt.salat.budget.domain.AssignedBookingTotals(
-               count(t), sum(t.duration))
-        FROM TimereportBudgetAssignment a, Timereport t
+               count(t), sum(t.duration),
+               sum(case when coalesce(eo.suborder.orderType, eo.suborder.customerorder.orderType)
+                        = de.hbt.salat.order.domain.OrderType.BEREITSCHAFT then 0
+                   else t.surchargeCredit end))
+        FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
           AND t.referenceday.refdate >= :from AND t.referenceday.refdate <= :until
@@ -123,7 +132,10 @@ public interface TimereportBudgetAssignmentRepository
                eo.employeecontract.employee.sign,
                concat(eo.employeecontract.employee.firstname, ' ', eo.employeecontract.employee.lastname),
                eo.suborder.id, t.referenceday.refdate,
-               count(t), sum(t.duration))
+               count(t), sum(t.duration),
+               sum(case when coalesce(eo.suborder.orderType, eo.suborder.customerorder.orderType)
+                        = de.hbt.salat.order.domain.OrderType.BEREITSCHAFT then 0
+                   else t.surchargeCredit end))
         FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
@@ -203,7 +215,8 @@ public interface TimereportBudgetAssignmentRepository
     @Query("""
         SELECT new de.hbt.salat.budget.domain.PlanBooking(
                a.orderBudget.id, eo.suborder.id, eo.employeecontract.employee.id,
-               t.referenceday.refdate, t.duration)
+               t.referenceday.refdate, t.duration, t.surchargeCredit,
+               coalesce(eo.suborder.orderType, eo.suborder.customerorder.orderType))
         FROM TimereportBudgetAssignment a, Timereport t JOIN t.employeeorder eo
         WHERE t.id = a.timereportId
           AND a.orderBudget.id IN :budgetIds

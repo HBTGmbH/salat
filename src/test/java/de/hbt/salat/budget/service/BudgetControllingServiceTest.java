@@ -57,12 +57,14 @@ import de.hbt.salat.budget.persistence.TimereportBudgetAssignmentRepository;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.SurchargeKind;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -181,7 +183,7 @@ public class BudgetControllingServiceTest {
           .flatMap(r -> links.stream()
               .filter(link -> link.timereportId().equals(r.getId()) && planIds.contains(link.orderBudgetId()))
               .map(link -> new PlanBooking(link.orderBudgetId(), r.getSuborderId(), r.getEmployeeId(),
-                  r.getReferenceday(), r.getDuration())))
+                  r.getReferenceday(), r.getDurationWithSurcharge())))
           .toList();
     });
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
@@ -270,6 +272,56 @@ public class BudgetControllingServiceTest {
     var total = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
 
     assertThat(total.costEuro()).isEqualByComparingTo("120.00");
+  }
+
+  /**
+   * The time surcharge counts as part of the hours (#1470): a Sunday assignment of 8 h at 100 % stands
+   * with 16 h, priced and costed as such. No column of its own — the figures are simply larger.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_the_time_surcharge_as_part_of_the_hours() {
+    givenReports(onSunday(eightHoursOn(11L, IN_H1), 100, null), eightHoursOn(20L, IN_H2));
+    givenCosts(costAssignment("general", null), cost("general", 750));
+
+    var total = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
+
+    assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(24));
+    assertThat(total.billableHours()).isEqualTo(Duration.ofHours(24));
+    // 24 h at 100 EUR/h, and at 7.50 EUR/h
+    assertThat(total.revenueEuro()).isEqualByComparingTo("2400.00");
+    assertThat(total.costEuro()).isEqualByComparingTo("180.00");
+  }
+
+  /** On standby the credit counts nowhere, as on the time account (#1469). */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_no_time_surcharge_on_standby() {
+    givenReports(eightHoursOn(11L, IN_H1), onSunday(eightHoursOn(20L, IN_H2), 100, OrderType.BEREITSCHAFT));
+
+    var total = service.compute(CUSTOMERORDER_ID, FROM, UNTIL, true).orElseThrow().total();
+
+    assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(16));
+    assertThat(total.revenueEuro()).isEqualByComparingTo("1600.00");
+  }
+
+  /** The booking flagged as a Sunday assignment, with the credit the booking module would store. */
+  private static TimereportDTO onSunday(TimereportDTO report, int percent, OrderType orderType) {
+    return TimereportDTO.builder()
+        .id(report.getId())
+        .customerorderSign(report.getCustomerorderSign())
+        .customerorderId(report.getCustomerorderId())
+        .completeOrderSign(report.getCompleteOrderSign())
+        .suborderId(report.getSuborderId())
+        .employeeId(report.getEmployeeId())
+        .employeeSign(report.getEmployeeSign())
+        .referenceday(report.getReferenceday())
+        .duration(report.getDuration())
+        .orderType(orderType)
+        .surchargeKind(SurchargeKind.SUNDAY)
+        .surchargePercent(percent)
+        .surchargeCredit(Timereport.surchargeCreditFor(report.getDuration(), percent))
+        .build();
   }
 
   /** Assignments and rate periods, given in pairs or in any order — sorted apart by their type. */

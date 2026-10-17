@@ -33,6 +33,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.SurchargeKind;
 
 /**
  * The bookings the budget detail page lists (#997). Both the order and the cap belong to the
@@ -208,6 +209,53 @@ public class AssignedBookingRepositoryTest {
             tuple(other.getId(), suborderB.getId(), DAY.minusDays(1),
                 Duration.ofHours(2)));
     assertThat(rows).extracting(PlanBooking::employeeId).doesNotContainNull().doesNotHaveDuplicates();
+  }
+
+  /**
+   * The time surcharge counts in the budget as part of the hours (#1470): a Sunday assignment of two
+   * hours at 100 % stands with four — in the list, the totals, the card and what the dashboard prices.
+   */
+  @Test
+  public void counts_the_time_surcharge_as_part_of_the_hours() {
+    var sunday = book(plan, DAY, "abc", suborderA, 2, 0, "");
+    surcharge(sunday, SurchargeKind.SUNDAY, 100);
+    book(plan, DAY.plusDays(1), "abc", suborderA, 1, 0, "");
+
+    assertThat(newest(10)).extracting(AssignedBooking::duration)
+        .containsExactly(Duration.ofHours(1), Duration.ofHours(4));
+    assertThat(assignmentRepository.findAssignedBookingTotals(plan.getId(), FROM, UNTIL).totalDuration())
+        .isEqualTo(Duration.ofHours(5));
+    assertThat(assignmentRepository.findAssignedEmployeeDays(plan.getId(), FROM, UNTIL))
+        .extracting(day -> day.duration()).containsExactly(Duration.ofHours(4), Duration.ofHours(1));
+    assertThat(assignmentRepository.findPlanBookings(java.util.List.of(plan.getId()), UNTIL))
+        .extracting(PlanBooking::duration).containsExactlyInAnyOrder(Duration.ofHours(4), Duration.ofHours(1));
+  }
+
+  /**
+   * On standby the credit counts nowhere, as on the time account (#1469) — a flag kept from before
+   * the suborder became standby earns nothing in the budget either.
+   */
+  @Test
+  public void counts_no_time_surcharge_on_standby() {
+    var standby = suborder("so-standby");
+    standby.setOrderType(OrderType.BEREITSCHAFT);
+    var flagged = book(plan, DAY, "abc", standby, 2, 0, "");
+    surcharge(flagged, SurchargeKind.SUNDAY, 100);
+
+    assertThat(newest(10)).extracting(AssignedBooking::duration).containsExactly(Duration.ofHours(2));
+    assertThat(assignmentRepository.findAssignedBookingTotals(plan.getId(), FROM, UNTIL).totalDuration())
+        .isEqualTo(Duration.ofHours(2));
+    assertThat(assignmentRepository.findAssignedEmployeeDays(plan.getId(), FROM, UNTIL))
+        .extracting(day -> day.duration()).containsExactly(Duration.ofHours(2));
+    assertThat(assignmentRepository.findPlanBookings(java.util.List.of(plan.getId()), UNTIL))
+        .extracting(PlanBooking::duration).containsExactly(Duration.ofHours(2));
+  }
+
+  private void surcharge(long timereportId, SurchargeKind kind, int percent) {
+    var timereport = entityManager.find(Timereport.class, timereportId);
+    timereport.setSurcharge(kind, percent);
+    entityManager.flush();
+    entityManager.clear();
   }
 
   /** Written straight to the column: reading the booking back would already be filtered out. */

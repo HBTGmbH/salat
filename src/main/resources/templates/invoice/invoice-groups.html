@@ -60,7 +60,11 @@
   <tr class="invoice-row"
       th:each="line : ${group.lines}"
       th:classappend="${line.visible} ? '' : ' row-excluded'"
-      th:attr="data-groups=${line.groupPath},data-suborder=${line.suborder.id},data-minutes=${line.share.toMinutes()}"
+      th:attr="data-groups=${line.groupPath},data-suborder=${line.suborder.id},data-minutes=${line.share.toMinutes()},
+               data-timereport=${line.timereport.id},
+               data-surcharge-key=${invoiceData.surchargesSeparate and line.timereport.surcharged} ? ${line.timereport.surchargeKind.name() + '-' + line.timereport.surchargePercent} : null,
+               data-surcharge-basis=${invoiceData.surchargesSeparate and line.timereport.surcharged} ? ${line.timereport.bookedDuration.toMinutes()} : null,
+               data-surcharge-credit=${invoiceData.surchargesSeparate and line.timereport.surcharged} ? ${line.timereport.surchargeCredit.toMinutes()} : null"
       onclick="handleRowClick(event, this)">
     <td class="col-selection align-middle">
       <input class="form-check-input" type="checkbox" name="timereportIdArray"
@@ -82,6 +86,16 @@
       <span th:text="${@durationUtils.format(line.share)}"></span>
       <div th:if="${line.shared}" class="small text-secondary"
            th:text="#{main.invoice.ticket.share(${@durationUtils.format(line.timereport.duration)})}"></div>
+      <!--/* the time surcharge (#1470): a badge when it is a position of its own, a hint when it is part of the duration */-->
+      <th:block th:if="${line.timereport.surcharged}">
+        <span th:unless="${line.timereport.surchargeIncluded}" class="badge bg-teal-lt mt-1"
+              th:title="${@surchargeCreditViewHelper.title(line.timereport.surchargeKind, line.timereport.surchargePercent, line.timereport.surchargeCredit)}"><span
+            class="visually-hidden" th:text="#{main.surcharge.booking.label}">Zeitzuschlag</span> <span
+            th:text="${@surchargeCreditViewHelper.credit(line.timereport.surchargeCredit)}">+1:00</span></span>
+        <div th:if="${line.timereport.surchargeIncluded}" class="small text-secondary"
+             th:title="${@surchargeCreditViewHelper.title(line.timereport.surchargeKind, line.timereport.surchargePercent, line.timereport.surchargeCredit)}"
+             th:text="#{main.invoice.surcharge.included(${@surchargeCreditViewHelper.credit(line.timereport.surchargeCredit)})}"></div>
+      </th:block>
     </td>
     <td class="col-hours text-end align-middle"
         th:text="${#numbers.formatDecimal(line.hours, 1, 2)}"></td>
