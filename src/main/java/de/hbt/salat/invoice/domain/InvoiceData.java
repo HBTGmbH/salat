@@ -20,7 +20,28 @@ public class InvoiceData {
   private final String customerOrderSign;
   private final Customer customer;
   private final Duration totalDuration;
+  /** Every suborder with its bookings — what is selected and deselected, whatever the grouping. */
   private final List<InvoiceSuborder> suborders;
+  /**
+   * The grouping the groups were built with. {@link InvoiceGrouping#SUBORDER} whenever no booking has a
+   * ticket reference, whatever was asked for: then there is nothing to group by.
+   */
+  private final InvoiceGrouping grouping;
+  /** What preview, print and export render (#1390). */
+  private final List<InvoiceGroup> groups;
+  /** The ticket selection as a tree; empty when no booking has a ticket reference. */
+  private final List<InvoiceTicketOption> ticketOptions;
+  private final List<InvoiceProjectKey> projectKeys;
+
+  /** Whether at least one loaded booking has a ticket reference — only then is there anything to choose. */
+  public boolean isTicketReferencesPresent() {
+    return !ticketOptions.isEmpty();
+  }
+
+  /** Whether the suborders have rows of their own — every grouping but {@link InvoiceGrouping#TICKET}. */
+  public boolean isSuborderRows() {
+    return grouping != InvoiceGrouping.TICKET;
+  }
 
   public BigDecimal getTotalHours() {
     return BigDecimal

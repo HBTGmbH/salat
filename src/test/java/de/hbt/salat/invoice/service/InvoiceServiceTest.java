@@ -24,6 +24,7 @@ import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.invoice.domain.InvoiceSuborder;
 import de.hbt.salat.invoice.service.InvoiceService.InvoiceOptions;
+import de.hbt.salat.jira.service.JiraTicketService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -73,7 +74,8 @@ public class InvoiceServiceTest {
               : List.of(report(200L, 20L));
         });
 
-    service = new InvoiceService(customerorderService, suborderService, timereportService, budgetQueryService);
+    service = new InvoiceService(customerorderService, suborderService, timereportService, budgetQueryService,
+        mock(JiraTicketService.class));
   }
 
   @Test

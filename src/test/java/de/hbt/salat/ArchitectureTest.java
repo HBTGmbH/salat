@@ -131,14 +131,20 @@ public class ArchitectureTest {
    * adds {@code invoice -> budget}. That edge is free of cycles because budget does not import
    * invoice — and it reaches budget through a narrow query port that hands out records, not
    * entities.
+   *
+   * <p>Since #1390 an invoice can be grouped by the tickets the bookings refer to, and the group
+   * headings and the ticket hierarchy (#1393) come from {@code jira}: {@code invoice -> jira}. It
+   * reads through {@code JiraTicketService.getTickets}, which hands out {@code JiraTicketInfo}
+   * records (ADR-0021). The edge is free of cycles because jira imports only common, auth, order
+   * and secret — see {@link #jiraShouldAccessCommonAuthOrderSecretOnly}.
    */
   @ArchTest
   static final ArchRule invoiceShouldAccessOnlyItsKnownDependencies = priority(HIGH).noClasses().that()
       .resideInAPackage("de.hbt.salat.invoice..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "invoice must only import common, auth, budget, customer, dailyreport, order",
+          "invoice must only import common, auth, budget, customer, dailyreport, jira, order",
           "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.budget.", "de.hbt.salat.customer.", "de.hbt.salat.dailyreport.",
-          "de.hbt.salat.order.", "de.hbt.salat.invoice."));
+          "de.hbt.salat.jira.", "de.hbt.salat.order.", "de.hbt.salat.invoice."));
 
   /**
    * The assumption the whole assignment data model rests on (#908): a booking's budget lives in the
