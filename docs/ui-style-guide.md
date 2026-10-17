@@ -1948,12 +1948,15 @@ In der englischen Sprachfassung erscheinen also deutsche Tooltips und umgekehrt.
 `layout/base.html:2` deklariert nur die XML-Namespaces. Bei zwei Sprachfassungen (ADR-0010) fehlt
 damit die Sprachauszeichnung für Screenreader, Silbentrennung und Übersetzungsdienste.
 
-**W5. Die Beschreibung der Filter-Persistenz ist veraltet.**
+~~**W5. Die Beschreibung der Filter-Persistenz ist veraltet.**
 AGENTS.md (Controller Pattern, Zeile 375): *„store to session on explicit submit, read from session
 otherwise"*, und (List View Filter Toggles, Zeile 424): *„store both flags in session … session key
 names follow the pattern `<module>.<entity>.show`"*.
 Tatsächlich arbeitet `CustomerController` mit Request-Parametern (`cFilter`, `cShowHidden`) und
-`UiState` (ADR-0014/0016), nicht mit `HttpSession`. Die Regel beschreibt den Legacy-Zustand.
+`UiState` (ADR-0014/0016), nicht mit `HttpSession`. Die Regel beschreibt den Legacy-Zustand.~~
+**Behoben (#1009, #950).** Beide Regeln führen den Filter heute über `UiState` (→ ADR-0022), nicht
+über die Session: [`guides/backend-patterns.md`](guides/backend-patterns.md) im Controller Pattern,
+[`guides/ui.md`](guides/ui.md) bei den Filter-Umschaltern.
 
 **W6. Der `salat:`-Dialekt kann mehr als dokumentiert.**
 `guides/ui.md` listet für `<salat:textInput>` nur `th:field`, `th:label`, `required`, `maxlength`,
@@ -1966,12 +1969,15 @@ und genau darüber werden im Budget-Modul Datums- und Zahlenfelder gebaut
 **W7. `guides/ui.md` gibt die überholte Fragment-Regel wieder.**
 ADR-0005 (*Accepted*, supersedes ADR-0004) entscheidet: *„Alle Fragmente durch Salat-Dialect-Tags
 ersetzen, einschließlich `master-table` und weiterer struktureller Layout-Komponenten."*
-`guides/ui.md` („Controller and View Guidelines") sagt dagegen: *„Thymeleaf fragments remain valid for structural/layout reuse
-(e.g. `master-table`, layout decorators)"* — das ist die von ADR-0005 ersetzte Position aus ADR-0004.
+`guides/ui.md` („Controller and View Guidelines") sagt dagegen: *„Thymeleaf fragments remain valid
+for structural/layout reuse (e.g. `master-table`, layout decorators)"* — das ist die von ADR-0005
+ersetzte Position aus ADR-0004.
 
-**W8. AGENTS.md widerspricht sich zur Session-Nutzung.**
+~~**W8. AGENTS.md widerspricht sich zur Session-Nutzung.**
 Zeile 375 und 424 schreiben Session-Speicherung vor, Zeile 380 verbietet sie
-(*„No direct `HttpSession` access (→ ADR-0013)"*). Beide Regeln stehen im selben Dokument.
+(*„No direct `HttpSession` access (→ ADR-0013)"*). Beide Regeln stehen im selben Dokument.~~
+**Behoben (#1009, #950)** mit W5: Die Vorschriften zur Session-Speicherung sind entfallen, es gilt nur
+noch das Verbot (*„No direct `HttpSession` access"*, → ADR-0013).
 
 **W9. `guides/backend-patterns.md` schreibt für Flags Bootstrap Icons fest, sonst gilt Tabler.**
 Der Abschnitt „Flags Column Pattern" nennt ausdrücklich `bi-cash-stack`, `bi-bookmark-star-fill`,
