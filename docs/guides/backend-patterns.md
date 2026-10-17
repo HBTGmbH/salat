@@ -116,11 +116,7 @@ Repository und `Specification`.
   - The available switches are `requiresAuthentication` (default `true`), `requireUnrestricted`,
     `requiresBackoffice`, `requiresPeopleLead`, `requiresManager`, `requiresAdmin`, `permitAll`.
 - Write operations get `@Authorized(requiresManager = true)` on the method
-- **`@PreAuthorize` does not appear in this codebase** (#926, → ADR-0006). Both forms guard the same
-  method, but they do not ask the same question: `hasRole` reads the authorities of the
-  `SecurityContext`, `@Authorized` asks `AuthorizedUser` — and that one knows the impersonated
-  login. With both in use it depended on the annotation whether a page answered the real or the
-  impersonated person, and controller and service could contradict each other. `ArchitectureTest`
+- **`@PreAuthorize` does not appear in this codebase** (#926, → ADR-0006). `ArchitectureTest`
   rejects `@PreAuthorize` on a class or a method.
   - There is no *or*: `hasAnyRole('MANAGER','PEOPLE_LEAD')` was `requiresPeopleLead` all along,
     because the roles are cumulative. A genuine either/or is a runtime guard in the service, not an
@@ -133,13 +129,13 @@ Repository und `Specification`.
   it again as a fallback, so a controller only declares `@RequestParam(required = false) Long
   fBudgetCustomerOrderId`. Where a submit must be told apart from a mere page call — because it triggers
   something expensive — that hangs on a hidden field of the form (`evaluate`), never on whether the
-  filter parameter is present: the fallback makes it present on every request (#1009)
+  filter parameter is present (#1009)
 - Redirect-After-Post: successful writes return `”redirect:/...”` with `redirectAttributes.addFlashAttribute(“toastSuccess”, ...)`
 - Form validation errors: call the service inside `try/catch(ErrorCodeException)`, convert via `ErrorCodeViewHelper.toViewMessages(ex)`, add to model, and re-render the form view (do not redirect)
 - HTMX partial updates: use `th:hx-post`, `hx-swap=”none”`, `hx-include=”closest form”`, `hx-trigger=”change”` on select/input elements; detect `HX-Request` header in the controller and return `”view :: fragmentName”` for partial responses
 - CSRF tokens: **never** add an explicit `<input type=”hidden” th:name=”${_csrf.parameterName}” th:value=”${_csrf.token}” />`. Spring Security 6 uses deferred tokens — `_csrf` is null when accessed directly in templates. Using `th:action=”@{...}”` is sufficient; Thymeleaf's `CsrfRequestDataValueProcessor` injects the token automatically into every POST form.
-- **UiState parameters are named `f…`** (→ ADR-0022): see the section below before registering a key.
-- **No direct `HttpSession` access** (→ ADR-0013): new Spring MVC controllers must not read or write `HttpSession` for UI state. Pass state via URL parameters, path variables, or form fields. User selection state (e.g. currently selected employee contract) must be expressed in the URL or stored in a cookie — not the session. Exceptions (`AuthorizedUser`, `AuthorizedEmployee`, impersonation) must be documented with a comment `// ADR-0013: Ausnahme — [Begründung]` at the point of use.
+- **UiState parameters are named `f…`** (→ ADR-0022): see [ui](ui.md), „UiState: Filter Parameters Carry the Prefix `f`“, before registering a key.
+- **No direct `HttpSession` access** (→ ADR-0013): new Spring MVC controllers must not read or write `HttpSession` for UI state. Pass state via URL parameters, path variables, or form fields. User selection state (e.g. currently selected employee contract) must be expressed in the URL or stored in a cookie — not the session. The rule has no exceptions left (ADR-0013, Nachtrag 2026-09-18); a new one must be documented with a comment `// ADR-0013: Ausnahme — [Begründung]` at the point of use.
 
 ---
 
@@ -307,9 +303,8 @@ beantwortet**:
 
 - **Kein Controller fängt eine Ausnahme der Persistenz.** Einen Konflikt der Versionsnummer
   (`OptimisticLockingFailureException`) übersetzt `ConcurrentModificationAspect` an jedem `@Service`
-  in eine `BusinessRuleException` `XX-0003`. Der Aspekt liegt außen um die Transaktion, weil der
-  Konflikt meist erst beim Commit entsteht, also nach dem Methodenrumpf. Ein `catch` im Service
-  sähe ihn nicht.
+  in eine `BusinessRuleException` `XX-0003`. Der Konflikt entsteht meist erst beim Commit, ein
+  `catch` im Service sähe ihn nicht.
   Ebenso übersetzt er die Verletzung eines Unique-Schlüssels, `XX-0004` oder den eigenen Befund
   des Schlüssels (#1208). Ein neuer Unique-Schlüssel heißt in Changeset und Entität gleich
   (`uk_<tabelle>_<spalten>`). Braucht er eine eigene Meldung, kommt er in die Tabelle des Aspekts.
@@ -330,8 +325,7 @@ Systeme — speichert und liest allein das Modul `secret`** (#1432).
   (`ArchitectureTest.nothingOutsideSecretTouchesTheStoredSecret`).
 - **Der Eigentümer merkt sich die id mit Fremdschlüssel**, nicht als `@ManyToOne` (bewusste
   Abweichung von ADR-0036), und **löscht das Secret mit sich, in derselben Transaktion**: erst sich,
-  dann das Secret, denn der Fremdschlüssel zeigt darauf. `secret` weiß nicht, wer ein Secret
-  referenziert, und findet verwaiste nicht von selbst.
+  dann das Secret, denn der Fremdschlüssel zeigt darauf.
 - Jede Art von Secret ist ein Typ (`UsernamePassword`, `Token`), dessen `toString()` das Secret
   auslässt. Kein Secret in Logs, Fehlermeldungen oder Laufhistorie: was ein fremder Client in seine
   Meldung schreibt, geht durch eine Redaktion (`JiraCredentialRedaction`), bevor es angezeigt oder
@@ -372,15 +366,13 @@ via `@JdbcTypeCode(SqlTypes.JSON)` on a `Map` or `List` attribute: `JiraTicket.c
 (#1386).
 
 - **Reading a value out of the JSON is MySQL-specific and belongs in ETL/report SQL or in a view** —
-  never in a JPQL query or a repository method. H2 2.4 knows neither `JSON_VALUE` nor `JSON_EXTRACT`,
-  so such a query cannot be tested. The persistence model itself stays portable, and the round trip
-  is covered against H2 (`JiraTicketCustomFieldsTest`).
-- **The empty state is `NULL`, never `{}` and never an empty string.** A native `json` column cannot
-  hold an empty string at all, and `JSON_EXTRACT` on an empty document aborts with `ERROR 3141` —
-  taking the whole ETL statement with it. `JSON_EXTRACT(NULL, …)` answers `NULL`.
+  never in a JPQL query or a repository method. The persistence model itself stays portable, and the
+  round trip is covered against H2 (`JiraTicketCustomFieldsTest`).
+- **The empty state is `NULL`, never `{}` and never an empty string.** `JSON_EXTRACT(NULL, …)`
+  answers `NULL`.
 - Where the stored document depends on a configured list, keep a hash of that list next to it and
   rewrite the row when the hash differs. Build the hash from the **configured value** (trimmed,
-  sorted), not from the stored JSON: MySQL normalises JSON on write.
+  sorted), not from the stored JSON.
 
 ---
 
