@@ -446,7 +446,7 @@
             </thead>
             <tbody>
               <!--/* Die formatierte Dauer einmal binden: th:attr wertet seine Ausdruecke
-                     eingeschraenkt aus, und eine Bohne ist dort nicht erreichbar (AGENTS.md,
+                     eingeschraenkt aus, und eine Bohne ist dort nicht erreichbar (docs/guides/ui.md,
                      "Globally Accessible Objects"). */-->
               <tr th:each="tr : ${dailyData.timereports}"
                   th:with="trDuration=${@durationUtils.format(tr.duration)}">

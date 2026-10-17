@@ -126,7 +126,7 @@ Die Objekte, an denen alles hängt: `Customer` → `Customerorder` → `Suborder
 dazu `Employee` mit `Employeecontract`, und als eigentliche Bewegungsdaten der `Timereport`.
 Darüber liegen Rechnungstellung, Reporting und das Budget-Modul.
 
-Zwei Unterscheidungen tragen das ganze Modell und sind in `AGENTS.md` dokumentiert:
+Zwei Unterscheidungen tragen das ganze Modell und sind in `docs/guides/domain-rules.md` dokumentiert:
 
 - **Stammdaten gegen Bewegungsdaten** (→ ADR-0011). Stammdaten werden nicht gelöscht, sondern
   über `hide` oder eine Gültigkeit ausgeblendet.
@@ -139,7 +139,7 @@ daran hängen.
 ### 3. Rollen und Rechte
 
 Sechs Rollen, abgeleitet aus `SalatUser.status`: `USER`, `RESTRICTED`, `BACKOFFICE`,
-`PEOPLE_LEAD`, `MANAGER`, `ADMIN`. Die Semantik steht in `AGENTS.md`; besonders `RESTRICTED`
+`PEOPLE_LEAD`, `MANAGER`, `ADMIN`. Die Semantik steht in `docs/guides/backend-patterns.md` (Security Layers); besonders `RESTRICTED`
 (Externe, Praktikanten) wird leicht übersehen.
 
 Wichtig ist das Durchsetzungsmodell (→ ADR-0006): **zwei Ebenen**, `@PreAuthorize`
@@ -193,14 +193,15 @@ zutreffen. Der Build dauert einige Minuten; nutz die Zeit für die DoD-Frage, st
 
 Hier geht es um agentisches Arbeiten, nicht um Autovervollständigung.
 
-- **`AGENTS.md` ist der Vertrag.** Was dort steht, gilt für Menschen und Agenten gleichermaßen.
-  Wer eine Regel ändert, ändert `AGENTS.md` im selben PR.
+- **`AGENTS.md` ist der Vertrag**, zusammen mit den Leitfäden unter `docs/guides/`, auf die es
+  verweist. Was dort steht, gilt für Menschen und Agenten gleichermaßen. Wer eine Regel ändert,
+  ändert das Dokument, das sie trägt, im selben PR.
 - **Der Agent liefert Vorschläge, die Verantwortung bleibt bei der Person, die merged.** Diff
   lesen, nicht nur das Ergebnis. Besonders bei Sicherheits- und Autorisierungscode.
 - **Prüfen statt vertrauen.** Der Agent behauptet gelegentlich Dinge, die plausibel klingen und
   falsch sind. Belege verlangen: Datei, Zeile, Testlauf.
 - **Kontext geben lohnt sich mehr als Prompt-Tricks.** Issue-Nummer, betroffenes Modul, die Regel
-  aus `AGENTS.md`, an die er sich halten soll.
+  aus `AGENTS.md` oder `docs/guides/`, an die er sich halten soll.
 - **Keine Kunden- oder Personendaten** in Code, Commits, Issues, PRs oder Kommentaren. Die lokale
   Datenbank kann ein Produktionsabzug sein; ihr Inhalt gehört nicht in Artefakte.
 
@@ -211,7 +212,7 @@ sie am Diff prüfen würde.
 
 - **Issues** liegen auf GitHub. Jedes bekommt einen Issue-Type (`Bug`, `Feature`, `Task`), größere
   Vorhaben laufen als Epic mit Sub-Issue-Checkliste — siehe #767 und #907 als Vorlage.
-- **Dokumentation:** `AGENTS.md` sagt *was* gilt, die ADRs unter `docs/adr/` sagen *warum*.
+- **Dokumentation:** `AGENTS.md` und `docs/guides/` sagen *was* gilt, die ADRs unter `docs/adr/` sagen *warum*.
   Neue Architekturentscheidungen brauchen einen ADR, bevor oder während sie umgesetzt werden.
 - **UI:** `docs/ui-style-guide.md` beschreibt den Ist-Stand — Tabler auf Bootstrap 5,
   Listenansicht, Formularaufbau, Buttonfarben, Flags-Spalte, HTMX-Muster. Formularfelder über den

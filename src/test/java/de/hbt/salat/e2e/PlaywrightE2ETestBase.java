@@ -235,7 +235,7 @@ public abstract class PlaywrightE2ETestBase {
   }
 
   /**
-   * Opens a TomSelect-enhanced {@code <select>} (see AGENTS.md "TomSelect Dropdowns") by
+   * Opens a TomSelect-enhanced {@code <select>} (see docs/guides/ui.md "TomSelect Dropdowns") by
    * clicking its rendered control and picking the option whose visible text contains
    * {@code optionText}, mirroring real user interaction rather than setting the hidden native
    * {@code <select>} value directly.

@@ -19,7 +19,7 @@ import de.hbt.salat.employee.persistence.EmployeecontractRepository;
 
 /**
  * Verifies the dailyreport dashboard (the post-login landing page, see the
- * {@code /welcome -> /dailyreport/dashboard} legacy redirect in AGENTS.md) renders its core
+ * {@code /welcome -> /dailyreport/dashboard} legacy redirect in docs/guides/backend-patterns.md) renders its core
  * widgets for a logged-in employee.
  */
 class DashboardE2ETest extends PlaywrightE2ETestBase {

@@ -77,7 +77,7 @@ class EmployeeAccessIntegrationTest {
   }
 
   /**
-   * Ein Administrator ist kein Mitarbeiter und hat deshalb nie einen Vertrag (→ AGENTS.md,
+   * Ein Administrator ist kein Mitarbeiter und hat deshalb nie einen Vertrag (→ docs/guides/backend-patterns.md,
    * "Role semantics"). Für ihn darf der fehlende Vertrag kein Hindernis sein.
    */
   @Test

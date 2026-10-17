@@ -38,7 +38,7 @@ public class OrderPricing extends AuditedEntity {
      * Suborder#getSign()}, and no reference: it stays as typed (#1212, → {@link OrderPricingLookup}).
      * {@code null} means the price applies to the whole customer order.
      *
-     * <p>The one place where a sign of the order tree still decides what a record covers (AGENTS.md,
+     * <p>The one place where a sign of the order tree still decides what a record covers (docs/guides/backend-patterns.md,
      * #1205). That is intended — a pattern prices a group of suborders, including ones created
      * later — and it is why a rename has to reach it: the pattern starts with the order sign, so
      * renaming the order, or renaming or moving a suborder, changes the complete signs it is matched

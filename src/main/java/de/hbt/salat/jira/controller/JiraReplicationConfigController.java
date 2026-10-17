@@ -492,7 +492,7 @@ public class JiraReplicationConfigController {
   /**
    * The suborders of the selected order, at any depth — empty while none is selected. The suborder
    * a replication already points at stays in the list once it is hidden, so that an edit cannot drop
-   * the scope and silently write back whatever the browser preselected instead (→ AGENTS.md, #1005).
+   * the scope and silently write back whatever the browser preselected instead (→ docs/guides/domain-rules.md, #1005).
    */
   private List<Suborder> subordersOf(JiraReplicationConfigForm form) {
     var customerorderId = form.getCustomerorderId();

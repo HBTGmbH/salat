@@ -162,7 +162,7 @@
       <!--/* the time surcharge credit (#1469) above the sum row it is no part of: it counts towards the
              time account, not towards the booked hours. The figures in the ordinary text colour like
              every other cell: the credit falls on weekend and holiday columns, whose tint coloured text
-             would not stand out from (AGENTS.md, "Farben und Kontrast"). */-->
+             would not stand out from (docs/guides/ui.md, "Farben und Kontrast"). */-->
       <tr th:unless="${matrixData.surchargeCreditTotal.zero}" data-surcharge-row>
         <td class="matrix-first-col text-nowrap text-end" th:text="#{main.matrixoverview.table.surcharge.text}"
             th:title="#{main.matrixoverview.table.surcharge.title}">Zeitzuschläge</td>

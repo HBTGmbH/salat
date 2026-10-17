@@ -93,7 +93,7 @@ Für eine Schnittstelle, die „an die Services übergibt", ist dies der wichtig
 > `CustomerSegmentService` prüfen nur die Anmeldung.** Ihr Klassen-`@Authorized` ist ohne
 > Argument, und `@Authorized` ohne Argument heißt nur *authentifiziert*. Den Ausschluss von
 > `RESTRICTED` übernimmt heute allein der Controller (`@Authorized(requireUnrestricted = true)`).
-> AGENTS.md hält das für die Befehlspalette ausdrücklich fest: „Die Services der Fachmodule prüfen
+> `docs/guides/ui.md` hält das für die Befehlspalette ausdrücklich fest: „Die Services der Fachmodule prüfen
 > beim Lesen meist nur die Anmeldung, eingeschränkte Anmeldungen hält also der Anbieter fern."
 
 **Das heutige Modell ist ein Zugang je Rolle, kein Filter je Datensatz.** Die Kunden- und
@@ -678,7 +678,7 @@ keine Sonderlogik in der GraphQL-Schicht.
 ### 5.6 Schreibende Service-Methoden anpassen (entschieden 01.10.2026)
 
 Die Services werden, wo nötig, so angepasst, dass ihre Berechtigung beim Schreiben **selbst** passt
-und dass sie die **id** des angelegten Objekts zurückgeben. Maßstab ist die Regel aus AGENTS.md für
+und dass sie die **id** des angelegten Objekts zurückgeben. Maßstab ist die Regel aus `docs/guides/backend-patterns.md` für
 die Service-Ebene: `@Authorized(requires…)` an der Methode **und** ein Laufzeit-Guard im Rumpf, der
 eine `AuthorizationException` wirft. Die Annotation allein genügt nicht: Sie greift nur, wenn der
 Aufruf durch den Proxy geht. Ein Aufruf aus derselben Klasse umgeht sie.
@@ -736,8 +736,8 @@ Annotation und Guard), wird nicht auf GraphQL gewartet: #1256.
 - Die GraphiQL-Oberfläche gibt es nur in `local` und `local-qa`. Sie bräuchte eine
   Browser-Sitzung, und die gibt es unter `/api` nicht (nächster Punkt). Zusätzlich wird das Schema
   als Datei veröffentlicht, wie die OpenAPI-Beschreibung unter `/api/doc`.
-- Kein Browser-Sitzungszugang. Für Endpunkte unter `/api` gilt AGENTS.md: Diese Pfade sind
-  zustandslose Ketten für Maschinen.
+- Kein Browser-Sitzungszugang. Für Endpunkte unter `/api` gilt `docs/guides/backend-patterns.md`:
+  Diese Pfade sind zustandslose Ketten für Maschinen.
 
 ### 6.2 Schutz vor teuren Abfragen
 

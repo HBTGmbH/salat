@@ -92,7 +92,7 @@ Die auslösende Aktion beschreibt ihn deklarativ am Formular oder an einem einze
 `data-confirm`, `data-confirm-title`, `data-confirm-text`, `data-confirm-detail`,
 `data-confirm-detail-secondary`, `data-confirm-detail-input`, `data-confirm-label`,
 `data-confirm-variant`. Strukturelle Wiederverwendung ist ein Fragment, kein `salat:`-Dialekt
-(→ AGENTS.md, Controller and View Guidelines). Der Handler steht zentral in `static/js/salat.js`;
+(→ [`docs/guides/ui.md`](../guides/ui.md), Controller and View Guidelines). Der Handler steht zentral in `static/js/salat.js`;
 kein Template bringt für eine Bestätigung eigenes JavaScript mit. B hätte das Muster verdoppelt
 statt es aufzulösen, C keinen der drei Mängel behoben.
 

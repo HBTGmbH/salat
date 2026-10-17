@@ -4,7 +4,8 @@ Kompakte Beschreibung der tatsächlich verwendeten UI-Muster in SALAT — als ge
 für ein Gespräch mit UX. Beschreibt **was ist**, nicht was sein sollte. Offene Punkte stehen
 gesammelt am Ende in [Diskussionspunkte für UX](#diskussionspunkte-für-ux).
 
-Verwandte Dokumente: [AGENTS.md](../AGENTS.md) (verbindliche Entwicklungsregeln),
+Verwandte Dokumente: [AGENTS.md](../AGENTS.md) (verbindliche Entwicklungsregeln, die UI-Regeln in
+[`guides/ui.md`](guides/ui.md)),
 [ADR 0002](adr/0002-thymeleaf-spring-mvc-als-ui-stack.md) (UI-Stack),
 [ADR 0004](adr/0004-salat-thymeleaf-dialect.md) / [0005](adr/0005-alle-fragmente-durch-salat-dialect-ersetzen.md) (Komponenten-Dialekt),
 [ADR 0010](adr/0010-deutsch-first-i18n.md) (Sprache).
@@ -398,7 +399,7 @@ Kanonischer Aufbau — Referenz: `customer/customer-list.html`, `order/sub-order
    `#{main.general.norecords.text}`.
 6. **Auto-Submit-Skript** am Seitenende: Änderung einer Checkbox löst `form.requestSubmit()` aus.
 
-**Filter-Umschalter** (dokumentiert in AGENTS.md): zwei unabhängige Booleans —
+**Filter-Umschalter** (dokumentiert in [`guides/ui.md`](guides/ui.md)): zwei unabhängige Booleans —
 `show` (abgelaufene/ungültige Datensätze einbeziehen) und `showHidden` (ausgeblendete einbeziehen),
 beide als `form-check form-switch`.
 
@@ -710,7 +711,7 @@ Alle `<select>` werden per [TomSelect](https://tom-select.github.io/) zu Suchfel
 zentral initialisiert in `salat.js`, auch nach HTMX-Swaps (`htmx:after:swap`).
 Klassenvertrag: `tomselect` = Einzelauswahl, `tomselect tomselect-multi` + `multiple` = Mehrfachauswahl.
 Optionen können über `data-subtext` eine zweite Zeile anzeigen (z. B. Vertragslaufzeit).
-Wie Personen, Verträge, Kunden, Aufträge und Unteraufträge darin heißen, legt AGENTS.md fest
+Wie Personen, Verträge, Kunden, Aufträge und Unteraufträge darin heißen, legt [`guides/ui.md`](guides/ui.md) fest
 („Bezeichnung von Stammdaten", #1266): überall gleich, aus einem View-Helper je Art.
 
 ### 5.4 Badges & Flags-Spalte
@@ -1496,7 +1497,7 @@ Der auffälligste Fall: **getippter Text landet in `.ts-control > input`, nicht 
 Aufgefangen war nur Letzteres, weshalb Text im Dunkelmodus während der Eingabe bei 1,54:1 lag und
 erst lesbar wurde, sobald die Auswahl stand und der Wert wieder in `.ts-control` gerendert wurde. Bei
 den Auswahlfeldern fällt es nicht auf, weil das `dropdown_input`-Plugin die Eingabe ins Dropdown
-verlegt — nur das freie Textfeld (→ [AGENTS.md, Freitextfeld mit Vorschlägen](../AGENTS.md)) tippt
+verlegt — nur das freie Textfeld (→ [`guides/ui.md`, Free text field with remote suggestions](guides/ui.md)) tippt
 direkt in `.ts-control > input`.
 
 | Element | hell vorher | hell nachher | dunkel vorher | dunkel nachher |
@@ -1918,7 +1919,7 @@ nicht ins Gespräch.
 ### A — Dokumentierte Regel ≠ Implementierung
 
 **W1. „Alle `<select>` nutzen TomSelect" trifft nicht zu.**
-AGENTS.md („TomSelect Dropdowns"): *„All `<select>` elements use TomSelect for search-as-you-type."*
+`guides/ui.md` („TomSelect Dropdowns"): *„All `<select>` elements use TomSelect for search-as-you-type."*
 Tatsächlich: 51 Selects mit `tomselect`-Klasse, **13 ohne** — `orderType` und `debithoursunit` (je in
 Auftrags-, Unterauftrags- und Mitarbeiterauftragsformular), `gender` und `status` (Mitarbeiter),
 `numberOfSerialDays` (Buchung), `invoiceview` und `suborderdescription` (Rechnung),
@@ -1955,24 +1956,24 @@ Tatsächlich arbeitet `CustomerController` mit Request-Parametern (`cFilter`, `c
 `UiState` (ADR-0014/0016), nicht mit `HttpSession`. Die Regel beschreibt den Legacy-Zustand.
 
 **W6. Der `salat:`-Dialekt kann mehr als dokumentiert.**
-AGENTS.md listet für `<salat:textInput>` nur `th:field`, `th:label`, `required`, `maxlength`,
+`guides/ui.md` listet für `<salat:textInput>` nur `th:field`, `th:label`, `required`, `maxlength`,
 `th:helpText`. Der `TextInputProcessor` unterstützt zusätzlich **`type`** und **`th:placeholder`** —
 und genau darüber werden im Budget-Modul Datums- und Zahlenfelder gebaut
-(`type="date"`, `type="number"`). Wer nur AGENTS.md liest, kennt diesen Weg nicht.
+(`type="date"`, `type="number"`). Wer nur `guides/ui.md` liest, kennt diesen Weg nicht.
 
 ### B — Widersprüche innerhalb der Dokumentation
 
-**W7. AGENTS.md gibt die überholte Fragment-Regel wieder.**
+**W7. `guides/ui.md` gibt die überholte Fragment-Regel wieder.**
 ADR-0005 (*Accepted*, supersedes ADR-0004) entscheidet: *„Alle Fragmente durch Salat-Dialect-Tags
 ersetzen, einschließlich `master-table` und weiterer struktureller Layout-Komponenten."*
-AGENTS.md Zeile 36 sagt dagegen: *„Thymeleaf fragments remain valid for structural/layout reuse
+`guides/ui.md` („Controller and View Guidelines") sagt dagegen: *„Thymeleaf fragments remain valid for structural/layout reuse
 (e.g. `master-table`, layout decorators)"* — das ist die von ADR-0005 ersetzte Position aus ADR-0004.
 
 **W8. AGENTS.md widerspricht sich zur Session-Nutzung.**
 Zeile 375 und 424 schreiben Session-Speicherung vor, Zeile 380 verbietet sie
 (*„No direct `HttpSession` access (→ ADR-0013)"*). Beide Regeln stehen im selben Dokument.
 
-**W9. AGENTS.md schreibt für Flags Bootstrap Icons fest, sonst gilt Tabler.**
+**W9. `guides/backend-patterns.md` schreibt für Flags Bootstrap Icons fest, sonst gilt Tabler.**
 Der Abschnitt „Flags Column Pattern" nennt ausdrücklich `bi-cash-stack`, `bi-bookmark-star-fill`,
 `bi-chat-square-text`, `bi-tag-fill`, `bi-mortarboard` — während Navigation, Buttons und
 Formularaktionen durchgängig Tabler-Icons (`ti ti-*`) verwenden. Der Doppel-Icon-Satz ist damit

@@ -257,7 +257,7 @@ public class FixedPriceCalculationService {
 
     /**
      * The suborders a line of the plan's calculation may name: the plan's scope, hidden ones left out
-     * unless the line already names one (→ AGENTS.md, „The hide Flag").
+     * unless the line already names one (→ docs/guides/domain-rules.md, „The hide Flag").
      */
     public List<SuborderReadModel> getCalculableSuborders(OrderBudget plan, Long keepSuborderId) {
         budgetAuthorization.checkAuthorized(plan);

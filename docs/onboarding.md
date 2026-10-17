@@ -55,9 +55,9 @@ Widersprüche zwischen Dokumentation und Code werden als Issue erfasst.
 
 | Konzept | Kurz | Nachschlagen |
 |---|---|---|
-| **Fachliche Domäne** | Zeiterfassung: Mitarbeitende buchen Zeit auf Unteraufträge von Kundenaufträgen; darauf setzen Abrechnung, Auswertung und Budgetcontrolling auf | `AGENTS.md`, Abschnitt Entity Classification |
+| **Fachliche Domäne** | Zeiterfassung: Mitarbeitende buchen Zeit auf Unteraufträge von Kundenaufträgen; darauf setzen Abrechnung, Auswertung und Budgetcontrolling auf | [`guides/domain-rules.md`](guides/domain-rules.md), Abschnitt Entity Classification |
 | **Stammdaten / Bewegungsdaten** | Stammdaten werden nicht gelöscht, sondern über `hide` oder Gültigkeit ausgeblendet | [ADR-0011](adr/0011-stammdaten-vs-bewegungsdaten.md) |
-| **Rollen** | `USER`, `RESTRICTED`, `BACKOFFICE`, `PEOPLE_LEAD`, `MANAGER`, `ADMIN`, abgeleitet aus `SalatUser.status` | `AGENTS.md`, Abschnitt Security Layers |
+| **Rollen** | `USER`, `RESTRICTED`, `BACKOFFICE`, `PEOPLE_LEAD`, `MANAGER`, `ADMIN`, abgeleitet aus `SalatUser.status` | [`guides/backend-patterns.md`](guides/backend-patterns.md), Abschnitt Security Layers |
 | **Rechte** | Zwei Durchsetzungsebenen: Controller und Service. Ein ausgeblendeter Menüpunkt ist keine Autorisierung | [ADR-0006](adr/0006-rollenbasierte-autorisierung.md) |
 | **Architektur** | Modularer Monolith, ein Modul je fachlicher Fähigkeit, keine Zyklen | [ADR-0001](adr/0001-modular-monolith.md), `ArchitectureTest` |
 | **Module** | Modultabelle und Schichtkonvention je Modul | `AGENTS.md`, Abschnitt Module Overview |
@@ -65,9 +65,9 @@ Widersprüche zwischen Dokumentation und Code werden als Issue erfasst.
 | **Entwicklungsprozess** | Branch je Issue, PR mit `Closes #NNN`, Issue-Type per GraphQL | `AGENTS.md`, Abschnitt GitHub Workflow |
 | **Definition of Ready** | `main` aktuell, dedizierter Branch | `AGENTS.md` |
 | **Definition of Done** | Vollständige Checkliste: Build, Tests, Zyklen, Security, i18n, Liquibase, ADR, PR | `AGENTS.md` |
-| **Zusammenarbeit mit der KI** | `AGENTS.md` ist der Vertrag für Menschen und Agenten; Verantwortung bleibt beim Mergenden | `AGENTS.md`, Abschnitt Agent usage policy; `CLAUDE.md` |
+| **Zusammenarbeit mit der KI** | `AGENTS.md` mit den Leitfäden unter `docs/guides/` ist der Vertrag für Menschen und Agenten; Verantwortung bleibt beim Mergenden | `AGENTS.md`, Abschnitt Agent usage policy; `CLAUDE.md` |
 | **Issues** | GitHub, Issue-Type verpflichtend, größere Vorhaben als Epic mit Sub-Issues | Beispiele: #767, #907 |
-| **Dokumentation** | `AGENTS.md` sagt *was*, ADRs sagen *warum* | [docs/adr/](adr/README.md) |
+| **Dokumentation** | `AGENTS.md` und `docs/guides/` sagen *was*, ADRs sagen *warum* | [docs/adr/](adr/README.md) |
 | **UI Style Guide** | Tabler auf Bootstrap 5, Listenansicht, Formularaufbau, Buttonfarben, HTMX-Muster | [docs/ui-style-guide.md](ui-style-guide.md) |
 | **Lokaler Betrieb** | Start, Login über `?login-name=<sign>`, Profile, Performancemessung | `README.md` |
 
