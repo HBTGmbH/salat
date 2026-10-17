@@ -206,7 +206,7 @@ public class BudgetControllingService {
             var soSign = suborder.completeOrderSign();
             var invoiceable = suborder.invoiceable();
             scored.put(suborder.id(), bySuborder.getOrDefault(suborder.id(), List.<TimereportDTO>of()).stream()
-                .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDuration(), invoiceable,
+                .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDurationWithSurcharge(), invoiceable,
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
                     invoiceable
                         ? rateOf(r, customerorderId, soSign, planOfBooking.get(r.getId()), pricingLookup)
@@ -221,7 +221,7 @@ public class BudgetControllingService {
 
     private static BigDecimal rateOf(TimereportDTO report, long customerorderId, String soSign, Long planId,
                                      OrderPricingLookup lookup) {
-        return rateOf(report.getDuration(), report.getEmployeeId(), report.getReferenceday(), customerorderId, soSign,
+        return rateOf(report.getDurationWithSurcharge(), report.getEmployeeId(), report.getReferenceday(), customerorderId, soSign,
             planId, lookup);
     }
 
@@ -236,7 +236,7 @@ public class BudgetControllingService {
 
     private static BigDecimal costOf(TimereportDTO report, long customerorderId, long suborderId,
                                      EmployeeCostLookup lookup) {
-        var hours = minutesToHours(report.getDuration().toMinutes());
+        var hours = minutesToHours(report.getDurationWithSurcharge().toMinutes());
         return lookup.findEffectiveCost(report.getEmployeeId(), customerorderId, suborderId, report.getReferenceday())
             .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);

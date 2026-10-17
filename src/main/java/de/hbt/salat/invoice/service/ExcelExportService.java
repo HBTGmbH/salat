@@ -10,12 +10,14 @@ import static de.hbt.salat.common.GlobalConstants.MINUTES_PER_HOUR;
 import jakarta.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.hssf.usermodel.HSSFDataFormatter;
 import org.apache.poi.ss.usermodel.Cell;
@@ -36,9 +38,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
+import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.invoice.domain.InvoiceData;
 import de.hbt.salat.invoice.domain.InvoiceGroup;
 import de.hbt.salat.invoice.domain.InvoiceLine;
+import de.hbt.salat.invoice.domain.InvoiceSurcharge;
 import de.hbt.salat.invoice.domain.InvoiceTicketDisplay;
 import de.hbt.salat.invoice.service.InvoiceService.InvoiceOptions;
 
@@ -85,7 +89,10 @@ public class ExcelExportService {
         var layout = new Layout(displayOptions,
             displayOptions.getTicketDisplay() == InvoiceTicketDisplay.COLUMN && invoiceData.isTicketReferencesPresent(),
             displayOptions.isShowTimereports() && (!invoiceData.getGrouping().isByTicket() || displayOptions.isShowTicketLines()),
-            messages.getMessage("main.invoice.ticket.none", "ohne Ticket"));
+            messages.getMessage("main.invoice.ticket.none", "ohne Ticket"),
+            invoiceData.getSurcharges().stream().collect(Collectors.toMap(InvoiceSurcharge::getKey, this::surchargeLabel)),
+            messages.getMessage("main.invoice.surcharges.text", "Zeitzuschläge"),
+            messages.getMessage("main.invoice.overall.withsurcharges.text", "Gesamtsumme inkl. Zuschläge"));
         try(Workbook workbook = createInvoiceExcel(invoiceData, layout, headers, factory);
             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             workbook.write(out);
@@ -99,7 +106,17 @@ public class ExcelExportService {
      * @param ticketColumn whether the column „Ticket“ is there (#1390)
      * @param lines        whether the bookings are listed under their groups, or only the subtotals
      */
-    private record Layout(InvoiceOptions options, boolean ticketColumn, boolean lines, String noTicketLabel) {}
+    private record Layout(InvoiceOptions options, boolean ticketColumn, boolean lines, String noTicketLabel,
+                          Map<String, String> surchargeLabels, String surchargesLabel, String totalWithSurchargesLabel) {}
+
+    /** „Sonntag 100 % auf 4:00“ — the kind and rate as the booking form names them, and what they apply to. */
+    private String surchargeLabel(InvoiceSurcharge surcharge) {
+        var flag = messages.getMessage("main.surcharge.flag", new Object[] {
+            messages.getMessage(surcharge.kind().getLabel()),
+            messages.getMessage("main.surcharge.percent", new Object[] {surcharge.percent()})});
+        return messages.getMessage("main.invoice.surcharge.line",
+            new Object[] {flag, DurationUtils.format(surcharge.basis())});
+    }
 
     private static Workbook createInvoiceExcel(InvoiceData invoiceData, Layout layout, InvoiceColumnHeaders headers, InstanceFactory factory) {
         Workbook workbook = factory.createWorkbook();
@@ -111,6 +128,7 @@ public class ExcelExportService {
             rowIndex = addGroup(workbook, rowIndex, group, layout, factory);
         }
         addSumRow(workbook, rowIndex, invoiceData, layout);
+        addSurchargeRows(workbook, rowIndex + 1, invoiceData, layout, factory);
         setColumnWidths(workbook.getSheet(INVOICE_EXCEL_SHEET_NAME), factory);
         return workbook;
     }
@@ -343,8 +361,19 @@ public class ExcelExportService {
     }
 
     private static void addSumRow(Workbook workbook, int rowIndex, InvoiceData invoiceData, Layout layout) {
-        var displayOptions = layout.options();
         Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
+        int colIndex = durationColumn(layout);
+        Cell cell = row.createCell(colIndex, NUMERIC);
+        cell.setCellValue(((double)invoiceData.getTotalDurationVisible().toMinutes()) / MINUTES_PER_DAY);
+        cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
+        colIndex++;
+        cell = row.createCell(colIndex, NUMERIC);
+        cell.setCellValue(invoiceData.getTotalHoursVisible().doubleValue());
+    }
+
+    /** The column of the duration; the hours stand in the one after it. */
+    private static int durationColumn(Layout layout) {
+        var displayOptions = layout.options();
         int colIndex = 1;
         if (displayOptions.isShowTimereports()) {
             colIndex++;
@@ -361,13 +390,42 @@ public class ExcelExportService {
         if (displayOptions.isShowBudget()) {
             colIndex++;
         }
+        return colIndex;
+    }
 
+    /**
+     * The time surcharges as positions of their own below the total (#1470), and the total with them —
+     * nothing when there are none or when they are part of the hours.
+     */
+    private static void addSurchargeRows(Workbook workbook, int rowIndex, InvoiceData invoiceData, Layout layout,
+                                         InstanceFactory factory) {
+        var surcharges = invoiceData.getSurcharges();
+        if (surcharges.isEmpty()) {
+            return;
+        }
+        var sheet = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME);
+        sheet.createRow(rowIndex++).createCell(0, STRING).setCellValue(createRTS(layout.surchargesLabel(), factory));
+        for (var surcharge : surcharges) {
+            addLabelledDurationRow(workbook, rowIndex++, layout.surchargeLabels().get(surcharge.getKey()),
+                surcharge.credit(), surcharge.getHours().doubleValue(), "hourMinute", layout, factory);
+        }
+        // rounded like the total above it
+        addLabelledDurationRow(workbook, rowIndex, layout.totalWithSurchargesLabel(),
+            invoiceData.getTotalDurationVisibleWithSurcharges(), invoiceData.getTotalHoursVisibleWithSurcharges().doubleValue(),
+            "hourMinuteBold", layout, factory);
+    }
+
+    /** A label in the first column, the duration and the hours where the sum row has them. */
+    private static void addLabelledDurationRow(Workbook workbook, int rowIndex, String label, Duration duration,
+                                               double hours, String durationStyle, Layout layout, InstanceFactory factory) {
+        Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
+        row.createCell(0, STRING).setCellValue(createRTS(label, factory));
+        int colIndex = durationColumn(layout);
         Cell cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue(((double)invoiceData.getTotalDurationVisible().toMinutes()) / MINUTES_PER_DAY);
-        cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
-        colIndex++;
-        cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue(invoiceData.getTotalHoursVisible().doubleValue());
+        cell.setCellValue((double) duration.toMinutes() / MINUTES_PER_DAY);
+        cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get(durationStyle)));
+        cell = row.createCell(colIndex + 1, NUMERIC);
+        cell.setCellValue(hours);
     }
 
     private static void setColumnWidths(Sheet sheet, InstanceFactory factory) {

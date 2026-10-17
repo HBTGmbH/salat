@@ -132,7 +132,7 @@ public class TimereportBudgetBulkAssignmentService {
 
         static BudgetBookingCounts count(List<Selected> bucket) {
             return bucket.stream()
-                .map(selected -> selected.report().getDuration())
+                .map(selected -> selected.report().getDurationWithSurcharge())
                 .reduce(BudgetBookingCounts.NONE, BudgetBookingCounts::plus, BudgetBookingCounts::plus);
         }
     }

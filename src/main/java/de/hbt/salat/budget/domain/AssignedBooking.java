@@ -2,6 +2,8 @@ package de.hbt.salat.budget.domain;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import de.hbt.salat.dailyreport.domain.TimereportDTO;
+import de.hbt.salat.order.domain.OrderType;
 
 /**
  * One booking assigned to a budget plan, as the detail page lists it (#997).
@@ -29,11 +31,15 @@ public record AssignedBooking(
     Duration duration,
     String taskDescription) {
 
-    /** The shape the JPQL constructor expression builds — still without the complete order sign. */
+    /**
+     * The shape the JPQL constructor expression builds — still without the complete order sign. The
+     * duration includes the time surcharge credit (#1470), as everywhere in the budget.
+     */
     public AssignedBooking(long id, LocalDate day, long suborderId, long employeeId,
                            String employeeSign, String employeeName, Duration duration,
-                           String taskDescription) {
-        this(id, day, suborderId, null, employeeId, employeeSign, employeeName, duration, taskDescription);
+                           Duration surchargeCredit, OrderType orderType, String taskDescription) {
+        this(id, day, suborderId, null, employeeId, employeeSign, employeeName,
+            TimereportDTO.durationWithSurcharge(duration, surchargeCredit, orderType), taskDescription);
     }
 
     public AssignedBooking withSuborderSign(String suborderSign) {

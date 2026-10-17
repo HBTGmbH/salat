@@ -22,6 +22,17 @@ import java.time.LocalDate;
 public record AssignedEmployeeDay(long employeeId, String employeeSign, String employeeName,
                                   long suborderId, LocalDate day, Long count, Long minutes) {
 
+    /**
+     * The shape the query builds: the time surcharge credit is summed separately and counts as part of
+     * the hours (#1470).
+     */
+    public AssignedEmployeeDay(long employeeId, String employeeSign, String employeeName,
+                               long suborderId, LocalDate day, Long count, Long minutes, Long surchargeMinutes) {
+        this(employeeId, employeeSign, employeeName, suborderId, day, count,
+            minutes == null && surchargeMinutes == null ? null
+                : (minutes == null ? 0 : minutes) + (surchargeMinutes == null ? 0 : surchargeMinutes));
+    }
+
     public long bookings() {
         return count == null ? 0 : count;
     }

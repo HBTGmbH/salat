@@ -228,6 +228,17 @@
                      th:text="#{main.invoice.ticketdisplay.none}">keine Ticketangabe</label>
             </div>
           </div>
+          <div class="mt-3" th:if="${invoiceData.surchargesPresent}">
+            <!--/* The surcharges change the figures, not just the columns: switching rebuilds the preview and
+                 keeps what was deselected, like „Gruppierung anwenden“ (#1470) */-->
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="surchargesbox" role="switch"
+                     th:field="*{surchargesbox}" onchange="regroupNow()">
+              <label class="form-check-label" for="surchargesbox"
+                     th:text="#{main.invoice.surcharges.separate}">Zeitzuschläge gesondert aufführen</label>
+            </div>
+            <p class="text-secondary small mb-0" th:text="#{main.invoice.surcharges.separate.hint}"></p>
+          </div>
           <p class="text-muted small mt-2 mb-0" th:text="#{main.invoice.columntitles.hint}">
             Spaltenüberschriften können direkt in der Tabellenkopfzeile bearbeitet werden.
           </p>
@@ -447,6 +458,49 @@
                     (<span th:text="${#numbers.formatDecimal(invoiceData.totalHours, 1, 2)}"></span>)
                   </td>
                 </tr>
+                <!--/* the time surcharges as positions of their own (#1470); the script fills in the figures */-->
+                <th:block th:if="${invoiceData.surchargesSeparate}">
+                  <tr class="surcharge-block">
+                    <td class="col-selection"></td>
+                    <td class="col-suborder text-end fw-semibold" th:text="#{main.invoice.surcharges.text}">Zeitzuschläge</td>
+                    <td class="col-date"></td>
+                    <td class="col-employee"></td>
+                    <td class="col-description"></td>
+                    <td class="col-ticket"></td>
+                    <td class="col-budget"></td>
+                    <td class="col-duration"></td>
+                    <td class="col-hours"></td>
+                  </tr>
+                  <tr th:each="surcharge : ${invoiceData.surchargesLoaded}" class="surcharge-block"
+                      th:attr="data-surcharge-row=${surcharge.key}">
+                    <td class="col-selection"></td>
+                    <td class="col-suborder text-end">
+                      <span th:text="${@surchargeViewHelper.flag(surcharge.kind, surcharge.percent)}">Sonntag 100 %</span>
+                      <span th:text="#{main.invoice.surcharge.on}">auf</span>
+                      <span class="surcharge-basis">0:00</span>
+                    </td>
+                    <td class="col-date"></td>
+                    <td class="col-employee"></td>
+                    <td class="col-description"></td>
+                    <td class="col-ticket"></td>
+                    <td class="col-budget"></td>
+                    <td class="col-duration text-end surcharge-credit">+0:00</td>
+                    <td class="col-hours text-end surcharge-hours">+0,00</td>
+                  </tr>
+                  <tr class="surcharge-block fw-bold">
+                    <th class="col-selection"></th>
+                    <th class="col-suborder text-end" th:text="#{main.invoice.overall.withsurcharges.text}"></th>
+                    <th class="col-date"></th>
+                    <th class="col-employee"></th>
+                    <th class="col-description"></th>
+                    <th class="col-ticket"></th>
+                    <th class="col-budget"></th>
+                    <th class="col-duration text-end" id="footer-total-with-surcharges-duration"
+                        th:text="${@durationUtils.format(invoiceData.totalDurationVisibleWithSurcharges)}"></th>
+                    <th class="col-hours text-end" id="footer-total-with-surcharges-hours"
+                        th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisibleWithSurcharges, 1, 2)}"></th>
+                  </tr>
+                </th:block>
               </tfoot>
             </table>
           </div>
@@ -588,9 +642,55 @@
 
       document.getElementById('footer-total-duration').textContent = fmtDuration(grandMinutes);
       document.getElementById('footer-total-hours').textContent = fmtHours(grandMinutes);
+      recomputeSurcharges(grandMinutes);
 
       const totalMinutes = parseInt(document.querySelector('tfoot').dataset.totalMinutes || '0', 10);
       document.getElementById('footer-gesamt-row').classList.toggle('d-none', grandMinutes === totalMinutes);
+    }
+
+    /**
+     * The time surcharges as positions of their own (#1470), of the bookings still ticked. A booking under
+     * several tickets has a row in each, but its surcharge counts once.
+     */
+    function recomputeSurcharges(grandMinutes) {
+      const rows = [...document.querySelectorAll('tr[data-surcharge-row]')];
+      if (!rows.length) return;
+      const byKey = {};
+      const counted = new Set();
+      document.querySelectorAll('tr[data-surcharge-key]').forEach(row => {
+        const cb = row.querySelector('input[name="timereportIdArray"]');
+        if (!cb || !cb.checked || counted.has(row.dataset.timereport)) return;
+        counted.add(row.dataset.timereport);
+        const sum = byKey[row.dataset.surchargeKey] || (byKey[row.dataset.surchargeKey] = { basis: 0, credit: 0 });
+        sum.basis += parseInt(row.dataset.surchargeBasis || '0', 10);
+        sum.credit += parseInt(row.dataset.surchargeCredit || '0', 10);
+      });
+      let creditMinutes = 0;
+      rows.forEach(row => {
+        const sum = byKey[row.dataset.surchargeRow] || { basis: 0, credit: 0 };
+        creditMinutes += sum.credit;
+        row.querySelector('.surcharge-basis').textContent = fmtDuration(sum.basis);
+        row.querySelector('.surcharge-credit').textContent = '+' + fmtDuration(sum.credit);
+        row.querySelector('.surcharge-hours').textContent = '+' + fmtHours(sum.credit);
+        row.classList.toggle('d-none', sum.credit === 0);
+      });
+      document.querySelectorAll('tr.surcharge-block:not([data-surcharge-row])')
+        .forEach(row => row.classList.toggle('d-none', creditMinutes === 0));
+      document.getElementById('footer-total-with-surcharges-duration').textContent = fmtDuration(grandMinutes + creditMinutes);
+      document.getElementById('footer-total-with-surcharges-hours').textContent = fmtHours(grandMinutes + creditMinutes);
+    }
+
+    /** Rebuilds the preview on the server and keeps what was deselected — „Gruppierung anwenden“ without the button. */
+    function regroupNow() {
+      const form = document.getElementById('invoice-form');
+      const regroup = document.createElement('input');
+      regroup.type = 'hidden';
+      regroup.name = 'regroup';
+      regroup.value = 'true';
+      form.appendChild(regroup);
+      form.target = '_self';
+      form.action = '[[@{/invoice/generate}]]';
+      form.submit();
     }
 
     /** The suborder's checkbox, or its hidden field where the grouping shows no suborder rows. */

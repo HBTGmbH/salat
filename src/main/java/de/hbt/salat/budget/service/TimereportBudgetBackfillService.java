@@ -99,14 +99,14 @@ public class TimereportBudgetBackfillService {
             var resolution = resolutions.get(report.getId());
             var plan = resolution.unique().orElse(null);
             if (plan != null) {
-                assigned = assigned.plus(report.getDuration());
+                assigned = assigned.plus(report.getDurationWithSurcharge());
                 newAssignments.add(assignmentOf(report.getId(), plan));
             } else if (resolution.isAmbiguous()) {
                 // Never guessed here either: which plan is meant is a decision, and #911 is where it
                 // is made.
-                ambiguous = ambiguous.plus(report.getDuration());
+                ambiguous = ambiguous.plus(report.getDurationWithSurcharge());
             } else {
-                withoutPlan = withoutPlan.plus(report.getDuration());
+                withoutPlan = withoutPlan.plus(report.getDurationWithSurcharge());
             }
         }
         // One plain bulk save per order; no batching machinery until it is measurably needed.
@@ -124,7 +124,7 @@ public class TimereportBudgetBackfillService {
         var alreadyAssigned = BudgetBookingCounts.NONE;
         for (var report : reports) {
             if (assignedIds.contains(report.getId())) {
-                alreadyAssigned = alreadyAssigned.plus(report.getDuration());
+                alreadyAssigned = alreadyAssigned.plus(report.getDurationWithSurcharge());
             } else {
                 pending.add(report);
             }

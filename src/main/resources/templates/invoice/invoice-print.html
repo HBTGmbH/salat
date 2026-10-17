@@ -83,6 +83,25 @@
           <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisible, 1, 2)}"></td>
         </tr>
       </tbody>
+      <!--/* the time surcharges as positions of their own (#1470), unless they are part of the hours */-->
+      <tbody th:unless="${#lists.isEmpty(invoiceData.surcharges)}">
+        <tr class="invoice_suborder_row">
+          <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount + 2}" th:text="#{main.invoice.surcharges.text}">Zeitzuschläge</td>
+        </tr>
+        <tr th:each="surcharge : ${invoiceData.surcharges}" class="invoice_booking_row">
+          <td class="invoice_booking_row right" th:colspan="${dynamicColumnCount}" style="width: 100%"
+              th:text="#{main.invoice.surcharge.line(${@surchargeViewHelper.flag(surcharge.kind, surcharge.percent)}, ${@durationUtils.format(surcharge.basis)})}"></td>
+          <td class="invoice_booking_row nonproportional right" style="min-width: 2cm"
+              th:text="${@surchargeCreditViewHelper.credit(surcharge.credit)}"></td>
+          <td class="invoice_booking_row nonproportional right" style="min-width: 2cm"
+              th:text="'+' + ${#numbers.formatDecimal(surcharge.hours, 1, 2)}"></td>
+        </tr>
+        <tr class="invoice_totalsum_row">
+          <td class="invoice_totalsum_row right" style="width: 100%" th:colspan="${dynamicColumnCount}" th:text="#{main.invoice.overall.withsurcharges.text}"></td>
+          <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(invoiceData.totalDurationVisibleWithSurcharges)}"></td>
+          <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisibleWithSurcharges, 1, 2)}"></td>
+        </tr>
+      </tbody>
     </table>
   </div>
 </body>

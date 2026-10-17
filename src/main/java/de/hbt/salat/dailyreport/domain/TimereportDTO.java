@@ -95,6 +95,25 @@ public class TimereportDTO implements Serializable {
   }
 
   /**
+   * The booking as budget, controlling and an invoice that includes the surcharges count it (#1470): its
+   * duration plus the time surcharge credit — the credit as the overtime account counts it, so none on
+   * standby. The customer is charged the rate the person is credited with, and the controlling sees no
+   * figure of its own for it: the surcharge is part of the hours.
+   */
+  public Duration getDurationWithSurcharge() {
+    return durationWithSurcharge(duration, surchargeCredit, orderType);
+  }
+
+  /**
+   * {@link #getDurationWithSurcharge} for whoever reads the three columns without the DTO — a query of the
+   * budget module, say. {@code orderType} is the effective one, that of the suborder before that of the order.
+   */
+  public static Duration durationWithSurcharge(Duration duration, Duration surchargeCredit, OrderType orderType) {
+    var counted = surchargeCredit == null || orderType == OrderType.BEREITSCHAFT ? Duration.ZERO : surchargeCredit;
+    return duration.plus(counted);
+  }
+
+  /**
    * What the booking adds to the time account and holds against the target: its working time plus its time
    * surcharge credit (#1469), as the overtime account counts it. The booked hours stay {@link #getWorkingTime}.
    */

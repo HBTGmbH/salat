@@ -60,6 +60,9 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     /** With a grouping by ticket: the bookings under each ticket, or only its subtotal. */
     private boolean ticketlinesbox = true;
 
+    /** Time surcharges as positions of their own (#1470); off, each is part of its booking's hours. */
+    private boolean surchargesbox = true;
+
     /** The tickets that get a group of their own (#1390), meaningful only with {@link #ticketSelectionSubmitted}. */
     private List<String> ticketSelection = new ArrayList<>();
 

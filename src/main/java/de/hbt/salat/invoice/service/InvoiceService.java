@@ -108,7 +108,7 @@ public class InvoiceService {
           var timereports = timereportService.getTimereportsByDatesAndSuborderId(dateFirst, dateLast, suborder.getId()).stream()
               .filter(timereport -> assignedIds == null || assignedIds.contains(timereport.getId()))
               .sorted(BOOKING_ORDER)
-              .map(timereport -> new InvoiceTimereport(timereport))
+              .map(timereport -> new InvoiceTimereport(timereport, !options.isSeparateSurcharges()))
               .toList();
           return new InvoiceSuborder(suborder, timereports, options);
         })
@@ -280,6 +280,12 @@ public class InvoiceService {
     /** Whether a grouping by ticket lists the bookings under each ticket or only the subtotal. */
     @Builder.Default
     private final boolean showTicketLines = true;
+    /**
+     * Whether the time surcharges are positions of their own (#1470) — otherwise each one is part of
+     * the duration of its booking, and with it of every subtotal.
+     */
+    @Builder.Default
+    private final boolean separateSurcharges = true;
   }
 
 }

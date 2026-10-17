@@ -163,6 +163,7 @@ public class InvoiceController {
             .showBudget(form.isTargethoursbox())
             .ticketDisplay(form.getTicketdisplay())
             .showTicketLines(form.isTicketlinesbox())
+            .separateSurcharges(form.isSurchargesbox())
             .build();
         var bytes = excelExportService.exportToExcel(invoiceData, displayOptions, form);
         var fileName = createFileName(invoiceData);
@@ -270,6 +271,7 @@ public class InvoiceController {
                 ? Set.copyOf(form.getTicketSelection()) : null)
             .ticketDisplay(form.getTicketdisplay())
             .showTicketLines(form.isTicketlinesbox())
+            .separateSurcharges(form.isSurchargesbox())
             .build();
 
         return invoiceService.generateInvoiceData(
