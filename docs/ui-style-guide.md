@@ -356,7 +356,8 @@ People Lead.
 - **Formular:** Der Fokus steht im ersten Feld, das die Palette nicht belegt hat (Dauer, Unterauftrag,
   Kommentar), sind alle belegt, auf „Speichern" (`focus=` in der Adresse, `data-entry-focus`).
 - **Report (#1493):** Der Name hat eigene Leerzeichen und wird deshalb erst mit Tab oder Enter
-  Chip. Danach fragt die Palette die Parameter des Reports ab, in der Reihenfolge des SQL, das Jahr
+  Chip. Wer ohne `report` nur den Namen tippt, findet den Report als Objekt; Tab übernimmt ihn von
+  dort in den Befehl, Enter führt wie bisher das erste Ziel aus. Danach fragt die Palette die Parameter des Reports ab, in der Reihenfolge des SQL, das Jahr
   aber direkt hinter dem Monat. Gelesen wird nach dem Namen wie auf der Parameterseite: `monat` wie
   ein Monat der Palette, `jahr` vierstellig, `datum`, `von`, `bis` … wie ein Tag, alles andere als ein
   Wort. Schlüsselwörter wie `VORMONAT` oder `KW` gehen unverändert an den Server. Ein Monat ohne Jahr

@@ -1992,6 +1992,9 @@ function paletteObjectCommand(article) {
   return {
     type: 'object',
     key: article.dataset.kind + ':' + article.dataset.key,
+    objectKind: article.dataset.kind,
+    objectKey: article.dataset.key,
+    parameters: article.dataset.parameters,
     label: subtitle ? title + ' · ' + subtitle : title,
     title,
     kind: markers.concat(part('context') ? [part('context')] : []).join(' · '),
@@ -2618,6 +2621,20 @@ function paletteInvoke(dialog, verb, rest) {
   paletteInvocationUpdate(dialog);
 }
 
+/**
+ * Tab on a report the search found takes it into the command `report`, as if it had been chosen
+ * there (#1493): whoever looks for a report types its name, not the command first. Only where the
+ * sidebar offers the command.
+ */
+function paletteTakeReportObject(dialog, item) {
+  if (!item || item.type !== 'object' || item.objectKind !== 'REPORT') return false;
+  if (!paletteState.commands.some(command => command.type === 'verb' && command.key === 'report')) return false;
+  paletteInvoke(dialog, 'report', '');
+  paletteState.invocation.values.report = { value: item.objectKey, label: item.title, parameters: item.parameters };
+  paletteInvocationUpdate(dialog);
+  return true;
+}
+
 function paletteLeaveInvocation(dialog, text) {
   paletteState.invocation = null;
   dialog.classList.remove('command-palette-wide');
@@ -3005,6 +3022,11 @@ function paletteWire(dialog) {
         paletteState.heldKey = event.key;
         paletteTakeBack(dialog, null);
       }
+      return;
+    }
+    // a report the search found goes on as the command `report`, its values typed next (#1493)
+    if (event.key === 'Tab' && !event.shiftKey && paletteTakeReportObject(dialog, active)) {
+      event.preventDefault();
       return;
     }
     // Tab takes a command: the selected one, or else the first among the hits — "buch" ranks the page

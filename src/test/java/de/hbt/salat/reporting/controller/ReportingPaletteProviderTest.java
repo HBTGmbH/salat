@@ -164,6 +164,17 @@ class ReportingPaletteProviderTest {
     assertThat(hits.get(1).context()).isNull();
   }
 
+  /** The hit brings its parameters along like the suggestion of the command: Tab takes it into it (#1493). */
+  @Test
+  void the_hit_carries_the_parameters_in_the_order_the_command_asks_for_them() {
+    actingAsManager();
+
+    var hits = provider.search(QUERY);
+
+    assertThat(hits.get(0).parameters()).isEqualTo("monat:month,jahr:year");
+    assertThat(hits.get(1).parameters()).isEmpty();
+  }
+
   @Test
   void enter_runs_the_report_and_the_targets_are_labelled_as_such() {
     actingAsManager();

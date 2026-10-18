@@ -8,12 +8,14 @@
        nur, was dafuer gebraucht wird, und alle Texte aus den Nachrichtendateien.
 
        Die Ziele stehen als Links am Treffer, in der Reihenfolge, in der die Palette sie anbietet; der
-       erste ist der, den Enter oeffnet. */-->
+       erste ist der, den Enter oeffnet. Ein Report traegt seine Parameter, damit Tab ihn in den Befehl
+       report uebernimmt (#1493). */-->
 <div th:fragment="results" data-palette-results>
   <section th:each="group : ${groups}" data-palette-group th:data-kind="${group.kind}"
            th:with="groupKey=${'main.palette.group.' + #strings.toLowerCase(group.kind.name())}">
     <h3 data-part="heading" th:text="#{${groupKey}}">Aufträge</h3>
-    <article th:each="hit : ${group.hits}" data-palette-hit th:data-kind="${hit.kind}" th:data-key="${hit.key}">
+    <article th:each="hit : ${group.hits}" data-palette-hit th:data-kind="${hit.kind}" th:data-key="${hit.key}"
+             th:data-parameters="${hit.parameters}">
       <span data-part="title" th:text="${hit.title}">MUSTER-01</span>
       <span data-part="subtitle" th:if="${hit.subtitle != null}" th:text="${hit.subtitle}">Wartungsvertrag</span>
       <span data-part="context" th:if="${hit.context != null}"
