@@ -12,6 +12,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.MatchResult;
@@ -36,6 +37,26 @@ import de.hbt.salat.reporting.domain.ReportParameter;
 public final class ReportParameters {
 
   private static final Pattern PLACEHOLDER = Pattern.compile(":\\w+");
+
+  private static final Set<String> YEAR_NAMES = Set.of("jahr", "year");
+  private static final Set<String> MONTH_NAMES = Set.of("monat", "month");
+  private static final Set<String> DATE_NAMES = Set.of("datum", "date", "from", "to", "von", "bis");
+
+  /** Wie ein Parameter gelesen wird, nach seinem Namen: Jahr und Monat als Zahl, ein Datum als Datum. */
+  public enum Kind {
+    YEAR("number"), MONTH("number"), DATE("date"), STRING("string");
+
+    private final String type;
+
+    Kind(String type) {
+      this.type = type;
+    }
+
+    /** Der Typ, den der Wert als Präfix trägt ({@code number}, {@code date}, {@code string}). */
+    public String type() {
+      return type;
+    }
+  }
 
   private ReportParameters() {
   }
@@ -88,6 +109,21 @@ public final class ReportParameters {
         .map(qp -> qp.substring(1))
         .distinct()
         .toList();
+  }
+
+  /**
+   * Wie der Parameter dieses Namens gelesen wird. Die Parameterseite belegt danach Typ und Wert vor,
+   * die Befehlspalette liest danach, was getippt wird (#1493). Groß- und Kleinschreibung zählt nicht.
+   */
+  public static Kind kindOf(String name) {
+    var lower = name.toLowerCase(Locale.ROOT);
+    if (YEAR_NAMES.contains(lower)) {
+      return Kind.YEAR;
+    }
+    if (MONTH_NAMES.contains(lower)) {
+      return Kind.MONTH;
+    }
+    return DATE_NAMES.contains(lower) ? Kind.DATE : Kind.STRING;
   }
 
   /** Die Werte in der Form, die {@code NamedParameterJdbcTemplate} erwartet. */

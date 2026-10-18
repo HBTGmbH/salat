@@ -281,7 +281,19 @@ class PaletteControllerTest {
         .contains("MUSTER-01.03", "Wartung &amp; &lt;b&gt;Pflege&lt;/b&gt;", "am 01.08.2026 nicht buchbar");
     assertThat(articles.get(1))
         .contains("data-value=\"502\"")
-        .doesNotContain("data-disabled", "data-comment-required", "data-exact", "data-part=\"detail\"", "data-part=\"note\"");
+        .doesNotContain("data-disabled", "data-comment-required", "data-exact", "data-part=\"detail\"", "data-part=\"note\"",
+            "data-parameters");
+  }
+
+  /** A report brings its parameters along, for salat.js to read after it (#1493). */
+  @Test
+  void a_report_carries_the_parameters_it_expects() throws Exception {
+    when(paletteSearchService.suggest(PaletteCommand.REPORT, PaletteParameter.REPORT, "ums", null, null)).thenReturn(List.of(
+        new PaletteSuggestion("7", "Umsatz je Auftrag", null, null, false, false, false, "monat:month,jahr:year")));
+
+    var html = renderFragment(get("/palette/suggest").param("command", "REPORT").param("parameter", "REPORT").param("q", "ums"));
+
+    assertThat(html).contains("data-value=\"7\"", "data-parameters=\"monat:month,jahr:year\"", "Umsatz je Auftrag");
   }
 
   private static PaletteTarget target(String key, String href, int rank) {

@@ -14,9 +14,16 @@ package de.hbt.salat.common.palette;
  * @param commentRequired a suborder that demands a comment
  * @param exact           the query is the whole key of the value — a person's sign, an order's sign —
  *                        so that a single word resolves it even where it begins other keys as well
+ * @param parameters      the parameters the value brings along, read after it (#1493): those of a report,
+ *                        as {@code name:kind} separated by commas; {@code null} for any other value
  */
 public record PaletteSuggestion(String value, String label, String detail, PaletteText note,
-    boolean disabled, boolean commentRequired, boolean exact) {
+    boolean disabled, boolean commentRequired, boolean exact, String parameters) {
+
+  public PaletteSuggestion(String value, String label, String detail, PaletteText note,
+      boolean disabled, boolean commentRequired, boolean exact) {
+    this(value, label, detail, note, disabled, commentRequired, exact, null);
+  }
 
   public static PaletteSuggestion of(String value, String label, String detail, PaletteText note) {
     return new PaletteSuggestion(value, label, detail, note, false, false, false);

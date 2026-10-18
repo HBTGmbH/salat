@@ -15,5 +15,6 @@ public enum PaletteCommand {
   MATRIX,
   RELEASE,
   ACCEPT,
-  CONTROLLING
+  CONTROLLING,
+  REPORT
 }

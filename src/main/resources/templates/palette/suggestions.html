@@ -10,7 +10,8 @@
            th:data-value="${suggestion.value}"
            th:data-disabled="${suggestion.disabled} ? 'true' : null"
            th:data-comment-required="${suggestion.commentRequired} ? 'true' : null"
-           th:data-exact="${suggestion.exact} ? 'true' : null">
+           th:data-exact="${suggestion.exact} ? 'true' : null"
+           th:data-parameters="${suggestion.parameters}">
     <span data-part="label" th:text="${suggestion.label}">MUSTER-01.03</span>
     <span data-part="detail" th:if="${suggestion.detail != null}" th:text="${suggestion.detail}">Wartung</span>
     <span data-part="note" th:if="${suggestion.note != null}"
