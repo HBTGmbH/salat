@@ -329,7 +329,8 @@ People Lead.
 | `report` | Report, dann dessen Parameter (#1493) | mit allen Werten das Ergebnis, sonst die Parameterseite |
 
 - **Bedienung:** Der Befehl wird Chip, sobald sein Wort mit einem Leerzeichen dasteht oder Tab ihn
-  übernimmt. Rechts steht, welcher Parameter dran ist (`Tag?`). Tab übernimmt den gewählten
+  übernimmt — Tab auch dann, wenn erst der Anfang getippt ist und eine Seite darüber steht (`buch`
+  und Tab ist `buchen`, #1493). Rechts steht, welcher Parameter dran ist (`Tag?`). Tab übernimmt den gewählten
   Vorschlag, die Rücktaste im leeren Feld nimmt den letzten Chip zurück, zuletzt den Befehl; ein
   Klick auf einen Chip nimmt genau ihn zurück. Die Pfeile überspringen, was sich nicht wählen lässt.
   Ein optionaler Parameter ohne jeden Vorschlag — das Ticket eines Unterauftrags ohne Tickets — wird

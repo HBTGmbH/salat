@@ -3007,9 +3007,14 @@ function paletteWire(dialog) {
       }
       return;
     }
-    if (event.key === 'Tab' && !event.shiftKey && active && active.type === 'verb') {
+    // Tab takes a command: the selected one, or else the first among the hits — "buch" ranks the page
+    // "Neue Buchung" above "buchen", and Tab left the field for the close button (#1493). Not on an
+    // empty field, where the group of commands is only a list to choose from.
+    const command = active && active.type === 'verb' ? active
+      : input.value.trim() ? paletteState.items.find(item => item.type === 'verb') : null;
+    if (event.key === 'Tab' && !event.shiftKey && command) {
       event.preventDefault();
-      active.run();
+      command.run();
       return;
     }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
