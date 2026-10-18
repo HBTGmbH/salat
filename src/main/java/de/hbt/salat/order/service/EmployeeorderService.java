@@ -581,7 +581,6 @@ public class EmployeeorderService {
     createOrUpdate(employeeorder, newFrom, newUntil);
   }
 
-  // TODO improve method arguments to reflect all details of an employee order
   private void createOrUpdate(Employeeorder employeeorder, LocalDate from, LocalDate until) {
     employeeorder.setFromDate(from);
     employeeorder.setUntilDate(until);
