@@ -148,6 +148,28 @@ class CommandPaletteCommandsE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * Tab takes the command even where only the beginning of its word is typed and a page ranks above
+   * it — "buch" leads to "Neue Buchung" with Enter, but Tab promises to take, and it used to move the
+   * focus out of the field onto the close button instead (#1493).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void tab_takes_the_command_even_where_a_page_ranks_above_it(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      page.keyboard().press(SHORTCUT);
+      input(page).pressSequentially("buch");
+      assertThat(options(page).first()).not().hasAttribute("data-command-type", "verb");
+      assertThat(page.locator("#commandPaletteList [data-command-type=verb]")).hasCount(1);
+
+      page.keyboard().press("Tab");
+
+      assertThat(chips(page)).hasText(new String[] {"buchen"});
+      assertThat(param(page)).hasText("Tag?");
+      assertThat(input(page)).isFocused();
+    });
+  }
+
   /** In one go: every word that means exactly one value becomes a chip, the rest is the comment. */
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
