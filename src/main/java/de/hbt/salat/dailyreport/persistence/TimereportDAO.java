@@ -113,20 +113,6 @@ public class TimereportDAO {
     }
 
     /**
-     * Gets a list of all {@link TimereportDTO}s, that have no duration and are associated to the given ecId.
-     */
-    public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long employeecontractId, LocalDate releaseDate) {
-        if(releaseDate == null) {
-            releaseDate = LocalDate.of(2000, 1, 1); // HACK to mimic "take everything"
-        }
-        var timereports = timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(
-            employeecontractId,
-            releaseDate
-        );
-        return toDaoList(timereports.stream().collect(Collectors.toList()));
-    }
-
-    /**
      * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
      * 1) associated to the given employee contract id
      * 2) valid before and at the given date

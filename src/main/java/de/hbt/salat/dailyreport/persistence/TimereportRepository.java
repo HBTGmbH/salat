@@ -98,14 +98,6 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(long employeecontractId);
 
-  @Query("""
-      select t from Timereport t where t.deleted = false and t.employeeorder.employeecontract.id = :employeecontractId
-      and t.referenceday.refdate >= :releaseDate
-      and t.duration = :#{T(java.time.Duration).ZERO}
-      order by t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc
-      """)
-  List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);
-
   /**
    * The customer orders anything was booked on in the period (#779). Signs rather than orders,
    * because the caller uses them to decide what to evaluate, not to display them — and one query
