@@ -24,8 +24,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.common.palette.PaletteCommand;
 import de.hbt.salat.common.palette.PaletteHit;
+import de.hbt.salat.common.palette.PaletteParameter;
 import de.hbt.salat.common.palette.PaletteQuery;
+import de.hbt.salat.common.palette.PaletteSuggestion;
+import de.hbt.salat.common.palette.PaletteSuggestionRequest;
 import de.hbt.salat.common.palette.PaletteTarget;
 import de.hbt.salat.common.palette.PaletteText;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
@@ -205,4 +209,63 @@ class ReportingPaletteProviderTest {
     report.setOwner(salatUserWithId(ownerUserId));
     return report;
   }
+
+  /** The command {@code report} (#1493): the reports a person may execute, each with its parameters. */
+  @Test
+  void the_command_report_offers_each_report_with_the_parameters_it_expects() {
+    actingAsManager();
+
+    var suggestions = provider.suggest(reportRequest("umsatz"));
+
+    assertThat(suggestions).extracting(PaletteSuggestion::value).containsExactly("7", "8");
+    var withParameters = suggestions.getFirst();
+    assertThat(withParameters.label()).isEqualTo("Umsatz je Auftrag");
+    // the year right behind the month: a month brings its year along, and the year typed next replaces it
+    assertThat(withParameters.parameters()).isEqualTo("monat:month,jahr:year");
+    assertThat(withParameters.note()).isEqualTo(PaletteText.of("main.palette.context.report.parameters", "monat, jahr"));
+    assertThat(suggestions.get(1).parameters()).isEmpty();
+    assertThat(suggestions.get(1).note()).isNull();
+  }
+
+  @Test
+  void the_command_report_offers_nothing_a_person_may_not_execute() {
+    assertThat(provider.suggest(reportRequest("umsatz"))).isEmpty();
+
+    grant(EXECUTE, "8");
+    assertThat(provider.suggest(reportRequest("umsatz"))).extracting(PaletteSuggestion::value).containsExactly("8");
+  }
+
+  @Test
+  void the_report_whose_name_is_typed_whole_is_exact_and_first() {
+    actingAsManager();
+    when(reportDefinitionRepository.findPaletteCandidates("%umsatzübersicht%", null, null))
+        .thenReturn(List.of(WITH_PARAMETERS, WITHOUT_PARAMETERS));
+
+    var suggestions = provider.suggest(reportRequest("umsatzübersicht"));
+
+    assertThat(suggestions.getFirst().value()).isEqualTo("8");
+    assertThat(suggestions.getFirst().exact()).isTrue();
+  }
+
+  @Test
+  void other_commands_get_no_reports() {
+    actingAsManager();
+
+    var request = new PaletteSuggestionRequest(PaletteCommand.CONTROLLING, PaletteParameter.CUSTOMERORDER,
+        PaletteQuery.of("umsatz"), null, null);
+
+    assertThat(provider.suggest(request)).isEmpty();
+  }
+
+  @Test
+  void the_year_follows_the_month_and_everything_else_keeps_the_order_of_the_sql() {
+    assertThat(ReportingPaletteProvider.paletteOrder(List.of("jahr", "auftrag", "monat", "von")))
+        .containsExactly("auftrag", "monat", "jahr", "von");
+    assertThat(ReportingPaletteProvider.paletteOrder(List.of("jahr", "auftrag"))).containsExactly("jahr", "auftrag");
+  }
+
+  private static PaletteSuggestionRequest reportRequest(String text) {
+    return new PaletteSuggestionRequest(PaletteCommand.REPORT, PaletteParameter.REPORT, PaletteQuery.of(text), null, null);
+  }
+
 }

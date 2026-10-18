@@ -11,5 +11,7 @@ public enum PaletteParameter {
   MONTH,
   SUBORDER,
   PERSON,
-  CUSTOMERORDER
+  CUSTOMERORDER,
+  /** A report; the parameters it expects come with it ({@link PaletteSuggestion#parameters}, #1493). */
+  REPORT
 }

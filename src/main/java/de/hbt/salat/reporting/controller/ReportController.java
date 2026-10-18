@@ -1,6 +1,5 @@
 package de.hbt.salat.reporting.controller;
 
-import static java.util.Set.of;
 import static java.util.stream.Collectors.toSet;
 import static de.hbt.salat.reporting.controller.ReportingUiStateKeyContributor.REPORT_FILTER;
 
@@ -245,9 +244,17 @@ public class ReportController {
 
     private List<ReportParameter> parameters = new ArrayList<>();
 
+    /**
+     * The row the focus starts in: the first one the request left open. The given values come
+     * first, so it is the one behind them — after the command palette filled some, the next to
+     * type (#1493); without any, the first.
+     */
+    private int firstOpen;
+
     public void initParameters(List<ReportParameter> preset, java.util.Set<String> missingParameterNames) {
       var list = new java.util.ArrayList<ReportParameter>();
       if (preset != null) list.addAll(preset);
+      firstOpen = list.size();
 
       // add placeholders for missing parameter names not yet present
       var existingNames = list.stream()
@@ -271,26 +278,16 @@ public class ReportController {
     }
 
     private String getType(String parameterName) {
-      if(of("jahr", "monat", "year", "month").contains(parameterName.toLowerCase())) {
-        return "number";
-      }
-      if(of("datum", "date", "from", "to", "von", "bis").contains(parameterName.toLowerCase())) {
-        return "date";
-      }
-      return "string";
+      return ReportParameters.kindOf(parameterName).type();
     }
 
     private String getValue(String parameterName) {
-      if(of("jahr", "year").contains(parameterName.toLowerCase())) {
-        return Year.from(DateUtils.today()).toString();
-      }
-      if(of("monat", "month").contains(parameterName.toLowerCase())) {
-        return Integer.toString(YearMonth.from(DateUtils.today()).getMonthValue());
-      }
-      if(of("datum", "date", "from", "to", "von", "bis").contains(parameterName.toLowerCase())) {
-        return DateUtils.today().toString();
-      }
-      return "";
+      return switch (ReportParameters.kindOf(parameterName)) {
+        case YEAR -> Year.from(DateUtils.today()).toString();
+        case MONTH -> Integer.toString(YearMonth.from(DateUtils.today()).getMonthValue());
+        case DATE -> DateUtils.today().toString();
+        case STRING -> "";
+      };
     }
 
   }

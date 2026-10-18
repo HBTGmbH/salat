@@ -2110,6 +2110,10 @@ function paletteCaretAt(input, position) {
  * the booking form's own endpoint. A ticket is taken only by its whole number — any other word
  * begins the comment —, and without a comment of its own the form gets the ticket's number and
  * title, as a pick in the form writes them.
+ *
+ * The command `report` (#1493) has no fixed list behind the report: the report's suggestion brings
+ * its parameters along (paletteInvocationParams). A report runs only with values that were typed —
+ * Enter takes no suggestion for them —, and with any missing its parameter page opens instead.
  */
 
 // the parameters of each command in the order they are read; "?" marks one that may be left out
@@ -2120,8 +2124,11 @@ const PALETTE_VERBS = {
   release: ['month'],
   accept: ['person', 'month'],
   controlling: ['customerorder'],
+  report: ['report'],
 };
-const PALETTE_SERVER_PARAMS = ['suborder', 'person', 'customerorder'];
+const PALETTE_SERVER_PARAMS = ['suborder', 'person', 'customerorder', 'report'];
+// the parameters a report brings along (#1493) are named 'rp:' and their name in a command
+const PALETTE_REPORT_PARAM = 'rp:';
 const PALETTE_PENDING = 'pending';
 
 function paletteCapitalized(word) {
@@ -2132,7 +2139,28 @@ function paletteParams(verb) {
   return PALETTE_VERBS[verb].map(spec => ({ type: spec.replace('?', ''), optional: spec.endsWith('?') }));
 }
 
+function paletteIsReportParam(type) {
+  return type.startsWith(PALETTE_REPORT_PARAM);
+}
+
+/**
+ * The parameters of the command being entered: those of PALETTE_VERBS, and behind the report of
+ * `report` the ones it brings along, in the order the server sent them — name and kind, so that a
+ * month is read as a month (#1493). None of them is optional: a report runs with all or opens its
+ * parameter page.
+ */
+function paletteInvocationParams(invocation) {
+  const params = paletteParams(invocation.verb);
+  const report = paletteValue(invocation, 'report');
+  if (!report || !report.parameters) return params;
+  return params.concat(report.parameters.split(',').filter(Boolean).map(spec => {
+    const [name, kind] = spec.split(':');
+    return { type: PALETTE_REPORT_PARAM + name, name, kind, optional: false };
+  }));
+}
+
 function paletteParamName(dialog, type) {
+  if (paletteIsReportParam(type)) return type.slice(PALETTE_REPORT_PARAM.length);
   return dialog.dataset['param' + paletteCapitalized(type)] || type;
 }
 
@@ -2262,6 +2290,7 @@ function paletteSuggestionOf(article) {
     disabled: article.dataset.disabled === 'true',
     commentRequired: article.dataset.commentRequired === 'true',
     exact: article.dataset.exact === 'true',
+    parameters: article.dataset.parameters,
   };
 }
 
@@ -2336,11 +2365,11 @@ function paletteValue(invocation, type) {
 
 /** The first parameter without a value; the one the typed text is read for. */
 function paletteCurrentParam(invocation) {
-  return paletteParams(invocation.verb).find(param => !(param.type in invocation.values)) || null;
+  return paletteInvocationParams(invocation).find(param => !(param.type in invocation.values)) || null;
 }
 
 function paletteNextParam(invocation, param) {
-  const params = paletteParams(invocation.verb);
+  const params = paletteInvocationParams(invocation);
   return params.slice(params.findIndex(p => p.type === param.type) + 1)
     .find(p => !(p.type in invocation.values)) || null;
 }
@@ -2391,6 +2420,12 @@ function paletteResolveWord(dialog, invocation, param, word) {
     const exact = answer.find(value => value.exact);
     return exact ? paletteTaken(exact) : 'skip';
   }
+  if (paletteIsReportParam(param.type)) {
+    const values = paletteReportValues(dialog, invocation, param, word);
+    if (values.length === 1) return paletteTaken(values[0]);
+    // the year a month brought along: a word that is no year belongs to the next parameter
+    return param.kind === 'year' && paletteImpliedYear(invocation) ? 'skip' : 'open';
+  }
   if (PALETTE_SERVER_PARAMS.includes(param.type)) {
     const answer = paletteServerValues(dialog, invocation, param.type, word, false);
     if (!answer) return 'pending';
@@ -2404,7 +2439,62 @@ function paletteResolveWord(dialog, invocation, param, word) {
 
 function paletteTaken(value) {
   return { value: value.value, label: value.label, detail: value.detail, commentRequired: value.commentRequired,
-    comment: value.comment };
+    comment: value.comment, chip: value.chip, year: value.year, parameters: value.parameters };
+}
+
+/**
+ * Keywords of the report parameters (VORMONAT, KW, …) go to the server as they are typed: it knows
+ * them and resolves them for the day it runs, and it tells the case apart, as on the parameter page.
+ */
+function paletteIsReportKeyword(word) {
+  return /^[A-Z][A-Z_]*$/.test(word);
+}
+
+/** The year a month typed for the report brought along — `sep` is the most recent September (#1493). */
+function paletteImpliedYear(invocation) {
+  const month = paletteInvocationParams(invocation).find(param => param.kind === 'month');
+  const value = month && paletteValue(invocation, month.type);
+  return value && value.year ? value.year : null;
+}
+
+/** The type a report parameter's value carries in the address, as on the parameter page. */
+function paletteReportType(kind) {
+  return kind === 'date' ? 'date' : kind === 'month' || kind === 'year' ? 'number' : 'string';
+}
+
+/**
+ * The values for a parameter of the chosen report, read in the browser like those of the other
+ * commands: a month as a month, a day as a day, a year by its four digits, anything else as the word
+ * it is. Without a query, what Tab may take — Enter takes nothing for a report that was not typed.
+ */
+function paletteReportValues(dialog, invocation, param, query) {
+  const lang = document.documentElement.lang || 'de';
+  const today = paletteToday(dialog);
+  const value = (raw, shown, extra) => Object.assign({ value: raw, label: shown, chip: param.name + ' ' + shown }, extra);
+  if (query && param.kind !== 'string' && paletteIsReportKeyword(query)) return [value(query, query)];
+  if (param.kind === 'month') {
+    const monthName = new Intl.DateTimeFormat(lang, { month: 'long', timeZone: 'UTC' });
+    const months = query ? paletteParseMonth(query, today, paletteMonthVocabulary(dialog)).map(month => month.ym)
+      : [today.slice(0, 7), paletteShiftMonths(today.slice(0, 7), -1)];
+    return months.map(ym => {
+      const [year, month] = ym.split('-').map(Number);
+      return value(String(month), paletteFormatMonth(ym, lang), {
+        year: String(year), chip: param.name + ' ' + monthName.format(new Date(Date.UTC(year, month - 1, 1))),
+      });
+    });
+  }
+  if (param.kind === 'year') {
+    if (query) return /^\d{4}$/.test(query) ? [value(query, query)] : [];
+    const current = Number(today.slice(0, 4));
+    return [...new Set([paletteImpliedYear(invocation), String(current), String(current - 1)].filter(Boolean))]
+      .map(year => value(year, year));
+  }
+  if (param.kind === 'date') {
+    const days = query ? paletteParseDay(query, today, paletteVocabulary(dialog)).map(day => day.iso)
+      : [today, paletteShiftDays(today, -1)];
+    return days.map(iso => value(iso, paletteFormatDay(iso, lang), { chip: param.name + ' ' + paletteShortDay(iso, lang) }));
+  }
+  return query ? [value(query, query)] : [];
 }
 
 /** Reads the complete words of the field into chips, as far as they resolve. */
@@ -2415,7 +2505,8 @@ function paletteResolve(dialog) {
   let changed = false;
   for (;;) {
     const param = paletteCurrentParam(invocation);
-    if (!param || param.type === 'comment') break;
+    // a report's name has spaces of its own: it becomes a chip by Tab or Enter, not word by word
+    if (!param || param.type === 'comment' || param.type === 'report') break;
     const lead = text.replace(/^\s+/, '');
     if (param.type === 'day') {
       const phrase = paletteLastWorkdayPhrase(dialog, lead);
@@ -2452,6 +2543,7 @@ function paletteParamValues(dialog, invocation, param, query, partial) {
   const lang = document.documentElement.lang || 'de';
   const today = paletteToday(dialog);
   const data = dialog.dataset;
+  if (paletteIsReportParam(param.type)) return paletteReportValues(dialog, invocation, param, query);
   if (param.type === 'day') {
     const lastWorkday = paletteLastWorkday(dialog, invocation);
     const word = (label, iso) => ({ value: iso, label, note: paletteFormatDay(iso, lang), chip: paletteShortDay(iso, lang) });
@@ -2566,19 +2658,22 @@ function paletteInvocationUpdate(dialog) {
   const firstWord = /^(\S+)(\s|$)/.exec(lead);
   const complete = /\s/.test(lead);
   let query = '';
-  if (param && (param.type === 'comment' || (param.type === 'day' && paletteLastWorkdayPhrase(dialog, lead)))) {
+  if (param && (param.type === 'comment' || param.type === 'report'
+      || (param.type === 'day' && paletteLastWorkdayPhrase(dialog, lead)))) {
     query = lead.trim();
   } else if (firstWord) {
     query = firstWord[1];
   }
-  let values = param ? paletteParamValues(dialog, invocation, param, query, !complete) : [];
+  // a report's name is searched with all its words, and asked for once the typing pauses
+  const partial = !complete || (param && param.type === 'report');
+  let values = param ? paletteParamValues(dialog, invocation, param, query, partial) : [];
   // an optional parameter the input does not fit, or one with nothing to offer at all — the ticket
   // of a suborder without tickets —: it is left out, and the next one is offered
   if (param && param.optional && param.type !== 'comment' && values && !values.length) {
     const next = paletteNextParam(invocation, param);
     if (next) {
       param = next;
-      values = paletteParamValues(dialog, invocation, param, next.type === 'comment' ? lead.trim() : query, !complete);
+      values = paletteParamValues(dialog, invocation, param, next.type === 'comment' ? lead.trim() : query, partial);
     }
   }
   paletteState.valueParam = param;
@@ -2620,7 +2715,7 @@ function paletteRenderChips(dialog) {
     chips.append(button);
   };
   chip(invocation.label, '');
-  paletteParams(invocation.verb).forEach(param => {
+  paletteInvocationParams(invocation).forEach(param => {
     const value = paletteValue(invocation, param.type);
     // a person by name and sign, as the palette lists them — two of the same name stay apart
     const label = value && (value.chip
@@ -2722,6 +2817,26 @@ function paletteTarget(dialog, invocation) {
         title, parts: [person.label, monthLabel(chosen.value)], warnings: [],
       };
     }
+    case 'report': {
+      // with every parameter the report runs at once; with any missing, its parameter page opens with
+      // what there is — never with a value the palette chose itself (#1232)
+      const report = value('report');
+      if (!report) return page();
+      const params = new URLSearchParams({ id: report.value });
+      const parts = [report.label];
+      let complete = true;
+      paletteInvocationParams(invocation).filter(param => paletteIsReportParam(param.type)).forEach(param => {
+        const implied = param.kind === 'year' && paletteImpliedYear(invocation);
+        const given = value(param.type) || (implied ? { value: implied, chip: param.name + ' ' + implied } : null);
+        if (!given) {
+          complete = false;
+          return;
+        }
+        params.set(param.name, paletteReportType(param.kind) + ',' + given.value);
+        parts.push(given.chip || param.name + ' ' + given.label);
+      });
+      return { href: data.targetReport + '?' + params, title: complete ? title : data.previewReportparameters, parts, warnings: [] };
+    }
     case 'controlling': {
       const order = value('customerorder');
       if (!order) return page();
@@ -2763,7 +2878,7 @@ function paletteTake(dialog, value) {
 function paletteTakeBack(dialog, type) {
   const invocation = paletteState.invocation;
   if (!type) {
-    const set = paletteParams(invocation.verb).filter(param => paletteValue(invocation, param.type));
+    const set = paletteInvocationParams(invocation).filter(param => paletteValue(invocation, param.type));
     if (!set.length) {
       paletteLeaveInvocation(dialog, invocation.label);
       return;
@@ -2775,8 +2890,11 @@ function paletteTakeBack(dialog, type) {
   Object.keys(invocation.values).forEach(key => {
     if (invocation.values[key].skipped) delete invocation.values[key];
   });
-  // a ticket belongs to its suborder's branch and goes with it
+  // a ticket belongs to its suborder's branch and goes with it, a report's values with the report
   if (type === 'suborder') delete invocation.values.ticket;
+  if (type === 'report') {
+    Object.keys(invocation.values).filter(paletteIsReportParam).forEach(key => delete invocation.values[key]);
+  }
   paletteInvocationUpdate(dialog);
 }
 
@@ -2792,6 +2910,8 @@ function paletteEnterTakes() {
   // a ticket only by its whole number: a ticket whose title merely contains the word is no reason
   // to turn the comment into a ticket
   if (param.type === 'ticket') return active.value.exact ? active.value : null;
+  // a report runs only with what was typed for it, never with a value the palette chose (#1232)
+  if (paletteIsReportParam(param.type)) return typed ? active.value : null;
   return typed || !param.optional ? active.value : null;
 }
 

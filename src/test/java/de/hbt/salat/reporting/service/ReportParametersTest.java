@@ -201,6 +201,18 @@ class ReportParametersTest {
     assertThat(ReportParameters.names(null)).isEmpty();
   }
 
+  @Test
+  void theKindOfAParameterFollowsItsName() {
+    assertThat(ReportParameters.kindOf("jahr")).isEqualTo(ReportParameters.Kind.YEAR);
+    assertThat(ReportParameters.kindOf("Year")).isEqualTo(ReportParameters.Kind.YEAR);
+    assertThat(ReportParameters.kindOf("monat")).isEqualTo(ReportParameters.Kind.MONTH);
+    assertThat(ReportParameters.kindOf("von")).isEqualTo(ReportParameters.Kind.DATE);
+    assertThat(ReportParameters.kindOf("to")).isEqualTo(ReportParameters.Kind.DATE);
+    assertThat(ReportParameters.kindOf("auftrag")).isEqualTo(ReportParameters.Kind.STRING);
+    assertThat(ReportParameters.Kind.MONTH.type()).isEqualTo("number");
+    assertThat(ReportParameters.Kind.DATE.type()).isEqualTo("date");
+  }
+
   /** The parameter page lists what is missing as the command palette asks for it (#1493). */
   @Test
   void missingKeepsTheOrderOfTheSql() {

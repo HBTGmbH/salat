@@ -446,6 +446,7 @@
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
                   <a class="dropdown-item" th:href="@{/reporting/reports}" th:text="#{main.general.mainmenu.reporting.text}"
+                     data-palette-verb="report"
                      th:classappend="${subSection == 'reports'} ? 'active' : ''"
                      th:if="${@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable()}">
                     Reports
