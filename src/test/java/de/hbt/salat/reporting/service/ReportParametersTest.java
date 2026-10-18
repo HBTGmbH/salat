@@ -201,4 +201,13 @@ class ReportParametersTest {
     assertThat(ReportParameters.names(null)).isEmpty();
   }
 
+  /** The parameter page lists what is missing as the command palette asks for it (#1493). */
+  @Test
+  void missingKeepsTheOrderOfTheSql() {
+    var result = ReportParameters.missing(List.of(),
+        "select * from t where m = :monat and j = :jahr and a = :auftrag and m2 = :monat");
+
+    assertThat(result).containsExactly("monat", "jahr", "auftrag");
+  }
+
 }
