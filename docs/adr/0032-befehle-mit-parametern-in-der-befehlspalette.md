@@ -3,6 +3,18 @@
 Date: 2026-09-28
 Status: Accepted
 
+> **Nachtrag 2026-10-18 (#1493): Parameter je Objekt.** Der Befehl `report` hat keine feste
+> Parameterliste: hinter dem Report folgen dessen Parameter, die erst mit dem gewählten Report
+> feststehen. Der Vorschlag des Servers bringt sie mit (`PaletteSuggestion#parameters`, Name und Art
+> je Parameter, nach `ReportParameters#kindOf`); `salat.js` hängt sie an die Liste aus
+> `PALETTE_VERBS` an (`paletteInvocationParams`). Die Regel, welcher Name ein Monat, ein Jahr oder
+> ein Datum ist, steht damit nur in Java und gilt für Palette und Parameterseite gleich. Zwei
+> Abweichungen von den übrigen Befehlen: Enter übernimmt für einen Report-Parameter keinen
+> Vorschlag, der nicht getippt ist — ein Report läuft nie mit einem Wert, den die Palette gewählt
+> hat (#1232) —, und mit einem fehlenden Wert öffnet Enter die Parameterseite statt eines Formulars.
+> Ein Monat ohne Jahr bringt das Jahr mit, das danach getippte ersetzt es; dafür fragt die Palette
+> das Jahr direkt nach dem Monat ab.
+
 ## Context and Problem Statement
 
 Mit #1155 und #1157 springt die Befehlspalette zu Seiten und Objekten. Was danach einzugeben ist —

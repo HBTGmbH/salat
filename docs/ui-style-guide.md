@@ -313,7 +313,7 @@ Antwort unter die Treffer der Seite: **Aufträge, Unteraufträge, Auftraggeber, 
 
 #### Befehle mit Parametern (#1158)
 
-Sechs Befehle nehmen Parameter; die Entscheidung steht in
+Sieben Befehle nehmen Parameter; die Entscheidung steht in
 [ADR-0032](adr/0032-befehle-mit-parametern-in-der-befehlspalette.md). Angeboten wird ein Befehl nur,
 wenn die Sidebar den Eintrag seiner Seite zeigt (`data-palette-verb`) — `abnahme` also nur einer
 People Lead.
@@ -326,6 +326,7 @@ People Lead.
 | `freigabe` | Monat | die Prüfseite vor der Freigabe |
 | `abnahme` | Person, Monat | die Prüfseite vor der Abnahme |
 | `controlling` | Auftrag | das Controlling, ausgewertet |
+| `report` | Report, dann dessen Parameter (#1493) | mit allen Werten das Ergebnis, sonst die Parameterseite |
 
 - **Bedienung:** Der Befehl wird Chip, sobald sein Wort mit einem Leerzeichen dasteht oder Tab ihn
   übernimmt. Rechts steht, welcher Parameter dran ist (`Tag?`). Tab übernimmt den gewählten
@@ -353,6 +354,14 @@ People Lead.
   Tageswechsel nicht mehr buchbar ist (sein Chip ebenso), „Kommentar erforderlich".
 - **Formular:** Der Fokus steht im ersten Feld, das die Palette nicht belegt hat (Dauer, Unterauftrag,
   Kommentar), sind alle belegt, auf „Speichern" (`focus=` in der Adresse, `data-entry-focus`).
+- **Report (#1493):** Der Name hat eigene Leerzeichen und wird deshalb erst mit Tab oder Enter
+  Chip. Danach fragt die Palette die Parameter des Reports ab, in der Reihenfolge des SQL, das Jahr
+  aber direkt hinter dem Monat. Gelesen wird nach dem Namen wie auf der Parameterseite: `monat` wie
+  ein Monat der Palette, `jahr` vierstellig, `datum`, `von`, `bis` … wie ein Tag, alles andere als ein
+  Wort. Schlüsselwörter wie `VORMONAT` oder `KW` gehen unverändert an den Server. Ein Monat ohne Jahr
+  (`sep`) bringt das Jahr mit, ein danach getipptes ersetzt es. Enter übernimmt für einen
+  Report-Parameter nur, was getippt ist: mit allen Werten läuft der Report, mit einem fehlenden
+  öffnet die Parameterseite, der Fokus im ersten Feld, das die Palette offen ließ.
 - **Rangfolge:** Das ganze Wort eines Befehls steht vor allem; ein Befehl, der nur mit seinem Anfang
   passt, unter den Seiten und dem Tagessprung — `mat` und Enter führen weiter zur Matrixübersicht.
 
