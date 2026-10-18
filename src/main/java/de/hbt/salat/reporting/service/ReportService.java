@@ -32,6 +32,7 @@ import de.hbt.salat.common.event.SignsRenamedEvent;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.palette.PaletteQuery;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.ReportDefinition;
@@ -73,6 +74,21 @@ public class ReportService {
             Sort.by(Order.by(ReportDefinition_.NAME).ignoreCase())
         ).iterator()
     ).stream().filter(r -> reportAuthorization.isAuthorized(r, EXECUTE)).toList();
+  }
+
+  /**
+   * The reports the command palette considers for a query (#1232): found by name, only those the
+   * person may execute — the question the page of the palette's first target asks
+   * ({@link #getReportDefinition(long)}). The check comes before the limit: a limit first could cut
+   * away exactly the few reports an employee may run.
+   */
+  @Transactional(readOnly = true)
+  public List<ReportDefinition> getPaletteCandidates(PaletteQuery query) {
+    return reportDefinitionRepository.findPaletteCandidates(query.likeWord(0), query.likeWord(1), query.likeWord(2))
+        .stream()
+        .filter(r -> reportAuthorization.isAuthorized(r, EXECUTE))
+        .limit(PaletteQuery.CANDIDATE_LIMIT)
+        .toList();
   }
 
   public void deleteReportDefinition(long reportDefinitionId) {

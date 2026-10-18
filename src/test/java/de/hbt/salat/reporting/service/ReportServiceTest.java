@@ -28,10 +28,12 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.palette.PaletteQuery;
 import de.hbt.salat.common.web.UiState;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
+import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.domain.ReportParameter;
 import de.hbt.salat.reporting.persistence.OwnerReferences;
 import de.hbt.salat.testutils.WebContextTestExecutionListener;
@@ -292,6 +294,39 @@ public class ReportServiceTest {
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias_1"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias_2"));
+  }
+
+  /** The command palette finds a report by every word of its name, never by its SQL (#1232). */
+  @Test
+  public void the_palette_finds_a_report_by_the_words_of_its_name_not_by_its_sql() {
+    loginAsManager("test");
+    reportService.create("Umsatz je Auftrag", "select 1");
+    reportService.create("Umsatz Planung", "select 2");
+    reportService.create("Offene Freigaben", "select 'umsatz auftrag'");
+
+    assertThat(reportService.getPaletteCandidates(PaletteQuery.of("umsatz")))
+        .extracting(ReportDefinition::getName).containsExactly("Umsatz je Auftrag", "Umsatz Planung");
+    assertThat(reportService.getPaletteCandidates(PaletteQuery.of("auf ums")))
+        .extracting(ReportDefinition::getName).containsExactly("Umsatz je Auftrag");
+  }
+
+  @Test
+  public void the_palette_reads_a_percent_sign_in_the_query_as_itself() {
+    loginAsManager("test");
+    reportService.create("100% Auslastung", "select 1");
+    reportService.create("1000 Stunden", "select 2");
+
+    assertThat(reportService.getPaletteCandidates(PaletteQuery.of("100%")))
+        .extracting(ReportDefinition::getName).containsExactly("100% Auslastung");
+  }
+
+  @Test
+  public void the_palette_offers_no_report_the_person_may_not_execute() {
+    loginAsManager("test");
+    reportService.create("Umsatz je Auftrag", "select 1");
+
+    loginAsEmployee("other");
+    assertThat(reportService.getPaletteCandidates(PaletteQuery.of("umsatz"))).isEmpty();
   }
 
 }

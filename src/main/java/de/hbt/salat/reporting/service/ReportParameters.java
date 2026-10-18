@@ -64,13 +64,26 @@ public final class ReportParameters {
       return emptySet();
     }
     var parameterNames = parameters.stream().map(ReportParameter::getName).toList();
+    return names(query).stream()
+        .filter(not(parameterNames::contains))
+        .collect(toSet());
+  }
+
+  /**
+   * Die Namen der Parameter, die das SQL nennt, jeder einmal, in der Reihenfolge ihres ersten
+   * Vorkommens. Die Befehlspalette zeigt sie am Report (#1232).
+   */
+  public static List<String> names(String query) {
+    if (query == null) {
+      return emptyList();
+    }
     return PLACEHOLDER
         .matcher(query)
         .results()
         .map(MatchResult::group)
         .map(qp -> qp.substring(1))
-        .filter(not(parameterNames::contains))
-        .collect(toSet());
+        .distinct()
+        .toList();
   }
 
   /** Die Werte in der Form, die {@code NamedParameterJdbcTemplate} erwartet. */
