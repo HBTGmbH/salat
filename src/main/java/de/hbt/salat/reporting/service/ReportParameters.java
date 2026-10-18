@@ -3,13 +3,14 @@ package de.hbt.salat.reporting.service;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toCollection;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_PARAMETER_INVALID;
 import static de.hbt.salat.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +59,10 @@ public final class ReportParameters {
         .toList();
   }
 
-  /** Die Namen der Parameter, die das SQL nennt, für die aber kein Wert vorliegt. */
+  /**
+   * Die Namen der Parameter, die das SQL nennt, für die aber kein Wert vorliegt, in der Reihenfolge des
+   * SQL: die Parameterseite zeigt sie so, wie die Befehlspalette sie abfragt (#1493).
+   */
   public static Set<String> missing(List<ReportParameter> parameters, String query) {
     if (query == null) {
       return emptySet();
@@ -66,7 +70,7 @@ public final class ReportParameters {
     var parameterNames = parameters.stream().map(ReportParameter::getName).toList();
     return names(query).stream()
         .filter(not(parameterNames::contains))
-        .collect(toSet());
+        .collect(toCollection(LinkedHashSet::new));
   }
 
   /**
