@@ -8,5 +8,6 @@ public enum PaletteKind {
   CUSTOMERORDER,
   SUBORDER,
   CUSTOMER,
-  PERSON
+  PERSON,
+  REPORT
 }

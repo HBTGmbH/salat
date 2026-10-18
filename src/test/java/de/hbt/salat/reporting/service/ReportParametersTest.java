@@ -189,4 +189,16 @@ class ReportParametersTest {
         .hasMessageContaining("RP-0004");
   }
 
+  @Test
+  void namesListsEveryParameterOnceInTheOrderOfItsFirstUse() {
+    var result = ReportParameters.names("select * from t where monat = :monat and jahr = :jahr or :monat is null");
+
+    assertThat(result).containsExactly("monat", "jahr");
+  }
+
+  @Test
+  void aReportWithoutSqlNamesNoParameter() {
+    assertThat(ReportParameters.names(null)).isEmpty();
+  }
+
 }

@@ -38,7 +38,10 @@
                   <option value="number">number</option>
                 </select>
               </td>
-              <td><input class="form-control" type="text" th:field="*{parameters[__${i.index}__].value}" /></td>
+              <!--/* Der Fokus beginnt im ersten Wert, nicht im Namen: wer aus der Befehlspalette kommt,
+                     prüft den vorbelegten Wert, und Enter führt den Report aus (#1232). */-->
+              <td><input class="form-control" type="text" th:field="*{parameters[__${i.index}__].value}"
+                         th:attr="data-entry-focus=${i.first} ? 'true' : null" /></td>
             </tr>
             </tbody>
           </table>
