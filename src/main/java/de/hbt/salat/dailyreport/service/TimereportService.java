@@ -1285,13 +1285,6 @@ public class TimereportService {
     return timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontractId);
   }
 
-  /**
-   * Gets a list of all {@link TimereportDTO}s, that have no duration and are associated to the given ecId.
-   */
-  public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long employeecontractId, LocalDate releaseDate) {
-    return timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontractId, releaseDate);
-  }
-
   @Transactional(readOnly = true)
   public List<RecentBooking> getRecentBookings(long employeeContractId, long suborderId) {
     return timereportDAO.getRecentBookingsByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
