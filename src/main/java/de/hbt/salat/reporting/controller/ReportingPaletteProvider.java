@@ -72,11 +72,23 @@ public class ReportingPaletteProvider implements PaletteProvider {
 
   private PaletteSuggestion suggestion(PaletteQuery query, ReportDefinition report) {
     var parameters = paletteOrder(ReportParameters.names(report.getSql()));
-    var encoded = parameters.stream()
+    return new PaletteSuggestion(String.valueOf(report.getId()), report.getName(), null, parametersNote(parameters),
+        false, false, query.isKey(report.getName()), encoded(parameters));
+  }
+
+  /**
+   * The parameters as the browser reads them after the report, in the order it asks for them: the
+   * suggestion of the command brings them along, and so does the hit of the search, which Tab takes
+   * into the command (#1493).
+   */
+  private static String encodedParameters(ReportDefinition report) {
+    return encoded(paletteOrder(ReportParameters.names(report.getSql())));
+  }
+
+  private static String encoded(List<String> parameters) {
+    return parameters.stream()
         .map(name -> name + ":" + ReportParameters.kindOf(name).name().toLowerCase(Locale.ROOT))
         .collect(joining(","));
-    return new PaletteSuggestion(String.valueOf(report.getId()), report.getName(), null, parametersNote(parameters),
-        false, false, query.isKey(report.getName()), encoded);
   }
 
   /**
@@ -113,6 +125,6 @@ public class ReportingPaletteProvider implements PaletteProvider {
         PaletteLink.to("/reporting/reports").param("fReportFilter", report.getName()).build(), 2));
     var context = parametersNote(ReportParameters.names(report.getSql()));
     return new PaletteHit(REPORT, String.valueOf(report.getId()), report.getName(), null, context,
-        false, false, query.match(report.getName()), targets);
+        false, false, query.match(report.getName()), targets, encodedParameters(report));
   }
 }

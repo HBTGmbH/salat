@@ -17,15 +17,24 @@ import java.util.List;
  * @param hidden   hidden from selection lists (ADR-0012); ranked lower and marked
  * @param match    how well the query matches, higher is better ({@link PaletteQuery#match})
  * @param targets  where the hit leads; a hit without any target is not offered
+ * @param parameters the parameters a command reads after the hit, where Tab takes it into one (#1493): a
+ *                 report's, as {@code name:kind} separated by commas, as {@link PaletteSuggestion#parameters}
+ *                 has them; {@code null} for any other hit
  */
 public record PaletteHit(PaletteKind kind, String key, String title, String subtitle,
-    PaletteText context, boolean ended, boolean hidden, int match, List<PaletteTarget> targets) {
+    PaletteText context, boolean ended, boolean hidden, int match, List<PaletteTarget> targets,
+    String parameters) {
 
   public PaletteHit {
     targets = List.copyOf(targets);
   }
 
+  public PaletteHit(PaletteKind kind, String key, String title, String subtitle,
+      PaletteText context, boolean ended, boolean hidden, int match, List<PaletteTarget> targets) {
+    this(kind, key, title, subtitle, context, ended, hidden, match, targets, null);
+  }
+
   public PaletteHit withTargets(List<PaletteTarget> targets) {
-    return new PaletteHit(kind, key, title, subtitle, context, ended, hidden, match, targets);
+    return new PaletteHit(kind, key, title, subtitle, context, ended, hidden, match, targets, parameters);
   }
 }

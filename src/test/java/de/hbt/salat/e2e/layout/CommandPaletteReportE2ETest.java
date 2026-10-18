@@ -127,6 +127,40 @@ class CommandPaletteReportE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * Whoever looks for a report types its name, not the command first: Tab on the report the search
+   * found takes it into the command, and its values are typed next.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void tab_on_a_report_the_search_found_takes_it_into_the_command(E2EBrowser browser) {
+    var name = "Palette Umsatz gefunden " + browser;
+    var id = report(name, "select cast(:monat as int) as monat_wert, cast(:jahr as int) as jahr_wert");
+
+    runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/dailyreport/dashboard", page -> {
+      page.keyboard().press(SHORTCUT);
+      input(page).pressSequentially("umsatz gefunden");
+      var found = page.locator("#commandPaletteList [role=option][data-command-type=object]", new Page.LocatorOptions().setHasText(name));
+      assertThat(found).hasCount(1);
+      assertThat(found).hasAttribute("aria-selected", "true");
+
+      page.keyboard().press("Tab");
+
+      assertThat(chips(page)).hasText(new String[] {"report", name});
+      assertThat(param(page)).hasText("monat?");
+      assertThat(input(page)).isFocused();
+      assertThat(input(page)).hasValue("");
+
+      input(page).pressSequentially("sep");
+      page.keyboard().press("Enter");
+
+      page.waitForURL(Pattern.compile(".*/reporting/reports/execute\\?.*"));
+      assertTrue(page.url().contains("id=" + id), page.url());
+      assertTrue(page.url().contains("monat=number%2C9"), page.url());
+      assertTrue(page.url().contains("jahr=number%2C2025"), page.url());
+    });
+  }
+
   private long report(String name, String sql) {
     var report = new ReportDefinition();
     report.setName(name);

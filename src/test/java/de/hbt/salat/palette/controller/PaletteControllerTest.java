@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static de.hbt.salat.common.palette.PaletteKind.CUSTOMER;
 import static de.hbt.salat.common.palette.PaletteKind.CUSTOMERORDER;
 import static de.hbt.salat.common.palette.PaletteKind.PERSON;
+import static de.hbt.salat.common.palette.PaletteKind.REPORT;
 import static de.hbt.salat.common.palette.PaletteKind.SUBORDER;
 
 import java.time.LocalDate;
@@ -174,6 +175,18 @@ class PaletteControllerTest {
     assertThat(texts(order, "title")).containsExactly("MUSTER-02");
     assertThat(texts(order, "subtitle")).isEmpty();
     assertThat(texts(order, "context")).isEmpty();
+  }
+
+  /** A report carries its parameters, for Tab to take it into the command {@code report} (#1493). */
+  @Test
+  void a_report_hit_carries_its_parameters_and_other_hits_none() throws Exception {
+    var report = new PaletteHit(REPORT, "7", "Umsatz je Auftrag", null, null, false, false, 4,
+        List.of(target("main.palette.target.report.execute", "/reporting/reports/execute?id=7", PaletteTarget.OPEN)),
+        "monat:month,jahr:year");
+    var html = render(List.of(new PaletteGroup(CUSTOMERORDER, List.of(ENDED_ORDER)), new PaletteGroup(REPORT, List.of(report))));
+
+    assertThat(openingTag(hit(html, REPORT, "7"))).contains("data-parameters=\"monat:month,jahr:year\"");
+    assertThat(openingTag(hit(html, CUSTOMERORDER, "MUSTER-02"))).doesNotContain("data-parameters");
   }
 
   /** Ended and hidden objects are still found, ranked lower by the service and marked here (ADR-0012, ADR-0029). */
