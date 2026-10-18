@@ -260,8 +260,8 @@ Balken am linken Rand.
 #### Geschäftsobjekte (#1157)
 
 Ab zwei Zeichen fragt die Palette den Server, sobald das Tippen etwa 150 ms ruht, und hängt die
-Antwort unter die Treffer der Seite: **Aufträge, Unteraufträge, Auftraggeber, Personen**, je Gruppe
-höchstens fünf. Die Anbieter je Modul und ihre Regeln stehen in
+Antwort unter die Treffer der Seite: **Aufträge, Unteraufträge, Auftraggeber, Personen, Reports**
+(#1232), je Gruppe höchstens fünf. Die Anbieter je Modul und ihre Regeln stehen in
 [ADR-0031](adr/0031-objektsuche-der-befehlspalette-anbieter-je-modul.md).
 
 - **Die gewählte Zeile springt nicht.** Die Objekte kommen unter die Treffer der Seite; war dort
@@ -288,10 +288,18 @@ höchstens fünf. Die Anbieter je Modul und ihre Regeln stehen in
   | Unterauftrag | Unterauftrag öffnen, Buchen auf … |
   | Auftraggeber | Auftraggeber öffnen, Aufträge des Auftraggebers |
   | Person | Mitarbeiter, Vertrag, Einzelübersicht, Matrixübersicht |
+  | Report | Ausführen, Bearbeiten, Alle Reports mit diesem Namen |
 
   Angeboten wird nur, was sich öffnen lässt — je Rolle, je Ziel. „Buchen auf" steht nur da, wo der
   gewählte Vertrag heute buchen darf; Controlling und Budget nur für die Aufträge, deren Zahlen die
   Person sehen darf, das Budget nur, wo es Pläne gibt.
+- **Reports** findet die Palette nur über ihren Namen, nicht über ihr SQL: fast jedes Wort steht in
+  irgendeinem SQL. Rechts stehen die Parameter, die der Report erwartet (`Parameter: monat, jahr`),
+  damit vor dem Enter klar ist, ob gleich das Ergebnis kommt oder erst die Parameterseite. Die
+  Palette führt nie mit selbst gewählten Werten aus: Mit Parametern öffnet Enter die vorbelegte
+  Parameterseite, der Fokus steht dort im ersten Wert, und ein weiteres Enter führt aus. Ein Report
+  erscheint nur, wenn die Person ihn ausführen darf; „Bearbeiten" nur, wo die Bearbeitungsseite
+  öffnet — People Lead und Schreibrecht auf den Report.
 - **Zuletzt verwendet** merkt kein Objekt: ob es sich noch öffnen lässt, beantwortet nur der Server.
 - „Keine Treffer" kommt erst mit der Antwort, nicht schon, während sie aussteht.
 
