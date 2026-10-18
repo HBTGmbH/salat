@@ -254,7 +254,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     }
 
     /**
-     * FIXME move to service
      * Checks, if the employeecontract is accepted until the last day of the preceding month.
      *
      * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
@@ -276,28 +275,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      */
     public boolean getCurrentlyValid() {
         return !Validity.isInactive(getValidUntil());
-    }
-
-    /**
-     * FIXME move to service
-     * Checks, if the employeecontract is accepted until the last day of the preceding month.
-     *
-     * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
-     */
-    public boolean getAcceptanceWarningByDate(LocalDate date) {
-        boolean acceptanceWarning = false;
-        LocalDate acceptance = getReportAcceptanceDate();
-
-        if (acceptance == null) {
-            // new contract
-            acceptance = validFrom;
-        }
-
-        LocalDate endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(date, -1));
-        if (acceptance.isBefore(endOfPreviousMonth)) {
-            acceptanceWarning = true;
-        }
-        return acceptanceWarning;
     }
 
     public Duration getDailyWorkingTime() {
