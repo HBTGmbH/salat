@@ -49,7 +49,7 @@ class FixedPriceEvaluationTest {
 
   @Test
   void reports_gross_profit_only_with_costs() {
-    var total = new FixedPriceCalculationRow(null, null, null, null, Duration.ofHours(400), Duration.ofHours(160),
+    var total = new FixedPriceCalculationRow(null, false, null, null, null, Duration.ofHours(400), Duration.ofHours(160),
         new BigDecimal("24000.00"), new BigDecimal("9000.00"));
     var withCosts = new FixedPriceEvaluation(List.of(), total, new BigDecimal("48000"), BigDecimal.ZERO,
         40.0, ProgressStatus.ON_TRACK, true);
@@ -70,7 +70,7 @@ class FixedPriceEvaluationTest {
   /** Without a progress there is nothing to project the cost from (#1435). */
   @Test
   void has_no_expected_gross_profit_without_progress() {
-    var total = new FixedPriceCalculationRow(null, null, null, null, Duration.ofHours(400), Duration.ofHours(160),
+    var total = new FixedPriceCalculationRow(null, false, null, null, null, Duration.ofHours(400), Duration.ofHours(160),
         new BigDecimal("24000.00"), new BigDecimal("9000.00"));
 
     assertThat(new FixedPriceEvaluation(List.of(), total, new BigDecimal("48000"), BigDecimal.ZERO,
@@ -86,7 +86,7 @@ class FixedPriceEvaluationTest {
   }
 
   private static FixedPriceCalculationRow total(int calculatedHours, int bookedHours) {
-    return new FixedPriceCalculationRow(null, null, null, null, Duration.ofHours(calculatedHours),
+    return new FixedPriceCalculationRow(null, false, null, null, null, Duration.ofHours(calculatedHours),
         Duration.ofHours(bookedHours), null, null);
   }
 }

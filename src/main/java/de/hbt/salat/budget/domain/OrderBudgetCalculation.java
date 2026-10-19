@@ -22,8 +22,11 @@ import de.hbt.salat.order.domain.Suborder;
  * people of one cost category.
  *
  * <p>The line covers its suborder and everything below it, like a plan does (→ {@link BudgetScope}).
+ * Without a suborder it covers the whole plan, without a category it is for every person (#1496) — a
+ * single line with neither calculates the order as a whole, whoever works the hours and wherever.
  * Which bookings count against it is decided by {@link FixedPriceCalculation}; the combination of
- * suborder and category is unique per plan.
+ * suborder and category is unique per plan. The service checks that: the unique constraint lets
+ * {@code NULL} through more than once.
  */
 @Entity
 @Table(name = "order_budget_calculation",
@@ -39,15 +42,16 @@ public class OrderBudgetCalculation extends AuditedEntity {
     private OrderBudget orderBudget;
 
     /**
-     * The suborder the hours were calculated for. A reference to master data of another module
-     * (ADR-0036): read only, no cascade.
+     * The suborder the hours were calculated for, {@code null} for the whole plan. A reference to
+     * master data of another module (ADR-0036): read only, no cascade.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "suborder_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suborder_id")
     private Suborder suborder;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cost_category_id", nullable = false)
+    /** The cost category the hours were calculated for, {@code null} for every person. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cost_category_id")
     private CostCategory category;
 
     @Column(name = "calculated_minutes", nullable = false)

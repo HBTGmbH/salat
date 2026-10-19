@@ -283,6 +283,30 @@ class FixedPriceCalculationServiceTest {
     assertThatThrownBy(() -> service.evaluate(plan, DEC, false)).isInstanceOf(AuthorizationException.class);
   }
 
+  /**
+   * A line for the whole plan shows the sign of the plan's scope; a line for all categories has no
+   * calculated cost, and the calculated gross profit says so (#1496).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  void evaluates_a_line_for_the_whole_plan_and_all_categories() {
+    addLine(null, null, 100);
+    booked("co/02/A", SENIOR_PERSON, 30);
+    booked("co/02", PERSON_WITHOUT_COST, 6);
+
+    var evaluation = service.evaluate(plan, DEC, true).orElseThrow();
+
+    assertThat(evaluation.rows()).singleElement().satisfies(row -> {
+      assertThat(row.wholePlan()).isTrue();
+      assertThat(row.suborderSign()).isEqualTo("co/02");
+      assertThat(row.isAllCategories()).isTrue();
+      assertThat(row.bookedHours()).isEqualTo(Duration.ofHours(36));
+      assertThat(row.calculatedCostEuro()).isNull();
+    });
+    assertThat(evaluation.total().bookedCostEuro()).isEqualByComparingTo("1800.00");
+    assertThat(evaluation.hasLineForAllCategories()).isTrue();
+  }
+
   // --- maintaining the calculation -------------------------------------------------------------
 
   @Test
@@ -295,6 +319,43 @@ class FixedPriceCalculationServiceTest {
       assertThat(line.getCalculatedHours()).isEqualTo(Duration.ofMinutes(450));
     });
     verify(orderBudgetRepository).save(plan);
+  }
+
+  /** Neither a suborder nor a category: one line for the whole plan and every person (#1496). */
+  @Test
+  void adds_a_line_for_the_whole_plan_and_all_categories() {
+    service.storeLine(100L, new CalculationLineData(null, null, null, new BigDecimal("450")));
+
+    assertThat(plan.getCalculations()).singleElement().satisfies(line -> {
+      assertThat(line.getSuborder()).isNull();
+      assertThat(line.getCategory()).isNull();
+      assertThat(line.getCalculatedHours()).isEqualTo(Duration.ofHours(450));
+    });
+    verify(orderBudgetRepository).save(plan);
+  }
+
+  /** The unique constraint lets NULL through more than once, so the service checks the empty places too. */
+  @Test
+  void refuses_a_second_line_for_the_whole_plan_and_all_categories() {
+    addLine(null, null, 10);
+
+    assertRefused(new CalculationLineData(null, null, null, BigDecimal.ONE), ErrorCode.BU_CALCULATION_LINE_EXISTS);
+  }
+
+  @Test
+  void tells_a_line_for_the_whole_plan_from_one_on_a_suborder_and_a_category_from_all() {
+    addLine(null, "Senior", 10);
+    addLine("co/02", null, 10);
+
+    service.storeLine(100L, new CalculationLineData(null, tree.suborderId("co/02"), categoryId("Senior"),
+        BigDecimal.ONE));
+    service.storeLine(100L, new CalculationLineData(null, null, null, BigDecimal.ONE));
+
+    assertThat(plan.getCalculations()).hasSize(4);
+    assertThatThrownBy(() -> service.storeLine(100L,
+        new CalculationLineData(null, null, categoryId("Senior"), BigDecimal.ONE)))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_CALCULATION_LINE_EXISTS.getCode());
   }
 
   @Test
@@ -394,8 +455,8 @@ class FixedPriceCalculationServiceTest {
     var line = new OrderBudgetCalculation();
     setId(line, 200L + plan.getCalculations().size());
     line.setOrderBudget(plan);
-    line.setSuborder(tree.suborder(suborderSign));
-    line.setCategory(CostCategoryTestUtils.named(category));
+    line.setSuborder(suborderSign == null ? null : tree.suborder(suborderSign));
+    line.setCategory(category == null ? null : CostCategoryTestUtils.named(category));
     line.setCalculatedHours(Duration.ofHours(hours));
     plan.getCalculations().add(line);
     return line;

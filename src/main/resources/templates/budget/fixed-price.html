@@ -75,10 +75,14 @@
         <tr th:each="row : ${fp.rows()}">
           <td>
             <div class="text-muted small text-nowrap" th:text="${row.signFormatted()}">4711 / 01</div>
-            <div class="small text-nowrap" th:text="${row.suborderLabel()}">Konzept</div>
+            <!--/* Eine Zeile ohne Unterauftrag gilt für den ganzen Plan; die Kennung ist die seines Geltungsbereichs (#1496). */-->
+            <div class="small text-nowrap"
+                 th:text="${row.wholePlan()} ? #{main.budget.calculation.wholeplan} : ${row.suborderLabel()}">Konzept</div>
           </td>
           <td class="small">
-            <span th:unless="${row.isWithoutCategory()}" th:text="${row.categoryName()}">Senior</span>
+            <span th:if="${row.isAllCategories()}" th:title="#{main.budget.calculation.allcategories.help}"
+                  th:text="#{main.budget.calculation.allcategories}">alle Kostensätze</span>
+            <span th:unless="${row.isWithoutCategory() or row.isAllCategories()}" th:text="${row.categoryName()}">Senior</span>
             <span th:if="${row.isWithoutCategory()}" class="badge bg-warning-lt"
                   th:title="#{main.budget.calculation.withoutcategory.help}">
               <i class="icon ti ti-alert-triangle m-0 me-1"></i>
@@ -95,11 +99,13 @@
               th:text="${row.hasConsumedPercent()} ? (${#numbers.formatDecimal(row.consumedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:if="${fp.costsIncluded()}">
             <span th:if="${row.isCalculated() and row.hasCalculatedCost()}" th:text="#{main.budget.format.amount(${row.calculatedCostEuro()})}"></span>
-            <span th:if="${row.isCalculated() and not row.hasCalculatedCost()}" class="badge bg-warning-lt"
+            <!--/* Eine Zeile für alle Kostensätze hat keinen Satz, und das ist kein Mangel: Strich statt Warnung (#1496). */-->
+            <span th:if="${row.isCalculated() and not row.hasCalculatedCost() and not row.isAllCategories()}"
+                  class="badge bg-warning-lt"
                   th:title="#{main.budget.calculation.cost.missing}">
               <i class="icon ti ti-alert-triangle m-0"></i>
             </span>
-            <span th:unless="${row.isCalculated()}">—</span>
+            <span th:if="${not row.isCalculated() or row.isAllCategories()}">—</span>
           </td>
           <td class="text-end small" th:if="${fp.costsIncluded()}"
               th:text="${row.hasBookedCost()} ? #{main.budget.format.amount(${row.bookedCostEuro()})} : '—'"></td>
@@ -114,7 +120,10 @@
                     method="post" class="d-inline ms-1"
                     data-confirm
                     th:data-confirm-title="#{main.budget.calculation.delete.confirm.title}"
-                    th:data-confirm-detail="|${row.suborderSign()} · ${row.categoryName()}|"
+                    th:data-confirm-detail="${row.suborderSign()
+                        + (row.wholePlan() ? ' (' + #messages.msg('main.budget.calculation.wholeplan') + ')' : '')
+                        + ' · '
+                        + (row.isAllCategories() ? #messages.msg('main.budget.calculation.allcategories') : row.categoryName())}"
                     th:data-confirm-detail-secondary="|${row.calculatedHoursFormatted()} h|"
                     th:data-confirm-label="#{main.general.button.delete.text}"
                     data-confirm-variant="danger">
@@ -205,7 +214,8 @@
               th:text="#{main.fixedprice.grossprofit.calculated.formula(${#messages.msg('main.budget.format.amount', fp.fixedPriceEuro())}, ${#messages.msg('main.budget.format.amount', fp.total().calculatedCostEuro())})}">
           Festpreis − kalkulierte Kosten: 48.000,00 € − 24.000,00 €</span>
         <span class="text-muted small ms-2" th:unless="${fp.calculatedGrossProfitEuro() != null}"
-              th:text="#{main.fixedprice.grossprofit.calculated.formula.plain}">Festpreis − kalkulierte Kosten</span>
+              th:text="${fp.hasLineForAllCategories()} ? #{main.fixedprice.grossprofit.calculated.allcategories}
+                                                      : #{main.fixedprice.grossprofit.calculated.formula.plain}">Festpreis − kalkulierte Kosten</span>
       </dd>
       <!--/* Zwischen kalkuliert und bisher, wie die Stundensätze von der Kalkulation zum Ende (#1435). */-->
       <dt class="col-sm-4 col-lg-3" th:text="#{main.fixedprice.grossprofit.expected}">Rohertrag erwartet am Ende</dt>

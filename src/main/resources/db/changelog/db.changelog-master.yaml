@@ -7052,3 +7052,30 @@ databaseChangeLog:
                 ADD COLUMN `surcharge_kind` varchar(16) NULL,
                 ADD COLUMN `surcharge_percent` int NULL,
                 ADD COLUMN `surcharge_credit_minutes` int NOT NULL DEFAULT 0
+
+  - changeSet:
+      id: 189
+      author: kr
+      comment: Kalkulationszeile fuer den ganzen Plan und alle Kostensaetze (#1496)
+      # Eine Zeile ohne Unterauftrag gilt fuer den ganzen Plan, eine ohne Kostensatz fuer jede Person.
+      # Der eindeutige Schluessel ueber Plan, Unterauftrag und Kostensatz bleibt; er laesst NULL
+      # mehrfach zu, deshalb prueft der Service die leeren Stellen selbst.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: order_budget_calculation
+        - sqlCheck:
+            expectedResult: 1
+            sql: >-
+              SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'order_budget_calculation'
+                AND column_name = 'suborder_id' AND is_nullable = 'NO'
+      changes:
+        - dropNotNullConstraint:
+            tableName: order_budget_calculation
+            columnName: suborder_id
+            columnDataType: bigint
+        - dropNotNullConstraint:
+            tableName: order_budget_calculation
+            columnName: cost_category_id
+            columnDataType: bigint

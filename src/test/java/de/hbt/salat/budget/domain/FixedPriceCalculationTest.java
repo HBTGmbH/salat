@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
+import org.assertj.core.data.Offset;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,8 @@ import org.junit.jupiter.api.Test;
  * booking, and that no booked hour gets lost on the way.
  *
  * <p>The fixture: suborder 10 ({@code 4711/01}) and 20 ({@code 4711/02}) on the first level, 21
- * ({@code 4711/02/A}) below 20. Categories 1 (Senior) and 2 (Professional).
+ * ({@code 4711/02/A}) below 20 of the customer order {@code 4711}. Categories 1 (Senior) and 2
+ * (Professional).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class FixedPriceCalculationTest {
@@ -121,7 +123,7 @@ class FixedPriceCalculationTest {
 
   @Test
   void prices_calculated_and_booked_hours_only_where_costs_are_reported() {
-    var lines = List.of(new FixedPriceCalculation.Line(1, 10, "4711/01", "Konzept", SENIOR, "Senior",
+    var lines = List.of(new FixedPriceCalculation.Line(1, 10L, "4711/01", "Konzept", SENIOR, "Senior",
         Duration.ofHours(80), new BigDecimal("60.00")));
     var bookings = List.of(new FixedPriceCalculation.Booking(10, List.of(10L), "4711/01", "Konzept",
         Duration.ofHours(10), SENIOR, "Senior", new BigDecimal("600.00")));
@@ -139,9 +141,9 @@ class FixedPriceCalculationTest {
   @Test
   void leaves_the_calculated_cost_open_where_a_line_has_no_rate() {
     var lines = List.of(
-        new FixedPriceCalculation.Line(1, 10, "4711/01", "Konzept", SENIOR, "Senior", Duration.ofHours(80),
+        new FixedPriceCalculation.Line(1, 10L, "4711/01", "Konzept", SENIOR, "Senior", Duration.ofHours(80),
             new BigDecimal("60.00")),
-        new FixedPriceCalculation.Line(2, 20, "4711/02", "Umsetzung", PROFESSIONAL, "Professional",
+        new FixedPriceCalculation.Line(2, 20L, "4711/02", "Umsetzung", PROFESSIONAL, "Professional",
             Duration.ofHours(10), null));
 
     var result = FixedPriceCalculation.evaluate(lines, List.of(), true);
@@ -149,9 +151,151 @@ class FixedPriceCalculationTest {
     assertThat(result.total().calculatedCostEuro()).isNull();
   }
 
-  private static FixedPriceCalculation.Line line(long id, long suborderId, String sign, long categoryId,
+  // --- lines for the whole plan and for all categories (#1496) -----------------------------------
+
+  /**
+   * The calculation of an order as a whole: one line for the whole plan and every category takes
+   * every booking, whoever worked it and on whichever suborder, people without a cost category
+   * included. Nothing is left over as "nicht kalkuliert".
+   */
+  @Test
+  void counts_every_booking_against_a_line_for_the_whole_plan_and_all_categories() {
+    var lines = List.of(wholePlanLine(1, null, null, 450));
+
+    var result = FixedPriceCalculation.evaluate(lines, List.of(
+        booking(10, List.of(10L), "4711/01", 120, SENIOR, "Senior"),
+        booking(21, List.of(20L, 21L), "4711/02/A", 60, PROFESSIONAL, "Professional"),
+        booking(20, List.of(20L), "4711/02", 20, null, null)), false);
+
+    assertThat(result.rows()).singleElement().satisfies(row -> {
+      assertThat(row.lineId()).isEqualTo(1L);
+      assertThat(row.wholePlan()).isTrue();
+      assertThat(row.suborderSign()).isEqualTo("4711");
+      assertThat(row.isAllCategories()).isTrue();
+      assertThat(row.isWithoutCategory()).isFalse();
+      assertThat(row.bookedHours()).isEqualTo(Duration.ofHours(200));
+    });
+    assertThat(result.total().consumedPercent()).isCloseTo(44.4, Offset.offset(0.1));
+  }
+
+  /** Mixed: the line of the person's category comes first, the line for all categories takes the rest. */
+  @Test
+  void prefers_the_line_of_the_category_of_the_person_to_one_for_all_categories() {
+    var lines = List.of(
+        wholePlanLine(1, null, null, 400),
+        line(2, 10, "4711/01", SENIOR, "Senior", 50));
+
+    var result = FixedPriceCalculation.evaluate(lines, List.of(
+        booking(10, List.of(10L), "4711/01", 20, SENIOR, "Senior"),
+        booking(10, List.of(10L), "4711/01", 30, PROFESSIONAL, "Professional"),
+        booking(20, List.of(20L), "4711/02", 150, SENIOR, "Senior")), false);
+
+    assertThat(result.rows()).extracting(FixedPriceCalculationRow::lineId, FixedPriceCalculationRow::bookedHours)
+        .containsExactly(tuple(1L, Duration.ofHours(180)), tuple(2L, Duration.ofHours(20)));
+    assertThat(result.total().bookedHours()).isEqualTo(Duration.ofHours(200));
+  }
+
+  /**
+   * The person's category wins over depth: a line of the category for the whole plan takes the
+   * booking before a deeper line for all categories does.
+   */
+  @Test
+  void prefers_the_category_of_the_person_to_a_deeper_line_for_all_categories() {
+    var lines = List.of(
+        wholePlanLine(1, SENIOR, "Senior", 100),
+        line(2, 20, "4711/02", null, null, 50));
+
+    var result = FixedPriceCalculation.evaluate(lines, List.of(
+        booking(21, List.of(20L, 21L), "4711/02/A", 8, SENIOR, "Senior"),
+        booking(21, List.of(20L, 21L), "4711/02/A", 5, PROFESSIONAL, "Professional")), false);
+
+    assertThat(result.rows()).extracting(FixedPriceCalculationRow::lineId, FixedPriceCalculationRow::bookedHours)
+        .containsExactly(tuple(1L, Duration.ofHours(8)), tuple(2L, Duration.ofHours(5)));
+  }
+
+  /** Among the lines for all categories the deepest one takes the booking, the whole plan last. */
+  @Test
+  void takes_the_deepest_line_for_all_categories_with_the_whole_plan_above_every_suborder() {
+    var lines = List.of(
+        wholePlanLine(1, null, null, 100),
+        line(2, 20, "4711/02", null, null, 50));
+
+    var result = FixedPriceCalculation.evaluate(lines, List.of(
+        booking(21, List.of(20L, 21L), "4711/02/A", 5, PROFESSIONAL, "Professional"),
+        booking(10, List.of(10L), "4711/01", 7, PROFESSIONAL, "Professional")), false);
+
+    assertThat(result.rows()).extracting(FixedPriceCalculationRow::lineId, FixedPriceCalculationRow::bookedHours)
+        .containsExactly(tuple(1L, Duration.ofHours(7)), tuple(2L, Duration.ofHours(5)));
+  }
+
+  /** A line of a category for the whole plan covers every suborder; a deeper one of the same category wins. */
+  @Test
+  void counts_a_booking_against_a_line_of_its_category_for_the_whole_plan_unless_a_deeper_one_exists() {
+    var lines = List.of(
+        wholePlanLine(1, SENIOR, "Senior", 300),
+        line(2, 20, "4711/02", SENIOR, "Senior", 40));
+
+    var result = FixedPriceCalculation.evaluate(lines, List.of(
+        booking(10, List.of(10L), "4711/01", 12, SENIOR, "Senior"),
+        booking(21, List.of(20L, 21L), "4711/02/A", 9, SENIOR, "Senior")), false);
+
+    assertThat(result.rows()).extracting(FixedPriceCalculationRow::lineId, FixedPriceCalculationRow::bookedHours)
+        .containsExactly(tuple(1L, Duration.ofHours(12)), tuple(2L, Duration.ofHours(9)));
+  }
+
+  /**
+   * Bookings nobody calculated with hang on the deepest calculated place above them, and the whole
+   * plan counts as one: the bookings of another category collect in one line for the whole plan
+   * rather than in one line per suborder.
+   */
+  @Test
+  void reports_bookings_nobody_calculated_with_under_the_whole_plan() {
+    var lines = List.of(wholePlanLine(1, SENIOR, "Senior", 300));
+
+    var result = FixedPriceCalculation.evaluate(lines, List.of(
+        booking(10, List.of(10L), "4711/01", 150, SENIOR, "Senior"),
+        booking(10, List.of(10L), "4711/01", 30, PROFESSIONAL, "Professional"),
+        booking(21, List.of(20L, 21L), "4711/02/A", 20, PROFESSIONAL, "Professional")), false);
+
+    assertThat(result.rows()).hasSize(2);
+    assertThat(result.rows().get(1)).satisfies(row -> {
+      assertThat(row.isCalculated()).isFalse();
+      assertThat(row.wholePlan()).isTrue();
+      assertThat(row.suborderSign()).isEqualTo("4711");
+      assertThat(row.categoryName()).isEqualTo("Professional");
+      assertThat(row.bookedHours()).isEqualTo(Duration.ofHours(50));
+    });
+    // every hour counts in the consumption of the plan, the uncalculated ones included
+    assertThat(result.total().consumedPercent()).isCloseTo(66.7, Offset.offset(0.1));
+  }
+
+  /** A line without a category has no calculated cost, so the calculated total stays open. */
+  @Test
+  void leaves_the_calculated_cost_open_where_a_line_is_for_all_categories() {
+    var lines = List.of(
+        new FixedPriceCalculation.Line(1, null, "4711", null, null, null, Duration.ofHours(400), null),
+        new FixedPriceCalculation.Line(2, 10L, "4711/01", "Konzept", SENIOR, "Senior", Duration.ofHours(50),
+            new BigDecimal("80.00")));
+    var bookings = List.of(new FixedPriceCalculation.Booking(10, List.of(10L), "4711/01", "Konzept",
+        Duration.ofHours(20), SENIOR, "Senior", new BigDecimal("1600.00")));
+
+    var result = FixedPriceCalculation.evaluate(lines, bookings, true);
+
+    assertThat(result.rows()).extracting(FixedPriceCalculationRow::calculatedCostEuro)
+        .containsExactly(null, new BigDecimal("4000.00"));
+    assertThat(result.total().calculatedCostEuro()).isNull();
+    assertThat(result.total().bookedCostEuro()).isEqualByComparingTo("1600.00");
+  }
+
+  private static FixedPriceCalculation.Line line(long id, long suborderId, String sign, Long categoryId,
                                                  String categoryName, int hours) {
     return new FixedPriceCalculation.Line(id, suborderId, sign, sign, categoryId, categoryName,
+        Duration.ofHours(hours), null);
+  }
+
+  /** A line for the whole plan, which lives on the customer order {@code 4711}. */
+  private static FixedPriceCalculation.Line wholePlanLine(long id, Long categoryId, String categoryName, int hours) {
+    return new FixedPriceCalculation.Line(id, null, "4711", null, categoryId, categoryName,
         Duration.ofHours(hours), null);
   }
 
