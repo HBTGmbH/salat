@@ -234,8 +234,11 @@
         <input type="hidden" th:field="*{id}"/>
         <div class="col-md-5">
           <label class="form-label" for="calculationSuborderId" th:text="#{main.budget.calculation.field.suborder}">Unterauftrag</label>
-          <select class="form-select tomselect" id="calculationSuborderId" name="suborderId" required>
-            <option value="" th:text="#{main.budget.calculation.field.suborder.select}">--- Unterauftrag ---</option>
+          <!--/* Der leere Wert heißt „ganzer Plan“, nicht „nichts gewählt“ (#1496); data-allow-empty-option
+                 hält die Option in TomSelect wählbar. */-->
+          <select class="form-select tomselect" id="calculationSuborderId" name="suborderId"
+                  data-allow-empty-option="true">
+            <option value="" th:text="#{main.budget.calculation.wholeplan}">ganzer Plan</option>
             <option th:each="so : ${calculationSuborders}" th:value="${so.id()}"
                     th:selected="${calculationForm.suborderId != null and calculationForm.suborderId == so.id()}"
                     th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide())}"></option>
@@ -243,8 +246,9 @@
         </div>
         <div class="col-md-3">
           <label class="form-label" for="calculationCategoryId" th:text="#{main.budget.calculation.field.category}">Kostensatz</label>
-          <select class="form-select tomselect" id="calculationCategoryId" name="categoryId" required>
-            <option value="" th:text="#{main.budget.calculation.field.category.select}">--- Kostensatz ---</option>
+          <select class="form-select tomselect" id="calculationCategoryId" name="categoryId"
+                  data-allow-empty-option="true">
+            <option value="" th:text="#{main.budget.calculation.allcategories}">alle Kostensätze</option>
             <option th:each="c : ${calculationCategories}" th:value="${c.id}"
                     th:selected="${calculationForm.categoryId != null and calculationForm.categoryId == c.id}"
                     th:text="${c.name}"></option>

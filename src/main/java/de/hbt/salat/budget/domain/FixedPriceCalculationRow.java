@@ -11,14 +11,17 @@ import java.util.Objects;
  *
  * @param lineId             the calculation line, {@code null} for a line of bookings nobody
  *                           calculated with and for the total
- * @param categoryName       the cost category; {@code null} on the line of bookings without an
- *                           effective cost category and on the total
+ * @param wholePlan          whether the line is for the whole plan rather than for a suborder (#1496);
+ *                           {@code suborderSign} is then the sign of the plan's scope
+ * @param categoryName       the cost category; {@code null} on a calculated line for all categories,
+ *                           on the line of bookings without an effective cost category and on the total
  * @param calculatedCostEuro the calculated hours at the rate of the category; {@code null} where costs
  *                           are not reported or the category has no rate
  * @param bookedCostEuro     what the booked hours cost; {@code null} where costs are not reported
  */
 public record FixedPriceCalculationRow(
     Long lineId,
+    boolean wholePlan,
     String suborderSign,
     String suborderLabel,
     String categoryName,
@@ -44,7 +47,8 @@ public record FixedPriceCalculationRow(
             bookedCost = rows.stream().map(FixedPriceCalculationRow::bookedCostEuro).filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
-        return new FixedPriceCalculationRow(null, null, null, null, calculated, booked, calculatedCost, bookedCost);
+        return new FixedPriceCalculationRow(null, false, null, null, null, calculated, booked, calculatedCost,
+            bookedCost);
     }
 
     /** Whether the line stands for a line of the calculation rather than for bookings nobody calculated. */
@@ -52,9 +56,17 @@ public record FixedPriceCalculationRow(
         return lineId != null;
     }
 
-    /** Whether the bookings of this line have no effective cost category (#1404: „ohne Kostensatz"). */
+    /**
+     * Whether the bookings of this line, nobody calculated with, have no effective cost category (#1404:
+     * „ohne Kostensatz").
+     */
     public boolean isWithoutCategory() {
-        return categoryName == null;
+        return !isCalculated() && categoryName == null;
+    }
+
+    /** Whether the line of the calculation is for every person, whatever the category (#1496). */
+    public boolean isAllCategories() {
+        return isCalculated() && categoryName == null;
     }
 
     public boolean hasCalculatedHours() {

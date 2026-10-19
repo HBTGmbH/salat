@@ -139,6 +139,14 @@ public record FixedPriceEvaluation(
         return HourlyRate.of(perHour(fixedPriceEuro, projectedHours()));
     }
 
+    /**
+     * Whether a line of the calculation is for all categories (#1496). Such a line has no calculated
+     * cost, so the calculated gross profit has none either, and the view says why.
+     */
+    public boolean hasLineForAllCategories() {
+        return rows.stream().anyMatch(FixedPriceCalculationRow::isAllCategories);
+    }
+
     /** Fixed price less the calculated cost; {@code null} where costs are not reported or incomplete. */
     public BigDecimal calculatedGrossProfitEuro() {
         if (!costsIncluded || !hasFixedPrice() || total.calculatedCostEuro() == null) {

@@ -522,6 +522,24 @@ public class OrderBudgetServiceTest {
     assertThat(notices).isEmpty();
   }
 
+  /** A line for the whole plan has no suborder to leave the scope with: it goes along (#1496). */
+  @Test
+  public void keeps_a_calculation_line_for_the_whole_plan_when_the_scope_changes() {
+    givenExisting();
+    var stored = fixedPricePlan(null, "co/02/B");
+    var wholePlan = new OrderBudgetCalculation();
+    wholePlan.setOrderBudget(stored);
+    wholePlan.setCalculatedHours(Duration.ofHours(450));
+    stored.getCalculations().add(wholePlan);
+    givenStored(7L, stored);
+
+    var notices = service.update(7L, fixedPriceData("co/01"));
+
+    assertThat(stored.getCalculations()).containsExactly(wholePlan);
+    assertThat(notices).singleElement()
+        .satisfies(notice -> assertThat(notice.getArguments()).containsExactly("plan", 1));
+  }
+
   private static OrderBudget fixedPricePlan(String suborderSign, String... lineSuborders) {
     var plan = plan(suborderSign, JAN, DEC);
     plan.setName("plan");

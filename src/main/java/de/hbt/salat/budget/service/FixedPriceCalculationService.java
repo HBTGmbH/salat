@@ -186,23 +186,40 @@ public class FixedPriceCalculationService {
 
     /**
      * The calculated hours are priced at the rate the category has at the start of the plan — when
-     * the fixed price was calculated — and, where the category had none then, at today's.
+     * the fixed price was calculated — and, where the category had none then, at today's. A line for
+     * all categories has no rate (#1496); a line for the whole plan carries the sign of the plan's scope.
      */
     private static FixedPriceCalculation.Line lineOf(OrderBudget plan, OrderBudgetCalculation line,
                                                      Map<Long, SuborderReadModel> suborders,
                                                      EmployeeCostLookup costLookup, boolean includeCosts) {
-        var suborder = suborders.get(line.getSuborderId());
-        var sign = suborder != null ? suborder.completeOrderSign() : line.getSuborder().getCompleteOrderSign();
-        var label = suborder != null ? suborder.shortdescription() : line.getSuborder().getShortdescription();
+        String sign;
+        String label = null;
+        if (line.getSuborder() == null) {
+            sign = scopeSignOf(plan, suborders);
+        } else {
+            var suborder = suborders.get(line.getSuborderId());
+            sign = suborder != null ? suborder.completeOrderSign() : line.getSuborder().getCompleteOrderSign();
+            label = suborder != null ? suborder.shortdescription() : line.getSuborder().getShortdescription();
+        }
         BigDecimal costPerHour = null;
-        if (includeCosts) {
+        if (includeCosts && line.getCategory() != null) {
             costPerHour = costLookup.findCategoryCost(line.getCategoryId(), plan.getValidFrom())
                 .or(() -> costLookup.findCategoryCost(line.getCategoryId(), DateUtils.today()))
                 .map(cost -> new BigDecimal(cost.getCostCentsPerHour()).movePointLeft(2))
                 .orElse(null);
         }
         return new FixedPriceCalculation.Line(line.getId(), line.getSuborderId(), sign, label,
-            line.getCategoryId(), line.getCategory().getName(), line.getCalculatedHours(), costPerHour);
+            line.getCategoryId(), line.getCategory() != null ? line.getCategory().getName() : null,
+            line.getCalculatedHours(), costPerHour);
+    }
+
+    /** The complete sign of what the plan covers: its suborder, or its customer order when it is order-wide. */
+    private static String scopeSignOf(OrderBudget plan, Map<Long, SuborderReadModel> suborders) {
+        if (plan.isOrderWide()) {
+            return plan.getCustomerorder().getSign();
+        }
+        var suborder = suborders.get(plan.getSuborderId());
+        return suborder != null ? suborder.completeOrderSign() : plan.getSuborder().getCompleteOrderSign();
     }
 
     /** A booking with the cost category of its person on its day (→ {@link EmployeeCostLookup}). */
@@ -275,44 +292,49 @@ public class FixedPriceCalculationService {
     /**
      * Adds a line to the calculation of a fixed-price plan, or changes one ({@code data.id()}).
      * The suborder has to lie in the plan's scope, and suborder and category together name at most one
-     * line per plan.
+     * line per plan. Without a suborder the line is for the whole plan, without a category for every
+     * person (#1496).
      */
     @Authorized(requiresManager = true)
     @Transactional
     public void storeLine(long planId, CalculationLineData data) {
         var plan = fixedPricePlan(planId);
-        // Read as a value of the plan's order (ADR-0021): a suborder of another order is not found
-        // here, and it could not lie in the plan's scope anyway.
-        var suborder = data.suborderId() == null ? null
-            : suborderService.getAllSuborderReadModelsByCustomerorderId(plan.getCustomerorderId()).stream()
+        SuborderReadModel suborder = null;
+        if (data.suborderId() != null) {
+            // Read as a value of the plan's order (ADR-0021): a suborder of another order is not found
+            // here, and it could not lie in the plan's scope anyway.
+            suborder = suborderService.getAllSuborderReadModelsByCustomerorderId(plan.getCustomerorderId()).stream()
                 .filter(candidate -> candidate.id() == data.suborderId())
-                .findFirst().orElse(null);
-        if (suborder == null) {
-            throw new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId());
+                .findFirst()
+                .orElseThrow(() -> new InvalidDataException(ErrorCode.SO_NOT_FOUND, data.suborderId()));
+            if (!BudgetScope.covers(plan, OrderPosition.of(suborder))) {
+                throw new BusinessRuleException(ErrorCode.BU_CALCULATION_SUBORDER_NOT_IN_SCOPE,
+                    suborder.completeOrderSign(), plan.getName());
+            }
         }
-        if (!BudgetScope.covers(plan, OrderPosition.of(suborder))) {
-            throw new BusinessRuleException(ErrorCode.BU_CALCULATION_SUBORDER_NOT_IN_SCOPE,
-                suborder.completeOrderSign(), plan.getName());
-        }
-        var category = data.categoryId() == null ? null : categoryRepository.findById(data.categoryId()).orElse(null);
-        if (category == null) {
-            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN, data.categoryId());
+        CostCategory category = null;
+        if (data.categoryId() != null) {
+            category = categoryRepository.findById(data.categoryId())
+                .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN, data.categoryId()));
         }
         var minutes = data.hours() == null ? 0 : data.hours().multiply(BigDecimal.valueOf(60))
             .setScale(0, RoundingMode.HALF_UP).longValue();
         if (minutes <= 0) {
             throw new BusinessRuleException(ErrorCode.BU_CALCULATION_HOURS_REQUIRED);
         }
+        // Compared here, not left to the unique constraint: it lets NULL through more than once.
         var duplicate = plan.getCalculations().stream()
-            .anyMatch(line -> !line.getId().equals(data.id())
-                && line.getSuborderId() == suborder.id()
-                && line.getCategoryId().equals(category.getId()));
+            .anyMatch(line -> !Objects.equals(line.getId(), data.id())
+                && Objects.equals(line.getSuborderId(), data.suborderId())
+                && Objects.equals(line.getCategoryId(), data.categoryId()));
         if (duplicate) {
+            // The choice arguments pick „den ganzen Plan" and „alle Kostensätze" for the empty places.
             throw new BusinessRuleException(ErrorCode.BU_CALCULATION_LINE_EXISTS,
-                suborder.completeOrderSign(), category.getName());
+                suborder == null ? 0 : 1, suborder == null ? "" : suborder.completeOrderSign(),
+                category == null ? 0 : 1, category == null ? "" : category.getName());
         }
         var line = data.id() == null ? newLine(plan) : existingLine(plan, data.id());
-        line.setSuborder(masterDataReferences.suborder(suborder.id()));
+        line.setSuborder(suborder == null ? null : masterDataReferences.suborder(suborder.id()));
         line.setCategory(category);
         line.setCalculatedHours(Duration.ofMinutes(minutes));
         orderBudgetRepository.save(plan);

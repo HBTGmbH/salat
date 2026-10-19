@@ -214,7 +214,9 @@ public class OrderBudgetService {
         }
         var positions = orderPositions.ofSubordersOf(budget.getCustomerorderId());
         var before = lines.size();
-        lines.removeIf(line -> !BudgetScope.covers(budget, positions.get(line.getSuborderId())));
+        // A line for the whole plan (#1496) has no suborder to leave the scope with: it goes along.
+        lines.removeIf(line -> line.getSuborder() != null
+            && !BudgetScope.covers(budget, positions.get(line.getSuborderId())));
         var removed = before - lines.size();
         return removed == 0 ? List.of()
             : List.of(info(ErrorCode.BU_CALCULATION_REMOVED_OUT_OF_SCOPE, budget.getName(), removed));
