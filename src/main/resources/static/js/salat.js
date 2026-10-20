@@ -3463,18 +3463,27 @@ document.addEventListener('change', releaseTicketSuggestions);
 
 /* Neue Achievements (#1501): layout/base.html bindet den Dialog nur ein, wenn es etwas anzukuendigen
  * gibt, und hier geht er nach dem Laden auf. Das Schliessen meldet der Dialog selbst (hx-trigger auf
- * hidden.bs.modal). Das Carousel wird gleich angelegt: ohne data-bs-ride tut Bootstrap das erst beim
- * ersten Klick auf einen Pfeil, und bis dahin bliebe Wischen wirkungslos. Die Pfeiltasten blaettern,
- * wo der Fokus im Dialog auch steht: Bootstraps eigene Tastatursteuerung hoert nur auf das Carousel
- * selbst, der Fokus liegt aber auf dem Dialog. */
+ * hidden.bs.modal). Die Profilseite zeigt erreichte Medaillen im selben Dialog noch einmal
+ * (data-achievement-dialog="replay"); den oeffnet der Klick auf die Medaille, mit Feier und frisch gemischten
+ * Emojis bei jedem Mal. */
 document.addEventListener('DOMContentLoaded', function () {
-  const popup = document.querySelector('[data-achievement-popup]');
+  document.querySelectorAll('[data-achievement-dialog="replay"]').forEach(achievementDialog);
+  const popup = document.querySelector('[data-achievement-dialog="announce"]');
   if (!popup) return;
+  achievementDialog(popup);
+  tabler.bootstrap.Modal.getOrCreateInstance(popup).show();
+});
+
+/* Das Carousel wird gleich angelegt: ohne data-bs-ride tut Bootstrap das erst beim ersten Klick auf
+ * einen Pfeil, und bis dahin bliebe Wischen wirkungslos. Die Pfeiltasten blaettern, wo der Fokus im
+ * Dialog auch steht: Bootstraps eigene Tastatursteuerung hoert nur auf das Carousel selbst, der Fokus
+ * liegt aber auf dem Dialog. */
+function achievementDialog(popup) {
   const carousel = popup.querySelector('.carousel');
   const content = popup.querySelector('.modal-content');
-  popup.querySelectorAll('[data-achievement-emojis]').forEach(frame => {
+  popup.addEventListener('show.bs.modal', () => popup.querySelectorAll('[data-achievement-emojis]').forEach(frame => {
     frame.textContent = achievementPick(TITLE_EMOJIS, TITLE_EMOJIS_PER_SIDE).join('');
-  });
+  }));
   if (carousel) {
     const slides = tabler.bootstrap.Carousel.getOrCreateInstance(carousel);
     popup.addEventListener('keydown', event => {
@@ -3486,9 +3495,8 @@ document.addEventListener('DOMContentLoaded', function () {
     carousel.addEventListener('slid.bs.carousel', event => achievementCelebrate(content, event.relatedTarget));
   }
   popup.addEventListener('shown.bs.modal',
-    () => achievementCelebrate(content, popup.querySelector('.carousel-item.active')), { once: true });
-  tabler.bootstrap.Modal.getOrCreateInstance(popup).show();
-});
+    () => achievementCelebrate(content, popup.querySelector('.carousel-item.active')));
+}
 
 /* The celebration of a new achievement (#1501) grows with its tier: flying emojis for bronze and
  * silver, confetti for gold and platinum, a firework from diamond on. Drawn on a canvas laid over the popup, which

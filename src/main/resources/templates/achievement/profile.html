@@ -9,10 +9,11 @@
 <main layout:fragment="content">
   <!--/* Nur die eigenen Achievements (#837, #1501): keine Rangliste, kein fremdes Profil. Die erreichten
          Stufen stehen in der Reihenfolge, in der sie erreicht wurden, dahinter die naechste Stufe jedes
-         Achievements als gesperrte Medaille. Jede Medaille ist ein Knopf mit einem Popover (Muster aus
-         #1065, data-info-popover): wofuer es sie gibt, und bei einer gesperrten, was fehlt und wie man
-         sie bekommt. Die Zahl wird per th:with gebunden - ein Bean-Aufruf ist im Fragment-Parameter
-         nicht erlaubt. */-->
+         Achievements als gesperrte Medaille. Jede Medaille ist ein Knopf: eine erreichte oeffnet den
+         Dialog, mit dem sie angekuendigt wurde, samt Feier (achievement/popup, ohne Zitat); eine
+         gesperrte ein Popover (Muster aus #1065, data-info-popover) mit dem, was fehlt, und wie man sie
+         bekommt. Die Zahl wird per th:with gebunden - ein Bean-Aufruf ist im Fragment-Parameter nicht
+         erlaubt. */-->
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.achievement.title}">Achievements</h3>
@@ -21,24 +22,14 @@
       <ul class="list-unstyled d-flex flex-wrap gap-4 mb-0">
         <li th:each="item, stat : ${profile.reached()}" class="achievement-tile text-center"
             th:with="definition=${item.definition()},plate=${@achievementViewHelper.plate(item.level())},
-                     detail=${'achievement-reached-' + stat.index},
-                     rank=#{${item.definition().rankKey(item.level())}},group=#{${item.definition().groupKey()}},
-                     meaning=#{${item.definition().titleKey()}(${item.level()})}">
-          <button type="button" class="achievement-tile-button" th:data-info-popover="${'#' + detail}">
+                     rank=#{${item.definition().rankKey(item.level())}}">
+          <button type="button" class="achievement-tile-button" data-bs-toggle="modal"
+                  th:data-bs-target="${'#achievementReached' + stat.index}">
             <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${item.tier().fileName()}, ${plate}, true)}"></span>
             <span class="d-block fw-bold mt-2" th:text="${rank}">Urgestein</span>
             <span class="d-block text-secondary small"
                   th:text="${#temporals.format(item.achievedOn(), 'dd.MM.yyyy')}">01.01.2017</span>
           </button>
-          <div th:id="${detail}" hidden>
-            <div class="fw-bold" th:text="${rank}">Urgestein</div>
-            <div th:text="${rank == group} ? ${meaning} : |${group} · ${meaning}|">Loyalist · 10 Jahre bei HBT</div>
-            <div class="text-secondary"
-                 th:text="#{main.achievement.popup.reached(${#temporals.format(item.achievedOn(), 'dd.MM.yyyy')})}">
-              erreicht am 01.01.2017
-            </div>
-            <div class="mt-2" th:text="#{${definition.descriptionKey()}}">Für jedes Jahr bei HBT.</div>
-          </div>
         </li>
       </ul>
       <!--/* Die gesperrten Medaillen stehen in einem eigenen Abschnitt, damit sie nicht wie Erreichtes
@@ -73,5 +64,9 @@
       </th:block>
     </div>
   </div>
+  <!--/* Je erreichter Medaille ihr Dialog, ausserhalb der Karte wie jeder Modal-Dialog. */-->
+  <th:block th:each="item, stat : ${profile.reached()}">
+    <div th:replace="~{achievement/popup :: popup(${ {item} }, ${'achievementReached' + stat.index}, false)}"></div>
+  </th:block>
 </main>
 </html>
