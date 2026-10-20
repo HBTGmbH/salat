@@ -406,6 +406,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 
 | Package | Responsibility |
 |---|---|
+| `achievement` | Achievements (#837, #1501, ADR-0040): records what people reach, announces it (notification, popup) and shows it on the profile page; imports only `common`, `auth`, `employee`, `notification` and `settings`. It knows no achievement itself: each module declares its own and contributes them through `AchievementContributor` in `common.achievement`, the pattern of `common.beta`; no module imports `achievement` except `settingseditor`. Only positive incentives: no ranking, nobody sees the achievements of somebody else |
 | `auth` | Authentication, authorization beans and annotations |
 | `beta` | Opt-in betas (#1447, ADR-0039): the switches, counting their use with a comparison group, asking about them without storing the person, and the evaluation for management; imports only `common`, `auth`, `settings` and `employee`. It knows no beta itself: each module declares its own and contributes the list through `BetaFeatureContributor` in `common.beta` (the pattern of `UiStateKeyContributor`), asking and counting through `Betas` there; no module imports `beta` except `settingseditor` |
 | `budget` | Budget planning and cost controlling |

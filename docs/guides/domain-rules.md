@@ -24,6 +24,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `Publicholiday` | Stammdaten | — (calendar fact) |
 | `Referenceday` | Stammdaten | — (calendar reference) |
 | `SalatUser` | Stammdaten | `Employee.hide` |
+| `EmployeeEntry` | Stammdaten | — (Eintritt vor Salat, von Hand per SQL gepflegt, die Anwendung liest nur; #1501) |
 | `AuthorizationRule` | Stammdaten | `validFrom`/`validUntil` |
 | `ETLDefinition` | Stammdaten | — |
 | `JiraReplicationConfig` | Stammdaten | `enabled` |
@@ -49,6 +50,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `BetaUsage` | Bewegungsdaten | — (gelöscht mit dem Ende der Beta) |
 | `BetaParticipation` | Bewegungsdaten | — (gelöscht mit dem Ende der Beta) |
 | `BetaFeedback` | Bewegungsdaten | — (ohne Person und ohne `AuditedEntity`, ADR-0039; gelöscht mit dem Ende der Beta) |
+| `Achievement` | Bewegungsdaten | — (einmal eingetragen, danach ändert sich nur `seenAt`; geht mit der Person) |
 
 ---
 
