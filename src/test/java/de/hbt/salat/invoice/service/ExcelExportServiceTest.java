@@ -101,7 +101,72 @@ class ExcelExportServiceTest {
     assertThat(sheet.getRow(sheet.getLastRowNum()).getCell(0)).isNull();
   }
 
+  /** A branch without bookings carries the subtotal of the suborders below it, which follow indented (#217). */
+  @Test
+  void a_branch_row_carries_the_subtotal_of_its_children() throws Exception {
+    var options = InvoiceOptions.builder().showTimereports(true).build();
+
+    var sheet = export(branchWithOneChild(options), options);
+
+    int hoursColumn = columnTitled(sheet.getRow(0), "Stunden");
+    // title, branch, child, its booking, total
+    assertThat(sheet.getLastRowNum()).isEqualTo(4);
+    assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).doesNotStartWith(" ");
+    assertThat(sheet.getRow(1).getCell(hoursColumn).getNumericCellValue()).isEqualTo(2.0);
+    assertThat(sheet.getRow(2).getCell(0).getStringCellValue()).startsWith("  ");
+    assertThat(sheet.getRow(2).getCell(hoursColumn).getNumericCellValue()).isEqualTo(2.0);
+  }
+
+  /** Deselecting a branch removes its row, not the suborders below it. */
+  @Test
+  void a_deselected_branch_leaves_its_children_in_the_export() throws Exception {
+    var options = InvoiceOptions.builder().showTimereports(true).build();
+    var data = branchWithOneChild(options);
+    data.getSuborders().get(0).setVisible(false);
+
+    var sheet = export(data, options);
+
+    int hoursColumn = columnTitled(sheet.getRow(0), "Stunden");
+    // title, child, its booking, total
+    assertThat(sheet.getLastRowNum()).isEqualTo(3);
+    assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).startsWith("  ");
+    assertThat(sheet.getRow(sheet.getLastRowNum()).getCell(hoursColumn).getNumericCellValue()).isEqualTo(2.0);
+  }
+
   // --- fixture ---------------------------------------------------------------------------------
+
+  /** A branch without bookings, and below it one suborder with a booking of two hours. */
+  private static InvoiceData branchWithOneChild(InvoiceOptions options) {
+    var customerorder = new Customerorder();
+    customerorder.setSign("co");
+    customerorder.setCustomer(new Customer());
+    setId(customerorder, 1L);
+    var branch = new Suborder();
+    setId(branch, 10L);
+    branch.setSign("01");
+    branch.setCustomerorder(customerorder);
+    var child = new Suborder();
+    setId(child, 11L);
+    child.setSign("01");
+    child.setCustomerorder(customerorder);
+    child.setParentorder(branch);
+
+    var booking = new InvoiceTimereport(TimereportDTO.builder()
+        .id(110L).suborderId(11L).employeeName("Person A").employeeSign("pa")
+        .referenceday(JAN).duration(Duration.ofHours(2)).taskdescription("work")
+        .build());
+    var invoiceBranch = new InvoiceSuborder(branch, List.of(), options);
+    var invoiceChild = new InvoiceSuborder(child, List.of(booking), options);
+    var branchGroup = InvoiceGroup.ofSuborder(invoiceBranch);
+    var childGroup = InvoiceGroup.ofSuborder(invoiceChild);
+    childGroup.setDepth(1);
+    childGroup.getLines().add(InvoiceLine.whole(booking, invoiceChild));
+    branchGroup.getChildren().add(childGroup);
+
+    return new InvoiceData(options, new LocalDateRange(JAN, JAN), "co", customerorder.getCustomer(),
+        Duration.ofHours(2), List.of(invoiceBranch, invoiceChild), InvoiceGrouping.SUBORDER, List.of(branchGroup),
+        List.of(), List.of());
+  }
 
   private static Sheet export(InvoiceData data, InvoiceOptions options) throws Exception {
     var source = new StaticMessageSource();

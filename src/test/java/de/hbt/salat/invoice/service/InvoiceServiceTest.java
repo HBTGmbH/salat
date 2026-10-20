@@ -64,7 +64,6 @@ public class InvoiceServiceTest {
     var first = suborder("01", 10L, customerorder);
     var second = suborder("02", 20L, customerorder);
     when(suborderService.getSubordersByCustomerorderId(1L)).thenReturn(List.of(first, second));
-    when(suborderService.getSuborderById(10L)).thenReturn(first);
 
     when(timereportService.getTimereportsByDatesAndSuborderId(any(), any(), anyLong()))
         .thenAnswer(invocation -> {

@@ -8,9 +8,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -75,7 +77,13 @@ public class InvoiceService {
    * <p>In the budget case the bookings come from the assignment: billed is what was booked onto that
    * budget, however many suborders it spreads over. The period still applies on top, so a plan
    * running longer than the billing month yields only that month's bookings. Suborders without an
-   * assigned booking in the period drop out — they contribute nothing to this invoice.
+   * assigned booking in the period drop out — they contribute nothing to this invoice — unless one
+   * below them has one: a branch stays as long as its subtree is billed.
+   *
+   * <p>The suborders form the tree they stand in (#217): the group of each one hangs under the group
+   * of its nearest ancestor in this invoice, and its subtotal includes everything below it. One
+   * suborder means its subtree; the filters apply to every node of it, and a node they drop takes
+   * nothing with it — its children move up to the nearest ancestor that is left.
    *
    * <p>The groups follow {@link InvoiceOptions#getGrouping()} (#1390): by suborder as before, by
    * ticket within each suborder, or by ticket across them; how the bookings fall to the tickets is
@@ -95,16 +103,17 @@ public class InvoiceService {
 
     // For every suborder the suborders of its branch: the scopes its tickets may be kept under (#1323).
     var scopesBySuborder = new HashMap<Long, Set<Long>>();
-    var invoiceSuborders = suborderId
-        .map(sid -> List.of(suborderService.getSuborderById(sid)))
-        .orElseGet(() -> suborderService.getSubordersByCustomerorderId(customerorderId))
-        .stream()
+    // For every suborder its ancestors, nearest first: where its group hangs (#217).
+    var ancestorsBySuborder = new HashMap<Long, List<Long>>();
+    var loadedSuborders = suborderService.getSubordersByCustomerorderId(customerorderId).stream()
+        .filter(suborder -> suborderId.isEmpty() || isInSubtree(suborder, suborderId.get()))
         .filter(suborder -> suborder.getValidity().overlaps(invoiceDateRange))
         .filter(suborder -> options.isShowNonInvoicableSuborders() || suborder.getInvoice() == YESNO_YES)
         .sorted(SubOrderComparator.INSTANCE)
         .map(suborder -> {
-          scopesBySuborder.put(suborder.getId(),
-              suborder.withParents().stream().map(Suborder::getId).collect(Collectors.toSet()));
+          var withParents = suborder.withParents().stream().map(Suborder::getId).toList();
+          scopesBySuborder.put(suborder.getId(), Set.copyOf(withParents));
+          ancestorsBySuborder.put(suborder.getId(), withParents.subList(1, withParents.size()));
           var timereports = timereportService.getTimereportsByDatesAndSuborderId(dateFirst, dateLast, suborder.getId()).stream()
               .filter(timereport -> assignedIds == null || assignedIds.contains(timereport.getId()))
               .sorted(BOOKING_ORDER)
@@ -112,8 +121,8 @@ public class InvoiceService {
               .toList();
           return new InvoiceSuborder(suborder, timereports, options);
         })
-        .filter(invoiceSuborder -> assignedIds == null || !invoiceSuborder.getTimereports().isEmpty())
         .toList();
+    var invoiceSuborders = assignedIds == null ? loadedSuborders : withBookings(loadedSuborders, ancestorsBySuborder);
 
     var totalDuration = invoiceSuborders.stream()
         .map(InvoiceSuborder::getTotalDuration)
@@ -127,7 +136,8 @@ public class InvoiceService {
     var bookings = invoiceSuborders.stream().flatMap(s -> s.getTimereports().stream()).toList();
     if (bookings.stream().allMatch(booking -> booking.getTicketReferences().isEmpty())) {
       return new InvoiceData(options, invoiceDateRange, customerOrderSign, customerorder.getCustomer(), totalDuration,
-          invoiceSuborders, InvoiceGrouping.SUBORDER, numbered(bySuborder(invoiceSuborders)), List.of(), List.of());
+          invoiceSuborders, InvoiceGrouping.SUBORDER, numbered(nested(bySuborder(invoiceSuborders), ancestorsBySuborder)),
+          List.of(), List.of());
     }
 
     var ticketsByKey = InvoiceTicketTree.byKey(ticketsOf(customerorderId, invoiceSuborders, scopesBySuborder));
@@ -136,14 +146,14 @@ public class InvoiceService {
     var suborderById = invoiceSuborders.stream().collect(Collectors.toMap(InvoiceSuborder::getId, s -> s));
 
     var groups = switch (options.getGrouping()) {
-      case SUBORDER -> bySuborder(invoiceSuborders);
-      case SUBORDER_TICKET -> invoiceSuborders.stream().map(invoiceSuborder -> {
+      case SUBORDER -> nested(bySuborder(invoiceSuborders), ancestorsBySuborder);
+      case SUBORDER_TICKET -> nested(invoiceSuborders.stream().map(invoiceSuborder -> {
         var group = InvoiceGroup.ofSuborder(invoiceSuborder);
         // within a suborder the tickets are resolved in its branch alone
         var ownTree = new InvoiceTicketTree(invoiceSuborder.getTimereports(), ticketsByKey, scopesBySuborder);
         group.getChildren().addAll(InvoiceGroups.byTicket(invoiceSuborder.getTimereports(), ownTree, selected, suborderById::get));
         return group;
-      }).toList();
+      }).toList(), ancestorsBySuborder);
       case TICKET -> InvoiceGroups.byTicket(bookings.stream().sorted(INVOICE_TIMEREPORT_ORDER).toList(), tree, selected,
           suborderById::get);
     };
@@ -184,6 +194,44 @@ public class InvoiceService {
       invoiceSuborder.getTimereports().forEach(booking -> group.getLines().add(InvoiceLine.whole(booking, invoiceSuborder)));
       return group;
     }).toList();
+  }
+
+  /** Whether the suborder is the one the invoice is narrowed to, or below it. */
+  private static boolean isInSubtree(Suborder suborder, long rootId) {
+    return suborder.withParents().stream().anyMatch(node -> node.getId() == rootId);
+  }
+
+  /**
+   * The suborders with an assigned booking (#915), and every one above such a suborder: a branch is
+   * billed as long as anything below it is. Their own bookings are the assigned ones already.
+   */
+  private static List<InvoiceSuborder> withBookings(List<InvoiceSuborder> suborders,
+      Map<Long, List<Long>> ancestorsBySuborder) {
+    var kept = new HashSet<Long>();
+    suborders.stream().filter(suborder -> !suborder.getTimereports().isEmpty()).forEach(suborder -> {
+      kept.add(suborder.getId());
+      kept.addAll(ancestorsBySuborder.get(suborder.getId()));
+    });
+    return suborders.stream().filter(suborder -> kept.contains(suborder.getId())).toList();
+  }
+
+  /**
+   * The suborder groups as the tree they stand in (#217): each one below the group of its nearest
+   * ancestor in this invoice, after what that group holds already; one without any stays at the top.
+   * A group hangs in exactly one place, so no booking counts twice.
+   */
+  private static List<InvoiceGroup> nested(List<InvoiceGroup> suborderGroups, Map<Long, List<Long>> ancestorsBySuborder) {
+    var groupBySuborder = suborderGroups.stream()
+        .collect(Collectors.toMap(group -> group.getSuborder().getId(), group -> group));
+    var top = new ArrayList<InvoiceGroup>();
+    for (var group : suborderGroups) {
+      ancestorsBySuborder.get(group.getSuborder().getId()).stream()
+          .map(groupBySuborder::get)
+          .filter(Objects::nonNull)
+          .findFirst()
+          .ifPresentOrElse(parent -> parent.getChildren().add(group), () -> top.add(group));
+    }
+    return top;
   }
 
   /** Gives every group an id and its depth, every line the ids of the groups it stands in. */

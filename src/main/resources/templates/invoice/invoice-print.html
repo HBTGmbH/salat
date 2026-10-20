@@ -48,39 +48,18 @@
     <span style="float: right" class="invoice_date"><span th:text="#{main.invoice.asof.text}">Stand:</span> <span th:text="${#temporals.format(today, 'dd.MM.yyyy')}"></span></span>
     <br style="clear: both"/>
     <table width="100%" style="border-collapse: collapse">
-      <th:block th:unless="${invoiceData.grouping.byTicket}" th:each="group : ${invoiceData.groups}">
-        <tbody th:if="${group.visible}">
-          <tr class="invoice_suborder_row">
-            <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount + 2}">
-              <span th:text="${group.heading}"></span>
-              <th:block th:if="${targethoursbox and group.budget != null}">
-                / <span th:text="#{main.invoice.budget}">Budget</span>: <span th:text="${@durationUtils.format(group.budget)}"></span>
-              </th:block>
-            </td>
-          </tr>
-          <tr th:replace="~{invoice/invoice-groups :: printHeader}"></tr>
-          <th:block th:if="${invoiceForm.timereportsbox}" th:with="visibleLines=${group.lines.?[visible]}">
-            <th:block th:each="line, iterStat : ${visibleLines}">
-              <tr th:replace="~{invoice/invoice-groups :: printLine(${line}, ${iterStat.last})}"></tr>
-            </th:block>
-          </th:block>
-          <tr class="invoice_subordersum_row">
-            <td class="invoice_subordersum_row right" th:colspan="${dynamicColumnCount}" style="width: 100%" th:text="#{main.invoice.suborder.sum.text}"></td>
-            <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
-            <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
-          </tr>
-        </tbody>
-      </th:block>
-      <th:block th:if="${invoiceData.grouping.byTicket}">
-        <th:block th:each="group : ${invoiceData.groups}">
-          <th:block th:replace="~{invoice/invoice-groups :: printGroup(${group})}"></th:block>
-        </th:block>
+      <!--/* the column titles once, repeated on every printed page; every group carries its subtotal in its own row (#217) */-->
+      <thead>
+        <tr th:replace="~{invoice/invoice-groups :: printHeader}"></tr>
+      </thead>
+      <th:block th:each="group : ${invoiceData.groups}">
+        <th:block th:replace="~{invoice/invoice-groups :: printGroup(${group})}"></th:block>
       </th:block>
       <tbody>
         <tr class="invoice_totalsum_row">
-          <td class="invoice_totalsum_row right" style="width: 100%" th:colspan="${dynamicColumnCount}" th:text="#{main.invoice.overall.text}"></td>
-          <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(invoiceData.totalDurationVisible)}"></td>
-          <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisible, 1, 2)}"></td>
+          <td class="invoice_totalsum_row invoice_total_rule right" style="width: 100%" th:colspan="${dynamicColumnCount}" th:text="#{main.invoice.overall.text}"></td>
+          <td class="invoice_totalsum_row invoice_total_rule nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(invoiceData.totalDurationVisible)}"></td>
+          <td class="invoice_totalsum_row invoice_total_rule nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisible, 1, 2)}"></td>
         </tr>
       </tbody>
       <!--/* the time surcharges as positions of their own (#1470), unless they are part of the hours */-->

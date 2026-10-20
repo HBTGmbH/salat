@@ -133,16 +133,18 @@ public class ExcelExportService {
         return workbook;
     }
 
-    /** The group's row with its subtotal, its own bookings, then the groups below it. */
+    /**
+     * The group's row with its subtotal, its own bookings, then the groups below it — those also when
+     * the group itself is deselected (#217).
+     */
     private static int addGroup(Workbook workbook, int rowIndex, InvoiceGroup group, Layout layout, InstanceFactory factory) {
-        if (!group.isVisible()) {
-            return rowIndex;
-        }
-        rowIndex = addGroupDataRow(workbook, rowIndex, group, layout, factory);
-        if (layout.lines()) {
-            for (var line : group.getLines()) {
-                if (line.isVisible()) {
-                    rowIndex = addLineDataRow(workbook, rowIndex, line, layout, factory);
+        if (group.isVisible()) {
+            rowIndex = addGroupDataRow(workbook, rowIndex, group, layout, factory);
+            if (layout.lines()) {
+                for (var line : group.getLines()) {
+                    if (line.isVisible()) {
+                        rowIndex = addLineDataRow(workbook, rowIndex, line, layout, factory);
+                    }
                 }
             }
         }

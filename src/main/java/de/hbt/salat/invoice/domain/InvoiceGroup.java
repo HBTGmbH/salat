@@ -13,8 +13,8 @@ import lombok.Setter;
 
 /**
  * A group of the invoice with its subtotal (#1390): a suborder, a ticket, or the bookings without a
- * ticket. Groups nest — a suborder holds ticket groups, an epic the groups of its stories (#1393) —
- * and the subtotal of a group includes the groups below it. Preview, print and Excel export render
+ * ticket. Groups nest — a suborder holds ticket groups and the suborders below it (#217), an epic
+ * the groups of its stories (#1393) — and the subtotal of a group includes the groups below it. Preview, print and Excel export render
  * this one model, which is what keeps their sums the same.
  */
 @Getter
@@ -94,8 +94,10 @@ public class InvoiceGroup {
   }
 
   /**
-   * Whether print and export show the group: a suborder as long as it is selected, even when nothing
-   * of it is left — as before; a ticket group only while one of its bookings is.
+   * Whether print and export show the row of the group and its lines: a suborder as long as it is
+   * selected, even when nothing of it is left — as before; a ticket group only while one of its
+   * bookings is. The groups below it decide for themselves (#217): deselecting a branch leaves its
+   * children, and the subtotals above still count them.
    */
   public boolean isVisible() {
     return suborder != null ? suborder.isVisible() : hasVisibleLines();
