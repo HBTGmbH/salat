@@ -866,7 +866,7 @@
        danach ist eine kleine Abfrage; erst wenn es etwas anzukuendigen gibt, wird es gelesen. */-->
 <th:block th:with="achievements=${@achievementViewHelper.popup}">
   <th:block th:unless="${#lists.isEmpty(achievements)}">
-    <div th:replace="~{achievement/popup :: popup(${achievements})}"></div>
+    <div th:replace="~{achievement/popup :: popup(${achievements}, 'achievementPopup', true)}"></div>
   </th:block>
 </th:block>
 
