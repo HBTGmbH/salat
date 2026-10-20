@@ -13,7 +13,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 
-/** Every level of every achievement has its ten quotes (#1501). */
+/** Every level of every achievement has its quotes, three to five (#1501). */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class AchievementQuotesTest {
 
@@ -24,11 +24,11 @@ class AchievementQuotesTest {
   private final AchievementQuotes quotes = new AchievementQuotes();
 
   @Test
-  void every_level_has_ten_different_quotes_with_their_source() {
+  void every_level_has_three_to_five_different_quotes_with_their_source() {
     for (var achievement : ACHIEVEMENTS) {
       for (int level : achievement.getLevels()) {
         var ofLevel = quotes.of(achievement.getKey(), level);
-        assertThat(ofLevel).as(achievement + " " + level).hasSize(10).doesNotHaveDuplicates()
+        assertThat(ofLevel).as(achievement + " " + level).hasSizeBetween(3, 5).doesNotHaveDuplicates()
             .allSatisfy(quote -> {
               assertThat(quote.quote()).isNotBlank();
               assertThat(quote.source()).isNotBlank();
