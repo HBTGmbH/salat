@@ -27,12 +27,12 @@ levels beyond the last tier share it and differ by the number only.
 The medal fills 94 % of a round white disc; the plate's centre lies at y = 84 of 128 and the plate is 34 high. The page
 therefore places the number at these positions - `scripts/preview.py` uses the same constants, change both together:
 
-| Value | Popup (96 px) | Profile (64 px) |
+| Value | Popup and profile (144 px, `achievement-medal-lg`) | Small (64 px) |
 |---|---|---|
-| Disc | 96 px, white, `border-radius: 50%` | 64 px |
+| Disc | 144 px, white, `border-radius: 50%` | 64 px |
 | Medal image | `inset: 3%`, 94 % wide and high | same |
 | Number centre | `left: 50%; top: 64.7%`, `transform: translate(-50%, -50%)` | same |
-| Number size | about 15 px, bold | about 10 px, bold |
+| Number size | 16 % of the disc, about 23 px, bold | about 10 px, bold |
 | Number colour | `number` of the tier in `assets/tiers.json`: white, dark on the gold plate of `grandmaster` | same |
 
 Numbers from 1000 on are shortened to one decimal and `K` in the reader's language (`1,0K`, `2,5K`), so that four digits fit
