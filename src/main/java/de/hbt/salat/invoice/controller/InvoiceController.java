@@ -141,7 +141,7 @@ public class InvoiceController {
         model.addAttribute("showTicketColumn", showTicketColumn);
         model.addAttribute("showLines", form.isTimereportsbox()
             && (!invoiceData.getGrouping().isByTicket() || form.isTicketlinesbox()));
-        model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form) + (showTicketColumn ? 1 : 0));
+        model.addAttribute("dynamicColumnCount", printLabelColumnCount(form, showTicketColumn));
         model.addAttribute("targethoursbox", form.isTargethoursbox());
         return "invoice/invoice-print";
     }
@@ -227,6 +227,17 @@ public class InvoiceController {
         if (form.isEmployeesignbox()) count++;
         if (form.isTimereportdescriptionbox()) count++;
         return count;
+    }
+
+    /**
+     * The columns of the print in front of „Dauer“, as its single row of column titles has them (#217):
+     * those of the bookings, or one for the group headings when no booking is listed.
+     */
+    private static int printLabelColumnCount(InvoiceForm form, boolean showTicketColumn) {
+        if (!form.isTimereportsbox()) {
+            return 1;
+        }
+        return computeDynamicColumnCount(form) + (showTicketColumn ? 1 : 0);
     }
 
     /** The column „Ticket“ is there when it is chosen and there is anything to put in it (#1390). */

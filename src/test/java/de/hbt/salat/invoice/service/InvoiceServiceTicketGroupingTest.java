@@ -105,7 +105,10 @@ class InvoiceServiceTicketGroupingTest {
 
     var data = generate(SUBORDER, null);
 
-    assertThat(data.getGroups()).extracting(group -> group.getSuborder().getId()).containsExactly(S10, S20, S21);
+    // S21 stands below its parent (#217)
+    assertThat(data.getGroups()).extracting(group -> group.getSuborder().getId()).containsExactly(S10, S20);
+    assertThat(data.getGroups().get(1).getChildren()).extracting(group -> group.getSuborder().getId())
+        .containsExactly(S21);
     var first = data.getGroups().get(0);
     assertThat(first.getChildren()).isEmpty();
     assertThat(first.getLines()).extracting(line -> line.getTimereport().getId()).containsExactly(100L, 101L);

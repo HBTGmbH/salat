@@ -4,8 +4,8 @@
 
 <!--/*
   The groups of an invoice (#1390, #1393), one fragment per output. Groups nest — a suborder holds
-  ticket groups, an epic the groups of its stories — so both fragments call themselves for the
-  groups below. A group's own bookings come right below its heading, its subgroups after them.
+  ticket groups and the suborders below it (#217), an epic the groups of its stories — so both
+  fragments call themselves for the groups below. A group's own bookings come right below its heading, its subgroups after them.
 */-->
 
 <!--/*
@@ -25,7 +25,8 @@
              th:attr="data-suborder-input=${group.suborder.id}"
              onchange="toggleSuborder(this)">
     </td>
-    <td class="col-suborder fw-bold align-middle" th:text="${group.heading}"></td>
+    <td class="col-suborder fw-bold align-middle" th:text="${group.heading}"
+        th:style="'padding-left: ' + ${0.75 + group.depth * 1.25} + 'rem'"></td>
     <td class="col-date"></td>
     <td class="col-employee"></td>
     <td class="col-description"></td>
@@ -106,57 +107,41 @@
 </th:block>
 
 <!--/*
-  Print, for the groupings by ticket. The grouping by suborder keeps the layout it always had and
-  does not come through here. A ticket without bookings to list and without subgroups is one row
-  with its subtotal — „nur Summenzeile“ would otherwise double every ticket.
+  Print, for every grouping: a group is one row with its subtotal, below it its own bookings, then the
+  groups below it (#217). A deselected suborder loses its row and its bookings, not the suborders
+  below it. The row keeps the class invoice_suborder_row, which the invoice templates style.
 */-->
 <th:block th:fragment="printGroup(group)">
-  <th:block th:if="${group.visible}"
-            th:with="heading=${group.noTicketGroup} ? #{main.invoice.ticket.none} : ${group.heading},
-                     indent=${'padding-left: ' + (0.5 + group.depth * 1.5) + 'em'},
-                     visibleLines=${group.lines.?[visible]}">
-    <tbody th:if="${!showLines and group.children.isEmpty() and !group.suborderGroup}">
-      <tr class="invoice_booking_row">
-        <td class="invoice_booking_row wrap" th:colspan="${dynamicColumnCount}" th:style="${indent}" th:text="${heading}"></td>
-        <td class="invoice_booking_row nonproportional right" style="min-width: 2cm"
-            th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
-        <td class="invoice_booking_row nonproportional right" style="min-width: 2cm"
-            th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
-      </tr>
-    </tbody>
-    <th:block th:unless="${!showLines and group.children.isEmpty() and !group.suborderGroup}">
-      <tbody>
-        <tr class="invoice_suborder_row">
-          <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount + 2}" th:style="${indent}">
-            <span th:text="${heading}"></span>
-            <th:block th:if="${targethoursbox and group.budget != null}">
-              / <span th:text="#{main.invoice.budget}">Budget</span>: <span th:text="${@durationUtils.format(group.budget)}"></span>
-            </th:block>
-          </td>
-        </tr>
-        <th:block th:if="${showLines and !visibleLines.isEmpty()}">
-          <tr th:replace="~{invoice/invoice-groups :: printHeader}"></tr>
-          <th:block th:each="line, iterStat : ${visibleLines}">
-            <tr th:replace="~{invoice/invoice-groups :: printLine(${line}, ${iterStat.last})}"></tr>
-          </th:block>
+  <tbody th:if="${group.visible}"
+         th:with="heading=${group.noTicketGroup} ? #{main.invoice.ticket.none} : ${group.heading},
+                  visibleLines=${group.lines.?[visible]}">
+    <tr class="invoice_suborder_row" th:classappend="${group.depth == 0} ? 'invoice_group_top' : ''">
+      <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount}"
+          th:style="${'padding-left: ' + (0.5 + group.depth * 1.5) + 'em'}">
+        <span th:text="${heading}"></span>
+        <th:block th:if="${targethoursbox and group.budget != null}">
+          / <span th:text="#{main.invoice.budget}">Budget</span>: <span th:text="${@durationUtils.format(group.budget)}"></span>
         </th:block>
-      </tbody>
-      <th:block th:each="child : ${group.children}">
-        <th:block th:replace="~{invoice/invoice-groups :: printGroup(${child})}"></th:block>
+      </td>
+      <td class="invoice_suborder_row nonproportional right" style="min-width: 2cm"
+          th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
+      <td class="invoice_suborder_row nonproportional right" style="min-width: 2cm"
+          th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
+    </tr>
+    <th:block th:if="${showLines}">
+      <th:block th:each="line, iterStat : ${visibleLines}">
+        <tr th:replace="~{invoice/invoice-groups :: printLine(${line}, ${iterStat.last})}"></tr>
       </th:block>
-      <tbody>
-        <tr class="invoice_subordersum_row">
-          <td class="invoice_subordersum_row right" th:colspan="${dynamicColumnCount}" style="width: 100%"
-              th:text="#{main.invoice.ticket.sum.text(${heading})}"></td>
-          <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(group.totalDurationVisible)}"></td>
-          <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(group.totalHoursVisible, 1, 2)}"></td>
-        </tr>
-      </tbody>
     </th:block>
+  </tbody>
+  <th:block th:each="child : ${group.children}">
+    <th:block th:replace="~{invoice/invoice-groups :: printGroup(${child})}"></th:block>
   </th:block>
 </th:block>
 
 <tr th:fragment="printHeader" class="invoice_header">
+  <!--/* without bookings the first column holds the group headings alone */-->
+  <th th:unless="${invoiceForm.timereportsbox}" class="invoice_header"></th>
   <th:block th:if="${invoiceForm.timereportsbox}">
     <th class="invoice_header" th:text="${invoiceForm.titledatetext}"></th>
     <th th:if="${invoiceForm.employeesignbox}" class="invoice_header" th:text="${invoiceForm.titleemployeesigntext}"></th>
