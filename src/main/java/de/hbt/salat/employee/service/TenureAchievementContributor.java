@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class TenureAchievementContributor implements AchievementContributor {
 
   public static final AchievementDefinition TENURE =
-      new AchievementDefinition("tenure", List.of(1, 5, 10, 15, 20, 25), "trophy");
+      new AchievementDefinition("tenure", List.of(1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50), "trophy");
 
   private final TenureService tenureService;
 
