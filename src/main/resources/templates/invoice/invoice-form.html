@@ -381,9 +381,18 @@
           </div>
         </div>
         <div class="card-body p-0">
+          <!--/*
+            What the preview deselected, the ids comma-separated and each once (#1499): the only part of
+            the selection the form sends, so that a large order stays below the parameter limit. The
+            script keeps both fields up to date with the checkboxes.
+          */-->
+          <input type="hidden" name="excludedSuborderIds" id="excluded-suborders"
+                 th:value="${#strings.listJoin(invoiceForm.excludedSuborderIds, ',')}">
+          <input type="hidden" name="excludedTimereportIds" id="excluded-timereports"
+                 th:value="${#strings.listJoin(invoiceForm.excludedTimereportIds, ',')}">
           <!--/* Without suborder rows the deselection of a suborder still has to survive regrouping (#1390) */-->
           <th:block th:unless="${invoiceData.suborderRows}">
-            <input type="hidden" name="suborderIdArray"
+            <input type="hidden"
                    th:each="invoiceSuborder : ${invoiceData.suborders}"
                    th:value="${invoiceSuborder.id}"
                    th:disabled="${!invoiceSuborder.visible}"
@@ -584,10 +593,10 @@
     // ── Row click: toggle checkbox by clicking anywhere on the row ──────
     function handleRowClick(event, row) {
       if (event.target.tagName === 'INPUT') return; // checkbox handles itself
-      const cb = row.querySelector('input[name="suborderIdArray"], input[name="timereportIdArray"]');
+      const cb = row.querySelector('input[data-suborder-input], input[data-timereport-input]');
       if (!cb) return;
       cb.checked = !cb.checked;
-      if (cb.name === 'suborderIdArray') {
+      if ('suborderInput' in cb.dataset) {
         toggleSuborder(cb);
       } else {
         toggleRowExclusion(cb);
@@ -625,7 +634,7 @@
       let grandMinutes = 0;
 
       document.querySelectorAll('tr[data-groups]').forEach(row => {
-        const cb = row.querySelector('input[name="timereportIdArray"]');
+        const cb = row.querySelector('input[data-timereport-input]');
         if (!cb || !cb.checked) return;
         const minutes = parseInt(row.dataset.minutes || '0', 10);
         grandMinutes += minutes;
@@ -646,6 +655,19 @@
 
       const totalMinutes = parseInt(document.querySelector('tfoot').dataset.totalMinutes || '0', 10);
       document.getElementById('footer-gesamt-row').classList.toggle('d-none', grandMinutes === totalMinutes);
+      syncExclusions();
+    }
+
+    /**
+     * The form sends only what is deselected, each id once (#1499) — a booking under several tickets
+     * has a checkbox in each, and a suborder without a row of its own a disabled hidden input.
+     */
+    function syncExclusions() {
+      const excluded = selector => [...new Set([...document.querySelectorAll(selector)].map(input => input.value))].join(',');
+      document.getElementById('excluded-timereports').value =
+        excluded('input[data-timereport-input]:not(:checked)');
+      document.getElementById('excluded-suborders').value =
+        excluded('input[type="checkbox"][data-suborder-input]:not(:checked), input[type="hidden"][data-suborder-input]:disabled');
     }
 
     /**
@@ -658,7 +680,7 @@
       const byKey = {};
       const counted = new Set();
       document.querySelectorAll('tr[data-surcharge-key]').forEach(row => {
-        const cb = row.querySelector('input[name="timereportIdArray"]');
+        const cb = row.querySelector('input[data-timereport-input]');
         if (!cb || !cb.checked || counted.has(row.dataset.timereport)) return;
         counted.add(row.dataset.timereport);
         const sum = byKey[row.dataset.surchargeKey] || (byKey[row.dataset.surchargeKey] = { basis: 0, credit: 0 });
@@ -708,7 +730,7 @@
     // ── Row exclusion feedback ──────────────────────────────────────────
     /** A booking under several tickets has a checkbox in each; it is in the invoice whole or not at all. */
     function toggleRowExclusion(checkbox) {
-      document.querySelectorAll(`input[name="timereportIdArray"][value="${checkbox.value}"]`).forEach(cb => {
+      document.querySelectorAll(`input[data-timereport-input][value="${checkbox.value}"]`).forEach(cb => {
         cb.checked = checkbox.checked;
         cb.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
       });
@@ -722,7 +744,7 @@
     function toggleSuborder(checkbox) {
       checkbox.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
       document.querySelectorAll(`tr[data-suborder="${checkbox.value}"]`).forEach(trRow => {
-        const cb = trRow.querySelector('input[name="timereportIdArray"]');
+        const cb = trRow.querySelector('input[data-timereport-input]');
         if (cb) {
           cb.checked = checkbox.checked;
           trRow.classList.toggle('row-excluded', !checkbox.checked);
@@ -735,7 +757,7 @@
     // ── Bulk select / deselect ──────────────────────────────────────────
     function setAllEntries(checked) {
       document.querySelectorAll(
-        'input[name="timereportIdArray"], input[name="suborderIdArray"]'
+        'input[data-timereport-input], input[data-suborder-input]'
       ).forEach(input => {
         if (input.type === 'hidden') {
           input.disabled = !checked;

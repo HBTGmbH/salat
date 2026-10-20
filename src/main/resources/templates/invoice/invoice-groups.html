@@ -11,7 +11,8 @@
 <!--/*
   Preview: one row per group with its subtotal, one row per line. A line carries the ids of every
   group it stands in (data-groups), which is how the script recomputes all levels at once; a booking
-  divided among several tickets has one checkbox per line, all with its id.
+  divided among several tickets has one checkbox per line, all with its id. The checkboxes have no
+  name: the form sends only what they deselect, in two fields of its own (#1499).
 */-->
 <th:block th:fragment="previewGroup(group)">
   <tr th:if="${group.suborderGroup}" class="invoice-row"
@@ -19,7 +20,7 @@
       th:attr="data-group=${group.id}"
       onclick="handleRowClick(event, this)">
     <td class="col-selection align-middle">
-      <input class="form-check-input" type="checkbox" name="suborderIdArray"
+      <input class="form-check-input" type="checkbox"
              th:value="${group.suborder.id}"
              th:checked="${group.suborder.visible}"
              th:attr="data-suborder-input=${group.suborder.id}"
@@ -68,7 +69,7 @@
                data-surcharge-credit=${invoiceData.surchargesSeparate and line.timereport.surcharged} ? ${line.timereport.surchargeCredit.toMinutes()} : null"
       onclick="handleRowClick(event, this)">
     <td class="col-selection align-middle">
-      <input class="form-check-input" type="checkbox" name="timereportIdArray"
+      <input class="form-check-input" type="checkbox" data-timereport-input
              th:value="${line.timereport.id}"
              th:checked="${line.visible}"
              onchange="toggleRowExclusion(this)">
