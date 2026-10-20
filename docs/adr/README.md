@@ -53,3 +53,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0037](0037-hoheit-je-ticket-ueber-die-replikation.md) | Hoheit je Ticket: die Replikation am Ticket sagt, wer es pflegt | Accepted | 2026-10-06 |
 | [0038](0038-secrets-verschluesselt-im-eigenen-modul.md) | Secrets liegen verschlüsselt im Modul `secret`, ausgehendes OAuth führt die Anwendung selbst | Proposed | 2026-10-08 |
 | [0039](0039-beta-funktionen-messen-zaehlung-je-person-rueckmeldung-anonym.md) | Beta-Funktionen messen: Zählung je Person mit Vergleichsgruppe, Rückmeldung anonym | Proposed | 2026-10-09 |
+| [0040](0040-achievements-eigenes-modul-beitraege-ueber-common.md) | Achievements: eigenes Modul, die Module tragen ihre Achievements über `common.achievement` bei | Proposed | 2026-10-20 |
