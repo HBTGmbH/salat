@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='',personName=${@authorizedEmployee.name},sectionTitle=#{main.profile.title},title=${personName}">
+<head>
+  <title th:text="#{main.profile.title}">Profil</title>
+</head>
+<main layout:fragment="content">
+  <!--/* Nur die eigenen Achievements (#837, #1501): keine Rangliste, kein fremdes Profil. Neben den
+         erreichten Stufen steht die naechste, damit sichtbar ist, was noch kommt. */-->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.achievement.title}">Achievements</h3>
+    </div>
+    <div class="card-body">
+      <section th:each="group, groupStat : ${groups}" th:classappend="${groupStat.last} ? '' : 'mb-4'"
+               th:with="definition=${group.definition()}">
+        <h4 class="subheader mb-3" th:text="#{${definition.groupKey()}}">Betriebszugehörigkeit</h4>
+        <ul class="list-unstyled d-flex flex-wrap gap-4 mb-0">
+          <li th:each="reached : ${group.reached()}" class="achievement-tile text-center">
+            <span class="avatar avatar-lg rounded-circle bg-yellow-lt mb-2 achievement-icon">
+              <i class="ti" th:classappend="'ti-' + ${definition.icon}" aria-hidden="true"></i>
+            </span>
+            <div class="fw-bold" th:text="#{${definition.levelKey()}(${reached.level()})}">5 Jahre</div>
+            <div class="text-secondary small"
+                 th:text="${#temporals.format(reached.achievedOn(), 'dd.MM.yyyy')}">01.03.2026</div>
+          </li>
+          <li th:if="${group.next() != null}" th:with="next=${group.next()}" class="achievement-tile text-center">
+            <span class="avatar avatar-lg rounded-circle bg-secondary-lt text-secondary mb-2 achievement-icon">
+              <i class="ti ti-lock" aria-hidden="true"></i>
+            </span>
+            <div class="fw-bold text-secondary" th:text="#{${definition.levelKey()}(${next.level()})}">10 Jahre</div>
+            <div class="text-secondary small"
+                 th:text="${next.expectedOn() != null} ? ${@achievementViewHelper.remaining(today, next.expectedOn())} : #{main.achievement.next.open}">
+              noch 4 Jahre 4 Monate
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</main>
+</html>

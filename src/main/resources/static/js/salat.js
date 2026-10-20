@@ -153,11 +153,12 @@ document.addEventListener('change', event => {
   });
 });
 
-/* The settings moved from the header into the user menu (#1231). A dot on the trigger and "Neu" on
- * the entry point there until the menu has been opened once; then both stay away. The dot goes on
- * opening, the badge only when the menu closes again, so that it is seen once. Both are taken out
- * again with a follow-up commit after some weeks, and the key with them. */
-const USER_MENU_SEEN_KEY = 'salat-user-menu-seen';
+/* Something new in the user menu: a dot on the trigger and "Neu" on the entry until the menu has
+ * been opened once; then both stay away. The dot goes on opening, the badge only when the menu
+ * closes again, so that it is seen once. The key names what is new — first the settings (#1231),
+ * since #1501 the profile page —, so that the next novelty shows again for everyone. Both are taken
+ * out with a follow-up commit after some weeks, and the key with them. */
+const USER_MENU_SEEN_KEY = 'salat-user-menu-seen-profile';
 
 function userMenuNews() {
   return document.querySelectorAll('[data-user-menu-news]');
@@ -3442,3 +3443,24 @@ function releaseTicketSuggestions(event) {
 
 document.addEventListener('input', releaseTicketSuggestions);
 document.addEventListener('change', releaseTicketSuggestions);
+
+/* Neue Achievements (#1501): layout/base.html bindet den Dialog nur ein, wenn es etwas anzukuendigen
+ * gibt, und hier geht er nach dem Laden auf. Das Schliessen meldet der Dialog selbst (hx-trigger auf
+ * hidden.bs.modal). Das Carousel wird gleich angelegt: ohne data-bs-ride tut Bootstrap das erst beim
+ * ersten Klick auf einen Pfeil, und bis dahin bliebe Wischen wirkungslos. Die Pfeiltasten blaettern,
+ * wo der Fokus im Dialog auch steht: Bootstraps eigene Tastatursteuerung hoert nur auf das Carousel
+ * selbst, der Fokus liegt aber auf dem Dialog. */
+document.addEventListener('DOMContentLoaded', function () {
+  const popup = document.querySelector('[data-achievement-popup]');
+  if (!popup) return;
+  const carousel = popup.querySelector('.carousel');
+  if (carousel) {
+    const slides = tabler.bootstrap.Carousel.getOrCreateInstance(carousel);
+    popup.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      if (event.key === 'ArrowLeft') slides.prev(); else slides.next();
+    });
+  }
+  tabler.bootstrap.Modal.getOrCreateInstance(popup).show();
+});

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* Kuendigt neue Achievements an (#1501), eingebunden von layout/base.html. salat.js oeffnet ihn
+       nach dem Laden. Wie auch immer er geschlossen wird - Knopf, Kreuz, Esc, Klick daneben -,
+       hidden.bs.modal schickt den POST, der die Achievements als gesehen markiert; "Zum Profil"
+       tut das mit dem Aufruf der Seite. Mehrere stehen in einem Carousel: wischen, Pfeil-Knoepfe,
+       Pfeiltasten. */-->
+<div th:fragment="popup(achievements)" class="modal modal-blur fade" id="achievementPopup" tabindex="-1"
+     role="dialog" aria-labelledby="achievementPopupTitle" data-achievement-popup
+     th:with="count=${#lists.size(achievements)}"
+     th:attr="hx-post=@{/achievements/seen}" hx-trigger="hidden.bs.modal" hx-swap="none">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="achievementPopupTitle"
+            th:text="${count == 1} ? #{main.achievement.popup.title.one} : #{main.achievement.popup.title.many(${count})}">
+          Neues Achievement
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
+      </div>
+      <div class="modal-body py-4">
+        <div id="achievementCarousel" class="carousel slide" data-bs-touch="true" data-bs-interval="false"
+             data-bs-wrap="false" data-bs-keyboard="false">
+          <div class="d-flex align-items-center gap-2">
+            <button th:if="${count > 1}" type="button" class="btn btn-icon btn-ghost-secondary"
+                    data-bs-target="#achievementCarousel" data-bs-slide="prev"
+                    th:aria-label="#{main.achievement.popup.previous}">
+              <i class="ti ti-chevron-left" aria-hidden="true"></i>
+            </button>
+            <div class="carousel-inner flex-grow-1">
+              <div th:each="achievement, stat : ${achievements}" class="carousel-item text-center"
+                   th:classappend="${stat.first} ? 'active'" th:with="definition=${achievement.definition()}">
+                <span class="avatar avatar-xl rounded-circle bg-yellow-lt mb-3 achievement-icon">
+                  <i class="ti" th:classappend="'ti-' + ${definition.icon}" aria-hidden="true"></i>
+                </span>
+                <div class="h2 mb-1" th:text="#{${definition.titleKey()}(${achievement.level()})}">5 Jahre bei HBT</div>
+                <div class="text-secondary"
+                     th:text="#{main.achievement.popup.reached(${#temporals.format(achievement.achievedOn(), 'dd.MM.yyyy')})}">
+                  erreicht am 01.03.2026
+                </div>
+                <div th:if="${count > 1}" class="text-secondary small mt-3"
+                     th:text="#{main.achievement.popup.position(${stat.count},${count})}">1 von 2</div>
+              </div>
+            </div>
+            <button th:if="${count > 1}" type="button" class="btn btn-icon btn-ghost-secondary"
+                    data-bs-target="#achievementCarousel" data-bs-slide="next"
+                    th:aria-label="#{main.achievement.popup.next}">
+              <i class="ti ti-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div th:if="${count > 1}" class="carousel-indicators achievement-indicators">
+            <button th:each="achievement, stat : ${achievements}" type="button"
+                    data-bs-target="#achievementCarousel" th:data-bs-slide-to="${stat.index}"
+                    th:classappend="${stat.first} ? 'active'" th:attr="aria-current=${stat.first} ? 'true'"
+                    th:aria-label="#{main.achievement.popup.position(${stat.count},${count})}"></button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a th:href="@{/profile}" class="btn btn-link" th:text="#{main.achievement.popup.profile}">Zum Profil</a>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" th:text="#{main.button.close}">
+          Schließen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

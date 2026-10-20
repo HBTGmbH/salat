@@ -146,12 +146,20 @@
                 </div>
               </div>
               <div class="dropdown-divider"></div>
+              <!--/* Die eigene Profilseite mit den Achievements (#1501); externe Personen und
+                     Praktikanten bekommen keine. Die Marke "Neu" steht seit #1501 hier statt an den
+                     Einstellungen (#1231). */-->
+              <a class="dropdown-item" th:href="@{/profile}" th:unless="${@authorizedUser.restricted}"
+                 data-palette-command="profile" th:data-palette-keywords="#{main.palette.keywords.profile}">
+                <i class="ti ti-user-circle dropdown-item-icon" aria-hidden="true"></i>
+                <span th:text="#{main.profile.title}">Profil</span>
+                <span class="badge bg-green-lt ms-auto" data-user-menu-news hidden
+                      th:text="#{main.general.new.badge}">Neu</span>
+              </a>
               <a class="dropdown-item" th:href="@{/settings}"
                  data-palette-command="settings" th:data-palette-keywords="#{main.palette.keywords.settings}">
                 <i class="ti ti-settings dropdown-item-icon" aria-hidden="true"></i>
                 <span th:text="#{main.settings.title}">Benutzereinstellungen</span>
-                <span class="badge bg-green-lt ms-auto" data-user-menu-news hidden
-                      th:text="#{main.general.new.badge}">Neu</span>
               </a>
               <!--/* Der Moduswechsel bietet nur die Richtung in den anderen Modus an; Tabler blendet
                      den Eintrag fuer den geltenden per CSS aus. Die Palette fragt dafuer
@@ -853,6 +861,14 @@
 
 <!--/* Die Uebersicht der Tastenkuerzel (#1016), geoeffnet mit ? oder ueber den Eintrag im Fuss. */-->
 <div th:replace="~{fragments/shortcut-help :: shortcutHelp}"></div>
+
+<!--/* Neue Achievements (#1501), beim ersten Seitenaufruf danach. Meist gibt es keine, und die Frage
+       danach ist eine kleine Abfrage; erst wenn es etwas anzukuendigen gibt, wird es gelesen. */-->
+<th:block th:with="achievements=${@achievementViewHelper.popup}">
+  <th:block th:unless="${#lists.isEmpty(achievements)}">
+    <div th:replace="~{achievement/popup :: popup(${achievements})}"></div>
+  </th:block>
+</th:block>
 
 <div class="modal modal-blur fade" id="loginSwitchModal" tabindex="-1" role="dialog"
      th:if="${@loginSwitchViewHelper.visible}">

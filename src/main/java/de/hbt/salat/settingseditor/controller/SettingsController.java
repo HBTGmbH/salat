@@ -21,7 +21,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
+import de.hbt.salat.achievement.domain.AchievementPreferences;
+import de.hbt.salat.achievement.service.AchievementPreferenceService;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.controller.SuborderOption;
@@ -68,6 +71,8 @@ public class SettingsController {
   private final BetaFeatureRegistry betaFeatureRegistry;
   private final FavoriteService favoriteService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
+  private final AchievementPreferenceService achievementPreferenceService;
+  private final AuthorizedUser authorizedUser;
 
   @GetMapping
   public String show(Model model) {
@@ -91,6 +96,7 @@ public class SettingsController {
     form.setBetaFeatures(new ArrayList<>(betaFeatureService.getForCurrentUser().keys().stream()
         .sorted()
         .toList()));
+    form.setAchievementsAnnounced(achievementPreferenceService.getForCurrentUser().announce());
 
     var loginEmployee = employeeService.getLoginEmployee();
     model.addAttribute("settingsForm", form);
@@ -98,6 +104,8 @@ public class SettingsController {
     model.addAttribute("suborders", loadSuborders());
     // the switch section is shown only while there is a beta to switch on
     model.addAttribute("betaFeatureOptions", betaFeatureRegistry.all());
+    // externals and interns get no achievements (#1501), so there is nothing to announce to them
+    model.addAttribute("achievementsAvailable", !authorizedUser.isRestricted());
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
     model.addAttribute("title", messages.getMessage("main.settings.title"));
@@ -149,6 +157,9 @@ public class SettingsController {
     // null when every beta switch is off — Spring resets the list via the "_betaFeatures" marker
     betaFeatureService.saveForCurrentUser(
         form.getBetaFeatures() != null ? form.getBetaFeatures() : List.of());
+    if (!authorizedUser.isRestricted()) {
+      achievementPreferenceService.saveForCurrentUser(new AchievementPreferences(form.isAchievementsAnnounced()));
+    }
 
     String localeValue = form.getLocale() != null ? form.getLocale() : "";
     switch (localeValue) {
@@ -205,6 +216,8 @@ public class SettingsController {
 
     /** Keys of the beta features the user switched on, see {@code BetaFeatureContributor}. */
     private List<String> betaFeatures = new ArrayList<>();
+    /** Whether a new achievement is announced with a notification and a popup (#1501). */
+    private boolean achievementsAnnounced = true;
 
   }
 

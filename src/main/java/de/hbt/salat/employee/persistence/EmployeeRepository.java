@@ -10,6 +10,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.domain.EmployeeLogin;
 
 @Repository
 public interface EmployeeRepository extends PagingAndSortingRepository<Employee, Long>, JpaSpecificationExecutor<Employee>,
@@ -40,5 +41,9 @@ public interface EmployeeRepository extends PagingAndSortingRepository<Employee,
   /** The employees signed in under these logins, by the id of the login (#1204). */
   @Query("SELECT e FROM Employee e JOIN FETCH e.salatUser u WHERE u.id IN :salatUserIds")
   List<Employee> findBySalatUserIds(@Param("salatUserIds") Collection<Long> salatUserIds);
+
+  /** The logins of these employees as values (#1501); an employee without a login is left out. */
+  @Query("SELECT new de.hbt.salat.employee.domain.EmployeeLogin(e.id, u.id, u.status) FROM Employee e JOIN e.salatUser u WHERE e.id IN :employeeIds")
+  List<EmployeeLogin> findLoginsByIdIn(@Param("employeeIds") Collection<Long> employeeIds);
 
 }

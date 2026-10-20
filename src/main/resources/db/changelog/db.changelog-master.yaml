@@ -7079,3 +7079,129 @@ databaseChangeLog:
             tableName: order_budget_calculation
             columnName: cost_category_id
             columnDataType: bigint
+
+  - changeSet:
+      id: 190
+      author: kr
+      comment: Eintrittsdatum vor dem Start von Salat (#1501)
+      # Wer vor 2007 eingetreten ist, hat als ersten Vertragsbeginn den 01.01.2007. Die Zeile verlegt den
+      # Beginn der Betriebszugehoerigkeit auf das echte Eintrittsdatum. Gepflegt von Hand per SQL, ohne
+      # Oberflaeche; die Werte stehen nicht im Changeset, es sind Personendaten.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: employee_entry
+      changes:
+        - createTable:
+            tableName: employee_entry
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_employee_entry
+              - column:
+                  name: employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_employee_entry_employee
+                    references: employee(id)
+                    deleteCascade: true
+              - column:
+                  name: entry_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: employee_entry
+            columnNames: employee_id
+            constraintName: uk_employee_entry_employee_id
+
+  - changeSet:
+      id: 191
+      author: kr
+      comment: Erreichte Achievements je Person (#1501)
+      # Eine Zeile je Person, Achievement und Stufe; achieved_on ist der Tag, an dem sie erreicht wurde,
+      # nicht der Tag des Eintrags. seen_at bleibt leer, bis das Popup sie angekuendigt hat. Der
+      # eindeutige Schluessel beginnt mit der Person und traegt damit auch die Frage je Seitenaufruf,
+      # ob es Ungesehenes gibt.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: achievement
+      changes:
+        - createTable:
+            tableName: achievement
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_achievement
+              - column:
+                  name: employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_achievement_employee
+                    references: employee(id)
+                    deleteCascade: true
+              - column:
+                  name: achievement_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: achievement_level
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: achieved_on
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: seen_at
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: achievement
+            columnNames: employee_id, achievement_key, achievement_level
+            constraintName: uk_achievement_employee_id_achievement_key_achievement_level

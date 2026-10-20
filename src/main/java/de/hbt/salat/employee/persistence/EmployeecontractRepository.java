@@ -11,6 +11,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.domain.EmploymentSpan;
 import de.hbt.salat.employee.domain.PersonSearchRow;
 
 @Repository
@@ -34,6 +35,26 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   List<Employeecontract> findAllSupervised(long supervisorId);
 
   List<Employeecontract> findAllByEmployeeId(Long employeeId);
+
+  /**
+   * Alle Verträge der Personen, die am Tag einen gültigen Vertrag haben (#1501) — die früheren
+   * eingeschlossen, denn die Betriebszugehörigkeit zählt sie mit.
+   */
+  @Query("""
+      select new de.hbt.salat.employee.domain.EmploymentSpan(ec.employee.id, ec.validFrom, ec.validUntil)
+      from Employeecontract ec
+      where ec.employee.id in (
+          select v.employee.id from Employeecontract v
+          where v.validFrom <= :day and (v.validUntil is null or v.validUntil >= :day))
+      """)
+  List<EmploymentSpan> findSpansOfEmployeesEmployedOn(LocalDate day);
+
+  /** Alle Verträge der Person als Zeiträume (#1501). */
+  @Query("""
+      select new de.hbt.salat.employee.domain.EmploymentSpan(ec.employee.id, ec.validFrom, ec.validUntil)
+      from Employeecontract ec where ec.employee.id = :employeeId
+      """)
+  List<EmploymentSpan> findSpansByEmployeeId(long employeeId);
 
   /** Die Person des Vertrags (#1414). */
   @Query("select e.employee.id from Employeecontract e where e.id = :employeecontractId")
