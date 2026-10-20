@@ -6,13 +6,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.palette.PaletteCommand;
 import de.hbt.salat.common.palette.PaletteParameter;
 import de.hbt.salat.palette.service.PaletteSearchService;
+import de.hbt.salat.palette.service.PaletteUseService;
 
 /**
  * The object search of the command palette (#1157): the hits of every module for what was typed, as
@@ -29,6 +33,17 @@ import de.hbt.salat.palette.service.PaletteSearchService;
 public class PaletteController {
 
   private final PaletteSearchService paletteSearchService;
+  private final PaletteUseService paletteUseService;
+
+  /**
+   * A run of a palette entry, sent by {@code salat.js} without waiting for an answer (#1501). Only
+   * the number is kept, for the achievement „Palette Junkie“; counting never fails the request.
+   */
+  @PostMapping("/used")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void used() {
+    paletteUseService.countForCurrentUser();
+  }
 
   @GetMapping("/search")
   public String search(@RequestParam(defaultValue = "") String q, Model model) {

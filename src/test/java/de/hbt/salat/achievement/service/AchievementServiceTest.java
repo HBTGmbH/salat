@@ -1,5 +1,9 @@
 package de.hbt.salat.achievement.service;
 
+import static de.hbt.salat.common.achievement.AchievementLevel.level;
+import static de.hbt.salat.common.achievement.AchievementTier.BRONZE;
+import static de.hbt.salat.common.achievement.AchievementTier.GOLD;
+import static de.hbt.salat.common.achievement.AchievementTier.SILVER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,7 +13,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -22,6 +25,8 @@ import de.hbt.salat.achievement.persistence.AchievementRepository;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.achievement.AchievementContributor;
 import de.hbt.salat.common.achievement.AchievementDefinition;
+import de.hbt.salat.common.achievement.AchievementPerson;
+import de.hbt.salat.common.achievement.AchievementProgress;
 import de.hbt.salat.common.achievement.ReachedAchievement;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -44,7 +49,7 @@ import org.springframework.context.support.StaticMessageSource;
 
 /**
  * Recording, announcing and showing achievements (#1501), with a stand-in achievement so that the
- * rules of the module are tested apart from the rules of tenure.
+ * rules of the module are tested apart from the rules of each achievement.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @FixedClock("2026-10-20T04:30:00")
@@ -52,7 +57,8 @@ class AchievementServiceTest {
 
   private static final LocalDate TODAY = LocalDate.of(2026, 10, 20);
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 20, 4, 30);
-  private static final AchievementDefinition TEST = new AchievementDefinition("test", List.of(1, 5, 10), "trophy");
+  private static final AchievementDefinition TEST = new AchievementDefinition("test", "flag", 10,
+      List.of(level(1, BRONZE), level(5, SILVER), level(10, GOLD)));
   private static final long ANNA = 1L;
   private static final long BERT = 2L;
   private static final long ANNA_LOGIN = 11L;
@@ -67,7 +73,8 @@ class AchievementServiceTest {
   private final AuthorizedEmployee authorizedEmployee = mock(AuthorizedEmployee.class);
   private final List<ReachedAchievement> reported = new ArrayList<>();
   private final List<Achievement> saved = new ArrayList<>();
-  private LocalDate forecast;
+  private AchievementProgress progress;
+  private AchievementPerson askedFor;
 
   private AchievementService service;
 
@@ -85,12 +92,17 @@ class AchievementServiceTest {
       }
 
       @Override
-      public Optional<LocalDate> forecast(long employeeId, AchievementDefinition achievement, int level, LocalDate today) {
-        return Optional.ofNullable(forecast);
+      public Optional<AchievementProgress> progress(AchievementPerson person, AchievementDefinition achievement,
+          int level, LocalDate today) {
+        askedFor = person;
+        return Optional.ofNullable(progress);
       }
     };
     var messages = new StaticMessageSource();
     messages.addMessage("main.achievement.test.title", Locale.GERMAN, "Stufe {0}");
+    messages.addMessage("main.achievement.test.rank.1", Locale.GERMAN, "Neuling");
+    messages.addMessage("main.achievement.test.rank.5", Locale.GERMAN, "Kenner");
+    messages.addMessage("main.achievement.test.rank.10", Locale.GERMAN, "Meister");
     messages.addMessage("main.achievement.notification.action", Locale.GERMAN, "Zum Profil");
     service = new AchievementService(repository, new AchievementRegistry(List.of(contributor)), employeeReferences,
         preferenceService, employeeService, notificationService, messages, authorizedUser, authorizedEmployee);
@@ -106,11 +118,15 @@ class AchievementServiceTest {
       Collection<Long> ids = invocation.getArgument(0);
       return ids.stream().map(id -> new EmployeeLogin(id, id + 10, "ma")).toList();
     });
+    when(employeeService.getLoginsBySalatUserIds(any())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return ids.stream().map(id -> new EmployeeLogin(id - 10, id, "ma")).toList();
+    });
     when(preferenceService.isAnnouncedTo(anyLong())).thenReturn(true);
   }
 
   @Test
-  void the_first_run_records_every_reached_level_with_its_day_and_announces_once_per_person() {
+  void the_first_run_records_every_level_with_its_day_and_announces_the_highest_per_achievement() {
     reported.add(reached(ANNA, 1, "2017-03-01"));
     reported.add(reached(ANNA, 5, "2021-03-01"));
     reported.add(reached(BERT, 1, "2026-02-01"));
@@ -123,12 +139,21 @@ class AchievementServiceTest {
             tuple(ANNA, 1, LocalDate.parse("2017-03-01"), null),
             tuple(ANNA, 5, LocalDate.parse("2021-03-01"), null),
             tuple(BERT, 1, LocalDate.parse("2026-02-01"), null));
-    verify(notificationService).emitNotification(List.of(ANNA_LOGIN), "main.achievement.notification.many.title",
-        List.of("2"), "main.achievement.notification.many.description", List.of("Stufe 1, Stufe 5"),
+    verify(notificationService).emitNotification(List.of(ANNA_LOGIN), "main.achievement.notification.one.title",
+        List.of("Kenner · Stufe 5"), "main.achievement.notification.one.description", List.of("01.03.2021"),
         AchievementService.PROFILE_URL, "Zum Profil");
     verify(notificationService).emitNotification(List.of(BERT_LOGIN), "main.achievement.notification.one.title",
-        List.of("Stufe 1"), "main.achievement.notification.one.description", List.of("01.02.2026"),
+        List.of("Neuling · Stufe 1"), "main.achievement.notification.one.description", List.of("01.02.2026"),
         AchievementService.PROFILE_URL, "Zum Profil");
+  }
+
+  @Test
+  void a_level_reported_by_login_is_recorded_for_the_person_of_the_login() {
+    reported.add(ReachedAchievement.ofLogin(ANNA_LOGIN, "test", 1, LocalDate.parse("2026-10-01")));
+
+    assertThat(service.recordReached(TODAY)).isEqualTo(1);
+
+    assertThat(saved).singleElement().extracting(a -> a.getEmployee().getId()).isEqualTo(ANNA);
   }
 
   @Test
@@ -145,7 +170,7 @@ class AchievementServiceTest {
   @Test
   void a_level_reported_twice_is_recorded_once() {
     reported.add(reached(ANNA, 1, "2017-03-01"));
-    reported.add(reached(ANNA, 1, "2017-03-01"));
+    reported.add(ReachedAchievement.ofLogin(ANNA_LOGIN, "test", 1, LocalDate.parse("2017-03-01")));
 
     assertThat(service.recordReached(TODAY)).isEqualTo(1);
   }
@@ -176,7 +201,7 @@ class AchievementServiceTest {
 
   @Test
   void an_unknown_achievement_or_level_and_a_day_still_to_come_are_left_out() {
-    reported.add(new ReachedAchievement(ANNA, "gone", 1, LocalDate.parse("2017-03-01")));
+    reported.add(ReachedAchievement.ofEmployee(ANNA, "gone", 1, LocalDate.parse("2017-03-01")));
     reported.add(reached(ANNA, 2, "2017-03-01"));
     reported.add(reached(ANNA, 1, "2026-10-21"));
 
@@ -186,37 +211,51 @@ class AchievementServiceTest {
   }
 
   @Test
-  void the_profile_shows_the_reached_levels_and_when_the_next_one_comes() {
-    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
-    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(5, "2021-03-01"), recorded(1, "2017-03-01")));
-    forecast = LocalDate.parse("2026-03-01").plusYears(5);
+  void without_anything_reported_nobody_is_asked_for_logins() {
+    service.recordReached(TODAY);
 
-    var groups = service.getProfileOfCurrentPerson(TODAY);
-
-    assertThat(groups).singleElement().satisfies(group -> {
-      assertThat(group.definition()).isEqualTo(TEST);
-      assertThat(group.reached()).containsExactly(
-          new AchievementGroup.Reached(1, LocalDate.parse("2017-03-01")),
-          new AchievementGroup.Reached(5, LocalDate.parse("2021-03-01")));
-      assertThat(group.next()).isEqualTo(new AchievementGroup.Next(10, LocalDate.parse("2031-03-01")));
-    });
+    verify(employeeService, never()).getLoginsOfEmployees(any());
+    verify(preferenceService, never()).isAnnouncedTo(anyLong());
+    verify(notificationService, never()).emitNotification(any(), anyString(), any(), any(), any(), any(), any());
   }
 
   @Test
-  void the_next_level_has_no_day_where_the_contracts_end_before_it() {
-    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
+  void the_profile_shows_the_reached_levels_with_their_tier_and_when_the_next_one_comes() {
+    asPerson();
+    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(5, "2021-03-01"), recorded(1, "2017-03-01")));
+    progress = AchievementProgress.on(LocalDate.parse("2031-03-01"));
+
+    var group = service.getProfileOfCurrentPerson(TODAY).getFirst();
+
+    assertThat(group.definition()).isEqualTo(TEST);
+    assertThat(group.reached()).containsExactly(
+        new AchievementGroup.Reached(1, BRONZE, LocalDate.parse("2017-03-01")),
+        new AchievementGroup.Reached(5, SILVER, LocalDate.parse("2021-03-01")));
+    assertThat(group.next()).isEqualTo(new AchievementGroup.Next(10, LocalDate.parse("2031-03-01"), null));
+    assertThat(askedFor).isEqualTo(new AchievementPerson(ANNA, ANNA_LOGIN));
+  }
+
+  @Test
+  void the_next_level_may_say_how_much_is_still_missing() {
+    asPerson();
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of());
-    forecast = null;
+    progress = AchievementProgress.missing(37);
 
-    var groups = service.getProfileOfCurrentPerson(TODAY);
+    assertThat(service.getProfileOfCurrentPerson(TODAY).getFirst().next()).isEqualTo(new AchievementGroup.Next(1, null, 37));
+  }
 
-    assertThat(groups.getFirst().reached()).isEmpty();
-    assertThat(groups.getFirst().next()).isEqualTo(new AchievementGroup.Next(1, null));
+  @Test
+  void the_next_level_has_no_progress_where_it_cannot_be_told() {
+    asPerson();
+    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of());
+    progress = null;
+
+    assertThat(service.getProfileOfCurrentPerson(TODAY).getFirst().next()).isEqualTo(new AchievementGroup.Next(1, null, null));
   }
 
   @Test
   void after_the_highest_level_there_is_no_next_one() {
-    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
+    asPerson();
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(10, "2027-03-01")));
 
     assertThat(service.getProfileOfCurrentPerson(TODAY).getFirst().next()).isNull();
@@ -225,7 +264,7 @@ class AchievementServiceTest {
   @Test
   void nothing_is_announced_while_somebody_acts_as_another_person() {
     when(authorizedUser.getImpersonateLoginSign()).thenReturn("bt");
-    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
+    asPerson();
 
     assertThat(service.hasUnseenForCurrentPerson()).isFalse();
     service.markSeenForCurrentPerson();
@@ -235,37 +274,34 @@ class AchievementServiceTest {
   }
 
   @Test
-  void the_popup_shows_the_unseen_levels_of_known_achievements_only() {
-    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
+  void the_popup_shows_the_highest_unseen_level_of_each_known_achievement() {
+    asPerson();
     var gone = recorded(1, "2017-03-01");
     gone.setAchievementKey("gone");
-    when(repository.findUnseenByEmployeeId(ANNA)).thenReturn(List.of(gone, recorded(5, "2021-03-01")));
+    when(repository.findUnseenByEmployeeId(ANNA))
+        .thenReturn(List.of(gone, recorded(1, "2017-03-01"), recorded(5, "2021-03-01")));
 
     assertThat(service.getUnseenForCurrentPerson())
-        .extracting(unseen -> unseen.definition().getKey(), unseen -> unseen.level())
-        .containsExactly(tuple("test", 5));
+        .extracting(unseen -> unseen.definition().getKey(), unseen -> unseen.level(), unseen -> unseen.tier())
+        .containsExactly(tuple("test", 5, SILVER));
   }
 
   @Test
   void closing_the_popup_marks_everything_seen() {
-    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
+    asPerson();
 
     service.markSeenForCurrentPerson();
 
-    verify(repository, times(1)).markSeen(eq(ANNA), eq(NOW));
+    verify(repository).markSeen(eq(ANNA), eq(NOW));
   }
 
-  @Test
-  void without_anything_new_nobody_is_asked_for_logins() {
-    service.recordReached(TODAY);
-
-    verify(employeeService, never()).getLoginsOfEmployees(any());
-    verify(preferenceService, never()).isAnnouncedTo(anyLong());
-    verify(notificationService, never()).emitNotification(any(), anyString(), any(), any(), any(), any(), any());
+  private void asPerson() {
+    when(authorizedEmployee.getEmployeeId()).thenReturn(ANNA);
+    when(authorizedEmployee.getSalatUserId()).thenReturn(ANNA_LOGIN);
   }
 
   private static ReachedAchievement reached(long employeeId, int level, String day) {
-    return new ReachedAchievement(employeeId, "test", level, LocalDate.parse(day));
+    return ReachedAchievement.ofEmployee(employeeId, "test", level, LocalDate.parse(day));
   }
 
   private static Achievement recorded(int level, String day) {

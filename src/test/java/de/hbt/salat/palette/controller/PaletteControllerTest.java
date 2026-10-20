@@ -45,6 +45,7 @@ import de.hbt.salat.common.palette.PaletteTarget;
 import de.hbt.salat.common.palette.PaletteText;
 import de.hbt.salat.palette.service.PaletteGroup;
 import de.hbt.salat.palette.service.PaletteSearchService;
+import de.hbt.salat.palette.service.PaletteUseService;
 
 /**
  * The endpoint of the palette's object search (#1157): what the service found, as the fragment that salat.js takes
@@ -103,11 +104,14 @@ class PaletteControllerTest {
   @Mock
   private PaletteSearchService paletteSearchService;
 
+  @Mock
+  private PaletteUseService paletteUseService;
+
   private PaletteController controller;
 
   @BeforeEach
   void setUp() {
-    controller = new PaletteController(paletteSearchService);
+    controller = new PaletteController(paletteSearchService, paletteUseService);
   }
 
   @Test

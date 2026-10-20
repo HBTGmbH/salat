@@ -7205,3 +7205,63 @@ databaseChangeLog:
             tableName: achievement
             columnNames: employee_id, achievement_key, achievement_level
             constraintName: uk_achievement_employee_id_achievement_key_achievement_level
+
+  - changeSet:
+      id: 192
+      author: kr
+      comment: Aufrufe der Befehlspalette je Login und Tag (#1501)
+      # Fuer das Achievement "Palette Junkie": nur die Zahl, weder der Befehl noch die Uhrzeit. Je Login
+      # und Tag eine Zeile; der Tag ist noetig, damit eine Stufe ihr Datum bekommt.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: palette_use
+      changes:
+        - createTable:
+            tableName: palette_use
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_palette_use
+              - column:
+                  name: salat_user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_palette_use_salat_user
+                    references: salat_user(id)
+                    deleteCascade: true
+              - column:
+                  name: use_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: use_count
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: palette_use
+            columnNames: salat_user_id, use_date
+            constraintName: uk_palette_use_salat_user_id_use_date

@@ -1941,8 +1941,23 @@ function paletteRun(index) {
   if (command.type !== 'object' && command.type !== 'target' && command.type !== 'login' && !command.forget) {
     paletteRemember({ t: command.type, k: command.key });
   }
-  document.getElementById('commandPalette').close();
+  const dialog = document.getElementById('commandPalette');
+  dialog.close();
+  paletteCountRun(dialog);
   command.run();
+}
+
+/* Every run is counted for the achievement "Palette Junkie" (#1501) - the number only: an entry run
+ * here, and a command with parameters once paletteInvocationRun opens its target. A beacon
+ * outlives the page the command may be leaving; it cannot carry a header, so the token goes into the
+ * body, where Spring Security looks for it as well. */
+function paletteCountRun(dialog) {
+  const url = dialog.dataset.useUrl;
+  const raw = document.cookie.split('; ').find(r => r.startsWith('XSRF-TOKEN='))?.split('=')[1];
+  if (!url || !navigator.sendBeacon) return;
+  const body = new FormData();
+  if (raw) body.append('_csrf', decodeURIComponent(raw));
+  navigator.sendBeacon(url, body);
 }
 
 /* ─── Objects from the server (#1157, ADR-0031) ───
@@ -2953,7 +2968,9 @@ function paletteInvocationRun(dialog) {
   if (taken) paletteTake(dialog, taken);
   const target = paletteTarget(dialog, invocation);
   if (!target.href) return;
-  document.getElementById('commandPalette').close();
+  const palette = document.getElementById('commandPalette');
+  palette.close();
+  paletteCountRun(palette);
   window.location.assign(target.href);
 }
 

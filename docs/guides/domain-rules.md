@@ -51,6 +51,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `BetaParticipation` | Bewegungsdaten | — (gelöscht mit dem Ende der Beta) |
 | `BetaFeedback` | Bewegungsdaten | — (ohne Person und ohne `AuditedEntity`, ADR-0039; gelöscht mit dem Ende der Beta) |
 | `Achievement` | Bewegungsdaten | — (einmal eingetragen, danach ändert sich nur `seenAt`; geht mit der Person) |
+| `PaletteUse` | Bewegungsdaten | — (Aufrufe der Befehlspalette je Login und Tag, nur die Zahl; geht mit dem Login) |
 
 ---
 

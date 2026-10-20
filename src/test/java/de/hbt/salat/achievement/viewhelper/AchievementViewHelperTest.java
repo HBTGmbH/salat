@@ -9,6 +9,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -39,6 +40,30 @@ class AchievementViewHelperTest {
   @Test
   void less_than_a_month() {
     assertThat(viewHelper.remaining(TODAY, LocalDate.of(2026, 11, 3))).isEqualTo("in weniger als einem Monat");
+  }
+
+  @Test
+  void the_plate_shortens_thousands() {
+    LocaleContextHolder.setLocale(Locale.GERMAN);
+    try {
+      assertThat(viewHelper.plate(25)).isEqualTo("25");
+      assertThat(viewHelper.plate(500)).isEqualTo("500");
+      assertThat(viewHelper.plate(1000)).isEqualTo("1,0K");
+      assertThat(viewHelper.plate(2500)).isEqualTo("2,5K");
+      assertThat(viewHelper.plate(10000)).isEqualTo("10K");
+    } finally {
+      LocaleContextHolder.resetLocaleContext();
+    }
+  }
+
+  @Test
+  void the_plate_follows_the_reader_s_language() {
+    LocaleContextHolder.setLocale(Locale.ENGLISH);
+    try {
+      assertThat(viewHelper.plate(2500)).isEqualTo("2.5K");
+    } finally {
+      LocaleContextHolder.resetLocaleContext();
+    }
   }
 
   private static MessageSourceAccessor messages() {

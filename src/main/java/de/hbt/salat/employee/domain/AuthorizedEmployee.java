@@ -17,10 +17,14 @@ public class AuthorizedEmployee {
   private Long employeeId;
   @Getter
   private String sign;
+  /** The id of the person's login, read off the reference without loading the login (#1501). */
+  @Getter
+  private Long salatUserId;
 
   public void login(Employee employee) {
     this.name = employee.getName();
     this.employeeId = employee.getId();
     this.sign = employee.getSign();
+    this.salatUserId = employee.getSalatUser() != null ? employee.getSalatUser().getId() : null;
   }
 }
