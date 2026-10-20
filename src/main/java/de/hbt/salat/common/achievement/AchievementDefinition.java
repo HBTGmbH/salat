@@ -114,6 +114,16 @@ public final class AchievementDefinition {
     return "main.achievement." + key + ".rank." + level;
   }
 
+  /** Message key of what the achievement is given for, for the popover on the profile page. */
+  public String descriptionKey() {
+    return "main.achievement." + key + ".description";
+  }
+
+  /** Message key of how to get it - the hint the popover of a level still to come gives. */
+  public String hintKey() {
+    return "main.achievement." + key + ".hint";
+  }
+
   /** Message key of what is still missing to the next level - „noch 37 Aufrufe“; its argument is the amount. */
   public String remainingKey() {
     return "main.achievement." + key + ".remaining";

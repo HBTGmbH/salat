@@ -1,9 +1,8 @@
 package de.hbt.salat.achievement.viewhelper;
 
-import de.hbt.salat.achievement.domain.AchievementGroup;
+import de.hbt.salat.achievement.domain.AchievementProfile;
 import de.hbt.salat.achievement.domain.UnseenAchievement;
 import de.hbt.salat.achievement.service.AchievementService;
-import de.hbt.salat.common.achievement.AchievementDefinition;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.Period;
@@ -67,12 +66,12 @@ public class AchievementViewHelper {
   }
 
   /** How far the next level is: „noch 4 Jahre 4 Monate“, „noch 37 Aufrufe“ or „noch nicht erreicht“. */
-  public String next(AchievementDefinition definition, AchievementGroup.Next next, LocalDate today) {
+  public String next(AchievementProfile.Next next, LocalDate today) {
     if (next.expectedOn() != null) {
       return remaining(today, next.expectedOn());
     }
     if (next.remaining() != null) {
-      return messages.getMessage(definition.remainingKey(), new Object[] {next.remaining()});
+      return messages.getMessage(next.definition().remainingKey(), new Object[] {next.remaining()});
     }
     return messages.getMessage("main.achievement.next.open");
   }

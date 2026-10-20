@@ -18,7 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import de.hbt.salat.achievement.domain.Achievement;
-import de.hbt.salat.achievement.domain.AchievementGroup;
+import de.hbt.salat.achievement.domain.AchievementProfile;
 import de.hbt.salat.achievement.domain.RecordedLevel;
 import de.hbt.salat.achievement.persistence.AchievementEmployeeReferences;
 import de.hbt.salat.achievement.persistence.AchievementRepository;
@@ -126,7 +126,7 @@ class AchievementServiceTest {
   }
 
   @Test
-  void the_first_run_records_every_level_with_its_day_and_announces_the_highest_per_achievement() {
+  void the_first_run_records_every_level_with_its_day_and_announces_them_in_order() {
     reported.add(reached(ANNA, 1, "2017-03-01"));
     reported.add(reached(ANNA, 5, "2021-03-01"));
     reported.add(reached(BERT, 1, "2026-02-01"));
@@ -139,8 +139,8 @@ class AchievementServiceTest {
             tuple(ANNA, 1, LocalDate.parse("2017-03-01"), null),
             tuple(ANNA, 5, LocalDate.parse("2021-03-01"), null),
             tuple(BERT, 1, LocalDate.parse("2026-02-01"), null));
-    verify(notificationService).emitNotification(List.of(ANNA_LOGIN), "main.achievement.notification.one.title",
-        List.of("Kenner · Stufe 5"), "main.achievement.notification.one.description", List.of("01.03.2021"),
+    verify(notificationService).emitNotification(List.of(ANNA_LOGIN), "main.achievement.notification.many.title",
+        List.of("2"), "main.achievement.notification.many.description", List.of("Neuling · Stufe 1, Kenner · Stufe 5"),
         AchievementService.PROFILE_URL, "Zum Profil");
     verify(notificationService).emitNotification(List.of(BERT_LOGIN), "main.achievement.notification.one.title",
         List.of("Neuling · Stufe 1"), "main.achievement.notification.one.description", List.of("01.02.2026"),
@@ -220,18 +220,17 @@ class AchievementServiceTest {
   }
 
   @Test
-  void the_profile_shows_the_reached_levels_with_their_tier_and_when_the_next_one_comes() {
+  void the_profile_shows_the_reached_levels_in_the_order_they_were_reached_and_when_the_next_one_comes() {
     asPerson();
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(5, "2021-03-01"), recorded(1, "2017-03-01")));
     progress = AchievementProgress.on(LocalDate.parse("2031-03-01"));
 
-    var group = service.getProfileOfCurrentPerson(TODAY).getFirst();
+    var profile = service.getProfileOfCurrentPerson(TODAY);
 
-    assertThat(group.definition()).isEqualTo(TEST);
-    assertThat(group.reached()).containsExactly(
-        new AchievementGroup.Reached(1, BRONZE, LocalDate.parse("2017-03-01")),
-        new AchievementGroup.Reached(5, SILVER, LocalDate.parse("2021-03-01")));
-    assertThat(group.next()).isEqualTo(new AchievementGroup.Next(10, LocalDate.parse("2031-03-01"), null));
+    assertThat(profile.reached()).containsExactly(
+        new AchievementProfile.Reached(TEST, 1, BRONZE, LocalDate.parse("2017-03-01")),
+        new AchievementProfile.Reached(TEST, 5, SILVER, LocalDate.parse("2021-03-01")));
+    assertThat(profile.next()).containsExactly(new AchievementProfile.Next(TEST, 10, LocalDate.parse("2031-03-01"), null));
     assertThat(askedFor).isEqualTo(new AchievementPerson(ANNA, ANNA_LOGIN));
   }
 
@@ -241,7 +240,7 @@ class AchievementServiceTest {
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of());
     progress = AchievementProgress.missing(37);
 
-    assertThat(service.getProfileOfCurrentPerson(TODAY).getFirst().next()).isEqualTo(new AchievementGroup.Next(1, null, 37));
+    assertThat(service.getProfileOfCurrentPerson(TODAY).next()).containsExactly(new AchievementProfile.Next(TEST, 1, null, 37));
   }
 
   @Test
@@ -250,7 +249,7 @@ class AchievementServiceTest {
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of());
     progress = null;
 
-    assertThat(service.getProfileOfCurrentPerson(TODAY).getFirst().next()).isEqualTo(new AchievementGroup.Next(1, null, null));
+    assertThat(service.getProfileOfCurrentPerson(TODAY).next()).containsExactly(new AchievementProfile.Next(TEST, 1, null, null));
   }
 
   @Test
@@ -258,7 +257,7 @@ class AchievementServiceTest {
     asPerson();
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(10, "2027-03-01")));
 
-    assertThat(service.getProfileOfCurrentPerson(TODAY).getFirst().next()).isNull();
+    assertThat(service.getProfileOfCurrentPerson(TODAY).next()).isEmpty();
   }
 
   @Test
@@ -274,16 +273,16 @@ class AchievementServiceTest {
   }
 
   @Test
-  void the_popup_shows_the_highest_unseen_level_of_each_known_achievement() {
+  void the_popup_shows_every_unseen_level_of_the_known_achievements_in_the_order_it_was_reached() {
     asPerson();
     var gone = recorded(1, "2017-03-01");
     gone.setAchievementKey("gone");
     when(repository.findUnseenByEmployeeId(ANNA))
-        .thenReturn(List.of(gone, recorded(1, "2017-03-01"), recorded(5, "2021-03-01")));
+        .thenReturn(List.of(gone, recorded(5, "2021-03-01"), recorded(1, "2017-03-01")));
 
     assertThat(service.getUnseenForCurrentPerson())
         .extracting(unseen -> unseen.definition().getKey(), unseen -> unseen.level(), unseen -> unseen.tier())
-        .containsExactly(tuple("test", 5, SILVER));
+        .containsExactly(tuple("test", 1, BRONZE), tuple("test", 5, SILVER));
   }
 
   @Test

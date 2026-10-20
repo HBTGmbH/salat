@@ -40,7 +40,8 @@ class AchievementTextsTest {
       }
       for (var definition : definitions) {
         assertThat(properties).as(bundle)
-            .containsKeys(definition.groupKey(), definition.titleKey(), definition.remainingKey());
+            .containsKeys(definition.groupKey(), definition.titleKey(), definition.remainingKey(),
+                definition.descriptionKey(), definition.hintKey());
         for (int level : definition.getLevels()) {
           assertThat(properties).as(bundle + " " + definition + " " + level).containsKey(definition.rankKey(level));
           var title = new MessageFormat(properties.getProperty(definition.titleKey()), Locale.GERMAN)

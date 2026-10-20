@@ -7,36 +7,62 @@
   <title th:text="#{main.profile.title}">Profil</title>
 </head>
 <main layout:fragment="content">
-  <!--/* Nur die eigenen Achievements (#837, #1501): keine Rangliste, kein fremdes Profil. Neben den
-         erreichten Stufen steht die naechste als gesperrte Medaille, damit sichtbar ist, was noch kommt. */-->
+  <!--/* Nur die eigenen Achievements (#837, #1501): keine Rangliste, kein fremdes Profil. Die erreichten
+         Stufen stehen in der Reihenfolge, in der sie erreicht wurden, dahinter die naechste Stufe jedes
+         Achievements als gesperrte Medaille. Jede Medaille ist ein Knopf mit einem Popover (Muster aus
+         #1065, data-info-popover): wofuer es sie gibt, und bei einer gesperrten, was fehlt und wie man
+         sie bekommt. Die Zahl wird per th:with gebunden - ein Bean-Aufruf ist im Fragment-Parameter
+         nicht erlaubt. */-->
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.achievement.title}">Achievements</h3>
     </div>
     <div class="card-body">
-      <section th:each="group, groupStat : ${groups}" th:classappend="${groupStat.last} ? '' : 'mb-4'"
-               th:with="definition=${group.definition()}">
-        <h4 class="subheader mb-3" th:text="#{${definition.groupKey()}}">Loyalist</h4>
-        <ul class="list-unstyled d-flex flex-wrap gap-4 mb-0">
-          <!--/* plate per th:with: a bean call is not allowed in a fragment parameter */-->
-          <li th:each="reached : ${group.reached()}" class="achievement-tile text-center"
-              th:with="plate=${@achievementViewHelper.plate(reached.level())}">
-            <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${reached.tier().fileName()},
-                  ${plate}, false)}"></span>
-            <div class="fw-bold mt-2" th:text="#{${definition.rankKey(reached.level())}}">Urgestein</div>
-            <div class="text-secondary small"
-                 th:text="${#temporals.format(reached.achievedOn(), 'dd.MM.yyyy')}">01.01.2017</div>
-          </li>
-          <li th:if="${group.next() != null}" class="achievement-tile text-center"
-              th:with="next=${group.next()},plate=${@achievementViewHelper.plate(next.level())}">
-            <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, 'locked', ${plate}, false)}"></span>
-            <div class="fw-bold mt-2 text-secondary" th:text="#{${definition.rankKey(next.level())}}">Säule</div>
-            <div class="text-secondary small" th:text="${@achievementViewHelper.next(definition, next, today)}">
-              noch 4 Jahre 4 Monate
+      <ul class="list-unstyled d-flex flex-wrap gap-4 mb-0">
+        <li th:each="item, stat : ${profile.reached()}" class="achievement-tile text-center"
+            th:with="definition=${item.definition()},plate=${@achievementViewHelper.plate(item.level())},
+                     detail=${'achievement-reached-' + stat.index},
+                     rank=#{${item.definition().rankKey(item.level())}},group=#{${item.definition().groupKey()}},
+                     meaning=#{${item.definition().titleKey()}(${item.level()})}">
+          <button type="button" class="achievement-tile-button" th:data-info-popover="${'#' + detail}">
+            <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${item.tier().fileName()}, ${plate}, true)}"></span>
+            <span class="d-block fw-bold mt-2" th:text="${rank}">Urgestein</span>
+            <span class="d-block text-secondary small"
+                  th:text="${#temporals.format(item.achievedOn(), 'dd.MM.yyyy')}">01.01.2017</span>
+          </button>
+          <div th:id="${detail}" hidden>
+            <div class="fw-bold" th:text="${rank}">Urgestein</div>
+            <div th:text="${rank == group} ? ${meaning} : |${group} · ${meaning}|">Loyalist · 10 Jahre bei HBT</div>
+            <div class="text-secondary"
+                 th:text="#{main.achievement.popup.reached(${#temporals.format(item.achievedOn(), 'dd.MM.yyyy')})}">
+              erreicht am 01.01.2017
             </div>
-          </li>
-        </ul>
-      </section>
+            <div class="mt-2" th:text="#{${definition.descriptionKey()}}">Für jedes Jahr bei HBT.</div>
+          </div>
+        </li>
+        <li th:each="item, stat : ${profile.next()}" class="achievement-tile text-center"
+            th:with="definition=${item.definition()},plate=${@achievementViewHelper.plate(item.level())},
+                     detail=${'achievement-next-' + stat.index},
+                     rank=#{${item.definition().rankKey(item.level())}},group=#{${item.definition().groupKey()}},
+                     meaning=#{${item.definition().titleKey()}(${item.level()})},
+                     goal=${rank == group ? meaning : group + ' · ' + meaning},
+                     progress=${@achievementViewHelper.next(item, today)}">
+          <button type="button" class="achievement-tile-button" th:data-info-popover="${'#' + detail}">
+            <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, 'locked', ${plate}, true)}"></span>
+            <span class="d-block fw-bold mt-2 text-secondary" th:text="${rank}">Säule</span>
+            <span class="d-block text-secondary small" th:text="${progress}">noch 4 Jahre 4 Monate</span>
+          </button>
+          <div th:id="${detail}" hidden>
+            <div class="fw-bold" th:text="${rank}">Säule</div>
+            <div th:text="#{main.achievement.popover.goal(${goal})}">Noch zu erreichen: Loyalist · 15 Jahre bei HBT</div>
+            <div class="text-secondary" th:text="${progress}">noch 4 Jahre 4 Monate</div>
+            <div class="mt-2">
+              <span class="fw-bold" th:text="#{main.achievement.popover.how}">So geht's:</span>
+              <span th:text="#{${definition.hintKey()}}">Einfach dabeibleiben.</span>
+            </div>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
 </main>
