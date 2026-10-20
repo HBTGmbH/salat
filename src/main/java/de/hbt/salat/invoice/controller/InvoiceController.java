@@ -28,6 +28,7 @@ import de.hbt.salat.invoice.domain.InvoiceGrouping;
 import de.hbt.salat.invoice.domain.InvoiceSettings;
 import de.hbt.salat.invoice.domain.InvoiceSuborder;
 import de.hbt.salat.invoice.domain.InvoiceTicketDisplay;
+import de.hbt.salat.invoice.domain.InvoiceTimereport;
 import de.hbt.salat.invoice.service.ExcelExportService;
 import de.hbt.salat.invoice.service.InvoiceService;
 import de.hbt.salat.invoice.service.InvoiceService.InvoiceOptions;
@@ -92,16 +93,14 @@ public class InvoiceController {
             }
             form.setRegroup(false);
 
-            form.setSuborderIdArray(invoiceData.getSuborders().stream()
-                .filter(InvoiceSuborder::isVisible)
+            form.setExcludedSuborderIds(invoiceData.getSuborders().stream()
+                .filter(suborder -> !suborder.isVisible())
                 .map(InvoiceSuborder::getId)
-                .map(Long::valueOf)
                 .toList());
-            form.setTimereportIdArray(invoiceData.getSuborders().stream()
-                .flatMap(so -> so.getTimereports().stream())
-                .filter(tr -> tr.isVisible())
-                .map(tr -> tr.getId())
-                .map(Long::valueOf)
+            form.setExcludedTimereportIds(invoiceData.getSuborders().stream()
+                .flatMap(suborder -> suborder.getTimereports().stream())
+                .filter(timereport -> !timereport.isVisible())
+                .map(InvoiceTimereport::getId)
                 .toList());
 
             form.setCustomername(invoiceData.getCustomer().getName());
@@ -320,14 +319,15 @@ public class InvoiceController {
         return true;
     }
 
+    /** Everything is in the invoice but what the preview deselected (#1499) — a booking added since included. */
     private static void updateVisibleFlags(InvoiceForm form, InvoiceData invoiceData) {
-        var suborderIds = form.getSuborderIdArray();
-        var timereportIds = form.getTimereportIdArray();
+        var excludedSuborderIds = Set.copyOf(form.getExcludedSuborderIds());
+        var excludedTimereportIds = Set.copyOf(form.getExcludedTimereportIds());
 
         for (var invoiceSuborder : invoiceData.getSuborders()) {
-            invoiceSuborder.setVisible(suborderIds.contains(invoiceSuborder.getId()));
+            invoiceSuborder.setVisible(!excludedSuborderIds.contains(invoiceSuborder.getId()));
             for (var invoiceTimereport : invoiceSuborder.getTimereports()) {
-                invoiceTimereport.setVisible(timereportIds.contains(invoiceTimereport.getId()));
+                invoiceTimereport.setVisible(!excludedTimereportIds.contains(invoiceTimereport.getId()));
             }
         }
     }

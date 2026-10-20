@@ -52,8 +52,13 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     private boolean employeesignbox = true;
     private boolean invoicebox;
     private boolean showInactive;
-    private List<Long> suborderIdArray = new ArrayList<>();
-    private List<Long> timereportIdArray = new ArrayList<>();
+    /**
+     * The suborders and bookings deselected in the preview (#1499), each once, sent as one field of
+     * comma-separated ids. Deselected rather than selected: what is sent then does not grow with the
+     * order, and a large one stays below the parameter limit of the container.
+     */
+    private List<Long> excludedSuborderIds = new ArrayList<>();
+    private List<Long> excludedTimereportIds = new ArrayList<>();
 
     private InvoiceGrouping grouping = InvoiceGrouping.SUBORDER;
     private InvoiceTicketDisplay ticketdisplay = InvoiceTicketDisplay.COLUMN;
