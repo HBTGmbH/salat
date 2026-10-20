@@ -1768,7 +1768,7 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 
 /* The quote under a new achievement in the popup: set apart, but never louder than the medal.
    Without Tabler's side rule, which stands apart from a centred text. */
-.achievement-quote blockquote {
+blockquote.achievement-quote {
   font-style: italic;
   border: 0;
   padding: 0;

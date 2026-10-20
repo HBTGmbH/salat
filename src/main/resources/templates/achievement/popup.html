@@ -55,14 +55,11 @@
                      th:text="#{main.achievement.popup.reached(${#temporals.format(achievement.achievedOn(), 'dd.MM.yyyy')})}">
                   erreicht am 01.01.2017
                 </div>
-                <!--/* Ein Zitat zur Stufe, zufaellig aus zehn (AchievementQuotes), im Original. */-->
+                <!--/* Ein Zitat zur Stufe, zufaellig aus drei bis fuenf (AchievementQuotes), im Original und
+                       ohne Quelle: Wer es kennt, erkennt es; die Quelle steht nur in quotes.json. */-->
                 <th:block th:with="quote=${@achievementViewHelper.quote(definition, achievement.level())}">
-                  <figure th:if="${quote != null}" class="achievement-quote mt-3 mb-0">
-                    <blockquote class="mb-1" th:text="|„${quote.quote()}“|">„Don't Panic.“</blockquote>
-                    <figcaption class="text-secondary small" th:text="|– ${quote.source()}|">
-                      – Douglas Adams, The Hitchhiker's Guide to the Galaxy
-                    </figcaption>
-                  </figure>
+                  <blockquote th:if="${quote != null}" class="achievement-quote mt-3 mb-0"
+                              th:text="|„${quote.quote()}“|">„Don't Panic.“</blockquote>
                 </th:block>
                 <div th:if="${count > 1}" class="text-secondary small mt-3"
                      th:text="#{main.achievement.popup.position(${stat.count},${count})}">1 von 2</div>
