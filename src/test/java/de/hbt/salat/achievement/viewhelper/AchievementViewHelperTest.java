@@ -19,7 +19,7 @@ class AchievementViewHelperTest {
 
   private static final LocalDate TODAY = LocalDate.of(2026, 10, 20);
 
-  private final AchievementViewHelper viewHelper = new AchievementViewHelper(mock(AchievementService.class), messages());
+  private final AchievementViewHelper viewHelper = new AchievementViewHelper(mock(AchievementService.class), messages(), new AchievementQuotes());
 
   @Test
   void years_and_months() {

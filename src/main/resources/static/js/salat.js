@@ -3471,6 +3471,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const popup = document.querySelector('[data-achievement-popup]');
   if (!popup) return;
   const carousel = popup.querySelector('.carousel');
+  const content = popup.querySelector('.modal-content');
+  popup.querySelectorAll('[data-achievement-emojis]').forEach(frame => {
+    frame.textContent = achievementPick(TITLE_EMOJIS, TITLE_EMOJIS_PER_SIDE).join('');
+  });
   if (carousel) {
     const slides = tabler.bootstrap.Carousel.getOrCreateInstance(carousel);
     popup.addEventListener('keydown', event => {
@@ -3478,6 +3482,246 @@ document.addEventListener('DOMContentLoaded', function () {
       event.preventDefault();
       if (event.key === 'ArrowLeft') slides.prev(); else slides.next();
     });
+    // every achievement gets its own celebration, also the second and the third
+    carousel.addEventListener('slid.bs.carousel', event => achievementCelebrate(content, event.relatedTarget));
   }
+  popup.addEventListener('shown.bs.modal',
+    () => achievementCelebrate(content, popup.querySelector('.carousel-item.active')), { once: true });
   tabler.bootstrap.Modal.getOrCreateInstance(popup).show();
 });
+
+/* The celebration of a new achievement (#1501) grows with its tier: flying emojis for bronze and
+ * silver, confetti for gold and platinum, a firework from diamond on. Drawn on a canvas laid over the popup, which
+ * neither catches a click nor stays behind - it removes itself when it is over. The colours are the
+ * page's own (--tblr-*). Nothing moves for whoever asked the system to reduce motion. */
+const CELEBRATION_COLOURS = ['--tblr-yellow', '--tblr-primary', '--tblr-green', '--tblr-red', '--tblr-purple',
+  '--tblr-azure', '--tblr-orange'];
+const CELEBRATION_BY_TIER = {
+  bronze: 'emoji', silver: 'emoji', gold: 'confetti', platinum: 'confetti',
+  diamond: 'firework', master: 'firework', grandmaster: 'firework'
+};
+// The emojis of a celebration, in groups: party, partying, celebrate, proud, powerful, happy. They
+// frame the popup's heading and fly with the emoji celebration, there together with one for the
+// pictogram.
+const EMOJI_GROUPS = {
+  party: ['🎉', '🎊', '🎈', '🪅', '🎁'],
+  partying: ['🥳', '💃', '🕺', '🪩', '🍾', '🥂', '🍻', '🎶', '🤘'],
+  celebrate: ['🏆', '🥇', '🏅', '👏', '🙌', '🎆', '🎇', '✨', '🌟'],
+  proud: ['😤', '👑', '🦚', '💯', '🎖️', '😌'],
+  powerful: ['💪', '🔥', '🚀', '⚡', '🦾', '👊', '😎'],
+  happy: ['😄', '😆', '😁', '😂', '🤣', '🤩', '😍', '🤗', '😊', '🥰']
+};
+const CELEBRATION_EMOJIS = Object.values(EMOJI_GROUPS).flat();
+const PICTOGRAM_EMOJIS = { flag: '🚩', calendar: '📅', mortarboard: '🎓', keyboard: '⌨️', flask: '🧪' };
+// the frame of the popup's heading, mixed anew each time it opens
+const TITLE_EMOJIS = CELEBRATION_EMOJIS;
+const TITLE_EMOJIS_PER_SIDE = 2;
+
+/** Some different entries of the list, in random order. */
+function achievementPick(list, count) {
+  const pool = list.slice();
+  const picked = [];
+  while (picked.length < count && pool.length) picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  return picked;
+}
+// Long enough to enjoy it - three to four times a short burst - and fading out over the last second.
+const CELEBRATION_FADE_MS = 1000;
+const EMOJI_COUNT = 60;
+const EMOJI_LAUNCH_MS = 6500;
+const EMOJI_MS = 9000;
+const CONFETTI_BURSTS = [0, 2500, 5000];
+const CONFETTI_PIECES = 110;
+const CONFETTI_MS = 8500;
+const FIREWORK_ROCKETS = 14;
+const FIREWORK_LAUNCH_MS = 6500;
+const FIREWORK_SPARKS = 60;
+// the climb has to be seen: about one and a half to two seconds from the bottom edge to the burst
+const FIREWORK_CLIMB_SPEED = 5.5;
+const FIREWORK_TAIL = 14;
+const FIREWORK_MS = 11000;
+
+function achievementCelebrate(container, slide) {
+  if (!container || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const kind = CELEBRATION_BY_TIER[slide ? slide.dataset.achievementTier : ''] || 'confetti';
+  if (kind === 'firework') achievementFirework(container);
+  else if (kind === 'emoji') achievementEmojis(container, slide ? slide.dataset.achievementPictogram : '');
+  else achievementConfetti(container);
+}
+
+/** A canvas over the container, scaled for sharp drawing, with the colours of the page. */
+function celebrationCanvas(container) {
+  container.querySelectorAll('.achievement-celebration').forEach(old => old.remove());
+  const canvas = document.createElement('canvas');
+  canvas.className = 'achievement-celebration';
+  canvas.setAttribute('aria-hidden', 'true');
+  container.appendChild(canvas);
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  const context = canvas.getContext('2d');
+  context.scale(ratio, ratio);
+  const style = getComputedStyle(document.documentElement);
+  const colours = CELEBRATION_COLOURS.map(name => style.getPropertyValue(name).trim()).filter(Boolean);
+  return { canvas, context, width, height, colour: () => colours[Math.floor(Math.random() * colours.length)] || 'gold' };
+}
+
+/** Runs draw(elapsed) every frame until the time is over, then takes the canvas away. */
+function celebrationLoop(canvas, duration, draw) {
+  const start = performance.now();
+  function frame(now) {
+    const elapsed = now - start;
+    draw(elapsed);
+    if (elapsed < duration && canvas.isConnected) requestAnimationFrame(frame); else canvas.remove();
+  }
+  requestAnimationFrame(frame);
+}
+
+/** Emojis thrown up from the bottom, each on its own arc, swaying a little and fading out. */
+function achievementEmojis(container, pictogram) {
+  const { canvas, context, width, height } = celebrationCanvas(container);
+  const own = PICTOGRAM_EMOJIS[pictogram];
+  const pool = own ? CELEBRATION_EMOJIS.concat([own, own, own]) : CELEBRATION_EMOJIS;
+  const emojis = Array.from({ length: EMOJI_COUNT }, () => ({
+    glyph: pool[Math.floor(Math.random() * pool.length)],
+    launch: Math.random() * EMOJI_LAUNCH_MS,
+    x: width * (0.1 + Math.random() * 0.8),
+    y: height + 20,
+    vx: (Math.random() - 0.5) * 2.5,
+    vy: -6.5 - Math.random() * 3.5,
+    size: 22 + Math.random() * 14,
+    sway: Math.random() * Math.PI * 2,
+    angle: (Math.random() - 0.5) * 0.6
+  }));
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  celebrationLoop(canvas, EMOJI_MS, elapsed => {
+    context.clearRect(0, 0, width, height);
+    context.globalAlpha = Math.min(1, Math.max(0, (EMOJI_MS - elapsed) / CELEBRATION_FADE_MS));
+    emojis.forEach(emoji => {
+      if (elapsed < emoji.launch) return;
+      emoji.vy += 0.1;
+      emoji.sway += 0.08;
+      emoji.x += emoji.vx + Math.sin(emoji.sway) * 0.8;
+      emoji.y += emoji.vy;
+      context.save();
+      context.translate(emoji.x, emoji.y);
+      context.rotate(emoji.angle + Math.sin(emoji.sway) * 0.15);
+      context.font = `${emoji.size}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      context.fillText(emoji.glyph, 0, 0);
+      context.restore();
+    });
+  });
+}
+
+/** A burst from behind the medal that falls and fades out. */
+function achievementConfetti(container) {
+  const { canvas, context, width, height, colour } = celebrationCanvas(container);
+  // salvo after salvo from where the medal stands, upwards and to both sides; the pieces then flutter
+  // down slowly instead of dropping
+  const pieces = CONFETTI_BURSTS.flatMap(launch => Array.from({ length: CONFETTI_PIECES }, () => ({
+    launch,
+    x: width / 2 + (Math.random() - 0.5) * 60,
+    y: height * 0.3,
+    vx: (Math.random() - 0.5) * 11,
+    vy: -4 - Math.random() * 8,
+    size: 5 + Math.random() * 6,
+    angle: Math.random() * Math.PI,
+    spin: (Math.random() - 0.5) * 0.35,
+    flutter: Math.random() * Math.PI * 2,
+    colour: colour()
+  })));
+  celebrationLoop(canvas, CONFETTI_MS, elapsed => {
+    context.clearRect(0, 0, width, height);
+    context.globalAlpha = Math.min(1, Math.max(0, (CONFETTI_MS - elapsed) / CELEBRATION_FADE_MS));
+    pieces.forEach(piece => {
+      if (elapsed < piece.launch) return;
+      piece.vy = Math.min(piece.vy + 0.18, 1.6);
+      piece.vx *= 0.97;
+      piece.flutter += 0.07;
+      piece.x += piece.vx + Math.sin(piece.flutter) * 0.9;
+      piece.y += piece.vy;
+      piece.angle += piece.spin;
+      context.save();
+      context.translate(piece.x, piece.y);
+      context.rotate(piece.angle);
+      context.fillStyle = piece.colour;
+      context.fillRect(-piece.size / 2, -piece.size / 4, piece.size, piece.size / 2);
+      context.restore();
+    });
+  });
+}
+
+/** Rockets that rise from the bottom one after the other and burst into sparks. */
+function achievementFirework(container) {
+  const { canvas, context, width, height, colour } = celebrationCanvas(container);
+  const rockets = Array.from({ length: FIREWORK_ROCKETS }, (_, index) => ({
+    launch: (index / FIREWORK_ROCKETS) * FIREWORK_LAUNCH_MS + Math.random() * 250,
+    x: width * (0.15 + Math.random() * 0.7),
+    y: height,
+    drift: (Math.random() - 0.5) * 0.8,
+    peak: height * (0.12 + Math.random() * 0.3),
+    colour: colour(),
+    tail: [],
+    sparks: null
+  }));
+  celebrationLoop(canvas, FIREWORK_MS, elapsed => {
+    context.clearRect(0, 0, width, height);
+    context.globalAlpha = Math.min(1, Math.max(0, (FIREWORK_MS - elapsed) / CELEBRATION_FADE_MS));
+    rockets.forEach(rocket => {
+      if (elapsed < rocket.launch) return;
+      if (!rocket.sparks) {
+        // rising from the bottom edge: a glowing head with a tail that fades behind it
+        rocket.tail.push([rocket.x, rocket.y]);
+        if (rocket.tail.length > FIREWORK_TAIL) rocket.tail.shift();
+        rocket.y -= FIREWORK_CLIMB_SPEED;
+        rocket.x += rocket.drift;
+        rocket.tail.forEach(([x, y], index) => {
+          context.globalAlpha = (index + 1) / rocket.tail.length * 0.6;
+          context.fillStyle = rocket.colour;
+          context.beginPath();
+          context.arc(x, y, 1 + index / rocket.tail.length * 2, 0, Math.PI * 2);
+          context.fill();
+        });
+        context.globalAlpha = Math.min(1, Math.max(0, (FIREWORK_MS - elapsed) / CELEBRATION_FADE_MS));
+        context.fillStyle = rocket.colour;
+        context.beginPath();
+        context.arc(rocket.x, rocket.y, 4, 0, Math.PI * 2);
+        context.fill();
+        if (rocket.y <= rocket.peak) {
+          rocket.sparks = Array.from({ length: FIREWORK_SPARKS }, (_, index) => {
+            const direction = (index / FIREWORK_SPARKS) * Math.PI * 2;
+            const speed = 2.5 + Math.random() * 2.5;
+            return { x: rocket.x, y: rocket.y, vx: Math.cos(direction) * speed, vy: Math.sin(direction) * speed, life: 1,
+              trail: [] };
+          });
+        }
+        return;
+      }
+      rocket.sparks.forEach(spark => {
+        // a short trail behind each spark, so that the burst reads as light on the white popup
+        spark.trail.push([spark.x, spark.y]);
+        if (spark.trail.length > 6) spark.trail.shift();
+        spark.vy += 0.05;
+        spark.vx *= 0.98;
+        spark.vy *= 0.98;
+        spark.x += spark.vx;
+        spark.y += spark.vy;
+        spark.life -= 0.008;
+        if (spark.life <= 0) return;
+        context.globalAlpha = Math.max(0, spark.life) * Math.min(1, (FIREWORK_MS - elapsed) / CELEBRATION_FADE_MS);
+        context.strokeStyle = rocket.colour;
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(spark.trail[0][0], spark.trail[0][1]);
+        context.lineTo(spark.x, spark.y);
+        context.stroke();
+        context.fillStyle = rocket.colour;
+        context.beginPath();
+        context.arc(spark.x, spark.y, 3, 0, Math.PI * 2);
+        context.fill();
+      });
+    });
+  });
+}

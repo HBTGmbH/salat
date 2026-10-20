@@ -1,8 +1,10 @@
 package de.hbt.salat.achievement.viewhelper;
 
 import de.hbt.salat.achievement.domain.AchievementProfile;
+import de.hbt.salat.achievement.domain.AchievementQuote;
 import de.hbt.salat.achievement.domain.UnseenAchievement;
 import de.hbt.salat.achievement.service.AchievementService;
+import de.hbt.salat.common.achievement.AchievementDefinition;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.Period;
@@ -32,6 +34,7 @@ public class AchievementViewHelper {
 
   private final AchievementService achievementService;
   private final MessageSourceAccessor messages;
+  private final AchievementQuotes quotes;
 
   private List<UnseenAchievement> popup;
 
@@ -50,6 +53,11 @@ public class AchievementViewHelper {
       }
     }
     return popup;
+  }
+
+  /** A quote for a new level, picked at random; {@code null} where the level has none. */
+  public AchievementQuote quote(AchievementDefinition definition, int level) {
+    return quotes.random(definition.getKey(), level).orElse(null);
   }
 
   /** The number on a medal's plate: „25“, „1,0K“, „10K“ - in the reader's language. */
