@@ -13,13 +13,15 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 /**
- * Ten quotes per level of every achievement (#1501) - from films, series, music and books, the
- * nerdier the better: the people reading them write software. The popup shows one of them at
- * random with each new level. They stand in the original language, since a translated line loses
- * what makes it recognizable.
+ * Three to five quotes per level of every achievement (#1501) - from films, series, music and
+ * books, the nerdier the better: the people reading them write software. The popup shows one of
+ * them at random with each new level. Each one alludes to what its level stands for - arriving,
+ * staying, learning, the keyboard instead of the mouse -, and none speaks of death, age or farewell
+ * or reads as a dig at the person; a level gets fewer quotes rather than ones that do not fit.
+ * They stand in the original language, since a translated line loses what makes it recognizable.
  *
  * <p>Read once from {@code achievement/quotes.json}, keyed by achievement and level;
- * {@code AchievementQuotesTest} checks that every contributed level has its ten.
+ * {@code AchievementQuotesTest} checks that every contributed level has its quotes.
  */
 @Component
 public class AchievementQuotes {

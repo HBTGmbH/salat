@@ -2,53 +2,29 @@
  "first-100-days": {
   "100": [
    {
-    "quote": "Home is behind, the world ahead.",
-    "source": "J. R. R. Tolkien, The Lord of the Rings"
-   },
-   {
-    "quote": "It's a dangerous business, Frodo, going out your door.",
-    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
-   },
-   {
-    "quote": "In a hole in the ground there lived a hobbit.",
-    "source": "J. R. R. Tolkien, The Hobbit"
-   },
-   {
-    "quote": "Don't Panic.",
-    "source": "Douglas Adams, The Hitchhiker's Guide to the Galaxy"
-   },
-   {
     "quote": "hello, world",
     "source": "Kernighan & Ritchie, The C Programming Language"
+   },
+   {
+    "quote": "Home is behind, the world ahead.",
+    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
    },
    {
     "quote": "Welcome to the real world.",
     "source": "The Matrix (1999)"
    },
    {
-    "quote": "Adventure is out there!",
-    "source": "Up (2009)"
+    "quote": "Don't Panic.",
+    "source": "Douglas Adams, The Hitchhiker's Guide to the Galaxy"
    },
    {
-    "quote": "Roads? Where we're going, we don't need roads.",
-    "source": "Back to the Future (1985)"
-   },
-   {
-    "quote": "Here comes the sun.",
-    "source": "The Beatles, Here Comes the Sun"
-   },
-   {
-    "quote": "Hello, friend.",
-    "source": "Mr. Robot (2015)"
+    "quote": "Louis, I think this is the beginning of a beautiful friendship.",
+    "source": "Casablanca (1942)"
    }
   ]
  },
  "tenure": {
   "1": [
-   {
-    "quote": "A wizard is never late, nor is he early. He arrives precisely when he means to.",
-    "source": "The Lord of the Rings: The Fellowship of the Ring (2001)"
-   },
    {
     "quote": "There's no place like home.",
     "source": "The Wizard of Oz (1939)"
@@ -58,43 +34,15 @@
     "source": "Star Wars: The Force Awakens (2015)"
    },
    {
-    "quote": "Wherever you go, there you are.",
-    "source": "The Adventures of Buckaroo Banzai (1984)"
-   },
-   {
-    "quote": "This is the way.",
-    "source": "The Mandalorian (2019)"
+    "quote": "Ohana means family. Family means nobody gets left behind. Or forgotten.",
+    "source": "Lilo & Stitch (2002)"
    },
    {
     "quote": "Live long and prosper.",
     "source": "Star Trek (1967)"
-   },
-   {
-    "quote": "Ohana means family. Family means nobody gets left behind or forgotten.",
-    "source": "Lilo & Stitch (2002)"
-   },
-   {
-    "quote": "I am Groot.",
-    "source": "Guardians of the Galaxy (2014)"
-   },
-   {
-    "quote": "We are family.",
-    "source": "Sister Sledge, We Are Family"
-   },
-   {
-    "quote": "Just keep swimming.",
-    "source": "Finding Nemo (2003)"
    }
   ],
   "5": [
-   {
-    "quote": "I have been, and always shall be, your friend.",
-    "source": "Star Trek II: The Wrath of Khan (1982)"
-   },
-   {
-    "quote": "After all this time? – Always.",
-    "source": "J. K. Rowling, Harry Potter and the Deathly Hallows"
-   },
    {
     "quote": "I can't carry it for you, but I can carry you!",
     "source": "The Lord of the Rings: The Return of the King (2003)"
@@ -108,402 +56,138 @@
     "source": "Rick Astley, Never Gonna Give You Up"
    },
    {
-    "quote": "Friends don't lie.",
-    "source": "Stranger Things (2016)"
-   },
-   {
-    "quote": "I'll be back.",
-    "source": "The Terminator (1984)"
-   },
-   {
-    "quote": "So say we all.",
-    "source": "Battlestar Galactica (2004)"
-   },
-   {
-    "quote": "With a little help from my friends.",
-    "source": "The Beatles, With a Little Help from My Friends"
-   },
-   {
-    "quote": "Hold the door!",
-    "source": "Game of Thrones (2016)"
+    "quote": "I made a promise, Mr. Frodo. A promise. 'Don't you leave him, Samwise Gamgee.' And I don't mean to.",
+    "source": "The Lord of the Rings: The Fellowship of the Ring (2001)"
    }
   ],
   "10": [
    {
-    "quote": "It's not the years, honey, it's the mileage.",
-    "source": "Raiders of the Lost Ark (1981)"
-   },
-   {
-    "quote": "Difficult to see. Always in motion is the future.",
-    "source": "Star Wars: The Empire Strikes Back (1980)"
+    "quote": "Deep roots are not reached by the frost.",
+    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
    },
    {
     "quote": "The Road goes ever on and on.",
-    "source": "J. R. R. Tolkien, The Lord of the Rings"
+    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
    },
    {
     "quote": "I'm still standing better than I ever did.",
     "source": "Elton John, I'm Still Standing"
    },
    {
-    "quote": "Time is an illusion. Lunchtime doubly so.",
-    "source": "Douglas Adams, The Hitchhiker's Guide to the Galaxy"
-   },
-   {
-    "quote": "Wibbly wobbly, timey wimey … stuff.",
-    "source": "Doctor Who, Blink (2007)"
-   },
-   {
-    "quote": "Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.",
-    "source": "Ferris Bueller's Day Off (1986)"
-   },
-   {
-    "quote": "Time is on my side.",
-    "source": "The Rolling Stones, Time Is on My Side"
-   },
-   {
     "quote": "I can do this all day.",
     "source": "Captain America: The First Avenger (2011)"
-   },
-   {
-    "quote": "Stayin' alive, stayin' alive.",
-    "source": "Bee Gees, Stayin' Alive"
    }
   ],
   "15": [
    {
+    "quote": "Lean on me, when you're not strong, and I'll be your friend.",
+    "source": "Bill Withers, Lean on Me"
+   },
+   {
+    "quote": "With great power comes great responsibility.",
+    "source": "Spider-Man (2002)"
+   },
+   {
     "quote": "It ain't about how hard you hit. It's about how hard you can get hit and keep moving forward.",
     "source": "Rocky Balboa (2006)"
-   },
-   {
-    "quote": "Even the smallest person can change the course of the future.",
-    "source": "The Lord of the Rings: The Fellowship of the Ring (2001)"
-   },
-   {
-    "quote": "Make it so.",
-    "source": "Star Trek: The Next Generation (1987)"
-   },
-   {
-    "quote": "The needs of the many outweigh the needs of the few.",
-    "source": "Star Trek II: The Wrath of Khan (1982)"
-   },
-   {
-    "quote": "I will survive.",
-    "source": "Gloria Gaynor, I Will Survive"
-   },
-   {
-    "quote": "The show must go on.",
-    "source": "Queen, The Show Must Go On"
-   },
-   {
-    "quote": "Rebellions are built on hope.",
-    "source": "Rogue One: A Star Wars Story (2016)"
-   },
-   {
-    "quote": "Engage.",
-    "source": "Star Trek: The Next Generation (1987)"
-   },
-   {
-    "quote": "Indeed.",
-    "source": "Stargate SG-1 (1997)"
-   },
-   {
-    "quote": "Why do we fall, Bruce? So we can learn to pick ourselves up.",
-    "source": "Batman Begins (2005)"
    }
   ],
   "20": [
+   {
+    "quote": "You wanna be where everybody knows your name.",
+    "source": "Gary Portnoy, Where Everybody Knows Your Name (Cheers)"
+   },
    {
     "quote": "Impressive. Most impressive.",
     "source": "Star Wars: The Empire Strikes Back (1980)"
    },
    {
-    "quote": "Space: the final frontier.",
-    "source": "Star Trek (1966)"
-   },
-   {
     "quote": "Simply the best, better than all the rest.",
     "source": "Tina Turner, The Best"
-   },
-   {
-    "quote": "Resistance is futile.",
-    "source": "Star Trek: The Next Generation (1990)"
-   },
-   {
-    "quote": "Wakanda forever!",
-    "source": "Black Panther (2018)"
-   },
-   {
-    "quote": "So it goes.",
-    "source": "Kurt Vonnegut, Slaughterhouse-Five"
-   },
-   {
-    "quote": "We are the champions, my friends.",
-    "source": "Queen, We Are the Champions"
-   },
-   {
-    "quote": "I am Iron Man.",
-    "source": "Iron Man (2008)"
-   },
-   {
-    "quote": "It's a kind of magic.",
-    "source": "Queen, A Kind of Magic"
-   },
-   {
-    "quote": "Fascinating.",
-    "source": "Star Trek (1966)"
    }
   ],
   "25": [
    {
-    "quote": "When nine hundred years old you reach, look as good you will not.",
-    "source": "Star Wars: Return of the Jedi (1983)"
+    "quote": "Legen – wait for it – dary!",
+    "source": "How I Met Your Mother (2005)"
+   },
+   {
+    "quote": "Standing in the hall of fame.",
+    "source": "The Script, Hall of Fame"
    },
    {
     "quote": "Woah, we're half way there.",
     "source": "Bon Jovi, Livin' on a Prayer"
-   },
-   {
-    "quote": "What we do in life echoes in eternity.",
-    "source": "Gladiator (2000)"
-   },
-   {
-    "quote": "We're all stories in the end. Just make it a good one, eh?",
-    "source": "Doctor Who, The Big Bang (2010)"
-   },
-   {
-    "quote": "Remember who you are.",
-    "source": "The Lion King (1994)"
-   },
-   {
-    "quote": "Luminous beings are we, not this crude matter.",
-    "source": "Star Wars: The Empire Strikes Back (1980)"
-   },
-   {
-    "quote": "Forty-two.",
-    "source": "Douglas Adams, The Hitchhiker's Guide to the Galaxy"
-   },
-   {
-    "quote": "Great Scott!",
-    "source": "Back to the Future (1985)"
-   },
-   {
-    "quote": "The Force will be with you. Always.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "Don't stop believin'.",
-    "source": "Journey, Don't Stop Believin'"
    }
   ],
   "30": [
    {
-    "quote": "Who wants to live forever?",
-    "source": "Queen, Who Wants to Live Forever"
+    "quote": "I can go the distance.",
+    "source": "Hercules (1997)"
    },
    {
-    "quote": "Forever young, I want to be forever young.",
-    "source": "Alphaville, Forever Young"
+    "quote": "It's a long way to the top if you wanna rock 'n' roll.",
+    "source": "AC/DC, It's a Long Way to the Top"
    },
    {
-    "quote": "Not all those who wander are lost.",
-    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
-   },
-   {
-    "quote": "There is some good in this world, Mr. Frodo, and it's worth fighting for.",
-    "source": "The Lord of the Rings: The Two Towers (2002)"
-   },
-   {
-    "quote": "Your future is whatever you make it. So make it a good one.",
-    "source": "Back to the Future Part III (1990)"
-   },
-   {
-    "quote": "Change is the essential process of all existence.",
-    "source": "Star Trek, Let That Be Your Last Battlefield (1969)"
-   },
-   {
-    "quote": "Hakuna Matata!",
-    "source": "The Lion King (1994)"
-   },
-   {
-    "quote": "Ground Control to Major Tom.",
-    "source": "David Bowie, Space Oddity"
-   },
-   {
-    "quote": "The times they are a-changin'.",
-    "source": "Bob Dylan, The Times They Are a-Changin'"
-   },
-   {
-    "quote": "May the Force be with you.",
+    "quote": "The Force is strong with this one.",
     "source": "Star Wars (1977)"
    }
   ],
   "35": [
    {
-    "quote": "Yesterday is history, tomorrow is a mystery, but today is a gift. That is why it is called the present.",
-    "source": "Kung Fu Panda (2008)"
+    "quote": "Don't stop me now, I'm having such a good time.",
+    "source": "Queen, Don't Stop Me Now"
    },
    {
-    "quote": "All we have to decide is what to do with the time that is given us.",
-    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
-   },
-   {
-    "quote": "It is possible to commit no mistakes and still lose. That is not a weakness; that is life.",
-    "source": "Star Trek: The Next Generation, Peak Performance (1989)"
-   },
-   {
-    "quote": "Carpe diem. Seize the day, boys.",
-    "source": "Dead Poets Society (1989)"
-   },
-   {
-    "quote": "Allons-y!",
-    "source": "Doctor Who (2006)"
-   },
-   {
-    "quote": "Life, uh, finds a way.",
-    "source": "Jurassic Park (1993)"
-   },
-   {
-    "quote": "Don't worry, be happy.",
-    "source": "Bobby McFerrin, Don't Worry, Be Happy"
-   },
-   {
-    "quote": "Always look on the bright side of life.",
-    "source": "Monty Python's Life of Brian (1979)"
-   },
-   {
-    "quote": "Völlig losgelöst von der Erde schwebt das Raumschiff völlig schwerelos.",
-    "source": "Peter Schilling, Major Tom (völlig losgelöst)"
-   },
-   {
-    "quote": "I aim to misbehave.",
-    "source": "Serenity (2005)"
-   }
-  ],
-  "40": [
-   {
-    "quote": "I am inevitable.",
-    "source": "Avengers: Endgame (2019)"
-   },
-   {
-    "quote": "Avengers, assemble.",
-    "source": "Avengers: Endgame (2019)"
-   },
-   {
-    "quote": "To boldly go where no one has gone before.",
-    "source": "Star Trek: The Next Generation (1987)"
-   },
-   {
-    "quote": "The game is afoot.",
-    "source": "Arthur Conan Doyle, The Adventure of the Abbey Grange"
-   },
-   {
-    "quote": "Fantastic!",
-    "source": "Doctor Who (2005)"
-   },
-   {
-    "quote": "Shiny.",
-    "source": "Firefly (2002)"
-   },
-   {
-    "quote": "Excellent.",
-    "source": "The Simpsons"
-   },
-   {
-    "quote": "Gonna fly now.",
-    "source": "Bill Conti, Rocky (1976)"
-   },
-   {
-    "quote": "Ain't no mountain high enough.",
-    "source": "Marvin Gaye & Tammi Terrell, Ain't No Mountain High Enough"
+    "quote": "Fortune and glory, kid. Fortune and glory.",
+    "source": "Indiana Jones and the Temple of Doom (1984)"
    },
    {
     "quote": "Celebrate good times, come on!",
     "source": "Kool & the Gang, Celebration"
    }
   ],
+  "40": [
+   {
+    "quote": "Ain't no mountain high enough.",
+    "source": "Marvin Gaye & Tammi Terrell, Ain't No Mountain High Enough"
+   },
+   {
+    "quote": "Gonna fly now.",
+    "source": "Bill Conti, Rocky (1976)"
+   },
+   {
+    "quote": "Let's see what's out there. Engage.",
+    "source": "Star Trek: The Next Generation, Encounter at Farpoint (1987)"
+   }
+  ],
   "45": [
    {
-    "quote": "I've seen things you people wouldn't believe.",
-    "source": "Blade Runner (1982)"
+    "quote": "But I would walk five hundred miles, and I would walk five hundred more.",
+    "source": "The Proclaimers, I'm Gonna Be (500 Miles)"
    },
    {
-    "quote": "Truly wonderful, the mind of a child is.",
-    "source": "Star Wars: Attack of the Clones (2002)"
-   },
-   {
-    "quote": "Even the very wise cannot see all ends.",
-    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
-   },
-   {
-    "quote": "It does not do to dwell on dreams and forget to live.",
-    "source": "J. K. Rowling, Harry Potter and the Philosopher's Stone"
-   },
-   {
-    "quote": "The ships hung in the sky in much the same way that bricks don't.",
-    "source": "Douglas Adams, The Hitchhiker's Guide to the Galaxy"
-   },
-   {
-    "quote": "Bow ties are cool.",
-    "source": "Doctor Who (2010)"
-   },
-   {
-    "quote": "Hasta la vista, baby.",
-    "source": "Terminator 2: Judgment Day (1991)"
-   },
-   {
-    "quote": "Here's looking at you, kid.",
-    "source": "Casablanca (1942)"
+    "quote": "Don't stop believin'. Hold on to that feelin'.",
+    "source": "Journey, Don't Stop Believin'"
    },
    {
     "quote": "We will, we will rock you.",
     "source": "Queen, We Will Rock You"
-   },
-   {
-    "quote": "It's the final countdown.",
-    "source": "Europe, The Final Countdown"
    }
   ],
   "50": [
-   {
-    "quote": "I am definitely a mad man with a box.",
-    "source": "Doctor Who, The Eleventh Hour (2010)"
-   },
-   {
-    "quote": "The Force is strong with this one.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "Do not go gentle into that good night.",
-    "source": "Dylan Thomas, Do Not Go Gentle into That Good Night"
-   },
-   {
-    "quote": "Geronimo!",
-    "source": "Doctor Who (2010)"
-   },
-   {
-    "quote": "One more time, we're gonna celebrate.",
-    "source": "Daft Punk, One More Time"
-   },
-   {
-    "quote": "The best is yet to come.",
-    "source": "Frank Sinatra, The Best Is Yet to Come"
-   },
-   {
-    "quote": "I'm the king of the world!",
-    "source": "Titanic (1997)"
-   },
-   {
-    "quote": "We're all mad here.",
-    "source": "Lewis Carroll, Alice's Adventures in Wonderland"
-   },
    {
     "quote": "To infinity and beyond!",
     "source": "Toy Story (1995)"
    },
    {
-    "quote": "So long, and thanks for all the fish.",
-    "source": "Douglas Adams, So Long, and Thanks for All the Fish"
+    "quote": "We are the champions, my friends.",
+    "source": "Queen, We Are the Champions"
+   },
+   {
+    "quote": "One more time, we're gonna celebrate.",
+    "source": "Daft Punk, One More Time"
    }
   ]
  },
@@ -514,166 +198,66 @@
     "source": "The Matrix (1999)"
    },
    {
-    "quote": "Do. Or do not. There is no try.",
-    "source": "Star Wars: The Empire Strikes Back (1980)"
+    "quote": "Curiouser and curiouser!",
+    "source": "Lewis Carroll, Alice's Adventures in Wonderland"
    },
    {
     "quote": "You must unlearn what you have learned.",
     "source": "Star Wars: The Empire Strikes Back (1980)"
    },
    {
-    "quote": "It's Levi-O-sa, not Levi-o-SA.",
-    "source": "Harry Potter and the Philosopher's Stone (2001)"
-   },
-   {
-    "quote": "Anyone can cook.",
-    "source": "Ratatouille (2007)"
-   },
-   {
-    "quote": "Free your mind.",
-    "source": "The Matrix (1999)"
-   },
-   {
-    "quote": "Harder, better, faster, stronger.",
-    "source": "Daft Punk, Harder, Better, Faster, Stronger"
-   },
-   {
-    "quote": "Think! About your work.",
+    "quote": "Invest regularly in your knowledge portfolio.",
     "source": "Hunt & Thomas, The Pragmatic Programmer"
-   },
-   {
-    "quote": "Programs must be written for people to read, and only incidentally for machines to execute.",
-    "source": "Abelson & Sussman, Structure and Interpretation of Computer Programs"
-   },
-   {
-    "quote": "Insufficient facts always invite danger.",
-    "source": "Star Trek, Space Seed (1967)"
    }
   ],
   "200": [
    {
-    "quote": "The greatest teacher, failure is.",
-    "source": "Star Wars: The Last Jedi (2017)"
+    "quote": "Care about your craft.",
+    "source": "Hunt & Thomas, The Pragmatic Programmer"
    },
    {
     "quote": "Pass on what you have learned.",
     "source": "Star Wars: Return of the Jedi (1983)"
    },
    {
-    "quote": "Logic is the beginning of wisdom, not the end.",
-    "source": "Star Trek VI: The Undiscovered Country (1991)"
+    "quote": "The greatest teacher, failure is.",
+    "source": "Star Wars: The Last Jedi (2017)"
    },
    {
-    "quote": "Care about your craft.",
-    "source": "Hunt & Thomas, The Pragmatic Programmer"
-   },
-   {
-    "quote": "Leave the campground cleaner than you found it.",
-    "source": "Robert C. Martin, Clean Code"
-   },
-   {
-    "quote": "Any sufficiently advanced technology is indistinguishable from magic.",
-    "source": "Arthur C. Clarke, Profiles of the Future"
-   },
-   {
-    "quote": "It is our choices, Harry, that show what we truly are, far more than our abilities.",
-    "source": "J. K. Rowling, Harry Potter and the Chamber of Secrets"
-   },
-   {
-    "quote": "There is no spoon.",
-    "source": "The Matrix (1999)"
-   },
-   {
-    "quote": "Size matters not.",
+    "quote": "Do. Or do not. There is no try.",
     "source": "Star Wars: The Empire Strikes Back (1980)"
-   },
-   {
-    "quote": "Don't live with broken windows.",
-    "source": "Hunt & Thomas, The Pragmatic Programmer"
    }
   ],
   "500": [
    {
-    "quote": "Always two there are, no more, no less. A master and an apprentice.",
-    "source": "Star Wars: The Phantom Menace (1999)"
-   },
-   {
-    "quote": "Adding manpower to a late software project makes it later.",
-    "source": "Frederick P. Brooks, The Mythical Man-Month"
+    "quote": "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.",
+    "source": "Martin Fowler, Refactoring"
    },
    {
     "quote": "Plan to throw one away; you will, anyhow.",
     "source": "Frederick P. Brooks, The Mythical Man-Month"
    },
    {
-    "quote": "It always takes longer than you expect, even when you take into account Hofstadter's Law.",
-    "source": "Douglas Hofstadter, Gödel, Escher, Bach"
+    "quote": "Adding manpower to a late software project makes it later.",
+    "source": "Frederick P. Brooks, The Mythical Man-Month"
    },
    {
     "quote": "Clean code always looks like it was written by someone who cares.",
     "source": "Michael Feathers in Robert C. Martin, Clean Code"
-   },
-   {
-    "quote": "Your focus determines your reality.",
-    "source": "Star Wars: The Phantom Menace (1999)"
-   },
-   {
-    "quote": "DRY – Don't Repeat Yourself.",
-    "source": "Hunt & Thomas, The Pragmatic Programmer"
-   },
-   {
-    "quote": "Things are only impossible until they're not.",
-    "source": "Star Trek: The Next Generation, When the Bough Breaks (1988)"
-   },
-   {
-    "quote": "Fear is the path to the dark side.",
-    "source": "Star Wars: The Phantom Menace (1999)"
-   },
-   {
-    "quote": "I think, therefore I am.",
-    "source": "René Descartes, Discourse on the Method"
    }
   ],
   "1000": [
    {
-    "quote": "The bearing of a child takes nine months, no matter how many women are assigned.",
-    "source": "Frederick P. Brooks, The Mythical Man-Month"
+    "quote": "It is a capital mistake to theorize before one has data.",
+    "source": "Arthur Conan Doyle, A Scandal in Bohemia"
    },
    {
-    "quote": "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.",
-    "source": "Martin Fowler, Refactoring"
-   },
-   {
-    "quote": "Knowledge is power.",
-    "source": "Francis Bacon, Meditationes Sacrae"
-   },
-   {
-    "quote": "Great men are not born great, they grow great.",
-    "source": "The Godfather (1972)"
-   },
-   {
-    "quote": "Mischief managed.",
-    "source": "J. K. Rowling, Harry Potter and the Prisoner of Azkaban"
-   },
-   {
-    "quote": "You know nothing, Jon Snow.",
-    "source": "Game of Thrones (2011)"
-   },
-   {
-    "quote": "I'm a doctor, not a bricklayer.",
-    "source": "Star Trek, The Devil in the Dark (1967)"
-   },
-   {
-    "quote": "I'm not crazy. My mother had me tested.",
-    "source": "The Big Bang Theory (2008)"
-   },
-   {
-    "quote": "Highly illogical.",
-    "source": "Star Trek (1967)"
-   },
-   {
-    "quote": "Share and Enjoy.",
+    "quote": "The Answer to the Great Question … of Life, the Universe and Everything … is … Forty-two.",
     "source": "Douglas Adams, The Hitchhiker's Guide to the Galaxy"
+   },
+   {
+    "quote": "Any sufficiently advanced technology is indistinguishable from magic.",
+    "source": "Arthur C. Clarke, Profiles of the Future"
    }
   ]
  },
@@ -688,207 +272,83 @@
     "source": "WarGames (1983)"
    },
    {
-    "quote": "Greetings, programs!",
-    "source": "Tron (1982)"
-   },
-   {
-    "quote": "Hello there!",
-    "source": "Star Wars: Revenge of the Sith (2005)"
-   },
-   {
-    "quote": "Open the pod bay doors, HAL.",
-    "source": "2001: A Space Odyssey (1968)"
-   },
-   {
     "quote": "It's a UNIX system! I know this!",
     "source": "Jurassic Park (1993)"
    },
    {
-    "quote": "Hello, IT. Have you tried turning it off and on again?",
-    "source": "The IT Crowd (2006)"
-   },
-   {
-    "quote": "Curiouser and curiouser!",
-    "source": "Lewis Carroll, Alice's Adventures in Wonderland"
-   },
-   {
-    "quote": "These aren't the droids you're looking for.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "I've got the power!",
-    "source": "Snap!, The Power"
+    "quote": "Greetings, programs!",
+    "source": "Tron (1982)"
    }
   ],
   "500": [
    {
-    "quote": "Hack the planet!",
-    "source": "Hackers (1995)"
-   },
-   {
     "quote": "I feel the need – the need for speed!",
     "source": "Top Gun (1986)"
-   },
-   {
-    "quote": "Never tell me the odds!",
-    "source": "Star Wars: The Empire Strikes Back (1980)"
-   },
-   {
-    "quote": "Work it, make it, do it, makes us harder, better, faster, stronger.",
-    "source": "Daft Punk, Harder, Better, Faster, Stronger"
-   },
-   {
-    "quote": "Bazinga!",
-    "source": "The Big Bang Theory (2008)"
    },
    {
     "quote": "Shut up and take my money!",
     "source": "Futurama (2010)"
    },
    {
-    "quote": "Good news, everyone!",
-    "source": "Futurama (1999)"
-   },
-   {
-    "quote": "Use the Force, Luke.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "Punch it, Chewie!",
-    "source": "Star Wars: Return of the Jedi (1983)"
-   },
-   {
-    "quote": "Short cuts make long delays.",
-    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
+    "quote": "Hack the planet!",
+    "source": "Hackers (1995)"
    }
   ],
   "1000": [
    {
-    "quote": "Dodge this.",
-    "source": "The Matrix (1999)"
-   },
-   {
-    "quote": "Show me.",
-    "source": "The Matrix (1999)"
-   },
-   {
-    "quote": "In my experience, there's no such thing as luck.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "Domo arigato, Mr. Roboto.",
-    "source": "Styx, Mr. Roboto"
-   },
-   {
-    "quote": "Highway to the danger zone.",
-    "source": "Kenny Loggins, Danger Zone"
-   },
-   {
-    "quote": "Come with me if you want to live.",
-    "source": "The Terminator (1984)"
-   },
-   {
-    "quote": "End of line.",
-    "source": "Tron (1982)"
-   },
-   {
-    "quote": "No capes!",
-    "source": "The Incredibles (2004)"
-   },
-   {
-    "quote": "It's a trap!",
-    "source": "Star Wars: Return of the Jedi (1983)"
-   },
-   {
-    "quote": "Fly, you fools!",
-    "source": "The Lord of the Rings: The Fellowship of the Ring (2001)"
-   }
-  ],
-  "2500": [
-   {
-    "quote": "Wake up, Neo.",
-    "source": "The Matrix (1999)"
-   },
-   {
-    "quote": "Ludicrous speed! Go!",
-    "source": "Spaceballs (1987)"
-   },
-   {
-    "quote": "May the Schwartz be with you!",
-    "source": "Spaceballs (1987)"
-   },
-   {
-    "quote": "Why waste time say lot word when few word do trick?",
-    "source": "The Office (2013)"
-   },
-   {
-    "quote": "A strange game. The only winning move is not to play.",
-    "source": "WarGames (1983)"
-   },
-   {
-    "quote": "Don't stop me now, I'm having such a good time.",
-    "source": "Queen, Don't Stop Me Now"
+    "quote": "Cowabunga!",
+    "source": "Teenage Mutant Ninja Turtles (1987)"
    },
    {
     "quote": "Wax on, wax off.",
     "source": "The Karate Kid (1984)"
    },
    {
-    "quote": "And now for something completely different.",
-    "source": "Monty Python's Flying Circus (1969)"
+    "quote": "Dodge this.",
+    "source": "The Matrix (1999)"
+   }
+  ],
+  "2500": [
+   {
+    "quote": "Ludicrous speed! Go!",
+    "source": "Spaceballs (1987)"
    },
    {
-    "quote": "Nobody expects the Spanish Inquisition!",
-    "source": "Monty Python's Flying Circus (1970)"
+    "quote": "Roads? Where we're going, we don't need roads.",
+    "source": "Back to the Future (1985)"
    },
    {
-    "quote": "Clever girl.",
-    "source": "Jurassic Park (1993)"
+    "quote": "A Short Cut to Mushrooms",
+    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
+   },
+   {
+    "quote": "Why waste time say lot word when few word do trick?",
+    "source": "The Office (2013)"
    }
   ],
   "5000": [
    {
-    "quote": "Wir sind die Roboter.",
-    "source": "Kraftwerk, Die Roboter"
-   },
-   {
-    "quote": "There can be only one!",
-    "source": "Highlander (1986)"
-   },
-   {
-    "quote": "When I left you, I was but the learner; now I am the master.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "You shall not pass!",
-    "source": "The Lord of the Rings: The Fellowship of the Ring (2001)"
-   },
-   {
-    "quote": "I'm the captain now.",
-    "source": "Captain Phillips (2013)"
-   },
-   {
-    "quote": "One Ring to rule them all.",
-    "source": "J. R. R. Tolkien, The Lord of the Rings"
-   },
-   {
-    "quote": "Unlimited power!",
-    "source": "Star Wars: Revenge of the Sith (2005)"
-   },
-   {
-    "quote": "Kneel before Zod!",
-    "source": "Superman II (1980)"
-   },
-   {
-    "quote": "I solemnly swear that I am up to no good.",
-    "source": "J. K. Rowling, Harry Potter and the Prisoner of Azkaban"
+    "quote": "Make it so.",
+    "source": "Star Trek: The Next Generation (1987)"
    },
    {
     "quote": "Tea. Earl Grey. Hot.",
     "source": "Star Trek: The Next Generation (1987)"
+   },
+   {
+    "quote": "Man who catch fly with chopstick accomplish anything.",
+    "source": "The Karate Kid (1984)"
    }
   ],
   "10000": [
+   {
+    "quote": "Keyboard. How quaint.",
+    "source": "Star Trek IV: The Voyage Home (1986)"
+   },
+   {
+    "quote": "Hello, computer.",
+    "source": "Star Trek IV: The Voyage Home (1986)"
+   },
    {
     "quote": "Bond. James Bond.",
     "source": "Dr. No (1962)"
@@ -896,38 +356,6 @@
    {
     "quote": "It's over 9000!",
     "source": "Dragon Ball Z (1997)"
-   },
-   {
-    "quote": "No, I am your father.",
-    "source": "Star Wars: The Empire Strikes Back (1980)"
-   },
-   {
-    "quote": "Hello, computer.",
-    "source": "Star Trek IV: The Voyage Home (1986)"
-   },
-   {
-    "quote": "A keyboard. How quaint.",
-    "source": "Star Trek IV: The Voyage Home (1986)"
-   },
-   {
-    "quote": "I'm one with the Force. The Force is with me.",
-    "source": "Rogue One: A Star Wars Story (2016)"
-   },
-   {
-    "quote": "I'm Batman.",
-    "source": "Batman (1989)"
-   },
-   {
-    "quote": "Excelsior!",
-    "source": "Stan Lee"
-   },
-   {
-    "quote": "Fear is the mind-killer.",
-    "source": "Frank Herbert, Dune"
-   },
-   {
-    "quote": "Truly, you have a dizzying intellect.",
-    "source": "The Princess Bride (1987)"
    }
   ]
  },
@@ -938,87 +366,31 @@
     "source": "Star Wars: Revenge of the Sith (2005)"
    },
    {
-    "quote": "Life was like a box of chocolates. You never know what you're gonna get.",
-    "source": "Forrest Gump (1994)"
-   },
-   {
-    "quote": "I have a bad feeling about this.",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "Buy it, use it, break it, fix it, trash it, change it, mail, upgrade it.",
-    "source": "Daft Punk, Technologic"
-   },
-   {
-    "quote": "Is this the real life? Is this just fantasy?",
-    "source": "Queen, Bohemian Rhapsody"
-   },
-   {
     "quote": "Houston, we have a problem.",
-    "source": "Apollo 13 (1995)"
-   },
-   {
-    "quote": "Failure is not an option.",
     "source": "Apollo 13 (1995)"
    },
    {
     "quote": "Fasten your seatbelts. It's going to be a bumpy night.",
     "source": "All About Eve (1950)"
-   },
-   {
-    "quote": "It's alive! It's alive!",
-    "source": "Frankenstein (1931)"
-   },
-   {
-    "quote": "In your face, Neil Armstrong.",
-    "source": "The Martian (2015)"
    }
   ],
   "3": [
    {
-    "quote": "I'll try spinning, that's a good trick!",
-    "source": "Star Wars (1977)"
-   },
-   {
-    "quote": "We used to look up at the sky and wonder at our place in the stars.",
-    "source": "Interstellar (2014)"
+    "quote": "To boldly go where no one has gone before.",
+    "source": "Star Trek: The Next Generation (1987)"
    },
    {
     "quote": "Second to the right, and straight on till morning.",
     "source": "J. M. Barrie, Peter Pan"
    },
    {
-    "quote": "Fortune favours the bold.",
-    "source": "Virgil, Aeneid"
-   },
-   {
-    "quote": "Welcome to Earth.",
-    "source": "Independence Day (1996)"
-   },
-   {
-    "quote": "I am a leaf on the wind. Watch how I soar.",
-    "source": "Serenity (2005)"
-   },
-   {
-    "quote": "There's always a bigger fish.",
-    "source": "Star Wars: The Phantom Menace (1999)"
-   },
-   {
-    "quote": "The world is changed.",
-    "source": "The Lord of the Rings: The Fellowship of the Ring (2001)"
-   },
-   {
-    "quote": "Hey ho, let's go!",
-    "source": "Ramones, Blitzkrieg Bop"
-   },
-   {
-    "quote": "Born to be wild.",
-    "source": "Steppenwolf, Born to Be Wild"
+    "quote": "We used to look up at the sky and wonder at our place in the stars.",
+    "source": "Interstellar (2014)"
    }
   ],
   "5": [
    {
-    "quote": "Your future hasn't been written yet. No one's has.",
+    "quote": "Your future is whatever you make it. So make it a good one.",
     "source": "Back to the Future Part III (1990)"
    },
    {
@@ -1026,36 +398,12 @@
     "source": "Terminator 2: Judgment Day (1991)"
    },
    {
-    "quote": "I'm sorry, Dave. I'm afraid I can't do that.",
-    "source": "2001: A Space Odyssey (1968)"
-   },
-   {
-    "quote": "Two roads diverged in a wood, and I – I took the one less traveled by.",
-    "source": "Robert Frost, The Road Not Taken"
-   },
-   {
-    "quote": "It's the end of the world as we know it (and I feel fine).",
-    "source": "R.E.M., It's the End of the World as We Know It"
-   },
-   {
-    "quote": "Imagine all the people living life in peace.",
+    "quote": "You may say I'm a dreamer, but I'm not the only one.",
     "source": "John Lennon, Imagine"
-   },
-   {
-    "quote": "You take the red pill, you stay in Wonderland, and I show you how deep the rabbit hole goes.",
-    "source": "The Matrix (1999)"
-   },
-   {
-    "quote": "Computers make excellent and efficient servants, but I have no wish to serve under them.",
-    "source": "Star Trek, The Ultimate Computer (1968)"
    },
    {
     "quote": "We are the music makers, and we are the dreamers of dreams.",
     "source": "Willy Wonka & the Chocolate Factory (1971)"
-   },
-   {
-    "quote": "O brave new world, that has such people in't!",
-    "source": "William Shakespeare, The Tempest"
    }
   ]
  }
