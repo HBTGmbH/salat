@@ -119,7 +119,11 @@
 </style>
 
 <th:block th:fragment="matrixTable(matrixData, showBeginBreakEnd, showNotWorked)">
-<div class="table-responsive">
+<!--/* position-relative: der Name eines Feiertags steht im Kopf als visually-hidden, und Bootstrap
+       positioniert den absolut. Ohne positionierten Container entkam er dem Abschneiden, und die
+       ganze Seite wurde so breit wie die Tabelle - auf dem Smartphone lag ein zentrierter Dialog
+       dann ausserhalb des Bildschirms (#1501). */-->
+<div class="table-responsive position-relative">
   <table class="table table-vcenter table-sm card-table" id="matrix">
 
     <thead>
