@@ -1691,9 +1691,24 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 }
 
 /* ===== Achievements (#1501) ===== */
-/* A tile on the profile page: as wide as the longest line under it, „noch 4 Jahre 11 Monate“. */
+/* A tile on the profile page: as wide as the longest line under it, „noch 4 Jahre 11 Monate“. The
+   whole tile is the button that opens its popover; it looks like the tile, not like a button. */
 .achievement-tile {
   width: 11rem;
+}
+
+.achievement-tile-button {
+  width: 100%;
+  padding: .25rem;
+  border: 0;
+  border-radius: var(--tblr-border-radius);
+  background: none;
+  color: inherit;
+}
+
+.achievement-tile-button:focus-visible {
+  outline: 2px solid var(--tblr-primary);
+  outline-offset: 2px;
 }
 
 /* A medal (#1501): the SVG on a round white disc, the level number set as text onto its plate. The

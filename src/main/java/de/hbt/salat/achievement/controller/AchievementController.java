@@ -24,7 +24,7 @@ public class AchievementController {
   @GetMapping("/profile")
   public String profile(Model model) {
     achievementService.markSeenForCurrentPerson();
-    model.addAttribute("groups", achievementService.getProfileOfCurrentPerson(today()));
+    model.addAttribute("profile", achievementService.getProfileOfCurrentPerson(today()));
     model.addAttribute("today", today());
     return "achievement/profile";
   }

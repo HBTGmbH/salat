@@ -5,7 +5,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 import de.hbt.salat.achievement.domain.Achievement;
-import de.hbt.salat.achievement.domain.AchievementGroup;
+import de.hbt.salat.achievement.domain.AchievementProfile;
 import de.hbt.salat.achievement.domain.RecordedLevel;
 import de.hbt.salat.achievement.domain.UnseenAchievement;
 import de.hbt.salat.achievement.persistence.AchievementEmployeeReferences;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -46,9 +47,8 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Achievements are for employees: a restricted login (externals, interns) and the technical
  * administrator get none.
  *
- * <p>Announced is the highest new level of each achievement only. Whoever has been with the company
- * for 30 years would otherwise get seven levels of the same achievement at once on the first run;
- * the lower ones are recorded all the same and stand on the profile page.
+ * <p>Every new level is announced, in the order it was reached: whoever has been with the company
+ * for ten years sees one year and five years first, then ten - the way they happened.
  */
 @Slf4j
 @Service
@@ -107,7 +107,7 @@ public class AchievementService {
           .sorted(comparing(Fresh::achievedOn).thenComparing(Fresh::level))
           .forEach(reached -> achievementRepository.save(toEntity(reached, announce)));
       if (announce) {
-        announce(login.salatUserId(), highestPerAchievement(reachedOfPerson, Fresh::key, Fresh::level));
+        announce(login.salatUserId(), reachedOfPerson);
       }
     }
     log.info("Recorded {} achievement level(s) for {} person(s)", fresh.size(), byEmployee.size());
@@ -116,22 +116,36 @@ public class AchievementService {
 
   /**
    * The achievements of the person on the profile page - the logged-in one, or the one acted as:
-   * per achievement the levels reached and the next one.
+   * every level reached, in the order it was reached, and the next level of each achievement.
    */
   @Transactional(readOnly = true)
-  public List<AchievementGroup> getProfileOfCurrentPerson(LocalDate today) {
+  public AchievementProfile getProfileOfCurrentPerson(LocalDate today) {
     var employeeId = authorizedEmployee.getEmployeeId();
     var salatUserId = authorizedEmployee.getSalatUserId();
     if (employeeId == null || salatUserId == null) {
-      return List.of();
+      return new AchievementProfile(List.of(), List.of());
     }
     var person = new AchievementPerson(employeeId, salatUserId);
     var recorded = achievementRepository.findAllByEmployeeId(employeeId).stream()
         .filter(achievement -> registry.isKnown(achievement.getAchievementKey(), achievement.getAchievementLevel()))
-        .collect(groupingBy(Achievement::getAchievementKey));
-    return registry.all().stream()
-        .map(definition -> group(definition, recorded.getOrDefault(definition.getKey(), List.of()), person, today))
         .toList();
+    var reached = recorded.stream()
+        .map(achievement -> {
+          var definition = registry.find(achievement.getAchievementKey()).orElseThrow();
+          return new AchievementProfile.Reached(definition, achievement.getAchievementLevel(),
+              definition.tierOf(achievement.getAchievementLevel()), achievement.getAchievedOn());
+        })
+        .sorted(comparing(AchievementProfile.Reached::achievedOn)
+            .thenComparing(item -> item.definition().getPosition())
+            .thenComparing(AchievementProfile.Reached::level))
+        .toList();
+    var highest = recorded.stream().collect(groupingBy(Achievement::getAchievementKey,
+        Collectors.mapping(Achievement::getAchievementLevel, Collectors.maxBy(Integer::compare))));
+    var next = registry.all().stream()
+        .flatMap(definition -> next(definition, highest.getOrDefault(definition.getKey(), Optional.empty())
+            .orElse(null), person, today).stream())
+        .toList();
+    return new AchievementProfile(reached, next);
   }
 
   /**
@@ -145,17 +159,15 @@ public class AchievementService {
     return employeeId != null && achievementRepository.existsUnseenByEmployeeId(employeeId);
   }
 
-  /** The highest unseen level of each achievement, for the popup. */
+  /** Every unseen level of the known achievements, in the order it was reached - for the popup. */
   @Transactional(readOnly = true)
   public List<UnseenAchievement> getUnseenForCurrentPerson() {
     var employeeId = announcedPerson();
     if (employeeId == null) {
       return List.of();
     }
-    var known = achievementRepository.findUnseenByEmployeeId(employeeId).stream()
+    return achievementRepository.findUnseenByEmployeeId(employeeId).stream()
         .filter(achievement -> registry.isKnown(achievement.getAchievementKey(), achievement.getAchievementLevel()))
-        .toList();
-    return highestPerAchievement(known, Achievement::getAchievementKey, Achievement::getAchievementLevel).stream()
         .sorted(comparing(Achievement::getAchievedOn).thenComparing(Achievement::getAchievementLevel))
         .map(achievement -> {
           var definition = registry.find(achievement.getAchievementKey()).orElseThrow();
@@ -202,13 +214,6 @@ public class AchievementService {
         .collect(toMap(key, Function.identity(), (first, second) -> first));
   }
 
-  private static <T> List<T> highestPerAchievement(Collection<T> levels, Function<T, String> key,
-      Function<T, Integer> level) {
-    return levels.stream()
-        .collect(toMap(key, Function.identity(), (one, other) -> level.apply(one) >= level.apply(other) ? one : other))
-        .values().stream().toList();
-  }
-
   private Long announcedPerson() {
     if (authorizedUser.getImpersonateLoginSign() != null) {
       return null;
@@ -216,22 +221,15 @@ public class AchievementService {
     return authorizedEmployee.getEmployeeId();
   }
 
-  private AchievementGroup group(AchievementDefinition definition, List<Achievement> recorded, AchievementPerson person,
-      LocalDate today) {
-    var reached = recorded.stream()
-        .sorted(comparing(Achievement::getAchievementLevel))
-        .map(achievement -> new AchievementGroup.Reached(achievement.getAchievementLevel(),
-            definition.tierOf(achievement.getAchievementLevel()), achievement.getAchievedOn()))
-        .toList();
-    var highest = reached.isEmpty() ? null : reached.getLast().level();
-    var next = definition.nextLevelAfter(highest)
+  /** The level after the highest reached one, with how far it is; empty once every level is reached. */
+  private Optional<AchievementProfile.Next> next(AchievementDefinition definition, Integer highest,
+      AchievementPerson person, LocalDate today) {
+    return definition.nextLevelAfter(highest)
         .map(level -> registry.contributorOf(definition).progress(person, definition, level, today)
-            .map(progress -> new AchievementGroup.Next(level,
+            .map(progress -> new AchievementProfile.Next(definition, level,
                 progress.expectedOn() != null && progress.expectedOn().isAfter(today) ? progress.expectedOn() : null,
                 progress.remaining()))
-            .orElse(new AchievementGroup.Next(level, null, null)))
-        .orElse(null);
-    return new AchievementGroup(definition, reached, next);
+            .orElse(new AchievementProfile.Next(definition, level, null, null)));
   }
 
   private Achievement toEntity(Fresh reached, boolean announce) {
