@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 42"><!-- Loyalist: calendar sheet with binder rings and day cells -->
+  <rect x="18" y="0" width="5" height="10" rx="1"/>
+  <rect x="37" y="0" width="5" height="10" rx="1"/>
+  <path d="M10 5H50V41H10Z M14 17H46V37H14Z"/>
+  <path d="M18 21H24V26H18Z M27 21H33V26H27Z M36 21H42V26H36Z M18 29H24V34H18Z M27 29H33V34H27Z"/>
+</svg>
