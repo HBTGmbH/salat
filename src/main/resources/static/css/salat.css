@@ -1749,6 +1749,23 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   color: var(--tblr-white);
 }
 
+/* A level still to come carries a lock at the lower right, so that it never reads as reached. */
+.achievement-medal-lock {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--achievement-medal-size) * .32);
+  height: calc(var(--achievement-medal-size) * .32);
+  border-radius: 50%;
+  background: var(--tblr-bg-surface);
+  box-shadow: 0 0 0 1px var(--tblr-border-color);
+  color: var(--tblr-secondary);
+  font-size: calc(var(--achievement-medal-size) * .18);
+}
+
 /* the one plate in gold: the number is dark on it */
 .achievement-medal-grandmaster .achievement-medal-number {
   color: var(--tblr-dark);

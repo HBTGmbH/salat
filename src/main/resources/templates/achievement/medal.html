@@ -9,6 +9,7 @@
       th:classappend="${'achievement-medal-' + tier + (large ? ' achievement-medal-lg' : '')}">
   <img th:src="@{|/images/achievement/medal-${pictogram}-${tier}.svg|}" alt=""/>
   <span class="achievement-medal-number" th:text="${number}">25</span>
+  <span th:if="${tier == 'locked'}" class="achievement-medal-lock" aria-hidden="true"><i class="ti ti-lock"></i></span>
 </span>
 </body>
 </html>

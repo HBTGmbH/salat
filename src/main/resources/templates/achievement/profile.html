@@ -40,6 +40,13 @@
             <div class="mt-2" th:text="#{${definition.descriptionKey()}}">Für jedes Jahr bei HBT.</div>
           </div>
         </li>
+      </ul>
+      <!--/* Die gesperrten Medaillen stehen in einem eigenen Abschnitt, damit sie nicht wie Erreichtes
+             gelesen werden; das Schloss an der Medaille sagt es zusaetzlich. */-->
+      <th:block th:unless="${#lists.isEmpty(profile.next())}">
+      <hr class="my-4" th:unless="${#lists.isEmpty(profile.reached())}"/>
+      <h4 class="subheader mb-3" th:text="#{main.achievement.next.title}">Als Nächstes</h4>
+      <ul class="list-unstyled d-flex flex-wrap gap-4 mb-0">
         <li th:each="item, stat : ${profile.next()}" class="achievement-tile text-center"
             th:with="definition=${item.definition()},plate=${@achievementViewHelper.plate(item.level())},
                      detail=${'achievement-next-' + stat.index},
@@ -63,6 +70,7 @@
           </div>
         </li>
       </ul>
+      </th:block>
     </div>
   </div>
 </main>
