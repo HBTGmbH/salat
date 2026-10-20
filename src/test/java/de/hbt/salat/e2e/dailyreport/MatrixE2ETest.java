@@ -252,4 +252,24 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
         assertThat(page.locator("#matrix")).isVisible());
   }
 
+  /**
+   * The name of a holiday stands in its column head for screen readers only, in a span Bootstrap
+   * positions absolutely. Its scroll container was not positioned, so the span escaped the clip, and
+   * the page grew as wide as the table: on a phone Chrome laid out the whole page that wide, and a
+   * centred dialog lay outside the screen (#1501). October 2026 carries the E2E holiday; the matrix
+   * of the dashboard shares the table.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_holiday_in_the_month_keeps_the_page_as_wide_as_the_screen(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?fMonth=10&fYear=2026", page -> {
+      page.setViewportSize(390, 844);
+      assertThat(page.locator("#matrix thead .visually-hidden")
+          .filter(new Locator.FilterOptions().setHasText("E2E-Feiertag am Werktag"))).hasCount(1);
+
+      assertEquals(true, page.evaluate(
+          "() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+    });
+  }
+
 }
