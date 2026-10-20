@@ -25,11 +25,19 @@ belohnt werden, was die Person selbst tut: keine Rangliste, keine fremden Achiev
 ## Decision Outcome
 
 Chosen: **A**. Jedes Modul deklariert seine Achievements als `AchievementDefinition` (Schlüssel,
-Stufen, Icon) und liefert sie mit einem `@Component`, das `AchievementContributor` umsetzt. Dieses
+Piktogramm, Stufen mit Material) und liefert sie mit einem `@Component`, das `AchievementContributor` umsetzt. Dieses
 beantwortet, wer bis heute welche Stufe erreicht hat und an welchem Tag. Das Modul `achievement`
 sammelt die Beiträge (`AchievementRegistry`), trägt nachts ein, was neu ist, kündigt es an und
 zeigt es. Es importiert nur `common`, `auth`, `employee`, `notification` und `settings`. Kein Modul
 außer `settingseditor` importiert `achievement` (`ArchitectureTest`).
+
+Ein Contributor meldet eine Person über die Employee-ID oder, wo sein Modul Personen nur als Login
+kennt, über die Login-ID: Die Befehlspalette darf `employee` nicht importieren (ADR-0031) und zählt
+deshalb je Login. `achievement` löst beides über `EmployeeService` zur Person auf.
+
+Jedes Achievement ist eine Medaille: Das Piktogramm sagt, wofür sie ist, das Material der Stufe
+(Bronze bis Grand Master, `AchievementTier`), wie weit jemand gekommen ist. Die SVGs baut der
+Projekt-Skill `achievement-medals`; die Zahl der Stufe setzt die Seite als Text auf das Schild.
 
 Der Job fragt jede Nacht alle Contributors und trägt nur ein, was noch fehlt. Der erste Lauf holt
 damit die Historie nach, mit dem Tag, an dem die Stufe erreicht wurde. Ein Achievement, das ein

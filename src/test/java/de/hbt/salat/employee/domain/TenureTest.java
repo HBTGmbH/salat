@@ -86,6 +86,14 @@ class TenureTest {
   }
 
   @Test
+  void the_hundredth_day_counts_the_first_day_as_day_one_and_skips_gaps() {
+    assertThat(Tenure.of(List.of(span("2026-09-01", null)), null).reachedAfterDays(100)).contains(date("2026-12-09"));
+    // ten days off in October push the hundredth day on by ten
+    var tenure = Tenure.of(List.of(span("2026-09-01", "2026-09-30"), span("2026-10-11", null)), null);
+    assertThat(tenure.reachedAfterDays(100)).contains(date("2026-12-19"));
+  }
+
+  @Test
   void without_a_contract_nothing_is_reached() {
     assertThat(Tenure.of(List.of(), date("2000-01-01")).reachedOn(1)).isEmpty();
   }

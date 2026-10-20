@@ -420,7 +420,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | `invoice` | Invoice generation and settings |
 | `jira` | Jira integration and replication, and tickets maintained by hand or imported next to it (#1386, ADR-0037); may import `order` and `secret` (its credentials, #1432) — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
 | `notification` | Notifications |
-| `palette` | Object search of the command palette (#1157, ADR-0031): collects every module's `PaletteProvider`; imports only `common` and `auth`, and no module imports it |
+| `palette` | Object search of the command palette (#1157, ADR-0031): collects every module's `PaletteProvider`, and counts the runs of the palette per login and day for the achievement „Palette Junkie“ (#1501); imports only `common` and `auth`, and no module imports it |
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |
 | `secret` | Secrets of foreign systems, encrypted (#1432, ADR-0038): `SecretService` stores and reads them by id; imports only `common` and `auth` and knows none of the owners that import it |

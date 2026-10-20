@@ -1,5 +1,8 @@
 package de.hbt.salat.achievement.service;
 
+import static de.hbt.salat.common.achievement.AchievementLevel.level;
+import static de.hbt.salat.common.achievement.AchievementTier.BRONZE;
+import static de.hbt.salat.common.achievement.AchievementTier.SILVER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -15,11 +18,13 @@ import org.junit.jupiter.api.Test;
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class AchievementRegistryTest {
 
-  private static final AchievementDefinition TENURE = new AchievementDefinition("tenure", List.of(1, 5), "trophy");
-  private static final AchievementDefinition INVOICE = new AchievementDefinition("invoice", List.of(1), "receipt");
+  private static final AchievementDefinition TENURE =
+      new AchievementDefinition("tenure", "calendar", 20, List.of(level(1, BRONZE), level(5, SILVER)));
+  private static final AchievementDefinition INVOICE =
+      new AchievementDefinition("invoice", "receipt", 10, List.of(level(1, BRONZE)));
 
   @Test
-  void knows_the_contributed_achievements_and_their_levels() {
+  void knows_the_contributed_achievements_in_the_order_of_the_profile_page() {
     var registry = new AchievementRegistry(List.of(contributor(TENURE), contributor(INVOICE)));
 
     assertThat(registry.all()).containsExactly(INVOICE, TENURE);

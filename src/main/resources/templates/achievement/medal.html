@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* Eine Achievement-Medaille (#1501): das SVG aus dem Skill achievement-medals auf runder weisser
+       Flaeche, die Zahl als Text auf dem Schild. Die Flaeche bleibt auch im Dunkelmodus weiss, damit
+       jede Medaille ueberall gleich aussieht. Die Medaille ist Schmuck, Name und Stufe stehen als
+       Text daneben: deshalb alt="". tier ist der Dateiname des Materials oder 'locked'. */-->
+<span th:fragment="medal(pictogram, tier, number, large)" class="achievement-medal"
+      th:classappend="${'achievement-medal-' + tier + (large ? ' achievement-medal-lg' : '')}">
+  <img th:src="@{|/images/achievement/medal-${pictogram}-${tier}.svg|}" alt=""/>
+  <span class="achievement-medal-number" th:text="${number}">25</span>
+</span>
+</body>
+</html>

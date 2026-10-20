@@ -6,10 +6,15 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * An achievement a person can reach, in levels — years with the company in 1, 5, 10 … (#837, #1501).
+ * An achievement a person can reach, in levels - years with the company in 1, 5, 10 … (#837, #1501).
  * It belongs to the module that knows what is achieved: that module declares it as a constant and
  * contributes it through an {@link AchievementContributor}, the way modules contribute their betas.
  * The achievement module records, announces and shows achievements, but knows none of them.
+ *
+ * <p>Every achievement is a medal: the pictogram says what was achieved, the {@link AchievementTier}
+ * of the level how far someone has come, and the level's value stands on the medal's plate. The
+ * medal SVGs are built by the skill {@code achievement-medals} as
+ * {@code /images/achievement/medal-<pictogram>-<tier>.svg}.
  *
  * <p>Only positive incentives (#837): an achievement rewards the person's own conduct. There is no
  * ranking, no negative counterpart, and nobody sees the achievements of somebody else.
@@ -23,68 +28,95 @@ public final class AchievementDefinition {
   private static final Pattern KEY = Pattern.compile("[a-z0-9][a-z0-9-]{0,63}");
 
   private final String key;
-  private final List<Integer> levels;
-  private final String icon;
+  private final String pictogram;
+  private final int position;
+  private final List<AchievementLevel> levels;
 
   /**
-   * @param key    the key the achievement is recorded under; never change it once recorded
-   * @param levels the levels, positive and strictly ascending
-   * @param icon   the name of the Tabler icon the achievement is shown with, without {@code ti-}
+   * @param key       the key the achievement is recorded under; never change it once recorded
+   * @param pictogram the pictogram of its medal, the name of a source in the skill {@code achievement-medals}
+   * @param position  where it stands among the others on the profile page, lowest first
+   * @param levels    the levels, values positive and strictly ascending, tiers not descending
    */
-  public AchievementDefinition(String key, List<Integer> levels, String icon) {
+  public AchievementDefinition(String key, String pictogram, int position, List<AchievementLevel> levels) {
     if (key == null || !KEY.matcher(key).matches()) {
       throw new IllegalArgumentException("achievement key must be lower case letters, digits and dashes: " + key);
+    }
+    if (pictogram == null || !KEY.matcher(pictogram).matches()) {
+      throw new IllegalArgumentException("pictogram must be lower case letters, digits and dashes: " + key);
     }
     if (levels == null || levels.isEmpty()) {
       throw new IllegalArgumentException("an achievement has at least one level: " + key);
     }
     for (int i = 0; i < levels.size(); i++) {
-      if (levels.get(i) < 1 || i > 0 && levels.get(i) <= levels.get(i - 1)) {
-        throw new IllegalArgumentException("levels must be positive and strictly ascending: " + key);
+      var level = levels.get(i);
+      if (level.value() < 1 || i > 0 && level.value() <= levels.get(i - 1).value()) {
+        throw new IllegalArgumentException("level values must be positive and strictly ascending: " + key);
+      }
+      if (i > 0 && level.tier().compareTo(levels.get(i - 1).tier()) < 0) {
+        throw new IllegalArgumentException("a higher level never gets a lower tier: " + key);
       }
     }
     this.key = key;
+    this.pictogram = pictogram;
+    this.position = position;
     this.levels = List.copyOf(levels);
-    this.icon = Objects.requireNonNull(icon);
   }
 
   public String getKey() {
     return key;
   }
 
-  public List<Integer> getLevels() {
-    return levels;
+  public String getPictogram() {
+    return pictogram;
   }
 
-  public String getIcon() {
-    return icon;
+  public int getPosition() {
+    return position;
+  }
+
+  /** The values of the levels, ascending. */
+  public List<Integer> getLevels() {
+    return levels.stream().map(AchievementLevel::value).toList();
   }
 
   public boolean hasLevel(int level) {
-    return levels.contains(level);
+    return levels.stream().anyMatch(candidate -> candidate.value() == level);
+  }
+
+  /** The material of the level's medal. */
+  public AchievementTier tierOf(int level) {
+    return levels.stream().filter(candidate -> candidate.value() == level).findFirst()
+        .map(AchievementLevel::tier)
+        .orElseThrow(() -> new IllegalArgumentException("no level " + level + " in " + key));
   }
 
   /** The lowest level above {@code level}; the first level for {@code null}. */
   public Optional<Integer> nextLevelAfter(Integer level) {
-    return levels.stream().filter(candidate -> level == null || candidate > level).findFirst();
+    return getLevels().stream().filter(candidate -> level == null || candidate > level).findFirst();
   }
 
-  /** Message key of the heading the levels are grouped under on the profile page. */
+  /** Message key of the achievement's name, the heading of its medals on the profile page. */
   public String groupKey() {
     return "main.achievement." + key + ".group";
   }
 
   /**
-   * Message key of the full name of one level — „5 Jahre bei HBT“ —, for the popup and the
+   * Message key of what a level stands for - „10 Jahre bei HBT“ -, for the popup and the
    * notification; its only argument is the level.
    */
   public String titleKey() {
     return "main.achievement." + key + ".title";
   }
 
-  /** Message key of the short name of one level under its group — „5 Jahre“; its only argument is the level. */
-  public String levelKey() {
-    return "main.achievement." + key + ".level";
+  /** Message key of the name of one level - „Urgestein“; every level has one. */
+  public String rankKey(int level) {
+    return "main.achievement." + key + ".rank." + level;
+  }
+
+  /** Message key of what is still missing to the next level - „noch 37 Aufrufe“; its argument is the amount. */
+  public String remainingKey() {
+    return "main.achievement." + key + ".remaining";
   }
 
   @Override

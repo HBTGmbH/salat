@@ -3,9 +3,20 @@ package de.hbt.salat.common.achievement;
 import java.time.LocalDate;
 
 /**
- * A level of an achievement a person has reached (#1501), with the day it was reached — the day of
+ * A level of an achievement a person has reached (#1501), with the day it was reached - the day of
  * the matter, not the day the job noticed it: the anniversary of a person who joined in 2017 is
  * recorded with its date in 2022 even when the job first runs years later.
+ *
+ * <p>The person comes either as an employee or, from a module that knows people only by their
+ * login, as a login; exactly one of the two ids is set.
  */
-public record ReachedAchievement(long employeeId, String key, int level, LocalDate achievedOn) {
+public record ReachedAchievement(Long employeeId, Long salatUserId, String key, int level, LocalDate achievedOn) {
+
+  public static ReachedAchievement ofEmployee(long employeeId, String key, int level, LocalDate achievedOn) {
+    return new ReachedAchievement(employeeId, null, key, level, achievedOn);
+  }
+
+  public static ReachedAchievement ofLogin(long salatUserId, String key, int level, LocalDate achievedOn) {
+    return new ReachedAchievement(null, salatUserId, key, level, achievedOn);
+  }
 }

@@ -115,6 +115,14 @@ public class EmployeeService {
     return employeeRepository.findLoginsByIdIn(employeeIds);
   }
 
+  /** {@link #getLoginsOfEmployees(Collection)} by the ids of the logins (#1501). */
+  @Authorized(requiresManager = true)
+  @Transactional(readOnly = true)
+  public List<EmployeeLogin> getLoginsBySalatUserIds(Collection<Long> salatUserIds) {
+    if (salatUserIds.isEmpty()) return List.of();
+    return employeeRepository.findLoginsBySalatUserIdIn(salatUserIds);
+  }
+
   /**
    * The employees offered in a select box: everything not hidden, plus the one with the id
    * {@code keepId} even if it is hidden (#956). Hiding an employee is a decluttering aid for

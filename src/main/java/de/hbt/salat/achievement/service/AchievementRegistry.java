@@ -26,7 +26,8 @@ public class AchievementRegistry {
     contributors.stream()
         .flatMap(contributor -> contributor.getAchievements().stream()
             .map(definition -> Map.entry(definition, contributor)))
-        .sorted(Map.Entry.comparingByKey(Comparator.comparing(AchievementDefinition::getKey)))
+        .sorted(Map.Entry.comparingByKey(Comparator.comparing(AchievementDefinition::getPosition)
+            .thenComparing(AchievementDefinition::getKey)))
         .forEach(entry -> {
           if (definitions.putIfAbsent(entry.getKey().getKey(), entry.getKey()) != null) {
             throw new IllegalStateException("achievement key contributed twice: " + entry.getKey().getKey());
@@ -39,6 +40,7 @@ public class AchievementRegistry {
     return contributors;
   }
 
+  /** Every achievement, in the order of the profile page. */
   public List<AchievementDefinition> all() {
     return List.copyOf(definitions.values());
   }

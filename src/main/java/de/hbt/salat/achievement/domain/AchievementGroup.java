@@ -1,6 +1,7 @@
 package de.hbt.salat.achievement.domain;
 
 import de.hbt.salat.common.achievement.AchievementDefinition;
+import de.hbt.salat.common.achievement.AchievementTier;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,10 +11,13 @@ import java.util.List;
  */
 public record AchievementGroup(AchievementDefinition definition, List<Reached> reached, Next next) {
 
-  public record Reached(int level, LocalDate achievedOn) {
+  public record Reached(int level, AchievementTier tier, LocalDate achievedOn) {
   }
 
-  /** {@code expectedOn} is the day it is reached if nothing changes; {@code null} where it cannot be told. */
-  public record Next(int level, LocalDate expectedOn) {
+  /**
+   * The next level: {@code expectedOn} is the day it is reached if nothing changes, {@code remaining}
+   * how much is still missing; either or both {@code null} where it cannot be told.
+   */
+  public record Next(int level, LocalDate expectedOn, Integer remaining) {
   }
 }

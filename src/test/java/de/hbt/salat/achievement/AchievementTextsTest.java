@@ -29,7 +29,7 @@ import org.springframework.core.type.filter.AssignableTypeFilter;
 class AchievementTextsTest {
 
   @Test
-  void every_contributed_achievement_has_its_texts_in_both_bundles_and_names_every_level() throws Exception {
+  void every_contributed_achievement_has_its_texts_in_both_bundles_and_a_name_per_level() throws Exception {
     var definitions = contributedAchievements();
     assertThat(definitions).isNotEmpty();
     for (var bundle : List.of("/de/hbt/salat/web/MessageResources.properties",
@@ -40,11 +40,13 @@ class AchievementTextsTest {
       }
       for (var definition : definitions) {
         assertThat(properties).as(bundle)
-            .containsKeys(definition.groupKey(), definition.titleKey(), definition.levelKey());
+            .containsKeys(definition.groupKey(), definition.titleKey(), definition.remainingKey());
         for (int level : definition.getLevels()) {
+          assertThat(properties).as(bundle + " " + definition + " " + level).containsKey(definition.rankKey(level));
           var title = new MessageFormat(properties.getProperty(definition.titleKey()), Locale.GERMAN)
               .format(new Object[] {level});
-          assertThat(title).as(bundle + " " + definition + " " + level).contains(String.valueOf(level));
+          // digits only: 1000 comes out as „1.000“ in German
+          assertThat(title.replaceAll("[.,]", "")).as(bundle + " " + definition + " " + level).contains(String.valueOf(level));
         }
       }
     }

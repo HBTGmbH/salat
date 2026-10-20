@@ -46,4 +46,8 @@ public interface EmployeeRepository extends PagingAndSortingRepository<Employee,
   @Query("SELECT new de.hbt.salat.employee.domain.EmployeeLogin(e.id, u.id, u.status) FROM Employee e JOIN e.salatUser u WHERE e.id IN :employeeIds")
   List<EmployeeLogin> findLoginsByIdIn(@Param("employeeIds") Collection<Long> employeeIds);
 
+  /** The same by the ids of the logins (#1501), for a module that knows people only by their login. */
+  @Query("SELECT new de.hbt.salat.employee.domain.EmployeeLogin(e.id, u.id, u.status) FROM Employee e JOIN e.salatUser u WHERE u.id IN :salatUserIds")
+  List<EmployeeLogin> findLoginsBySalatUserIdIn(@Param("salatUserIds") Collection<Long> salatUserIds);
+
 }

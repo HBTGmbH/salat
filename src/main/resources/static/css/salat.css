@@ -1696,8 +1696,47 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   width: 11rem;
 }
 
-.achievement-icon .ti {
-  font-size: 1.75em;
+/* A medal (#1501): the SVG on a round white disc, the level number set as text onto its plate. The
+   disc stays white in the dark mode too, so that every medal looks the same everywhere. The plate's
+   centre and size follow the medal's drawing - .claude/skills/achievement-medals/references/integration.md
+   names the values, change them together. */
+.achievement-medal {
+  --achievement-medal-size: 64px;
+  position: relative;
+  display: inline-block;
+  width: var(--achievement-medal-size);
+  height: var(--achievement-medal-size);
+  border-radius: 50%;
+  background: var(--tblr-white);
+  box-shadow: 0 0 0 1px var(--tblr-border-color);
+}
+
+.achievement-medal-lg {
+  --achievement-medal-size: 96px;
+}
+
+.achievement-medal img {
+  position: absolute;
+  inset: 3%;
+  width: 94%;
+  height: 94%;
+}
+
+.achievement-medal-number {
+  position: absolute;
+  left: 50%;
+  top: 64.7%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--achievement-medal-size) * .16);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--tblr-white);
+}
+
+/* the one plate in gold: the number is dark on it */
+.achievement-medal-grandmaster .achievement-medal-number {
+  color: var(--tblr-dark);
 }
 
 /* The position in the popup's carousel. Bootstrap's indicators are white bars over a picture; here

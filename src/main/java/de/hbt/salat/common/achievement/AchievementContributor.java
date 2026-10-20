@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Contributes the achievements of a module (#1501) — the pattern of {@code BetaFeatureContributor}
+ * Contributes the achievements of a module (#1501) - the pattern of {@code BetaFeatureContributor}
  * and {@code PaletteProvider}. Implement it in the module that knows what is achieved and annotate
  * the implementation with {@code @Component}. Declare each achievement as a
  * {@code public static final} constant of the implementation: the check that every achievement has
@@ -19,18 +19,18 @@ public interface AchievementContributor {
   List<AchievementDefinition> getAchievements();
 
   /**
-   * Every level of its achievements that the persons with a contract valid on {@code today} have
-   * reached by then, each with the day it was reached. Levels already recorded may come again; the
-   * job records only what is new.
+   * Every level of its achievements that the persons employed on {@code today} have reached by
+   * then, each with the day it was reached - by employee, or by login where the module knows people
+   * only by their login. Levels already recorded may come again; the job records only what is new.
    */
   List<ReachedAchievement> findReached(LocalDate today);
 
   /**
-   * The day the person reaches the level if nothing changes, for the profile page; empty where that
-   * cannot be told.
+   * How far the person is from the level, for the profile page: the day it is reached if nothing
+   * changes, or what is still missing. Empty where that cannot be told.
    */
-  default Optional<LocalDate> forecast(long employeeId, AchievementDefinition achievement, int level,
-      LocalDate today) {
+  default Optional<AchievementProgress> progress(AchievementPerson person, AchievementDefinition achievement,
+      int level, LocalDate today) {
     return Optional.empty();
   }
 }

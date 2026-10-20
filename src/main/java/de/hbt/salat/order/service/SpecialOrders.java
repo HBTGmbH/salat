@@ -149,6 +149,11 @@ public class SpecialOrders {
     return resolved.regularTrainingSuborderIds().contains(suborderId);
   }
 
+  /** The suborders of the regular training, for a query that counts training (#1501). */
+  public Set<Long> getRegularTrainingSuborderIds() {
+    return resolved.regularTrainingSuborderIds();
+  }
+
   /** Whether the sign of the customer order must not change and the order must not be deleted. */
   public boolean isLockedCustomerorder(long customerorderId) {
     return resolved.lockedCustomerorderIds().contains(customerorderId);

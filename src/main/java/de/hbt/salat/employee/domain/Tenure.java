@@ -62,10 +62,20 @@ public final class Tenure {
    * contracts end before.
    */
   public Optional<LocalDate> reachedOn(int years) {
-    if (stretches.isEmpty()) {
-      return Optional.empty();
-    }
-    var day = stretches.getFirst().from().plusYears(years);
+    return stretches.isEmpty() ? Optional.empty() : shiftedByGaps(stretches.getFirst().from().plusYears(years));
+  }
+
+  /**
+   * The day the person has been with the company for the given number of days - the hundredth day
+   * of the first 100; empty while the contracts end before.
+   */
+  public Optional<LocalDate> reachedAfterDays(int days) {
+    return stretches.isEmpty() ? Optional.empty() : shiftedByGaps(stretches.getFirst().from().plusDays(days - 1));
+  }
+
+  /** The day moved on by every gap that lies before it, if a contract still covers it then. */
+  private Optional<LocalDate> shiftedByGaps(LocalDate candidate) {
+    var day = candidate;
     for (int i = 1; i < stretches.size(); i++) {
       // only the last stretch can be without an end: an open one takes in every later contract
       var previousEnd = stretches.get(i - 1).until();
