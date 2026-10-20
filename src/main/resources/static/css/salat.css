@@ -1766,6 +1766,29 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   font-size: calc(var(--achievement-medal-size) * .18);
 }
 
+/* The quote under a new achievement in the popup: set apart, but never louder than the medal.
+   Without Tabler's side rule, which stands apart from a centred text. */
+.achievement-quote blockquote {
+  font-style: italic;
+  border: 0;
+  padding: 0;
+}
+
+/* The emojis framing the heading of the achievement popup (salat.js): a little apart. */
+.achievement-title-emojis {
+  letter-spacing: .15em;
+}
+
+/* The confetti or firework of a new achievement lies over the popup and lets every click through (salat.js). */
+.achievement-celebration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* the one plate in gold: the number is dark on it */
 .achievement-medal-grandmaster .achievement-medal-number {
   color: var(--tblr-dark);
