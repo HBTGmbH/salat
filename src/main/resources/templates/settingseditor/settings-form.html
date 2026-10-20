@@ -80,6 +80,19 @@
            th:data-check-url="${checkUrl}">Gravatar verwalten</a>
       </div>
 
+      <!--/* Ob ein neues Achievement mit Benachrichtigung und Popup angekuendigt wird (#1501). Externe
+             und Praktikanten bekommen keine Achievements, also auch keinen Schalter. */-->
+      <th:block th:if="${achievementsAvailable}">
+        <hr/>
+        <div class="mb-3">
+          <div class="form-label" th:text="#{main.settings.achievement.label}">Achievements</div>
+          <div class="form-text mt-0 mb-2" th:text="#{main.settings.achievement.help}">
+            Ausgeschaltet zeigt Salat neue Achievements nur noch auf der Profilseite.
+          </div>
+          <salat:checkboxSwitch th:field="*{achievementsAnnounced}"
+                                th:label="#{main.settings.achievement.announce.label}" />
+        </div>
+      </th:block>
       <!--/* Beta features: one switch per BetaFeature constant; without one the section is gone */-->
       <th:block th:unless="${betaFeatureOptions.isEmpty()}">
         <hr id="beta"/>

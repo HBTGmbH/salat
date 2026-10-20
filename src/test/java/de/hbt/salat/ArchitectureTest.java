@@ -308,6 +308,31 @@ public class ArchitectureTest {
       .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.beta..");
 
   /**
+   * achievement records the achievements people reach, announces them and shows them on the profile
+   * page (#1501, ADR-0040). An achievement belongs to a person ({@code employee}), is announced by a
+   * notification ({@code notification}) unless the person switched that off ({@code settings}).
+   * Which achievements there are it does not know: the modules contribute them through
+   * {@code common.achievement} — the pattern of {@code common.beta}.
+   */
+  @ArchTest
+  static final ArchRule achievementShouldAccessCommonAuthEmployeeNotificationSettingsOnly = priority(HIGH).noClasses()
+      .that().resideInAPackage("de.hbt.salat.achievement..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "achievement must only import common, auth, employee, notification, settings",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.notification.",
+          "de.hbt.salat.settings.", "de.hbt.salat.achievement."));
+
+  /**
+   * The other half (#1501): a module contributes its achievements through {@code common.achievement}
+   * alone and never imports the achievement module, so that it does not grow an edge with every kind
+   * of achievement. The settings page shows the switch for the announcements and may import any module.
+   */
+  @ArchTest
+  static final ArchRule onlySettingseditorShouldAccessAchievement = priority(HIGH).noClasses().that()
+      .resideOutsideOfPackages("de.hbt.salat.achievement..", "de.hbt.salat.settingseditor..")
+      .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.achievement..");
+
+  /**
    * The other half (ADR-0038): the entity of a secret and its repository never leave the module.
    * Their fields mean nothing without the key, and a secret is read decrypted through
    * {@code SecretService} alone — an owner that loaded the row would hold the cipher text and a

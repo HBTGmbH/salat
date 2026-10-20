@@ -26,6 +26,8 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
+import de.hbt.salat.achievement.service.AchievementPreferenceService;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.beta.service.BetaFeatureService;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
@@ -72,6 +74,10 @@ class SettingsFavoritesFirstTest {
   private LocaleSyncInterceptor localeSyncInterceptor;
   @Mock
   private MessageSourceAccessor messages;
+  @Mock
+  private AchievementPreferenceService achievementPreferenceService;
+  @Mock
+  private AuthorizedUser authorizedUser;
   @InjectMocks
   private SettingsController controller;
 

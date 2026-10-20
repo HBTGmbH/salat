@@ -34,6 +34,7 @@ import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.EmployeeData;
+import de.hbt.salat.employee.domain.EmployeeLogin;
 import de.hbt.salat.employee.event.EmployeeAnonymizedEvent;
 import de.hbt.salat.employee.event.EmployeeDeleteEvent;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
@@ -100,6 +101,18 @@ public class EmployeeService {
   public List<Employee> getEmployeesBySalatUserIds(Collection<Long> salatUserIds) {
     if (salatUserIds.isEmpty()) return List.of();
     return employeeRepository.findBySalatUserIds(salatUserIds);
+  }
+
+  /**
+   * The logins of these employees as values (#1501), for a module that notifies them: a
+   * notification goes to the login. An employee without a login is left out. Management only — the
+   * nightly job of the achievements runs as one.
+   */
+  @Authorized(requiresManager = true)
+  @Transactional(readOnly = true)
+  public List<EmployeeLogin> getLoginsOfEmployees(Collection<Long> employeeIds) {
+    if (employeeIds.isEmpty()) return List.of();
+    return employeeRepository.findLoginsByIdIn(employeeIds);
   }
 
   /**

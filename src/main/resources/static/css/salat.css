@@ -1689,3 +1689,35 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 .favorites-pick-group:not([open]) > summary .favorites-pick-chevron {
   transform: rotate(-90deg);
 }
+
+/* ===== Achievements (#1501) ===== */
+/* A tile on the profile page: as wide as the longest line under it, „noch 4 Jahre 11 Monate“. */
+.achievement-tile {
+  width: 11rem;
+}
+
+.achievement-icon .ti {
+  font-size: 1.75em;
+}
+
+/* The position in the popup's carousel. Bootstrap's indicators are white bars over a picture; here
+   they stand below the text as dots in the colours of the page. */
+.achievement-indicators {
+  position: static;
+  margin: 1rem 0 0;
+  gap: .5rem;
+}
+
+.achievement-indicators [data-bs-target] {
+  width: .5rem;
+  height: .5rem;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--tblr-secondary);
+  opacity: 1;
+}
+
+.achievement-indicators .active {
+  background-color: var(--tblr-primary);
+}
