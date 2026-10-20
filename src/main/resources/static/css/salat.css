@@ -1726,8 +1726,21 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   box-shadow: 0 0 0 1px var(--tblr-border-color);
 }
 
+/* Popup and profile page: large enough to see the material and the pictogram at a glance. */
 .achievement-medal-lg {
-  --achievement-medal-size: 96px;
+  --achievement-medal-size: 144px;
+}
+
+/* On a phone two medals share a row (the list's gap is 1.5rem) instead of one standing alone at the
+   left edge; there they come out a little smaller to fit. */
+@media (max-width: 575.98px) {
+  .achievement-tile {
+    width: calc(50% - .75rem);
+  }
+
+  .achievement-medal-lg {
+    --achievement-medal-size: 128px;
+  }
 }
 
 .achievement-medal img {
