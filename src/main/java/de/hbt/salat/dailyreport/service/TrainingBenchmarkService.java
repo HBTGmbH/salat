@@ -24,7 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The benchmark of the training account in „Meine Konten“ (#827): the median of the regular training
- * of the colleagues, in working days, so that the person sees where they stand. Only positive
+ * of the colleagues - the suborders of {@code salat.training.regular-suborder-signs}, resolved by
+ * {@link SpecialOrders} -, in working days, so that the person sees where they stand. Only positive
  * incentives (#837): it is an aggregate over the whole company, no ranking, and no value of anybody
  * else leaves this service.
  *
