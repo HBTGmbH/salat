@@ -1,5 +1,6 @@
 package de.hbt.salat.achievement.service;
 
+import static de.hbt.salat.achievement.service.AchievementNotificationKinds.ACHIEVEMENT_REACHED;
 import static de.hbt.salat.common.achievement.AchievementLevel.level;
 import static de.hbt.salat.common.achievement.AchievementTier.BRONZE;
 import static de.hbt.salat.common.achievement.AchievementTier.GOLD;
@@ -8,7 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -32,6 +32,7 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.EmployeeLogin;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.service.NotificationService;
 import de.hbt.salat.testutils.ReferenceTestUtils;
 import java.time.LocalDate;
@@ -139,12 +140,15 @@ class AchievementServiceTest {
             tuple(ANNA, 1, LocalDate.parse("2017-03-01"), null),
             tuple(ANNA, 5, LocalDate.parse("2021-03-01"), null),
             tuple(BERT, 1, LocalDate.parse("2026-02-01"), null));
-    verify(notificationService).emitNotification(List.of(ANNA_LOGIN), "main.achievement.notification.many.title",
-        List.of("2"), "main.achievement.notification.many.description", List.of("Neuling · Stufe 1, Kenner · Stufe 5"),
-        AchievementService.PROFILE_URL, "Zum Profil");
-    verify(notificationService).emitNotification(List.of(BERT_LOGIN), "main.achievement.notification.one.title",
-        List.of("Neuling · Stufe 1"), "main.achievement.notification.one.description", List.of("01.02.2026"),
-        AchievementService.PROFILE_URL, "Zum Profil");
+    verify(notificationService).emitNotification(ACHIEVEMENT_REACHED, List.of(ANNA_LOGIN), NotificationMessage.builder()
+        .titleKey("main.achievement.notification.many.title").titleParams(List.of("2"))
+        .descriptionKey("main.achievement.notification.many.description")
+        .descriptionParams(List.of("Neuling · Stufe 1, Kenner · Stufe 5"))
+        .actionUrl(AchievementService.PROFILE_URL).actionLabel("Zum Profil").build());
+    verify(notificationService).emitNotification(ACHIEVEMENT_REACHED, List.of(BERT_LOGIN), NotificationMessage.builder()
+        .titleKey("main.achievement.notification.one.title").titleParams(List.of("Neuling · Stufe 1"))
+        .descriptionKey("main.achievement.notification.one.description").descriptionParams(List.of("01.02.2026"))
+        .actionUrl(AchievementService.PROFILE_URL).actionLabel("Zum Profil").build());
   }
 
   @Test
@@ -189,14 +193,16 @@ class AchievementServiceTest {
   }
 
   @Test
-  void with_announcements_switched_off_the_level_is_recorded_as_seen_and_not_announced() {
+  void with_announcements_switched_off_the_level_is_recorded_as_seen_and_not_announced_in_the_bell() {
     reported.add(reached(ANNA, 1, "2017-03-01"));
     when(preferenceService.isAnnouncedTo(ANNA_LOGIN)).thenReturn(false);
 
     service.recordReached(TODAY);
 
     assertThat(saved).singleElement().extracting(Achievement::getSeenAt).isEqualTo(NOW);
-    verifyNoInteractions(notificationService);
+    verify(notificationService, never()).emitNotification(any(), any(), any());
+    // whether it is mailed is the person's own choice since #828, decided by the notification module
+    verify(notificationService).emitMail(eq(ACHIEVEMENT_REACHED), eq(List.of(ANNA_LOGIN)), any());
   }
 
   @Test
@@ -216,7 +222,7 @@ class AchievementServiceTest {
 
     verify(employeeService, never()).getLoginsOfEmployees(any());
     verify(preferenceService, never()).isAnnouncedTo(anyLong());
-    verify(notificationService, never()).emitNotification(any(), anyString(), any(), any(), any(), any(), any());
+    verifyNoInteractions(notificationService);
   }
 
   @Test

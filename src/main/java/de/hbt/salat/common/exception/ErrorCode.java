@@ -318,6 +318,7 @@ public enum ErrorCode {
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   XX_CONCURRENT_MODIFICATION("XX-0003", "the data was changed concurrently"),
   XX_DUPLICATE_KEY("XX-0004", "a record with the same key already exists"),
+  XX_MAIL_NOT_SENT("XX-0005", "a mail that must be sent could not be sent"),
   ;
 
   private final String code;

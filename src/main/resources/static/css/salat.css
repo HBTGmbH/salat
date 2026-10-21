@@ -1828,3 +1828,11 @@ blockquote.achievement-quote {
 .achievement-indicators .active {
   background-color: var(--tblr-primary);
 }
+
+/* The channels of each notification kind on the settings page (#828): a bare switch per cell,
+   centred under its column heading, without the label space Bootstrap reserves beside it. */
+.notification-channels .form-switch {
+  display: inline-block;
+  margin: 0;
+  min-height: auto;
+}

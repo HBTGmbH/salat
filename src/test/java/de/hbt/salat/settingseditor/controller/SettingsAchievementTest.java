@@ -13,6 +13,8 @@ import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferenceService;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferences;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
+import de.hbt.salat.employee.preferences.NotificationChannelPreferenceService;
+import de.hbt.salat.notification.service.NotificationKindRegistry;
 import de.hbt.salat.settings.service.UiPreferenceService;
 import de.hbt.salat.settings.web.LocaleSyncInterceptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +59,10 @@ class SettingsAchievementTest {
   private AchievementPreferenceService achievementPreferenceService;
   @Mock
   private AuthorizedUser authorizedUser;
+  @Mock
+  private NotificationKindRegistry notificationKindRegistry;
+  @Mock
+  private NotificationChannelPreferenceService notificationChannelPreferenceService;
   @InjectMocks
   private SettingsController controller;
 

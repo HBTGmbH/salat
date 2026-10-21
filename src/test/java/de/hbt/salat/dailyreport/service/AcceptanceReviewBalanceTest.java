@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
@@ -27,7 +28,6 @@ import de.hbt.salat.auth.service.SalatUserService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.command.CommandPublisher;
-import de.hbt.salat.common.service.MailService;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.web.UiState;
 import de.hbt.salat.customer.domain.Customer;
@@ -46,6 +46,7 @@ import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
 import de.hbt.salat.dailyreport.persistence.WorkingdayRepository;
 import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
+import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Overtime;
@@ -146,7 +147,9 @@ class AcceptanceReviewBalanceTest {
   @MockitoBean
   private NotificationService notificationService;
   @MockitoBean
-  private MailService mailService;
+  private MessageSourceAccessor messages;
+  @MockitoBean
+  private AuthorizedEmployee authorizedEmployee;
   @MockitoBean
   private EmployeePreferenceService employeePreferenceService;
 

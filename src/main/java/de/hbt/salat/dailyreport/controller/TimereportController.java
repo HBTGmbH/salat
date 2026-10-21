@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.controller;
 
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.TIMEREPORT_SHARED;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static de.hbt.salat.common.GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
@@ -62,6 +63,7 @@ import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.service.NotificationService;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 
@@ -408,21 +410,21 @@ public class TimereportController {
         );
 
         String trainingStr = tr.isTraining() ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
-        notificationService.emitNotification(
-            recipientUserIds.stream().toList(),
-            "main.timereport.share.notification.title",
-            List.of(senderDisplayName),
-            "main.timereport.share.notification.description",
-            List.of(
-                tr.getCompleteOrderSign(),
-                tr.getReferenceday().toString(),
-                duration,
-                trainingStr,
-                tr.getTaskdescription() != null ? tr.getTaskdescription() : ""
-            ),
-            actionUrl,
-            messages.getMessage("main.timereport.share.notification.action")
-        );
+        notificationService.emitNotification(TIMEREPORT_SHARED, recipientUserIds.stream().toList(),
+            NotificationMessage.builder()
+                .titleKey("main.timereport.share.notification.title")
+                .titleParams(List.of(senderDisplayName))
+                .descriptionKey("main.timereport.share.notification.description")
+                .descriptionParams(List.of(
+                    tr.getCompleteOrderSign(),
+                    tr.getReferenceday().toString(),
+                    duration,
+                    trainingStr,
+                    tr.getTaskdescription() != null ? tr.getTaskdescription() : ""
+                ))
+                .actionUrl(actionUrl)
+                .actionLabel(messages.getMessage("main.timereport.share.notification.action"))
+                .build());
 
         redirectAttributes.addFlashAttribute("toastSuccess",
             messages.getMessage("main.timereport.share.success"));
@@ -555,15 +557,15 @@ public class TimereportController {
                     training
                 );
                 String trainingStr = training ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
-                notificationService.emitNotification(
-                    recipientUserIds.stream().toList(),
-                    "main.timereport.share.notification.title",
-                    List.of(senderDisplayName),
-                    "main.timereport.share.notification.description",
-                    List.of(completeOrderSign, date.toString(), duration, trainingStr, comment),
-                    actionUrl,
-                    messages.getMessage("main.timereport.share.notification.action")
-                );
+                notificationService.emitNotification(TIMEREPORT_SHARED, recipientUserIds.stream().toList(),
+                    NotificationMessage.builder()
+                        .titleKey("main.timereport.share.notification.title")
+                        .titleParams(List.of(senderDisplayName))
+                        .descriptionKey("main.timereport.share.notification.description")
+                        .descriptionParams(List.of(completeOrderSign, date.toString(), duration, trainingStr, comment))
+                        .actionUrl(actionUrl)
+                        .actionLabel(messages.getMessage("main.timereport.share.notification.action"))
+                        .build());
             }
 
             redirectAttributes.addFlashAttribute("toastSuccess",

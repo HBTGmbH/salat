@@ -31,6 +31,8 @@ salat:
   jira:
     oauth:
       redirect-uri: https://salat.hbt.de/jira/replications/oauth/callback
+  notifications:
+    email-from: salat-noreply@hbt.de
   reporting:
     email:
       from: salat-noreply@hbt.de

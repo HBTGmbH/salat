@@ -1,22 +1,19 @@
 package de.hbt.salat.budget.service;
 
-import java.text.MessageFormat;
+import static de.hbt.salat.budget.service.BudgetNotificationKinds.BUDGET_ALERT;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
-import de.hbt.salat.common.SalatProperties;
-import de.hbt.salat.common.service.MailService;
-import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.common.util.DateUtils;
-import de.hbt.salat.employee.preferences.EmployeePreferenceService;
+import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.service.NotificationService;
 import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -32,15 +29,9 @@ public class BudgetAlertService {
     private final BudgetControllingService budgetControllingService;
     private final CustomerorderService customerorderService;
     private final NotificationService notificationService;
-    private final MailService mailService;
-    private final EmployeePreferenceService employeePreferenceService;
     private final OrderBudgetService orderBudgetService;
     private final MessageSourceAccessor messages;
-    private final SalatProperties salatProperties;
     private final FixedPriceCalculationService fixedPriceCalculationService;
-
-    @Value("${salat.budget.alert.email.from:noreply@salat.local}")
-    private String alertEmailFrom;
 
     public void checkAndNotify() {
         var today = DateUtils.today();
@@ -82,8 +73,8 @@ public class BudgetAlertService {
 
     /**
      * The responsibles of the order come as values from the module {@code order} — no entity of
-     * another module crosses into budget through a service (#1340, ADR-0021). The text names the
-     * order by the sign it has today, read through the plan's reference (#1367).
+     * another module crosses into budget through a service (#1340, ADR-0021). Bell and mail go the
+     * common way of all notifications (#828); the sign of the order only goes to the log.
      */
     private void sendAlert(long budgetId, String budgetName, long customerorderId, String coSign,
                            boolean fixedPrice, double utilization, int threshold, LocalDate today) {
@@ -107,34 +98,14 @@ public class BudgetAlertService {
         var utilizationStr = String.format("%.1f", utilization);
         var thresholdStr = String.valueOf(threshold);
 
-        notificationService.emitNotification(
-            recipientUserIds,
-            "main.budget.alert.notification.title",
-            List.of(budgetName),
-            "main.budget.alert." + kind + "notification.description",
-            List.of(budgetName, utilizationStr, thresholdStr),
-            controllingUrl,
-            messages.getMessage("main.budget.dashboard.link.controlling")
-        );
-
-        var baseUrl = salatProperties.getUrl() != null ? salatProperties.getUrl() : "";
-        var absoluteUrl = baseUrl + controllingUrl;
-
-        for (var responsible : responsibleEmployees) {
-            var emailAddress = employeePreferenceService.getNotificationEmailForEmployeeId(responsible.employeeId());
-            if (emailAddress == null || emailAddress.isBlank()) continue;
-            try {
-                var subject = MessageFormat.format(
-                    messages.getMessage("main.budget.alert.email.subject"), budgetName);
-                var body = MessageFormat.format(
-                    messages.getMessage("main.budget.alert." + kind + "email.body"),
-                    budgetName, coSign, utilization, threshold, absoluteUrl);
-                mailService.sendEmail(subject, body,
-                    new MailContact("Salat Budget", alertEmailFrom),
-                    new MailContact(responsible.name(), emailAddress));
-            } catch (Exception e) {
-                log.warn("Failed to send alert email to {}", responsible.name(), e);
-            }
-        }
+        notificationService.emitNotification(BUDGET_ALERT, recipientUserIds,
+            NotificationMessage.builder()
+                .titleKey("main.budget.alert.notification.title")
+                .titleParams(List.of(budgetName))
+                .descriptionKey("main.budget.alert." + kind + "notification.description")
+                .descriptionParams(List.of(budgetName, utilizationStr, thresholdStr))
+                .actionUrl(controllingUrl)
+                .actionLabel(messages.getMessage("main.budget.dashboard.link.controlling"))
+                .build());
     }
 }

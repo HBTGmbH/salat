@@ -71,6 +71,8 @@ public class SalatProperties {
   public static class Notifications {
     private int retentionDays = 30;
     private int bellLimit = 10;
+    /** The sender of a notification mail no person caused (#828): a budget alert, a new achievement. */
+    private String emailFrom = "noreply@salat.local";
   }
 
   /** The booking list (#1092) — and with its limit every other list that offers one (#1380). */

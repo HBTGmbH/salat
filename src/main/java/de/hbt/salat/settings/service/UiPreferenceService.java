@@ -1,5 +1,6 @@
 package de.hbt.salat.settings.service;
 
+import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,16 @@ public class UiPreferenceService {
         var val = userPreferenceService.getModuleSettings(MODULE_KEY).get(KEY_LOCALE);
         var stored = val != null ? val.toString() : "";
         return stored.isBlank() ? BROWSER_DETECTION : stored;
+    }
+
+    /**
+     * The language a login chose, for a mail to it (#828); German where the browser decides, since
+     * a mail knows no browser.
+     */
+    @Transactional(readOnly = true)
+    public Locale getLocaleFor(long salatUserId) {
+        var val = userPreferenceService.getModuleSettings(salatUserId, MODULE_KEY).get(KEY_LOCALE);
+        return "en".equals(val) ? Locale.ENGLISH : Locale.GERMAN;
     }
 
     public void saveLocaleForCurrentUser(String locale) {
