@@ -68,6 +68,20 @@ Zu finden u. a. in `EmployeeService.getLoginEmployees`, `EmployeecontractDAO`, `
 `EmployeeorderAuthorization.readable()` (#1380) — dieselbe Regel wie `isAuthorized` als
 `Specification`, und ein Test (`EmployeeorderReadableTest`) hält beide für jede Rolle gleich.
 
+Gemessener Fall (#1514): Die Vertragsauswahl jeder Seite unter „Buchungen“ lud alle nicht
+verborgenen Verträge und prüfte jeden in Java; weil `Employeecontract.supervisors` EAGER mit
+`FetchMode.SELECT` ist, kostete das eine Abfrage je Vertrag, für jede Rolle. Seit
+`EmployeecontractRepository.findAllNotHiddenReadable` steht die Sichtbarkeit in der Abfrage, und
+Person, Login und Vorgesetzte kommen per `join fetch` mit; die Regel in Java prüft die Zeilen danach
+noch einmal, ohne weitere Abfrage. Zusammen mit den Buchungen als Projektion (Regel 10) sank
+*Meine Konten* (`local-qa`, Abzug, n=30 nach 10 Aufrufen Warmlauf, abwechselnd gegen `main`):
+
+| Rolle | Statements vorher → nachher | Median vorher → nachher |
+|---|---|---|
+| Mitarbeiter | 312 → 86 | 308 ms → 185 ms |
+| People Lead | 398 → 89 | 388 ms → 215 ms |
+| Manager | 192 → 66 | 200 ms → 144 ms |
+
 ## 4. ViewHelper werden pro Render mehrfach aufgerufen
 
 Thymeleaf ruft dieselbe Getter-Methode während eines Renders beliebig oft auf. Ein ViewHelper
