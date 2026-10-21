@@ -52,6 +52,7 @@ import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.viewhelper.CustomerOrderViewDecorator;
 import de.hbt.salat.tag.domain.Tag;
+import de.hbt.salat.tag.domain.TagColor;
 
 @Controller
 @RequestMapping("/orders/customerorders")
@@ -357,6 +358,7 @@ public class CustomerorderController {
     model.addAttribute("employees", employees);
 
     model.addAttribute("tagChoices", OrderTags.formChoices(orderTagService.getTagChoices(), form.getTagNames()));
+    model.addAttribute("tagColors", TagColor.palette());
     model.addAttribute("orderTypes", OrderType.values());
     model.addAttribute("ticketReferenceModes", TicketReferenceMode.values());
     model.addAttribute("isEdit", isEdit);

@@ -60,6 +60,13 @@ public class SelectProcessor extends AbstractElementModelProcessor {
                 selectAttrs.put("th:data-create-label", createLabel);
             }
         }
+        // data attributes go to the select as written, for what salat.js reads there (#847: data-tag-colors)
+        for (var attribute : openTag.getAllAttributes()) {
+            var name = attribute.getAttributeCompleteName();
+            if (name.startsWith("data-") || name.startsWith("th:data-")) {
+                selectAttrs.put(name, attribute.getValue());
+            }
+        }
         newModel.add(mf.createOpenElementTag("select", selectAttrs, AttributeValueQuotes.DOUBLE, false));
 
         for (int i = 1; i < model.size() - 1; i++) {

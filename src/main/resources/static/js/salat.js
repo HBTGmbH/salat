@@ -471,24 +471,39 @@ const tomSelectConfig = (el) => {
     }
   }
 
-  // An option with data-color (#847: the colour of a tag) shows it as a dot, in the list and on the chip, so that
-  // the chip looks like the badge the lists show. The name stays the text; the dot only repeats the colour.
+  // An option with data-color (#847: the colour of a tag) shows it as a dot in the list, and its chip is the badge
+  // the lists show, in the same colour. A name typed into the field has no option yet: data-tag-colors names the
+  // palette, and the chip takes the colour the server will give it - TagColor.of, Java's hashCode of the name in
+  // lower case modulo the palette. Whoever changes the rule there changes it here.
   const colors = new Map(Array.from(el.options || []).filter(opt => opt.dataset.color)
     .map(opt => [opt.value, opt.dataset.color]));
-  if (colors.size) {
-    const dot = (value, escape) => {
-      const color = colors.get(String(value));
-      return color ? '<span class="tag-dot bg-' + escape(color) + '"></span>' : '';
+  const palette = el.dataset.tagColors ? el.dataset.tagColors.split(',') : null;
+  if (colors.size || palette) {
+    const javaHashCode = text => {
+      let hash = 0;
+      for (let i = 0; i < text.length; i++) hash = (Math.imul(31, hash) + text.charCodeAt(i)) | 0;
+      return hash;
+    };
+    const colorOf = value => {
+      if (colors.has(String(value))) return colors.get(String(value));
+      if (!palette) return null;
+      const key = String(value).trim().replace(/\s+/g, ' ').toLowerCase();
+      return palette[((javaHashCode(key) % palette.length) + palette.length) % palette.length];
     };
     config.render = Object.assign({}, config.render, {
       option(data, escape) {
+        const color = colorOf(data.value);
+        const dot = color ? '<span class="tag-dot bg-' + escape(color) + '"></span>' : '';
         return '<div class="d-flex flex-column py-1">'
-          + '<span class="text-nowrap">' + dot(data.value, escape) + escape(data.text) + '</span>'
+          + '<span class="text-nowrap">' + dot + escape(data.text) + '</span>'
           + (data.subtext ? '<small class="text-muted lh-1 mb-1">' + escape(data.subtext) + '</small>' : '')
           + '</div>';
       },
       item(data, escape) {
-        return '<div>' + dot(data.value, escape) + escape(data.text) + '</div>';
+        const color = colorOf(data.value);
+        return color
+          ? '<div class="badge bg-' + escape(color) + '-lt">' + escape(data.text) + '</div>'
+          : '<div>' + escape(data.text) + '</div>';
       },
     });
   }
