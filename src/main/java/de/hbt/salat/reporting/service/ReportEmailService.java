@@ -134,7 +134,7 @@ public class ReportEmailService {
   }
 
   private String jobsUrl() {
-    return (salatProperties.getUrl() != null ? salatProperties.getUrl() : "") + "/reporting/jobs";
+    return salatProperties.absoluteUrl("/reporting/jobs");
   }
 
   private String text(String key, Object... arguments) {
