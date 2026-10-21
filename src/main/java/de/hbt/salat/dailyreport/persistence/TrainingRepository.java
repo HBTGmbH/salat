@@ -110,4 +110,18 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
   List<RegularTrainingDay> findRegularTrainingDaysOfEmployeeBetween(long employeeId,
       Collection<Long> regularTrainingSuborderIds, LocalDate from, LocalDate until);
 
+  /**
+   * The regular training booked on each of the contracts in the period, for the benchmark of the
+   * training account (#827). A contract without regular training has no row.
+   */
+  @Query("""
+      select new de.hbt.salat.dailyreport.domain.TrainingInformation(eo.employeecontract.id, sum(t.duration))
+      from Timereport t join t.employeeorder eo
+      where eo.employeecontract.id in :employeecontractIds and eo.suborder.id in :regularTrainingSuborderIds
+      and t.referenceday.refdate between :from and :until
+      group by eo.employeecontract.id
+  """)
+  List<TrainingInformation> sumRegularTrainingOfContractsBetween(Collection<Long> employeecontractIds,
+      Collection<Long> regularTrainingSuborderIds, LocalDate from, LocalDate until);
+
 }

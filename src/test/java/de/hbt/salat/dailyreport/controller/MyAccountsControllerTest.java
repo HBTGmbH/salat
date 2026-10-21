@@ -2,8 +2,10 @@ package de.hbt.salat.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
@@ -29,6 +31,10 @@ import de.hbt.salat.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.service.OvertimeService;
 import de.hbt.salat.dailyreport.service.TimereportService;
+import de.hbt.salat.dailyreport.service.TrainingBenchmarkService;
+import de.hbt.salat.dailyreport.domain.TrainingBenchmark;
+import de.hbt.salat.dailyreport.domain.WorkingDays;
+import java.math.BigDecimal;
 import de.hbt.salat.dailyreport.service.VacationService;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
@@ -69,6 +75,8 @@ class MyAccountsControllerTest {
   private EmployeeService employeeService;
   @Mock
   private SpecialOrders specialOrders;
+  @Mock
+  private TrainingBenchmarkService trainingBenchmarkService;
 
   @InjectMocks
   private MyAccountsController myAccountsController;
@@ -311,6 +319,71 @@ class MyAccountsControllerTest {
 
     assertThat((List<Double>) model.getAttribute("trainingChartHours")).containsExactly(0.0, 4.0, 0.0, 0.0, 0.0, 0.0);
     assertThat((List<Double>) model.getAttribute("trainingChartOrderHours")).containsExactly(0.0, 2.0, 0.0, 0.0, 3.0, 0.0);
+  }
+
+  /* #827: neben der eigenen regulaeren Fortbildung in Arbeitstagen steht der Median der Kolleginnen
+     und Kollegen, hervorgehoben, wenn er deutlich darueber liegt. */
+  @Test
+  void shows_the_own_regular_training_in_working_days_and_the_median_beside_it() {
+    when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
+        .thenReturn(List.of(training("2026-02-10", REGULAR_TRAINING_SUBORDER_ID, 12)));
+    lenient().when(specialOrders.isRegularTraining(REGULAR_TRAINING_SUBORDER_ID)).thenReturn(true);
+    when(trainingBenchmarkService.getBenchmark(LocalDate.of(2026, 1, 1), TODAY, WorkingDays.of(12 * 60, 8 * 60)))
+        .thenReturn(Optional.of(new TrainingBenchmark(new BigDecimal("6.25"), true)));
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    assertThat(model.getAttribute("regularTrainingDays")).isEqualTo("1,5");
+    assertThat(model.getAttribute("trainingMedianDays")).isEqualTo("6,3");
+    assertThat(model.getAttribute("trainingMedianHighlighted")).isEqualTo(true);
+  }
+
+  @Test
+  void without_a_benchmark_no_median_is_shown() {
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    assertThat(model.getAttribute("regularTrainingDays")).isEqualTo("0,0");
+    assertThat(model.containsAttribute("trainingMedianDays")).isFalse();
+  }
+
+  /* Der Median vergleicht nur, solange der Vertrag gilt: begann er im April, von April an (#827). */
+  @Test
+  void the_period_is_cut_to_the_validity_of_the_contract() {
+    var contract = contract();
+    contract.setValidFrom(LocalDate.parse("2026-04-01"));
+    when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    verify(timereportService).getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.parse("2026-04-01"), TODAY);
+    verify(trainingBenchmarkService).getBenchmark(LocalDate.parse("2026-04-01"), TODAY, WorkingDays.of(0, 8 * 60));
+  }
+
+  @Test
+  void a_contract_that_ended_is_read_until_its_end() {
+    var contract = contract();
+    contract.setValidUntil(LocalDate.parse("2026-03-31"));
+    when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    verify(timereportService).getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1),
+        LocalDate.parse("2026-03-31"));
+  }
+
+  /* Fortbildung in der Zukunft zaehlt im Fortbildungskonto nicht - anders als der geplante Urlaub. */
+  @Test
+  void training_after_today_is_never_read() {
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, "CURRENT_YEAR", model);
+    myAccountsController.show(CONTRACT_ID, "LAST_12_MONTHS", model);
+
+    verify(timereportService, never()).getTimereportsByDatesAndEmployeeContractId(eq(CONTRACT_ID), any(),
+        argThat(until -> until.isAfter(TODAY)));
   }
 
   private static final long REGULAR_TRAINING_SUBORDER_ID = 500L;
