@@ -106,6 +106,17 @@ class NotificationMailerTest {
     assertThat(sent().getFrom()).isEqualTo(sender);
   }
 
+  /** The budget alert names the order in the mail, which the bell leaves out. */
+  @Test
+  void says_more_than_the_bell_where_the_notification_has_a_text_of_its_own_for_the_mail() {
+    mailer.mailAfterCommit(recipient(Locale.GERMAN), released()
+        .mailDescriptionKey("main.budget.alert.email.body").mailDescriptionParams(List.of("Plan", "ABC-12", "90,0", "80"))
+        .build());
+
+    assertThat(sent().getMessage()).contains(
+        "Die Budgetauslastung für Plan (Auftrag: ABC-12) beträgt 90,0 % und überschreitet den Schwellenwert von 80 %.");
+  }
+
   @Test
   void within_a_transaction_waits_for_the_commit() {
     TransactionSynchronizationManager.initSynchronization();
@@ -156,8 +167,14 @@ class NotificationMailerTest {
   }
 
   private static NotificationMessage withSender(MailContact sender) {
-    return new NotificationMessage(RELEASED.titleKey(), RELEASED.titleParams(), RELEASED.descriptionKey(),
-        RELEASED.descriptionParams(), RELEASED.actionUrl(), null, sender);
+    return released().sender(sender).build();
+  }
+
+  private static NotificationMessage.NotificationMessageBuilder released() {
+    return NotificationMessage.builder()
+        .titleKey(RELEASED.titleKey()).titleParams(RELEASED.titleParams())
+        .descriptionKey(RELEASED.descriptionKey()).descriptionParams(RELEASED.descriptionParams())
+        .actionUrl(RELEASED.actionUrl());
   }
 
   private EmailRequest sent() {

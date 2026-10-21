@@ -74,7 +74,8 @@ public class BudgetAlertService {
     /**
      * The responsibles of the order come as values from the module {@code order} — no entity of
      * another module crosses into budget through a service (#1340, ADR-0021). Bell and mail go the
-     * common way of all notifications (#828); the sign of the order only goes to the log.
+     * common way of all notifications (#828); the mail names the order by the sign it has today, read
+     * through the plan's reference (#1367).
      */
     private void sendAlert(long budgetId, String budgetName, long customerorderId, String coSign,
                            boolean fixedPrice, double utilization, int threshold, LocalDate today) {
@@ -104,6 +105,9 @@ public class BudgetAlertService {
                 .titleParams(List.of(budgetName))
                 .descriptionKey("main.budget.alert." + kind + "notification.description")
                 .descriptionParams(List.of(budgetName, utilizationStr, thresholdStr))
+                // the mail names the order as well, by the sign it has today (#1367)
+                .mailDescriptionKey("main.budget.alert." + kind + "email.body")
+                .mailDescriptionParams(List.of(budgetName, coSign, utilizationStr, thresholdStr))
                 .actionUrl(controllingUrl)
                 .actionLabel(messages.getMessage("main.budget.dashboard.link.controlling"))
                 .build());

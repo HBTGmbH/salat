@@ -19,7 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 /**
  * Mails a notification (#828), in the language of its recipient: the title is the subject, the
- * description the body, framed by a greeting, the link to its target and the note that the mail was
+ * description — or the mail's own, where the notification has one — the body, framed by a greeting, the link to its target and the note that the mail was
  * generated.
  *
  * <p>A mail the person may switch off goes out after the commit and never fails what caused it: a
@@ -92,9 +92,13 @@ class NotificationMailer {
 
   private String body(NotificationRecipient recipient, NotificationMessage message, Locale locale) {
     var body = new StringBuilder(text("main.notification.email.greeting", locale, recipient.firstname())).append("\n\n");
-    body.append(message.descriptionKey() != null
-        ? text(message.descriptionKey(), locale, message.descriptionParams().toArray())
-        : text(message.titleKey(), locale, message.titleParams().toArray()));
+    if (message.mailDescriptionKey() != null) {
+      body.append(text(message.mailDescriptionKey(), locale, message.mailDescriptionParams().toArray()));
+    } else if (message.descriptionKey() != null) {
+      body.append(text(message.descriptionKey(), locale, message.descriptionParams().toArray()));
+    } else {
+      body.append(text(message.titleKey(), locale, message.titleParams().toArray()));
+    }
     if (message.actionUrl() != null) {
       var baseUrl = salatProperties.getUrl() != null ? salatProperties.getUrl() : "";
       body.append("\n\n").append(text("main.notification.email.link", locale, baseUrl + message.actionUrl()));

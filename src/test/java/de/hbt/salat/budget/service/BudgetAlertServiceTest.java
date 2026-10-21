@@ -34,7 +34,7 @@ import de.hbt.salat.order.service.CustomerorderService;
  * The alert names the order of a plan as it is called today, read by the plan's order id (#1212).
  * Order and responsibles come by that id as values from the module {@code order} (#1340). Bell and
  * mail go the common way of all notifications since #828: whether the alert is mailed is the
- * responsible's choice, made in {@code NotificationService}.
+ * responsible's choice, made in {@code NotificationService}; the mail names the order as well.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BudgetAlertServiceTest {
@@ -75,6 +75,17 @@ public class BudgetAlertServiceTest {
         .isEqualTo("/budget/controlling?fBudgetCustomerOrderId=" + CUSTOMERORDER_ID + "&evaluate=true");
     assertThat(message.descriptionKey()).isEqualTo("main.budget.alert.notification.description");
     assertThat(message.descriptionParams()).hasSize(3).startsWith("plan").endsWith("80");
+  }
+
+  @Test
+  void mails_the_responsibles_naming_the_order_by_the_sign_it_has_today() {
+    givenPlans(plan(CUSTOMERORDER_ID));
+
+    service.checkAndNotify();
+
+    var message = notified();
+    assertThat(message.mailDescriptionKey()).isEqualTo("main.budget.alert.email.body");
+    assertThat(message.mailDescriptionParams()).hasSize(4).startsWith("plan", "co").endsWith("80");
   }
 
   /** The mail went to the employee before #828; it now goes to the login, like the bell. */
@@ -124,7 +135,9 @@ public class BudgetAlertServiceTest {
 
     service.checkAndNotify();
 
-    assertThat(notified().descriptionKey()).isEqualTo("main.budget.alert.fixedprice.notification.description");
+    var message = notified();
+    assertThat(message.descriptionKey()).isEqualTo("main.budget.alert.fixedprice.notification.description");
+    assertThat(message.mailDescriptionKey()).isEqualTo("main.budget.alert.fixedprice.email.body");
   }
 
   /** Without a calculation there is nothing to measure against — no alarm, as without a budget. */
