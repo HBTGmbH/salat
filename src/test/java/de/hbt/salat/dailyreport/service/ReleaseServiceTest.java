@@ -2550,6 +2550,8 @@ class ReleaseServiceTest {
             // the text names the person by first name, the mail header in full (#1505)
             assertThat(message.getValue().descriptionParams()).containsExactly("Bert", "31.03.2024");
             assertThat(message.getValue().sender()).isEqualTo(new MailContact("Bert Beispiel", "b@example.org"));
+            // the person is no people lead: the acceptance would answer 403
+            assertThat(message.getValue().actionUrl()).isEqualTo("/release");
         }
 
         /** Der Vertragsbeginn liegt hinter der letzten Abnahme: abgenommen wird ab dem Vertragsbeginn, wie die Übersicht ihn zeigt. */
@@ -2786,6 +2788,18 @@ class ReleaseServiceTest {
             verify(notificationService).emitNotification(eq(RELEASE_REMINDER), eq(List.of(42L)), message.capture());
             assertThat(message.getValue().descriptionParams()).containsExactly("Bert");
             assertThat(message.getValue().sender().getName()).isEqualTo("Bert Beispiel");
+        }
+
+        /** Die Abnahme ist nur für People Leads; wer erinnert wird, gibt auf der eigenen Freigabeseite frei. */
+        @Test
+        void theReminderToReleaseLeadsToTheOwnRelease() {
+            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Anna", "Beispiel", 42L));
+
+            classUnderTest.sendReleaseReminderMail(EMPLOYEE_ID);
+
+            final var message = ArgumentCaptor.forClass(NotificationMessage.class);
+            verify(notificationService).emitNotification(eq(RELEASE_REMINDER), eq(List.of(42L)), message.capture());
+            assertThat(message.getValue().actionUrl()).isEqualTo("/release");
         }
 
         @Test

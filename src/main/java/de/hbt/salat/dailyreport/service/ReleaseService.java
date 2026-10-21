@@ -108,6 +108,8 @@ import de.hbt.salat.notification.service.NotificationService;
 public class ReleaseService {
 
   private static final String ACCEPTANCE_URL = "/acceptance";
+  /** Where a person releases their own bookings; the acceptance is for people leads only. */
+  private static final String RELEASE_URL = "/release";
   private static final String DATE_PATTERN = "dd.MM.yyyy";
 
   private final EmployeecontractDAO employeecontractDAO;
@@ -814,7 +816,7 @@ public class ReleaseService {
             .titleKey("main.release.notification.releasereminder.title")
             .descriptionKey("main.release.notification.releasereminder.description")
             .descriptionParams(Arrays.asList(sender.getFirstname()))
-            .actionUrl(ACCEPTANCE_URL)
+            .actionUrl(RELEASE_URL)
             .actionLabel(messages.getMessage("main.release.notification.releasereminder.action"))
             .sender(mailContactOf(sender))
             .build());
@@ -868,7 +870,7 @@ public class ReleaseService {
             .descriptionKey("main.release.notification.accepted.description")
             // the name is missing for a login without a person, the administrator's
             .descriptionParams(Arrays.asList(authorizedEmployee.getFirstname(), DateUtils.format(acceptedUntil, DATE_PATTERN)))
-            .actionUrl(ACCEPTANCE_URL)
+            .actionUrl(RELEASE_URL)
             .actionLabel(messages.getMessage("main.release.notification.accepted.action"))
             .sender(mailContactOf(authorizedEmployee.getName(), authorizedEmployee.getEmployeeId()))
             .build());
