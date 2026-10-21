@@ -8,7 +8,7 @@ the first time, when a level's tier is decided, or when the number does not sit 
 * `src/main/resources/static/images/achievement/medal-<pictogram>-<tier>.svg`, served as
   `/images/achievement/medal-<pictogram>-<tier>.svg`.
 * `<pictogram>` is the file name of the source in `assets/pictograms/` (`flag`, `calendar`, `mortarboard`, `keyboard`,
-  `flask`). An achievement declares it in its `AchievementDefinition`; several achievements may share one.
+  `flask`, `book`). An achievement declares it in its `AchievementDefinition`; several achievements may share one.
 * `<tier>` is one of `bronze`, `silver`, `gold`, `platinum`, `diamond`, `master`, `grandmaster` and `locked`.
 
 ## Which tier a level gets

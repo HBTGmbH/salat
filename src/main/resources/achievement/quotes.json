@@ -406,5 +406,91 @@
     "source": "Willy Wonka & the Chocolate Factory (1971)"
    }
   ]
+ },
+ "training-year": {
+  "1": [
+   {
+    "quote": "The journey of a thousand miles begins with one step.",
+    "source": "Laozi, Tao Te Ching"
+   },
+   {
+    "quote": "Begin at the beginning, and go on till you come to the end: then stop.",
+    "source": "Lewis Carroll, Alice's Adventures in Wonderland"
+   },
+   {
+    "quote": "Well begun is half done.",
+    "source": "Aristotle, Politics"
+   }
+  ],
+  "2": [
+   {
+    "quote": "Stay hungry. Stay foolish.",
+    "source": "Steve Jobs, Stanford Commencement Address (2005)"
+   },
+   {
+    "quote": "I have no special talents. I am only passionately curious.",
+    "source": "Albert Einstein, letter to Carl Seelig (1952)"
+   },
+   {
+    "quote": "The more that you read, the more things you will know.",
+    "source": "Dr. Seuss, I Can Read with My Eyes Shut!"
+   }
+  ],
+  "4": [
+   {
+    "quote": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+    "source": "Will Durant, The Story of Philosophy"
+   },
+   {
+    "quote": "Repetitio est mater studiorum.",
+    "source": "Latin proverb"
+   },
+   {
+    "quote": "Fall seven times, stand up eight.",
+    "source": "Japanese proverb"
+   }
+  ],
+  "6": [
+   {
+    "quote": "It's a dangerous business, Frodo, going out your door.",
+    "source": "J. R. R. Tolkien, The Lord of the Rings"
+   },
+   {
+    "quote": "Not all those who wander are lost.",
+    "source": "J. R. R. Tolkien, The Fellowship of the Ring"
+   },
+   {
+    "quote": "Knowledge is power.",
+    "source": "Francis Bacon, Meditationes Sacrae (1597)"
+   }
+  ],
+  "8": [
+   {
+    "quote": "A reader lives a thousand lives before he dies.",
+    "source": "George R. R. Martin, A Dance with Dragons"
+   },
+   {
+    "quote": "It is our choices, Harry, that show what we truly are, far more than our abilities.",
+    "source": "J. K. Rowling, Harry Potter and the Chamber of Secrets"
+   },
+   {
+    "quote": "Ad astra per aspera.",
+    "source": "Latin proverb"
+   }
+  ],
+  "10": [
+   {
+    "quote": "The same procedure as every year, James.",
+    "source": "Dinner for One (1963)"
+   },
+   {
+    "quote": "I'll be back.",
+    "source": "The Terminator (1984)"
+   },
+   {
+    "quote": "There and Back Again.",
+    "source": "J. R. R. Tolkien, The Hobbit"
+   }
+  ]
  }
 }

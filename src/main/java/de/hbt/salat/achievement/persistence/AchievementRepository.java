@@ -13,7 +13,8 @@ import org.springframework.stereotype.Repository;
 public interface AchievementRepository extends JpaRepository<Achievement, Long> {
 
   @Query("""
-      select new de.hbt.salat.achievement.domain.RecordedLevel(a.employee.id, a.achievementKey, a.achievementLevel)
+      select new de.hbt.salat.achievement.domain.RecordedLevel(a.employee.id, a.achievementKey, a.achievementYear,
+          a.achievementLevel)
       from Achievement a
       """)
   List<RecordedLevel> findAllRecordedLevels();

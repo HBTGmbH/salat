@@ -19,12 +19,13 @@ import lombok.Setter;
 /**
  * A level of an achievement a person has reached (#1501): which, on which day, and whether the
  * person has seen it announced. Recorded once by the nightly job; afterwards only {@link #seenAt}
- * changes.
+ * changes. A yearly achievement records its levels once per year (#1512), every other one once with
+ * {@link de.hbt.salat.common.achievement.AchievementDefinition#NO_YEAR}.
  */
 @Entity
 @Table(name = "achievement", uniqueConstraints = @UniqueConstraint(
-    name = "uk_achievement_employee_id_achievement_key_achievement_level",
-    columnNames = {"employee_id", "achievement_key", "achievement_level"}))
+    name = "uk_achievement_employee_key_year_level",
+    columnNames = {"employee_id", "achievement_key", "achievement_year", "achievement_level"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -41,6 +42,10 @@ public class Achievement extends AuditedEntity {
 
   @Column(name = "achievement_level", nullable = false)
   private int achievementLevel;
+
+  /** The calendar year of a yearly achievement's level; {@code NO_YEAR} for every other one. */
+  @Column(name = "achievement_year", nullable = false)
+  private int achievementYear;
 
   /** The day it was reached — the day of the matter, not the day it was recorded. */
   @Column(name = "achieved_on", nullable = false)

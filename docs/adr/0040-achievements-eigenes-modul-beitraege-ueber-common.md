@@ -61,3 +61,35 @@ die ihrerseits `employee` importieren: ein Zyklus.
   in einer Abfrage holt (Verträge aller beschäftigten Personen) statt je Person.
 * Neutral: Die Texte entstehen aus dem Schlüssel (`main.achievement.<key>.group`, `.title`,
   `.level`). `AchievementTextsTest` prüft sie für jeden Beitrag in beiden Sprachen.
+
+## Nachtrag 2026-10-21: jährliche Achievements (#1512)
+
+Das Jahresabzeichen Fortbildung beginnt jedes Kalenderjahr neu: Seine Stufen (1, 2, 4, 6, 8 und 10
+Arbeitstage reguläre Fortbildung) werden einmal je Jahr erreicht. Bis dahin hielt die Tabelle
+`achievement` jede Stufe einer Person genau einmal fest; der eindeutige Schlüssel war Person,
+Achievement und Stufe.
+
+Erwogen wurden zwei Wege:
+
+* **A — das Jahr als Teil des Schlüssels.** `AchievementDefinition.yearly(…)` kennzeichnet ein
+  Achievement als jährlich, `achievement_year` hält das Jahr einer Stufe fest, der eindeutige
+  Schlüssel nimmt es auf. Das Jahr ist das des Tages, an dem die Stufe erreicht wurde; ein
+  Contributor meldet deshalb weiter nur Stufe und Tag, `AchievementContributor` bleibt unverändert.
+  Alle anderen Achievements tragen `NO_YEAR` (0) statt NULL, weil MySQL NULL-Werte in einem
+  eindeutigen Index für verschieden hält.
+* **B — ein Schlüssel je Jahr** (`training-year-2026`), ohne Schemaänderung. Die Registry entsteht
+  beim Start, ein Jahreswechsel im laufenden Betrieb fände keine Definition für das neue Jahr; Texte,
+  Zitate und Profilseite bekämen jedes Jahr eine neue Gruppe.
+
+Chosen: **A**. Auf der Profilseite stehen die erreichten Stufen wie bisher in der Reihenfolge, in
+der sie erreicht wurden; von einem früheren Jahr nur die höchste, sonst stünden bei langer
+Zugehörigkeit Dutzende Medaillen da. Als Nächstes zeigt ein jährliches Achievement die nächste
+Stufe des laufenden Jahres; der Rest bis dahin darf eine Dezimalzahl sein
+(`AchievementProgress.remaining` ist eine `Number`), „noch 1,5 Tage“.
+
+Angekündigt werden nur die Stufen des laufenden Jahres. Der erste Lauf findet die Stufen jedes Jahres
+seit Beginn der Beschäftigung, bei langer Zugehörigkeit Dutzende; angekündigt sprengten ihre Namen
+die eine Benachrichtigung je Person (2000 Zeichen) und brachen den ganzen Lauf ab. Stufen früherer
+Jahre trägt der Job deshalb als gesehen ein: Sie stehen auf der Profilseite, kommen aber weder als
+Popup noch als Benachrichtigung. Das gilt auch für eine Stufe des Vorjahres, die im Januar durch eine
+nachgetragene Buchung erreicht wird.
