@@ -369,6 +369,56 @@ Systeme — speichert und liest allein das Modul `secret`** (#1432).
 
 ---
 
+## Tags (→ ADR-0042)
+
+**Das Modul `tag` kennt nur die Tags, die Zuordnung liegt beim Objekt** (#847). Aufträge und
+Unteraufträge tragen Tags. So wird ein weiterer Typ taggbar, etwa Mitarbeiterverträge, und das Modul
+`tag` bleibt dabei unverändert:
+
+1. **Changeset:** eine Join-Tabelle `<typ>_tag (<typ>_id, tag_id)` mit zusammengesetztem
+   Primärschlüssel. Der Fremdschlüssel auf das Objekt bekommt `deleteCascade: true`, der auf `tag`
+   nicht (Vorbild: Changesets 196 und 197).
+2. **Entity:** ein Feld `Set<Tag> tags` als `@ManyToMany(fetch = LAZY)` mit `@JoinTable`,
+   `@BatchSize(size = 100)`, `@Cache` und ohne Cascade.
+   - Der Getter liefert eine sortierte Kopie.
+   - Geändert wird über `replaceTags(Collection<Tag>)`, wie bei `Customerorder` und `Suborder`.
+3. **Speichern:** Das DTO trägt `List<String> tagNames`, und `null` lässt die Tags unverändert.
+   - Der Service ruft `TagService.resolveTagIds(names)` auf. Der normalisiert die Namen und legt
+     fehlende Tags an.
+   - Die Referenzen holt eine Komponente des eigenen Moduls per `getReference`
+     (`order.persistence.TagReferences`).
+   - Der Rolle, die das Objekt bearbeiten darf, muss `resolveTagIds` erlaubt sein. Heute ist das
+     `requiresManager`.
+4. **Formular:** `<salat:select th:field="*{tagNames}" multiple allowCreate="true"
+   th:createLabel="#{main.tag.create.text}">`, als letztes Feld des Formulars. Die Optionen tragen den
+   Namen als Wert, dazu `data-color` und die Verwendung als `data-subtext` (`order/tags.html`,
+   `TagViewHelper`).
+5. **Liste:** Badges per `order/tags :: badges(…)` und der Filter per `order/tags :: filter(…)`.
+   - Der Filter ist ein `f…`-Parameter mit kommagetrennten Tag-ids.
+   - In der Abfrage steckt ein `exists` über die Join-Tabelle: Ein Tag aus der Auswahl genügt.
+6. **Verwendung:** Die Zahlen zählt das eigene Repository über seine Join-Tabelle
+   (`findTagUsages`).
+
+**Reports** lesen die Join-Tabellen direkt. Einen Parametertyp für Listen gibt es noch nicht. Ein
+`string`-Parameter mit kommagetrennten Namen (`string,festpreis,cloud`) geht über `FIND_IN_SET` auf
+`name_key`:
+
+```sql
+select co.sign, co.description
+from customerorder co
+where exists (select 1
+              from customerorder_tag ct
+              join tag t on t.id = ct.tag_id
+              where ct.customerorder_id = co.id
+                and find_in_set(t.name_key, lower(:tags)) > 0)
+```
+
+Bei Unteraufträgen zählt in der Liste nur der eigene Tag. Ein Report, der die Tags des Auftrags
+mitnehmen will, ergänzt `or exists (… customerorder_tag … where ct.customerorder_id =
+so.customerorder_id …)`.
+
+---
+
 ## Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.
 

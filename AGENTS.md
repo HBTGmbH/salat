@@ -12,7 +12,7 @@ Nachschlagewissen zu einzelnen Themen steht unter `docs/guides/` und gilt ebenso
 | Dokument | Inhalt | Lesen, wenn … |
 |---|---|---|
 | [`docs/guides/ui.md`](docs/guides/ui.md) | View-Regeln, Bestätigungen und modale Dialoge, Befehlspalette, Tastenkürzel, sortierbare Listen, Farben und Kontrast, Objekte in `layout/base.html`, TomSelect, `salat:`-Dialekt, UiState und Filter, Filter-Umschalter, Listen mit Obergrenze, gruppierte Listen, Mails | ein Template, `salat.js`, `salat.css`, ein Mail-Template oder ein Controller mit Liste oder Filter geändert wird |
-| [`docs/guides/backend-patterns.md`](docs/guides/backend-patterns.md) | Entity, Criteria, Repository, Service, Controller, DTO, Events, Benachrichtigungen, Exceptions, Fehlermeldungen, Security, Listener, gleichzeitige Änderungen, Secrets, Flags, JSON, i18n, Migrationen, CSV, Dauer und Uhrzeit, REST-Parameter, Legacy-Redirects | Java-Code in `domain`, `persistence`, `service`, `controller`, `rest` oder `listener`, ein Changeset oder ein Message-Bundle geändert wird |
+| [`docs/guides/backend-patterns.md`](docs/guides/backend-patterns.md) | Entity, Criteria, Repository, Service, Controller, DTO, Events, Benachrichtigungen, Exceptions, Fehlermeldungen, Security, Listener, gleichzeitige Änderungen, Secrets, Tags, Flags, JSON, i18n, Migrationen, CSV, Dauer und Uhrzeit, REST-Parameter, Legacy-Redirects | Java-Code in `domain`, `persistence`, `service`, `controller`, `rest` oder `listener`, ein Changeset oder ein Message-Bundle geändert wird |
 | [`docs/guides/domain-rules.md`](docs/guides/domain-rules.md) | Stammdaten und Bewegungsdaten, das `hide`-Flag, Gültigkeitszeiträume, Budget | eine Änderung Stammdaten, das Ausblenden, Gültigkeitszeiträume oder das Budget berührt |
 | [`docs/performance-tips.md`](docs/performance-tips.md) | Gemessene Performance-Regeln | JPA-Mappings, `AttributeConverter`, Repository-Queries oder View-Helper hinzukommen |
 | [`docs/beta-funktionen.md`](docs/beta-funktionen.md) | Beta-Funktionen: Einführung, Messung, Ende | eine Änderung als Beta eingeführt wird |
@@ -67,7 +67,8 @@ Nachschlagewissen zu einzelnen Themen steht unter `docs/guides/` und gilt ebenso
   query (#997); a read model must not load per row.
 - **References across a module boundary** (→ ADR-0036): a reference to **master data** of another
   module — customer, customer order, suborder, employee order, employee, employee contract, login
-  (`SalatUser`) — may be a real `@ManyToOne`, in the import direction `ArchitectureTest` allows.
+  (`SalatUser`), tag (ADR-0042, a `@ManyToMany` over a join table of the owner) — may be a real
+  `@ManyToOne`, in the import direction `ArchitectureTest` allows.
   **Transaction data stays an id** (`TimereportBudgetAssignment.timereportId`: a booking is
   soft-deleted and sensitive). Within a module the reference is the rule, transaction data included.
   A reference across the boundary is always `LAZY`, read only — no cascade, no setter called on the
@@ -427,6 +428,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | `settings` | User preference store: entity, converter, repository, service — generic map-based API, no UI |
 | `settingseditor` | User preferences editing UI — aggregator; may import from **any** module; other modules must not import from `settingseditor` |
 | `statistic` | Aggregations and statistics |
+| `tag` | Tags (#847, ADR-0042): the tags themselves — name, colour, turning names into tags; imports only `common` and `auth`. It knows none of the objects that carry tags: the owning module keeps a join table with foreign keys and the `@ManyToMany`, and imports `tag` (`order` for orders and suborders) |
 
 ### Module Layer Conventions
 Each module uses a consistent sub-package structure:

@@ -342,6 +342,19 @@ einer Stelle — einem View-Helper je Art. Ein Template verkettet keine Felder z
   Der Chip des gewählten Eintrags zeigt nur sie, der volle Text steht als Tooltip daran; sonst
   brechen schon zwei Einträge das Feld um.
 
+### Neue Einträge und Farbpunkte (#847)
+
+- `data-allow-create="true"` (im Dialekt `allowCreate="true"`) lässt einen getippten Wert als neuen
+  Eintrag zu.
+  - `salat.js` normalisiert ihn so, wie der Server speichert: getrimmt, mehrere Leerzeichen zu
+    einem.
+  - Unterscheidet er sich von einer vorhandenen Option nur in Groß- und Kleinschreibung, bietet
+    `salat.js` ihn nicht neu an.
+  - `data-create-label` beschriftet die Zeile, „No results found“ entfällt dann.
+- `data-color="<tabler-farbe>"` an einer Option zeigt einen Punkt vor dem Namen, in der Liste wie auf
+  dem Chip (`.tag-dot` in `salat.css`). Er wiederholt nur die Farbe der Badge, der Name steht daneben.
+- Die Unterzeile unter dem Feld (`{field}-subtext`) gibt es nur bei einer Einzelauswahl.
+
 ### Free text field with remote suggestions
 
 A field whose value is free text but where the known values should be offered while typing is an
@@ -382,7 +395,7 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 | `<salat:textInput />` | `th:field` (field), `th:label` (expr), `required`, `maxlength`, `th:helpText` (optional expr), `type`, `min`/`max` (bounds of a number field) | `<div class="mb-3">` with label, `<input class="form-control">`, optional `form-text` and `invalid-feedback` div (the old fragments are gone, #1247) |
 | `<salat:textarea />` | `th:field` (field), `th:label` (expr), `required`, `rows` (default 3), `monospace`, `th:helpText` (optional expr) | `<div class="mb-3">` with label, `<textarea class="form-control">` (monospace via `style`), optional `form-text` and `invalid-feedback` div |
 | `<salat:checkboxSwitch />` | `th:field` (field), `th:label` (expr) | `fragments/form-fields :: checkboxSwitch` |
-| `<salat:select>` | `th:field` (field), `th:label` (expr), `required` (optional), `allowEmptyOption` (optional, keeps an option with the empty value selectable in TomSelect) | `<div class="mb-3">` with stacked label, `<select class="form-select tomselect">`, auto `<small id="{field}-subtext">` for subtext, and `invalid-feedback` div; body is the `<option>` elements |
+| `<salat:select>` | `th:field` (field), `th:label` (expr), `required` (optional), `allowEmptyOption` (optional, keeps an option with the empty value selectable in TomSelect), `allowCreate` (optional, what is typed becomes a new entry, #847), `th:createLabel` (optional expr, the label of that row) | `<div class="mb-3">` with stacked label, `<select class="form-select tomselect">`, auto `<small id="{field}-subtext">` for subtext, and `invalid-feedback` div; body is the `<option>` elements |
 | `<salat:formButtons />` | `th:saveLabel` (expr), `th:cancelHref` (expr) | `fragments/form-fields :: formButtons` |
 
 ### Usage
