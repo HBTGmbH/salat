@@ -73,6 +73,10 @@ public class MailService {
         }
       }
 
+      for (MailContact copy : request.getCcRecipients()) {
+        helper.addCc(copy.getEmail());
+      }
+
       // Add attachments if present
       if (request.getAttachments() != null && !request.getAttachments().isEmpty()) {
         for (EmailAttachment attachment : request.getAttachments()) {
@@ -109,6 +113,10 @@ public class MailService {
 
     @Singular
     private List<MailContact> additionalRecipients;
+
+    /** Who reads along (#215): the people leads beside the person a reminder is for. */
+    @Singular
+    private List<MailContact> ccRecipients;
 
     @Singular
     private List<EmailAttachment> attachments;

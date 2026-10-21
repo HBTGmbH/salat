@@ -178,6 +178,19 @@ class NotificationMailerTest {
     verify(mailService, never()).sendEmail(any(EmailRequest.class));
   }
 
+  /** #215: whoever reads along gets the same mail as a copy; it greets the recipient alone. */
+  @Test
+  void sends_a_copy_to_whoever_reads_along() {
+    var lead = new MailContact("Person C", "person.c@example.org");
+
+    mailer.mailNow(recipient(Locale.GERMAN), RELEASED, List.of(lead));
+
+    var mail = sent();
+    assertThat(mail.getTo()).isEqualTo(new MailContact("Person B", "person.b@example.org"));
+    assertThat(mail.getCcRecipients()).containsExactly(lead);
+    assertThat(mail.getMessage()).startsWith("Hallo Person B,");
+  }
+
   @Test
   void a_mandatory_mail_that_fails_is_reported_with_the_recipient() {
     doThrow(new RuntimeException("mail server down")).when(mailService).sendEmail(any(EmailRequest.class));
