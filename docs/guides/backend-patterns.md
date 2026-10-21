@@ -190,8 +190,9 @@ return command.getResult().values().stream().reduce(Duration::plus).orElse(Durat
   in beiden Bundles (`NotificationKindRegistryTest`).
 - Der **Inhalt** (`NotificationMessage`) ist eine Reihe von Message-Keys mit Argumenten: die Glocke
   löst sie beim Anzeigen auf, die Mail in der Sprache der empfangenden Person. Der Titel wird zum
-  Betreff, die Beschreibung zum Text. Keine Anrede nach Geschlecht, kein im Code zusammengesetzter
-  Fließtext. `sender` setzt, wer die Mail ausgelöst hat; ohne ihn kommt sie von
+  Betreff, die Beschreibung zum Text; wo die Mail mehr sagen soll als die Glocke, setzt
+  `mailDescriptionKey` einen eigenen Text (Budget-Alert: der Auftrag). Keine Anrede nach Geschlecht,
+  kein im Code zusammengesetzter Fließtext. `sender` setzt, wer die Mail ausgelöst hat; ohne ihn kommt sie von
   `salat.notifications.email-from`.
 - Eine abschaltbare Mail geht **nach dem Commit** raus und lässt die auslösende Aktion nie
   scheitern. Wird die Aktion zurückgerollt, geht keine Mail raus.

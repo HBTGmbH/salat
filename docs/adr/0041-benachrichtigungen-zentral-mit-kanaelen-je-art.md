@@ -51,8 +51,8 @@ C hätte das Problem nur verteilt: Jede neue Art hätte die Prüfung wieder verg
 * Good: Mails gehen in der Sprache der empfangenden Person raus, mit derselben Anrede, demselben Link
   und demselben Fuß für alle Arten.
 * Good: Keine neue Modulkante; `ArchitectureTest` bleibt unverändert.
-* Bad: Die Mail sagt nur, was die Glocke sagt. Wo eine Art in der Mail mehr erzählen will, braucht
-  `NotificationMessage` später einen eigenen Text für die Mail.
+* Neutral: Die Mail sagt, was die Glocke sagt. Wo sie mehr erzählen soll, trägt `NotificationMessage`
+  einen eigenen Text für die Mail (`mailDescriptionKey`); der Budget-Alert nennt dort den Auftrag.
 * Bad: Wer keinen Login hat, bekommt nichts mehr. Bis #828 ging die Mail an die Standardadresse der
   Person. Eine Erinnerung, die so niemanden erreicht, meldet das der auslösenden Person.
 * Neutral: Die Glocke einer Art, deren Modul sie selbst schaltet (das Achievement mit seinem Popup),

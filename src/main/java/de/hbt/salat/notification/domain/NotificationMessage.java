@@ -16,15 +16,19 @@ import lombok.Builder;
  * @param actionLabel       the label of the link in the bell, already resolved; may be {@code null}
  * @param sender            whom the mail comes from where a person caused it — a reminder, a release;
  *                          {@code null} sends it from the address configured for notifications
+ * @param mailDescriptionKey    the body of the mail where it says more than the bell — the budget
+ *                              alert names the order; {@code null} takes the description
+ * @param mailDescriptionParams the arguments of the mail's own body
  */
 @Builder
 public record NotificationMessage(String titleKey, List<String> titleParams, String descriptionKey,
                                   List<String> descriptionParams, String actionUrl, String actionLabel,
-                                  MailContact sender) {
+                                  MailContact sender, String mailDescriptionKey, List<String> mailDescriptionParams) {
 
   public NotificationMessage {
     titleParams = withoutNulls(titleParams);
     descriptionParams = withoutNulls(descriptionParams);
+    mailDescriptionParams = withoutNulls(mailDescriptionParams);
   }
 
   private static List<String> withoutNulls(List<String> params) {
