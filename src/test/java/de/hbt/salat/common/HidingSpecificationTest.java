@@ -145,7 +145,7 @@ class HidingSpecificationTest {
     assertThat(employeecontractRepository.findAll(Hiding.notHidden(Employeecontract_.hide)))
         .extracting(ec -> ec.getEmployee().getSign())
         .containsExactlyInAnyOrder("hide-null", "hide-false");
-    assertThat(employeecontractRepository.findAllNotHidden())
+    assertThat(employeecontractRepository.findAllNotHiddenReadable(true, null, false))
         .extracting(ec -> ec.getEmployee().getSign())
         .containsExactlyInAnyOrder("hide-null", "hide-false");
   }

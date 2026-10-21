@@ -6,16 +6,19 @@ import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AccessLevel;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.Hiding;
 import de.hbt.salat.common.Validity;
@@ -30,6 +33,7 @@ public class EmployeecontractDAO {
 
     private final EmployeecontractRepository employeecontractRepository;
     private final EmployeecontractAuthorization employeecontractAuthorization;
+    private final AuthorizedUser authorizedUser;
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -157,25 +161,15 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
-    private List<Employeecontract> getAllVisibleEmployeeContracts() {
-        return employeecontractRepository.findAllNotHidden().stream()
-                .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
-                .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
-                .collect(Collectors.toList());
-    }
-
+    /**
+     * Die nicht verborgenen Verträge, die die angemeldete Person lesen darf, nach Name und Beginn —
+     * ohne den des technischen Administrators.
+     */
     public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
-        return getVisibleEmployeeContractsForAuthorizedUser(true);
-    }
-
-    public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser(boolean limitAccess) {
-        if (limitAccess) {
-            return getAllVisibleEmployeeContracts().stream()
-                    .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
-                    .collect(Collectors.toList());
-        } else {
-            return getAllVisibleEmployeeContracts();
-        }
+        return readableNotHidden()
+                .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+                .sorted(byName())
+                .toList();
     }
 
     public List<Employeecontract> getEmployeeContractsByEmployeeId(Long employeeId) {
@@ -184,13 +178,30 @@ public class EmployeecontractDAO {
             .toList();
     }
 
+  /**
+   * Die nicht verborgenen Verträge, die die angemeldete Person lesen darf, nach Name und Beginn —
+   * ohne die von Logins mit dem Status des Administrators.
+   */
   public List<Employeecontract> getVisibleEmployeeContracts() {
-    return employeecontractRepository.findAllNotHidden()
-        .stream()
+    return readableNotHidden()
         .filter(ec -> !Objects.equals(ec.getEmployee().getStatus(), EMPLOYEE_STATUS_ADM))
-        .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ))
-        .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
+        .sorted(byName())
         .toList();
+  }
+
+  /**
+   * Die Sichtbarkeit steht in der Abfrage (#1514); die Regel in Java prüft die gelieferten Zeilen
+   * noch einmal und kostet nichts mehr, denn alles, was sie liest, kam mit. Die Abfrage grenzt nur
+   * ein, {@code EmployeecontractReadableTest} hält beide für jede Rolle gleich.
+   */
+  private Stream<Employeecontract> readableNotHidden() {
+    return employeecontractRepository.findAllNotHiddenReadable(authorizedUser.isManager(),
+            authorizedUser.getEffectiveLoginSign(), authorizedUser.isPeopleLead()).stream()
+        .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ));
+  }
+
+  private static Comparator<Employeecontract> byName() {
+    return comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom);
   }
 
 }
