@@ -45,6 +45,21 @@ class MailServiceTest {
     assertThat(parts).noneMatch(part -> part.startsWith("text/html") || part.startsWith("image/"));
   }
 
+  /** The subject starts with an emoji (#1505): it travels encoded as UTF-8 and arrives unchanged. */
+  @Test
+  void sends_an_emoji_in_the_subject_encoded_as_utf8() throws Exception {
+    when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+    service.sendEmail(EmailRequest.builder().subject("🥗 Erinnerung").message("Hallo")
+        .from(new MailContact("Salat", "noreply@example.org"))
+        .to(new MailContact("Person B", "person.b@example.org"))
+        .build());
+    var sent = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender).send(sent.capture());
+
+    assertThat(sent.getValue().getHeader("Subject")[0]).startsWith("=?UTF-8?");
+    assertThat(sent.getValue().getSubject()).isEqualTo("🥗 Erinnerung");
+  }
+
   /** The content types of every part of the sent mail, the image with its content id. */
   private List<String> send(EmailRequest.EmailRequestBuilder request) throws Exception {
     when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));

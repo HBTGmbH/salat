@@ -68,7 +68,7 @@ class NotificationMailerTest {
     mailer.mailAfterCommit(recipient(Locale.GERMAN), RELEASED);
 
     var mail = sent();
-    assertThat(mail.getSubject()).isEqualTo("[SALAT] Person A hat Buchungen freigegeben");
+    assertThat(mail.getSubject()).isEqualTo("🥗 Person A hat Buchungen freigegeben [SALAT]");
     assertThat(mail.getMessage()).isEqualTo("""
         Hallo Person B,
 
@@ -91,7 +91,7 @@ class NotificationMailerTest {
     mailer.mailAfterCommit(recipient(Locale.ENGLISH), RELEASED);
 
     var mail = sent();
-    assertThat(mail.getSubject()).isEqualTo("[SALAT] Person A released bookings");
+    assertThat(mail.getSubject()).isEqualTo("🥗 Person A released bookings [SALAT]");
     assertThat(mail.getMessage()).startsWith("Hello Person B,").contains("Please accept them.")
         .contains("Salat sent this email automatically.");
     assertThat(mail.getHtmlMessage()).contains("lang=\"en\"", ">Person A released bookings<", "If the button does not work");

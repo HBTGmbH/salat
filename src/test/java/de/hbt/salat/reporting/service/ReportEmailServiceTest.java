@@ -57,7 +57,7 @@ class ReportEmailServiceTest {
   void comes_from_salat_with_the_report_in_the_subject() {
     var mail = send();
 
-    assertThat(mail.getSubject()).isEqualTo("[SALAT] Report Stunden je Auftrag");
+    assertThat(mail.getSubject()).isEqualTo("🥗 Report Stunden je Auftrag [SALAT]");
     assertThat(mail.getFrom().getName()).isEqualTo("Salat");
     assertThat(mail.getFrom().getEmail()).isEqualTo("noreply@example.org");
     assertThat(mail.getAttachments()).singleElement()
