@@ -24,6 +24,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.dailyreport.service.ReleaseReminderService;
 import de.hbt.salat.dailyreport.service.ReleaseService;
 import de.hbt.salat.dailyreport.viewhelper.ReviewLinks;
 import de.hbt.salat.employee.domain.Employee;
@@ -43,6 +44,7 @@ public class AcceptanceController {
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
     private final ReleaseService releaseService;
+    private final ReleaseReminderService releaseReminderService;
     private final AuthorizedUser authorizedUser;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
@@ -80,6 +82,8 @@ public class AcceptanceController {
         }
 
         model.addAttribute("employeeContracts", employeeContracts);
+        model.addAttribute("lastReminders", releaseReminderService.getLastReminders(
+            employeeContracts.stream().map(Employeecontract::getId).toList()));
         model.addAttribute("selectedContract", selected);
         model.addAttribute("supervisorId", fAcceptanceSupervisorId);
         model.addAttribute("releasedUntil", selected != null ? format(selected.getReportReleaseDate()) : "");

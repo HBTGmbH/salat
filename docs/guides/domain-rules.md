@@ -39,6 +39,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |
 | `Overtime` | Bewegungsdaten | — |
+| `ReleaseReminder` | Bewegungsdaten | — (je Vertrag und Tag eine automatische Erinnerung an die Freigabe, #215; geht mit dem Vertrag) |
 | `OrderRevenue` | Bewegungsdaten | — |
 | `ETLExecutionHistory` | Bewegungsdaten | — |
 | `ScheduledReportExecutionHistory` | Bewegungsdaten | — |

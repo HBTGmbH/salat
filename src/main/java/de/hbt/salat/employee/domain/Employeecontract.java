@@ -249,7 +249,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * beendeten Vertrag aber nur bis zu seinem letzten Tag (#324). Sonst stünde ein vollständig
      * abgenommener Vertrag für immer als überfällig da.
      */
-    private LocalDate dueUntil() {
+    public LocalDate dueUntil() {
         return DateUtils.min(DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1)), validUntil);
     }
 
