@@ -35,6 +35,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `OrderFlatRateInstalment` | Stammdaten | inherits the validity of its `OrderFlatRate` |
 | `OrderBudgetCalculation` | Stammdaten | goes with its `OrderBudget` |
 | `Secret` | Stammdaten | `status` instead of `hide`; deleted for good, with its owner (ADR-0038) |
+| `Tag` | Stammdaten | — (Umbenennen, Zusammenführen und Löschen kommen mit der Tag-Verwaltung; ADR-0042) |
 | `Timereport` | Bewegungsdaten | soft-delete (`deleted` + `@SQLRestriction`) |
 | `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |
