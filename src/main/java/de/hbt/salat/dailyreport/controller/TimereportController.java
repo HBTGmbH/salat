@@ -398,7 +398,7 @@ public class TimereportController {
             return "redirect:" + redirectTarget;
         }
 
-        String senderDisplayName = authorizedEmployee.getName();
+        String senderDisplayName = authorizedEmployee.getFirstname();
         var duration = String.format("%02d:%02d", tr.getDuration().toHours(), tr.getDuration().toMinutesPart());
         String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
             tr.getSuborderId(),
@@ -544,7 +544,7 @@ public class TimereportController {
             // Handle sharing (in edit and create modes)
             if (shareWithColleagues != null && shareWithColleagues &&
                     recipientUserIds != null && !recipientUserIds.isEmpty()) {
-                String senderDisplayName = authorizedEmployee.getName();
+                String senderDisplayName = authorizedEmployee.getFirstname();
                 String duration = form.getDurationTime();
                 String comment = form.getComment() != null ? form.getComment() : "";
                 boolean training = form.isTraining();

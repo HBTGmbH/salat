@@ -13,6 +13,9 @@ public class AuthorizedEmployee {
 
   @Getter
   private String name;
+  /** How the person is named in notifications (#1505): by first name only. */
+  @Getter
+  private String firstname;
   @Getter
   private Long employeeId;
   @Getter
@@ -23,6 +26,7 @@ public class AuthorizedEmployee {
 
   public void login(Employee employee) {
     this.name = employee.getName();
+    this.firstname = employee.getFirstname();
     this.employeeId = employee.getId();
     this.sign = employee.getSign();
     this.salatUserId = employee.getSalatUser() != null ? employee.getSalatUser().getId() : null;
