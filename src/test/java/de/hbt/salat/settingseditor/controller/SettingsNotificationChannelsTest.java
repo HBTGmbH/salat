@@ -46,6 +46,7 @@ class SettingsNotificationChannelsTest {
 
   private static final NotificationKind SHARED = NotificationKind.of("shared", 10, false);
   private static final NotificationKind ALERT = NotificationKind.of("alert", 30, true);
+  private static final NotificationKind TEAM = NotificationKind.of("team", 50, true).forPeopleLeads();
 
 
   @Mock
@@ -76,7 +77,8 @@ class SettingsNotificationChannelsTest {
   @BeforeEach
   void setUp() {
     when(timereportPreferenceService.getForCurrentUser()).thenReturn(TimereportPreferences.defaults());
-    when(notificationKindRegistry.all()).thenReturn(List.of(SHARED, ALERT, AchievementNotificationKinds.ACHIEVEMENT_REACHED));
+    when(notificationKindRegistry.all()).thenReturn(List.of(SHARED, ALERT, AchievementNotificationKinds.ACHIEVEMENT_REACHED, TEAM));
+    when(authorizedUser.isPeopleLead()).thenReturn(true);
   }
 
   @Test
@@ -120,6 +122,33 @@ class SettingsNotificationChannelsTest {
     assertThat(stored.mailOn()).doesNotContain("achievement-reached");
     assertThat(stored.mailOff()).doesNotContain("achievement-reached");
     assertThat(stored.bellOff()).doesNotContain("achievement-reached");
+  }
+
+  /** The switches of a kind for people leads stand greyed out for everybody else and are not sent. */
+  @Test
+  void without_the_role_of_a_people_lead_the_kinds_for_people_leads_keep_their_defaults() {
+    when(authorizedUser.isPeopleLead()).thenReturn(false);
+    var form = new SettingsController.SettingsForm();
+    form.setNotificationBell(List.of("shared", "alert"));
+    form.setNotificationMail(List.of("alert"));
+
+    var stored = store(form);
+
+    assertThat(stored.bell(TEAM)).isTrue();
+    assertThat(stored.mail(TEAM)).isTrue();
+    assertThat(stored.toMap()).isEmpty();
+  }
+
+  @Test
+  void a_people_lead_switches_the_kinds_for_people_leads() {
+    var form = new SettingsController.SettingsForm();
+    form.setNotificationBell(List.of("shared", "alert"));
+    form.setNotificationMail(List.of("alert"));
+
+    var stored = store(form);
+
+    assertThat(stored.bell(TEAM)).isFalse();
+    assertThat(stored.mail(TEAM)).isFalse();
   }
 
   private NotificationChannelPreferences store(SettingsController.SettingsForm form) {

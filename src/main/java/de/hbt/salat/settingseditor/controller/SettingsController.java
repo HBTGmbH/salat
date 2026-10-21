@@ -106,7 +106,7 @@ public class SettingsController {
         .toList()));
     form.setAchievementsAnnounced(achievementPreferenceService.getForCurrentUser().announce());
     var channels = notificationChannelPreferenceService.getForCurrentUser();
-    var notificationKinds = notificationKindsOfCurrentUser();
+    var notificationKinds = notificationKindsShown();
     form.setNotificationBell(new ArrayList<>(notificationKinds.stream().filter(channels::bell).map(NotificationKind::getKey).toList()));
     form.setNotificationMail(new ArrayList<>(notificationKinds.stream().filter(channels::mail).map(NotificationKind::getKey).toList()));
 
@@ -117,6 +117,7 @@ public class SettingsController {
     // the switch section is shown only while there is a beta to switch on
     model.addAttribute("betaFeatureOptions", betaFeatureRegistry.all());
     model.addAttribute("notificationKinds", notificationKinds);
+    model.addAttribute("peopleLead", authorizedUser.isPeopleLead());
     model.addAttribute("achievementKindKey", ACHIEVEMENT_REACHED.getKey());
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
@@ -177,7 +178,7 @@ public class SettingsController {
     var bell = new ArrayList<>(form.getNotificationBell() != null ? form.getNotificationBell() : List.of());
     bell.add(ACHIEVEMENT_REACHED.getKey());
     notificationChannelPreferenceService.saveForCurrentUser(NotificationChannelPreferences.of(
-        notificationKindsOfCurrentUser(), bell, form.getNotificationMail()));
+        notificationKindsSwitchable(), bell, form.getNotificationMail()));
 
     String localeValue = form.getLocale() != null ? form.getLocale() : "";
     switch (localeValue) {
@@ -193,9 +194,19 @@ public class SettingsController {
   }
 
   /** Externals and interns get no achievements (#1501), so nothing announces one to them. */
-  private List<NotificationKind> notificationKindsOfCurrentUser() {
+  private List<NotificationKind> notificationKindsShown() {
     return notificationKindRegistry.all().stream()
         .filter(kind -> !authorizedUser.isRestricted() || !kind.equals(ACHIEVEMENT_REACHED))
+        .toList();
+  }
+
+  /**
+   * A kind for people leads stands greyed out for everybody else and is not sent: what is stored for
+   * it goes back to its defaults, which apply once the person becomes a people lead.
+   */
+  private List<NotificationKind> notificationKindsSwitchable() {
+    return notificationKindsShown().stream()
+        .filter(kind -> !kind.isPeopleLeadsOnly() || authorizedUser.isPeopleLead())
         .toList();
   }
 

@@ -84,7 +84,7 @@
              eines neuen Achievements ist der Schalter fuer Hinweis und Popup (#1501); Externe und
              Praktikanten bekommen keine Achievements, also auch keine Zeile dafuer. Die E-Mail einer
              Erinnerung kommt immer: ihr Schalter steht ausgegraut und eingeschaltet da und wird nicht
-             gesendet. */-->
+             gesendet. Arten, die nur People Leads erreichen, stehen fuer alle anderen ausgegraut da. */-->
       <hr/>
       <div class="mb-3">
         <div class="form-label" th:text="#{main.settings.notification.channels.label}">Benachrichtigungen</div>
@@ -101,12 +101,17 @@
           </thead>
           <tbody>
           <tr th:each="kind : ${notificationKinds}"
-              th:with="label=#{${kind.labelKey()}},achievement=${kind.key == achievementKindKey}">
+              th:with="label=#{${kind.labelKey()}},achievement=${kind.key == achievementKindKey},
+                       locked=${kind.peopleLeadsOnly and !peopleLead}">
             <td>
               <span th:text="${label}">Jemand hat eine Buchung mit dir geteilt</span>
               <div th:if="${achievement}" class="form-text mt-0"
                    th:text="#{main.settings.notification.kind.achievement-reached.help}">
                 Glocke aus: kein Hinweis und kein Popup.
+              </div>
+              <div th:if="${locked}" class="form-text mt-0"
+                   th:text="#{main.settings.notification.peopleleadsonly}">
+                Betrifft nur People Leads.
               </div>
             </td>
             <td class="text-center">
@@ -115,7 +120,7 @@
                        th:field="*{achievementsAnnounced}"
                        th:attr="aria-label=|#{main.settings.notification.channels.column.bell}: ${label}|"/>
                 <input th:unless="${achievement}" class="form-check-input" type="checkbox"
-                       th:field="*{notificationBell}" th:value="${kind.key}"
+                       th:field="*{notificationBell}" th:value="${kind.key}" th:disabled="${locked}"
                        th:attr="aria-label=|#{main.settings.notification.channels.column.bell}: ${label}|"/>
               </label>
             </td>
@@ -124,7 +129,7 @@
                 <input th:if="${kind.emailMandatory}" class="form-check-input" type="checkbox" checked disabled
                        th:attr="aria-label=|#{main.settings.notification.channels.column.email}: ${label}|"/>
                 <input th:unless="${kind.emailMandatory}" class="form-check-input" type="checkbox"
-                       th:field="*{notificationMail}" th:value="${kind.key}"
+                       th:field="*{notificationMail}" th:value="${kind.key}" th:disabled="${locked}"
                        th:attr="aria-label=|#{main.settings.notification.channels.column.email}: ${label}|"/>
               </label>
             </td>
