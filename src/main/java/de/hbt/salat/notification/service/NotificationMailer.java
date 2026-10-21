@@ -4,11 +4,14 @@ import static de.hbt.salat.common.exception.ErrorCode.XX_MAIL_NOT_SENT;
 
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.common.mail.MailTemplates;
 import de.hbt.salat.common.notification.NotificationRecipient;
 import de.hbt.salat.common.service.MailService;
 import de.hbt.salat.common.service.MailService.EmailRequest;
 import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.notification.domain.NotificationMessage;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +22,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 /**
  * Mails a notification (#828), in the language of its recipient: the title is the subject, the
- * description — or the mail's own, where the notification has one — the body, framed by a greeting, the link to its target and the note that the mail was
- * generated.
+ * description — or the mail's own, where the notification has one — the body, framed by a greeting,
+ * the link to its target and the note that the mail was generated. Since #1505 the same comes as HTML
+ * in the common layout ({@code templates/mail/notification.html}), the text part beside it.
  *
  * <p>A mail the person may switch off goes out after the commit and never fails what caused it: a
  * release that is rolled back sends nothing, and a mail server that is down leaves a line in the log.
@@ -33,10 +37,12 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 class NotificationMailer {
 
   private static final String SENDER_NAME = "Salat";
+  private static final String SETTINGS_URL = "/settings";
 
   private final MailService mailService;
   private final MessageSource messageSource;
   private final SalatProperties salatProperties;
+  private final MailTemplates mailTemplates;
 
   void mailAfterCommit(NotificationRecipient recipient, NotificationMessage message) {
     if (recipient.email() == null || recipient.email().isBlank()) return;
@@ -80,9 +86,21 @@ class NotificationMailer {
 
   private EmailRequest request(NotificationRecipient recipient, NotificationMessage message) {
     var locale = recipient.locale();
+    var title = text(message.titleKey(), locale, message.titleParams().toArray());
+    var description = description(message, locale);
+    var actionUrl = message.actionUrl() != null ? absolute(message.actionUrl()) : null;
+    var settingsUrl = absolute(SETTINGS_URL);
+    var html = new HashMap<String, Object>();
+    html.put("firstname", recipient.firstname());
+    html.put("title", title);
+    html.put("descriptionLines", description != null ? description.lines().toList() : List.of());
+    html.put("actionUrl", actionUrl);
+    html.put("actionLabel", message.actionLabel() != null ? message.actionLabel() : text("main.mail.button.open", locale));
+    html.put("settingsUrl", settingsUrl);
     return EmailRequest.builder()
-        .subject(text("main.notification.email.subject", locale, text(message.titleKey(), locale, message.titleParams().toArray())))
-        .message(body(recipient, message, locale))
+        .subject(text("main.notification.email.subject", locale, title))
+        .message(body(recipient, title, description, actionUrl, settingsUrl, locale))
+        .htmlMessage(mailTemplates.render("mail/notification", locale, html))
         .from(message.sender() != null ? message.sender() : new MailContact(SENDER_NAME, salatProperties.getNotifications().getEmailFrom()))
         .to(new MailContact(recipient.firstname(), recipient.email()))
         // the footer of MailService is German only
@@ -90,20 +108,32 @@ class NotificationMailer {
         .build();
   }
 
-  private String body(NotificationRecipient recipient, NotificationMessage message, Locale locale) {
-    var body = new StringBuilder(text("main.notification.email.greeting", locale, recipient.firstname())).append("\n\n");
+  /** The mail's own text where the notification has one, else its description; {@code null} without either. */
+  private String description(NotificationMessage message, Locale locale) {
     if (message.mailDescriptionKey() != null) {
-      body.append(text(message.mailDescriptionKey(), locale, message.mailDescriptionParams().toArray()));
-    } else if (message.descriptionKey() != null) {
-      body.append(text(message.descriptionKey(), locale, message.descriptionParams().toArray()));
-    } else {
-      body.append(text(message.titleKey(), locale, message.titleParams().toArray()));
+      return text(message.mailDescriptionKey(), locale, message.mailDescriptionParams().toArray());
     }
-    if (message.actionUrl() != null) {
-      var baseUrl = salatProperties.getUrl() != null ? salatProperties.getUrl() : "";
-      body.append("\n\n").append(text("main.notification.email.link", locale, baseUrl + message.actionUrl()));
+    return message.descriptionKey() != null
+        ? text(message.descriptionKey(), locale, message.descriptionParams().toArray())
+        : null;
+  }
+
+  /** The text part: what the HTML part says, for whoever reads mails without HTML. */
+  private String body(NotificationRecipient recipient, String title, String description, String actionUrl,
+                      String settingsUrl, Locale locale) {
+    var body = new StringBuilder(text("main.notification.email.greeting", locale, recipient.firstname())).append("\n\n");
+    body.append(description != null ? description : title);
+    if (actionUrl != null) {
+      body.append("\n\n").append(text("main.notification.email.link", locale, actionUrl));
     }
-    return body.append("\n\n__________________________\n\n").append(text("main.notification.email.footer", locale)).toString();
+    return body.append("\n\n__________________________\n\n")
+        .append(text("main.mail.footer.automatic", locale)).append("\n")
+        .append(text("main.mail.footer.notification", locale)).append("\n").append(settingsUrl)
+        .toString();
+  }
+
+  private String absolute(String path) {
+    return (salatProperties.getUrl() != null ? salatProperties.getUrl() : "") + path;
   }
 
   private String text(String key, Locale locale, Object... arguments) {

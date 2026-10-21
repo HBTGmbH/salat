@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!--/* Ein Report aus dem Zeitplan als Mail (#1505): der Name als Ueberschrift, Parameter, Zeilenzahl
+       und Zeitpunkt als Liste, darunter der Anhang. Die Ergebnisse selbst stehen im Excel. */-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{mail/layout :: mail(~{::#content}, #{main.mail.footer.report}, ${jobsUrl})}">
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;" th:text="#{main.mail.greeting}">Hallo,</p>
+  <h1 th:style="|margin:0 0 12px;font-size:18px;line-height:1.3;color:${colors.text};|"
+      th:text="#{main.mail.report.title(${reportName})}">Report „Stunden je Auftrag“</h1>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="margin:0 0 16px;font-size:13px;">
+    <tr th:each="fact : ${facts}">
+      <td th:style="|padding:3px 12px 3px 0;width:120px;vertical-align:top;color:${colors.muted};|"
+          th:text="${fact.key}">Zeitraum</td>
+      <td style="padding:3px 0;vertical-align:top;" th:text="${fact.value}">01.09.2026 – 30.09.2026</td>
+    </tr>
+  </table>
+  <p style="margin:0 0 8px;" th:text="#{main.mail.report.attachment}">Die Ergebnisse stehen im angehängten Excel-Dokument.</p>
+  <p th:style="|margin:0;padding:8px 12px;border:1px solid ${colors.border};border-radius:4px;font-size:13px;word-break:break-all;|"
+     th:text="${fileName}">report-Stunden_je_Auftrag.xlsx</p>
+</div>
+</body>
+</html>

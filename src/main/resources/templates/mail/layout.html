@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!--/* Der gemeinsame Rahmen jeder Mail (#1505): Kopfleiste mit Logo, Karte mit dem Inhalt, Fuss mit
+       dem Hinweis auf den automatischen Versand und dem Link, wo man ihn aendert. Tabellen statt
+       flex und alle Stile inline, weil Outlook fuer Windows mit der Engine von Word rendert; die
+       Farben kommen aus MailColors, weil Mailprogramme keine CSS-Variablen kennen. Das Logo ist
+       eingebettet (cid:), MailService haengt es an. */-->
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="mail(content, footerText, footerUrl)"
+      th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>SALAT</title>
+</head>
+<body th:style="|margin:0;padding:0;background:${colors.page};|">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       th:style="|background:${colors.page};|">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0"
+             style="width:560px;max-width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <tr>
+          <td th:style="|background:${colors.header};padding:14px 20px;border-radius:6px 6px 0 0;|">
+            <img src="cid:salat-logo" width="28" height="28" alt="" style="vertical-align:middle;border:0;">
+            <span th:style="|color:${colors.headerText};font-size:16px;font-weight:700;letter-spacing:1px;vertical-align:middle;padding-left:8px;|">SALAT</span>
+          </td>
+        </tr>
+        <tr>
+          <td th:style="|background:${colors.card};border:1px solid ${colors.border};border-top:0;border-radius:0 0 6px 6px;padding:24px;color:${colors.text};font-size:14px;line-height:1.55;|">
+            <th:block th:replace="${content}"/>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" th:style="|padding:14px 8px 0;font-size:12px;line-height:1.5;color:${colors.muted};|">
+            <span th:text="#{main.mail.footer.automatic}">Diese E-Mail hat Salat automatisch verschickt.</span><br>
+            <a th:href="${footerUrl}" th:style="|color:${colors.muted};|" th:text="${footerText}">Einstellungen</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
