@@ -1,5 +1,6 @@
 package de.hbt.salat.achievement.service;
 
+import static de.hbt.salat.achievement.service.AchievementNotificationKinds.ACHIEVEMENT_REACHED;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
@@ -20,6 +21,7 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.EmployeeLogin;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.service.NotificationService;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -106,9 +108,7 @@ public class AchievementService {
       reachedOfPerson.stream()
           .sorted(comparing(Fresh::achievedOn).thenComparing(Fresh::level))
           .forEach(reached -> achievementRepository.save(toEntity(reached, announce)));
-      if (announce) {
-        announce(login.salatUserId(), reachedOfPerson);
-      }
+      announce(login.salatUserId(), reachedOfPerson, announce);
     }
     log.info("Recorded {} achievement level(s) for {} person(s)", fresh.size(), byEmployee.size());
     return fresh.size();
@@ -243,22 +243,28 @@ public class AchievementService {
     return achievement;
   }
 
-  private void announce(long salatUserId, List<Fresh> announced) {
+  /**
+   * The bell, with the popup, only where the person wants achievements announced; the mail wherever
+   * the person wants them mailed (#828), also without the popup.
+   */
+  private void announce(long salatUserId, List<Fresh> announced, boolean inBell) {
     var label = message("main.achievement.notification.action", null);
     var sorted = announced.stream().sorted(comparing(Fresh::achievedOn).thenComparing(Fresh::level)).toList();
+    var notification = NotificationMessage.builder().actionUrl(PROFILE_URL).actionLabel(label);
     if (sorted.size() == 1) {
       var achievement = sorted.getFirst();
-      notificationService.emitNotification(List.of(salatUserId),
-          "main.achievement.notification.one.title", List.of(name(achievement)),
-          "main.achievement.notification.one.description",
-          List.of(DateUtils.format(achievement.achievedOn(), DATE_PATTERN)),
-          PROFILE_URL, label);
+      notification.titleKey("main.achievement.notification.one.title").titleParams(List.of(name(achievement)))
+          .descriptionKey("main.achievement.notification.one.description")
+          .descriptionParams(List.of(DateUtils.format(achievement.achievedOn(), DATE_PATTERN)));
     } else {
-      notificationService.emitNotification(List.of(salatUserId),
-          "main.achievement.notification.many.title", List.of(String.valueOf(sorted.size())),
-          "main.achievement.notification.many.description",
-          List.of(sorted.stream().map(this::name).collect(Collectors.joining(", "))),
-          PROFILE_URL, label);
+      notification.titleKey("main.achievement.notification.many.title").titleParams(List.of(String.valueOf(sorted.size())))
+          .descriptionKey("main.achievement.notification.many.description")
+          .descriptionParams(List.of(sorted.stream().map(this::name).collect(Collectors.joining(", "))));
+    }
+    if (inBell) {
+      notificationService.emitNotification(ACHIEVEMENT_REACHED, List.of(salatUserId), notification.build());
+    } else {
+      notificationService.emitMail(ACHIEVEMENT_REACHED, List.of(salatUserId), notification.build());
     }
   }
 

@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
+import static de.hbt.salat.achievement.service.AchievementNotificationKinds.ACHIEVEMENT_REACHED;
+
 import de.hbt.salat.achievement.domain.AchievementPreferences;
 import de.hbt.salat.achievement.service.AchievementPreferenceService;
 import de.hbt.salat.auth.domain.Authorized;
@@ -38,6 +40,8 @@ import de.hbt.salat.dailyreport.preferences.TimereportPreferences;
 import de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
 import de.hbt.salat.employee.preferences.EmployeePreferences;
+import de.hbt.salat.employee.preferences.NotificationChannelPreferenceService;
+import de.hbt.salat.employee.preferences.NotificationChannelPreferences;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.favorites.domain.FavoritePreferences;
@@ -46,6 +50,8 @@ import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.beta.service.BetaFeatureRegistry;
 import de.hbt.salat.beta.service.BetaFeatureService;
+import de.hbt.salat.common.notification.NotificationKind;
+import de.hbt.salat.notification.service.NotificationKindRegistry;
 import de.hbt.salat.settings.service.UiPreferenceService;
 import de.hbt.salat.settings.web.LocaleSyncInterceptor;
 
@@ -73,6 +79,8 @@ public class SettingsController {
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final AchievementPreferenceService achievementPreferenceService;
   private final AuthorizedUser authorizedUser;
+  private final NotificationKindRegistry notificationKindRegistry;
+  private final NotificationChannelPreferenceService notificationChannelPreferenceService;
 
   @GetMapping
   public String show(Model model) {
@@ -97,6 +105,10 @@ public class SettingsController {
         .sorted()
         .toList()));
     form.setAchievementsAnnounced(achievementPreferenceService.getForCurrentUser().announce());
+    var channels = notificationChannelPreferenceService.getForCurrentUser();
+    var notificationKinds = notificationKindsOfCurrentUser();
+    form.setNotificationBell(new ArrayList<>(notificationKinds.stream().filter(channels::bell).map(NotificationKind::getKey).toList()));
+    form.setNotificationMail(new ArrayList<>(notificationKinds.stream().filter(channels::mail).map(NotificationKind::getKey).toList()));
 
     var loginEmployee = employeeService.getLoginEmployee();
     model.addAttribute("settingsForm", form);
@@ -104,8 +116,8 @@ public class SettingsController {
     model.addAttribute("suborders", loadSuborders());
     // the switch section is shown only while there is a beta to switch on
     model.addAttribute("betaFeatureOptions", betaFeatureRegistry.all());
-    // externals and interns get no achievements (#1501), so there is nothing to announce to them
-    model.addAttribute("achievementsAvailable", !authorizedUser.isRestricted());
+    model.addAttribute("notificationKinds", notificationKinds);
+    model.addAttribute("achievementKindKey", ACHIEVEMENT_REACHED.getKey());
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
     model.addAttribute("title", messages.getMessage("main.settings.title"));
@@ -160,6 +172,12 @@ public class SettingsController {
     if (!authorizedUser.isRestricted()) {
       achievementPreferenceService.saveForCurrentUser(new AchievementPreferences(form.isAchievementsAnnounced()));
     }
+    // null when every switch of a column is off — Spring resets the list via its "_" marker. The bell
+    // of an achievement is the switch of its popup, stored above, so its own bell stays on.
+    var bell = new ArrayList<>(form.getNotificationBell() != null ? form.getNotificationBell() : List.of());
+    bell.add(ACHIEVEMENT_REACHED.getKey());
+    notificationChannelPreferenceService.saveForCurrentUser(NotificationChannelPreferences.of(
+        notificationKindsOfCurrentUser(), bell, form.getNotificationMail()));
 
     String localeValue = form.getLocale() != null ? form.getLocale() : "";
     switch (localeValue) {
@@ -172,6 +190,13 @@ public class SettingsController {
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("main.settings.save.success"));
     return "redirect:/settings";
+  }
+
+  /** Externals and interns get no achievements (#1501), so nothing announces one to them. */
+  private List<NotificationKind> notificationKindsOfCurrentUser() {
+    return notificationKindRegistry.all().stream()
+        .filter(kind -> !authorizedUser.isRestricted() || !kind.equals(ACHIEVEMENT_REACHED))
+        .toList();
   }
 
   private List<SuborderOption> loadSuborders() {
@@ -218,6 +243,12 @@ public class SettingsController {
     private List<String> betaFeatures = new ArrayList<>();
     /** Whether a new achievement is announced with a notification and a popup (#1501). */
     private boolean achievementsAnnounced = true;
+
+    /** Keys of the notification kinds that go to the bell (#828), see {@code NotificationKindContributor}. */
+    private List<String> notificationBell = new ArrayList<>();
+
+    /** Keys of the notification kinds that are mailed (#828); a kind always mailed is not sent. */
+    private List<String> notificationMail = new ArrayList<>();
 
   }
 

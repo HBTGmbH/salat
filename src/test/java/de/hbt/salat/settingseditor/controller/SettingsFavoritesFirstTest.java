@@ -39,6 +39,8 @@ import de.hbt.salat.dailyreport.preferences.TimereportPreferenceService;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferences;
 import de.hbt.salat.dailyreport.preferences.WeekStripPlacement;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
+import de.hbt.salat.employee.preferences.NotificationChannelPreferenceService;
+import de.hbt.salat.notification.service.NotificationKindRegistry;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.settings.service.UiPreferenceService;
 import de.hbt.salat.settings.web.LocaleSyncInterceptor;
@@ -78,6 +80,10 @@ class SettingsFavoritesFirstTest {
   private AchievementPreferenceService achievementPreferenceService;
   @Mock
   private AuthorizedUser authorizedUser;
+  @Mock
+  private NotificationKindRegistry notificationKindRegistry;
+  @Mock
+  private NotificationChannelPreferenceService notificationChannelPreferenceService;
   @InjectMocks
   private SettingsController controller;
 

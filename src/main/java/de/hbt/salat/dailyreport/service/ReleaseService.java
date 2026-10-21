@@ -33,6 +33,10 @@ import static de.hbt.salat.common.util.DateUtils.max;
 import static de.hbt.salat.common.util.DateUtils.min;
 import static de.hbt.salat.common.util.DateUtils.today;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.ACCEPTANCE_REMINDER;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.RELEASE_REMINDER;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.TIMEREPORTS_ACCEPTED;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.TIMEREPORTS_RELEASED;
 import static de.hbt.salat.dailyreport.service.TimereportService.isRelevantForWorkingTimeValidation;
 import static de.hbt.salat.dailyreport.service.TimereportService.noTimeReportsFound;
 import static de.hbt.salat.dailyreport.service.TimereportService.validateBeginOfWorkingDay;
@@ -45,6 +49,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -56,19 +62,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
-import de.hbt.salat.common.GlobalConstants;
+import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
-import de.hbt.salat.common.service.MailService;
 import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.common.util.DataValidationUtils;
+import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.auth.ReleaseAuthorization;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
@@ -83,11 +90,15 @@ import de.hbt.salat.dailyreport.persistence.PublicholidayDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportRepository;
 import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
+import de.hbt.salat.employee.domain.AuthorizedEmployee;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.notification.domain.NotificationMessage;
+import de.hbt.salat.notification.service.NotificationService;
 
 @Slf4j
 @Service
@@ -96,6 +107,9 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 @Authorized
 public class ReleaseService {
 
+  private static final String ACCEPTANCE_URL = "/acceptance";
+  private static final String DATE_PATTERN = "dd.MM.yyyy";
+
   private final EmployeecontractDAO employeecontractDAO;
   private final TimereportDAO timereportDAO;
   private final TimereportRepository timereportRepository;
@@ -103,13 +117,15 @@ public class ReleaseService {
   private final OvertimeService overtimeService;
   private final AuthorizedUser authorizedUser;
   private final WorkingdayDAO workingdayDAO;
-  private final MailService mailService;
+  private final NotificationService notificationService;
+  private final MessageSourceAccessor messages;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
   private final TimereportService timereportService;
   private final ReleaseAuthorization releaseAuthorization;
   private final EmployeePreferenceService employeePreferenceService;
   private final TimereportAuthorization timereportAuthorization;
+  private final AuthorizedEmployee authorizedEmployee;
 
   /**
    * Gibt genau den Zeitraum frei, den die Übersicht gezeigt hat ({@link #reviewRelease}, #760):
@@ -132,8 +148,9 @@ public class ReleaseService {
    * Vergleich, scheitert die zweite beim Schreiben an der Versionsnummer von Vertrag und Buchungen
    * ({@code @Version} in {@link de.hbt.salat.common.domain.AuditedEntity}) und wird zurückgerollt —
    * meist erst beim Commit; {@link de.hbt.salat.common.service.ConcurrentModificationAspect} meldet das
-   * als {@code XX-0003} (#1237). Die Mail verschickt diese Methode aber innerhalb der Transaktion, sie
-   * kann dann doppelt ankommen. Eine eigene Sperre gibt es dafür bewusst nicht.
+   * als {@code XX-0003} (#1237). Eine eigene Sperre gibt es dafür bewusst nicht. Die Mail an die
+   * People Leads geht erst nach dem Commit hinaus (#828), eine zurückgerollte Freigabe verschickt
+   * also keine.
    *
    * @throws AuthorizationException ohne Freigabeberechtigung für den Vertrag
    * @throws BusinessRuleException  {@code RL-0008}, wenn sich der Zeitraum geändert hat, sonst die
@@ -171,7 +188,7 @@ public class ReleaseService {
     // store new release date in employee contract
     employeecontractService.updateReportReleaseData(employeecontractId, reviewedEnd, employeecontract.getReportAcceptanceDate());
 
-    sendTimeReportsReleasedMail(employeecontract);
+    notifyReleased(employeecontract, reviewedEnd);
   }
 
   /**
@@ -450,6 +467,8 @@ public class ReleaseService {
 
     // compute overtimeStatic and set it in employee contract
     overtimeService.updateOvertimeStatic(employeecontractId);
+
+    notifyAccepted(employeecontract, reviewedEnd);
   }
 
   /**
@@ -780,96 +799,107 @@ public class ReleaseService {
     );
   }
 
+  /**
+   * Erinnert die Person, ihre Buchungen freizugeben (#828): per Mail, die sich nicht abbestellen
+   * lässt, und in der Glocke, wenn die Person das will. Hat sie keinen Login, gibt es niemanden zu
+   * erinnern, und die auslösende Person erfährt das.
+   *
+   * @throws BusinessRuleException {@code XX-0005}, wenn die Mail nicht verschickt werden kann
+   */
   public void sendReleaseReminderMail(long employeeId) {
-
     var recipient = employeeService.getEmployeeById(employeeId);
     var sender = employeeService.getLoginEmployee();
-
-    String subject = "SALAT: Erinnerung SALAT freigeben";
-    StringBuilder message = new StringBuilder();
-    if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-      message.append("Liebe ");
-    } else {
-      message.append("Lieber ");
-    }
-    message.append(recipient.getFirstname());
-    message.append(",\n\n");
-    message.append("bitte gib deine SALAT-Buchungen des abgelaufenen Monats frei.\n\n");
-    message.append(sender.getName());
-
-    mailService.sendEmail(
-        subject,
-        message.toString(),
-        new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
-        new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
-    );
+    notificationService.emitNotification(RELEASE_REMINDER, requireLogins(List.of(recipient)),
+        NotificationMessage.builder()
+            .titleKey("main.release.notification.releasereminder.title")
+            .descriptionKey("main.release.notification.releasereminder.description")
+            .descriptionParams(List.of(sender.getName()))
+            .actionUrl(ACCEPTANCE_URL)
+            .actionLabel(messages.getMessage("main.release.notification.releasereminder.action"))
+            .sender(mailContactOf(sender))
+            .build());
   }
 
+  /**
+   * Erinnert die Personalverantwortlichen des Vertrags, die Freigabe abzunehmen (#828) — wie
+   * {@link #sendReleaseReminderMail}.
+   *
+   * @throws BusinessRuleException {@code XX-0005}, wenn die Mail nicht verschickt werden kann
+   */
   public void sendAcceptanceReminderMail(long employeecontracttoAcceptId) {
-
     var employeeContract = employeecontractService.getEmployeecontractById(employeecontracttoAcceptId);
     var coworker = employeeContract.getEmployee();
     var sender = employeeService.getLoginEmployee();
-
-    String subject = "SALAT: Erinnerung SALAT-Freigabe abnehmen";
-    for (var recipient : employeeContract.getSupervisors()) {
-      StringBuilder message = new StringBuilder();
-      if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-        message.append("Liebe ");
-      } else {
-        message.append("Lieber ");
-      }
-      message.append(recipient.getFirstname());
-      message.append(",\n\n");
-      message.append("bitte nimm die SALAT-Buchungen des abgelaufenen Monats von ");
-      if (GlobalConstants.GENDER_FEMALE == coworker.getGender()) {
-        message.append("Kollegin ");
-      } else {
-        message.append("Kollege ");
-      }
-      message.append(coworker.getName());
-      message.append(" ab.\n\n");
-      message.append(sender.getName());
-
-      mailService.sendEmail(
-          subject,
-          message.toString(),
-          new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
-          new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
-      );
-    }
+    notificationService.emitNotification(ACCEPTANCE_REMINDER, requireLogins(employeeContract.getSupervisors()),
+        NotificationMessage.builder()
+            .titleKey("main.release.notification.acceptancereminder.title")
+            .titleParams(List.of(coworker.getName()))
+            .descriptionKey("main.release.notification.acceptancereminder.description")
+            .descriptionParams(List.of(sender.getName(), coworker.getName()))
+            .actionUrl(ACCEPTANCE_URL + "?fAcceptanceEmployeeContractId=" + employeeContract.getId())
+            .actionLabel(messages.getMessage("main.release.notification.acceptancereminder.action"))
+            .sender(mailContactOf(sender))
+            .build());
   }
 
-  private void sendTimeReportsReleasedMail(Employeecontract releasedEmployeeContract) {
-    var sender = releasedEmployeeContract.getEmployee();
-    String subject = "SALAT: Buchungen durch " + sender.getSign() + " freigegeben";
+  /** Den Personalverantwortlichen, dass es etwas abzunehmen gibt (#828); bis #828 nur als Mail. */
+  private void notifyReleased(Employeecontract contract, LocalDate releasedUntil) {
+    var releasedBy = contract.getEmployee();
+    notificationService.emitNotification(TIMEREPORTS_RELEASED, loginIds(contract.getSupervisors()),
+        NotificationMessage.builder()
+            .titleKey("main.release.notification.released.title")
+            .titleParams(List.of(releasedBy.getName()))
+            .descriptionKey("main.release.notification.released.description")
+            .descriptionParams(List.of(releasedBy.getName(), DateUtils.format(releasedUntil, DATE_PATTERN)))
+            .actionUrl(ACCEPTANCE_URL + "/accept/review?contractId=" + contract.getId() + "&until=" + YearMonth.from(releasedUntil))
+            .actionLabel(messages.getMessage("main.release.notification.released.action"))
+            .sender(mailContactOf(releasedBy))
+            .build());
+  }
 
-    for (var recipient : releasedEmployeeContract.getSupervisors()) {
-      StringBuilder message = new StringBuilder();
-      if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-        message.append("Liebe Personalverantwortliche ");
-      } else {
-        message.append("Lieber Personalverantwortlicher ");
-      }
-      message.append(recipient.getFirstname());
-      message.append(",\n\n");
-      message.append(sender.getName());
-      message.append(" hat eben ");
-      if (GlobalConstants.GENDER_FEMALE == sender.getGender()) {
-        message.append("ihre ");
-      } else {
-        message.append("seine ");
-      }
-      message.append("SALAT-Buchungen freigegeben.\n");
-      message.append("Bitte nimm diese ab.");
+  /**
+   * Der Person, dass ihre Freigabe abgenommen ist (#828); bis #828 erfuhr sie davon nichts. Wer
+   * abnimmt, ist die angemeldete Person: abgenommen wird nur in einer Anfrage.
+   */
+  private void notifyAccepted(Employeecontract contract, LocalDate acceptedUntil) {
+    notificationService.emitNotification(TIMEREPORTS_ACCEPTED, loginIds(Stream.ofNullable(contract.getEmployee()).toList()),
+        NotificationMessage.builder()
+            .titleKey("main.release.notification.accepted.title")
+            .descriptionKey("main.release.notification.accepted.description")
+            // the name is missing for a login without a person, the administrator's
+            .descriptionParams(Arrays.asList(authorizedEmployee.getName(), DateUtils.format(acceptedUntil, DATE_PATTERN)))
+            .actionUrl(ACCEPTANCE_URL)
+            .actionLabel(messages.getMessage("main.release.notification.accepted.action"))
+            .sender(mailContactOf(authorizedEmployee.getName(), authorizedEmployee.getEmployeeId()))
+            .build());
+  }
 
-      mailService.sendEmail(
-          subject,
-          message.toString(),
-          new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
-          new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
-      );
+  private MailContact mailContactOf(Employee employee) {
+    return mailContactOf(employee.getName(), employee.getId());
+  }
+
+  /** By the id, so that no entity of the module employee travels into this one (#1244). */
+  private MailContact mailContactOf(String name, Long employeeId) {
+    return new MailContact(name, employeeId != null ? employeePreferenceService.getNotificationEmailForEmployeeId(employeeId) : null);
+  }
+
+  private static List<Long> loginIds(Collection<Employee> employees) {
+    return employees.stream()
+        .map(Employee::getSalatUser)
+        .filter(Objects::nonNull)
+        .map(SalatUser::getId)
+        .filter(Objects::nonNull)
+        .toList();
+  }
+
+  /** Eine Erinnerung, die niemanden erreicht, wäre eine stille Lüge an die Person, die sie schickt. */
+  private static List<Long> requireLogins(Collection<Employee> employees) {
+    var ids = loginIds(employees);
+    if (ids.isEmpty()) {
+      throw new BusinessRuleException(ErrorCode.XX_MAIL_NOT_SENT,
+          employees.stream().map(Employee::getName).collect(Collectors.joining(", ")));
     }
+    return ids;
   }
 
   /**

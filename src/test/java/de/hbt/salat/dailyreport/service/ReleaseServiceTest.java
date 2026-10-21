@@ -1,11 +1,15 @@
 package de.hbt.salat.dailyreport.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.ACCEPTANCE_REMINDER;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.RELEASE_REMINDER;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.TIMEREPORTS_ACCEPTED;
+import static de.hbt.salat.dailyreport.service.DailyReportNotificationKinds.TIMEREPORTS_RELEASED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
@@ -26,10 +30,13 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import de.hbt.salat.auth.domain.AccessLevel;
@@ -42,7 +49,7 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.exception.ServiceFeedbackMessage;
-import de.hbt.salat.common.service.MailService;
+import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.dailyreport.auth.ReleaseAuthorization;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
@@ -62,11 +69,15 @@ import de.hbt.salat.dailyreport.persistence.PublicholidayDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportRepository;
 import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
+import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.employee.preferences.EmployeePreferenceService;
+import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.notification.domain.NotificationMessage;
+import de.hbt.salat.notification.service.NotificationService;
 import de.hbt.salat.order.domain.OrderType;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,9 +108,15 @@ class ReleaseServiceTest {
     @Mock
     private TimereportAuthorization timereportAuthorization;
     @Mock
-    private MailService mailService;
+    private NotificationService notificationService;
+    @Mock
+    private MessageSourceAccessor messages;
     @Mock
     private EmployeePreferenceService employeePreferenceService;
+    @Mock
+    private AuthorizedEmployee authorizedEmployee;
+    @Mock
+    private EmployeeService employeeService;
 
     /**
      * Ein Vertrag endet mitten im Monat, das Formular kennt aber nur Monate: der Monatsletzte
@@ -1787,7 +1804,7 @@ class ReleaseServiceTest {
             verify(timereportService).updateReleaseData(eq(TIMEREPORT_ID), eq(GlobalConstants.TIMEREPORT_STATUS_COMMITTED),
                 eq(PEOPLE_LEAD), any(LocalDateTime.class), isNull(), isNull());
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, END_OF_MONTH, null);
-            verify(mailService).sendEmail(anyString(), anyString(), any(), any());
+            verify(notificationService).emitNotification(eq(TIMEREPORTS_RELEASED), any(), any());
         }
 
         /** Etwa in einem zweiten Fenster: die Übersicht zeigte ab Freitag, freigegeben ist inzwischen bis Monatsende. */
@@ -1815,7 +1832,7 @@ class ReleaseServiceTest {
 
             assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, END_OF_MONTH, null);
-            verify(mailService).sendEmail(anyString(), anyString(), any(), any());
+            verify(notificationService).emitNotification(eq(TIMEREPORTS_RELEASED), any(), any());
         }
 
         @Test
@@ -1883,7 +1900,7 @@ class ReleaseServiceTest {
             assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().getFirst())
                 .containsExactly(tuple(ErrorCode.WD_NO_TIMEREPORT, FRIDAY));
             verify(employeecontractService, never()).updateReportReleaseData(any(), any(), any());
-            verifyNoInteractions(timereportRepository, mailService);
+            verifyNoInteractions(timereportRepository, notificationService);
         }
 
         /**
@@ -1948,7 +1965,7 @@ class ReleaseServiceTest {
         }
 
         private void assertThatNothingWasReleased() {
-            verifyNoInteractions(timereportDAO, timereportRepository, employeecontractService, mailService);
+            verifyNoInteractions(timereportDAO, timereportRepository, employeecontractService, notificationService);
         }
 
         private void givenAnOpenBookingOnFriday() {
@@ -2516,6 +2533,23 @@ class ReleaseServiceTest {
             verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
         }
 
+        /** Bis #828 erfuhr die Person nicht, dass ihre Freigabe abgenommen ist. */
+        @Test
+        void tellsThePersonThatTheReleaseWasAccepted() {
+            final var contract = acceptableContract();
+            setField(contract.getEmployee().getSalatUser(), "id", 42L);
+            when(authorizedEmployee.getName()).thenReturn("Person B");
+            when(authorizedEmployee.getEmployeeId()).thenReturn(5L);
+            when(employeePreferenceService.getNotificationEmailForEmployeeId(5L)).thenReturn("b@example.org");
+
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, BEGIN, END_OF_MONTH);
+
+            final var message = ArgumentCaptor.forClass(NotificationMessage.class);
+            verify(notificationService).emitNotification(eq(TIMEREPORTS_ACCEPTED), eq(List.of(42L)), message.capture());
+            assertThat(message.getValue().descriptionParams()).containsExactly("Person B", "31.03.2024");
+            assertThat(message.getValue().sender()).isEqualTo(new MailContact("Person B", "b@example.org"));
+        }
+
         /** Der Vertragsbeginn liegt hinter der letzten Abnahme: abgenommen wird ab dem Vertragsbeginn, wie die Übersicht ihn zeigt. */
         @Test
         void acceptsFromTheContractStartWhenItLiesAfterTheLastAcceptance() {
@@ -2722,6 +2756,74 @@ class ReleaseServiceTest {
             contract.setReportReleaseDate(RELEASED_UNTIL);
             contract.setReportAcceptanceDate(ACCEPTED_UNTIL);
             return contract;
+        }
+    }
+
+    /**
+     * Die Erinnerungen, die eine Führungskraft per Knopfdruck schickt (#828): ihre Mail lässt sich
+     * nicht abbestellen, und wen sie nicht erreichen kann, erfährt die Führungskraft.
+     */
+    @Nested
+    class Reminders {
+
+        private static final long EMPLOYEE_ID = 3L;
+        private static final long CONTRACT_ID = 1L;
+
+        @BeforeEach
+        void sender() {
+            when(employeeService.getLoginEmployee()).thenReturn(person("Person", "B", null));
+        }
+
+        @Test
+        void remindsThePersonToRelease() {
+            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Person", "A", 42L));
+
+            classUnderTest.sendReleaseReminderMail(EMPLOYEE_ID);
+
+            final var message = ArgumentCaptor.forClass(NotificationMessage.class);
+            verify(notificationService).emitNotification(eq(RELEASE_REMINDER), eq(List.of(42L)), message.capture());
+            assertThat(message.getValue().descriptionParams()).containsExactly("Person B");
+            assertThat(message.getValue().sender().getName()).isEqualTo("Person B");
+        }
+
+        @Test
+        void remindsTheSupervisorsToAccept() {
+            final var contract = new Employeecontract();
+            setField(contract, "id", CONTRACT_ID);
+            contract.setEmployee(person("Person", "A", 42L));
+            contract.setSupervisors(new ArrayList<>(List.of(person("Person", "C", 43L), person("Person", "D", 44L))));
+            when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
+
+            classUnderTest.sendAcceptanceReminderMail(CONTRACT_ID);
+
+            final var message = ArgumentCaptor.forClass(NotificationMessage.class);
+            verify(notificationService).emitNotification(eq(ACCEPTANCE_REMINDER), eq(List.of(43L, 44L)), message.capture());
+            assertThat(message.getValue().descriptionParams()).containsExactly("Person B", "Person A");
+            assertThat(message.getValue().actionUrl()).isEqualTo("/acceptance?fAcceptanceEmployeeContractId=" + CONTRACT_ID);
+        }
+
+        /** Vor #828 ging die Mail an die Standardadresse; ohne Login gibt es keinen Empfänger mehr, und das wird gesagt. */
+        @Test
+        void aReminderThatReachesNobodySaysSo() {
+            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Person", "A", null));
+
+            assertThatThrownBy(() -> classUnderTest.sendReleaseReminderMail(EMPLOYEE_ID))
+                .isInstanceOf(BusinessRuleException.class)
+                .extracting(e -> ((BusinessRuleException) e).getMessages().getFirst().getErrorCode())
+                .isEqualTo(ErrorCode.XX_MAIL_NOT_SENT);
+            verifyNoInteractions(notificationService);
+        }
+
+        private Employee person(String firstname, String lastname, Long salatUserId) {
+            final var employee = new Employee();
+            employee.setFirstname(firstname);
+            employee.setLastname(lastname);
+            if (salatUserId != null) {
+                final var login = new SalatUser();
+                setField(login, "id", salatUserId);
+                employee.setSalatUser(login);
+            }
+            return employee;
         }
     }
 }

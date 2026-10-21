@@ -1,5 +1,6 @@
 package de.hbt.salat.employee.service;
 
+import static de.hbt.salat.employee.service.EmployeeNotificationKinds.EMPLOYEECONTRACT_CREATED;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static de.hbt.salat.common.exception.ErrorCode.EC_OVERLAPS;
@@ -58,6 +59,7 @@ import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.employee.persistence.EmployeecontractRepository;
 import de.hbt.salat.employee.persistence.OvertimeRepository;
+import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.service.NotificationService;
 
 @Slf4j
@@ -121,14 +123,11 @@ public class EmployeecontractService {
   private void emitContractCreatedNotification(Employeecontract employeecontract) {
     var salatUser = employeecontract.getEmployee().getSalatUser();
     if (salatUser == null || salatUser.getId() == null) return;
-    notificationService.emitNotification(
-        List.of(salatUser.getId()),
-        "notification.employeecontract.created.title",
-        List.of(),
-        null,
-        null,
-        "/employees/contracts/view?id=" + employeecontract.getId(),
-        null);
+    notificationService.emitNotification(EMPLOYEECONTRACT_CREATED, List.of(salatUser.getId()),
+        NotificationMessage.builder()
+            .titleKey("notification.employeecontract.created.title")
+            .actionUrl("/employees/contracts/view?id=" + employeecontract.getId())
+            .build());
   }
 
   public ContractStoredInfo updateEmployeecontract(
