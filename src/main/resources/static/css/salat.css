@@ -1843,9 +1843,9 @@ blockquote.achievement-quote {
 }
 
 /* ===== Tags (#847) =====
-   Ein Tag erscheint in den Listen als Badge in seiner Farbe (badge bg-<farbe>-lt, Kontrast siehe oben) und in
-   der Auswahl als Punkt vor dem Namen. Der Punkt traegt keine eigene Aussage - der Name steht daneben -, die
-   Farbe kommt ueber bg-<farbe> aus dem Token. */
+   Ein Tag erscheint in den Listen und als gewaehlter Chip als Badge in seiner Farbe (badge bg-<farbe>-lt,
+   Kontrast siehe oben), in der Liste der Auswahl als Punkt vor dem Namen. Der Punkt traegt keine eigene
+   Aussage - der Name steht daneben -, die Farbe kommt ueber bg-<farbe> aus dem Token. */
 .tag-dot {
   display: inline-block;
   width: .6rem;
@@ -1858,4 +1858,36 @@ blockquote.achievement-quote {
 .tag-badges .badge {
   margin-top: .25rem;
   margin-right: .25rem;
+}
+
+/* Ein Tag-Chip in der Auswahl ist die Badge der Liste (#847): dieselbe Klasse badge bg-<farbe>-lt, also
+   dieselbe gemessene Fuellung und Schrift (siehe Badges oben). Nur die Masse bleiben die des Chips, sonst
+   waere das Feld mit Tags niedriger als jedes andere. */
+.ts-wrapper.multi .ts-control > .item.badge {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  padding: 1px 5px;
+  margin: 0 3px 3px 0;
+  border-radius: calc(var(--bs-border-radius) - 1px);
+}
+
+/* Das x erbt die Schrift der Badge. Die Hover-Flaeche der grauen Chips (10 % Textfarbe) hellt eine volle
+   Fuellung im Dunkelmodus auf und nimmt der weissen Schrift Kontrast; auf der Badge zeigt der Hover deshalb
+   einen Rahmen in der Schriftfarbe statt einer Flaeche - die Schrift behaelt ihren Kontrast. Die
+   Trennlinie kommt ebenfalls aus der Schriftfarbe. */
+.ts-wrapper.plugin-remove_button:not(.rtl) .item.badge:not(.active) .remove {
+  border-left-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.ts-wrapper.plugin-remove_button .item.badge:not(.active) .remove:hover {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+/* Den aktiven Chip (per Tastatur markiert, Backspace entfernt ihn) zeigt TomSelect als Primaerflaeche - die
+   Badge-Fuellung ueberdeckt sie. Er bekommt stattdessen einen Ring in der Textfarbe der Seite. */
+.ts-wrapper.multi .ts-control > .item.badge.active {
+  outline: 2px solid var(--tblr-body-color);
+  outline-offset: 1px;
 }

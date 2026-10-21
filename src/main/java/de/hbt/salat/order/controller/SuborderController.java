@@ -51,6 +51,7 @@ import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.order.viewhelper.SuborderViewDecorator;
 import de.hbt.salat.tag.domain.Tag;
+import de.hbt.salat.tag.domain.TagColor;
 
 @Controller
 @RequestMapping("/orders/suborders")
@@ -517,6 +518,7 @@ public class SuborderController {
   private void addFormModel(Model model, SuborderForm form, boolean isEdit, boolean initialize) {
     model.addAttribute("suborderForm", form);
     model.addAttribute("tagChoices", OrderTags.formChoices(orderTagService.getTagChoices(), form.getTagNames()));
+    model.addAttribute("tagColors", TagColor.palette());
     model.addAttribute("orderTypes", OrderType.values());
     model.addAttribute("ticketReferenceModes", TicketReferenceMode.values());
     model.addAttribute("isEdit", isEdit);

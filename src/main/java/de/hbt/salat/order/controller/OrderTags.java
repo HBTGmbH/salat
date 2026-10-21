@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.order.domain.TagChoice;
+import de.hbt.salat.tag.domain.TagColor;
+import de.hbt.salat.tag.domain.TagName;
 
 /**
  * What the order and suborder controllers share about tags (#847): the tag filter of a list, and the choice of a
@@ -51,9 +54,18 @@ final class OrderTags {
           .map(name -> name.strip().replaceAll("\\s+", " "))
           .filter(name -> !name.isEmpty())
           .filter(name -> known.add(name.toLowerCase(Locale.ROOT)))
-          .map(name -> new TagChoice(0, name, null, 0, 0))
+          .map(name -> new TagChoice(0, name, colorOf(name), 0, 0))
           .forEach(choices::add);
     }
     return choices;
+  }
+
+  /** The colour the name will get; none for a name the service refuses anyway (too long, an emoji). */
+  private static TagColor colorOf(String name) {
+    try {
+      return TagColor.of(TagName.of(name));
+    } catch (InvalidDataException e) {
+      return null;
+    }
   }
 }

@@ -390,9 +390,12 @@ Unteraufträge tragen Tags. So wird ein weiterer Typ taggbar, etwa Mitarbeiterve
    - Der Rolle, die das Objekt bearbeiten darf, muss `resolveTagIds` erlaubt sein. Heute ist das
      `requiresManager`.
 4. **Formular:** `<salat:select th:field="*{tagNames}" multiple allowCreate="true"
-   th:createLabel="#{main.tag.create.text}">`, als letztes Feld des Formulars. Die Optionen tragen den
-   Namen als Wert, dazu `data-color` und die Verwendung als `data-subtext` (`order/tags.html`,
-   `TagViewHelper`).
+   th:createLabel="#{main.tag.create.text}" th:data-tag-colors="${tagColors}">`, als letztes Feld des
+   Formulars.
+   - Die Optionen tragen den Namen als Wert, dazu `data-color` und die Verwendung als
+     `data-subtext` (`TagViewHelper`).
+   - `tagColors` ist `TagColor.palette()`. Damit zeigt ein neu getippter Tag schon vor dem Speichern
+     seine Farbe.
 5. **Liste:** Badges per `order/tags :: badges(…)` und der Filter per `order/tags :: filter(…)`.
    - Der Filter ist ein `f…`-Parameter mit kommagetrennten Tag-ids.
    - In der Abfrage steckt ein `exists` über die Join-Tabelle: Ein Tag aus der Auswahl genügt.
