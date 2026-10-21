@@ -70,14 +70,29 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   boolean existsReleasedContractAfter(long employeeId, LocalDate validUntil);
 
   /**
-   * {@code hide is null} zählt als nicht verborgen — die eine Schreibweise aus
-   * {@link de.hbt.salat.common.Hiding} (#1104), hier als JPQL, weil ein {@code @Query} nur eine
-   * Zeichenkette ist und die Klasse nicht aufrufen kann.
+   * The contracts that are not hidden and that the user may read, with the person, the people leads
+   * and their logins in one query (#1514). The contract selector of every page under „Buchungen“
+   * reads them; loaded one by one and filtered in Java, that was a query for the people leads of
+   * every contract, for a manager of every contract there is (docs/performance-tips.md §2, §3).
+   *
+   * <p>{@code hide is null} counts as not hidden — the one spelling from
+   * {@link de.hbt.salat.common.Hiding} (#1104), here as JPQL, because a {@code @Query} is a string
+   * and cannot call the class. The visibility is the one of
+   * {@link de.hbt.salat.employee.auth.EmployeecontractAuthorization} with READ, written out as in
+   * {@link #findPaletteCandidates}: everything for a manager ({@code all}), the own contracts, and for
+   * a people lead those they supervise.
    */
   @Query("""
-      select e from Employeecontract e where e.hide is null or e.hide = false
+      select distinct ec from Employeecontract ec
+      join fetch ec.employee e left join fetch e.salatUser u
+      left join fetch ec.supervisors s left join fetch s.salatUser
+      where (ec.hide is null or ec.hide = false)
+      and (:all = true or u.loginname = :login
+          or (:peopleLead = true and exists (
+              select x.id from Employeecontract x join x.supervisors xs join xs.salatUser xsu
+              where x = ec and xsu.loginname = :login)))
       """)
-  List<Employeecontract> findAllNotHidden();
+  List<Employeecontract> findAllNotHiddenReadable(boolean all, String login, boolean peopleLead);
 
   /**
    * Candidates for the object search of the command palette (#1157): the contracts of every person
