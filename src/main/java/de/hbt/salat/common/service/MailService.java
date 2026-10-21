@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Singular;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class MailService {
+
+  /** How the HTML part of a mail refers to the Salat logo: {@code <img src="cid:salat-logo">} (#1505). */
+  public static final String LOGO_CONTENT_ID = "salat-logo";
+  private static final String LOGO = "static/images/logo-salat-print.png";
 
   private final JavaMailSender mailSender;
 
@@ -49,7 +54,14 @@ public class MailService {
 
       helper.setFrom(request.getFrom().getEmail(), request.getFrom().getName());
       helper.setSubject(request.getSubject());
-      helper.setText(emailMessage.toString(), false);
+      if (request.getHtmlMessage() != null) {
+        // text and HTML as alternatives (#1505); the logo travels inside the mail, since many mail
+        // programs load an image from outside only once the reader agrees
+        helper.setText(emailMessage.toString(), request.getHtmlMessage());
+        helper.addInline(LOGO_CONTENT_ID, new ClassPathResource(LOGO), "image/png");
+      } else {
+        helper.setText(emailMessage.toString(), false);
+      }
 
       // Add primary recipient
       helper.setTo(request.getTo().getEmail());
@@ -90,6 +102,8 @@ public class MailService {
   public static class EmailRequest {
     private String subject;
     private String message;
+    /** The same content as HTML (#1505); {@code null} sends the text alone. */
+    private String htmlMessage;
     private MailContact from;
     private MailContact to;
 

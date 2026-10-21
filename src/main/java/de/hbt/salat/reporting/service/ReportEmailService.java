@@ -2,12 +2,17 @@ package de.hbt.salat.reporting.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
+import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.mail.MailTemplates;
 import de.hbt.salat.common.service.MailService;
 import de.hbt.salat.common.service.MailService.EmailAttachment;
 import de.hbt.salat.common.service.MailService.EmailRequest;
@@ -23,9 +28,14 @@ import de.hbt.salat.reporting.domain.ReportResult;
 @RequiredArgsConstructor
 public class ReportEmailService {
 
+  private static final Locale LOCALE = Locale.GERMAN;
+
   private final ExcelExportService excelExportService;
   private final ReportService reportService;
   private final MailService mailService;
+  private final MailTemplates mailTemplates;
+  private final MessageSource messageSource;
+  private final SalatProperties salatProperties;
 
   @Value("${salat.reporting.email.from:noreply@salat.local}")
   private String fromAddress;
@@ -60,10 +70,10 @@ public class ReportEmailService {
 
       byte[] excelBytes = excelExportService.exportToExcel(reportResult);
 
-      String emailBody = buildEmailBody(rd, reportResult, parameters);
       String fileName = createFileName(rd);
+      var facts = facts(reportResult, parameters);
 
-      MailContact from = new MailContact("Salat Reporting", fromAddress);
+      MailContact from = new MailContact("Salat", fromAddress);
       MailContact primaryRecipient = new MailContact("", recipients[0].trim());
 
       List<MailContact> additionalRecipients = new ArrayList<>();
@@ -72,8 +82,10 @@ public class ReportEmailService {
       }
 
       EmailRequest emailRequest = EmailRequest.builder()
-          .subject("Report: " + rd.getName())
-          .message(emailBody)
+          .subject(text("main.mail.report.subject", rd.getName()))
+          .message(buildEmailBody(rd, facts))
+          .htmlMessage(mailTemplates.render("mail/report", LOCALE, Map.of(
+              "reportName", rd.getName(), "facts", facts, "fileName", fileName, "jobsUrl", jobsUrl())))
           .from(from)
           .to(primaryRecipient)
           .additionalRecipients(additionalRecipients)
@@ -95,23 +107,38 @@ public class ReportEmailService {
     }
   }
 
-  private String buildEmailBody(ReportDefinition reportDefinition, ReportResult reportResult, List<ReportParameter> parameters) {
+  /**
+   * The text part (#1505): what the HTML part says, in the du-form of the whole application. Reports go
+   * to addresses rather than to persons, so they come in German.
+   */
+  private String buildEmailBody(ReportDefinition reportDefinition, List<Map.Entry<String, String>> facts) {
     StringBuilder body = new StringBuilder();
-    body.append("Guten Tag,\n\n");
-    body.append("anbei erhältst du den bestellten Report: ").append(reportDefinition.getName()).append("\n\n");
-    body.append("Report-Details:\n");
-    if (!parameters.isEmpty()) {
-      body.append("- Parameter:\n");
-      parameters.forEach(parameter -> body.append("  * ").append(parameter.getName()).append(": ").append(parameter.getValue()).append("\n"));
-    }
-    body.append("- Anzahl Zeilen: ").append(reportResult.getRows().size()).append("\n");
-    body.append("- Generiert am: ").append(DateUtils.formatDateTime(DateTimeUtils.now(), "dd.MM.yyyy HH:mm")).append("\n");
-
-    body.append("\nDie Ergebnisse befinden sich im angehängten Excel-Dokument.\n\n");
-    body.append("Mit freundlichen Grüßen\n");
-    body.append("Ihr Salat Reporting System");
-
+    body.append(text("main.mail.greeting")).append("\n\n");
+    body.append(text("main.mail.report.intro", reportDefinition.getName())).append("\n\n");
+    facts.forEach(fact -> body.append("- ").append(fact.getKey()).append(": ").append(fact.getValue()).append("\n"));
+    body.append("\n").append(text("main.mail.report.attachment")).append("\n\n");
+    body.append("__________________________\n\n");
+    body.append(text("main.mail.footer.automatic")).append("\n");
+    body.append(text("main.mail.footer.report")).append("\n").append(jobsUrl());
     return body.toString();
+  }
+
+  /** The parameters, the number of rows and when the report was made, in the order the mail lists them. */
+  private List<Map.Entry<String, String>> facts(ReportResult reportResult, List<ReportParameter> parameters) {
+    var facts = new ArrayList<Map.Entry<String, String>>();
+    parameters.forEach(parameter -> facts.add(Map.entry(parameter.getName(), String.valueOf(parameter.getValue()))));
+    facts.add(Map.entry(text("main.mail.report.rows"), String.valueOf(reportResult.getRows().size())));
+    facts.add(Map.entry(text("main.mail.report.generated"),
+        DateUtils.formatDateTime(DateTimeUtils.now(), "dd.MM.yyyy HH:mm")));
+    return facts;
+  }
+
+  private String jobsUrl() {
+    return (salatProperties.getUrl() != null ? salatProperties.getUrl() : "") + "/reporting/jobs";
+  }
+
+  private String text(String key, Object... arguments) {
+    return messageSource.getMessage(key, arguments, LOCALE);
   }
 
   private String createFileName(ReportDefinition reportDefinition) {
