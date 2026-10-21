@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -33,7 +34,7 @@ import de.hbt.salat.tag.domain.TagName;
  * Orders and suborders carry tags over a join table each (#847, ADR-0042): the lists filter by them, deleting an
  * order or suborder leaves no rows behind, and the forms count how often a tag is used.
  */
-@DataJpaTest
+@DataJpaTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @Import({AuthorizedUserAuditorAware.class, CustomerorderDAO.class, SuborderDAO.class, EmployeeorderDAO.class,
     EmployeeorderAuthorization.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -112,6 +113,25 @@ class OrderTagsTest {
 
     assertThat(completeSigns(suborderDAO.findSuborders(null, null, null, null, null, List.of(fixedPrice.getId()), 500)))
         .containsExactly("ORD/02");
+  }
+
+  /** The list shows the tags of every row: one statement for all of them, not one per row (@BatchSize). */
+  @Test
+  void the_tags_of_a_list_are_read_in_one_statement_for_all_rows() {
+    order("A-1", fixedPrice);
+    order("B-2", cloud, framework);
+    order("C-3", fixedPrice, cloud);
+    entityManager.flush();
+    entityManager.clear();
+    var rows = customerorderDAO.findCustomerorders(null, null, null, null, List.of(), 500).rows();
+    var statistics = entityManager.getEntityManager().getEntityManagerFactory().unwrap(SessionFactory.class)
+        .getStatistics();
+    statistics.clear();
+
+    var tags = rows.stream().map(order -> order.getTags().size()).toList();
+
+    assertThat(tags).containsExactly(1, 2, 2);
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
   }
 
   // --- Löschen ----------------------------------------------------------------------------------
