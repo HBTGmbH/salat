@@ -192,6 +192,14 @@
                   <i class="bi bi-envelope"></i>
                 </button>
               </form>
+              <!--/* Wann Salat zuletzt von selbst erinnert hat (#215): der Knopf bleibt, wer ihn drueckt,
+                     will das bewusst - aber er soll sehen, dass die Person heute schon eine Mail hat. */-->
+              <span th:if="${ec.releaseWarning and lastReminders[ec.id] != null}"
+                    class="d-block text-secondary small"
+                    th:title="#{main.release.autoreminded.title}"
+                    th:text="#{main.release.autoreminded.text(${#temporals.format(lastReminders[ec.id], 'yyyy-MM-dd')})}">
+                automatisch erinnert: 2026-10-01
+              </span>
             </td>
             <td class="d-none d-md-table-cell text-muted" th:text="${ec.supervisors.isEmpty() ? '' : #strings.listJoin(ec.supervisors.![name], ', ')}"></td>
             <td>

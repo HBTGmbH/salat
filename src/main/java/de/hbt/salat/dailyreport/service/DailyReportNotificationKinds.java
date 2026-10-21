@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
  * The notifications about bookings, their release and their acceptance (#828). The mail
  * „Buchungen freigegeben" was sent before #828 and stays on by default; the two reminders are sent
  * on purpose by whoever presses the button, so their mail cannot be switched off. The release and
- * the reminder to accept reach the people leads of the contract only.
+ * the reminder to accept reach the people leads of the contract only. The automatic reminder to
+ * release (#215) cannot be switched off by mail either: those who would switch it off are exactly
+ * those it is for.
  */
 @Component
 public class DailyReportNotificationKinds implements NotificationKindContributor {
@@ -18,10 +20,11 @@ public class DailyReportNotificationKinds implements NotificationKindContributor
   public static final NotificationKind TIMEREPORTS_RELEASED = NotificationKind.of("timereports-released", 50, true).forPeopleLeads();
   public static final NotificationKind TIMEREPORTS_ACCEPTED = NotificationKind.of("timereports-accepted", 60, false);
   public static final NotificationKind RELEASE_REMINDER = NotificationKind.mailedAlways("release-reminder", 70);
+  public static final NotificationKind RELEASE_REMINDER_AUTO = NotificationKind.mailedAlways("release-reminder-auto", 75);
   public static final NotificationKind ACCEPTANCE_REMINDER = NotificationKind.mailedAlways("acceptance-reminder", 80).forPeopleLeads();
 
   @Override
   public List<NotificationKind> getNotificationKinds() {
-    return List.of(TIMEREPORT_SHARED, TIMEREPORTS_RELEASED, TIMEREPORTS_ACCEPTED, RELEASE_REMINDER, ACCEPTANCE_REMINDER);
+    return List.of(TIMEREPORT_SHARED, TIMEREPORTS_RELEASED, TIMEREPORTS_ACCEPTED, RELEASE_REMINDER, RELEASE_REMINDER_AUTO, ACCEPTANCE_REMINDER);
   }
 }

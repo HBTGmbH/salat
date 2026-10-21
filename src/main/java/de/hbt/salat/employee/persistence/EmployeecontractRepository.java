@@ -112,6 +112,20 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
       String login, boolean peopleLead, String adminSign, LocalDate today, Pageable page);
 
   /**
+   * Every contract that was released at least once, with the person, the people leads and their
+   * logins in one query (#215): the automatic reminder reads them all once a day. Whether a contract
+   * still runs and whether its release is overdue is logic of the entity
+   * ({@code Validity}, {@code dueUntil}) and is decided on it, not repeated here.
+   */
+  @Query("""
+      select distinct ec from Employeecontract ec
+      join fetch ec.employee e left join fetch e.salatUser
+      left join fetch ec.supervisors s left join fetch s.salatUser
+      where ec.reportReleaseDate is not null
+      """)
+  List<Employeecontract> findAllReleasedWithPeople();
+
+  /**
    * The given contracts with everything {@link de.hbt.salat.employee.auth.EmployeecontractAuthorization}
    * and {@link de.hbt.salat.employee.auth.EmployeeAuthorization} read, in one query instead of one per
    * association and contract.

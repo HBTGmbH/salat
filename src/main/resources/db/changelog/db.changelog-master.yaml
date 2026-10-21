@@ -7265,3 +7265,58 @@ databaseChangeLog:
             tableName: palette_use
             columnNames: salat_user_id, use_date
             constraintName: uk_palette_use_salat_user_id_use_date
+
+  - changeSet:
+      id: 193
+      author: kr
+      comment: Automatische Erinnerung an die Freigabe des Vormonats (#215)
+      # Je Vertrag und Tag eine Zeile: die Glocke ist kein Nachweis, Benachrichtigungen laufen ab und
+      # lassen sich loeschen. Der Schluessel verhindert eine zweite Mail am selben Tag. Den Vertrag
+      # loescht die Anwendung samt seinen Zeilen (ReleaseReminderService).
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: release_reminder
+      changes:
+        - createTable:
+            tableName: release_reminder
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_release_reminder
+              - column:
+                  name: employeecontract_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_release_reminder_employeecontract
+                    references: employeecontract(id)
+              - column:
+                  name: reminded_on
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: release_reminder
+            columnNames: employeecontract_id, reminded_on
+            constraintName: uk_release_reminder_employeecontract_id_reminded_on

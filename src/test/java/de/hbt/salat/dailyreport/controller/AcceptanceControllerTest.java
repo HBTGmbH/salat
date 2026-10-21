@@ -26,6 +26,7 @@ import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -42,6 +43,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.ReviewPeriod;
+import de.hbt.salat.dailyreport.service.ReleaseReminderService;
 import de.hbt.salat.dailyreport.service.ReleaseService;
 import de.hbt.salat.dailyreport.viewhelper.ReviewLinks;
 import de.hbt.salat.employee.domain.Employee;
@@ -66,6 +68,7 @@ class AcceptanceControllerTest {
   @Mock private EmployeecontractService employeecontractService;
   @Mock private EmployeeService employeeService;
   @Mock private ReleaseService releaseService;
+  @Mock private ReleaseReminderService releaseReminderService;
   @Mock private AuthorizedUser authorizedUser;
 
   private MockMvc mockMvc;
@@ -74,7 +77,7 @@ class AcceptanceControllerTest {
   void setUp() {
     var messages = ReleaseControllerTest.germanMessages();
     var controller = new AcceptanceController(employeecontractService, employeeService, releaseService,
-        authorizedUser, messages, new ErrorCodeViewHelper(messages));
+        releaseReminderService, authorizedUser, messages, new ErrorCodeViewHelper(messages));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(mock(Employeecontract.class));
@@ -329,6 +332,17 @@ class AcceptanceControllerTest {
 
     mockMvc.perform(get("/acceptance").param("fAcceptanceEmployeeContractId", "42"))
         .andExpect(model().attribute("acceptAllowed", false));
+  }
+
+  /** #215: neben dem Knopf steht, wann Salat zuletzt von selbst an die Freigabe erinnert hat. */
+  @Test
+  void the_page_knows_when_each_contract_was_last_reminded_automatically() throws Exception {
+    givenTheSelectedContract(LocalDate.of(2026, 8, 31), null, null);
+    when(releaseReminderService.getLastReminders(List.of(CONTRACT_ID)))
+        .thenReturn(Map.of(CONTRACT_ID, LocalDate.of(2026, 10, 2)));
+
+    mockMvc.perform(get("/acceptance").param("fAcceptanceEmployeeContractId", "42"))
+        .andExpect(model().attribute("lastReminders", Map.of(CONTRACT_ID, LocalDate.of(2026, 10, 2))));
   }
 
   private void givenTheSelectedContract(LocalDate releasedUntil, LocalDate acceptedUntil, LocalDate validUntil) {

@@ -49,6 +49,7 @@ import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.domain.EmployeecontractListItemDTO;
 import de.hbt.salat.employee.domain.Employeecontract_;
+import de.hbt.salat.employee.domain.OverdueRelease;
 import de.hbt.salat.employee.domain.Overtime;
 import de.hbt.salat.employee.event.EmployeeAnonymizedEvent;
 import de.hbt.salat.employee.event.EmployeeDeleteEvent;
@@ -456,6 +457,20 @@ public class EmployeecontractService {
   public List<EmployeecontractPeriod> getEmployeecontractPeriodsBetween(long employeeId, LocalDate from, LocalDate until) {
     return employeecontractDAO.getEmployeeContractsByEmployeeIdValidBetween(employeeId, from, until).stream()
         .map(contract -> EmployeecontractPeriod.of(contract, from, until))
+        .toList();
+  }
+
+  /**
+   * The running contracts whose release is overdue ({@link Employeecontract#getReleaseWarning()}),
+   * for the automatic reminder (#215). A contract that ended before today is not among them: its
+   * person may have left, and whoever still has to release it is reminded by hand.
+   */
+  @Transactional(readOnly = true)
+  public List<OverdueRelease> getRunningContractsWithOverdueRelease() {
+    return employeecontractRepository.findAllReleasedWithPeople().stream()
+        .filter(Employeecontract::getCurrentlyValid)
+        .filter(Employeecontract::getReleaseWarning)
+        .map(OverdueRelease::of)
         .toList();
   }
 
