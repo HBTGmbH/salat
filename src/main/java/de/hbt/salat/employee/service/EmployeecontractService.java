@@ -553,6 +553,16 @@ public class EmployeecontractService {
   }
 
   /**
+   * Bricht mit einer {@link AuthorizationException} ab, wenn es den Vertrag gibt und die angemeldete
+   * Person ihn nicht lesen darf (#1514) — dieselbe Prüfung wie {@link #getEmployeecontractForView(long)},
+   * für Aufrufer eines anderen Moduls, die den Vertrag nicht als Entity bekommen sollen (#1244).
+   */
+  @Authorized
+  public void checkReadable(long employeeContractId) {
+    getEmployeecontractForView(employeeContractId);
+  }
+
+  /**
    * Der Vertrag, wenn es ihn gibt und die angemeldete Person ihn lesen darf — für Aufrufer, die ein
    * „nicht lesbar" nicht beantworten, sondern übergehen (#1157). Eine {@link AuthorizationException}
    * aus {@link #getEmployeecontractForView(long)} setzt eine umgebende Transaktion auf Rollback, auch

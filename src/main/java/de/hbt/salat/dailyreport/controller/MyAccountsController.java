@@ -523,8 +523,13 @@ public class MyAccountsController {
         return specialOrders.isRegularTraining(timereport.getSuborderId());
     }
 
+    /**
+     * Der gewaehlte Vertrag, nur mit Leserecht (#1514): ein Vertrag, den die angemeldete Person nicht
+     * lesen darf, endet in einer {@code AuthorizationException}. Ohne Wahl der eigene laufende Vertrag.
+     */
     private Employeecontract currentContract(Long fEmployeeContractId) {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            employeecontractService.checkReadable(fEmployeeContractId);
             var contract = employeecontractService.getEmployeecontractById(fEmployeeContractId);
             if (contract != null) return contract;
         }

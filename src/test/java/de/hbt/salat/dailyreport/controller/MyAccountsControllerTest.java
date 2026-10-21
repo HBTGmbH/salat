@@ -1,9 +1,12 @@
 package de.hbt.salat.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
 import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.dailyreport.domain.OvertimeReport;
 import de.hbt.salat.dailyreport.domain.OvertimeReportTotal;
@@ -55,6 +59,7 @@ class MyAccountsControllerTest {
 
   private static final LocalDate TODAY = LocalDate.parse("2026-06-25");
   private static final long CONTRACT_ID = 10L;
+  private static final long FOREIGN_CONTRACT_ID = 11L;
   private static final long ORDER_ID = 100L;
   private static final Duration DAILY_WORKING_TIME = Duration.ofHours(8);
   private static final Duration BUDGET = Duration.ofHours(8 * 30); // 30 Tage Soll
@@ -83,9 +88,21 @@ class MyAccountsControllerTest {
 
   @BeforeEach
   void setUp() {
-    when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract());
-    when(overtimeService.createDetailedReportForEmployee(CONTRACT_ID, false))
+    // lenient: der Test des fremden Vertrags kommt bis zu keinem der beiden
+    lenient().when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract());
+    lenient().when(overtimeService.createDetailedReportForEmployee(CONTRACT_ID, false))
         .thenReturn(new OvertimeReport(null, List.of()));
+  }
+
+  /* Den Vertrag waehlt die Seite ueber den Parameter. Ein Vertrag, den die angemeldete Person nicht
+     lesen darf, zeigt sie nicht (#1514) - bis dahin hielt nur der Filter je Buchung die Fortbildung
+     eines fremden Vertrags zurueck, die Konten standen offen. */
+  @Test
+  void a_contract_the_user_may_not_read_is_not_shown() {
+    doThrow(new AuthorizationException(AA_NOT_ATHORIZED)).when(employeecontractService).checkReadable(FOREIGN_CONTRACT_ID);
+
+    assertThatThrownBy(() -> myAccountsController.show(FOREIGN_CONTRACT_ID, null, new ExtendedModelMap()))
+        .isInstanceOf(AuthorizationException.class);
   }
 
   /* Vor #1097 las die Berechnung das Ende des Urlaubsauftrags ungeschuetzt. Bei offenem Ende ist es
