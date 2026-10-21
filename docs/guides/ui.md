@@ -160,7 +160,7 @@ kein eigenes Modell. Attribute und Regeln in [`docs/ui-style-guide.md` §5.9](..
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene
 Marken-Palette. Ein Literal im Stylesheet oder in einem Template ist ein Fehler, solange es nicht
 in der Ausnahmeliste von [`docs/ui-style-guide.md` §7.1](../ui-style-guide.md) steht — dort sind
-die vier verbliebenen benannt und begründet. Eines davon ist das Gelb selbst: `salat.css` setzt
+die fünf verbliebenen benannt und begründet, eines davon die Farben der Mails (unten, „Mails“). Eines davon ist das Gelb selbst: `salat.css` setzt
 `--tblr-yellow` und `--tblr-warning` auf `#ffcc00`. Alles Abgeleitete mischt Tabler aus dem Token
 und folgt von selbst.
 
@@ -225,6 +225,26 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   muss direkt gesetzt werden.
 
 ---
+
+## Mails (#1505)
+
+Jede Mail von Salat hat einen Text- und einen HTML-Teil (`multipart/alternative`). Den HTML-Teil
+rendert `MailTemplates` aus `templates/mail/`; jede Mail rahmt ihren Inhalt mit `mail/layout`
+(Kopfleiste mit Logo, Karte, Fuß mit dem Hinweis auf den automatischen Versand und dem Link, wo man
+das ändert).
+
+- **Nur Tabellen und Inline-Stile.** Outlook für Windows rendert mit der Engine von Word: kein
+  `flex`, keine Klassen aus `salat.css`, keine `<style>`-Blöcke, auf die Verlass wäre. Eine
+  Schaltfläche ist eine Tabellenzelle mit Hintergrund und einem Link darin.
+- **Farben aus `MailColors`**, nie als Literal im Template. Das ist die eine Ausnahme von „Farben
+  nur aus Tabler-Tokens“: Mailprogramme kennen weder CSS-Variablen noch `oklch()`. Jeder Wert ist
+  ein Token, umgerechnet und mit gemessenem Kontrast (≥ 4,5:1), beides steht an `MailColors`.
+- **Kein `@{…}` und nichts aus der Anfrage.** Mails werden auch aus Jobs und nach dem Commit
+  gerendert; jeder Link kommt als absolute Adresse (`salat.url` + Pfad) in die Variablen.
+- **Text aus Eingaben nur mit `th:text`.** Kommentare und Namen erscheinen als Text, nie als Markup.
+- **Das Logo ist eingebettet** (`cid:salat-logo`); `MailService` hängt es an jede Mail mit HTML-Teil.
+- **Prüfen:** lokal in MailHog (Port 8025), dort sind beide Teile einzeln zu sehen. Ein neues
+  Layout zusätzlich in Outlook und Apple Mail ansehen.
 
 ## Globally Accessible Objects in `layout/base.html`
 

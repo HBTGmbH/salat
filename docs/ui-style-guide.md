@@ -1691,8 +1691,9 @@ benannt und begründet:
 | `salat.css`, `::selection` | `#fff` | Mischpartner zum Aufhellen der Primärfarbe. Für den dunklen Modus hält Tabler kein helles Blau bereit: `--tblr-blue-200` ist `color-mix(… 20%, transparent)` und wird auf dunklem Grund selbst dunkel |
 | `matrix.html`, Popover-Schatten | `rgba(0,0,0,…)`, `rgba(255,255,255,…)` | Für Schattenfarben gibt es in Tabler kein Token |
 | `static/style/invoiceprint.css` | `1px solid black` | Reines Druck-Stylesheet, kein Bildschirmkontrast |
+| `common/mail/MailColors.java`, Mail-Templates | die Tokens als Hex (`#262626`, `#066fd1`, …) | Mailprogramme kennen weder CSS-Variablen noch `oklch()`; jeder Wert ist das danebenstehende Token, umgerechnet, mit gemessenem Kontrast (#1505, [ui-Guide, Mails](guides/ui.md#mails-1505)) |
 
-Serverseitig (Java) gibt es keine Farbwerte.
+Serverseitig (Java) gibt es außer `MailColors` keine Farbwerte.
 
 ## 8. Typografie & Abstände
 
