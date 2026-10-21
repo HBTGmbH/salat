@@ -2538,7 +2538,8 @@ class ReleaseServiceTest {
         void tellsThePersonThatTheReleaseWasAccepted() {
             final var contract = acceptableContract();
             setField(contract.getEmployee().getSalatUser(), "id", 42L);
-            when(authorizedEmployee.getName()).thenReturn("Person B");
+            when(authorizedEmployee.getName()).thenReturn("Bert Beispiel");
+            when(authorizedEmployee.getFirstname()).thenReturn("Bert");
             when(authorizedEmployee.getEmployeeId()).thenReturn(5L);
             when(employeePreferenceService.getNotificationEmailForEmployeeId(5L)).thenReturn("b@example.org");
 
@@ -2546,8 +2547,9 @@ class ReleaseServiceTest {
 
             final var message = ArgumentCaptor.forClass(NotificationMessage.class);
             verify(notificationService).emitNotification(eq(TIMEREPORTS_ACCEPTED), eq(List.of(42L)), message.capture());
-            assertThat(message.getValue().descriptionParams()).containsExactly("Person B", "31.03.2024");
-            assertThat(message.getValue().sender()).isEqualTo(new MailContact("Person B", "b@example.org"));
+            // the text names the person by first name, the mail header in full (#1505)
+            assertThat(message.getValue().descriptionParams()).containsExactly("Bert", "31.03.2024");
+            assertThat(message.getValue().sender()).isEqualTo(new MailContact("Bert Beispiel", "b@example.org"));
         }
 
         /** Der Vertragsbeginn liegt hinter der letzten Abnahme: abgenommen wird ab dem Vertragsbeginn, wie die Übersicht ihn zeigt. */
@@ -2771,41 +2773,41 @@ class ReleaseServiceTest {
 
         @BeforeEach
         void sender() {
-            when(employeeService.getLoginEmployee()).thenReturn(person("Person", "B", null));
+            when(employeeService.getLoginEmployee()).thenReturn(person("Bert", "Beispiel", null));
         }
 
         @Test
         void remindsThePersonToRelease() {
-            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Person", "A", 42L));
+            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Anna", "Beispiel", 42L));
 
             classUnderTest.sendReleaseReminderMail(EMPLOYEE_ID);
 
             final var message = ArgumentCaptor.forClass(NotificationMessage.class);
             verify(notificationService).emitNotification(eq(RELEASE_REMINDER), eq(List.of(42L)), message.capture());
-            assertThat(message.getValue().descriptionParams()).containsExactly("Person B");
-            assertThat(message.getValue().sender().getName()).isEqualTo("Person B");
+            assertThat(message.getValue().descriptionParams()).containsExactly("Bert");
+            assertThat(message.getValue().sender().getName()).isEqualTo("Bert Beispiel");
         }
 
         @Test
         void remindsTheSupervisorsToAccept() {
             final var contract = new Employeecontract();
             setField(contract, "id", CONTRACT_ID);
-            contract.setEmployee(person("Person", "A", 42L));
-            contract.setSupervisors(new ArrayList<>(List.of(person("Person", "C", 43L), person("Person", "D", 44L))));
+            contract.setEmployee(person("Anna", "Beispiel", 42L));
+            contract.setSupervisors(new ArrayList<>(List.of(person("Carla", "Beispiel", 43L), person("Dirk", "Beispiel", 44L))));
             when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
 
             classUnderTest.sendAcceptanceReminderMail(CONTRACT_ID);
 
             final var message = ArgumentCaptor.forClass(NotificationMessage.class);
             verify(notificationService).emitNotification(eq(ACCEPTANCE_REMINDER), eq(List.of(43L, 44L)), message.capture());
-            assertThat(message.getValue().descriptionParams()).containsExactly("Person B", "Person A");
+            assertThat(message.getValue().descriptionParams()).containsExactly("Bert", "Anna");
             assertThat(message.getValue().actionUrl()).isEqualTo("/acceptance?fAcceptanceEmployeeContractId=" + CONTRACT_ID);
         }
 
         /** Vor #828 ging die Mail an die Standardadresse; ohne Login gibt es keinen Empfänger mehr, und das wird gesagt. */
         @Test
         void aReminderThatReachesNobodySaysSo() {
-            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Person", "A", null));
+            when(employeeService.getEmployeeById(EMPLOYEE_ID)).thenReturn(person("Anna", "Beispiel", null));
 
             assertThatThrownBy(() -> classUnderTest.sendReleaseReminderMail(EMPLOYEE_ID))
                 .isInstanceOf(BusinessRuleException.class)
