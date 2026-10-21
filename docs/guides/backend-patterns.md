@@ -176,6 +176,28 @@ return command.getResult().values().stream().reduce(Duration::plus).orElse(Durat
 
 ---
 
+## Benachrichtigungen (→ ADR-0041)
+- Glocke und Mail laufen über einen Weg: `NotificationService.emitNotification(kind, logins, message)`.
+  Kein Modul ruft `MailService` für eine Benachrichtigung selbst auf. Ob die Glocke einen Eintrag
+  bekommt und ob die Mail rausgeht, entscheidet die Wahl der empfangenden Person je Art; die
+  Einstellungsseite zeigt dafür eine Zeile je Art.
+- Eine **Art** (`NotificationKind`) deklariert das Modul, das benachrichtigt, als Konstante seines
+  `NotificationKindContributor` (`DailyReportNotificationKinds`), mit Platz auf der
+  Einstellungsseite und Voreinstellung der Mail. Was bisher gemailt wurde, bleibt an (`of(key, position,
+  true)`); eine neue Mail startet aus. `mailedAlways` ist der Ausnahmefall: eine Mail, die jemand
+  ausdrücklich per Knopfdruck schickt (die Erinnerungen), kommt immer, und ein Fehler wird zu
+  `XX-0005` für die auslösende Person. Jede Art braucht `main.settings.notification.kind.<key>.label`
+  in beiden Bundles (`NotificationKindRegistryTest`).
+- Der **Inhalt** (`NotificationMessage`) ist eine Reihe von Message-Keys mit Argumenten: die Glocke
+  löst sie beim Anzeigen auf, die Mail in der Sprache der empfangenden Person. Der Titel wird zum
+  Betreff, die Beschreibung zum Text. Keine Anrede nach Geschlecht, kein im Code zusammengesetzter
+  Fließtext. `sender` setzt, wer die Mail ausgelöst hat; ohne ihn kommt sie von
+  `salat.notifications.email-from`.
+- Eine abschaltbare Mail geht **nach dem Commit** raus und lässt die auslösende Aktion nie
+  scheitern. Wird die Aktion zurückgerollt, geht keine Mail raus.
+
+---
+
 ## Exception Hierarchy (→ ADR-0008)
 ```
 RuntimeException
