@@ -150,6 +150,15 @@ class ReleaseReminderServiceTest {
       verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(PEOPLE_LEADS), any());
     }
 
+    @Test
+    void a_contract_without_people_leads_is_mailed_without_cc_from_the_second_working_day_on_as_well() {
+      today(FRIDAY_SECOND);
+
+      service.remind(new OverdueRelease(CONTRACT_ID, PERSON, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 9, 30), List.of()));
+
+      verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(List.of()), any());
+    }
+
     /** The 1st is a holiday and the 2nd lies at the weekend: Monday the 4th is the first working day. */
     @Test
     void the_first_working_day_comes_after_a_holiday_and_the_weekend() {
