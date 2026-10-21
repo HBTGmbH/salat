@@ -17,12 +17,14 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey CUSTOMER_ORDER_SHOW_HIDDEN = new UiStateKey("customerOrder.ShowHidden");
     public static final UiStateKey CUSTOMER_ORDER_SHOW_ACTUAL_HOURS = new UiStateKey("customerOrder.ShowActualHours");
     public static final UiStateKey CUSTOMER_ORDER_LIMIT = new UiStateKey("customerOrder.Limit");
+    public static final UiStateKey CUSTOMER_ORDER_TAGS = new UiStateKey("customerOrder.Tags");
     public static final UiStateKey SUBORDER_ID = new UiStateKey("suborder.Id");
     public static final UiStateKey SUBORDER_FILTER = new UiStateKey("suborder.Filter");
     public static final UiStateKey SUBORDER_SHOW_INACTIVE = new UiStateKey("suborder.ShowInactive");
     public static final UiStateKey SUBORDER_SHOW_HIDDEN = new UiStateKey("suborder.ShowHidden");
     public static final UiStateKey SUBORDER_SHOW_ACTUAL_HOURS = new UiStateKey("suborder.ShowActualHours");
     public static final UiStateKey SUBORDER_LIMIT = new UiStateKey("suborder.Limit");
+    public static final UiStateKey SUBORDER_TAGS = new UiStateKey("suborder.Tags");
     public static final UiStateKey EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID = new UiStateKey("employeeOrder.EmployeeContract.Id");
     public static final UiStateKey EMPLOYEEORDER_FILTER = new UiStateKey("employeeOrder.Filter");
     public static final UiStateKey EMPLOYEEORDER_SHOW_INACTIVE = new UiStateKey("employeeOrder.ShowInactive");
@@ -41,11 +43,13 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
         map.put("fCustomerOrderShowHidden", CUSTOMER_ORDER_SHOW_HIDDEN);
         map.put("fCustomerOrderShowActualHours", CUSTOMER_ORDER_SHOW_ACTUAL_HOURS);
         map.put("fCustomerOrderLimit", CUSTOMER_ORDER_LIMIT);
+        map.put("fCustomerOrderTags", CUSTOMER_ORDER_TAGS);
         map.put("fSuborderFilter", SUBORDER_FILTER);
         map.put("fSuborderShowInactive", SUBORDER_SHOW_INACTIVE);
         map.put("fSuborderShowHidden", SUBORDER_SHOW_HIDDEN);
         map.put("fSuborderShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
         map.put("fSuborderLimit", SUBORDER_LIMIT);
+        map.put("fSuborderTags", SUBORDER_TAGS);
         map.put("fEmployeeOrderEmployeeContractId", EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID);
         map.put("fEmployeeOrderFilter", EMPLOYEEORDER_FILTER);
         map.put("fEmployeeOrderShowInactive", EMPLOYEEORDER_SHOW_INACTIVE);

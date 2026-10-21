@@ -14,6 +14,7 @@ import jakarta.persistence.criteria.ListJoin;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,6 +40,7 @@ import de.hbt.salat.order.domain.Employeeorder_;
 import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
+import de.hbt.salat.tag.domain.Tag_;
 
 /**
  * DAO class for 'Customerorder'
@@ -143,11 +145,11 @@ public class CustomerorderDAO {
      * shows something without any filter, so it must not load every order to show the first few.
      */
     public SearchHits<Customerorder> findCustomerorders(Boolean showInactive, String filter, Long customerId,
-        Boolean showHidden, int maxRows) {
+        Boolean showHidden, Collection<Long> tagIds, int maxRows) {
         if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
             return SearchHits.none();
         }
-        var filters = byFilters(showInactive, filter, customerId, showHidden);
+        var filters = byFilters(showInactive, filter, customerId, showHidden).and(carryingAnyOf(tagIds));
         // what every row shows, in the query of the rows; the count reads the filters alone
         Specification<Customerorder> withShownAssociations = filters.and((root, query, builder) -> {
             root.fetch(Customerorder_.customer);
@@ -206,6 +208,22 @@ public class CustomerorderDAO {
                 like(builder, root.get(Customerorder_.description), pattern),
                 like(builder, name(builder, contractually), pattern),
                 builder.exists(responsible));
+        };
+    }
+
+    /**
+     * Orders carrying at least one of these tags (#847) — one is enough, the tags of a filter are alternatives. Asked
+     * through {@code exists}, so that an order with two of them stays one row. No tags, no restriction.
+     */
+    private static Specification<Customerorder> carryingAnyOf(Collection<Long> tagIds) {
+        return (root, query, builder) -> {
+            if (tagIds == null || tagIds.isEmpty()) {
+                return null;
+            }
+            var tagged = query.subquery(Integer.class);
+            var tag = tagged.correlate(root).join(Customerorder_.tags);
+            tagged.select(builder.literal(1)).where(tag.get(Tag_.id).in(tagIds));
+            return builder.exists(tagged);
         };
     }
 

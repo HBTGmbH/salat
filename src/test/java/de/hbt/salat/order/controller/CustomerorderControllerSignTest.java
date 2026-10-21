@@ -32,6 +32,7 @@ import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SpecialOrders;
 
 /**
@@ -61,7 +62,7 @@ class CustomerorderControllerSignTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new CustomerorderController(customerorderService, customerService, employeeService, messages,
         new ErrorCodeViewHelper(messages), mock(AuthorizedEmployee.class), mock(FilterHintViewHelper.class),
-        mock(NoticeViewHelper.class), mock(SpecialOrders.class), new ListLimits(new SalatProperties()));
+        mock(NoticeViewHelper.class), mock(SpecialOrders.class), new ListLimits(new SalatProperties()), mock(OrderTagService.class));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     var holder = new Customerorder();

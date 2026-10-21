@@ -376,7 +376,8 @@ const tomSelectConfig = (el) => {
           if (opt.dataset.subtext) val.subtext = opt.dataset.subtext;
           if (favoriteTarget) val.isFavorite = !!(favoriteId && opt.value === favoriteId);
         });
-        const subtextEl = el.id ? document.getElementById(el.id + '-subtext') : null;
+        // the line under the field names the one chosen entry; a multi-select has no such entry (#847)
+        const subtextEl = el.id && !multi ? document.getElementById(el.id + '-subtext') : null;
         if (subtextEl) {
           const selected = el.options[el.selectedIndex];
           subtextEl.textContent = selected?.dataset.subtext || '';
@@ -441,6 +442,53 @@ const tomSelectConfig = (el) => {
         item(data, escape) {
           return '<div>' + escape(data.text) + '</div>';
         },
+      },
+    });
+  }
+
+  // A field that takes new entries (#847: tags) normalizes what is typed the way the server stores it - trimmed, runs
+  // of blanks as one - and offers no new entry for one that differs from an existing option only in case: typing
+  // "festpreis" picks "Festpreis" instead of creating a second chip for the same tag.
+  if (el.dataset.allowCreate === 'true') {
+    const createLabel = el.dataset.createLabel || null;
+    const normalize = input => (input || '').trim().replace(/\s+/g, ' ');
+    config.create = input => {
+      const value = normalize(input);
+      return value ? { value, text: value } : false;
+    };
+    config.createFilter = function (input) {
+      const key = normalize(input).toLowerCase();
+      return key.length > 0 && !Object.values(this.options).some(option => String(option.text).toLowerCase() === key);
+    };
+    // the row that offers the typed name says enough; "No results found" under it would contradict it
+    config.render = Object.assign({}, config.render, { no_results: null });
+    if (createLabel) {
+      config.render = Object.assign({}, config.render, {
+        option_create(data, escape) {
+          return '<div class="create">' + escape(createLabel) + ' <strong>' + escape(normalize(data.input)) + '</strong></div>';
+        },
+      });
+    }
+  }
+
+  // An option with data-color (#847: the colour of a tag) shows it as a dot, in the list and on the chip, so that
+  // the chip looks like the badge the lists show. The name stays the text; the dot only repeats the colour.
+  const colors = new Map(Array.from(el.options || []).filter(opt => opt.dataset.color)
+    .map(opt => [opt.value, opt.dataset.color]));
+  if (colors.size) {
+    const dot = (value, escape) => {
+      const color = colors.get(String(value));
+      return color ? '<span class="tag-dot bg-' + escape(color) + '"></span>' : '';
+    };
+    config.render = Object.assign({}, config.render, {
+      option(data, escape) {
+        return '<div class="d-flex flex-column py-1">'
+          + '<span class="text-nowrap">' + dot(data.value, escape) + escape(data.text) + '</span>'
+          + (data.subtext ? '<small class="text-muted lh-1 mb-1">' + escape(data.subtext) + '</small>' : '')
+          + '</div>';
+      },
+      item(data, escape) {
+        return '<div>' + dot(data.value, escape) + escape(data.text) + '</div>';
       },
     });
   }
@@ -3733,3 +3781,13 @@ function achievementFirework(container) {
     });
   });
 }
+
+/* The tag filter of the order and suborder lists (#847): the select has no name, its ids travel comma-separated in
+ * the hidden field next to it - UiState keeps one value per parameter. Filled in the capture phase, before the
+ * list's own change listener sends the form. */
+document.addEventListener('change', event => {
+  const select = event.target.closest && event.target.closest('select[data-tag-filter]');
+  if (!select) return;
+  const hidden = select.parentElement.querySelector('[data-tag-filter-value]');
+  if (hidden) hidden.value = Array.from(select.selectedOptions).map(option => option.value).join(',');
+}, true);

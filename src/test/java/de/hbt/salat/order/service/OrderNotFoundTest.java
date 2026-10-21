@@ -20,6 +20,8 @@ import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * Löschen und Kopieren eines Auftrags oder Unterauftrags, den es nicht gibt, lehnt der Service mit „nicht gefunden"
@@ -61,11 +63,11 @@ class OrderNotFoundTest {
 
   private CustomerorderService customerorderService() {
     return new CustomerorderService(eventPublisher, mock(CommandPublisher.class), mock(CustomerorderDAO.class),
-        mock(CustomerDAO.class), mock(EmployeeDAO.class), customerorderRepository, mock(SpecialOrders.class));
+        mock(CustomerDAO.class), mock(EmployeeDAO.class), customerorderRepository, mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
   }
 
   private SuborderService suborderService() {
     return new SuborderService(eventPublisher, mock(CommandPublisher.class), mock(SuborderDAO.class),
-        suborderRepository, mock(CustomerorderService.class), mock(SpecialOrders.class));
+        suborderRepository, mock(CustomerorderService.class), mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
   }
 }

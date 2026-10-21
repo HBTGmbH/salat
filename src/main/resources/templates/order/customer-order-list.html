@@ -13,7 +13,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col-md-6">
+          <div class="col-md">
             <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" name="fCustomerId" th:attr="data-value=${fCustomerId}">
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
@@ -23,6 +23,7 @@
                       th:selected="${fCustomerId != null and fCustomerId == c.id}"></option>
             </select>
           </div>
+          <div class="col-md" th:insert="~{order/tags :: filter('fCustomerOrderTags', ${fCustomerOrderTags})}"></div>
           <div class="col-auto">
             <th:block th:replace="~{fragments/list-limit :: select('fCustomerOrderLimit')}"></th:block>
           </div>
@@ -122,6 +123,7 @@
           <td>
             <div class="text-nowrap"><span th:text="${co.sign}">Sign Customer Order</span><span th:replace="~{fragments/inactive-badge :: badge(${!co.currentlyValid})}"></span></div>
             <small class="text-muted" th:text="${co.description}">Description</small>
+            <div th:replace="~{order/tags :: badges(${co.tags})}"></div>
           </td>
           <td class="d-none d-md-table-cell">
             <div th:text="${co.fromDate}" class="text-nowrap">From</div>

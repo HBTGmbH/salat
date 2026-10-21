@@ -28,6 +28,8 @@ import de.hbt.salat.order.domain.SuborderDTO;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * Where a suborder hangs (#1243). A suborder directly below its customer order has no parent, and
@@ -66,7 +68,7 @@ class SuborderServiceParentTest {
         suborderDAO,
         mock(SuborderRepository.class),
         customerorderService,
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
 
     order = customerorder(ORDER_ID, "co");
     twin = suborder(TWIN, order, "01");
@@ -140,7 +142,7 @@ class SuborderServiceParentTest {
   private Suborder createAndCapture(Long parentId) {
     var repository = mock(SuborderRepository.class);
     var service = new SuborderService(mock(ApplicationEventPublisher.class), mock(CommandPublisher.class),
-        suborderDAO, repository, customerorderService, mock(SpecialOrders.class));
+        suborderDAO, repository, customerorderService, mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
     var saved = ArgumentCaptor.forClass(Suborder.class);
 
     service.create(dto("03", parentId), ORDER_ID);
@@ -151,7 +153,7 @@ class SuborderServiceParentTest {
 
   private static SuborderDTO dto(String sign, Long parentId) {
     return new SuborderDTO(ORDER_ID, sign, "Leistung", "Leistung", null, 'y', false, false, false,
-        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null, SurchargeInput.NONE);
+        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null, SurchargeInput.NONE, null);
   }
 
   private static Customerorder customerorder(long id, String sign) {

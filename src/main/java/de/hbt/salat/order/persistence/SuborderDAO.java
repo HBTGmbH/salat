@@ -3,8 +3,11 @@ package de.hbt.salat.order.persistence;
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
 import static de.hbt.salat.common.util.DateUtils.today;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +30,7 @@ import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.Suborder_;
+import de.hbt.salat.tag.domain.Tag_;
 
 @Component
 @RequiredArgsConstructor
@@ -113,7 +117,7 @@ public class SuborderDAO {
      * by the complete sign, the id deciding between equal ones so that the limit always cuts the same rows.
      */
     public SearchHits<Suborder> findSuborders(Boolean showInactive, String filter, Long customerorderId, Long customerId,
-        Boolean showHidden, int maxRows) {
+        Boolean showHidden, Collection<Long> tagIds, int maxRows) {
         if (!ContainsPattern.canOccurInUtf8mb3(filter)) {
             return SearchHits.none();
         }
@@ -135,6 +139,9 @@ public class SuborderDAO {
             if(pattern != null) {
                 predicates.add(SuborderSearchText.containing(root, query, builder, pattern));
             }
+            if(tagIds != null && !tagIds.isEmpty()) {
+                predicates.add(carryingAnyOf(root, query, builder, tagIds));
+            }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
         // what every row shows, in the query of the rows; the count reads the filters alone
@@ -145,6 +152,18 @@ public class SuborderDAO {
         var page = suborderRepository.findAll(withShownAssociations, byFilters, PageRequest.of(0, maxRows,
             Sort.by(Suborder_.COMPLETE_ORDER_SIGN, Suborder_.ID)));
         return new SearchHits<>(page.getContent(), page.getTotalElements());
+    }
+
+    /**
+     * Suborders carrying at least one of these tags themselves (#847): the tags of the order above do not count, the
+     * list shows what was tagged. Asked through {@code exists}, so that a suborder with two of them stays one row.
+     */
+    private static Predicate carryingAnyOf(Root<Suborder> root, CriteriaQuery<?> query, CriteriaBuilder builder,
+        Collection<Long> tagIds) {
+        var tagged = query.subquery(Integer.class);
+        var tag = tagged.correlate(root).join(Suborder_.tags);
+        tagged.select(builder.literal(1)).where(tag.get(Tag_.id).in(tagIds));
+        return builder.exists(tagged);
     }
 
     /**

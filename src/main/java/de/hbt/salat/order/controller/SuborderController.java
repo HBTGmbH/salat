@@ -47,8 +47,10 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.domain.SuborderDTO;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.order.viewhelper.SuborderViewDecorator;
+import de.hbt.salat.tag.domain.Tag;
 
 @Controller
 @RequestMapping("/orders/suborders")
@@ -65,6 +67,7 @@ public class SuborderController {
   private final NoticeViewHelper noticeViewHelper;
   private final SpecialOrders specialOrders;
   private final ListLimits listLimits;
+  private final OrderTagService orderTagService;
 
   @GetMapping
   public String list(
@@ -75,12 +78,14 @@ public class SuborderController {
       @RequestParam(required = false) Boolean fSuborderShowActualHours,
       @RequestParam(required = false) Boolean fSuborderShowHidden,
       @RequestParam(required = false) String fSuborderLimit,
+      @RequestParam(required = false) String fSuborderTags,
       HttpServletRequest request,
       Model model) {
     // Like the booking list, the page lists suborders right away, up to the limit (#1380).
     var limit = listLimits.parse(fSuborderLimit);
+    var tagIds = OrderTags.filterIds(fSuborderTags);
     var hits = suborderService.searchSuborders(fSuborderShowInactive, fSuborderFilter, fCustomerOrderId, fCustomerId,
-        fSuborderShowHidden, limit.maxRows());
+        fSuborderShowHidden, tagIds, limit.maxRows());
     var suborders = hits.rows();
     if (Boolean.TRUE.equals(fSuborderShowActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
@@ -108,6 +113,9 @@ public class SuborderController {
     model.addAttribute("fSuborderShowInactive", fSuborderShowInactive);
     model.addAttribute("fSuborderShowHidden", fSuborderShowHidden);
     model.addAttribute("fSuborderShowActualHours", Boolean.TRUE.equals(fSuborderShowActualHours));
+    model.addAttribute("tagChoices", orderTagService.getTagChoices());
+    model.addAttribute("selectedTagIds", tagIds);
+    model.addAttribute("fSuborderTags", OrderTags.filterValue(tagIds));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "suborders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
@@ -195,8 +203,8 @@ public class SuborderController {
             form.getParentId(),
             form.getTicketReferenceMode(),
             form.getTicketReferenceLimit(),
-            form.getSurchargeRates().toInput()
-        );
+            form.getSurchargeRates().toInput(),
+            form.getTagNames());
         if (isCreate) {
           suborderService.create(data, form.getCustomerorderId());
         } else {
@@ -217,7 +225,7 @@ public class SuborderController {
     // message says so instead of the list silently not showing it.
     filterHintViewHelper.addSuccess(redirectAttributes,
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
-        SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
+        SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID, SUBORDER_TAGS);
     noticeViewHelper.addNotices(redirectAttributes, notices);
     if (isCreate && customerorderId != null) {
       redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + customerorderId);
@@ -508,6 +516,7 @@ public class SuborderController {
 
   private void addFormModel(Model model, SuborderForm form, boolean isEdit, boolean initialize) {
     model.addAttribute("suborderForm", form);
+    model.addAttribute("tagChoices", OrderTags.formChoices(orderTagService.getTagChoices(), form.getTagNames()));
     model.addAttribute("orderTypes", OrderType.values());
     model.addAttribute("ticketReferenceModes", TicketReferenceMode.values());
     model.addAttribute("isEdit", isEdit);
@@ -614,6 +623,7 @@ public class SuborderController {
       form.setDebithoursunit(so.getDebithoursunit());
     }
     form.setParentId(so.getParentorder() != null ? so.getParentorder().getId() : null);
+    form.setTagNames(new ArrayList<>(so.getTags().stream().map(Tag::getName).toList()));
     return form;
   }
 }

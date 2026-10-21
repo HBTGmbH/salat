@@ -62,6 +62,8 @@ import de.hbt.salat.order.event.SuborderDeleteEvent;
 import de.hbt.salat.order.event.SuborderUpdateEvent;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 @Service
 @Transactional
@@ -75,6 +77,8 @@ public class SuborderService {
   private final SuborderRepository suborderRepository;
   private final CustomerorderService customerorderService;
   private final SpecialOrders specialOrders;
+  private final TagService tagService;
+  private final TagReferences tagReferences;
 
   /**
    * The suborders the command palette considers for a query (#1157), hidden and ended ones last.
@@ -227,6 +231,9 @@ public class SuborderService {
     }
 
     so.setHide(data.hide());
+    if (data.tagNames() != null) {
+      so.replaceTags(tagReferences.tags(tagService.resolveTagIds(data.tagNames())));
+    }
     // parentId null is the top level (#1243); any other value names a suborder of the same order —
     // ids of orders and suborders are counted independently, so it is never read as the order's id
     Suborder parentOrderCandidate = null;
@@ -355,7 +362,7 @@ public class SuborderService {
         so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().mode() : null,
         so.getTicketReferencePolicy() != null ? so.getTicketReferencePolicy().limit() : null,
         SurchargeInput.of(so::getSurchargeRate)
-    );
+    , null);
   }
 
   /**
@@ -712,11 +719,14 @@ public class SuborderService {
     suborderRepository.deleteById(suborderId);
   }
 
-  /** The first {@code maxRows} suborders of the suborder list and how many the filters hit (#1380). */
+  /**
+   * The first {@code maxRows} suborders of the suborder list and how many the filters hit (#1380). With tags, a
+   * suborder carrying any of them — its own tags only, not those of its order (#847).
+   */
   @Transactional(readOnly = true)
   public SearchHits<Suborder> searchSuborders(Boolean showInactive, String filter, Long customerOrderId,
-      Long customerId, Boolean showHidden, int maxRows) {
-    return suborderDAO.findSuborders(showInactive, filter, customerOrderId, customerId, showHidden, maxRows);
+      Long customerId, Boolean showHidden, Collection<Long> tagIds, int maxRows) {
+    return suborderDAO.findSuborders(showInactive, filter, customerOrderId, customerId, showHidden, tagIds, maxRows);
   }
 
   public List<Suborder> getSuborderChildren(Long parentSuborderId) {
@@ -767,6 +777,7 @@ public class SuborderService {
     copy.setSuborder_customer(suborder.getSuborder_customer());
     copy.setTrainingFlag(suborder.isTrainingFlag());
     copy.setOrderType(suborder.getOrderType());
+    copy.replaceTags(suborder.getTags());
     copy.setTicketReferencePolicy(suborder.getTicketReferencePolicy());
     for (var kind : SurchargeKind.values()) {
       copy.setSurchargeRate(kind, suborder.getSurchargeRate(kind));

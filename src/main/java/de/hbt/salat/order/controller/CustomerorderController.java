@@ -5,6 +5,7 @@ import static de.hbt.salat.common.util.DateUtils.format;
 import static de.hbt.salat.common.util.DateUtils.today;
 import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.CUSTOMER_ID;
 import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.CUSTOMER_ORDER_FILTER;
+import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.CUSTOMER_ORDER_TAGS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -47,8 +48,10 @@ import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.viewhelper.CustomerOrderViewDecorator;
+import de.hbt.salat.tag.domain.Tag;
 
 @Controller
 @RequestMapping("/orders/customerorders")
@@ -66,6 +69,7 @@ public class CustomerorderController {
   private final NoticeViewHelper noticeViewHelper;
   private final SpecialOrders specialOrders;
   private final ListLimits listLimits;
+  private final OrderTagService orderTagService;
 
   @GetMapping
   public String list(
@@ -75,12 +79,14 @@ public class CustomerorderController {
       @RequestParam(required = false) Boolean fCustomerOrderShowActualHours,
       @RequestParam(required = false) Boolean fCustomerOrderShowHidden,
       @RequestParam(required = false) String fCustomerOrderLimit,
+      @RequestParam(required = false) String fCustomerOrderTags,
       HttpServletRequest request,
       Model model) {
     // Like the booking list, the page lists orders right away, up to the limit (#1380).
     var limit = listLimits.parse(fCustomerOrderLimit);
+    var tagIds = OrderTags.filterIds(fCustomerOrderTags);
     var hits = customerorderService.searchCustomerorders(fCustomerOrderShowInactive, fCustomerOrderFilter, fCustomerId,
-        fCustomerOrderShowHidden, limit.maxRows());
+        fCustomerOrderShowHidden, tagIds, limit.maxRows());
     var customerorders = hits.rows();
     if (Boolean.TRUE.equals(fCustomerOrderShowActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
@@ -99,6 +105,9 @@ public class CustomerorderController {
     model.addAttribute("fCustomerOrderShowInactive", fCustomerOrderShowInactive);
     model.addAttribute("fCustomerOrderShowHidden", fCustomerOrderShowHidden);
     model.addAttribute("fCustomerOrderShowActualHours", Boolean.TRUE.equals(fCustomerOrderShowActualHours));
+    model.addAttribute("tagChoices", orderTagService.getTagChoices());
+    model.addAttribute("selectedTagIds", tagIds);
+    model.addAttribute("fCustomerOrderTags", OrderTags.filterValue(tagIds));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.customerorders.text", "Customer Orders"));
@@ -162,7 +171,8 @@ public class CustomerorderController {
             form.getResponsibleCustomerContractually(), form.getResponsibleCustomerTechnical(),
             form.getResponsibleHbtIds(), form.getRespContrEmployeeId(),
             form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType(),
-            form.getTicketReferenceMode(), form.getTicketReferenceLimit(), form.getSurchargeRates().toInput());
+            form.getTicketReferenceMode(), form.getTicketReferenceLimit(), form.getSurchargeRates().toInput(),
+            form.getTagNames());
         if (form.getId() == null) {
           newId = customerorderService.create(dto).getId();
         } else {
@@ -183,7 +193,7 @@ public class CustomerorderController {
     // message says so instead of the list silently not showing it.
     filterHintViewHelper.addSuccess(redirectAttributes,
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"),
-        CUSTOMER_ORDER_FILTER, CUSTOMER_ID);
+        CUSTOMER_ORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_TAGS);
     noticeViewHelper.addNotices(redirectAttributes, notices);
     if (newId != null) {
       redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + newId);
@@ -346,6 +356,7 @@ public class CustomerorderController {
     }
     model.addAttribute("employees", employees);
 
+    model.addAttribute("tagChoices", OrderTags.formChoices(orderTagService.getTagChoices(), form.getTagNames()));
     model.addAttribute("orderTypes", OrderType.values());
     model.addAttribute("ticketReferenceModes", TicketReferenceMode.values());
     model.addAttribute("isEdit", isEdit);
@@ -395,6 +406,7 @@ public class CustomerorderController {
     form.setTicketReferenceMode(co.getTicketReferencePolicy().mode());
     form.setTicketReferenceLimit(co.getTicketReferencePolicy().limit());
     form.setSurchargeRates(SurchargeFields.ofOrder(SurchargeInput.of(co::getSurchargeRate)));
+    form.setTagNames(new java.util.ArrayList<>(co.getTags().stream().map(Tag::getName).toList()));
     return form;
   }
 }

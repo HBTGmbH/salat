@@ -15,6 +15,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderOption;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.domain.ResponsibleOption;
+import de.hbt.salat.order.domain.TagUsage;
 
 @Repository
 public interface CustomerorderRepository extends PagingAndSortingRepository<Customerorder, Long>,
@@ -250,4 +251,8 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   List<CustomerorderSearchRow> findPaletteCandidates(String word1, String word2, String word3,
       LocalDate today, Pageable page);
 
+
+  /** How many orders carry each tag (#847), for the tags in use; a tag without a row is used by none. */
+  @Query("select new de.hbt.salat.order.domain.TagUsage(t.id, count(x)) from Customerorder x join x.tags t group by t.id")
+  List<TagUsage> findTagUsages();
 }

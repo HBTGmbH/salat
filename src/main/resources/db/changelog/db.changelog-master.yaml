@@ -7356,3 +7356,134 @@ databaseChangeLog:
         - dropUniqueConstraint:
             tableName: achievement
             constraintName: uk_achievement_employee_id_achievement_key_achievement_level
+
+  - changeSet:
+      id: 195
+      author: kr
+      comment: Tags (#847)
+      # Frei vergebene Schlagworte, Stammdaten des Moduls tag (ADR-0042). name ist der Name wie angezeigt,
+      # normalisiert (getrimmt, Leerraum zu einem Leerzeichen); name_key derselbe Name in Kleinbuchstaben.
+      # Der eindeutige Schluessel liegt auf name_key, damit Festpreis und festpreis ein Tag bleiben - die
+      # Spalte ist binaer wie alle Tabellen, die Kleinschreibung macht den Vergleich unabhaengig von Gross-
+      # und Kleinschreibung. color ist eine der zwoelf benannten Tabler-Farben.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tag
+      changes:
+        - createTable:
+            tableName: tag
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_tag
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name_key
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: color
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: tag
+            columnNames: name_key
+            constraintName: uk_tag_name_key
+
+  - changeSet:
+      id: 196
+      author: kr
+      comment: Tags an Auftraegen (#847)
+      # Je getaggtem Typ eine Join-Tabelle mit echten Fremdschluesseln (ADR-0042, statt einer polymorphen
+      # Zuordnung ohne Fremdschluessel). Wird ein Auftrag geloescht, gehen seine Zeilen mit; ein Tag dagegen
+      # bleibt, solange ein Auftrag ihn traegt.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: customerorder_tag
+      changes:
+        - createTable:
+            tableName: customerorder_tag
+            columns:
+              - column:
+                  name: customerorder_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_customerorder_tag
+                    foreignKeyName: fk_customerorder_tag_customerorder
+                    references: customerorder(id)
+                    deleteCascade: true
+              - column:
+                  name: tag_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_customerorder_tag
+                    foreignKeyName: fk_customerorder_tag_tag
+                    references: tag(id)
+
+  - changeSet:
+      id: 197
+      author: kr
+      comment: Tags an Unterauftraegen (#847)
+      # Wie customerorder_tag (Changeset 196). Ein Unterauftrag traegt nur seine eigenen Tags; die seines
+      # Auftrags erbt er nicht.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: suborder_tag
+      changes:
+        - createTable:
+            tableName: suborder_tag
+            columns:
+              - column:
+                  name: suborder_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_suborder_tag
+                    foreignKeyName: fk_suborder_tag_suborder
+                    references: suborder(id)
+                    deleteCascade: true
+              - column:
+                  name: tag_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_suborder_tag
+                    foreignKeyName: fk_suborder_tag_tag
+                    references: tag(id)

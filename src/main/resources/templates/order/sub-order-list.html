@@ -13,7 +13,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col-md-4">
+          <div class="col-md">
             <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" name="fCustomerId" th:attr="data-value=${fCustomerId}">
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
@@ -23,7 +23,7 @@
                       th:selected="${fCustomerId != null and fCustomerId == c.id}"></option>
             </select>
           </div>
-          <div class="col-md-4" id="order-select-wrapper">
+          <div class="col-md" id="order-select-wrapper">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
             <select class="form-select tomselect" name="fCustomerOrderId">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -35,6 +35,7 @@
                       th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
             </select>
           </div>
+          <div class="col-md" th:insert="~{order/tags :: filter('fSuborderTags', ${fSuborderTags})}"></div>
           <div class="col-auto">
             <th:block th:replace="~{fragments/list-limit :: select('fSuborderLimit')}"></th:block>
           </div>
@@ -137,6 +138,7 @@
           <td>
             <div><span th:text="${so.completeOrderSign}">Suborder Sign</span><span th:replace="~{fragments/inactive-badge :: badge(${!so.currentlyValid})}"></span></div>
             <small class="text-muted" th:text="${so.getCompleteOrderDescription(true, false)}">short description</small>
+            <div th:replace="~{order/tags :: badges(${so.tags})}"></div>
           </td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.fromDate}">From</div>
@@ -202,7 +204,7 @@
   </div>
   </div>
   <div th:if="${htmxRequest}">
-    <div id="order-select-wrapper" class="col-md-4" hx-swap-oob="true">
+    <div id="order-select-wrapper" class="col-md" hx-swap-oob="true">
       <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
       <select class="form-select tomselect" name="fCustomerOrderId" onchange="form.requestSubmit()">
         <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>

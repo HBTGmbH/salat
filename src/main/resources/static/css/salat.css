@@ -1841,3 +1841,21 @@ blockquote.achievement-quote {
   margin: 0;
   min-height: auto;
 }
+
+/* ===== Tags (#847) =====
+   Ein Tag erscheint in den Listen als Badge in seiner Farbe (badge bg-<farbe>-lt, Kontrast siehe oben) und in
+   der Auswahl als Punkt vor dem Namen. Der Punkt traegt keine eigene Aussage - der Name steht daneben -, die
+   Farbe kommt ueber bg-<farbe> aus dem Token. */
+.tag-dot {
+  display: inline-block;
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+  margin-right: .35rem;
+  vertical-align: baseline;
+}
+
+.tag-badges .badge {
+  margin-top: .25rem;
+  margin-right: .25rem;
+}

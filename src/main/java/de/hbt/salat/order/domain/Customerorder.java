@@ -22,8 +22,12 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,6 +42,7 @@ import de.hbt.salat.common.domain.DurationMinutesConverter;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.order.domain.comparator.SubOrderComparator;
+import de.hbt.salat.tag.domain.Tag;
 
 /**
  * Bean for table 'customerorder'.
@@ -87,6 +92,21 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @Getter(AccessLevel.NONE)
     private List<Employee> responsibleHbt = new ArrayList<>();
+
+    /**
+     * The tags of the order (#847, → ADR-0042): master data of the module {@code tag}, referenced over the join table
+     * {@code customerorder_tag}. Read only towards {@code tag} — no cascade; a tag outlives the orders that carry it,
+     * and deleting the order removes only its rows of the join table. A list reads them for many orders at once.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "customerorder_tag",
+        joinColumns = @JoinColumn(name = "customerorder_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @BatchSize(size = 100)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Set<Tag> tags = new HashSet<>();
 
     /**
      * contractually responsible employee of HBT
@@ -195,6 +215,16 @@ public class Customerorder extends AuditedEntity implements Serializable {
     /** Read only, as {@link #getSuborders()}; set as a whole with {@link #setResponsibleHbt}. */
     public List<Employee> getResponsibleHbt() {
         return responsibleHbt == null ? null : Collections.unmodifiableList(responsibleHbt);
+    }
+
+    /** The tags by name regardless of case, as a copy that cannot be changed; set with {@link #replaceTags}. */
+    public List<Tag> getTags() {
+        return tags.stream().sorted(Comparator.comparing(Tag::getNameKey)).toList();
+    }
+
+    public void replaceTags(Collection<Tag> newTags) {
+        tags.clear();
+        tags.addAll(newTags);
     }
 
     public String getShortdescription() {

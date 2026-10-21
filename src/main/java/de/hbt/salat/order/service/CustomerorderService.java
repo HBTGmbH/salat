@@ -47,6 +47,8 @@ import de.hbt.salat.order.event.CustomerorderDeleteEvent;
 import de.hbt.salat.order.event.CustomerorderUpdateEvent;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 @Service
 @Transactional
@@ -61,6 +63,8 @@ public class CustomerorderService {
   private final EmployeeDAO employeeDAO;
   private final CustomerorderRepository customerorderRepository;
   private final SpecialOrders specialOrders;
+  private final TagService tagService;
+  private final TagReferences tagReferences;
 
   /**
    * The orders the command palette considers for a query (#1157), hidden and ended ones last. There
@@ -133,6 +137,9 @@ public class CustomerorderService {
     // each person once - the table refuses a second row for the same pair (#1208)
     co.setResponsibleHbt(dto.responsibleHbtIds().stream().distinct().map(employeeDAO::getEmployeeById).toList());
     co.setRespEmpHbtContract(employeeDAO.getEmployeeById(dto.respEmpHbtContractId()));
+    if (dto.tagNames() != null) {
+      co.replaceTags(tagReferences.tags(tagService.resolveTagIds(dto.tagNames())));
+    }
 
     if (dto.debithours() == null
         || dto.debithours().isEmpty()
@@ -448,11 +455,14 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerordersByFilters(showInactive, filter, customerId, showHidden);
   }
 
-  /** The first {@code maxRows} orders of the order list and how many the filters hit (#1380). */
+  /**
+   * The first {@code maxRows} orders of the order list and how many the filters hit (#1380). With tags, an order
+   * carrying any of them (#847).
+   */
   @Transactional(readOnly = true)
   public SearchHits<Customerorder> searchCustomerorders(Boolean showInactive, String filter, Long customerId,
-      Boolean showHidden, int maxRows) {
-    return customerorderDAO.findCustomerorders(showInactive, filter, customerId, showHidden, maxRows);
+      Boolean showHidden, Collection<Long> tagIds, int maxRows) {
+    return customerorderDAO.findCustomerorders(showInactive, filter, customerId, showHidden, tagIds, maxRows);
   }
 
   @EventListener

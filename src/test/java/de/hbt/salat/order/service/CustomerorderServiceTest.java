@@ -16,6 +16,8 @@ import de.hbt.salat.employee.persistence.EmployeeDAO;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * Hidden customer orders must not be offered in a select box, but the one a record already
@@ -37,7 +39,7 @@ public class CustomerorderServiceTest {
         mock(CustomerDAO.class),
         mock(EmployeeDAO.class),
         mock(CustomerorderRepository.class),
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
     when(customerorderDAO.getCustomerorders())
         .thenReturn(List.of(customerorder("visible", false), customerorder("hidden", true)));
   }
