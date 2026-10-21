@@ -236,7 +236,7 @@ class AchievementServiceTest {
   }
 
   @Test
-  void the_profile_shows_the_reached_levels_in_the_order_they_were_reached_and_when_the_next_one_comes() {
+  void the_profile_shows_the_newest_reached_level_first_and_when_the_next_one_comes() {
     asPerson();
     when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(5, "2021-03-01"), recorded(1, "2017-03-01")));
     progress = AchievementProgress.on(LocalDate.parse("2031-03-01"));
@@ -244,10 +244,20 @@ class AchievementServiceTest {
     var profile = service.getProfileOfCurrentPerson(TODAY);
 
     assertThat(profile.reached()).containsExactly(
-        new AchievementProfile.Reached(TEST, 1, BRONZE, LocalDate.parse("2017-03-01")),
-        new AchievementProfile.Reached(TEST, 5, SILVER, LocalDate.parse("2021-03-01")));
+        new AchievementProfile.Reached(TEST, 5, SILVER, LocalDate.parse("2021-03-01")),
+        new AchievementProfile.Reached(TEST, 1, BRONZE, LocalDate.parse("2017-03-01")));
     assertThat(profile.next()).containsExactly(new AchievementProfile.Next(TEST, 10, LocalDate.parse("2031-03-01"), null));
     assertThat(askedFor).isEqualTo(new AchievementPerson(ANNA, ANNA_LOGIN));
+  }
+
+  /* Several levels on one day: the highest first, as everywhere on the page the newest first. */
+  @Test
+  void levels_reached_on_the_same_day_stand_highest_first() {
+    asPerson();
+    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recorded(1, "2017-03-01"), recorded(5, "2017-03-01")));
+
+    assertThat(service.getProfileOfCurrentPerson(TODAY).reached()).extracting(AchievementProfile.Reached::level)
+        .containsExactly(5, 1);
   }
 
   @Test
@@ -334,7 +344,7 @@ class AchievementServiceTest {
 
     var profile = service.getProfileOfCurrentPerson(TODAY);
 
-    assertThat(profile.reached()).extracting(AchievementProfile.Reached::level).containsExactly(10, 1);
+    assertThat(profile.reached()).extracting(AchievementProfile.Reached::level).containsExactly(1, 10);
     assertThat(profile.next()).containsExactly(new AchievementProfile.Next(YEARLY, 5, null, null));
   }
 
@@ -351,8 +361,8 @@ class AchievementServiceTest {
 
     assertThat(service.getProfileOfCurrentPerson(TODAY).reached())
         .extracting(AchievementProfile.Reached::level, AchievementProfile.Reached::achievedOn)
-        .containsExactly(tuple(5, LocalDate.parse("2024-06-01")), tuple(10, LocalDate.parse("2025-11-01")),
-            tuple(1, LocalDate.parse("2026-02-01")), tuple(5, LocalDate.parse("2026-04-01")));
+        .containsExactly(tuple(5, LocalDate.parse("2026-04-01")), tuple(1, LocalDate.parse("2026-02-01")),
+            tuple(10, LocalDate.parse("2025-11-01")), tuple(5, LocalDate.parse("2024-06-01")));
   }
 
   @Test

@@ -81,9 +81,10 @@ Erwogen wurden zwei Wege:
   beim Start, ein Jahreswechsel im laufenden Betrieb fände keine Definition für das neue Jahr; Texte,
   Zitate und Profilseite bekämen jedes Jahr eine neue Gruppe.
 
-Chosen: **A**. Auf der Profilseite stehen die erreichten Stufen wie bisher in der Reihenfolge, in
-der sie erreicht wurden; von einem früheren Jahr nur die höchste, sonst stünden bei langer
-Zugehörigkeit Dutzende Medaillen da. Als Nächstes zeigt ein jährliches Achievement die nächste
+Chosen: **A**. Auf der Profilseite stehen die erreichten Stufen nach Datum absteigend, die neueste
+zuerst; von einem früheren Jahr nur die höchste, sonst stünden bei langer Zugehörigkeit Dutzende
+Medaillen da. Auf dem Schild einer jährlichen Medaille steht das Jahr, die Stufe nennt der Text darunter.
+Als Nächstes zeigt ein jährliches Achievement die nächste
 Stufe des laufenden Jahres; der Rest bis dahin darf eine Dezimalzahl sein
 (`AchievementProgress.remaining` ist eine `Number`), „noch 1,5 Tage“.
 

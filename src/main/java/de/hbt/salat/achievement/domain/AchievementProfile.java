@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * The profile page (#1501): every level the person has reached, in the order it was reached, and
- * for each achievement the next level still to come.
+ * The profile page (#1501): every level the person has reached, the newest first, and for each
+ * achievement the next level still to come.
  */
 public record AchievementProfile(List<Reached> reached, List<Next> next) {
 

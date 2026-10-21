@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import de.hbt.salat.achievement.domain.AchievementProfile;
 import de.hbt.salat.achievement.service.AchievementService;
+import de.hbt.salat.dailyreport.service.TrainingAchievementContributor;
 import de.hbt.salat.dailyreport.service.TrainingYearAchievementContributor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -76,6 +77,18 @@ class AchievementViewHelperTest {
     assertThat(missing("1.0")).isEqualTo("noch 1 Tag");
     assertThat(missing("0.5")).isEqualTo("noch 0,5 Tage");
     assertThat(missing("2.0")).isEqualTo("noch 2 Tage");
+  }
+
+  /* #1512: a yearly medal carries its year on the plate; the days stand in the text below it. */
+  @Test
+  void the_plate_of_a_yearly_achievement_shows_the_year() {
+    assertThat(viewHelper.plate(TrainingYearAchievementContributor.TRAINING_YEAR, 4, LocalDate.of(2025, 11, 3)))
+        .isEqualTo("2025");
+  }
+
+  @Test
+  void the_plate_of_any_other_achievement_shows_the_level() {
+    assertThat(viewHelper.plate(TrainingAchievementContributor.TRAINING, 500, LocalDate.of(2025, 11, 3))).isEqualTo("500");
   }
 
   private String missing(String days) {
