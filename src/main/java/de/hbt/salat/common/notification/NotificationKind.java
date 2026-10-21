@@ -15,6 +15,9 @@ import java.util.regex.Pattern;
  * a reminder somebody sends on purpose by pressing a button must arrive, and its sender is told when
  * it does not.
  *
+ * <p>A kind that only reaches people leads — it is about the bookings of their team — is
+ * {@link #forPeopleLeads() marked} as such; the settings page shows it to everybody else greyed out.
+ *
  * <p>The person's choices are stored by {@link #getKey()}; a choice for a kind that has since been
  * removed is ignored when read.
  */
@@ -27,8 +30,10 @@ public final class NotificationKind {
   private final int position;
   private final boolean emailByDefault;
   private final boolean emailMandatory;
+  private final boolean peopleLeadsOnly;
 
-  private NotificationKind(String key, int position, boolean emailByDefault, boolean emailMandatory) {
+  private NotificationKind(String key, int position, boolean emailByDefault, boolean emailMandatory,
+                           boolean peopleLeadsOnly) {
     if (key == null || !KEY.matcher(key).matches()) {
       throw new IllegalArgumentException("notification kind must be lower case letters, digits and dashes: " + key);
     }
@@ -36,6 +41,7 @@ public final class NotificationKind {
     this.position = position;
     this.emailByDefault = emailByDefault;
     this.emailMandatory = emailMandatory;
+    this.peopleLeadsOnly = peopleLeadsOnly;
   }
 
   /**
@@ -45,12 +51,17 @@ public final class NotificationKind {
    * @param emailByDefault whether it is mailed until the person decides otherwise
    */
   public static NotificationKind of(String key, int position, boolean emailByDefault) {
-    return new NotificationKind(key, position, emailByDefault, false);
+    return new NotificationKind(key, position, emailByDefault, false, false);
   }
 
   /** A kind that is always mailed; only its bell can be switched off. */
   public static NotificationKind mailedAlways(String key, int position) {
-    return new NotificationKind(key, position, true, true);
+    return new NotificationKind(key, position, true, true, false);
+  }
+
+  /** The same kind, reaching people leads only. */
+  public NotificationKind forPeopleLeads() {
+    return new NotificationKind(key, position, emailByDefault, emailMandatory, true);
   }
 
   public String getKey() {
@@ -67,6 +78,10 @@ public final class NotificationKind {
 
   public boolean isEmailMandatory() {
     return emailMandatory;
+  }
+
+  public boolean isPeopleLeadsOnly() {
+    return peopleLeadsOnly;
   }
 
   /** Message key of the row on the settings page. */
