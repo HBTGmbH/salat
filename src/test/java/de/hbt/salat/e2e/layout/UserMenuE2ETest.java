@@ -113,6 +113,32 @@ class UserMenuE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * An expanded section reaching down behind the open menu must not be painted over it (#1509).
+   * The low window makes sure the entries of "Buchungen", open on the dashboard, reach that far.
+   * Visibility alone would not tell: both menus are visible, the question is which one is on top.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_open_menu_lies_above_an_expanded_section(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      page.setViewportSize(1280, 600);
+      userMenuToggle(page).click();
+      Locator menu = menu(page);
+      assertThat(menu).isVisible();
+
+      List<?> covered = (List<?>) menu.evaluate("""
+          menu => Array.from(menu.querySelectorAll('.dropdown-item-text, .dropdown-item'))
+            .filter(item => item.offsetParent !== null)
+            .filter(item => {
+              const box = item.getBoundingClientRect();
+              return !menu.contains(document.elementFromPoint(box.x + 8, box.y + box.height / 2));
+            })
+            .map(item => item.textContent.trim())""");
+      assertEquals(List.of(), covered);
+    });
+  }
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void the_palette_offers_the_functions_of_the_closed_menu(E2EBrowser browser) {
