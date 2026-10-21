@@ -23,6 +23,7 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility.Clause;
+import de.hbt.salat.dailyreport.domain.TagSelection;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
@@ -200,7 +201,7 @@ class TimereportListFilterValuesTest {
     var billable = book(reader, suborder(customerorder(customer, "ALPHA"), "ALPHA/01", true));
     book(reader, suborder(customerorder(otherCustomer, "BETA"), "BETA/01", false));
 
-    var onlyBillable = new TimereportListFilter(List.of(), List.of(), List.of(), List.of(), List.of(), true,
+    var onlyBillable = new TimereportListFilter(List.of(), List.of(), List.of(), List.of(), List.of(), true, TagSelection.NONE,
         DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.BILLABLE, Sort.DATE, false,
         TimereportListFilter.UNLIMITED);
 
@@ -209,12 +210,55 @@ class TimereportListFilterValuesTest {
         .containsExactly(billable.getId());
   }
 
+  /**
+   * Tags narrow the other filters (#847). The service has resolved them into order trees: a booking matches when its
+   * order or its suborder lies in one of them.
+   */
+  @Test
+  void the_tags_find_the_bookings_in_their_trees_together_with_the_other_filters() {
+    var reader = employeecontract("aaa");
+    var colleague = employeecontract("bbb");
+    var taggedOrder = customerorder(customer, "ALPHA");
+    var onTaggedOrder = book(reader, suborder(taggedOrder, "ALPHA/01", true));
+    book(colleague, suborder(taggedOrder, "ALPHA/02", true));
+    var otherOrder = customerorder(otherCustomer, "BETA");
+    var taggedSuborder = suborder(otherOrder, "BETA/01", true);
+    var onTaggedSuborder = book(reader, taggedSuborder);
+    book(reader, suborder(otherOrder, "BETA/02", true));
+    var both = TimereportVisibility.of(List.of(Clause.forEmployees(
+        Set.of(reader.getEmployee().getId(), colleague.getEmployee().getId()))));
+
+    var tags = new TagSelection(List.of(1L), List.of(taggedOrder.getId()), List.of(taggedSuborder.getId()));
+
+    assertThat(timereportListDAO.findRows(withTags(tags, List.of(reader.getEmployee().getId())), both))
+        .extracting(Timereport::getId)
+        .containsExactlyInAnyOrder(onTaggedOrder.getId(), onTaggedSuborder.getId());
+  }
+
+  /** Chosen tags no order and no suborder carries leave nothing — not everything. */
+  @Test
+  void tags_nothing_carries_find_no_booking() {
+    var reader = employeecontract("aaa");
+    book(reader, suborder(customerorder(customer, "ALPHA"), "ALPHA/01", true));
+
+    var tags = new TagSelection(List.of(1L), List.of(), List.of());
+
+    assertThat(timereportListDAO.findRows(withTags(tags, List.of()), ownBookingsOf(reader))).isEmpty();
+    assertThat(timereportListDAO.findTotals(withTags(tags, List.of()), ownBookingsOf(reader)).count()).isZero();
+  }
+
+  private static TimereportListFilter withTags(TagSelection tags, List<Long> employeeIds) {
+    return new TimereportListFilter(employeeIds, List.of(), List.of(), List.of(), List.of(), true, tags,
+        DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false,
+        TimereportListFilter.UNLIMITED);
+  }
+
   private static TimereportVisibility ownBookingsOf(Employeecontract contract) {
     return TimereportVisibility.of(List.of(Clause.forEmployees(Set.of(contract.getEmployee().getId()))));
   }
 
   private static TimereportListFilter wholeMonth() {
-    return new TimereportListFilter(List.of(), List.of(), List.of(), List.of(), List.of(), true,
+    return new TimereportListFilter(List.of(), List.of(), List.of(), List.of(), List.of(), true, TagSelection.NONE,
         DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false,
         TimereportListFilter.UNLIMITED);
   }

@@ -33,6 +33,7 @@ public class DailyReportUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey BOOKINGS_BILLABLE = new UiStateKey("bookings.Billable");
     public static final UiStateKey BOOKINGS_SORT = new UiStateKey("bookings.Sort");
     public static final UiStateKey BOOKINGS_LIMIT = new UiStateKey("bookings.Limit");
+    public static final UiStateKey BOOKINGS_TAGS = new UiStateKey("bookings.Tags");
 
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
@@ -52,7 +53,8 @@ public class DailyReportUiStateKeyContributor implements UiStateKeyContributor {
             Map.entry("fBookingsUntil", BOOKINGS_UNTIL),
             Map.entry("fBookingsBillable", BOOKINGS_BILLABLE),
             Map.entry("fBookingsSort", BOOKINGS_SORT),
-            Map.entry("fBookingsLimit", BOOKINGS_LIMIT)
+            Map.entry("fBookingsLimit", BOOKINGS_LIMIT),
+            Map.entry("fBookingsTags", BOOKINGS_TAGS)
         );
     }
 }

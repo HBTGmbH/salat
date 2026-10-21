@@ -3,9 +3,12 @@
 <body>
 
 <!--/* The tags of an order or suborder as badges in their colour (#847). The lists put them below the description:
-       that column stays visible on a phone, the flags column does not. */-->
-<div th:fragment="badges(tags)" class="tag-badges" th:unless="${#lists.isEmpty(tags)}">
-  <span th:each="t : ${tags}" class="badge" th:classappend="${t.color.badgeClass()}" th:text="${t.name}">Tag</span>
+       that column stays visible on a phone, the flags column does not. A click filters the list by that tag alone:
+       salat.js sets the tag filter of the page, the link is what a new tab or a page without the filter opens. */-->
+<div th:fragment="badges(tags, listUrl, paramName)" class="tag-badges" th:unless="${#lists.isEmpty(tags)}">
+  <a th:each="t : ${tags}" class="badge" th:classappend="${t.color.badgeClass()}" th:text="${t.name}"
+     th:href="@{${listUrl}(__${paramName}__=${t.id})}" th:data-tag-filter-id="${t.id}"
+     th:title="#{main.tag.filter.by(${t.name})}">Tag</a>
 </div>
 
 <!--/* The tag filter of a list (#847): an order or suborder carrying any of the chosen tags. UiState keeps one value

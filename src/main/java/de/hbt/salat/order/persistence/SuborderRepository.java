@@ -17,6 +17,7 @@ import de.hbt.salat.order.domain.SuborderCompleteSign;
 import de.hbt.salat.order.domain.SuborderEdge;
 import de.hbt.salat.order.domain.SuborderTreeRow;
 import de.hbt.salat.order.domain.TagUsage;
+import de.hbt.salat.order.domain.TaggedSuborder;
 
 @Repository
 public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaSpecificationExecutor<Suborder> {
@@ -177,6 +178,14 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
 
   /** The suborder with exactly this complete sign, over the unique key on the column (#1342). */
   Optional<Suborder> findByCompleteOrderSign(String completeOrderSign);
+
+  /**
+   * The suborders carrying any of these tags, with their order (#847): the order is what the descendants are read by.
+   * Callers must not pass an empty collection.
+   */
+  @Query("select distinct new de.hbt.salat.order.domain.TaggedSuborder(s.id, s.customerorder.id) "
+      + "from Suborder s join s.tags t where t.id in :tagIds")
+  List<TaggedSuborder> findTagged(Collection<Long> tagIds);
 
   /** How many suborders carry each tag (#847), for the tags in use; a tag without a row is used by none. */
   @Query("select new de.hbt.salat.order.domain.TagUsage(t.id, count(x)) from Suborder x join x.tags t group by t.id")

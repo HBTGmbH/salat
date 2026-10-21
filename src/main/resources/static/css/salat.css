@@ -1860,6 +1860,17 @@ blockquote.achievement-quote {
   margin-right: .25rem;
 }
 
+/* Ein Badge der Liste ist ein Link, der nach seinem Tag filtert. Er sieht aus wie die Badge; Hover und Fokus
+   unterstreichen die Schrift, statt die Fuellung zu aendern - die traegt den gemessenen Kontrast. */
+.tag-badges a.badge {
+  text-decoration: none;
+}
+
+.tag-badges a.badge:hover,
+.tag-badges a.badge:focus-visible {
+  text-decoration: underline;
+}
+
 /* Ein Tag-Chip in der Auswahl ist die Badge der Liste (#847): dieselbe Klasse badge bg-<farbe>-lt, also
    dieselbe gemessene Fuellung und Schrift (siehe Badges oben). Nur die Masse bleiben die des Chips, sonst
    waere das Feld mit Tags niedriger als jedes andere. */

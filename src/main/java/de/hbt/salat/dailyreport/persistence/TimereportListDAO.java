@@ -245,6 +245,18 @@ public class TimereportListDAO {
       references.select(builder.literal(1)).where(builder.upper(reference).in(filter.ticketKeys()));
       predicates.add(builder.exists(references));
     }
+    // Tags narrow the rest of the filter (#847): a booking whose order carries one, or whose suborder lies below a
+    // suborder carrying one. Chosen tags nothing carries leave nothing.
+    if (filter.tags().active()) {
+      var tagged = new ArrayList<Predicate>();
+      if (!filter.tags().customerOrderIds().isEmpty()) {
+        tagged.add(dimensions.customerOrderId().in(filter.tags().customerOrderIds()));
+      }
+      if (!filter.tags().suborderIds().isEmpty()) {
+        tagged.add(dimensions.suborderId().in(filter.tags().suborderIds()));
+      }
+      predicates.add(tagged.isEmpty() ? builder.disjunction() : builder.or(tagged.toArray(Predicate[]::new)));
+    }
     switch (filter.billable()) {
       case BILLABLE -> predicates.add(builder.equal(dimensions.invoice(), YESNO_YES));
       case NOT_BILLABLE -> predicates.add(builder.notEqual(dimensions.invoice(), YESNO_YES));

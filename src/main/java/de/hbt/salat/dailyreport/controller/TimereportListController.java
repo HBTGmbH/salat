@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.web.ListLimits;
+import de.hbt.salat.dailyreport.domain.TagSelection;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
 import de.hbt.salat.dailyreport.service.TimereportListExcelService;
@@ -66,6 +67,7 @@ public class TimereportListController {
       @RequestParam(required = false) String fBookingsBillable,
       @RequestParam(required = false) String fBookingsSort,
       @RequestParam(required = false) String fBookingsLimit,
+      @RequestParam(required = false) String fBookingsTags,
       HttpServletRequest request,
       Model model) {
 
@@ -74,6 +76,7 @@ public class TimereportListController {
     var orderIds = longs(fBookingsOrders);
     var suborderIds = longs(fBookingsSuborders);
     var ticketKeys = strings(fBookingsTickets);
+    var tagIds = longs(fBookingsTags);
     var period = period(fBookingsFrom, fBookingsUntil);
     var billable = billable(fBookingsBillable);
     // The export is not limited.
@@ -82,7 +85,8 @@ public class TimereportListController {
     var ticketChildren = ticketDescendants(fBookingsTicketChildren);
     var order = sortOrder(fBookingsSort);
     var filter = new TimereportListFilter(employeeIds, customerIds, orderIds, suborderIds, ticketKeys, ticketChildren,
-        period.from(), period.until(), billable, order.sort(), order.descending(), limit.maxRows());
+        TagSelection.of(tagIds), period.from(), period.until(), billable, order.sort(), order.descending(),
+        limit.maxRows());
 
     // Ein Filterwechsel tauscht nur den Ergebnisbereich. Die Seite selbst bleibt stehen — mit ihr das
     // offene Modal, das ein Seitenwechsel mitgerissen haette, und die Auswahllisten, die das Fragment
@@ -98,6 +102,7 @@ public class TimereportListController {
         TimereportListPrintHeader.from(filterSummary, billable, period.from(), period.until(), messages));
     if (!fragment) {
       model.addAttribute("options", timereportListService.getFilterOptions(orderIds, suborderIds, ticketKeys));
+      model.addAttribute("tagChoices", timereportListService.getTagOptions());
     }
 
     model.addAttribute("selectedEmployeeIds", employeeIds);
@@ -105,6 +110,7 @@ public class TimereportListController {
     model.addAttribute("selectedOrderIds", orderIds);
     model.addAttribute("selectedSuborderIds", suborderIds);
     model.addAttribute("selectedTicketKeys", ticketKeys);
+    model.addAttribute("selectedTagIds", tagIds);
     model.addAttribute("ticketChildren", ticketChildren);
     model.addAttribute("yearMonth", period.yearMonth());
     model.addAttribute("wholeMonth", period.wholeMonth());
@@ -189,13 +195,15 @@ public class TimereportListController {
       @RequestParam(required = false) String fBookingsUntil,
       @RequestParam(required = false) String fBookingsBillable,
       @RequestParam(required = false) String fBookingsSort,
+      @RequestParam(required = false) String fBookingsTags,
       HttpServletResponse response) throws IOException {
 
     var period = period(fBookingsFrom, fBookingsUntil);
     var order = sortOrder(fBookingsSort);
     var filter = new TimereportListFilter(longs(fBookingsEmployees), longs(fBookingsCustomers),
         longs(fBookingsOrders), longs(fBookingsSuborders), strings(fBookingsTickets),
-        ticketDescendants(fBookingsTicketChildren), period.from(), period.until(), billable(fBookingsBillable),
+        ticketDescendants(fBookingsTicketChildren), TagSelection.of(longs(fBookingsTags)), period.from(),
+        period.until(), billable(fBookingsBillable),
         order.sort(), order.descending(), TimereportListFilter.UNLIMITED);
 
     var bytes = excelService.export(timereportListService.searchAll(filter));

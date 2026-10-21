@@ -179,13 +179,26 @@
         </div>
       </div>
 
+      <!--/* Tags (#847): eine Buchung trifft, wenn ihr Auftrag oder ein Unterauftrag ueber ihr einen der Tags
+             traegt; zusammen mit den uebrigen Filtern. */-->
+      <div class="col-lg-3">
+        <label class="form-label" for="tag-select" th:text="#{main.tag.tags.text}">Tags</label>
+        <select class="form-select tomselect tomselect-multi" id="tag-select" multiple autocomplete="off"
+                th:attr="placeholder=#{main.timereportlist.filter.tags.all}">
+          <option th:each="t : ${tagChoices}" th:value="${t.id}" th:text="${t.name}"
+                  th:data-color="${t.color.cssName()}"
+                  th:with="subtext=${@tagViewHelper.usage(t)}" th:attr="data-subtext=${subtext}"
+                  th:selected="${selectedTagIds.contains(t.id)}"></option>
+        </select>
+      </div>
+
       <div class="col-auto">
         <th:block th:replace="~{fragments/list-limit :: select(null)}"></th:block>
       </div>
 
       <div class="col-auto ms-auto">
         <div class="btn-list">
-          <a class="btn btn-link" th:href="@{/dailyreport/list(fBookingsEmployees='',fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsBillable='ALL')}"
+          <a class="btn btn-link" th:href="@{/dailyreport/list(fBookingsEmployees='',fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsTags='',fBookingsBillable='ALL')}"
              th:text="#{main.general.button.reset.text}">Zurücksetzen</a>
           <button type="submit" class="btn btn-primary">
             <i class="ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
@@ -208,6 +221,8 @@
     <input type="hidden" name="fBookingsTickets" id="f-tickets"
            th:value="${#strings.listJoin(selectedTicketKeys, ',')}"/>
     <input type="hidden" name="fBookingsTicketChildren" id="f-ticket-children" th:value="${ticketChildren}"/>
+    <input type="hidden" name="fBookingsTags" id="f-tags"
+           th:value="${#strings.listJoin(selectedTagIds, ',')}"/>
     <input type="hidden" name="fBookingsFrom" id="f-from" th:value="${from}"/>
     <input type="hidden" name="fBookingsUntil" id="f-until" th:value="${until}"/>
     <input type="hidden" name="fBookingsBillable" id="f-billable" th:value="${billable}"/>
@@ -265,6 +280,13 @@
         <div th:text="'(' + (${filterSummary.ticketDescendants}
                               ? #{main.timereportlist.tickets.dialog.children.included}
                               : #{main.timereportlist.tickets.dialog.children.excluded}) + ')'">(inklusive untergeordneter)</div>
+      </td>
+    </tr>
+    <tr>
+      <th th:text="#{main.tag.tags.text}">Tags</th>
+      <td th:if="${filterSummary.tags.isEmpty()}" th:text="#{main.timereportlist.print.all}">alle</td>
+      <td th:unless="${filterSummary.tags.isEmpty()}">
+        <div th:each="tag : ${filterSummary.tags}" th:text="${tag}">Festpreis</div>
       </td>
     </tr>
     <tr>
@@ -642,6 +664,7 @@
     hidden('f-suborders').value = [...state.suborders].map(id => id.slice(2)).join(',');
     hidden('f-tickets').value = [...state.tickets].join(',');
     hidden('f-ticket-children').value = document.getElementById('ticket-children').checked;
+    hidden('f-tags').value = selectedValues('tag-select').join(',');
     hidden('f-from').value = document.getElementById('date-from').value;
     hidden('f-until').value = document.getElementById('date-until').value;
     hidden('f-billable').value = document.querySelector('input[name="billable-choice"]:checked').value;
@@ -659,7 +682,7 @@
 
   form.addEventListener('submit', fillHiddenFields);
 
-  ['employee-select', 'customer-select', 'limit-select', 'date-from', 'date-until']
+  ['employee-select', 'customer-select', 'tag-select', 'limit-select', 'date-from', 'date-until']
     .forEach(id => document.getElementById(id).addEventListener('change', submitFilter));
   document.querySelectorAll('input[name="billable-choice"]')
     .forEach(input => input.addEventListener('change', submitFilter));
@@ -712,6 +735,7 @@
       fBookingsSuborders: [...state.suborders].map(id => id.slice(2)).join(','),
       fBookingsTickets: [...state.tickets].join(','),
       fBookingsTicketChildren: document.getElementById('ticket-children').checked,
+      fBookingsTags: selectedValues('tag-select').join(','),
       fBookingsFrom: document.getElementById('date-from').value,
       fBookingsUntil: document.getElementById('date-until').value,
       fBookingsBillable: document.querySelector('input[name="billable-choice"]:checked').value,

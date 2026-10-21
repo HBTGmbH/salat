@@ -252,6 +252,10 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       LocalDate today, Pageable page);
 
 
+  /** The orders carrying any of these tags (#847). Callers must not pass an empty collection. */
+  @Query("select distinct c.id from Customerorder c join c.tags t where t.id in :tagIds")
+  List<Long> findIdsByTagIds(Collection<Long> tagIds);
+
   /** How many orders carry each tag (#847), for the tags in use; a tag without a row is used by none. */
   @Query("select new de.hbt.salat.order.domain.TagUsage(t.id, count(x)) from Customerorder x join x.tags t group by t.id")
   List<TagUsage> findTagUsages();
