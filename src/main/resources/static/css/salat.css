@@ -927,10 +927,15 @@ body {
 /* Das Benutzermenue haengt am Listeneintrag des Ausloesers. In der mobilen Kopfzeile ist der nur so
    breit wie das Bild, und das absolut gesetzte Menue schrumpft dann auf seine min-width - die
    Rollen-Badge ragte ueber den Rand. max-content richtet die Breite nach dem Inhalt, max-width
-   haelt einen langen Namen im Bildschirm. */
+   haelt einen langen Namen im Bildschirm.
+   Tabler gibt jedem Menue der Navbar z-index 1030, auch dem aufgeklappten Bereich der Navigation:
+   der ist ein Flex-Element, also greift der Wert ohne Positionierung. Bei Gleichstand malt das
+   spaetere Element oben, und der Benutzerblock steht im Markup vor der Navigation (base.html) - ein
+   Bereich, der bis hinter das Menue reicht, uebermalte es (#1509). */
 .navbar-footer .dropdown-menu {
   width: max-content;
   max-width: calc(100vw - 1rem);
+  z-index: 1031;
 }
 
 /* Der Aenderungsmarker am Bild des Nutzermenues (#1231). Eigene Klasse statt .badge: Tabler setzt
