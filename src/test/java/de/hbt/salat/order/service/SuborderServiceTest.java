@@ -22,6 +22,8 @@ import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderReadModel;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * Budget, pricing and cost records reference their suborder by complete order sign (#889). These
@@ -47,7 +49,7 @@ public class SuborderServiceTest {
         suborderDAO,
         mock(SuborderRepository.class),
         customerorderService,
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
   }
 
   /**

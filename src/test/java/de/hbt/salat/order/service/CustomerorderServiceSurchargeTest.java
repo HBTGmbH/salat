@@ -31,6 +31,8 @@ import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * The time surcharge rates of an order as the form sends them (#1469): an empty percent means no
@@ -55,7 +57,7 @@ class CustomerorderServiceSurchargeTest {
     customerorderService = new CustomerorderService(mock(ApplicationEventPublisher.class), mock(CommandPublisher.class),
         customerorderDAO, mock(CustomerDAO.class), mock(EmployeeDAO.class), mock(CustomerorderRepository.class,
             invocation -> invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null),
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
 
     order = new Customerorder();
     setField(order, "id", ORDER_ID);
@@ -100,6 +102,6 @@ class CustomerorderServiceSurchargeTest {
 
   private static CustomerorderDTO dto(SurchargeInput surcharges) {
     return new CustomerorderDTO(1L, FROM, null, "4711", "Auftrag", "Auftrag", null, null, null, List.of(1L), 1L,
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, surcharges);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, surcharges, null);
   }
 }

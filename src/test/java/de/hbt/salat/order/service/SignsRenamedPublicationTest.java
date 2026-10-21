@@ -33,6 +33,8 @@ import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.CustomerorderRepository;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * Saving a renamed order, or a renamed or moved suborder, announces the new complete sign (#1206);
@@ -123,7 +125,7 @@ class SignsRenamedPublicationTest {
     var service = new CustomerorderService(eventPublisher, mock(CommandPublisher.class), customerorderDAO,
         mock(CustomerDAO.class), mock(EmployeeDAO.class), mock(CustomerorderRepository.class, invocation ->
             invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null),
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
 
     service.update(7L, customerorderDto("NEW"));
 
@@ -138,7 +140,7 @@ class SignsRenamedPublicationTest {
     var service = new CustomerorderService(eventPublisher, mock(CommandPublisher.class), customerorderDAO,
         mock(CustomerDAO.class), mock(EmployeeDAO.class), mock(CustomerorderRepository.class, invocation ->
             invocation.getMethod().getName().equals("save") ? invocation.getArgument(0) : null),
-        mock(SpecialOrders.class));
+        mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
 
     service.update(7L, customerorderDto("CO"));
 
@@ -147,7 +149,7 @@ class SignsRenamedPublicationTest {
 
   private SuborderService suborderService() {
     return new SuborderService(eventPublisher, mock(CommandPublisher.class), suborderDAO,
-        mock(SuborderRepository.class), customerorderService, mock(SpecialOrders.class));
+        mock(SuborderRepository.class), customerorderService, mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
   }
 
   private List<SignsRenamedEvent> renames() {
@@ -159,12 +161,12 @@ class SignsRenamedPublicationTest {
 
   private static SuborderDTO suborderDto(String sign, Long parentId) {
     return new SuborderDTO(7L, sign, "Leistung", "Leistung", null, 'y', false, false, false,
-        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null, SurchargeInput.NONE);
+        OrderType.STANDARD, "2026-01-01", "", null, null, false, parentId, null, null, SurchargeInput.NONE, null);
   }
 
   private static CustomerorderDTO customerorderDto(String sign) {
     return new CustomerorderDTO(1L, FROM, null, sign, "Auftrag", "Auftrag", null, null, null, List.of(1L), 1L,
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.LIMITED, 1, SurchargeInput.NONE);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.LIMITED, 1, SurchargeInput.NONE, null);
   }
 
   private static Customerorder customerorder(long id, String sign) {

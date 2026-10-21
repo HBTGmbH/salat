@@ -1,5 +1,7 @@
 package de.hbt.salat.order.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import de.hbt.salat.order.domain.OrderType;
@@ -32,5 +34,7 @@ public class SuborderForm {
   private Integer ticketReferenceLimit;
   /** time surcharge rates (#1469) */
   private SurchargeFields surchargeRates = new SurchargeFields();
+  /** the names of the tags (#847); a name typed into the field arrives the same way as a chosen one */
+  private List<String> tagNames = new ArrayList<>();
 
 }

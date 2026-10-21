@@ -29,6 +29,8 @@ import de.hbt.salat.order.domain.SurchargeInput;
 import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * The time surcharge rates of a suborder as the form sends them (#1469): an empty percent inherits,
@@ -55,7 +57,7 @@ class SuborderServiceSurchargeTest {
     var suborderDAO = mock(SuborderDAO.class);
     var customerorderService = mock(CustomerorderService.class);
     suborderService = new SuborderService(mock(ApplicationEventPublisher.class), mock(CommandPublisher.class),
-        suborderDAO, mock(SuborderRepository.class), customerorderService, mock(SpecialOrders.class));
+        suborderDAO, mock(SuborderRepository.class), customerorderService, mock(SpecialOrders.class), mock(TagService.class), mock(TagReferences.class));
 
     order = new Customerorder();
     setField(order, "id", ORDER_ID);
@@ -124,7 +126,7 @@ class SuborderServiceSurchargeTest {
 
   private static SuborderDTO dto(SurchargeInput surcharges) {
     return new SuborderDTO(ORDER_ID, "02", "Leistung", "Leistung", null, 'y', false, false, false,
-        OrderType.STANDARD, "2026-01-01", "", null, null, false, null, null, null, surcharges);
+        OrderType.STANDARD, "2026-01-01", "", null, null, false, null, null, null, surcharges, null);
   }
 
   private Suborder suborder(long id, String sign, Suborder parentSuborder) {

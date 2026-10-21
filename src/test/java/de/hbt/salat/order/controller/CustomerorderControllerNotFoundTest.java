@@ -38,6 +38,7 @@ import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SpecialOrders;
 
 /**
@@ -66,7 +67,7 @@ class CustomerorderControllerNotFoundTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new CustomerorderController(customerorderService, mock(CustomerService.class),
         mock(EmployeeService.class), messages, new ErrorCodeViewHelper(messages), mock(AuthorizedEmployee.class),
-        mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class), mock(SpecialOrders.class), new ListLimits(new SalatProperties()));
+        mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class), mock(SpecialOrders.class), new ListLimits(new SalatProperties()), mock(OrderTagService.class));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     when(customerorderService.getCustomerorderById(UNKNOWN_ID)).thenReturn(null);

@@ -16,6 +16,7 @@ import de.hbt.salat.order.domain.SuborderSearchRow;
 import de.hbt.salat.order.domain.SuborderCompleteSign;
 import de.hbt.salat.order.domain.SuborderEdge;
 import de.hbt.salat.order.domain.SuborderTreeRow;
+import de.hbt.salat.order.domain.TagUsage;
 
 @Repository
 public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaSpecificationExecutor<Suborder> {
@@ -176,4 +177,8 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
 
   /** The suborder with exactly this complete sign, over the unique key on the column (#1342). */
   Optional<Suborder> findByCompleteOrderSign(String completeOrderSign);
+
+  /** How many suborders carry each tag (#847), for the tags in use; a tag without a row is used by none. */
+  @Query("select new de.hbt.salat.order.domain.TagUsage(t.id, count(x)) from Suborder x join x.tags t group by t.id")
+  List<TagUsage> findTagUsages();
 }

@@ -14,7 +14,9 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -23,13 +25,18 @@ import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
@@ -38,6 +45,7 @@ import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.domain.DurationMinutesConverter;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.tag.domain.Tag;
 
 @Getter
 @Setter
@@ -68,6 +76,21 @@ public class Suborder extends AuditedEntity implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @Getter(AccessLevel.NONE)
     private List<Suborder> suborders;
+
+    /**
+     * The tags of the suborder (#847, → ADR-0042): master data of the module {@code tag}, referenced over the join table
+     * {@code suborder_tag}. Read only towards {@code tag} — no cascade; a tag outlives the suborders that carry it,
+     * and deleting the suborder removes only its rows of the join table. A list reads them for many suborders at once.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "suborder_tag",
+        joinColumns = @JoinColumn(name = "suborder_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @BatchSize(size = 100)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Set<Tag> tags = new HashSet<>();
 
     /**
      * parentorder
@@ -175,6 +198,16 @@ public class Suborder extends AuditedEntity implements Serializable {
     /** Read only, as {@link #getEmployeeorders()}; a child is added with {@link #addSuborder}. */
     public List<Suborder> getSuborders() {
         return suborders == null ? null : Collections.unmodifiableList(suborders);
+    }
+
+    /** The tags by name regardless of case, as a copy that cannot be changed; set with {@link #replaceTags}. */
+    public List<Tag> getTags() {
+        return tags.stream().sorted(Comparator.comparing(Tag::getNameKey)).toList();
+    }
+
+    public void replaceTags(Collection<Tag> newTags) {
+        tags.clear();
+        tags.addAll(newTags);
     }
 
     public void addSuborder(Suborder child) {

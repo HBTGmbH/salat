@@ -314,6 +314,9 @@ public enum ErrorCode {
   SC_SECRET_UNREADABLE("SC-0002", "the stored secret cannot be read and has to be entered again"),
   SC_SECRET_NOT_FOUND("SC-0003", "the secret was not found"),
 
+  TG_NAME_TOO_LONG("TG-0001", "a tag name is longer than allowed"),
+  TG_NAME_UNSUPPORTED_CHARACTER("TG-0002", "a tag name contains a character that cannot be stored"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   XX_CONCURRENT_MODIFICATION("XX-0003", "the data was changed concurrently"),

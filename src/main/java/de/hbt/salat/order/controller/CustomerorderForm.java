@@ -26,6 +26,8 @@ public class CustomerorderForm {
   private Boolean hide;
   private List<Long> responsibleHbtIds = new ArrayList<>();
   private List<Long> storedResponsibleHbtIds = new ArrayList<>();
+  /** the names of the tags (#847); a name typed into the field arrives the same way as a chosen one */
+  private List<String> tagNames = new ArrayList<>();
   private Long respContrEmployeeId;
   /** Employee ID as stored in the DB when the edit form was opened; never mutated by the form lifecycle. */
   private Long storedRespContrEmployeeId;

@@ -45,6 +45,7 @@ import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -80,7 +81,7 @@ class SuborderControllerNotFoundTest {
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new SuborderController(suborderService, customerorderService, customerService, messages,
         new ErrorCodeViewHelper(messages), mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class),
-        mock(SpecialOrders.class), new ListLimits(new SalatProperties()));
+        mock(SpecialOrders.class), new ListLimits(new SalatProperties()), mock(OrderTagService.class));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     var customer = new Customer();

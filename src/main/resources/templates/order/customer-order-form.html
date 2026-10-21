@@ -122,6 +122,18 @@
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(
         field='hide', label=#{main.general.hide}
       )}"></div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <!--/* Tags (#847): existing ones are offered with their use, a new name is created on saving. */-->
+          <salat:select th:field="*{tagNames}" th:label="#{main.tag.tags.text}" multiple allowCreate="true"
+                        th:createLabel="#{main.tag.create.text}">
+            <option th:each="t : ${tagChoices}" th:value="${t.name}" th:text="${t.name}"
+                    th:data-color="${t.color != null} ? ${t.color.cssName()} : null"
+                    th:with="subtext=${@tagViewHelper.usage(t)}" th:attr="data-subtext=${subtext}"></option>
+          </salat:select>
+        </div>
+      </div>
     </div>
 
     <div class="card-footer">

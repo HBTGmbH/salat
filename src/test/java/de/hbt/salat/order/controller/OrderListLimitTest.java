@@ -48,6 +48,7 @@ import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -77,10 +78,10 @@ class OrderListLimitTest {
     var listLimits = new ListLimits(new SalatProperties());
     var customerorders = new CustomerorderController(customerorderService, customerService, mock(EmployeeService.class),
         messages, new ErrorCodeViewHelper(messages), mock(AuthorizedEmployee.class), mock(FilterHintViewHelper.class),
-        mock(NoticeViewHelper.class), mock(SpecialOrders.class), listLimits);
+        mock(NoticeViewHelper.class), mock(SpecialOrders.class), listLimits, mock(OrderTagService.class));
     var suborders = new SuborderController(suborderService, customerorderService, customerService, messages,
         new ErrorCodeViewHelper(messages), mock(FilterHintViewHelper.class), mock(NoticeViewHelper.class),
-        mock(SpecialOrders.class), listLimits);
+        mock(SpecialOrders.class), listLimits, mock(OrderTagService.class));
     var employeeorders = new EmployeeorderController(employeeorderService, customerService, employeecontractService,
         customerorderService, suborderService, messages, new ErrorCodeViewHelper(messages),
         mock(FilterHintViewHelper.class), listLimits);
@@ -92,8 +93,8 @@ class OrderListLimitTest {
         .build();
 
     when(loginSignProvider.getEffectiveLoginSign()).thenReturn(LOGIN);
-    when(customerorderService.searchCustomerorders(any(), any(), any(), any(), anyInt())).thenReturn(SearchHits.none());
-    when(suborderService.searchSuborders(any(), any(), any(), any(), any(), anyInt())).thenReturn(SearchHits.none());
+    when(customerorderService.searchCustomerorders(any(), any(), any(), any(), any(), anyInt())).thenReturn(SearchHits.none());
+    when(suborderService.searchSuborders(any(), any(), any(), any(), any(), any(), anyInt())).thenReturn(SearchHits.none());
     when(employeeorderService.searchEmployeeorderListItems(any(), any(), any(), any(), any(), any(), anyBoolean(),
         any(), anyInt())).thenReturn(SearchHits.none());
   }
@@ -102,14 +103,14 @@ class OrderListLimitTest {
   void the_order_list_searches_without_a_filter_up_to_the_default_limit() throws Exception {
     perform(get("/orders/customerorders"));
 
-    verify(customerorderService).searchCustomerorders(isNull(), isNull(), isNull(), isNull(), eq(500));
+    verify(customerorderService).searchCustomerorders(isNull(), isNull(), isNull(), isNull(), eq(List.of()), eq(500));
   }
 
   @Test
   void the_suborder_list_searches_without_a_filter_up_to_the_default_limit() throws Exception {
     perform(get("/orders/suborders"));
 
-    verify(suborderService).searchSuborders(isNull(), isNull(), isNull(), isNull(), isNull(), eq(500));
+    verify(suborderService).searchSuborders(isNull(), isNull(), isNull(), isNull(), isNull(), eq(List.of()), eq(500));
   }
 
   @Test
@@ -126,7 +127,7 @@ class OrderListLimitTest {
         .andExpect(model().attribute("limit", 50))
         .andExpect(model().attribute("limits", ListLimits.STEPS));
 
-    verify(suborderService).searchSuborders(isNull(), isNull(), isNull(), isNull(), isNull(), eq(50));
+    verify(suborderService).searchSuborders(isNull(), isNull(), isNull(), isNull(), isNull(), eq(List.of()), eq(50));
   }
 
   @Test
@@ -134,7 +135,7 @@ class OrderListLimitTest {
     perform(get("/orders/customerorders").param("fCustomerOrderLimit", "0"))
         .andExpect(model().attribute("limit", 0));
 
-    verify(customerorderService).searchCustomerorders(isNull(), isNull(), isNull(), isNull(), eq(10_000));
+    verify(customerorderService).searchCustomerorders(isNull(), isNull(), isNull(), isNull(), eq(List.of()), eq(10_000));
   }
 
   /** Each list remembers its own limit (ADR-0022): a page call without parameters uses what was chosen before. */
@@ -146,8 +147,8 @@ class OrderListLimitTest {
     perform(get("/orders/suborders").cookie(remembered));
     perform(get("/orders/employeeorders").cookie(remembered));
 
-    verify(customerorderService).searchCustomerorders(isNull(), isNull(), isNull(), isNull(), eq(50));
-    verify(suborderService).searchSuborders(isNull(), isNull(), isNull(), isNull(), isNull(), eq(100));
+    verify(customerorderService).searchCustomerorders(isNull(), isNull(), isNull(), isNull(), eq(List.of()), eq(50));
+    verify(suborderService).searchSuborders(isNull(), isNull(), isNull(), isNull(), isNull(), eq(List.of()), eq(100));
     verify(employeeorderService).searchEmployeeorderListItems(isNull(), isNull(), isNull(), isNull(), isNull(),
         isNull(), eq(false), isNull(), eq(1000));
   }

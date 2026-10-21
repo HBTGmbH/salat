@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* The tags of an order or suborder as badges in their colour (#847). The lists put them below the description:
+       that column stays visible on a phone, the flags column does not. */-->
+<div th:fragment="badges(tags)" class="tag-badges" th:unless="${#lists.isEmpty(tags)}">
+  <span th:each="t : ${tags}" class="badge" th:classappend="${t.color.badgeClass()}" th:text="${t.name}">Tag</span>
+</div>
+
+<!--/* The tag filter of a list (#847): an order or suborder carrying any of the chosen tags. UiState keeps one value
+       per parameter, so the chosen ids travel comma-separated in the hidden field, which salat.js fills before the
+       list reloads; the select itself has no name. */-->
+<div th:fragment="filter(paramName, paramValue)">
+  <label class="form-label" for="tag-filter" th:text="#{main.tag.tags.text}">Tags</label>
+  <select class="form-select tomselect tomselect-multi" id="tag-filter" multiple autocomplete="off" data-tag-filter
+          th:placeholder="#{main.tag.filter.all}">
+    <option th:each="t : ${tagChoices}" th:value="${t.id}" th:text="${t.name}"
+            th:data-color="${t.color.cssName()}"
+            th:with="subtext=${@tagViewHelper.usage(t)}" th:attr="data-subtext=${subtext}"
+            th:selected="${selectedTagIds.contains(t.id)}"></option>
+  </select>
+  <input type="hidden" th:name="${paramName}" th:value="${paramValue}" data-tag-filter-value/>
+</div>
+
+</body>
+</html>

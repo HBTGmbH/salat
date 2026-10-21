@@ -94,10 +94,11 @@ public class ArchitectureTest {
       .resideInAPackage("de.hbt.salat.employee..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("employee must only import common, auth, settings, notification", "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.settings.", "de.hbt.salat.notification.", "de.hbt.salat.employee."));
 
+  /** order references the tags of its orders and suborders (#847, ADR-0042); tag knows nothing of order. */
   @ArchTest
-  static final ArchRule orderShouldAccessCommonAuthCustomerEmployeeOnly = priority(HIGH).noClasses().that()
+  static final ArchRule orderShouldAccessCommonAuthCustomerEmployeeTagOnly = priority(HIGH).noClasses().that()
       .resideInAPackage("de.hbt.salat.order..")
-      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("order must only import common,auth,customer,employee", "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.customer.", "de.hbt.salat.order."));
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("order must only import common,auth,customer,employee,tag", "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.customer.", "de.hbt.salat.tag.", "de.hbt.salat.order."));
 
   @ArchTest
   static final ArchRule settingsShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
@@ -281,6 +282,18 @@ public class ArchitectureTest {
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
           "secret must only import common, auth",
           "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.secret."));
+
+  /**
+   * tag holds the tags themselves (#847, ADR-0042): names, colours, turning names into tags. It knows none of the
+   * objects that carry tags: the owner keeps a join table with foreign keys on its side and imports tag, and a
+   * further taggable kind brings a join table, not a new edge out of tag.
+   */
+  @ArchTest
+  static final ArchRule tagShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("de.hbt.salat.tag..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "tag must only import common, auth",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.tag."));
 
   /**
    * beta switches the opt-in betas, counts their use and asks about them (#1447, ADR-0039). The

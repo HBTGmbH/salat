@@ -52,6 +52,8 @@ import de.hbt.salat.order.persistence.EmployeeorderRepository;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
 import de.hbt.salat.order.persistence.EmployeecontractReferences;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
 /**
@@ -67,7 +69,8 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
     EmployeecontractService.class, EmployeecontractDAO.class, EmployeecontractAuthorization.class,
     EmployeeorderService.class, EmployeecontractReferences.class, EmployeeorderDAO.class, EmployeeorderAuthorization.class,
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class,
-    CustomerDAO.class, CommandPublisher.class, SpecialOrders.class})
+    CustomerDAO.class, CommandPublisher.class, SpecialOrders.class,
+    TagService.class, TagReferences.class})
 public class VacationOrderFollowsContractValidityTest {
 
   private static final int YEAR = Year.now().getValue();

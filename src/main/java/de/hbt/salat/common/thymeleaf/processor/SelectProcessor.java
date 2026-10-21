@@ -26,6 +26,10 @@ public class SelectProcessor extends AbstractElementModelProcessor {
         // an option with the empty value that means something ("Ohne Gruppe") must stay selectable;
         // TomSelect drops it by default (#1414)
         var allowEmptyOption = Boolean.parseBoolean(openTag.getAttributeValue("allowEmptyOption"));
+        // a field whose values are not all known in advance: what somebody types becomes a new entry (#847), offered
+        // as "createLabel: <typed>"
+        var allowCreate = Boolean.parseBoolean(openTag.getAttributeValue("allowCreate"));
+        var createLabel = openTag.getAttributeValue("th:createLabel");
         var fieldName = extractFieldName(field);
 
         var mf = context.getModelFactory();
@@ -49,6 +53,12 @@ public class SelectProcessor extends AbstractElementModelProcessor {
         }
         if (allowEmptyOption) {
             selectAttrs.put("data-allow-empty-option", "true");
+        }
+        if (allowCreate) {
+            selectAttrs.put("data-allow-create", "true");
+            if (createLabel != null) {
+                selectAttrs.put("th:data-create-label", createLabel);
+            }
         }
         newModel.add(mf.createOpenElementTag("select", selectAttrs, AttributeValueQuotes.DOUBLE, false));
 

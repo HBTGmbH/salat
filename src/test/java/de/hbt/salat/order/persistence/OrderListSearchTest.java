@@ -75,7 +75,7 @@ class OrderListSearchTest {
     order("B-2");
     order("a-1");
 
-    var hits = customerorderDAO.findCustomerorders(null, null, null, null, 2);
+    var hits = customerorderDAO.findCustomerorders(null, null, null, null, List.of(), 2);
 
     assertThat(hits.rows()).extracting(Customerorder::getSign).containsExactly("a-1", "B-2");
     assertThat(hits.total()).isEqualTo(3);
@@ -89,7 +89,7 @@ class OrderListSearchTest {
     order("ORD-2");
     entityManager.flush();
 
-    assertThat(signs(customerorderDAO.findCustomerorders(null, "erika mus", null, null, 500)))
+    assertThat(signs(customerorderDAO.findCustomerorders(null, "erika mus", null, null, List.of(), 500)))
         .containsExactly("ORD-1");
   }
 
@@ -100,7 +100,7 @@ class OrderListSearchTest {
         contract("def", "Max", "Muster").getEmployee()));
     entityManager.flush();
 
-    var hits = customerorderDAO.findCustomerorders(null, "muster", null, null, 500);
+    var hits = customerorderDAO.findCustomerorders(null, "muster", null, null, List.of(), 500);
 
     assertThat(signs(hits)).containsExactly("ORD-1");
     assertThat(hits.total()).isEqualTo(1);
@@ -118,7 +118,7 @@ class OrderListSearchTest {
     other.setDebithours(Duration.ZERO);
     entityManager.persist(other);
 
-    assertThat(signs(customerorderDAO.findCustomerorders(null, "acme werke", null, null, 500)))
+    assertThat(signs(customerorderDAO.findCustomerorders(null, "acme werke", null, null, List.of(), 500)))
         .containsExactly("ORD-1");
   }
 
@@ -128,7 +128,7 @@ class OrderListSearchTest {
     order("ORD_1");
     order("ORDX1");
 
-    assertThat(signs(customerorderDAO.findCustomerorders(null, "d_1", null, null, 500))).containsExactly("ORD_1");
+    assertThat(signs(customerorderDAO.findCustomerorders(null, "d_1", null, null, List.of(), 500))).containsExactly("ORD_1");
   }
 
   @Test
@@ -138,8 +138,8 @@ class OrderListSearchTest {
     order("HIDDEN").setHide(true);
     entityManager.flush();
 
-    assertThat(signs(customerorderDAO.findCustomerorders(false, null, null, false, 500))).containsExactly("RUNNING");
-    assertThat(signs(customerorderDAO.findCustomerorders(true, null, null, true, 500)))
+    assertThat(signs(customerorderDAO.findCustomerorders(false, null, null, false, List.of(), 500))).containsExactly("RUNNING");
+    assertThat(signs(customerorderDAO.findCustomerorders(true, null, null, true, List.of(), 500)))
         .containsExactly("ENDED", "HIDDEN", "RUNNING");
   }
 
@@ -152,7 +152,7 @@ class OrderListSearchTest {
     suborder(order, top, "01", "Wartung", null);
     suborder(order, null, "01", "Entwicklung", null);
 
-    var hits = suborderDAO.findSuborders(null, null, null, null, null, 2);
+    var hits = suborderDAO.findSuborders(null, null, null, null, null, List.of(), 2);
 
     assertThat(hits.rows()).extracting(Suborder::getCompleteOrderSign).containsExactly("ORD/01", "ORD/02");
     assertThat(hits.total()).isEqualTo(3);
@@ -170,7 +170,7 @@ class OrderListSearchTest {
     suborder(order, middle, "01", "Rufbereitschaft", null);
     suborder(order, null, "02", "Entwicklung", null);
 
-    assertThat(completeSigns(suborderDAO.findSuborders(null, "wartung", null, null, null, 500)))
+    assertThat(completeSigns(suborderDAO.findSuborders(null, "wartung", null, null, null, List.of(), 500)))
         .containsExactly("ORD/01/01", "ORD/01/01/01");
   }
 
@@ -181,7 +181,7 @@ class OrderListSearchTest {
     suborder(order, null, "0_", "Wartung", null);
     suborder(order, suborder(order, null, "01", "Betrieb", null), "01", "Rufbereitschaft", null);
 
-    assertThat(completeSigns(suborderDAO.findSuborders(null, "wartung", null, null, null, 500)))
+    assertThat(completeSigns(suborderDAO.findSuborders(null, "wartung", null, null, null, List.of(), 500)))
         .containsExactly("ORD/0_");
   }
 
@@ -190,9 +190,9 @@ class OrderListSearchTest {
     var order = order("ORD");
     suborder(order, null, "01", "Betrieb", null);
 
-    assertThat(completeSigns(suborderDAO.findSuborders(null, "acme", null, null, null, 500)))
+    assertThat(completeSigns(suborderDAO.findSuborders(null, "acme", null, null, null, List.of(), 500)))
         .containsExactly("ORD/01");
-    assertThat(completeSigns(suborderDAO.findSuborders(null, "beschreibung ord", null, null, null, 500)))
+    assertThat(completeSigns(suborderDAO.findSuborders(null, "beschreibung ord", null, null, null, List.of(), 500)))
         .containsExactly("ORD/01");
   }
 
@@ -202,7 +202,7 @@ class OrderListSearchTest {
     suborder(order, null, "01", "Betrieb", "Betrieb der Rechenzentren");
     suborder(order, null, "02", "Betrieb", "Betrieb der Arbeitsplätze");
 
-    assertThat(completeSigns(suborderDAO.findSuborders(null, "rechenzentren", null, null, null, 500)))
+    assertThat(completeSigns(suborderDAO.findSuborders(null, "rechenzentren", null, null, null, List.of(), 500)))
         .containsExactly("ORD/01");
   }
 

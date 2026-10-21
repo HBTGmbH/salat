@@ -68,6 +68,8 @@ import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.order.persistence.EmployeecontractReferences;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
 /**
@@ -90,7 +92,8 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class, SpecialOrders.class,
     CustomerDAO.class, CommandPublisher.class,
     TimereportService.class, TimereportDAO.class, TimereportAuthorization.class, PublicholidayDAO.class,
-    WorkingdayDAO.class, OvertimeService.class, MoveTimereportsService.class})
+    WorkingdayDAO.class, OvertimeService.class, MoveTimereportsService.class,
+    TagService.class, TagReferences.class})
 class ContractChangeOvertimeTest {
 
   private static final Duration DAILY_WORKING_TIME = Duration.ofHours(8);

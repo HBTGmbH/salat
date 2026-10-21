@@ -45,6 +45,8 @@ import de.hbt.salat.order.domain.TicketReferenceMode;
 import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.SuborderRepository;
+import de.hbt.salat.order.persistence.TagReferences;
+import de.hbt.salat.tag.service.TagService;
 import de.hbt.salat.testutils.EmployeeTestUtils;
 
 /**
@@ -58,7 +60,8 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @Import({AuthorizedUserAuditorAware.class, SalatProperties.class, SuborderService.class, SuborderDAO.class,
     CustomerorderService.class, CustomerorderDAO.class, CustomerDAO.class, CommandPublisher.class,
-    SpecialOrders.class})
+    SpecialOrders.class,
+    TagService.class, TagReferences.class})
 class StoredCompleteOrderSignTest {
 
   private static final LocalDate FROM = LocalDate.of(2026, 1, 1);
@@ -231,13 +234,13 @@ class StoredCompleteOrderSignTest {
 
   private static SuborderDTO dto(String sign, Long parentId) {
     return new SuborderDTO(null, sign, "Leistung", null, null, GlobalConstants.INVOICE_YES, false, false,
-        false, null, DateUtils.format(FROM), DateUtils.format(UNTIL), null, null, false, parentId, null, null, SurchargeInput.NONE);
+        false, null, DateUtils.format(FROM), DateUtils.format(UNTIL), null, null, false, parentId, null, null, SurchargeInput.NONE, null);
   }
 
   private CustomerorderDTO customerorderDto(Customerorder customerorder, String sign) {
     return new CustomerorderDTO(customerorder.getCustomer().getId(), FROM, UNTIL, sign,
         customerorder.getDescription(), null, null, null, null, List.of(responsible.getId()), responsible.getId(),
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE, null);
   }
 
   private Customer customer() {

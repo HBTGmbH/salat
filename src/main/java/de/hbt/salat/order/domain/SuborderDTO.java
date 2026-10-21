@@ -1,5 +1,7 @@
 package de.hbt.salat.order.domain;
 
+import java.util.List;
+
 /**
  * Data transfer object carrying suborder field values for create/update operations.
  */
@@ -25,5 +27,10 @@ public record SuborderDTO(
     /** the bound for {@link TicketReferenceMode#LIMITED}, ignored otherwise */
     Integer ticketReferenceLimit,
     /** the time surcharge rates (#1469); never {@code null}, {@link SurchargeInput#NONE} for none */
-    SurchargeInput surchargeRates
+    SurchargeInput surchargeRates,
+    /**
+     * the names of the tags (#847), new ones created on saving; {@code null} leaves the tags as they are — what
+     * rebuilds the record from the stored entity (a changed validity) does not touch them
+     */
+    List<String> tagNames
 ) {}
