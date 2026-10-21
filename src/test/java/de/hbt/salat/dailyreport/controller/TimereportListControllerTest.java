@@ -48,6 +48,7 @@ import de.hbt.salat.common.web.ListLimits;
 import de.hbt.salat.common.web.LoginSignProvider;
 import de.hbt.salat.common.web.UiState;
 import de.hbt.salat.common.web.UiStateKeyRegistry;
+import de.hbt.salat.dailyreport.domain.TagSelection;
 import de.hbt.salat.dailyreport.domain.TimereportFilterOptions;
 import de.hbt.salat.dailyreport.domain.TimereportFilterOptions.CustomerOption;
 import de.hbt.salat.dailyreport.domain.TimereportFilterOptions.EmployeeOption;
@@ -106,7 +107,7 @@ class TimereportListControllerTest {
     when(timereportListService.getFilterOptions(anyList(), anyList(), anyList()))
         .thenReturn(TimereportFilterOptions.empty());
     when(timereportListService.describe(any())).thenReturn(
-        new TimereportFilterSummary(List.of(), List.of(), List.of(), List.of(), 0, List.of(), true));
+        new TimereportFilterSummary(List.of(), List.of(), List.of(), List.of(), 0, List.of(), true, List.of()));
   }
 
   @Test
@@ -114,7 +115,7 @@ class TimereportListControllerTest {
     perform(get("/dailyreport/list").cookie(remembered()));
 
     assertThat(searchedFilters()).containsExactly(new TimereportListFilter(
-        List.of(5L, 7L), List.of(), List.of(42L), List.of(), List.of(), true,
+        List.of(5L, 7L), List.of(), List.of(42L), List.of(), List.of(), true, TagSelection.NONE,
         LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31), Billable.BILLABLE, Sort.EMPLOYEE, true,
         10_000));
   }
@@ -206,7 +207,7 @@ class TimereportListControllerTest {
         List.of(new EmployeeOption(5L, "Berta Beispiel", "bb"), new EmployeeOption(6L, "Carl Muster", "cm")),
         List.of(new CustomerOption(3L, "TK", "Testkunde")),
         List.of(new OrderOption(42L, "ORD-42", "Wartung", 3L, "TK", 2)),
-        List.of(), 2, List.of("OPS-7"), false));
+        List.of(), 2, List.of("OPS-7"), false, List.of()));
 
     var html = renderFragment(get("/dailyreport/list")
         .header("HX-Request", "true")

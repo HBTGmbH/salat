@@ -123,7 +123,7 @@
           <td>
             <div class="text-nowrap"><span th:text="${co.sign}">Sign Customer Order</span><span th:replace="~{fragments/inactive-badge :: badge(${!co.currentlyValid})}"></span></div>
             <small class="text-muted" th:text="${co.description}">Description</small>
-            <div th:replace="~{order/tags :: badges(${co.tags})}"></div>
+            <div th:replace="~{order/tags :: badges(${co.tags}, '/orders/customerorders', 'fCustomerOrderTags')}"></div>
           </td>
           <td class="d-none d-md-table-cell">
             <div th:text="${co.fromDate}" class="text-nowrap">From</div>

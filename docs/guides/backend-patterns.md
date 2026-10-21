@@ -402,6 +402,13 @@ Unteraufträge tragen Tags. So wird ein weiterer Typ taggbar, etwa Mitarbeiterve
 6. **Verwendung:** Die Zahlen zählt das eigene Repository über seine Join-Tabelle
    (`findTagUsages`).
 
+**Die Buchungsliste** filtert über die Bäume, in denen die Tags sitzen.
+`OrderTagService.getTaggedTrees` liefert die getaggten Aufträge und die getaggten Unteraufträge samt
+allem darunter, in drei Abfragen. Eine Buchung trifft, wenn ihr Auftrag oder ihr Unterauftrag darin
+liegt. Der Tag-Filter schränkt die übrigen Filter per UND ein, mehrere Tags untereinander gelten als
+ODER. In der Unterauftragsliste zählen dagegen nur die eigenen Tags: Sie zeigt, was getaggt ist,
+die Buchungsliste zeigt, was dazugehört.
+
 **Reports** lesen die Join-Tabellen direkt. Einen Parametertyp für Listen gibt es noch nicht. Ein
 `string`-Parameter mit kommagetrennten Namen (`string,festpreis,cloud`) geht über `FIND_IN_SET` auf
 `name_key`:

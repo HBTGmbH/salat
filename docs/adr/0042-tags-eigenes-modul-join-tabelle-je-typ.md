@@ -65,6 +65,10 @@ Ein weiterer Typ kostet ein Changeset mit der Join-Tabelle und ein Feld an seine
    (`order.persistence.TagReferences`).
 5. Wie oft ein Tag verwendet wird, zählt das besitzende Modul über seine Join-Tabellen. `tag` kann das
    nicht wissen.
+6. Ein anderes Modul, das nach Tags filtert, fragt das besitzende Modul nach ids. Die Buchungsliste
+   fragt `OrderTagService.getTaggedTrees` und filtert nach Aufträgen und Unteraufträgen in den
+   getaggten Bäumen. Einen Join auf die Join-Tabellen baut sie nicht nach, und `dailyreport` braucht
+   keine Kante zu `tag`.
 
 ### Consequences
 

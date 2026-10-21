@@ -18,6 +18,7 @@ import de.hbt.salat.common.LocalDateRange;
  * @param ticketKeys       which ticket references, compared ignoring case
  * @param ticketDescendants whether a chosen ticket stands for its whole descendant chain — on by default, because
  *                          that is what somebody filtering by an epic means
+ * @param tags             which tags (#847) — narrows the other filters, the caller resolves it into order trees
  * @param from             first day, inclusive
  * @param until            last day, inclusive
  * @param billable         all bookings, only the billable ones, or only the others
@@ -32,6 +33,7 @@ public record TimereportListFilter(
     List<Long> suborderIds,
     List<String> ticketKeys,
     boolean ticketDescendants,
+    TagSelection tags,
     LocalDate from,
     LocalDate until,
     Billable billable,

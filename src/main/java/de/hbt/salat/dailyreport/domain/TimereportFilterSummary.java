@@ -21,6 +21,7 @@ import de.hbt.salat.dailyreport.domain.TimereportFilterOptions.SuborderOption;
  * @param includedSuborders how many suborders orders and suborders bring along, descendants included
  * @param tickets           the ticket keys it names, as they were picked
  * @param ticketDescendants whether the tickets stand for their descendants as well
+ * @param tags              the names of the tags it names (#847)
  */
 public record TimereportFilterSummary(
     List<EmployeeOption> employees,
@@ -29,7 +30,8 @@ public record TimereportFilterSummary(
     List<SuborderOption> suborders,
     int includedSuborders,
     List<String> tickets,
-    boolean ticketDescendants
+    boolean ticketDescendants,
+    List<String> tags
 ) {
 
   /** Orders and suborders are one filter on the page — the dialog picks both — and they are counted as one. */

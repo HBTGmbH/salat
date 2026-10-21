@@ -19,6 +19,7 @@ import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility;
 import de.hbt.salat.dailyreport.auth.TimereportVisibilityService;
+import de.hbt.salat.dailyreport.domain.TagSelection;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.TimereportFilterOptions;
@@ -40,7 +41,9 @@ import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.SuborderTreeRow;
+import de.hbt.salat.order.domain.TagChoice;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SuborderService;
 
 /**
@@ -69,6 +72,7 @@ public class TimereportListService {
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final JiraTicketService jiraTicketService;
+  private final OrderTagService orderTagService;
 
   /** The hits of this filter — the rows cut to its maximum, the numbers over all of them. */
   public TimereportListResult search(TimereportListFilter filter) {
@@ -111,8 +115,8 @@ public class TimereportListService {
       return List.of();
     }
     var unlimited = new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
-        filter.suborderIds(), filter.ticketKeys(), filter.ticketDescendants(), filter.from(), filter.until(),
-        filter.billable(), filter.sort(), filter.descending(), TimereportListFilter.UNLIMITED);
+        filter.suborderIds(), filter.ticketKeys(), filter.ticketDescendants(), filter.tags(), filter.from(),
+        filter.until(), filter.billable(), filter.sort(), filter.descending(), TimereportListFilter.UNLIMITED);
     return timereportDAO.getDtosOf(timereportListDAO.findRows(expand(unlimited), visibility));
   }
 
@@ -200,7 +204,25 @@ public class TimereportListService {
             .map(TimereportListService::toOption).toList(),
         includedSuborderCount(orders, suborders),
         List.copyOf(filter.ticketKeys()),
-        filter.ticketDescendants());
+        filter.ticketDescendants(),
+        tagNames(filter.tags()));
+  }
+
+  private List<String> tagNames(TagSelection tags) {
+    if (!tags.active()) return List.of();
+    var chosen = new HashSet<>(tags.tagIds());
+    return orderTagService.getTagChoices().stream()
+        .filter(tag -> chosen.contains(tag.id()))
+        .map(TagChoice::name)
+        .toList();
+  }
+
+  /**
+   * The tags the filter offers (#847): every tag, with how often it is used. Tags are master data every unrestricted
+   * user reads in the order lists anyway; a tag without a booking the user may see simply finds nothing.
+   */
+  public List<TagChoice> getTagOptions() {
+    return orderTagService.getTagChoices();
   }
 
   private List<Employee> visibleEmployees(List<Long> employeeIds) {
@@ -426,8 +448,12 @@ public class TimereportListService {
     var ticketKeys = filter.ticketKeys().isEmpty() || !filter.ticketDescendants()
         ? filter.ticketKeys()
         : expandTickets(filter);
+    // the tags become the order trees they sit in (#847) — the order module knows where they are
+    var tags = filter.tags().active()
+        ? filter.tags().resolvedTo(orderTagService.getTaggedTrees(filter.tags().tagIds()))
+        : filter.tags();
     return new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
-        suborderIds, ticketKeys, filter.ticketDescendants(), filter.from(), filter.until(), filter.billable(),
+        suborderIds, ticketKeys, filter.ticketDescendants(), tags, filter.from(), filter.until(), filter.billable(),
         filter.sort(), filter.descending(), filter.maxResults());
   }
 

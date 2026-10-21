@@ -41,6 +41,7 @@ public record TimereportListPrintHeader(String title, String filterLine, String 
     count(parts, summary.customers().size(), "main.timereportlist.print.short.customers", messages);
     count(parts, summary.orderCount(), "main.timereportlist.print.short.orders", messages);
     count(parts, summary.tickets().size(), "main.timereportlist.print.short.tickets", messages);
+    count(parts, summary.tags().size(), "main.timereportlist.print.short.tags", messages);
     switch (billable) {
       case BILLABLE -> parts.add(messages.getMessage("main.timereportlist.print.short.billable"));
       case NOT_BILLABLE -> parts.add(messages.getMessage("main.timereportlist.print.short.notbillable"));

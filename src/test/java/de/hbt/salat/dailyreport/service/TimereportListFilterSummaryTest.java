@@ -21,6 +21,7 @@ import de.hbt.salat.customer.service.CustomerService;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility.Clause;
 import de.hbt.salat.dailyreport.auth.TimereportVisibilityService;
+import de.hbt.salat.dailyreport.domain.TagSelection;
 import de.hbt.salat.dailyreport.domain.TimereportFilterOptions.EmployeeOption;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
@@ -98,7 +99,7 @@ class TimereportListFilterSummaryTest {
   }
 
   private static TimereportListFilter filterFor(List<Long> employeeIds) {
-    return new TimereportListFilter(employeeIds, List.of(), List.of(), List.of(), List.of(), true,
+    return new TimereportListFilter(employeeIds, List.of(), List.of(), List.of(), List.of(), true, TagSelection.NONE,
         LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), Billable.ALL, Sort.DATE, false,
         TimereportListFilter.UNLIMITED);
   }

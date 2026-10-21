@@ -3806,3 +3806,15 @@ document.addEventListener('change', event => {
   const hidden = select.parentElement.querySelector('[data-tag-filter-value]');
   if (hidden) hidden.value = Array.from(select.selectedOptions).map(option => option.value).join(',');
 }, true);
+
+/* A click on a tag badge filters the list by that tag alone (#847), the other filters staying as they are. Setting
+ * the tag filter of the page fires its change, and the list reloads as with any filter change. Without a tag filter
+ * on the page the link opens the list filtered by the tag. */
+document.addEventListener('click', event => {
+  const badge = event.target.closest && event.target.closest('a[data-tag-filter-id]');
+  if (!badge || event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
+  const select = document.querySelector('select[data-tag-filter]');
+  if (!select || !select.tomselect) return;
+  event.preventDefault();
+  select.tomselect.setValue([badge.dataset.tagFilterId]);
+});

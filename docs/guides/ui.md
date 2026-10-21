@@ -362,6 +362,13 @@ einer Stelle — einem View-Helper je Art. Ein Template verkettet keine Felder z
   `TagColor.of` nach: Javas `hashCode` des Namens in Kleinbuchstaben modulo Palette. Ändert sich die
   Regel, ändern sich beide Stellen, `TagColorTest` hält die Paare fest.
 - Die Unterzeile unter dem Feld (`{field}-subtext`) gibt es nur bei einer Einzelauswahl.
+- Ein Tag-Badge in einer Liste ist ein Link (`order/tags :: badges(tags, listUrl, paramName)`).
+  - Ein Klick setzt den Tag-Filter der Seite auf genau diesen Tag, `select[data-tag-filter]` per
+    `salat.js`, die übrigen Filter bleiben stehen.
+  - Ersetzt statt ergänzt wird, weil mehrere Tags ODER bedeuten: Ein Klick, der ergänzt, würde die
+    Liste länger machen.
+  - Ohne Filter auf der Seite, im neuen Tab oder mit Strg-Klick öffnet der Link die Liste mit dem
+    Tag als Filter.
 
 ### Free text field with remote suggestions
 

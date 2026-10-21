@@ -45,6 +45,7 @@ import de.hbt.salat.order.persistence.CustomerorderDAO;
 import de.hbt.salat.order.persistence.SuborderDAO;
 import de.hbt.salat.order.persistence.TagReferences;
 import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.order.service.SuborderService;
 import de.hbt.salat.order.service.SpecialOrders;
 import de.hbt.salat.tag.service.TagService;
@@ -76,7 +77,7 @@ import de.hbt.salat.tag.service.TagService;
 @Import({AuthorizedUserAuditorAware.class, SalatProperties.class, TimereportListService.class, SuborderService.class,
     SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class, CustomerDAO.class, CommandPublisher.class,
     SpecialOrders.class,
-    TagService.class, TagReferences.class})
+    TagService.class, TagReferences.class, OrderTagService.class})
 class TimereportListOrderSearchTest {
 
   private static final LocalDate FROM = LocalDate.of(2026, 1, 1);

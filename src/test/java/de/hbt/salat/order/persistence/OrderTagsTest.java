@@ -27,8 +27,10 @@ import de.hbt.salat.order.domain.OrderType;
 import de.hbt.salat.order.domain.SearchHits;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.domain.TagUsage;
+import de.hbt.salat.order.service.OrderTagService;
 import de.hbt.salat.tag.domain.Tag;
 import de.hbt.salat.tag.domain.TagName;
+import de.hbt.salat.tag.service.TagService;
 
 /**
  * Orders and suborders carry tags over a join table each (#847, ADR-0042): the lists filter by them, deleting an
@@ -36,7 +38,7 @@ import de.hbt.salat.tag.domain.TagName;
  */
 @DataJpaTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @Import({AuthorizedUserAuditorAware.class, CustomerorderDAO.class, SuborderDAO.class, EmployeeorderDAO.class,
-    EmployeeorderAuthorization.class})
+    EmployeeorderAuthorization.class, OrderTagService.class, TagService.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class OrderTagsTest {
 
@@ -47,6 +49,7 @@ class OrderTagsTest {
   @Autowired private CustomerorderRepository customerorderRepository;
   @Autowired private SuborderRepository suborderRepository;
   @Autowired private TestEntityManager entityManager;
+  @Autowired private OrderTagService orderTagService;
 
   @MockitoBean private AuthorizedUser authorizedUser;
 
@@ -134,6 +137,38 @@ class OrderTagsTest {
     assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
   }
 
+  // --- Bäume (Buchungsliste) ---------------------------------------------------------------------
+
+  /**
+   * The booking list filters by the trees the tags sit in (#847): a tagged order for itself — its suborders need not
+   * be listed —, a tagged suborder with everything below it, at any depth, but nothing beside or above it.
+   */
+  @Test
+  void a_tagged_suborder_stands_for_everything_below_it() {
+    var taggedOrder = order("A-1", fixedPrice);
+    suborder(taggedOrder, "01");
+    var order = order("B-2");
+    var tagged = suborder(order, "01", cloud);
+    var child = child(tagged, "01");
+    var grandchild = child(child, "01");
+    suborder(order, "02");
+    entityManager.flush();
+
+    var trees = orderTagService.getTaggedTrees(List.of(fixedPrice.getId(), cloud.getId()));
+
+    assertThat(trees.customerorderIds()).containsExactly(taggedOrder.getId());
+    assertThat(trees.suborderIds()).containsExactlyInAnyOrder(tagged.getId(), child.getId(), grandchild.getId());
+  }
+
+  @Test
+  void tags_nothing_carries_have_no_trees() {
+    order("A-1", fixedPrice);
+    entityManager.flush();
+
+    assertThat(orderTagService.getTaggedTrees(List.of(framework.getId())).isEmpty()).isTrue();
+    assertThat(orderTagService.getTaggedTrees(List.of()).isEmpty()).isTrue();
+  }
+
   // --- Löschen ----------------------------------------------------------------------------------
 
   @Test
@@ -215,6 +250,17 @@ class OrderTagsTest {
     suborder.setDebithours(Duration.ZERO);
     suborder.replaceTags(List.of(tags));
     return entityManager.persist(suborder);
+  }
+
+  private Suborder child(Suborder parent, String sign) {
+    var child = new Suborder();
+    child.setCustomerorder(parent.getCustomerorder());
+    child.setParentorder(parent);
+    child.setSign(sign);
+    child.setDescription("Unterauftrag");
+    child.setFromDate(FROM);
+    child.setDebithours(Duration.ZERO);
+    return entityManager.persist(child);
   }
 
   private long rows(String table) {

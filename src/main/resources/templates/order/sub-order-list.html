@@ -138,7 +138,7 @@
           <td>
             <div><span th:text="${so.completeOrderSign}">Suborder Sign</span><span th:replace="~{fragments/inactive-badge :: badge(${!so.currentlyValid})}"></span></div>
             <small class="text-muted" th:text="${so.getCompleteOrderDescription(true, false)}">short description</small>
-            <div th:replace="~{order/tags :: badges(${so.tags})}"></div>
+            <div th:replace="~{order/tags :: badges(${so.tags}, '/orders/suborders', 'fSuborderTags')}"></div>
           </td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.fromDate}">From</div>
