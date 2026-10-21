@@ -20,6 +20,7 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.notification.NotificationKind;
 import de.hbt.salat.common.notification.NotificationRecipient;
 import de.hbt.salat.common.notification.NotificationRecipients;
+import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.notification.domain.Notification;
 import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.persistence.NotificationRepository;
@@ -51,12 +52,28 @@ public class NotificationService {
      *     kind that is always mailed cannot be sent; nothing is then stored either
      */
     public void emitNotification(NotificationKind kind, List<Long> recipientUserIds, NotificationMessage message) {
+        emit(kind, recipientUserIds, List.of(), message);
+    }
+
+    /**
+     * Like {@link #emitNotification(NotificationKind, List, NotificationMessage)}, and the mail goes
+     * to the logins in {@code ccUserIds} as a copy (#215) — the people leads who read along when a
+     * person is reminded. A copy is the mail and nothing else: it puts nothing into their bell, it
+     * goes out only where the recipient's mail does, and a login without an address is left out.
+     */
+    public void emitNotification(NotificationKind kind, List<Long> recipientUserIds, List<Long> ccUserIds,
+                                 NotificationMessage message) {
+        emit(kind, recipientUserIds, ccUserIds, message);
+    }
+
+    private void emit(NotificationKind kind, List<Long> recipientUserIds, List<Long> ccUserIds, NotificationMessage message) {
         validateKey(message.titleKey());
+        var cc = copies(ccUserIds, kind);
         for (var recipient : notificationRecipients.resolve(recipientUserIds, kind)) {
             if (recipient.bell()) {
                 store(recipient.salatUserId(), message);
             }
-            mail(kind, recipient, message);
+            mail(kind, recipient, message, cc);
         }
     }
 
@@ -67,16 +84,25 @@ public class NotificationService {
     public void emitMail(NotificationKind kind, List<Long> recipientUserIds, NotificationMessage message) {
         validateKey(message.titleKey());
         for (var recipient : notificationRecipients.resolve(recipientUserIds, kind)) {
-            mail(kind, recipient, message);
+            mail(kind, recipient, message, List.of());
         }
     }
 
-    private void mail(NotificationKind kind, NotificationRecipient recipient, NotificationMessage message) {
+    private void mail(NotificationKind kind, NotificationRecipient recipient, NotificationMessage message,
+                      List<MailContact> cc) {
         if (kind.isEmailMandatory()) {
-            notificationMailer.mailNow(recipient, message);
+            notificationMailer.mailNow(recipient, message, cc);
         } else if (recipient.mail()) {
-            notificationMailer.mailAfterCommit(recipient, message);
+            notificationMailer.mailAfterCommit(recipient, message, cc);
         }
+    }
+
+    private List<MailContact> copies(List<Long> ccUserIds, NotificationKind kind) {
+        if (ccUserIds.isEmpty()) return List.of();
+        return notificationRecipients.resolve(ccUserIds, kind).stream()
+                .filter(copy -> copy.email() != null && !copy.email().isBlank())
+                .map(copy -> new MailContact(copy.firstname(), copy.email()))
+                .toList();
     }
 
     private void store(long salatUserId, NotificationMessage message) {

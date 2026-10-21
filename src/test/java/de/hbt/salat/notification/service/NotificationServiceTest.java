@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import de.hbt.salat.auth.domain.AuthorizedUser;
@@ -16,6 +17,7 @@ import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.notification.NotificationKind;
 import de.hbt.salat.common.notification.NotificationRecipient;
 import de.hbt.salat.common.notification.NotificationRecipients;
+import de.hbt.salat.common.service.MailService.MailContact;
 import de.hbt.salat.notification.domain.Notification;
 import de.hbt.salat.notification.domain.NotificationMessage;
 import de.hbt.salat.notification.persistence.NotificationRepository;
@@ -82,7 +84,7 @@ class NotificationServiceTest {
     service.emitNotification(SHARED, List.of(LOGIN), MESSAGE);
 
     verify(notificationRepository, never()).save(any());
-    verify(notificationMailer).mailAfterCommit(recipient, MESSAGE);
+    verify(notificationMailer).mailAfterCommit(recipient, MESSAGE, List.of());
   }
 
   @Test
@@ -91,8 +93,8 @@ class NotificationServiceTest {
 
     service.emitNotification(REMINDER, List.of(LOGIN), MESSAGE);
 
-    verify(notificationMailer).mailNow(recipient, MESSAGE);
-    verify(notificationMailer, never()).mailAfterCommit(any(), any());
+    verify(notificationMailer).mailNow(recipient, MESSAGE, List.of());
+    verify(notificationMailer, never()).mailAfterCommit(any(), any(), any());
   }
 
   @Test
@@ -102,7 +104,32 @@ class NotificationServiceTest {
     service.emitMail(SHARED, List.of(LOGIN), MESSAGE);
 
     verify(notificationRepository, never()).save(any());
-    verify(notificationMailer).mailAfterCommit(recipient, MESSAGE);
+    verify(notificationMailer).mailAfterCommit(recipient, MESSAGE, List.of());
+  }
+
+  /** #215: the people leads read along when a person is reminded — a copy of the mail, nothing in their bell. */
+  @Test
+  void a_copy_goes_to_the_cc_logins_with_an_address_and_into_no_bell_of_theirs() {
+    var recipient = givenRecipient(REMINDER, false, false);
+    var lead = new NotificationRecipient(21L, "Carla", "carla@example.org", Locale.GERMAN, true, true);
+    var withoutAddress = new NotificationRecipient(22L, "Dirk", null, Locale.GERMAN, true, true);
+    when(notificationRecipients.resolve(List.of(21L, 22L), REMINDER)).thenReturn(List.of(lead, withoutAddress));
+
+    service.emitNotification(REMINDER, List.of(LOGIN), List.of(21L, 22L), MESSAGE);
+
+    verify(notificationMailer).mailNow(recipient, MESSAGE, List.of(new MailContact("Carla", "carla@example.org")));
+    verify(notificationRepository, never()).save(any());
+  }
+
+  @Test
+  void without_cc_logins_nobody_else_is_asked_for() {
+    var recipient = givenRecipient(REMINDER, false, false);
+
+    service.emitNotification(REMINDER, List.of(LOGIN), List.of(), MESSAGE);
+
+    verify(notificationMailer).mailNow(recipient, MESSAGE, List.of());
+    verify(notificationRecipients).resolve(List.of(LOGIN), REMINDER);
+    verifyNoMoreInteractions(notificationRecipients);
   }
 
   private NotificationRecipient givenRecipient(NotificationKind kind, boolean bell, boolean mail) {

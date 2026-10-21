@@ -196,6 +196,11 @@ return command.getResult().values().stream().reduce(Duration::plus).orElse(Durat
   `salat.notifications.email-from`.
 - Eine abschaltbare Mail geht **nach dem Commit** raus und lässt die auslösende Aktion nie
   scheitern. Wird die Aktion zurückgerollt, geht keine Mail raus.
+- **CC** (#215): `emitNotification(kind, logins, ccLogins, message)` schickt die Mail zusätzlich als
+  Kopie an weitere Logins, etwa an die People Leads bei der automatischen Freigabe-Erinnerung. Eine
+  Kopie ist nur die Mail: Sie legt nichts in deren Glocke, geht nur raus, wo auch die Mail an die
+  empfangende Person rausgeht, und lässt Logins ohne Adresse aus. Die Mail redet die empfangende
+  Person an; wer in CC steht, liest mit.
 
 ---
 

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import de.hbt.salat.common.service.MailService.EmailRequest;
 import de.hbt.salat.common.service.MailService.MailContact;
+import jakarta.mail.Message;
 import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.Session;
@@ -58,6 +59,24 @@ class MailServiceTest {
 
     assertThat(sent.getValue().getHeader("Subject")[0]).startsWith("=?UTF-8?");
     assertThat(sent.getValue().getSubject()).isEqualTo("🥗 Erinnerung");
+  }
+
+  /** #215: a copy is a CC, not a second recipient. */
+  @Test
+  void sends_a_copy_as_cc() throws Exception {
+    when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+    service.sendEmail(EmailRequest.builder().subject("Erinnerung").message("Hallo")
+        .from(new MailContact("Salat", "noreply@example.org"))
+        .to(new MailContact("Person B", "person.b@example.org"))
+        .ccRecipient(new MailContact("Person C", "person.c@example.org"))
+        .build());
+    var sent = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender).send(sent.capture());
+
+    assertThat(sent.getValue().getRecipients(Message.RecipientType.TO)).extracting(Object::toString)
+        .containsExactly("person.b@example.org");
+    assertThat(sent.getValue().getRecipients(Message.RecipientType.CC)).extracting(Object::toString)
+        .containsExactly("person.c@example.org");
   }
 
   /** The content types of every part of the sent mail, the image with its content id. */
