@@ -1,5 +1,6 @@
 package de.hbt.salat.employee.persistence;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
+import de.hbt.salat.employee.domain.ContractWorkingTime;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.EmploymentSpan;
 import de.hbt.salat.employee.domain.PersonSearchRow;
@@ -138,4 +140,20 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
       """)
   List<Employeecontract> findAllForAuthorizationByIdIn(Collection<Long> ids);
 
+  /**
+   * The contracts that cover the whole period and take part in a comparison across the workforce
+   * (#827): neither the contract nor the person hidden, no freelancer contract, at least the daily
+   * working time given, and a login whose status is none of those given.
+   */
+  @Query("""
+      select new de.hbt.salat.employee.domain.ContractWorkingTime(ec.id, ec.dailyWorkingTimeMinutes)
+      from Employeecontract ec join ec.employee e join e.salatUser u
+      where ec.validFrom <= :from and (ec.validUntil is null or ec.validUntil >= :until)
+      and (ec.hide is null or ec.hide = false) and (e.hide is null or e.hide = false)
+      and (ec.freelancer is null or ec.freelancer = false)
+      and ec.dailyWorkingTimeMinutes >= :minimumDailyWorkingTime
+      and u.status not in :excludedStatuses
+      """)
+  List<ContractWorkingTime> findComparableCovering(LocalDate from, LocalDate until, Duration minimumDailyWorkingTime,
+      Collection<String> excludedStatuses);
 }

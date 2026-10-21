@@ -270,8 +270,24 @@
             <div class="col-12 col-sm-6 d-flex">
               <div class="card h-100 w-100">
                 <div class="card-body">
-                  <p class="subheader mb-2" th:text="#{main.my.accounts.training.regular.hours}">Reguläre Fortbildung</p>
-                  <div class="display-5 fw-bold" th:text="${regularTrainingHours}">0:00</div>
+                  <!--/* Hinter der Ueberschrift der Median der Kolleginnen und Kollegen ueber denselben Zeitraum
+                         (#827). Liegt er deutlich ueber der eigenen Fortbildung, steht er als Badge in der
+                         Akzentfarbe da: ein Anstoss, keine Warnung (#837, nur positive Anreize). */-->
+                  <p class="subheader mb-2">
+                    <span th:text="#{main.my.accounts.training.regular.hours}">Reguläre Fortbildung</span>
+                    <th:block th:if="${trainingMedianDays != null}">
+                      <span th:unless="${trainingMedianHighlighted}" th:title="#{main.my.accounts.training.median.info}"
+                            th:text="|· #{main.my.accounts.training.median(${trainingMedianDays})}|">· HBT-Median 4,0 Tage</span>
+                      <span th:if="${trainingMedianHighlighted}" class="badge bg-primary-lt ms-1"
+                            th:title="#{main.my.accounts.training.median.info}"
+                            th:text="#{main.my.accounts.training.median(${trainingMedianDays})}">HBT-Median 6,0 Tage</span>
+                    </th:block>
+                  </p>
+                  <div class="display-5 fw-bold">
+                    <span th:text="${regularTrainingHours}">0:00</span>
+                    <span th:if="${regularTrainingDays != null}" class="fs-3 fw-normal text-secondary"
+                          th:text="#{main.my.accounts.training.days(${regularTrainingDays})}">(5,5 Tage)</span>
+                  </div>
                 </div>
               </div>
             </div>

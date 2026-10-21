@@ -133,11 +133,13 @@ public class SalatProperties {
     private List<String> doNotCalculateSigns = new ArrayList<>();
   }
 
-  /** The suborders of the regular training (#1341, → {@code SpecialOrders}). */
+  /** The suborders of the regular training (#1341, → {@code SpecialOrders}), and its benchmark (#827). */
   @Data
   public static class Training {
     /** Complete order signs ({@code i976/FORTBILDUNG}). */
     private List<String> regularSuborderSigns = new ArrayList<>();
+    /** By more working days than these the median has to lie above the own training to be highlighted. */
+    private int medianHighlightDays = 4;
   }
 
   @Data

@@ -4,8 +4,10 @@ import static de.hbt.salat.employee.service.EmployeeNotificationKinds.EMPLOYEECO
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static de.hbt.salat.common.exception.ErrorCode.EC_OVERLAPS;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 import static de.hbt.salat.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS;
 import static de.hbt.salat.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT;
@@ -43,6 +45,7 @@ import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.common.util.DataValidationUtils;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
+import de.hbt.salat.employee.domain.ContractWorkingTime;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employee_;
 import de.hbt.salat.employee.domain.Employeecontract;
@@ -472,6 +475,21 @@ public class EmployeecontractService {
         .filter(Employeecontract::getReleaseWarning)
         .map(OverdueRelease::of)
         .toList();
+  }
+
+  /**
+   * The contracts a comparison across the workforce is made over (#827): those that cover the whole
+   * period, neither hidden nor a freelancer contract, with at least {@code minimumDailyWorkingTime} a
+   * day, and of a person whose login is neither restricted (interns, externals) nor the technical
+   * administrator. Open to every login although it names other people's contracts: it hands out ids
+   * and working time only, and its one caller hands out nothing but an aggregate over them.
+   */
+  @Authorized
+  @Transactional(readOnly = true)
+  public List<ContractWorkingTime> getComparableContractsCovering(LocalDate from, LocalDate until,
+      Duration minimumDailyWorkingTime) {
+    return employeecontractRepository.findComparableCovering(from, until, minimumDailyWorkingTime,
+        List.of(EMPLOYEE_STATUS_RESTRICTED, EMPLOYEE_STATUS_ADM));
   }
 
   @Authorized

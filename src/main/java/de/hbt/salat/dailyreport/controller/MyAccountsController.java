@@ -2,6 +2,7 @@ package de.hbt.salat.dailyreport.controller;
 
 import static de.hbt.salat.common.util.DateUtils.today;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -30,13 +31,16 @@ import de.hbt.salat.common.Validity;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
+import de.hbt.salat.dailyreport.domain.WorkingDays;
 import de.hbt.salat.dailyreport.service.OvertimeService;
 import de.hbt.salat.dailyreport.service.TimereportService;
+import de.hbt.salat.dailyreport.service.TrainingBenchmarkService;
 import de.hbt.salat.dailyreport.service.VacationService;
 import de.hbt.salat.dailyreport.viewhelper.OvertimeScale;
 import de.hbt.salat.dailyreport.viewhelper.VacationViewHelper;
 import de.hbt.salat.dailyreport.viewhelper.WorkingTimeChart;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Employeeorder;
@@ -66,6 +70,7 @@ public class MyAccountsController {
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
     private final SpecialOrders specialOrders;
+    private final TrainingBenchmarkService trainingBenchmarkService;
 
     @GetMapping
     public String show(@RequestParam(required = false) Long fEmployeeContractId,
@@ -379,9 +384,11 @@ public class MyAccountsController {
 
     private void populateTrainingTab(Model model, Employeecontract contract, LocalDate today, TrainingPeriod period) {
         var range = period.range(today);
-        // nie vor Vertragsbeginn; ein Zeitraum ganz vor dem Vertrag bleibt leer
-        var from = contract.getValidFrom().isAfter(range.getFrom()) ? contract.getValidFrom() : range.getFrom();
-        var until = range.getUntil();
+        // nur solange der Vertrag gilt; ein Zeitraum ganz ausserhalb des Vertrags bleibt leer. Der
+        // Median der Kolleginnen und Kollegen vergleicht genau diesen Zeitraum (#827).
+        var validity = EmployeecontractPeriod.of(contract, range.getFrom(), range.getUntil());
+        var from = validity.from();
+        var until = validity.until();
         var allReports = from.isAfter(until) ? List.<TimereportDTO>of() : timereportService
                 .getTimereportsByDatesAndEmployeeContractId(contract.getId(), from, until);
 
@@ -432,6 +439,7 @@ public class MyAccountsController {
         model.addAttribute("totalTrainingHours", DurationUtils.format(Duration.ofMinutes(totalTrainingMinutes)));
         model.addAttribute("trainingSharePercent", trainingSharePercent);
         model.addAttribute("regularTrainingHours", DurationUtils.format(Duration.ofMinutes(regularTrainingMinutes)));
+        populateTrainingBenchmark(model, contract, from, until, regularTrainingMinutes);
         model.addAttribute("orderTrainingHours", DurationUtils.format(Duration.ofMinutes(orderTrainingMinutes)));
         model.addAttribute("trainingBookings", bookings);
         model.addAttribute("trainingChartLabels", trainingChartLabels);
@@ -441,6 +449,25 @@ public class MyAccountsController {
         model.addAttribute("trainingPeriod", period.name());
         model.addAttribute("trainingFrom", range.getFrom());
         model.addAttribute("trainingUntil", until);
+    }
+
+    /**
+     * Die eigene regulaere Fortbildung in Arbeitstagen und der Median der Kolleginnen und Kollegen
+     * ueber denselben Zeitraum (#827); ohne taegliche Arbeitszeit am Vertrag gibt es keine Tage.
+     */
+    private void populateTrainingBenchmark(Model model, Employeecontract contract, LocalDate from, LocalDate until,
+            long regularTrainingMinutes) {
+        long dailyMinutes = contract.getDailyWorkingTime().toMinutes();
+        var own = dailyMinutes > 0 ? WorkingDays.of(regularTrainingMinutes, dailyMinutes) : null;
+        model.addAttribute("regularTrainingDays", own != null ? days(own.toDecimal()) : null);
+        trainingBenchmarkService.getBenchmark(from, until, own).ifPresent(benchmark -> {
+            model.addAttribute("trainingMedianDays", days(benchmark.medianDays()));
+            model.addAttribute("trainingMedianHighlighted", benchmark.highlighted());
+        });
+    }
+
+    private static String days(BigDecimal days) {
+        return String.format(Locale.GERMAN, "%.1f", days);
     }
 
     private void populateOvertimeTab(Model model, Employeecontract contract) {

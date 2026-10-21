@@ -95,6 +95,9 @@ salat:
     # Fortbildungskennzeichen ist projektbezogene Fortbildung.
     regular-suborder-signs:
       - i976/FORTBILDUNG
+    # env: SALAT_TRAINING_MEDIAN_HIGHLIGHT_DAYS — liegt der HBT-Median im Fortbildungskonto um mehr
+    # als so viele Arbeitstage über der eigenen regulären Fortbildung, wird er hervorgehoben (#827).
+    median-highlight-days: 4
   vacation:
     # env: SALAT_VACATION_CUSTOMERORDER_SIGN — der Urlaubsauftrag. Seine Unteraufträge sind die
     # Jahres-Unteraufträge mit berechnetem Urlaubsanspruch, außer denen der Liste darunter.

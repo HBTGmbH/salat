@@ -12,6 +12,7 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.domain.RegularTrainingDay;
 import de.hbt.salat.dailyreport.domain.Timereport;
+import de.hbt.salat.dailyreport.domain.TrainingInformation;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Customerorder;
@@ -32,7 +33,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * The regular training the yearly training achievement (#1512) counts, against the database: bookings on a suborder of the regular training only,
+ * The regular training the yearly training achievement (#1512) and the benchmark of the training
+ * account (#827) count, against the database: bookings on a suborder of the regular training only,
  * none on a freelancer contract, each row with the daily working time of its contract.
  */
 @DataJpaTest
@@ -130,6 +132,23 @@ class RegularTrainingQueriesTest {
             TODAY.withDayOfYear(1), TODAY))
         .extracting(RegularTrainingDay::day, RegularTrainingDay::minutes)
         .containsExactly(tuple(LocalDate.parse("2026-01-02"), 240L));
+  }
+
+  @Test
+  void the_benchmark_sums_the_regular_training_per_contract_in_the_period() {
+    var annasContract = contract(anna, "2020-01-01", null, Duration.ofHours(8), false);
+    var bertsContract = contract(employee("bb"), "2020-01-01", null, Duration.ofHours(8), false);
+    book(annasContract, regularTraining, "2026-04-01", 4, false);
+    book(annasContract, regularTraining, "2026-05-04", 4, false);
+    book(annasContract, regularTraining, "2026-03-31", 8, false);
+    book(annasContract, project, "2026-05-05", 8, true);
+
+    var sums = trainingRepository.sumRegularTrainingOfContractsBetween(
+        List.of(annasContract.getId(), bertsContract.getId()), Set.of(regularTraining.getId()),
+        LocalDate.parse("2026-04-01"), TODAY);
+
+    assertThat(sums).extracting(TrainingInformation::getEmployeecontractId, TrainingInformation::getDurationMinutes)
+        .containsExactly(tuple(annasContract.getId(), 480L));
   }
 
   private List<RegularTrainingDay> employedOnToday() {
