@@ -40,10 +40,8 @@ public class TimereportAuthorization {
   private final EmployeecontractService employeecontractService;
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
-    if(accessLevel == READ && authorizedUser.isManager()) return true;
-    if(accessLevel == READ && authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract())) return true;
-    var isOwner = timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
-    if(isOwner && accessLevel == READ) return true;
+    if(accessLevel == READ && mayReadEveryBookingOf(timereport.getEmployeecontract())) return true;
+    var isOwner = isOwner(timereport.getEmployeecontract());
 
     if(accessLevel == READ) {
       // every project manager may see the time reports of her project
@@ -84,6 +82,23 @@ public class TimereportAuthorization {
         timereport.getEmployeecontract().getEmployee().getId(),
         timereport.getSuborder().getCustomerorder().getId(),
         timereport.getSuborder().getId()));
+  }
+
+  /**
+   * Whether the user may read every booking of the contract (#1514): a manager, a people lead of the contract and the
+   * person themselves - the branches of {@link #isAuthorized} with {@code READ} that ask nothing of the booking but its
+   * contract. A caller that reads the bookings of such a contract as values, without the entity, needs no check per
+   * booking. Where this says no, single bookings may still be readable (project responsibility, backoffice, rules);
+   * such a caller reads none of them.
+   */
+  public boolean mayReadEveryBookingOf(Employeecontract contract) {
+    return authorizedUser.isManager()
+        || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(contract))
+        || isOwner(contract);
+  }
+
+  private boolean isOwner(Employeecontract contract) {
+    return contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
   }
 
   public void checkAuthorized(List<Timereport> timereports, AccessLevel accessLevel) throws AuthorizationException {

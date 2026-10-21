@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import de.hbt.salat.dailyreport.domain.AccountBooking;
 import de.hbt.salat.dailyreport.domain.MonthlyReportedMinutes;
 import de.hbt.salat.dailyreport.domain.ReportedMinutes;
 import de.hbt.salat.dailyreport.domain.Timereport;
@@ -33,6 +34,33 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
                 else tr.employeeorder.suborder.customerorder.orderType end
            is distinct from de.hbt.salat.order.domain.OrderType.BEREITSCHAFT)
       """;
+
+  /** The bookings as „Meine Konten“ reads them (#1514), joined along the order tree to the customer. */
+  String ACCOUNT_BOOKINGS = """
+      select new de.hbt.salat.dailyreport.domain.AccountBooking(eo.id, so.id, t.referenceday.refdate, t.duration,
+          t.training, so.completeOrderSign, cu.shortname, t.taskdescription)
+      from Timereport t join t.employeeorder eo join eo.suborder so join so.customerorder co join co.customer cu
+      """;
+
+  /**
+   * The bookings of the contract in the range, as {@link #findAllByEmployeecontractIdAndReferencedayBetween}
+   * orders them: by day, customer order and suborder.
+   */
+  @Query(ACCOUNT_BOOKINGS + """
+      where t.deleted = false and eo.employeecontract.id = :employeecontractId
+      and t.referenceday.refdate between :begin and :end
+      order by t.referenceday.refdate asc, co.sign asc, so.sign asc
+      """)
+  List<AccountBooking> findAccountBookingsOfContractBetween(long employeecontractId, LocalDate begin, LocalDate end);
+
+  /** The bookings on those of the employee orders that belong to the contract, in the range, by day. */
+  @Query(ACCOUNT_BOOKINGS + """
+      where t.deleted = false and eo.employeecontract.id = :employeecontractId and eo.id in :employeeorderIds
+      and t.referenceday.refdate between :begin and :end
+      order by t.referenceday.refdate asc
+      """)
+  List<AccountBooking> findAccountBookingsOfEmployeeordersBetween(long employeecontractId,
+      Collection<Long> employeeorderIds, LocalDate begin, LocalDate end);
 
   @QueryHints(value = {
           @QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"),
