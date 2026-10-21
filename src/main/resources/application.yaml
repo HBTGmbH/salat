@@ -11,7 +11,7 @@ salat:
     logout:
       enabled: true                  # env: SALAT_AUTH_LOGOUT_ENABLED
       logout-url: /?logout=true      # env: SALAT_AUTH_LOGOUT_LOGOUT_URL
-  url: localhost                     # env: SALAT_URL
+  url: http://localhost:8080         # env: SALAT_URL — with scheme: the base of every link in a mail
   mail-host: localhost               # env: SALAT_MAIL_HOST
   # User-facing documentation URL (e.g. Confluence overview). Hidden in footer when empty.
   # Override locally via JVM arg: -Dsalat.docs-url=https://your-confluence/wiki/spaces/SALAT/overview

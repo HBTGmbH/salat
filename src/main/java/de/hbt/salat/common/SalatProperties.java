@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "salat")
 public class SalatProperties {
 
+  /** Where the application is reached from outside, with its scheme: the base of every link in a mail. */
   private String url;
   private String mailHost;
   private String docsUrl;
@@ -30,6 +31,19 @@ public class SalatProperties {
   private Vacation vacation = new Vacation();
   private Training training = new Training();
   private Secret secret = new Secret();
+
+
+  /**
+   * The absolute address of a path of the application, for a link that leaves it — in a mail above
+   * all (#1505). A mail program reads an address without scheme as a relative path, so a configured
+   * {@link #url} without one gets {@code https://}.
+   */
+  public String absoluteUrl(String path) {
+    var base = url != null ? url.trim() : "";
+    while (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+    if (!base.isEmpty() && !base.contains("://")) base = "https://" + base;
+    return base + (path.startsWith("/") ? path : "/" + path);
+  }
 
   @Data
   public static class Auth {

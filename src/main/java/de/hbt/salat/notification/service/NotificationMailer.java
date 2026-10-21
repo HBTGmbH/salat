@@ -133,7 +133,7 @@ class NotificationMailer {
   }
 
   private String absolute(String path) {
-    return (salatProperties.getUrl() != null ? salatProperties.getUrl() : "") + path;
+    return salatProperties.absoluteUrl(path);
   }
 
   private String text(String key, Locale locale, Object... arguments) {
