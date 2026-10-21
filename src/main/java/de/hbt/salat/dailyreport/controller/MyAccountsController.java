@@ -29,8 +29,8 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.Validity;
 import de.hbt.salat.common.util.DurationUtils;
+import de.hbt.salat.dailyreport.domain.AccountBooking;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus;
-import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.WorkingDays;
 import de.hbt.salat.dailyreport.service.OvertimeService;
 import de.hbt.salat.dailyreport.service.TimereportService;
@@ -247,7 +247,7 @@ public class MyAccountsController {
         model.addAttribute("previousYearCarryoverDays", String.format(Locale.GERMAN, "%.1f", previousYearCarryoverDays));
         model.addAttribute("takenDays", String.format(Locale.GERMAN, "%.1f", takenDays));
         populateSpecialVacation(model, ordersUntilHorizon, today, yearStart, horizon, dailyWorkingMinutes);
-        populateVacationChart(model, ordersUntilHorizon, today, yearStart, horizon, dailyWorkingMinutes);
+        populateVacationChart(model, contract.getId(), ordersUntilHorizon, today, yearStart, horizon, dailyWorkingMinutes);
         populateNextYearVacation(model, contract, currentYear, dailyWorkingMinutes);
         model.addAttribute("plannedDays", String.format(Locale.GERMAN, "%.1f", plannedDays));
         model.addAttribute("remainingDays", String.format(Locale.GERMAN, "%.1f", remainingDays));
@@ -285,19 +285,20 @@ public class MyAccountsController {
      * jeweils genommen (bis heute) und geplant (danach): dieselbe Unterscheidung wie in den Balken.
      * Reicht das Diagramm ueber das Jahr hinaus, traegt jede Beschriftung ihr Jahr.
      */
-    private void populateVacationChart(Model model, List<Employeeorder> orders, LocalDate today,
+    private void populateVacationChart(Model model, long contractId, List<Employeeorder> orders, LocalDate today,
             LocalDate yearStart, LocalDate horizon, long dailyWorkingMinutes) {
         var regularTaken = new TreeMap<YearMonth, Long>();
         var regularPlanned = new TreeMap<YearMonth, Long>();
         var specialTaken = new TreeMap<YearMonth, Long>();
         var specialPlanned = new TreeMap<YearMonth, Long>();
-        for (var order : orders) {
-            var special = isSpecialVacation(order);
-            for (var report : timereportService.getTimereportsByDatesAndEmployeeorderId(yearStart, horizon, order.getId())) {
-                var planned = report.getReferenceday().isAfter(today);
-                var target = special ? (planned ? specialPlanned : specialTaken) : (planned ? regularPlanned : regularTaken);
-                target.merge(YearMonth.from(report.getReferenceday()), report.getDuration().toMinutes(), Long::sum);
-            }
+        var specialOrderIds = orders.stream().filter(this::isSpecialVacation).map(Employeeorder::getId).toList();
+        // die Buchungen aller Urlaubsauftraege in einer Abfrage, nicht je Auftrag und Buchung (#1514)
+        var orderIds = orders.stream().map(Employeeorder::getId).toList();
+        for (var booking : timereportService.getAccountBookingsOfEmployeeorders(contractId, orderIds, yearStart, horizon)) {
+            var special = specialOrderIds.contains(booking.employeeorderId());
+            var planned = booking.day().isAfter(today);
+            var target = special ? (planned ? specialPlanned : specialTaken) : (planned ? regularPlanned : regularTaken);
+            target.merge(YearMonth.from(booking.day()), booking.duration().toMinutes(), Long::sum);
         }
 
         var labels = new ArrayList<String>();
@@ -389,29 +390,30 @@ public class MyAccountsController {
         var validity = EmployeecontractPeriod.of(contract, range.getFrom(), range.getUntil());
         var from = validity.from();
         var until = validity.until();
-        var allReports = from.isAfter(until) ? List.<TimereportDTO>of() : timereportService
-                .getTimereportsByDatesAndEmployeeContractId(contract.getId(), from, until);
+        // die Werte, die der Reiter braucht, in einer Abfrage statt je Buchung nachgeladen (#1514)
+        var allReports = from.isAfter(until) ? List.<AccountBooking>of() : timereportService
+                .getAccountBookingsOfContract(contract.getId(), from, until);
 
         var trainingReports = allReports.stream().filter(this::isTraining).toList();
-        long totalTrainingMinutes = trainingReports.stream().mapToLong(t -> t.getDuration().toMinutes()).sum();
-        long totalWorkMinutes = allReports.stream().mapToLong(t -> t.getDuration().toMinutes()).sum();
+        long totalTrainingMinutes = trainingReports.stream().mapToLong(t -> t.duration().toMinutes()).sum();
+        long totalWorkMinutes = allReports.stream().mapToLong(t -> t.duration().toMinutes()).sum();
         int trainingSharePercent = totalWorkMinutes > 0 ? (int) Math.round(totalTrainingMinutes * 100.0 / totalWorkMinutes) : 0;
 
         long regularTrainingMinutes = trainingReports.stream()
                 .filter(this::isRegularTraining)
-                .mapToLong(t -> t.getDuration().toMinutes()).sum();
+                .mapToLong(t -> t.duration().toMinutes()).sum();
         long orderTrainingMinutes = trainingReports.stream()
                 .filter(t -> !isRegularTraining(t))
-                .mapToLong(t -> t.getDuration().toMinutes()).sum();
+                .mapToLong(t -> t.duration().toMinutes()).sum();
 
         var bookings = trainingReports.stream()
-                .sorted(Comparator.comparing(TimereportDTO::getReferenceday).reversed())
+                .sorted(Comparator.comparing(AccountBooking::day).reversed())
                 .map(t -> new TrainingBooking(
-                        t.getReferenceday().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
-                        t.getCompleteOrderSign(),
-                        t.getCustomerShortname(),
-                        t.getTaskdescription(),
-                        DurationUtils.format(t.getDuration())))
+                        t.day().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                        t.completeOrderSign(),
+                        t.customerShortname(),
+                        t.taskdescription(),
+                        DurationUtils.format(t.duration())))
                 .toList();
 
         // Monatsdiagramm, regulaere und projektbezogene Fortbildung getrennt gestapelt (#1175)
@@ -420,7 +422,7 @@ public class MyAccountsController {
         for (var report : trainingReports) {
             var target = isRegularTraining(report)
                     ? regularMonthMinutes : orderMonthMinutes;
-            target.merge(YearMonth.from(report.getReferenceday()), report.getDuration().toMinutes(), Long::sum);
+            target.merge(YearMonth.from(report.day()), report.duration().toMinutes(), Long::sum);
         }
         var trainingChartLabels = new ArrayList<String>();
         var trainingChartHours = new ArrayList<Double>();
@@ -514,13 +516,13 @@ public class MyAccountsController {
         model.addAttribute("nextYearPlannedKind", regularDays > 0 && specialDays > 0 ? "both" : specialDays > 0 ? "special" : "regular");
     }
 
-    private boolean isTraining(TimereportDTO timereport) {
-        return timereport.isTraining() || isRegularTraining(timereport);
+    private boolean isTraining(AccountBooking booking) {
+        return booking.training() || isRegularTraining(booking);
     }
 
     /** A booking on a suborder of the regular training, by id (#1341). */
-    private boolean isRegularTraining(TimereportDTO timereport) {
-        return specialOrders.isRegularTraining(timereport.getSuborderId());
+    private boolean isRegularTraining(AccountBooking booking) {
+        return specialOrders.isRegularTraining(booking.suborderId());
     }
 
     /**

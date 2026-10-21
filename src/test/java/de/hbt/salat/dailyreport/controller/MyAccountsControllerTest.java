@@ -32,7 +32,7 @@ import de.hbt.salat.dailyreport.domain.OvertimeReport;
 import de.hbt.salat.dailyreport.domain.OvertimeReportTotal;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
-import de.hbt.salat.dailyreport.domain.TimereportDTO;
+import de.hbt.salat.dailyreport.domain.AccountBooking;
 import de.hbt.salat.dailyreport.service.OvertimeService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.TrainingBenchmarkService;
@@ -256,10 +256,10 @@ class MyAccountsControllerTest {
   void the_chart_reaches_the_last_planned_month_and_separates_special_leave() {
     specialOrderBesidesVacation();
     var horizon = TODAY.plusYears(2);
-    lenient().when(timereportService.getTimereportsByDatesAndEmployeeorderId(LocalDate.of(2026, 1, 1), horizon, ORDER_ID))
-        .thenReturn(List.of(booking("2026-06-10"), booking("2027-02-03")));
-    lenient().when(timereportService.getTimereportsByDatesAndEmployeeorderId(LocalDate.of(2026, 1, 1), horizon, SPECIAL_ORDER_ID))
-        .thenReturn(List.of(booking("2026-10-15")));
+    when(timereportService.getAccountBookingsOfEmployeeorders(CONTRACT_ID, List.of(ORDER_ID, SPECIAL_ORDER_ID),
+        LocalDate.of(2026, 1, 1), horizon))
+        .thenReturn(List.of(booking(ORDER_ID, "2026-06-10"), booking(SPECIAL_ORDER_ID, "2026-10-15"),
+            booking(ORDER_ID, "2027-02-03")));
 
     var model = new ExtendedModelMap();
     myAccountsController.show(CONTRACT_ID, null, model);
@@ -313,7 +313,7 @@ class MyAccountsControllerTest {
     var model = new ExtendedModelMap();
     myAccountsController.show(CONTRACT_ID, period, model);
 
-    verify(timereportService).getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, from, until);
+    verify(timereportService).getAccountBookingsOfContract(CONTRACT_ID, from, until);
     assertThat(model.getAttribute("trainingFrom")).isEqualTo(from);
     assertThat(model.getAttribute("trainingUntil")).isEqualTo(until);
     assertThat((List<String>) model.getAttribute("trainingChartLabels")).hasSize(months);
@@ -323,7 +323,7 @@ class MyAccountsControllerTest {
   @Test
   @SuppressWarnings("unchecked")
   void separates_regular_from_order_training_in_the_chart() {
-    when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
+    when(timereportService.getAccountBookingsOfContract(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
         .thenReturn(List.of(
             training("2026-02-10", REGULAR_TRAINING_SUBORDER_ID, 4),
             training("2026-02-12", ORDER_TRAINING_SUBORDER_ID, 2),
@@ -342,7 +342,7 @@ class MyAccountsControllerTest {
      und Kollegen, hervorgehoben, wenn er deutlich darueber liegt. */
   @Test
   void shows_the_own_regular_training_in_working_days_and_the_median_beside_it() {
-    when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
+    when(timereportService.getAccountBookingsOfContract(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
         .thenReturn(List.of(training("2026-02-10", REGULAR_TRAINING_SUBORDER_ID, 12)));
     lenient().when(specialOrders.isRegularTraining(REGULAR_TRAINING_SUBORDER_ID)).thenReturn(true);
     when(trainingBenchmarkService.getBenchmark(LocalDate.of(2026, 1, 1), TODAY, WorkingDays.of(12 * 60, 8 * 60)))
@@ -375,7 +375,7 @@ class MyAccountsControllerTest {
     var model = new ExtendedModelMap();
     myAccountsController.show(CONTRACT_ID, null, model);
 
-    verify(timereportService).getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.parse("2026-04-01"), TODAY);
+    verify(timereportService).getAccountBookingsOfContract(CONTRACT_ID, LocalDate.parse("2026-04-01"), TODAY);
     verify(trainingBenchmarkService).getBenchmark(LocalDate.parse("2026-04-01"), TODAY, WorkingDays.of(0, 8 * 60));
   }
 
@@ -388,7 +388,7 @@ class MyAccountsControllerTest {
     var model = new ExtendedModelMap();
     myAccountsController.show(CONTRACT_ID, null, model);
 
-    verify(timereportService).getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1),
+    verify(timereportService).getAccountBookingsOfContract(CONTRACT_ID, LocalDate.of(2026, 1, 1),
         LocalDate.parse("2026-03-31"));
   }
 
@@ -399,16 +399,16 @@ class MyAccountsControllerTest {
     myAccountsController.show(CONTRACT_ID, "CURRENT_YEAR", model);
     myAccountsController.show(CONTRACT_ID, "LAST_12_MONTHS", model);
 
-    verify(timereportService, never()).getTimereportsByDatesAndEmployeeContractId(eq(CONTRACT_ID), any(),
+    verify(timereportService, never()).getAccountBookingsOfContract(eq(CONTRACT_ID), any(),
         argThat(until -> until.isAfter(TODAY)));
   }
 
   private static final long REGULAR_TRAINING_SUBORDER_ID = 500L;
   private static final long ORDER_TRAINING_SUBORDER_ID = 501L;
 
-  private static TimereportDTO training(String day, long suborderId, long hours) {
-    return TimereportDTO.builder().referenceday(LocalDate.parse(day)).suborderId(suborderId).training(true)
-        .duration(Duration.ofHours(hours)).build();
+  private static AccountBooking training(String day, long suborderId, long hours) {
+    return new AccountBooking(ORDER_ID, suborderId, LocalDate.parse(day), Duration.ofHours(hours), true, "ORD/01",
+        "TK", "Fortbildung");
   }
 
   private static final long SPECIAL_ORDER_ID = 300L;
@@ -430,8 +430,9 @@ class MyAccountsControllerTest {
         .thenReturn(List.of(vacationOrder(null), special));
   }
 
-  private static TimereportDTO booking(String day) {
-    return TimereportDTO.builder().referenceday(LocalDate.parse(day)).duration(DAILY_WORKING_TIME).build();
+  private static AccountBooking booking(long employeeorderId, String day) {
+    return new AccountBooking(employeeorderId, 1000L, LocalDate.parse(day), DAILY_WORKING_TIME, false, "URLAUB/2026",
+        "HBT", null);
   }
 
   private void plannedAfterToday(Duration planned) {

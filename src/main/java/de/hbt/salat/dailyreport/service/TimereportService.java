@@ -22,6 +22,7 @@ import static de.hbt.salat.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static de.hbt.salat.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static de.hbt.salat.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_ABSENCE_DAY_EXCEEDS_TARGET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_ABSENCE_DAY_WITHOUT_TARGET;
 import static de.hbt.salat.common.exception.ErrorCode.TR_DURATION_EXCEEDS_ONE_DAY;
@@ -101,6 +102,7 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
+import de.hbt.salat.dailyreport.domain.AccountBooking;
 import de.hbt.salat.dailyreport.domain.PreviousBooking;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
 import de.hbt.salat.dailyreport.domain.RecentBooking;
@@ -1206,8 +1208,36 @@ public class TimereportService {
     return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
   }
 
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeorderId(LocalDate beginDate, LocalDate endDate, long employeeorderId) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeorderId(beginDate, endDate, employeeorderId);
+  /**
+   * The bookings of the contract in the range as „Meine Konten“ reads them (#1514), in one statement. They are not
+   * checked one by one against {@link TimereportAuthorization#isAuthorized}: the contract is checked as a whole
+   * ({@link TimereportAuthorization#mayReadEveryBookingOf}), and a contract that fails that check yields an
+   * {@link AuthorizationException} rather than the few bookings that might be readable on other grounds.
+   */
+  public List<AccountBooking> getAccountBookingsOfContract(long employeecontractId, LocalDate begin, LocalDate end) {
+    checkMayReadEveryBookingOf(employeecontractId);
+    return timereportRepository.findAccountBookingsOfContractBetween(employeecontractId, begin, end);
+  }
+
+  /**
+   * The bookings on the employee orders of the contract in the range, as {@link #getAccountBookingsOfContract} reads
+   * them; an employee order of another contract contributes none.
+   */
+  public List<AccountBooking> getAccountBookingsOfEmployeeorders(long employeecontractId,
+      Collection<Long> employeeorderIds, LocalDate begin, LocalDate end) {
+    checkMayReadEveryBookingOf(employeecontractId);
+    if (employeeorderIds.isEmpty()) {
+      return List.of();
+    }
+    return timereportRepository.findAccountBookingsOfEmployeeordersBetween(employeecontractId, employeeorderIds, begin,
+        end);
+  }
+
+  private void checkMayReadEveryBookingOf(long employeecontractId) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    if (contract == null || !timereportAuthorization.mayReadEveryBookingOf(contract)) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
   }
 
   public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
