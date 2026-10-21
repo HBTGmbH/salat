@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import de.hbt.salat.dailyreport.domain.RegularTrainingDay;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TrainingDay;
 import de.hbt.salat.dailyreport.domain.TrainingInformation;
@@ -73,5 +74,40 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
       where ec.employee.id = :employeeId and (t.training = true or eo.suborder.id in :regularTrainingSuborderIds)
   """)
   long sumTrainingMinutesOfEmployee(long employeeId, Collection<Long> regularTrainingSuborderIds);
+
+  /**
+   * The regular training of every person employed on the day, per person, contract and day, ordered by
+   * person and day, up to the day (#1512): only bookings on a suborder of the regular training, and
+   * none on a freelancer contract. Each row carries the daily working time of its contract, so that
+   * the caller counts working days per contract; a contract without one cannot be counted in days.
+   */
+  @Query("""
+      select new de.hbt.salat.dailyreport.domain.RegularTrainingDay(ec.employee.id, t.referenceday.refdate,
+          sum(t.duration), ec.dailyWorkingTimeMinutes)
+      from Timereport t join t.employeeorder eo join eo.employeecontract ec
+      where eo.suborder.id in :regularTrainingSuborderIds and t.referenceday.refdate <= :day
+      and (ec.freelancer is null or ec.freelancer = false) and ec.dailyWorkingTimeMinutes > 0
+      and ec.employee.id in (
+          select v.employee.id from Employeecontract v
+          where v.validFrom <= :day and (v.validUntil is null or v.validUntil >= :day))
+      group by ec.employee.id, ec.id, ec.dailyWorkingTimeMinutes, t.referenceday.refdate
+      order by ec.employee.id, t.referenceday.refdate
+  """)
+  List<RegularTrainingDay> findRegularTrainingDaysOfEmployeesEmployedOn(Collection<Long> regularTrainingSuborderIds,
+      LocalDate day);
+
+  /** The regular training of one person in the period, by the same rule (#1512). */
+  @Query("""
+      select new de.hbt.salat.dailyreport.domain.RegularTrainingDay(ec.employee.id, t.referenceday.refdate,
+          sum(t.duration), ec.dailyWorkingTimeMinutes)
+      from Timereport t join t.employeeorder eo join eo.employeecontract ec
+      where ec.employee.id = :employeeId and eo.suborder.id in :regularTrainingSuborderIds
+      and t.referenceday.refdate between :from and :until
+      and (ec.freelancer is null or ec.freelancer = false) and ec.dailyWorkingTimeMinutes > 0
+      group by ec.employee.id, ec.id, ec.dailyWorkingTimeMinutes, t.referenceday.refdate
+      order by t.referenceday.refdate
+  """)
+  List<RegularTrainingDay> findRegularTrainingDaysOfEmployeeBetween(long employeeId,
+      Collection<Long> regularTrainingSuborderIds, LocalDate from, LocalDate until);
 
 }

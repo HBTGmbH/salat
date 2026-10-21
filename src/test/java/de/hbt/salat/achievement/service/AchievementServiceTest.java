@@ -1,6 +1,7 @@
 package de.hbt.salat.achievement.service;
 
 import static de.hbt.salat.achievement.service.AchievementNotificationKinds.ACHIEVEMENT_REACHED;
+import static de.hbt.salat.common.achievement.AchievementDefinition.NO_YEAR;
 import static de.hbt.salat.common.achievement.AchievementLevel.level;
 import static de.hbt.salat.common.achievement.AchievementTier.BRONZE;
 import static de.hbt.salat.common.achievement.AchievementTier.GOLD;
@@ -60,6 +61,8 @@ class AchievementServiceTest {
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 20, 4, 30);
   private static final AchievementDefinition TEST = new AchievementDefinition("test", "flag", 10,
       List.of(level(1, BRONZE), level(5, SILVER), level(10, GOLD)));
+  private static final AchievementDefinition YEARLY = AchievementDefinition.yearly("yearly", "book", 20,
+      List.of(level(1, BRONZE), level(5, SILVER), level(10, GOLD)));
   private static final long ANNA = 1L;
   private static final long BERT = 2L;
   private static final long ANNA_LOGIN = 11L;
@@ -76,15 +79,18 @@ class AchievementServiceTest {
   private final List<Achievement> saved = new ArrayList<>();
   private AchievementProgress progress;
   private AchievementPerson askedFor;
+  private List<AchievementDefinition> achievements = List.of(TEST);
 
   private AchievementService service;
+  private AchievementContributor contributor;
+  private StaticMessageSource messages;
 
   @BeforeEach
   void setUp() {
     var contributor = new AchievementContributor() {
       @Override
       public List<AchievementDefinition> getAchievements() {
-        return List.of(TEST);
+        return achievements;
       }
 
       @Override
@@ -104,9 +110,13 @@ class AchievementServiceTest {
     messages.addMessage("main.achievement.test.rank.1", Locale.GERMAN, "Neuling");
     messages.addMessage("main.achievement.test.rank.5", Locale.GERMAN, "Kenner");
     messages.addMessage("main.achievement.test.rank.10", Locale.GERMAN, "Meister");
+    messages.addMessage("main.achievement.yearly.title", Locale.GERMAN, "Jahresstufe {0}");
+    messages.addMessage("main.achievement.yearly.rank.1", Locale.GERMAN, "Neuling");
+    messages.addMessage("main.achievement.yearly.rank.5", Locale.GERMAN, "Kenner");
     messages.addMessage("main.achievement.notification.action", Locale.GERMAN, "Zum Profil");
-    service = new AchievementService(repository, new AchievementRegistry(List.of(contributor)), employeeReferences,
-        preferenceService, employeeService, notificationService, messages, authorizedUser, authorizedEmployee);
+    this.contributor = contributor;
+    this.messages = messages;
+    service = newService();
 
     when(repository.findAllRecordedLevels()).thenReturn(List.of());
     when(repository.save(any())).thenAnswer(invocation -> {
@@ -135,11 +145,11 @@ class AchievementServiceTest {
     assertThat(service.recordReached(TODAY)).isEqualTo(3);
 
     assertThat(saved).extracting(a -> a.getEmployee().getId(), Achievement::getAchievementLevel,
-            Achievement::getAchievedOn, Achievement::getSeenAt)
+            Achievement::getAchievedOn, Achievement::getSeenAt, Achievement::getAchievementYear)
         .containsExactly(
-            tuple(ANNA, 1, LocalDate.parse("2017-03-01"), null),
-            tuple(ANNA, 5, LocalDate.parse("2021-03-01"), null),
-            tuple(BERT, 1, LocalDate.parse("2026-02-01"), null));
+            tuple(ANNA, 1, LocalDate.parse("2017-03-01"), null, NO_YEAR),
+            tuple(ANNA, 5, LocalDate.parse("2021-03-01"), null, NO_YEAR),
+            tuple(BERT, 1, LocalDate.parse("2026-02-01"), null, NO_YEAR));
     verify(notificationService).emitNotification(ACHIEVEMENT_REACHED, List.of(ANNA_LOGIN), NotificationMessage.builder()
         .titleKey("main.achievement.notification.many.title").titleParams(List.of("2"))
         .descriptionKey("main.achievement.notification.many.description")
@@ -163,7 +173,7 @@ class AchievementServiceTest {
   @Test
   void a_level_already_recorded_is_neither_recorded_nor_announced_again() {
     reported.add(reached(ANNA, 1, "2017-03-01"));
-    when(repository.findAllRecordedLevels()).thenReturn(List.of(new RecordedLevel(ANNA, "test", 1)));
+    when(repository.findAllRecordedLevels()).thenReturn(List.of(new RecordedLevel(ANNA, "test", NO_YEAR, 1)));
 
     assertThat(service.recordReached(TODAY)).isZero();
 
@@ -266,6 +276,95 @@ class AchievementServiceTest {
     assertThat(service.getProfileOfCurrentPerson(TODAY).next()).isEmpty();
   }
 
+  /* #1512: a yearly achievement reaches its levels again every calendar year. */
+  @Test
+  void a_level_of_a_yearly_achievement_is_recorded_once_per_year_with_its_year() {
+    yearlyOnly();
+    reported.add(ReachedAchievement.ofEmployee(ANNA, "yearly", 1, LocalDate.parse("2025-03-01")));
+    reported.add(ReachedAchievement.ofEmployee(ANNA, "yearly", 1, LocalDate.parse("2026-02-01")));
+    when(repository.findAllRecordedLevels()).thenReturn(List.of(new RecordedLevel(ANNA, "yearly", 2025, 1)));
+
+    assertThat(service.recordReached(TODAY)).isEqualTo(1);
+
+    assertThat(saved).singleElement()
+        .extracting(Achievement::getAchievementYear, Achievement::getAchievedOn)
+        .containsExactly(2026, LocalDate.parse("2026-02-01"));
+  }
+
+  /* The first run records the yearly levels of every year since a person started - for a long tenure
+     dozens, whose names overflowed the one notification and stopped the whole job. Earlier years
+     are history: recorded as seen, shown on the profile page, not announced. */
+  @Test
+  void levels_of_earlier_years_of_a_yearly_achievement_are_recorded_as_seen_and_not_announced() {
+    yearlyOnly();
+    for (int year = 2006; year <= 2025; year++) {
+      reported.add(ReachedAchievement.ofEmployee(ANNA, "yearly", 1, LocalDate.of(year, 3, 1)));
+      reported.add(ReachedAchievement.ofEmployee(ANNA, "yearly", 5, LocalDate.of(year, 6, 1)));
+    }
+    reported.add(ReachedAchievement.ofEmployee(ANNA, "yearly", 1, LocalDate.parse("2026-02-01")));
+
+    assertThat(service.recordReached(TODAY)).isEqualTo(41);
+
+    assertThat(saved).filteredOn(a -> a.getAchievementYear() < 2026).hasSize(40)
+        .allSatisfy(a -> assertThat(a.getSeenAt()).isEqualTo(NOW));
+    assertThat(saved).filteredOn(a -> a.getAchievementYear() == 2026).singleElement()
+        .extracting(Achievement::getSeenAt).isNull();
+    verify(notificationService).emitNotification(ACHIEVEMENT_REACHED, List.of(ANNA_LOGIN), NotificationMessage.builder()
+        .titleKey("main.achievement.notification.one.title").titleParams(List.of("Neuling · Jahresstufe 1"))
+        .descriptionKey("main.achievement.notification.one.description").descriptionParams(List.of("01.02.2026"))
+        .actionUrl(AchievementService.PROFILE_URL).actionLabel("Zum Profil").build());
+  }
+
+  @Test
+  void only_levels_of_earlier_years_are_recorded_without_any_announcement() {
+    yearlyOnly();
+    reported.add(ReachedAchievement.ofEmployee(ANNA, "yearly", 1, LocalDate.parse("2025-03-01")));
+
+    assertThat(service.recordReached(TODAY)).isEqualTo(1);
+
+    verifyNoInteractions(notificationService);
+  }
+
+  @Test
+  void the_next_level_of_a_yearly_achievement_is_the_next_one_of_the_current_year() {
+    yearlyOnly();
+    asPerson();
+    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(
+        recordedYearly(10, "2025-11-01"), recordedYearly(1, "2026-02-01")));
+
+    var profile = service.getProfileOfCurrentPerson(TODAY);
+
+    assertThat(profile.reached()).extracting(AchievementProfile.Reached::level).containsExactly(10, 1);
+    assertThat(profile.next()).containsExactly(new AchievementProfile.Next(YEARLY, 5, null, null));
+  }
+
+  /* Every level of every year would flood the profile page with dozens of medals: of an earlier year
+     only the highest one stands there, of the current year each. */
+  @Test
+  void the_profile_shows_the_highest_level_of_each_earlier_year_and_every_level_of_the_current_year() {
+    yearlyOnly();
+    asPerson();
+    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(
+        recordedYearly(1, "2024-02-01"), recordedYearly(5, "2024-06-01"),
+        recordedYearly(1, "2025-03-01"), recordedYearly(5, "2025-05-01"), recordedYearly(10, "2025-11-01"),
+        recordedYearly(1, "2026-02-01"), recordedYearly(5, "2026-04-01")));
+
+    assertThat(service.getProfileOfCurrentPerson(TODAY).reached())
+        .extracting(AchievementProfile.Reached::level, AchievementProfile.Reached::achievedOn)
+        .containsExactly(tuple(5, LocalDate.parse("2024-06-01")), tuple(10, LocalDate.parse("2025-11-01")),
+            tuple(1, LocalDate.parse("2026-02-01")), tuple(5, LocalDate.parse("2026-04-01")));
+  }
+
+  @Test
+  void a_yearly_achievement_with_nothing_this_year_starts_at_its_first_level() {
+    yearlyOnly();
+    asPerson();
+    when(repository.findAllByEmployeeId(ANNA)).thenReturn(List.of(recordedYearly(10, "2025-11-01")));
+
+    assertThat(service.getProfileOfCurrentPerson(TODAY).next())
+        .containsExactly(new AchievementProfile.Next(YEARLY, 1, null, null));
+  }
+
   @Test
   void nothing_is_announced_while_somebody_acts_as_another_person() {
     when(authorizedUser.getImpersonateLoginSign()).thenReturn("bt");
@@ -298,6 +397,23 @@ class AchievementServiceTest {
     service.markSeenForCurrentPerson();
 
     verify(repository).markSeen(eq(ANNA), eq(NOW));
+  }
+
+  private AchievementService newService() {
+    return new AchievementService(repository, new AchievementRegistry(List.of(contributor)), employeeReferences,
+        preferenceService, employeeService, notificationService, messages, authorizedUser, authorizedEmployee);
+  }
+
+  private void yearlyOnly() {
+    achievements = List.of(YEARLY);
+    service = newService();
+  }
+
+  private static Achievement recordedYearly(int level, String day) {
+    var achievement = recorded(level, day);
+    achievement.setAchievementKey("yearly");
+    achievement.setAchievementYear(LocalDate.parse(day).getYear());
+    return achievement;
   }
 
   private void asPerson() {

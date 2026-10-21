@@ -7320,3 +7320,39 @@ databaseChangeLog:
             tableName: release_reminder
             columnNames: employeecontract_id, reminded_on
             constraintName: uk_release_reminder_employeecontract_id_reminded_on
+
+  - changeSet:
+      id: 194
+      author: kr
+      comment: Jahr eines jaehrlichen Achievements (#1512)
+      # Ein jaehrliches Achievement (Jahresabzeichen Fortbildung) erreicht jede Stufe einmal je
+      # Kalenderjahr. Das Jahr gehoert deshalb in den eindeutigen Schluessel. Alle anderen
+      # Achievements tragen 0 statt NULL: MySQL haelt NULL-Werte in einem eindeutigen Index fuer
+      # verschieden, der Schluessel schuetzte sie dann nicht mehr. Der neue Schluessel entsteht vor dem
+      # Entfernen des alten, weil der Fremdschluessel auf employee_id einen Index mit der Person vorn
+      # braucht.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: achievement
+        - not:
+            - columnExists:
+                tableName: achievement
+                columnName: achievement_year
+      changes:
+        - addColumn:
+            tableName: achievement
+            columns:
+              - column:
+                  name: achievement_year
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: achievement
+            columnNames: employee_id, achievement_key, achievement_year, achievement_level
+            constraintName: uk_achievement_employee_key_year_level
+        - dropUniqueConstraint:
+            tableName: achievement
+            constraintName: uk_achievement_employee_id_achievement_key_achievement_level

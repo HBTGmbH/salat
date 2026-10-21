@@ -3,7 +3,10 @@ package de.hbt.salat.achievement.viewhelper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import de.hbt.salat.achievement.domain.AchievementProfile;
 import de.hbt.salat.achievement.service.AchievementService;
+import de.hbt.salat.dailyreport.service.TrainingYearAchievementContributor;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Locale;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -64,6 +67,20 @@ class AchievementViewHelperTest {
     } finally {
       LocaleContextHolder.resetLocaleContext();
     }
+  }
+
+  /* #1512: working days of training are missing with a decimal, one day in the singular. */
+  @Test
+  void working_days_of_training_still_missing_with_a_decimal() {
+    assertThat(missing("1.5")).isEqualTo("noch 1,5 Tage");
+    assertThat(missing("1.0")).isEqualTo("noch 1 Tag");
+    assertThat(missing("0.5")).isEqualTo("noch 0,5 Tage");
+    assertThat(missing("2.0")).isEqualTo("noch 2 Tage");
+  }
+
+  private String missing(String days) {
+    var next = new AchievementProfile.Next(TrainingYearAchievementContributor.TRAINING_YEAR, 4, null, new BigDecimal(days));
+    return viewHelper.next(next, TODAY);
   }
 
   private static MessageSourceAccessor messages() {

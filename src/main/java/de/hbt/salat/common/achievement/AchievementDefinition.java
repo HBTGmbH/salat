@@ -1,5 +1,6 @@
 package de.hbt.salat.common.achievement;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,8 +22,15 @@ import java.util.regex.Pattern;
  *
  * <p>Recorded achievements are matched by {@link #getKey()}; the key of an achievement no module
  * contributes any more is dropped silently when they are read, so no cleanup migration is needed.
+ *
+ * <p>A {@linkplain #yearly yearly} achievement starts anew every calendar year (#1512): its levels
+ * are reached once per year, and the year is the one of the day a level was reached. Every other
+ * achievement is reached once for good.
  */
 public final class AchievementDefinition {
+
+  /** The year of a level of an achievement that is not yearly: it is reached once, not per year. */
+  public static final int NO_YEAR = 0;
 
   /** Lower case letters, digits and dashes; the key goes into message keys and element ids. */
   private static final Pattern KEY = Pattern.compile("[a-z0-9][a-z0-9-]{0,63}");
@@ -31,6 +39,7 @@ public final class AchievementDefinition {
   private final String pictogram;
   private final int position;
   private final List<AchievementLevel> levels;
+  private final boolean yearly;
 
   /**
    * @param key       the key the achievement is recorded under; never change it once recorded
@@ -39,6 +48,16 @@ public final class AchievementDefinition {
    * @param levels    the levels, values positive and strictly ascending, tiers not descending
    */
   public AchievementDefinition(String key, String pictogram, int position, List<AchievementLevel> levels) {
+    this(key, pictogram, position, levels, false);
+  }
+
+  /** An achievement that starts anew every calendar year (#1512); the parameters as for the constructor. */
+  public static AchievementDefinition yearly(String key, String pictogram, int position, List<AchievementLevel> levels) {
+    return new AchievementDefinition(key, pictogram, position, levels, true);
+  }
+
+  private AchievementDefinition(String key, String pictogram, int position, List<AchievementLevel> levels,
+      boolean yearly) {
     if (key == null || !KEY.matcher(key).matches()) {
       throw new IllegalArgumentException("achievement key must be lower case letters, digits and dashes: " + key);
     }
@@ -61,6 +80,7 @@ public final class AchievementDefinition {
     this.pictogram = pictogram;
     this.position = position;
     this.levels = List.copyOf(levels);
+    this.yearly = yearly;
   }
 
   public String getKey() {
@@ -73,6 +93,15 @@ public final class AchievementDefinition {
 
   public int getPosition() {
     return position;
+  }
+
+  public boolean isYearly() {
+    return yearly;
+  }
+
+  /** The year a level reached on the day counts for: its calendar year if yearly, {@link #NO_YEAR} otherwise. */
+  public int yearOf(LocalDate achievedOn) {
+    return yearly ? achievedOn.getYear() : NO_YEAR;
   }
 
   /** The values of the levels, ascending. */

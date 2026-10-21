@@ -6,6 +6,7 @@ import de.hbt.salat.achievement.domain.AchievementQuote;
 import de.hbt.salat.beta.service.BetaAchievementContributor;
 import de.hbt.salat.common.achievement.AchievementDefinition;
 import de.hbt.salat.dailyreport.service.TrainingAchievementContributor;
+import de.hbt.salat.dailyreport.service.TrainingYearAchievementContributor;
 import de.hbt.salat.employee.service.TenureAchievementContributor;
 import de.hbt.salat.palette.service.PaletteAchievementContributor;
 import java.util.List;
@@ -19,7 +20,7 @@ class AchievementQuotesTest {
 
   private static final List<AchievementDefinition> ACHIEVEMENTS = List.of(TenureAchievementContributor.FIRST_100_DAYS,
       TenureAchievementContributor.TENURE, TrainingAchievementContributor.TRAINING, PaletteAchievementContributor.PALETTE,
-      BetaAchievementContributor.BETA);
+      BetaAchievementContributor.BETA, TrainingYearAchievementContributor.TRAINING_YEAR);
 
   private final AchievementQuotes quotes = new AchievementQuotes();
 

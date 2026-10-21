@@ -1,5 +1,6 @@
 package de.hbt.salat.achievement.persistence;
 
+import static de.hbt.salat.common.achievement.AchievementDefinition.NO_YEAR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -54,7 +55,7 @@ class AchievementRepositoryTest {
     repository.save(achievement(bert, 5, "2021-03-01"));
 
     assertThat(repository.findAllRecordedLevels()).containsExactlyInAnyOrder(
-        new RecordedLevel(anna.getId(), "tenure", 1), new RecordedLevel(bert.getId(), "tenure", 5));
+        new RecordedLevel(anna.getId(), "tenure", NO_YEAR, 1), new RecordedLevel(bert.getId(), "tenure", NO_YEAR, 5));
   }
 
   @Test
@@ -62,6 +63,18 @@ class AchievementRepositoryTest {
     repository.saveAndFlush(achievement(anna, 1, "2017-03-01"));
 
     assertThatThrownBy(() -> repository.saveAndFlush(achievement(anna, 1, "2017-03-01")))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  /* #1512: a yearly achievement records the same level once per year. */
+  @Test
+  void a_level_of_a_yearly_achievement_is_recorded_once_per_year() {
+    repository.saveAndFlush(yearly(anna, 1, "2025-03-01"));
+    repository.saveAndFlush(yearly(anna, 1, "2026-03-01"));
+
+    assertThat(repository.findAllRecordedLevels()).containsExactlyInAnyOrder(
+        new RecordedLevel(anna.getId(), "training-year", 2025, 1), new RecordedLevel(anna.getId(), "training-year", 2026, 1));
+    assertThatThrownBy(() -> repository.saveAndFlush(yearly(anna, 1, "2026-05-01")))
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 
@@ -90,6 +103,13 @@ class AchievementRepositoryTest {
     employee.setLastname("Nachname");
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     return employeeRepository.save(employee);
+  }
+
+  private static Achievement yearly(Employee employee, int level, String day) {
+    var achievement = achievement(employee, level, day);
+    achievement.setAchievementKey("training-year");
+    achievement.setAchievementYear(achievement.getAchievedOn().getYear());
+    return achievement;
   }
 
   private static Achievement achievement(Employee employee, int level, String day) {

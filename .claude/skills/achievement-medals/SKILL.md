@@ -44,6 +44,7 @@ their contrasts are checked by the build script instead.
    | `assets/pictograms/mortarboard.svg` | Fortbildung, hours of training |
    | `assets/pictograms/keyboard.svg` | Palette Junkie, calls of the command palette |
    | `assets/pictograms/flask.svg` | Beta-Pionier, betas tried |
+   | `assets/pictograms/book.svg` | Fortbildungsjahr, working days of regular training per year |
 2. **Draw it** as `assets/pictograms/<name>.svg`, copying an existing one as the start. The format is strict, and the build
    script refuses anything else:
    * `viewBox="0 0 60 42"`, shapes only (`path`, `rect`, `circle`, `ellipse`, `polygon`), no `fill`, `stroke`, `style`,

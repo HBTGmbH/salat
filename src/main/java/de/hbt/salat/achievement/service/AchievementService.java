@@ -51,6 +51,11 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Every new level is announced, in the order it was reached: whoever has been with the company
  * for ten years sees one year and five years first, then ten - the way they happened.
+ *
+ * <p>A yearly achievement (#1512) is recorded once per year and level; the year is the one of the day
+ * the level was reached. Its next level on the profile page is the next one of the current year, and
+ * only the current year's levels are announced: the earlier years are recorded as history, and the
+ * profile page shows the highest level of each.
  */
 @Slf4j
 @Service
@@ -74,8 +79,8 @@ public class AchievementService {
   private final AuthorizedUser authorizedUser;
   private final AuthorizedEmployee authorizedEmployee;
 
-  /** A reached level, resolved to the person's login. */
-  private record Fresh(EmployeeLogin login, String key, int level, LocalDate achievedOn) {
+  /** A reached level, resolved to the person's login, with the year it counts for. */
+  private record Fresh(EmployeeLogin login, String key, int year, int level, LocalDate achievedOn) {
   }
 
   /**
@@ -97,7 +102,7 @@ public class AchievementService {
     var recorded = new HashSet<>(achievementRepository.findAllRecordedLevels());
     var fresh = new ArrayList<Fresh>();
     for (var reached : resolve(reported)) {
-      if (recorded.add(new RecordedLevel(reached.login().employeeId(), reached.key(), reached.level()))) {
+      if (recorded.add(new RecordedLevel(reached.login().employeeId(), reached.key(), reached.year(), reached.level()))) {
         fresh.add(reached);
       }
     }
@@ -105,10 +110,19 @@ public class AchievementService {
     for (var reachedOfPerson : byEmployee.values()) {
       var login = reachedOfPerson.getFirst().login();
       boolean announce = preferenceService.isAnnouncedTo(login.salatUserId());
+      var announced = new ArrayList<Fresh>();
       reachedOfPerson.stream()
           .sorted(comparing(Fresh::achievedOn).thenComparing(Fresh::level))
-          .forEach(reached -> achievementRepository.save(toEntity(reached, announce)));
-      announce(login.salatUserId(), reachedOfPerson, announce);
+          .forEach(reached -> {
+            boolean history = isHistory(reached, today);
+            achievementRepository.save(toEntity(reached, announce && !history));
+            if (!history) {
+              announced.add(reached);
+            }
+          });
+      if (!announced.isEmpty()) {
+        announce(login.salatUserId(), announced, announce);
+      }
     }
     log.info("Recorded {} achievement level(s) for {} person(s)", fresh.size(), byEmployee.size());
     return fresh.size();
@@ -129,7 +143,11 @@ public class AchievementService {
     var recorded = achievementRepository.findAllByEmployeeId(employeeId).stream()
         .filter(achievement -> registry.isKnown(achievement.getAchievementKey(), achievement.getAchievementLevel()))
         .toList();
+    var highestOfYear = recorded.stream().collect(groupingBy(achievement -> achievement.getAchievementKey()
+        + "/" + achievement.getAchievementYear(), Collectors.mapping(Achievement::getAchievementLevel,
+        Collectors.reducing(0, Integer::max))));
     var reached = recorded.stream()
+        .filter(achievement -> isShown(achievement, highestOfYear, today))
         .map(achievement -> {
           var definition = registry.find(achievement.getAchievementKey()).orElseThrow();
           return new AchievementProfile.Reached(definition, achievement.getAchievementLevel(),
@@ -139,7 +157,9 @@ public class AchievementService {
             .thenComparing(item -> item.definition().getPosition())
             .thenComparing(AchievementProfile.Reached::level))
         .toList();
-    var highest = recorded.stream().collect(groupingBy(Achievement::getAchievementKey,
+    var highest = recorded.stream()
+        .filter(achievement -> countsFor(achievement, today))
+        .collect(groupingBy(Achievement::getAchievementKey,
         Collectors.mapping(Achievement::getAchievementLevel, Collectors.maxBy(Integer::compare))));
     var next = registry.all().stream()
         .flatMap(definition -> next(definition, highest.getOrDefault(definition.getKey(), Optional.empty())
@@ -198,7 +218,8 @@ public class AchievementService {
     for (var reached : reported) {
       var login = reached.employeeId() != null ? byEmployee.get(reached.employeeId()) : byLogin.get(reached.salatUserId());
       if (login != null) {
-        resolved.add(new Fresh(login, reached.key(), reached.level(), reached.achievedOn()));
+        var year = registry.find(reached.key()).orElseThrow().yearOf(reached.achievedOn());
+        resolved.add(new Fresh(login, reached.key(), year, reached.level(), reached.achievedOn()));
       }
     }
     return resolved;
@@ -221,6 +242,36 @@ public class AchievementService {
     return authorizedEmployee.getEmployeeId();
   }
 
+  /**
+   * Whether the reached level stands on the profile page: of a yearly achievement's earlier year only
+   * the highest one (#1512) - every level of every year would flood the page with dozens of medals.
+   */
+  private boolean isShown(Achievement achievement, Map<String, Integer> highestOfYear, LocalDate today) {
+    int year = achievement.getAchievementYear();
+    if (year == AchievementDefinition.NO_YEAR || year == today.getYear()) {
+      return true;
+    }
+    return achievement.getAchievementLevel() == highestOfYear.get(achievement.getAchievementKey() + "/" + year);
+  }
+
+  /**
+   * Whether the level is a yearly achievement's of an earlier year (#1512). The first run finds those
+   * for every year since a person started, for a long tenure dozens; announced, their names overflowed
+   * the one notification and stopped the whole job. They are history: recorded as seen and shown on
+   * the profile page, but not announced. A level of the year before reached in January through a late
+   * booking is history as well.
+   */
+  private boolean isHistory(Fresh reached, LocalDate today) {
+    return reached.year() != AchievementDefinition.NO_YEAR && reached.year() < today.getYear();
+  }
+
+  /** Whether the recorded level counts towards the next one: of a yearly achievement only the current year's. */
+  private boolean countsFor(Achievement achievement, LocalDate today) {
+    return registry.find(achievement.getAchievementKey())
+        .map(definition -> achievement.getAchievementYear() == definition.yearOf(today))
+        .orElse(false);
+  }
+
   /** The level after the highest reached one, with how far it is; empty once every level is reached. */
   private Optional<AchievementProfile.Next> next(AchievementDefinition definition, Integer highest,
       AchievementPerson person, LocalDate today) {
@@ -237,6 +288,7 @@ public class AchievementService {
     achievement.setEmployee(employeeReferences.employee(reached.login().employeeId()));
     achievement.setAchievementKey(reached.key());
     achievement.setAchievementLevel(reached.level());
+    achievement.setAchievementYear(reached.year());
     achievement.setAchievedOn(reached.achievedOn());
     // without announcements there is no popup to wait for
     achievement.setSeenAt(announce ? null : ClockProvider.now());
