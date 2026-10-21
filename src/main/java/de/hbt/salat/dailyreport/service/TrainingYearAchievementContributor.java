@@ -30,8 +30,9 @@ import org.springframework.stereotype.Component;
  *
  * <p>A working day is the daily working time of the contract the training was booked on, as with the
  * vacation; a person with several contracts in a year collects on all of them. Only the regular
- * training counts, none booked on a project, and none on a freelancer contract. The levels end at
- * ten days, what the training rules of the company provide for: booking more brings no medal.
+ * training counts - the suborders of {@code salat.training.regular-suborder-signs}, resolved by
+ * {@code SpecialOrders} -, none booked on a project, and none on a freelancer contract. The levels
+ * end at ten days, what the training rules of the company provide for: booking more brings no medal.
  */
 @Component
 @RequiredArgsConstructor
