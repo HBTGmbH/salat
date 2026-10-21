@@ -130,7 +130,7 @@ public class AchievementService {
 
   /**
    * The achievements of the person on the profile page - the logged-in one, or the one acted as:
-   * every level reached, in the order it was reached, and the next level of each achievement.
+   * every level reached, the newest first, and the next level of each achievement.
    */
   @Transactional(readOnly = true)
   public AchievementProfile getProfileOfCurrentPerson(LocalDate today) {
@@ -153,9 +153,9 @@ public class AchievementService {
           return new AchievementProfile.Reached(definition, achievement.getAchievementLevel(),
               definition.tierOf(achievement.getAchievementLevel()), achievement.getAchievedOn());
         })
-        .sorted(comparing(AchievementProfile.Reached::achievedOn)
+        .sorted(comparing(AchievementProfile.Reached::achievedOn).reversed()
             .thenComparing(item -> item.definition().getPosition())
-            .thenComparing(AchievementProfile.Reached::level))
+            .thenComparing(comparing(AchievementProfile.Reached::level).reversed()))
         .toList();
     var highest = recorded.stream()
         .filter(achievement -> countsFor(achievement, today))

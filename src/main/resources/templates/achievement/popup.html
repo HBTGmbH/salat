@@ -45,7 +45,7 @@
               <div th:each="achievement, stat : ${achievements}" class="carousel-item text-center"
                    th:classappend="${stat.first} ? 'active'" th:data-achievement-tier="${achievement.tier().fileName()}"
                    th:data-achievement-pictogram="${definition.pictogram}"
-                   th:with="definition=${achievement.definition()},plate=${@achievementViewHelper.plate(achievement.level())}">
+                   th:with="definition=${achievement.definition()},plate=${@achievementViewHelper.plate(achievement.definition(), achievement.level(), achievement.achievedOn())}">
                 <!--/* plate per th:with: a bean call is not allowed in a fragment parameter */-->
                 <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${achievement.tier().fileName()},
                       ${plate}, true)}"></span>

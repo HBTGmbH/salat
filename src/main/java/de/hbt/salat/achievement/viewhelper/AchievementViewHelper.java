@@ -60,6 +60,14 @@ public class AchievementViewHelper {
     return quotes.random(definition.getKey(), level).orElse(null);
   }
 
+  /**
+   * The number on the plate of a medal reached - or to be reached - on the day: the year for a yearly
+   * achievement (#1512), whose days stand in the text below the medal, the level for every other one.
+   */
+  public String plate(AchievementDefinition definition, int level, LocalDate day) {
+    return definition.isYearly() ? String.valueOf(day.getYear()) : plate(level);
+  }
+
   /** The number on a medal's plate: „25“, „1,0K“, „10K“ - in the reader's language. */
   public String plate(int value) {
     if (value < THOUSAND) {
