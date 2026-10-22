@@ -493,7 +493,7 @@
          "Bewegung reduzieren" gewaehlt; dann stehen sie sofort da. */
       const animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const barChart = (element, { categories, series, colors, stacked = false, tooltip, legend, annotations, yMax }) => new ApexCharts(element, {
+      const barChart = (element, { categories, series, colors, stacked = false, tooltip, annotations, yMax }) => new ApexCharts(element, {
         chart: {
           type: 'bar', stacked: stacked, height: parseInt(element.style.height, 10), fontFamily: 'inherit',
           parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false },
@@ -512,8 +512,8 @@
         },
         yaxis: { max: yMax, labels: { formatter: number, style: { fontSize: '13px' } } },
         annotations: annotations || {},
-        legend: { show: series.length > 1, position: 'top', horizontalAlign: 'left', fontSize: '13px',
-          ...legend, markers: { strokeWidth: 0, ...(legend && legend.markers) } },
+        // die Legende steht als Tabler-Legend ueber dem Diagramm (legendList)
+        legend: { show: false },
         tooltip: tooltip || { y: { formatter: number } }
       });
 
@@ -522,19 +522,64 @@
          nach diesem Skript und loest dabei dasselbe Ereignis aus. */
       const renderWhenShown = (paneId, create) => {
         const pane = document.getElementById(paneId);
-        if (!pane) return;
-        let rendered = false;
-        const render = () => { if (!rendered) { rendered = true; create().render(); } };
+        if (!pane) return () => null;
+        let chart = null;
+        const render = () => { if (!chart) { chart = create(); chart.render(); } };
         if (pane.classList.contains('active')) render();
         document.getElementById(paneId + '-button').addEventListener('shown.bs.tab', render);
+        return () => chart;
+      };
+
+      /* Die Legende ist Tablers Legend (#1293), nicht die von ApexCharts: Schrift, Punkt und
+         Abstaende kommen so aus den Tabler-Tokens. Sie steht ueber dem Diagramm, wo die alte stand.
+         Ein Eintrag je Reihe, die Farbe des Punkts ist die des Balkens, bei planned die hellere
+         Stufe (salat.css). Mit onToggle ist jeder Eintrag ein Umschalter: Klick, Enter oder
+         Leertaste blendet die Reihe aus und wieder ein, aria-pressed sagt, ob sie zu sehen ist.
+         Ohne onToggle - oder bei nur einer Reihe, die sich auszublenden nicht lohnt - bleibt sie
+         eine blosse Beschriftung. */
+      const legendList = (chartElement, items, onToggle) => {
+        const toggles = onToggle && items.length > 1;
+        const list = document.createElement('div');
+        list.className = 'legend-list mb-2';
+        list.setAttribute('role', 'group');
+        list.setAttribute('aria-label', /*[[#{main.my.accounts.chart.legend}]]*/ 'Legende');
+        items.forEach(item => {
+          const entry = document.createElement(toggles ? 'button' : 'span');
+          entry.className = 'legend';
+          entry.style.setProperty('--tblr-legend-color', item.color);
+          const dot = document.createElement('span');
+          dot.className = 'legend-dot' + (item.line ? ' legend-dot-line' : '') + (item.planned ? ' legend-dot-planned' : '');
+          entry.append(dot, item.name);
+          if (toggles) {
+            entry.type = 'button';
+            entry.setAttribute('aria-pressed', 'true');
+            entry.addEventListener('click', () => {
+              const shown = entry.getAttribute('aria-pressed') !== 'true';
+              entry.setAttribute('aria-pressed', String(shown));
+              entry.classList.toggle('legend-off', !shown);
+              onToggle(item.name, shown);
+            });
+          }
+          list.append(entry);
+        });
+        chartElement.before(list);
+      };
+
+      /* Blendet eine Reihe aus oder ein und merkt sie sich: das Popup summiert nur, was zu sehen ist. */
+      const seriesToggle = (chartOf, hidden) => (name, shown) => {
+        if (shown) hidden.delete(name); else hidden.add(name);
+        const chart = chartOf();
+        if (chart) { if (shown) chart.showSeries(name); else chart.hideSeries(name); }
       };
 
       /* Arbeitszeit als "Column with Markers": die Ist-Stunden als Saeule, das Soll als Markierung
          quer ueber ihr (ApexCharts goals). Ob ein Monat darueber oder darunter liegt, steht so an
          einer Saeule statt im Vergleich zweier nebeneinander. Die Legende nennt alle Teile, auch wenn
-         es nur eine Reihe gibt. Zeitzuschlaege (#1469) wirken sofort aufs Arbeitszeitkonto und stehen
-         deshalb als eigenes Stueck in Teal oben auf den gebuchten Stunden; die Markierung des Solls
-         und die Differenz beziehen sich auf den ganzen Stapel. */
+         es nur eine Reihe gibt; ausblenden laesst sich hier nichts, weil Markierung und Differenz am
+         ganzen Stapel haengen und ohne eine Reihe ins Leere zeigten. Zeitzuschlaege (#1469) wirken
+         sofort aufs Arbeitszeitkonto und stehen deshalb als eigenes Stueck in Teal oben auf den
+         gebuchten Stunden; die Markierung des Solls und die Differenz beziehen sich auf den ganzen
+         Stapel. */
       const workingTimeChart = document.getElementById('workingTimeChart');
       if (workingTimeChart) {
         const actualName = /*[[#{main.my.accounts.working.chart.actual}]]*/ 'Ist';
@@ -551,7 +596,7 @@
         /* Eigenes Popup statt des eingebauten: das stellt den Sollwert einer Markierung anders dar
            als die Saeule - ohne Doppelpunkt, mit einem Zeichen zwischen den Zeilen. Hier stehen
            Ist, Zeitzuschlaege, Soll und ihre Differenz gleich aufgebaut untereinander, jede Zeile mit
-           dem Zeichen aus der Legende (Kaestchen fuer die Saeule, Strich fuer die Markierung). */
+           dem Zeichen aus der Legende (Punkt fuer die Saeule, Strich fuer die Markierung). */
         const row = (marker, label, value) => '<div class="chart-tooltip-row">' + marker
             + '<span>' + label + '</span><span class="chart-tooltip-value">' + value + '</span></div>';
         const box = (color) => '<span class="chart-tooltip-marker" style="background:' + color + '"></span>';
@@ -593,11 +638,12 @@
         const series = hasSurcharge
           ? [{ name: actualName, data: points(chartActual, false) }, { name: surchargeName, data: points(chartSurcharge, true) }]
           : [{ name: actualName, data: points(chartActual, true) }];
-        const legendItems = hasSurcharge ? [actualName, surchargeName, targetName] : [actualName, targetName];
-        // Leerzeichen nach der eckigen Klammer: ohne laese Thymeleaf sie mit der runden als Inline-Ausdruck
-        const legendMarkers = hasSurcharge
-          ? [ () => box(actualColor), () => box(surchargeColor), () => line(targetColor) ]
-          : [ () => box(actualColor), () => line(targetColor) ];
+        legendList(workingTimeChart, [
+          { name: actualName, color: actualColor },
+          ...(hasSurcharge ? [{ name: surchargeName, color: surchargeColor }] : []),
+          // ein Strich wie die Markierung im Diagramm und im Popup
+          { name: targetName, color: targetColor, line: true }
+        ]);
         renderWhenShown('tab-working-time', () => barChart(workingTimeChart, {
           categories: chartLabels,
           annotations: differenceLabels,
@@ -605,9 +651,6 @@
           stacked: hasSurcharge,
           series: series,
           colors: hasSurcharge ? [actualColor, surchargeColor] : [actualColor],
-          legend: { show: true, showForSingleSeries: true, customLegendItems: legendItems,
-            // dieselben Zeichen wie im Popup; ApexCharts' eigene Linienform bliebe ohne Strichstaerke unsichtbar
-            markers: { customHTML: legendMarkers } },
           tooltip: { custom: workingTimeTooltip }
         }));
       }
@@ -621,20 +664,22 @@
         const orange = tblrColor('orange');
         const series = [
           { name: /*[[#{main.my.accounts.vacation.chart.taken}]]*/ 'Urlaub', data: vacationMonthDays, color: azure },
-          { name: /*[[#{main.my.accounts.vacation.chart.planned}]]*/ 'Urlaub geplant', data: vacationMonthPlannedDays, color: planned(azure) },
+          { name: /*[[#{main.my.accounts.vacation.chart.planned}]]*/ 'Urlaub geplant', data: vacationMonthPlannedDays, color: azure, planned: true },
           { name: /*[[#{main.my.accounts.vacation.chart.special.taken}]]*/ 'Sonderurlaub', data: vacationMonthSpecialDays, color: orange },
-          { name: /*[[#{main.my.accounts.vacation.chart.special.planned}]]*/ 'Sonderurlaub geplant', data: vacationMonthSpecialPlannedDays, color: planned(orange) }
+          { name: /*[[#{main.my.accounts.vacation.chart.special.planned}]]*/ 'Sonderurlaub geplant', data: vacationMonthSpecialPlannedDays, color: orange, planned: true }
         ].filter(s => s.data.some(v => v > 0));
         /* Ein Popup je Monat mit allen Werten des Balkens und ihrer Summe im Titel, statt eines
            Popups je Teilstueck; Reihen ohne Tage in diesem Monat bleiben darin weg. */
         const dayUnit = /*[[#{main.my.accounts.vacation.day}]]*/ 'Tag';
         const daysUnit = /*[[#{main.my.accounts.vacation.days}]]*/ 'Tage';
         const days = (value) => number(value) + ' ' + (value === 1 ? dayUnit : daysUnit);
-        const monthTotal = (index) => series.reduce((sum, s) => sum + (s.data[index] || 0), 0);
-        renderWhenShown('tab-vacation', () => barChart(vacationChart, {
+        const hiddenVacation = new Set();
+        const monthTotal = (index) => series.filter(s => !hiddenVacation.has(s.name))
+            .reduce((sum, s) => sum + (s.data[index] || 0), 0);
+        const vacationChartOf = renderWhenShown('tab-vacation', () => barChart(vacationChart, {
           categories: vacationMonthLabels,
           series: series.map(s => ({ name: s.name, data: s.data })),
-          colors: series.map(s => s.color),
+          colors: series.map(s => s.planned ? planned(s.color) : s.color),
           stacked: true,
           tooltip: {
             shared: true, intersect: false, hideEmptySeries: true,
@@ -642,6 +687,7 @@
             y: { formatter: days }
           }
         }));
+        legendList(vacationChart, series, seriesToggle(vacationChartOf, hiddenVacation));
       }
 
       /* Fortbildung gestapelt: regulaere und projektbezogene je in eigener Farbe, wie die beiden
@@ -655,8 +701,10 @@
         ].filter(s => s.data.some(v => v > 0));
         const hoursUnit = /*[[#{main.my.accounts.training.booking.hours}]]*/ 'Stunden';
         const hours = (value) => number(value) + ' ' + hoursUnit;
-        const trainingTotal = (index) => trainingSeries.reduce((sum, s) => sum + (s.data[index] || 0), 0);
-        renderWhenShown('tab-training', () => barChart(trainingChart, {
+        const hiddenTraining = new Set();
+        const trainingTotal = (index) => trainingSeries.filter(s => !hiddenTraining.has(s.name))
+            .reduce((sum, s) => sum + (s.data[index] || 0), 0);
+        const trainingChartOf = renderWhenShown('tab-training', () => barChart(trainingChart, {
           categories: trainingChartLabels,
           series: trainingSeries.map(s => ({ name: s.name, data: s.data })),
           colors: trainingSeries.map(s => s.color),
@@ -667,6 +715,7 @@
             y: { formatter: hours }
           }
         }));
+        legendList(trainingChart, trainingSeries, seriesToggle(trainingChartOf, hiddenTraining));
       }
 
       // Sync URL hash with active tab

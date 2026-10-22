@@ -1538,10 +1538,6 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   fill: var(--tblr-body-color);
 }
 
-.apexcharts-legend-text {
-  color: inherit !important;
-}
-
 .apexcharts-grid-borders line,
 .apexcharts-gridline,
 .apexcharts-xaxis-tick,
@@ -1607,12 +1603,43 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   flex: none;
   width: 0.625rem;
   height: 0.625rem;
-  border-radius: 2px;
+  border-radius: var(--tblr-border-radius-pill);
 }
 
 .chart-tooltip-marker-line {
   height: 3px;
   border-radius: 2px;
+}
+
+/* Legenden der Diagramme sind Tablers Legend (#1293). Das Soll ist im Diagramm eine Markierung quer
+   ueber der Saeule, kein Balken; sein Zeichen ist deshalb ein Strich statt eines Punkts, wie im
+   Popup. */
+.legend-dot.legend-dot-line {
+  width: 0.75rem;
+  height: 3px;
+  border: 0;
+}
+
+/* Geplant: dieselbe hellere Stufe wie der Balken (planned() im Diagramm, .progress-bar-planned).
+   Allein erreicht sie auf der Karte nur 1,6:1 (dunkel 2,08:1); der Rand in der vollen Farbe der
+   Reihe traegt den Punkt ueber 3:1 (ADR-0025). */
+.legend-dot.legend-dot-planned {
+  background: color-mix(in srgb, var(--tblr-legend-color) 45%, transparent);
+  border-color: var(--tblr-legend-color);
+}
+
+/* Eine ausgeblendete Reihe: Tabler halbiert die Deckkraft des ganzen Eintrags, die Schrift fiele
+   damit unter 4,5:1 (ADR-0025). Sie bleibt deshalb in voller Farbe und ist durchgestrichen; der
+   Punkt wird zum Ring in der Farbe der Reihe, statt grau zu werden. */
+.legend.legend-off {
+  opacity: 1;
+  text-decoration: line-through;
+}
+
+.legend.legend-off .legend-dot {
+  --tblr-legend-color: inherit;
+  background: transparent;
+  border: 2px solid var(--tblr-legend-color);
 }
 
 /* A ticket key never breaks (#1386): browsers would otherwise wrap ABC-123 after its hyphen, and a
