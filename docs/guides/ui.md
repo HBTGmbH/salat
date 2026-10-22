@@ -210,6 +210,11 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   gebraucht wird, liefert `oklch(from <token> <L> <zu hohe Buntheit> h)` den Rand des sRGB-Raums —
   das sättigste, was bei dieser Helligkeit möglich ist. Wo auch das nicht reicht, gehört die Farbe
   in die Fläche statt in die Schrift (gelbe Badge: dunkle Schrift auf voller Farbe).
+- **Tabler blendet mit Deckkraft aus.** `.legend-off` halbiert die Deckkraft des ganzen Eintrags, und
+  die Schrift fällt unter 4,5:1. Diagramm-Legenden sind Tablers Legend (#1293); `salat.css` hält
+  einen ausgeblendeten Eintrag in voller Farbe, streicht ihn durch und macht den Punkt zum Ring.
+  Ein Punkt in der helleren Stufe für „geplant“ bekommt einen Rand in der vollen Farbe, allein
+  erreicht er keine 3:1.
 - **Ein Farbwert, den es zweimal gibt, driftet.** Die Füllung einer Badge und die semantische
   Textfarbe desselben Namens sind im hellen Modus **derselbe Ton** (`text-danger` = Füllung von
   `.badge.bg-danger-lt` = `#cb3636`, #1043). Wer einen Anteil ändert, ändert beide; sonst stehen
