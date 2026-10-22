@@ -34,6 +34,48 @@
   .overtime-legend-popover {
     max-width: min(21rem, calc(100vw - 2rem));
   }
+  /* Der Verlauf des Saldos als Gebirge hinter der Karte (#1294): absolut am unteren Rand, damit die
+     Karte nicht hoeher wird, und hinter dem Inhalt. z-index -1 bleibt dank isolation in der Karte und
+     verschwindet nicht hinter ihrem Hintergrund. Tabler zieht das SVG ohne Seitenverhaeltnis auf die
+     Flaeche; die Kammlinie behaelt ihre Breite nur ueber vector-effect.
+     Farben: Linie und Flaeche sind neutral grau (text-muted) und kommen ueber currentColor - die
+     Ampelfarbe gehoert der Zahl, das Gebirge ist Hintergrund. Die Kammlinie traegt die Information
+     und ist gegen Karte und Flaeche gemessen (ADR-0025, 3:1); die Flaeche ist Tablers
+     10-%-Fuellung, ein Schatten. */
+  .overtime-card {
+    isolation: isolate;
+  }
+  .overtime-sparkline {
+    --tblr-sparkline-width: 100%;
+    --tblr-sparkline-height: 45%;
+    --tblr-sparkline-stroke-width: 1.5;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+    pointer-events: none;
+  }
+  .overtime-sparkline polyline {
+    vector-effect: non-scaling-stroke;
+  }
+  /* Ueber der Flaeche faellt Text unter 4,5:1: gesamt (text-muted) im hellen Modus bei 10 %
+     Deckung auf 4,20:1. Ein Ring von 1px in Kartenfarbe ohne Unschaerfe stellt den
+     Kartengrund direkt um jeden Buchstaben wieder her - dort gelten die Werte auf der Karte
+     (gemessen text-muted 4,74:1 / 6,00:1, Link 5,0:1 / 6,28:1) - und unterbricht die Kammlinie, wo
+     sie Text kreuzt. Die Kammlinie selbst: 4,20:1 hell, 5,01:1 dunkel gegen die Flaeche, gegen die
+     Karte 4,74:1 / 6,00:1. */
+  .overtime-card .card-body > :not(.overtime-sparkline) {
+    --overtime-halo: var(--tblr-card-bg, var(--tblr-bg-surface));
+    text-shadow:
+      1px 0 var(--overtime-halo), -1px 0 var(--overtime-halo),
+      0 1px var(--overtime-halo), 0 -1px var(--overtime-halo),
+      1px 1px var(--overtime-halo), -1px -1px var(--overtime-halo),
+      1px -1px var(--overtime-halo), -1px 1px var(--overtime-halo);
+  }
 </style>
 <th:block th:replace="~{fragments/matrix-table :: matrixStyles}"></th:block>
 
@@ -198,7 +240,7 @@
 
     <!-- Total Overtime -->
     <div class="col-12 col-md-4 d-flex" th:if="${not #strings.isEmpty(overtime)}">
-      <div class="card h-100 w-100">
+      <div class="card h-100 w-100 overtime-card">
         <div class="card-body d-flex flex-column">
           <!--/* Das Icon sitzt in der Zeile der Ueberschrift und in deren Zeilenhoehe: die Karte
                  wird durch die Erklaerung nicht hoeher (#1030). */-->
@@ -230,6 +272,16 @@
           <div class="text-muted small mt-2 mb-3"
                th:with="surchargeShare=${@surchargeCreditViewHelper.creditOrEmpty(overtimeSurchargeCredit)}"
                th:text="${#strings.isEmpty(surchargeShare)} ? #{main.welcome.total.text} : #{main.welcome.total.surcharge.text(${surchargeShare})}">gesamt</div>
+          <!--/* Steht im Markup hinter der Zahl, damit ein Screenreader den Verlauf nach dem Saldo vorliest;
+                 gezeichnet wird er hinter dem Inhalt (.overtime-sparkline). Tabler blendet das SVG
+                 selbst aus, die Textalternative traegt das Element. */-->
+          <span th:if="${overtimeSparkline != null}" class="sparkline overtime-sparkline text-muted"
+                data-bs-toggle="sparkline" data-bs-type="line" data-bs-fill="auto"
+                th:data-bs-values="${overtimeSparkline.values}"
+                role="img"
+                th:aria-label="#{main.welcome.overtime.sparkline.text(${overtimeSparkline.monthCount},
+                                 ${overtimeSparkline.highest}, ${overtimeSparkline.highestMonth},
+                                 ${overtimeSparkline.lowest}, ${overtimeSparkline.lowestMonth})}"></span>
           <a class="stretched-link small mt-auto"
              th:href="@{/my-accounts(fEmployeeContractId=${shownContractId})} + '#tab-working-time'"
              th:text="#{main.welcome.overtime.link.text}">Arbeitszeitkonto anzeigen</a>

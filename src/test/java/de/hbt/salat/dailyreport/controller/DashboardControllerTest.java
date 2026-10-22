@@ -3,14 +3,17 @@ package de.hbt.salat.dailyreport.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +25,8 @@ import org.mockito.quality.Strictness;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
 import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.dailyreport.domain.OvertimeReport;
+import de.hbt.salat.dailyreport.domain.OvertimeReportMonth;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import de.hbt.salat.dailyreport.domain.OvertimeStatus;
 import de.hbt.salat.dailyreport.domain.TargetProgress;
@@ -36,6 +41,7 @@ import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.VacationService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.dailyreport.viewhelper.OvertimeScale;
+import de.hbt.salat.dailyreport.viewhelper.OvertimeSparkline;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
@@ -279,6 +285,11 @@ public class DashboardControllerTest {
     @InjectMocks
     private DashboardController dashboardController;
 
+    @BeforeEach
+    void noOvertimeHistory() {
+      when(overtimeService.createDetailedReportForEmployee(42L, false)).thenReturn(new OvertimeReport(null, List.of()));
+    }
+
     @Test
     void does_not_count_a_day_marked_as_not_worked() {
       bookedLastOn(THURSDAY);
@@ -450,6 +461,40 @@ public class DashboardControllerTest {
       assertThat(((OvertimeScale) model.getAttribute("overtimeScale")).warningBelowLabel()).isEqualTo("-10");
     }
 
+    /* Der Verlauf kommt aus demselben Bericht wie die Tabelle auf "Meine Konten" (#1294). */
+    @Test
+    void draws_the_overtime_history_from_the_report_of_my_accounts() {
+      bookedLastOn(THURSDAY);
+      var status = status(5, 1);
+      status.get().getCurrentMonth().setBegin(LocalDate.parse("2026-09-01"));
+      when(overtimeService.calculateOvertime(42L, false)).thenReturn(status);
+      when(overtimeService.createDetailedReportForEmployee(42L, false)).thenReturn(new OvertimeReport(null, List.of(
+          month(YearMonth.of(2026, 9), Duration.ofHours(5)),
+          month(YearMonth.of(2026, 8), Duration.ofHours(4)))));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(((OvertimeSparkline) model.getAttribute("overtimeSparkline")).values()).isEqualTo("4.00,5.00");
+    }
+
+    /* Ohne Ueberstundenkarte kein Verlauf - und kein Bericht ueber den ganzen Vertrag, der nur dafuer
+       gerechnet wuerde. */
+    @Test
+    void a_freelancer_gets_no_overtime_history() {
+      bookedLastOn(THURSDAY);
+      contract.setFreelancer(true);
+      var status = status(5, 1);
+      status.get().getCurrentMonth().setBegin(LocalDate.parse("2026-09-01"));
+      when(overtimeService.calculateOvertime(42L, false)).thenReturn(status);
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("overtimeSparkline")).isNull();
+      verify(overtimeService, never()).createDetailedReportForEmployee(42L, false);
+    }
+
     /* Nie freigegeben heisst neuer Vertrag: Employeecontract.getReleaseWarning() warnt nicht, die
        Karte auch nicht. */
     @Test
@@ -486,6 +531,10 @@ public class DashboardControllerTest {
           .thenReturn(java.util.Arrays.stream(days)
               .map(day -> TimereportDTO.builder().referenceday(day).duration(Duration.ofHours(8)).build())
               .toList());
+    }
+
+    private static OvertimeReportMonth month(YearMonth yearMonth, Duration diffCumulative) {
+      return OvertimeReportMonth.builder().yearMonth(yearMonth).diffCumulative(diffCumulative).build();
     }
 
     private static Workingday notWorked(LocalDate day) {
