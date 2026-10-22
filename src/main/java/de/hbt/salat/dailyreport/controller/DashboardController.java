@@ -44,6 +44,7 @@ import de.hbt.salat.dailyreport.service.VacationService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.dailyreport.viewhelper.DashboardGrades;
 import de.hbt.salat.dailyreport.viewhelper.OvertimeScale;
+import de.hbt.salat.dailyreport.viewhelper.OvertimeSparkline;
 import de.hbt.salat.dailyreport.viewhelper.VacationViewHelper;
 import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
@@ -92,6 +93,12 @@ public class DashboardController {
         // die Schwellen gelten fuer 40 Wochenstunden und werden auf den Vertrag umgerechnet (#1175)
         addOvertimeAttributes(model, overtimeStatus, OvertimeScale.TOTAL.forContract(employeecontract),
             OvertimeScale.CURRENT_MONTH.forContract(employeecontract));
+        // der Verlauf des Saldos hinter der Karte, aus demselben Bericht wie auf "Meine Konten" (#1294);
+        // nur, wo die Karte erscheint - der Bericht rechnet den ganzen Vertrag
+        if (displayEmployeeInfo && overtimeStatus.isPresent()) {
+            var report = overtimeService.createDetailedReportForEmployee(employeecontract.getId(), false);
+            model.addAttribute("overtimeSparkline", OvertimeSparkline.from(report).orElse(null));
+        }
         model.addAttribute("vacations", vacations);
         // the hint follows the contract the page shows, and its links name it (#1124)
         model.addAttribute("unbookedDays", releaseService.getUnbookedWorkingDaysOfPreviousWeek(employeecontract.getId()));
