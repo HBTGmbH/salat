@@ -1,8 +1,8 @@
 # Fachliche Regeln
 
 Teil der Entwicklungsregeln: Kern und Verweistabelle stehen in [AGENTS.md](../../AGENTS.md), was hier
-steht, gilt ebenso verbindlich. Lesen, bevor eine Änderung Stammdaten, das Ausblenden, Gültigkeitszeiträume
-oder das Budget berührt.
+steht, gilt ebenso verbindlich. Lesen, bevor eine Änderung Stammdaten, das Ausblenden, Gültigkeitszeiträume,
+das Budget oder ein Achievement berührt.
 
 ---
 
@@ -290,3 +290,20 @@ evaluation reads. Editing the plan therefore has to bring its assignments back i
 - `TimereportBudgetAssignmentService` loads and authorizes a plan through `OrderBudgetRepository` +
   `BudgetAuthorization` rather than through `OrderBudgetService`. That service has to be able to call
   this one, so going the other way would close a bean cycle.
+
+---
+
+## Achievements: was belohnt wird
+Ein Achievement belohnt eigenes Verhalten, das die Buchung ehrlich lässt (→ ADR-0043, #837). Bevor
+eines hinzukommt, besteht es alle fünf Fragen:
+
+1. **Steuert die Person es selbst?** Nicht das Ergebnis von Besetzung, Rolle oder Projekt.
+2. **Bleibt die Buchung ehrlich?** Kein Anreiz, Dauer, Auftrag oder Tag anders zu buchen als gearbeitet.
+3. **Kommt es ohne sensible Daten aus?** Keine Gesundheitsdaten, keine Leistungs- oder Umsatzzahlen der Person.
+4. **Kann jede Person es erreichen**, unabhängig von Gesundheit, Rolle, Teilzeit und Projekt?
+5. **Tut es der Person gut, es anzustreben?** Keine Belohnung für mehr Arbeit oder für Arbeiten trotz Krankheit.
+
+Deshalb gibt es keine Achievements für wenige Krankheitstage, für fakturierte Stunden, für
+Überstunden, Wochenend-, Nacht- oder Feiertagsarbeit und für bestimmte Dauern. Dazu kommen die
+Grundsätze aus #837: keine Rangliste, kein Negativ-Abzeichen, niemand sieht die Achievements eines
+anderen.

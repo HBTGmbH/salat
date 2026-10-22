@@ -56,3 +56,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0040](0040-achievements-eigenes-modul-beitraege-ueber-common.md) | Achievements: eigenes Modul, die Module tragen ihre Achievements über `common.achievement` bei | Proposed | 2026-10-20 |
 | [0041](0041-benachrichtigungen-zentral-mit-kanaelen-je-art.md) | Benachrichtigungen: ein Weg für Glocke und Mail, die Art bestimmt die Kanäle | Proposed | 2026-10-21 |
 | [0042](0042-tags-eigenes-modul-join-tabelle-je-typ.md) | Tags: eigenes Modul, je getaggtem Typ eine Join-Tabelle mit Fremdschlüsseln | Proposed | 2026-10-21 |
+| [0043](0043-was-ein-achievement-belohnt.md) | Was ein Achievement belohnt: eigenes Verhalten, ehrlich gebucht, für alle erreichbar | Proposed | 2026-10-22 |
