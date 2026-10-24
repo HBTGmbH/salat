@@ -30,7 +30,7 @@ public class TimereportPreferenceService {
         ? null
         : suborderId;
     saveForCurrentUser(new TimereportPreferences(
-        newFavorite, current.durationInputMode(), current.lastUsedDurationMode()));
+        newFavorite, current.durationInputMode(), current.lastUsedDurationMode(), current.twoStepSuborderSelect()));
   }
 
   /**
@@ -48,7 +48,7 @@ public class TimereportPreferenceService {
       return;
     }
     saveForCurrentUser(new TimereportPreferences(
-        current.favoriteSuborderId(), current.durationInputMode(), used));
+        current.favoriteSuborderId(), current.durationInputMode(), used, current.twoStepSuborderSelect()));
   }
 
 }

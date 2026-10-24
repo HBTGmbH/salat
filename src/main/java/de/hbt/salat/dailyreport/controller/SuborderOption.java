@@ -9,6 +9,7 @@ import de.hbt.salat.order.domain.SurchargeRate;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.viewhelper.CustomerorderViewHelper;
 import de.hbt.salat.order.viewhelper.SuborderLabelViewHelper;
 
 /**
@@ -24,11 +25,15 @@ import de.hbt.salat.order.viewhelper.SuborderLabelViewHelper;
  * @param ticketReferencePolicy how many ticket references a booking on it may carry (#1326)
  * @param surchargeRates the time surcharges a booking on it may be flagged with; only the kinds
  *                       offered (#1469)
+ * @param orderId    the order it belongs to, by which the form chosen in two steps narrows the list (#1522)
+ * @param orderLabel the order as every order select lists it, sign and short description
+ * @param orderSubtext the line under the order: its customer
  */
 public record SuborderOption(Long id, String sign, String description, String label, String subtext,
                              boolean commentNecessary, boolean trainingFlag, boolean absence,
                              boolean standby, TicketReferencePolicy ticketReferencePolicy,
-                             Map<SurchargeKind, SurchargeRate> surchargeRates) {
+                             Map<SurchargeKind, SurchargeRate> surchargeRates,
+                             Long orderId, String orderLabel, String orderSubtext) {
 
     /**
      * What the contract can book on the day: the suborders of its employee orders valid then. The
@@ -47,7 +52,10 @@ public record SuborderOption(Long id, String sign, String description, String la
                     order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND,
                     order.getOrderType() == OrderType.BEREITSCHAFT,
                     s.ticketReferencePolicy(),
-                    s.surchargeRates())))
+                    s.surchargeRates(),
+                    order.getId(),
+                    CustomerorderViewHelper.of(order.getSign(), order.getShortdescription()),
+                    CustomerorderViewHelper.customerOf(order))))
             .toList();
     }
 }

@@ -108,7 +108,7 @@ class TimereportAbsenceDurationTest {
     when(employeecontractService.getCurrentContract(LOGIN_EMPLOYEE_ID)).thenReturn(Optional.of(contract));
     when(timereportService.getEmployeecontractIdForUpdate(eq(TIMEREPORT_ID), any())).thenReturn(CONTRACT_ID);
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
 
     var sick = customerorder(SICK_ORDER_ID, "KRANK", OrderType.KRANK_URLAUB_ABWESEND);
     var project = customerorder(PROJECT_ORDER_ID, "ALPHA", OrderType.STANDARD);
@@ -158,7 +158,7 @@ class TimereportAbsenceDurationTest {
   @Test
   void the_favourite_counts_as_chosen() {
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(SICK_SUBORDER_ID, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(SICK_SUBORDER_ID, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     var model = new ExtendedModelMap();
 
     controller.createForm(null, null, DATE, null, null, null, null, null, null, null, model);

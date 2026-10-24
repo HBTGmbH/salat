@@ -43,12 +43,12 @@ class TimereportPreferenceServiceTest {
 
     service.rememberDurationMode("beginEnd");
 
-    assertThat(saved()).isEqualTo(new TimereportPreferences(null, REMEMBER, BEGIN_END));
+    assertThat(saved()).isEqualTo(new TimereportPreferences(null, REMEMBER, BEGIN_END, false));
   }
 
   @Test
   void the_favorite_suborder_is_kept_while_remembering() {
-    stored(new TimereportPreferences(7L, REMEMBER, DURATION));
+    stored(new TimereportPreferences(7L, REMEMBER, DURATION, false));
 
     service.rememberDurationMode("beginEnd");
 
@@ -66,7 +66,7 @@ class TimereportPreferenceServiceTest {
 
   @Test
   void booking_in_the_already_remembered_mode_writes_nothing() {
-    stored(new TimereportPreferences(null, REMEMBER, BEGIN_END));
+    stored(new TimereportPreferences(null, REMEMBER, BEGIN_END, false));
 
     service.rememberDurationMode("beginEnd");
 
@@ -75,7 +75,7 @@ class TimereportPreferenceServiceTest {
 
   @Test
   void an_explicitly_chosen_mode_is_not_overwritten_by_a_single_booking() {
-    stored(new TimereportPreferences(null, DURATION, DURATION));
+    stored(new TimereportPreferences(null, DURATION, DURATION, false));
 
     service.rememberDurationMode("beginEnd");
 
@@ -84,11 +84,30 @@ class TimereportPreferenceServiceTest {
 
   @Test
   void toggling_the_favorite_keeps_the_entry_mode() {
-    stored(new TimereportPreferences(null, BEGIN_END, BEGIN_END));
+    stored(new TimereportPreferences(null, BEGIN_END, BEGIN_END, false));
 
     service.toggleFavoriteSuborder(3L);
 
-    assertThat(saved()).isEqualTo(new TimereportPreferences(3L, BEGIN_END, BEGIN_END));
+    assertThat(saved()).isEqualTo(new TimereportPreferences(3L, BEGIN_END, BEGIN_END, false));
+  }
+
+  /** #1522: the star of the booking form and the last entry mode must not switch the setting off. */
+  @Test
+  void toggling_the_favorite_keeps_the_two_step_suborder_select() {
+    stored(new TimereportPreferences(null, BEGIN_END, BEGIN_END, true));
+
+    service.toggleFavoriteSuborder(3L);
+
+    assertThat(saved().twoStepSuborderSelect()).isTrue();
+  }
+
+  @Test
+  void remembering_the_entry_mode_keeps_the_two_step_suborder_select() {
+    stored(new TimereportPreferences(null, REMEMBER, DURATION, true));
+
+    service.rememberDurationMode("beginEnd");
+
+    assertThat(saved().twoStepSuborderSelect()).isTrue();
   }
 
   private void stored(TimereportPreferences preferences) {

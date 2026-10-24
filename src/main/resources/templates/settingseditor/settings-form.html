@@ -51,6 +51,9 @@
         <option value="beginEnd" th:text="#{main.settings.timereport.durationinputmode.beginend}">Immer Beginn / Ende</option>
       </salat:select>
 
+      <salat:checkboxSwitch th:field="*{twoStepSuborderSelect}"
+                            th:label="#{main.settings.timereport.twostepsuborderselect.label}" />
+
       <salat:textInput th:field="*{notificationEmail}"
                        th:label="#{main.settings.notification.email.label}"
                        th:helpText="#{main.settings.notification.email.help}"

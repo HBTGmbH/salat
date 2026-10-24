@@ -92,7 +92,7 @@ class TimereportDeleteFromFormTest {
     when(contract.getId()).thenReturn(CONTRACT_ID);
     when(employeecontractService.getReadableEmployeecontract(CONTRACT_ID)).thenReturn(Optional.of(contract));
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(anyLong(), eq(DATE))).thenReturn(List.of());
     when(timereportService.getTimereportById(TIMEREPORT_ID)).thenReturn(booking());
     when(messages.getMessage(anyString())).thenReturn("ok");

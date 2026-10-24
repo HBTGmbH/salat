@@ -114,7 +114,7 @@ class TimereportCreateContractTest {
     when(timereportService.getEmployeecontractIdForUpdate(TIMEREPORT_ID, DATE)).thenReturn(OWN_CONTRACT_ID);
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(anyLong(), eq(DATE))).thenReturn(List.of());
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
     when(timereportService.getWorkableSerialDates(eq(DATE), anyInt())).thenReturn(List.of(DATE));
     when(messages.getMessage(anyString())).thenReturn("ok");

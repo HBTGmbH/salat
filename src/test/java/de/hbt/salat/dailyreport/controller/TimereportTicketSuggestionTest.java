@@ -101,7 +101,7 @@ class TimereportTicketSuggestionTest {
     when(employeecontractService.getCurrentContract(LOGIN_EMPLOYEE_ID)).thenReturn(Optional.of(contract));
     when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
     when(timereportService.getWorkableSerialDates(eq(DATE), anyInt())).thenReturn(List.of(DATE));
     when(messages.getMessage(anyString())).thenReturn("ok");

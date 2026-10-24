@@ -40,6 +40,7 @@ import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DurationInputMode;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferenceService;
+import de.hbt.salat.dailyreport.preferences.TimereportPreferences;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateTimeUtils;
@@ -277,7 +278,7 @@ public class TimereportController {
         if (ecId > 0 && date != null) {
             suborders = suborderOptions(ecId, date);
             if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
-                form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).id());
+                form.setSuborderId(fallbackSuborderIdOf(suborders, form.getOrderId()));
             }
         }
 
@@ -298,7 +299,9 @@ public class TimereportController {
         }
         addAbsenceDuration(model, ecId, date, form.getId() != null);
         addBookedUntil(model, ecId, date, form.getId());
-        model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
+        var preferences = timereportPreferenceService.getForCurrentUser();
+        model.addAttribute("favoriteSuborderId", preferences.favoriteSuborderId());
+        addOrderSelectModel(model, form, suborders, preferences);
         model.addAttribute("oobSidebar", true);
         return "dailyreport/timereport-form :: ordersRefreshCompositeFragment";
     }
@@ -638,7 +641,9 @@ public class TimereportController {
         model.addAttribute("canSaveAsFavorite", ownContract);
         // the groups a new favourite can be sorted into (#1414); without any, the form asks nothing
         model.addAttribute("favoriteGroups", ownContract ? favoriteService.getOwnGroups() : List.of());
-        model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
+        var preferences = timereportPreferenceService.getForCurrentUser();
+        model.addAttribute("favoriteSuborderId", preferences.favoriteSuborderId());
+        addOrderSelectModel(model, form, suborders, preferences);
         boolean canShare = !isEdit || ecId == effectiveContractId(fEmployeeContractId);
         model.addAttribute("canShare", canShare);
         // the form renders the target as a hidden field and as the link "Abbrechen"; without one,
@@ -813,6 +818,47 @@ public class TimereportController {
 
     private void seedWorkingday(long ecId, LocalDate date, LocalTime beginTime) {
         workingdayService.seedWorkingday(ecId, date, beginTime);
+    }
+
+    /**
+     * The order select of the form whose suborder is chosen in two steps (#1522). It is operation only and
+     * submits nothing: the order is the one of the selected suborder, or the one the browser hands over
+     * while no suborder of it is chosen yet - the change of the date sends it along. An order without a
+     * suborder to book on the day is not selected.
+     */
+    private void addOrderSelectModel(Model model, TimereportForm form, List<SuborderOption> suborders,
+            TimereportPreferences preferences) {
+        model.addAttribute("twoStepSuborderSelect", preferences.twoStepSuborderSelect());
+        if (preferences.twoStepSuborderSelect()) {
+            model.addAttribute("bookableOrders", BookableOrderOption.of(suborders));
+            model.addAttribute("selectedOrderId", selectedOrderIdOf(suborders, form));
+        }
+    }
+
+    static Long selectedOrderIdOf(List<SuborderOption> suborders, TimereportForm form) {
+        return suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .findFirst()
+            .map(SuborderOption::orderId)
+            .orElseGet(() -> suborders.stream()
+                .map(SuborderOption::orderId)
+                .filter(orderId -> orderId.equals(form.getOrderId()))
+                .findFirst()
+                .orElse(null));
+    }
+
+    /**
+     * What a change of the date selects where the suborder cannot be booked on the new day: the first
+     * suborder of the order chosen before, while that order still has one (#1522), else the first of the
+     * list. Without the two steps the browser names no order, and it is always the first of the list.
+     */
+    static Long fallbackSuborderIdOf(List<SuborderOption> suborders, Long orderId) {
+        return suborders.stream()
+            .filter(s -> s.orderId().equals(orderId))
+            .findFirst()
+            .or(() -> suborders.stream().findFirst())
+            .map(SuborderOption::id)
+            .orElse(null);
     }
 
     private List<SuborderOption> suborderOptions(long ecId, LocalDate date) {
