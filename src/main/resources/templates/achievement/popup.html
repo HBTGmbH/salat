@@ -9,7 +9,7 @@
        und Silber, Konfetti bei Gold und Platin, Feuerwerk ab Diamant (salat.js, data-achievement-tier).
 
        Die Profilseite zeigt mit demselben Dialog eine erreichte Medaille noch einmal (announce = false):
-       ohne Zitat, dafuer mit der Erklaerung, wofuer es sie gibt; nichts wird als gesehen gemeldet, und
+       ohne Zitat; nichts wird als gesehen gemeldet, und
        der Link zum Profil entfaellt. salat.js oeffnet ihn dann nicht von selbst - das tut der Klick
        auf die Medaille. */-->
 <div th:fragment="popup(achievements, id, announce)" class="modal modal-blur fade" th:id="${id}" tabindex="-1"
@@ -45,7 +45,8 @@
               <div th:each="achievement, stat : ${achievements}" class="carousel-item text-center"
                    th:classappend="${stat.first} ? 'active'" th:data-achievement-tier="${achievement.tier().fileName()}"
                    th:data-achievement-pictogram="${definition.pictogram}"
-                   th:with="definition=${achievement.definition()},plate=${@achievementViewHelper.plate(achievement.definition(), achievement.level(), achievement.achievedOn())}">
+                   th:with="definition=${achievement.definition()},plate=${@achievementViewHelper.plate(achievement.definition(), achievement.level(), achievement.achievedOn())},
+                            info=${id + 'Info' + stat.index}">
                 <!--/* plate per th:with: a bean call is not allowed in a fragment parameter */-->
                 <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${achievement.tier().fileName()},
                       ${plate}, true)}"></span>
@@ -54,9 +55,17 @@
                 <th:block th:with="rank=#{${definition.rankKey(achievement.level())}},group=#{${definition.groupKey()}},
                                    meaning=#{${definition.titleKey()}(${achievement.level()})}">
                   <div class="h2 mt-3 mb-1" th:text="${rank}">Urgestein</div>
-                  <div class="text-secondary" th:text="${rank == group} ? ${meaning} : |${group} · ${meaning}|">
-                    Loyalist · 10 Jahre bei HBT
+                  <!--/* Wofuer es das Achievement gibt, steht hinter dem Info-Icon (#1530, Muster aus #1065):
+                         Nachschlagewissen, das nicht bei jedem Oeffnen im Weg steht. */-->
+                  <div class="text-secondary">
+                    <span th:text="${rank == group} ? ${meaning} : |${group} · ${meaning}|">Loyalist · 10 Jahre bei HBT</span>
+                    <button type="button" class="info-popover-toggle ms-1" th:data-info-popover="${'#' + info}"
+                            th:title="#{main.achievement.popup.description.toggle}"
+                            th:aria-label="#{main.achievement.popup.description.toggle}">
+                      <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    </button>
                   </div>
+                  <div th:id="${info}" hidden th:text="#{${definition.descriptionKey()}}">Für jedes Jahr bei HBT.</div>
                 </th:block>
                 <div class="text-secondary"
                      th:text="#{main.achievement.popup.reached(${#temporals.format(achievement.achievedOn(), 'dd.MM.yyyy')})}">
@@ -64,9 +73,6 @@
                 </div>
                 <!--/* Ein Zitat zur Stufe, zufaellig aus drei bis fuenf (AchievementQuotes), im Original und
                        ohne Quelle: Wer es kennt, erkennt es; die Quelle steht nur in quotes.json. */-->
-                <div th:unless="${announce}" class="mt-3" th:text="#{${definition.descriptionKey()}}">
-                  Für jedes Jahr bei HBT.
-                </div>
                 <th:block th:if="${announce}" th:with="quote=${@achievementViewHelper.quote(definition, achievement.level())}">
                   <blockquote th:if="${quote != null}" class="achievement-quote mt-3 mb-0"
                               th:text="|„${quote.quote()}“|">„Don't Panic.“</blockquote>
