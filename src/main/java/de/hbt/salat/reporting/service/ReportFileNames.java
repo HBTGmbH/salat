@@ -5,20 +5,26 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import java.util.List;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportGroupInfo;
 import de.hbt.salat.reporting.domain.ReportParameter;
 
 /**
  * Der Dateiname eines Report-Downloads: Reportname, die verwendeten Parameterwerte und der
  * Zeitpunkt des Abzugs. Excel-Export und API-Abzug benennen ihre Datei gleich.
+ *
+ * <p>Der Reportname ist Gruppe und Titel (#1523), so wie vorher das Präfix im Namen stand — Ablagen,
+ * die nach dem Dateinamen sortieren, finden die Dateien weiter am selben Platz.
  */
 public final class ReportFileNames {
 
   private ReportFileNames() {
   }
 
-  public static String create(ReportDefinition reportDefinition, List<ReportParameter> parameters, String extension) {
+  public static String create(ReportDefinition reportDefinition, ReportGroupInfo group, List<ReportParameter> parameters,
+      String extension) {
     var dateTime = DateTimeUtils.now().truncatedTo(SECONDS).toString();
-    var fileName = "report-" + reportDefinition.getName() + "-" + toString(parameters) + "-" + dateTime + "." + extension;
+    var fileName = "report-" + group.qualify(reportDefinition.getName()) + "-" + toString(parameters) + "-" + dateTime
+        + "." + extension;
     return normalizeToFileName(fileName);
   }
 

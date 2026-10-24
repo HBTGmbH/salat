@@ -510,6 +510,21 @@ const tomSelectConfig = (el) => {
     });
   }
 
+  // Options in groups (#1523: reports by report group) are found by the name of their group as well: TomSelect shows
+  // the label of an <optgroup> as a heading, but searches only the options themselves.
+  if (el.querySelector && el.querySelector('optgroup')) {
+    const fields = config.searchField || ['text'];
+    config.searchField = fields.concat(['group']);
+    const initialize = config.onInitialize;
+    config.onInitialize = function () {
+      el.querySelectorAll('optgroup > option').forEach(opt => {
+        const option = this.options[opt.value];
+        if (option) option.group = opt.parentElement.label;
+      });
+      if (initialize) initialize.call(this);
+    };
+  }
+
   // A picked entry of a multi-select is named by its short key (#1266): the option reads the whole
   // label, the chip only what tells it apart — a sign, a short name —, so that a few picks do not
   // wrap the field. The whole label stays at hand as the chip's tooltip.

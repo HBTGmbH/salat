@@ -423,7 +423,7 @@ Top-level packages under `de.hbt.salat`, one module per domain capability:
 | `notification` | Notifications |
 | `palette` | Object search of the command palette (#1157, ADR-0031): collects every module's `PaletteProvider`, and counts the runs of the palette per login and day for the achievement „Palette Junkie“ (#1501); imports only `common` and `auth`, and no module imports it |
 | `order` | Customer orders, employee orders, suborders |
-| `reporting` | Report definitions and scheduling |
+| `reporting` | Report definitions, report groups and scheduling; imports only `common`, `auth` and `employee` — the last for one value: the name a personal report group is shown with (#1523) |
 | `secret` | Secrets of foreign systems, encrypted (#1432, ADR-0038): `SecretService` stores and reads them by id; imports only `common` and `auth` and knows none of the owners that import it |
 | `settings` | User preference store: entity, converter, repository, service — generic map-based API, no UI |
 | `settingseditor` | User preferences editing UI — aggregator; may import from **any** module; other modules must not import from `settingseditor` |

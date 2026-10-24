@@ -8,6 +8,7 @@ import static de.hbt.salat.common.exception.ErrorCode.BU_EMPLOYEE_COST_OVERLAP;
 import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
 import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.EM_SIGN_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.RP_GROUP_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.XX_DUPLICATE_KEY;
 
@@ -38,6 +39,7 @@ import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.domain.Referenceday;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportGroup;
 
 /**
  * Ein doppelter fachlicher Schlüssel endet als Befund, nicht als 500er (#1208) — gegen die echte
@@ -110,11 +112,26 @@ class UniqueKeyTranslationTest {
     assertThat(findingOf(() -> store.persist(customer("ACME")))).isEqualTo(CU_DUPLICATE_SHORT_NAME);
   }
 
+  /** Der Titel ist je Gruppe eindeutig (#1523); ohne Gruppe prüft es die Anwendung, NULL zählt nicht als gleich. */
   @Test
-  void a_second_report_definition_with_the_same_name_is_refused_with_its_own_finding() {
-    store.persist(report("Umsatz"));
+  void a_second_report_definition_with_the_same_title_in_its_group_is_refused_with_its_own_finding() {
+    var group = new ReportGroup();
+    group.setName("Controlling");
+    store.persist(group);
+    store.persist(report("Umsatz", group));
 
-    assertThat(findingOf(() -> store.persist(report("Umsatz")))).isEqualTo(RP_REPORT_NAME_TAKEN);
+    assertThat(findingOf(() -> store.persist(report("Umsatz", group)))).isEqualTo(RP_REPORT_NAME_TAKEN);
+  }
+
+  @Test
+  void a_second_report_group_with_the_same_name_is_refused_with_its_own_finding() {
+    var group = new ReportGroup();
+    group.setName("Controlling");
+    store.persist(group);
+    var second = new ReportGroup();
+    second.setName("Controlling");
+
+    assertThat(findingOf(() -> store.persist(second))).isEqualTo(RP_GROUP_NAME_TAKEN);
   }
 
   /** Ohne eigenen Befund bleibt der allgemeine — der Tag ist meist gleichzeitig angelegt worden. */
@@ -155,10 +172,11 @@ class UniqueKeyTranslationTest {
     return customer;
   }
 
-  private static ReportDefinition report(String name) {
+  private static ReportDefinition report(String name, ReportGroup group) {
     var report = new ReportDefinition();
     report.setName(name);
     report.setSql("select 1");
+    report.setGroup(group);
     return report;
   }
 

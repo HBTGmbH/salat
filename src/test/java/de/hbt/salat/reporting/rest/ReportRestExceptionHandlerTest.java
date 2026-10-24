@@ -2,7 +2,6 @@ package de.hbt.salat.reporting.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -11,8 +10,8 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.AA_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_EXECUTION_FAILED;
-import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_AMBIGUOUS;
-import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_BY_NAME_REMOVED;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSING;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_PARAMETER_INVALID;
 
@@ -29,14 +28,15 @@ class ReportRestExceptionHandlerTest {
 
   @Test
   void anUnknownReportIsNotFound() {
-    assertThat(handler.handle(new InvalidDataException(RP_REPORT_NOT_FOUND, "Fehlt")).getStatusCode())
+    assertThat(handler.handle(new InvalidDataException(RP_REPORT_ID_NOT_FOUND, "7")).getStatusCode())
         .isEqualTo(NOT_FOUND);
   }
 
+  /** The call by name is gone (#1523) — a request to change, not a missing report. */
   @Test
-  void anAmbiguousNameIsAConflict() {
-    assertThat(handler.handle(new BusinessRuleException(RP_REPORT_NAME_AMBIGUOUS, "Doppelt", 2)).getStatusCode())
-        .isEqualTo(CONFLICT);
+  void aCallByNameIsABadRequest() {
+    assertThat(handler.handle(new InvalidDataException(RP_REPORT_BY_NAME_REMOVED, "reportId")).getStatusCode())
+        .isEqualTo(BAD_REQUEST);
   }
 
   @Test
@@ -79,7 +79,7 @@ class ReportRestExceptionHandlerTest {
   @Test
   void theAnswerIsAProblemDocumentWhateverTheCallerAccepts() {
     // without an explicit content type a caller asking for text/csv would get a 406 instead of the error
-    var response = handler.handle(new InvalidDataException(RP_REPORT_NOT_FOUND, "Fehlt"));
+    var response = handler.handle(new InvalidDataException(RP_REPORT_ID_NOT_FOUND, "7"));
 
     assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
   }

@@ -54,6 +54,11 @@ public class ScheduledReportJobController {
     model.addAttribute("jobs", jobs);
     model.addAttribute("defaultCron", defaultCron);
     model.addAttribute("cronDescriptions", cronDescriptions);
+    // the group next to the title (#1523): titles repeat across groups
+    Map<Long, String> reportGroupNames = new HashMap<>();
+    reportService.getOverview(null, null).groups().forEach(group -> group.reports()
+        .forEach(report -> reportGroupNames.put(report.getId(), group.group().name())));
+    model.addAttribute("reportGroupNames", reportGroupNames);
     return "reporting/scheduled-jobs-list";
   }
 
@@ -64,7 +69,7 @@ public class ScheduledReportJobController {
     model.addAttribute("subSection", "scheduled-report-jobs");
     model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("job", new ScheduledReportJobForm());
-    model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
+    model.addAttribute("reportGroups", reportService.getOverview(null, null).groups());
     model.addAttribute("isEdit", false);
     return "reporting/scheduled-job-form";
   }
@@ -81,7 +86,7 @@ public class ScheduledReportJobController {
     model.addAttribute("subSection", "scheduled-report-jobs");
     model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("job", form);
-    model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
+    model.addAttribute("reportGroups", reportService.getOverview(null, null).groups());
     model.addAttribute("isEdit", false);
     return "reporting/scheduled-job-form";
   }
@@ -105,7 +110,7 @@ public class ScheduledReportJobController {
     model.addAttribute("subSection", "scheduled-report-jobs");
     model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("job", form);
-    model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
+    model.addAttribute("reportGroups", reportService.getOverview(null, null).groups());
     model.addAttribute("isEdit", true);
     model.addAttribute("defaultCron", defaultCron);
     model.addAttribute("scheduledTask", scheduledReportJobScheduler.getScheduledTask(id));
@@ -135,7 +140,7 @@ public class ScheduledReportJobController {
       model.addAttribute("section", "reports");
       model.addAttribute("subSection", "scheduled-report-jobs");
       model.addAttribute("sectionTitle", "Reports");
-      model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
+      model.addAttribute("reportGroups", reportService.getOverview(null, null).groups());
       model.addAttribute("isEdit", isEdit);
       if(isEdit) {
         model.addAttribute("scheduledTask", scheduledReportJobScheduler.getScheduledTask(form.getId()));

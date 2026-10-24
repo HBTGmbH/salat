@@ -7487,3 +7487,115 @@ databaseChangeLog:
                     primaryKeyName: pk_suborder_tag
                     foreignKeyName: fk_suborder_tag_tag
                     references: tag(id)
+
+  - changeSet:
+      id: 198
+      author: kr
+      comment: Report-Gruppen statt Praefix im Namen (#1523)
+      # Eine Gruppe pflegen Manager (name), oder sie ist die persoenliche Gruppe eines People Leads
+      # (owner_user_id, je Login hoechstens eine). Die persoenliche Gruppe traegt keinen Namen: angezeigt
+      # wird sie mit dem Namen der Person, der sich aendern kann. Wird ein Login geloescht, geht seine
+      # persoenliche Gruppe mit; eine geloeschte Gruppe laesst ihre Reports ohne Gruppe zurueck.
+      # Der systemweit eindeutige Name des Reports (#1333) faellt: eindeutig ist er ab Changeset 200
+      # je Gruppe, ohne Gruppe prueft es die Anwendung (NULL ist in MySQL kein gleicher Wert).
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: report_group
+      changes:
+        - createTable:
+            tableName: report_group
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_report_group
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: owner_user_id
+                  type: bigint
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: report_group
+            columnNames: name
+            constraintName: uk_report_group_name
+        - addUniqueConstraint:
+            tableName: report_group
+            columnNames: owner_user_id
+            constraintName: uk_report_group_owner_user_id
+        - addForeignKeyConstraint:
+            baseTableName: report_group
+            baseColumnNames: owner_user_id
+            constraintName: fk_report_group_owner_user
+            referencedTableName: salat_user
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addColumn:
+            tableName: report_definition
+            columns:
+              - column:
+                  name: report_group_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: report_definition
+            baseColumnNames: report_group_id
+            constraintName: fk_report_definition_report_group
+            referencedTableName: report_group
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - sql:
+            sql: ALTER TABLE `report_definition` DROP INDEX `uk_report_definition_name`
+
+  - changeSet:
+      id: 199
+      author: kr
+      comment: Reports in Gruppen ueberfuehren (#1523)
+      # Aus dem Praefix vor dem ersten Doppelpunkt wird eine Gruppe, Reports von People Leads kommen in
+      # deren persoenliche Gruppe; die Regeln stehen an ReportGroupMigrationPlan. Laeuft nur, solange
+      # noch keine Gruppe angelegt ist.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: report_group
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM `report_group`
+      changes:
+        - customChange:
+            class: de.hbt.salat.reporting.persistence.ReportGroupMigration
+
+  - changeSet:
+      id: 200
+      author: kr
+      comment: Der Titel eines Reports ist je Gruppe eindeutig (#1523)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                tableName: report_definition
+                indexName: uk_report_definition_report_group_id_name
+      changes:
+        - addUniqueConstraint:
+            tableName: report_definition
+            columnNames: report_group_id, name
+            constraintName: uk_report_definition_report_group_id_name

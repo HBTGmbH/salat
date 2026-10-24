@@ -2,8 +2,8 @@ package de.hbt.salat.reporting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
-import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
 
@@ -20,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.web.WebAppConfiguration;
 import de.hbt.salat.auth.domain.AuthUiStateKeyContributor;
 import de.hbt.salat.auth.domain.AuthorizedUser;
@@ -32,16 +33,18 @@ import de.hbt.salat.common.palette.PaletteQuery;
 import de.hbt.salat.common.web.UiState;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
+import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
-import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportGroup;
 import de.hbt.salat.reporting.domain.ReportParameter;
 import de.hbt.salat.reporting.persistence.OwnerReferences;
+import de.hbt.salat.reporting.persistence.ReportGroupRepository;
 import de.hbt.salat.testutils.WebContextTestExecutionListener;
 
 @DataJpaTest
 @Import({ReportService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class,
     ReportAuthorization.class, UiState.class,
-    AuthUiStateKeyContributor.class, OwnerReferences.class})
+    AuthUiStateKeyContributor.class, OwnerReferences.class, ReportGroupNames.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration
@@ -53,6 +56,13 @@ public class ReportServiceTest {
 
   @Autowired
   private EmployeeRepository employeeRepository;
+
+  @Autowired
+  private ReportGroupRepository reportGroupRepository;
+
+  /** The names of personal groups (#1523); no group here is personal. */
+  @MockitoBean
+  private EmployeeService employeeService;
 
   @AfterEach
   void clearSecurityContext() {
@@ -75,21 +85,41 @@ public class ReportServiceTest {
         new UsernamePasswordAuthenticationToken(loginname, "N/A", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
   }
 
-  /** The REST interface calls a report by its name (#1333); the form asks before it saves. */
+  /** A title is unique within its group (#1523), case aside; the form asks before it saves. */
   @Test
-  public void a_name_another_report_definition_carries_is_taken() {
+  public void a_title_another_report_of_the_group_carries_is_taken() {
     loginAsManager("test");
-    var reportDefinition = reportService.create("Umsatz", "select 1");
+    var reportDefinition = reportService.create("Umsatz", "select 1", null);
 
-    assertThat(reportService.isNameTaken("Umsatz", null)).isTrue();
-    assertThat(reportService.isNameTaken("Umsatz", reportDefinition.getId())).isFalse();
-    assertThat(reportService.isNameTaken("Auslastung", null)).isFalse();
+    assertThat(reportService.isNameTaken("Umsatz", null, null)).isTrue();
+    assertThat(reportService.isNameTaken("umsatz", null, null)).isTrue();
+    assertThat(reportService.isNameTaken("Umsatz", null, reportDefinition.getId())).isFalse();
+    assertThat(reportService.isNameTaken("Auslastung", null, null)).isFalse();
+  }
+
+  /** Without a group the database cannot keep titles apart (NULL), in different groups they may repeat. */
+  @Test
+  public void a_title_is_free_in_another_group_and_taken_in_its_own() {
+    loginAsManager("test");
+    var controlling = group("Controlling");
+    var personal = group("Personal");
+    reportService.create("Umsatz", "select 1", controlling.getId());
+
+    assertThat(reportService.isNameTaken("Umsatz", controlling.getId(), null)).isTrue();
+    assertThat(reportService.isNameTaken("Umsatz", personal.getId(), null)).isFalse();
+    assertThat(reportService.isNameTaken("Umsatz", null, null)).isFalse();
+  }
+
+  private ReportGroup group(String name) {
+    var group = new ReportGroup();
+    group.setName(name);
+    return reportGroupRepository.save(group);
   }
 
   @Test
   public void should_get_report_definition_by_id() {
     loginAsManager("test");
-    var reportDefinition = reportService.create("test", "select 1");
+    var reportDefinition = reportService.create("test", "select 1", null);
 
     assertThat(reportService.getReportDefinitionById(reportDefinition.getId()))
         .isEqualTo(reportDefinition);
@@ -98,7 +128,7 @@ public class ReportServiceTest {
   @Test
   public void should_tell_an_unknown_id_apart_from_a_missing_permission() {
     loginAsManager("test");
-    var reportDefinition = reportService.create("test", "select 1");
+    var reportDefinition = reportService.create("test", "select 1", null);
     var unknownId = reportDefinition.getId() + 1000;
 
     assertThatThrownBy(() -> reportService.getReportDefinitionById(unknownId))
@@ -120,7 +150,7 @@ public class ReportServiceTest {
     var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportService.create("test", "select id, sign from employee");
+    var reportDefinition = reportService.create("test", "select id, sign from employee", null);
     assertThat(reportDefinition).isNotNull();
 
     defs = reportService.getReportDefinitions();
@@ -134,7 +164,7 @@ public class ReportServiceTest {
     var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportService.create("test", "select id, sign from employee");
+    var reportDefinition = reportService.create("test", "select id, sign from employee", null);
 
     var result = reportService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
@@ -162,7 +192,7 @@ public class ReportServiceTest {
 
     var reportDefinition = reportService.create(
             "test",
-            "select id, sign from employee where firstname like :firstname"
+            "select id, sign from employee where firstname like :firstname", null
     );
 
     var parameters = List.of(new ReportParameter("firstname", "string", "%Klaus%"));
@@ -193,8 +223,7 @@ public class ReportServiceTest {
 
     var reportDefinition = reportService.create(
             "test",
-            "select firstname from employee where lastname = :lastname order by firstname"
-    );
+            "select firstname from employee where lastname = :lastname order by firstname", null);
 
     var parameters = List.of(new ReportParameter("lastname", "string", "Richarz"));
     var result = reportService.execute(reportDefinition.getId(), parameters);
@@ -212,7 +241,7 @@ public class ReportServiceTest {
     var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportService.create("test", "select id, sign as sign_alias from employee");
+    var reportDefinition = reportService.create("test", "select id, sign as sign_alias from employee", null);
 
     var result = reportService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
@@ -231,7 +260,7 @@ public class ReportServiceTest {
 
     // syntaktisch gültig: der Teiler steht erst mit der gelesenen Zeile fest
     var sql = "select 100 / (t.n - t.n) as quotient from (select 1 as n) t";
-    var reportDefinition = reportService.create("test", sql);
+    var reportDefinition = reportService.create("test", sql, null);
 
     var result = reportService.execute(reportDefinition.getId(), List.of());
 
@@ -250,7 +279,7 @@ public class ReportServiceTest {
     loginAsManager("test");
 
     var sql = "select * from a_table_that_does_not_exist";
-    var reportDefinition = reportService.create("test", sql);
+    var reportDefinition = reportService.create("test", sql, null);
 
     var result = reportService.execute(reportDefinition.getId(), List.of());
 
@@ -285,8 +314,7 @@ public class ReportServiceTest {
 
     var reportDefinition = reportService.create(
             "test",
-            "select id, sign as sign_alias_1, sign as sign_alias_2 from employee"
-    );
+            "select id, sign as sign_alias_1, sign as sign_alias_2 from employee", null);
 
     var result = reportService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(3);
@@ -300,30 +328,42 @@ public class ReportServiceTest {
   @Test
   public void the_palette_finds_a_report_by_the_words_of_its_name_not_by_its_sql() {
     loginAsManager("test");
-    reportService.create("Umsatz je Auftrag", "select 1");
-    reportService.create("Umsatz Planung", "select 2");
-    reportService.create("Offene Freigaben", "select 'umsatz auftrag'");
+    reportService.create("Umsatz je Auftrag", "select 1", null);
+    reportService.create("Umsatz Planung", "select 2", null);
+    reportService.create("Offene Freigaben", "select 'umsatz auftrag'", null);
 
     assertThat(reportService.getPaletteCandidates(PaletteQuery.of("umsatz")))
-        .extracting(ReportDefinition::getName).containsExactly("Umsatz je Auftrag", "Umsatz Planung");
+        .extracting(candidate -> candidate.report().getName()).containsExactly("Umsatz je Auftrag", "Umsatz Planung");
     assertThat(reportService.getPaletteCandidates(PaletteQuery.of("auf ums")))
-        .extracting(ReportDefinition::getName).containsExactly("Umsatz je Auftrag");
+        .extracting(candidate -> candidate.report().getName()).containsExactly("Umsatz je Auftrag");
+  }
+
+  /** The name of the group stands where the prefix of the title used to (#1523). */
+  @Test
+  public void the_palette_finds_a_report_by_the_name_of_its_group() {
+    loginAsManager("test");
+    reportService.create("Offene Freigaben", "select 1", group("Monatsabschluss").getId());
+    reportService.create("Umsatz", "select 2", null);
+
+    assertThat(reportService.getPaletteCandidates(PaletteQuery.of("monatsab freig")))
+        .extracting(candidate -> candidate.report().getName(), candidate -> candidate.group().name())
+        .containsExactly(tuple("Offene Freigaben", "Monatsabschluss"));
   }
 
   @Test
   public void the_palette_reads_a_percent_sign_in_the_query_as_itself() {
     loginAsManager("test");
-    reportService.create("100% Auslastung", "select 1");
-    reportService.create("1000 Stunden", "select 2");
+    reportService.create("100% Auslastung", "select 1", null);
+    reportService.create("1000 Stunden", "select 2", null);
 
     assertThat(reportService.getPaletteCandidates(PaletteQuery.of("100%")))
-        .extracting(ReportDefinition::getName).containsExactly("100% Auslastung");
+        .extracting(candidate -> candidate.report().getName()).containsExactly("100% Auslastung");
   }
 
   @Test
   public void the_palette_offers_no_report_the_person_may_not_execute() {
     loginAsManager("test");
-    reportService.create("Umsatz je Auftrag", "select 1");
+    reportService.create("Umsatz je Auftrag", "select 1", null);
 
     loginAsEmployee("other");
     assertThat(reportService.getPaletteCandidates(PaletteQuery.of("umsatz"))).isEmpty();

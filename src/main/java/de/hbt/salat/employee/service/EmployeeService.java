@@ -35,6 +35,7 @@ import de.hbt.salat.employee.auth.EmployeeAuthorization;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.EmployeeData;
 import de.hbt.salat.employee.domain.EmployeeLogin;
+import de.hbt.salat.employee.domain.EmployeeName;
 import de.hbt.salat.employee.event.EmployeeAnonymizedEvent;
 import de.hbt.salat.employee.event.EmployeeDeleteEvent;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
@@ -121,6 +122,19 @@ public class EmployeeService {
   public List<EmployeeLogin> getLoginsBySalatUserIds(Collection<Long> salatUserIds) {
     if (salatUserIds.isEmpty()) return List.of();
     return employeeRepository.findLoginsBySalatUserIdIn(salatUserIds);
+  }
+
+  /**
+   * The name of the person signed in under each of these logins, by the id of the login (#1523) — for a
+   * module that knows people by their login only and shows them by name, as the personal report groups
+   * do. Hidden people included: the name says whose a record is, not whether the person is listed. A
+   * login without an employee is left out.
+   */
+  @Transactional(readOnly = true)
+  public Map<Long, String> getNamesBySalatUserIds(Collection<Long> salatUserIds) {
+    if (salatUserIds.isEmpty()) return Map.of();
+    return employeeRepository.findNamesBySalatUserIdIn(salatUserIds).stream()
+        .collect(Collectors.toMap(EmployeeName::salatUserId, EmployeeName::name, (a, b) -> a));
   }
 
   /**

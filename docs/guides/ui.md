@@ -602,3 +602,7 @@ Rules:
 - Hide empty groups with `th:if="${not #lists.isEmpty(group)}"`.
 - Show the global empty-state card only when the entire list is empty (place it before the group blocks).
 - SpEL selection syntax: `list.?[field == value]` or `list.?[field != true]`.
+- Where the groups are many and long (#1523, the report list), the heading of each card is a
+  `<button>` with `aria-expanded` and `aria-controls` that opens and closes its group, with
+  „Alle aufklappen“ / „Alle zuklappen“ above the list. What is closed is remembered in the browser
+  (`localStorage`, keyed by the id of the group); while a filter is set every group it leaves is open.

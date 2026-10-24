@@ -4,6 +4,7 @@ import static de.hbt.salat.testutils.ReferenceTestUtils.salatUserWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 import static de.hbt.salat.auth.domain.AccessLevel.EXECUTE;
@@ -35,7 +36,9 @@ import de.hbt.salat.common.palette.PaletteText;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
 import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.persistence.ReportDefinitionRepository;
+import de.hbt.salat.reporting.service.ReportGroupNames;
 import de.hbt.salat.reporting.service.ReportService;
+import de.hbt.salat.employee.service.EmployeeService;
 
 /**
  * What the command palette offers of a report, per role (#1232). The palette offers nothing whose
@@ -76,11 +79,11 @@ class ReportingPaletteProviderTest {
   @BeforeEach
   void setUp() {
     var reportAuthorization = new ReportAuthorization(authorizedUser, authService);
-    var reportService = new ReportService(reportDefinitionRepository, null, reportAuthorization, authorizedUser, null);
+    var reportService = new ReportService(reportDefinitionRepository, null, reportAuthorization, authorizedUser, null,
+        null, new ReportGroupNames(mock(EmployeeService.class)));
     provider = new ReportingPaletteProvider(reportService, reportAuthorization, authorizedUser);
     when(authorizedUser.getEffectiveUserId()).thenReturn(OWN_USER_ID);
-    when(reportDefinitionRepository.findPaletteCandidates("%umsatz%", null, null))
-        .thenReturn(List.of(WITH_PARAMETERS, WITHOUT_PARAMETERS));
+    when(reportDefinitionRepository.findAllWithGroup()).thenReturn(List.of(WITH_PARAMETERS, WITHOUT_PARAMETERS));
   }
 
   @Test
@@ -193,7 +196,7 @@ class ReportingPaletteProviderTest {
     var many = IntStream.rangeClosed(1, 40)
         .mapToObj(id -> report((long) id, "Umsatz " + id, "select 1", OTHER_USER_ID))
         .toList();
-    when(reportDefinitionRepository.findPaletteCandidates("%umsatz%", null, null)).thenReturn(many);
+    when(reportDefinitionRepository.findAllWithGroup()).thenReturn(many);
     grant(EXECUTE, "40");
 
     assertThat(provider.search(QUERY)).extracting(PaletteHit::key).containsExactly("40");
@@ -249,8 +252,6 @@ class ReportingPaletteProviderTest {
   @Test
   void the_report_whose_name_is_typed_whole_is_exact_and_first() {
     actingAsManager();
-    when(reportDefinitionRepository.findPaletteCandidates("%umsatzübersicht%", null, null))
-        .thenReturn(List.of(WITH_PARAMETERS, WITHOUT_PARAMETERS));
 
     var suggestions = provider.suggest(reportRequest("umsatzübersicht"));
 

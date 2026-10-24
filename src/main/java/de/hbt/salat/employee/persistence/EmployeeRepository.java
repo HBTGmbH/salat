@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.EmployeeLogin;
+import de.hbt.salat.employee.domain.EmployeeName;
 
 @Repository
 public interface EmployeeRepository extends PagingAndSortingRepository<Employee, Long>, JpaSpecificationExecutor<Employee>,
@@ -49,5 +50,9 @@ public interface EmployeeRepository extends PagingAndSortingRepository<Employee,
   /** The same by the ids of the logins (#1501), for a module that knows people only by their login. */
   @Query("SELECT new de.hbt.salat.employee.domain.EmployeeLogin(e.id, u.id, u.status) FROM Employee e JOIN e.salatUser u WHERE u.id IN :salatUserIds")
   List<EmployeeLogin> findLoginsBySalatUserIdIn(@Param("salatUserIds") Collection<Long> salatUserIds);
+
+  /** The names of the people signed in under these logins (#1523), as values. */
+  @Query("SELECT new de.hbt.salat.employee.domain.EmployeeName(u.id, e.firstname, e.lastname) FROM Employee e JOIN e.salatUser u WHERE u.id IN :salatUserIds")
+  List<EmployeeName> findNamesBySalatUserIdIn(@Param("salatUserIds") Collection<Long> salatUserIds);
 
 }

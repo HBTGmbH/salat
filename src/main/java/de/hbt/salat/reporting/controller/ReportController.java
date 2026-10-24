@@ -2,6 +2,7 @@ package de.hbt.salat.reporting.controller;
 
 import static java.util.stream.Collectors.toSet;
 import static de.hbt.salat.reporting.controller.ReportingUiStateKeyContributor.REPORT_FILTER;
+import static de.hbt.salat.reporting.controller.ReportingUiStateKeyContributor.REPORT_GROUP_FILTER;
 
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +19,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,14 +33,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AccessLevel;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
-import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.domain.ReportParameter;
 import de.hbt.salat.reporting.domain.ReportResult;
 import de.hbt.salat.reporting.service.ExcelExportService;
 import de.hbt.salat.reporting.service.ReportFileNames;
+import de.hbt.salat.reporting.service.ReportGroupService;
 import de.hbt.salat.reporting.service.ReportParameters;
 import de.hbt.salat.reporting.service.ReportService;
 
@@ -52,24 +55,39 @@ public class ReportController {
   private final ReportAuthorization reportAuthorization;
   private final ExcelExportService excelExportService;
   private final FilterHintViewHelper filterHintViewHelper;
+  private final ReportGroupService reportGroupService;
+  private final AuthorizedUser authorizedUser;
+  private final MessageSourceAccessor messages;
 
+  /**
+   * The reports by group (#1523), one card each. A group the person sees is one with a report they may
+   * run; the group filter offers those, {@link ReportService#WITHOUT_GROUP} for the reports without one.
+   */
   @GetMapping
-  public String list(@RequestParam(value = "fReportFilter", required = false) String fReportFilter, Model model) {
-    var reports = reportService.getReportDefinitionsByFilter(fReportFilter);
+  public String list(@RequestParam(value = "fReportFilter", required = false) String fReportFilter,
+                     @RequestParam(value = "fReportGroupId", required = false) Long fReportGroupId,
+                     Model model) {
+    var overview = reportService.getOverview(fReportFilter, fReportGroupId);
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
-    for (ReportDefinition r : reports) {
+    overview.groups().forEach(group -> group.reports().forEach(r -> {
       mayEdit.put(r.getId(), reportAuthorization.isAuthorized(r, AccessLevel.WRITE));
       mayDelete.put(r.getId(), reportAuthorization.isAuthorized(r, AccessLevel.DELETE));
-    }
+    }));
     model.addAttribute("pageTitle", "Reports");
     model.addAttribute("section", "reports");
     model.addAttribute("subSection", "reports");
     model.addAttribute("sectionTitle", "Reports");
-    model.addAttribute("reports", reports);
+    model.addAttribute("reportGroups", overview.groups());
+    model.addAttribute("visibleGroups", overview.visibleGroups());
+    model.addAttribute("withoutGroup", ReportService.WITHOUT_GROUP);
     model.addAttribute("mayEdit", mayEdit);
     model.addAttribute("mayDelete", mayDelete);
     model.addAttribute("fReportFilter", fReportFilter);
+    model.addAttribute("fReportGroupId", fReportGroupId);
+    // with a filter set, every group it leaves is open, whatever was collapsed before
+    model.addAttribute("filtered", (fReportFilter != null && !fReportFilter.isBlank()) || fReportGroupId != null);
+    model.addAttribute("mayManageGroups", authorizedUser.isManager());
     return "reporting/reports-list";
   }
 
@@ -80,9 +98,25 @@ public class ReportController {
     model.addAttribute("section", "reports");
     model.addAttribute("subSection", "reports");
     model.addAttribute("sectionTitle", "Reports");
-    model.addAttribute("report", new ReportForm());
+    var form = new ReportForm();
+    model.addAttribute("report", form);
     model.addAttribute("isEdit", false);
+    addGroupModel(model, form);
     return "reporting/report-form";
+  }
+
+  /**
+   * The group of the form (#1523): a manager picks one, a people lead sees the personal group the report
+   * goes into.
+   */
+  private void addGroupModel(Model model, ReportForm form) {
+    boolean chooseGroup = authorizedUser.isManager();
+    model.addAttribute("chooseGroup", chooseGroup);
+    if (chooseGroup) {
+      model.addAttribute("groups", reportGroupService.getGroups());
+    } else {
+      model.addAttribute("targetGroup", reportService.getTargetGroup(form.getGroupId(), form.getId()));
+    }
   }
 
   @GetMapping("/edit")
@@ -94,6 +128,7 @@ public class ReportController {
     form.setId(rd.getId());
     form.setName(rd.getName());
     form.setSql(rd.getSql());
+    form.setGroupId(rd.getGroupId());
     model.addAttribute("pageTitle", "Edit Report");
     model.addAttribute("section", "reports");
     model.addAttribute("subSection", "reports");
@@ -101,6 +136,7 @@ public class ReportController {
     model.addAttribute("report", form);
     model.addAttribute("isEdit", true);
     model.addAttribute("reportAuthorizations", reportAuthorization.getAuthorizations(rd));
+    addGroupModel(model, form);
     return "reporting/report-form";
   }
 
@@ -113,9 +149,12 @@ public class ReportController {
 
     if (form.getName() == null || form.getName().isBlank()) {
       bindingResult.rejectValue("name", "error.name", "Name is required");
-    } else if (reportService.isNameTaken(form.getName(), form.getId())) {
-      // the REST interface calls a report by its name (#1333)
-      bindingResult.rejectValue("name", "error.name", "A report with this name already exists");
+    } else if (reportService.isNameTaken(form.getName(), form.getGroupId(), form.getId())) {
+      // a title is unique within its group (#1523); the message names the group
+      var group = reportService.getTargetGroup(form.getGroupId(), form.getId());
+      var groupName = group.isNone() ? messages.getMessage("main.reporting.group.none") : group.name();
+      bindingResult.rejectValue("name", "error.name", messages.getMessage("main.reporting.report.name.taken",
+          new Object[] {groupName}));
     }
     if (form.getSql() == null || form.getSql().isBlank()) {
       bindingResult.rejectValue("sql", "error.sql", "SQL is required");
@@ -127,17 +166,20 @@ public class ReportController {
       model.addAttribute("subSection", "reports");
       model.addAttribute("sectionTitle", "Reports");
       model.addAttribute("isEdit", form.getId() != null);
+      addGroupModel(model, form);
       return "reporting/report-form";
     }
 
     // The filter stays as the user left it (ADR-0023); where it hides the saved report, the
     // message says so instead of the list silently not showing it.
     if (form.getId() == null) {
-      reportService.create(form.getName(), form.getSql());
-      filterHintViewHelper.addSuccess(redirectAttributes, "Report created successfully", REPORT_FILTER);
+      reportService.create(form.getName(), form.getSql(), form.getGroupId());
+      filterHintViewHelper.addSuccess(redirectAttributes, "Report created successfully", REPORT_FILTER,
+          REPORT_GROUP_FILTER);
     } else {
-      reportService.update(form.getId(), form.getName(), form.getSql());
-      filterHintViewHelper.addSuccess(redirectAttributes, "Report updated successfully", REPORT_FILTER);
+      reportService.update(form.getId(), form.getName(), form.getSql(), form.getGroupId());
+      filterHintViewHelper.addSuccess(redirectAttributes, "Report updated successfully", REPORT_FILTER,
+          REPORT_GROUP_FILTER);
     }
 
     return "redirect:/reporting/reports";
@@ -201,7 +243,7 @@ public class ReportController {
     var parameters = ReportParameters.nonEmpty(ReportParameters.fromRequest(allParams, rd.getSql()));
     var reportResult = reportService.execute(id, parameters);
     var bytes = excelExportService.exportToExcel(reportResult);
-    var fileName = ReportFileNames.create(rd, reportResult.getParameters(), "xlsx");
+    var fileName = ReportFileNames.create(rd, reportService.getGroupOf(rd), reportResult.getParameters(), "xlsx");
     response.setHeader("Content-disposition", "attachment; filename=" + fileName);
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     response.setContentLength(bytes.length);
@@ -233,6 +275,8 @@ public class ReportController {
     private Long id;
     private String name;
     private String sql;
+    /** The group a manager chooses (#1523), {@code null} for none; a people lead's form sends none. */
+    private Long groupId;
 
   }
 

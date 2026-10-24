@@ -26,9 +26,11 @@ import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.service.ReportParameters;
 import de.hbt.salat.reporting.service.ReportParameters.Kind;
 import de.hbt.salat.reporting.service.ReportService;
+import de.hbt.salat.reporting.service.ReportService.GroupedReport;
 
 /**
- * Reports for the object search of the command palette (#1232, ADR-0031), found by their name.
+ * Reports for the object search of the command palette (#1232, ADR-0031), found by their title and by
+ * the name of their group (#1523), which the hit shows as its second line.
  *
  * <p>The service offers only the reports the person may execute, which is what the page of the
  * first target asks. "Edit" asks what the edit page asks: the role people lead, and write access to
@@ -65,15 +67,20 @@ public class ReportingPaletteProvider implements PaletteProvider {
     var query = request.query();
     // the best match first; the candidates come by name, and a stable sort keeps that order below it
     return reportService.getPaletteCandidates(query).stream()
-        .sorted(comparingInt((ReportDefinition report) -> query.match(report.getName())).reversed())
-        .map(report -> suggestion(query, report))
+        .sorted(comparingInt((GroupedReport candidate) -> match(query, candidate)).reversed())
+        .map(candidate -> suggestion(query, candidate))
         .toList();
   }
 
-  private PaletteSuggestion suggestion(PaletteQuery query, ReportDefinition report) {
+  private static int match(PaletteQuery query, GroupedReport candidate) {
+    return query.match(candidate.report().getName(), candidate.group().name());
+  }
+
+  private PaletteSuggestion suggestion(PaletteQuery query, GroupedReport candidate) {
+    var report = candidate.report();
     var parameters = paletteOrder(ReportParameters.names(report.getSql()));
-    return new PaletteSuggestion(String.valueOf(report.getId()), report.getName(), null, parametersNote(parameters),
-        false, false, query.isKey(report.getName()), encoded(parameters));
+    return new PaletteSuggestion(String.valueOf(report.getId()), report.getName(), candidate.group().name(),
+        parametersNote(parameters), false, false, query.isKey(report.getName()), encoded(parameters));
   }
 
   /**
@@ -113,7 +120,8 @@ public class ReportingPaletteProvider implements PaletteProvider {
         : PaletteText.of("main.palette.context.report.parameters", String.join(", ", parameters));
   }
 
-  private PaletteHit hit(PaletteQuery query, ReportDefinition report) {
+  private PaletteHit hit(PaletteQuery query, GroupedReport candidate) {
+    var report = candidate.report();
     var targets = new ArrayList<PaletteTarget>();
     targets.add(new PaletteTarget(PaletteText.of("main.palette.target.report.execute"),
         PaletteLink.to("/reporting/reports/execute").param("id", report.getId()).build(), PaletteTarget.OPEN));
@@ -124,7 +132,7 @@ public class ReportingPaletteProvider implements PaletteProvider {
     targets.add(new PaletteTarget(PaletteText.of("main.palette.target.report.list"),
         PaletteLink.to("/reporting/reports").param("fReportFilter", report.getName()).build(), 2));
     var context = parametersNote(ReportParameters.names(report.getSql()));
-    return new PaletteHit(REPORT, String.valueOf(report.getId()), report.getName(), null, context,
-        false, false, query.match(report.getName()), targets, encodedParameters(report));
+    return new PaletteHit(REPORT, String.valueOf(report.getId()), report.getName(), candidate.group().name(), context,
+        false, false, match(query, candidate), targets, encodedParameters(report));
   }
 }

@@ -359,14 +359,16 @@ public class ArchitectureTest {
 
   /**
    * reporting runs report definitions as SQL and renders the result generically, so it needs no
-   * domain module — that is the whole point of the design, and this rule keeps it that way.
+   * domain module — that is the whole point of the design, and this rule keeps it that way. The one
+   * exception is employee (#1523): a personal report group is shown with the name of its person, read
+   * as a value per login. employee does not import reporting, so the edge closes no cycle.
    */
   @ArchTest
-  static final ArchRule reportingShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+  static final ArchRule reportingShouldAccessCommonAuthEmployeeOnly = priority(HIGH).noClasses().that()
       .resideInAPackage("de.hbt.salat.reporting..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "reporting must only import common, auth",
-          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.reporting."));
+          "reporting must only import common, auth, employee",
+          "de.hbt.salat.common.", "de.hbt.salat.auth.", "de.hbt.salat.employee.", "de.hbt.salat.reporting."));
 
   /**
    * notification sends mails and is used directly by budget, dailyreport and employee alike (see

@@ -12,9 +12,13 @@
 
         <salat:textInput th:field="*{name}" th:label="'Job Name'" required="true" maxlength="255" />
 
+        <!--/* by report group (#1523), in the order of the report list; salat.js searches the group names as well */-->
         <salat:select th:field="*{reportDefinitionId}" th:label="'Report'" required="true">
           <option value="" th:text="'-- Select Report --'"></option>
-          <option th:each="option : ${reportDefinitions}" th:value="${option.id}" th:text="${option.name}"></option>
+          <optgroup th:each="reportGroup : ${reportGroups}"
+                    th:label="${reportGroup.group().isNone()} ? #{main.reporting.group.none} : ${reportGroup.group().name()}">
+            <option th:each="option : ${reportGroup.reports()}" th:value="${option.id}" th:text="${option.name}"></option>
+          </optgroup>
         </salat:select>
 
         <salat:textarea th:field="*{reportParameters}" th:label="'Report Parameters (JSON)'" required="false" rows="5" monospace="true" th:helpText="#{reporting.scheduledjob.reportParameters.help}" />

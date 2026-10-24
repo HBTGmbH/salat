@@ -72,7 +72,7 @@
         </small>
       </div>
 
-      <div th:replace="~{auth/rule-form :: objectSelect(${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, ${objectsTyped}, null)}"></div>
+      <div th:replace="~{auth/rule-form :: objectSelect(${objectCandidates}, ${objectGroups}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, ${objectsTyped}, null)}"></div>
 
       <div class="row">
         <div class="col-md-6">
@@ -98,7 +98,7 @@
   <!--/* HTMX OOB update: which objects the chosen category offers, and what the hint says. */-->
   <div th:if="${htmxRequest}">
     <div th:replace="~{auth/rule-form :: objectSelect(
-            ${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, ${objectsTyped}, 'true')}"></div>
+            ${objectCandidates}, ${objectGroups}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, ${objectsTyped}, 'true')}"></div>
   </div>
 
 </main>
@@ -114,16 +114,23 @@
   that names nothing is refused when saving. Where the category offers a list, the values are ids and
   only the list is offered.
 */-->
-<div th:fragment="objectSelect(candidates, selected, hintKey, any, typed, oob)" class="mb-3"
+<div th:fragment="objectSelect(candidates, groups, selected, hintKey, any, typed, oob)" class="mb-3"
      id="authRuleObjectSelect" th:attr="hx-swap-oob=${oob}">
   <label class="form-label" for="objectIds" th:text="#{main.auth.rule.field.objects}">Objekte</label>
+  <!--/* A module that groups its objects (#1523: reports by report group) gets an optgroup per group; what the rule
+         keeps without a group - a deleted report - stands above them. The other categories look as before. */-->
   <select class="form-select tomselect tomselect-multi" id="objectIds" name="objectIds" multiple
           th:data-allow-create="${typed}">
     <option th:value="${any}" th:text="#{main.auth.rule.object.any}"
             th:selected="${selected != null and selected.contains(any)}">alle Objekte</option>
-    <option th:each="candidate : ${candidates}" th:value="${candidate.id}" th:data-chip="${candidate.chip}"
-            th:text="${candidate.unresolved} ? ${candidate.label} + ' – ' + #{main.auth.rule.value.unresolved} : ${candidate.label}"
-            th:selected="${selected != null and selected.contains(candidate.id)}">ETL-Definition</option>
+    <th:block th:each="candidate : ${candidates}" th:if="${candidate.group == null}">
+      <option th:replace="~{auth/rule-form :: objectOption(${candidate}, ${selected})}"></option>
+    </th:block>
+    <optgroup th:each="group : ${groups}" th:label="${group}">
+      <th:block th:each="candidate : ${candidates}" th:if="${candidate.group == group}">
+        <option th:replace="~{auth/rule-form :: objectOption(${candidate}, ${selected})}"></option>
+      </th:block>
+    </optgroup>
   </select>
   <small class="form-text" th:if="${hintKey != null}" th:text="#{__${hintKey}__}">
     Name der ETL-Definition.
@@ -132,4 +139,8 @@
     Leer oder "alle Objekte" gilt fuer jedes Objekt der Kategorie.
   </small>
 </div>
+<option th:fragment="objectOption(candidate, selected)" th:value="${candidate.id}" th:data-chip="${candidate.chip}"
+        th:text="${candidate.unresolved} ? ${candidate.label} + ' – ' + #{main.auth.rule.value.unresolved} : ${candidate.label}"
+        th:selected="${selected != null and selected.contains(candidate.id)}">ETL-Definition</option>
+
 </html>

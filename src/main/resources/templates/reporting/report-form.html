@@ -10,6 +10,26 @@
 
         <salat:textInput th:field="*{name}" th:label="'Report Name'" required="true" maxlength="255" />
 
+        <!--/* The group (#1523): a manager chooses it, also a personal group or none. A people lead has no
+               choice, their reports go into their personal group - shown, not asked. */-->
+        <th:block th:if="${chooseGroup}">
+          <salat:select th:field="*{groupId}" th:label="#{main.reporting.group.label}"
+                        allowEmptyOption="true">
+            <option value="" th:text="#{main.reporting.group.none.option}">— Ohne Gruppe —</option>
+            <option th:each="group : ${groups}" th:value="${group.id()}"
+                    th:text="${group.name()}"
+                    th:attr="data-subtext=${group.personal()} ? #{main.reporting.group.personal} : null"></option>
+          </salat:select>
+        </th:block>
+        <div class="mb-3" th:unless="${chooseGroup}">
+          <div class="form-label" th:text="#{main.reporting.group.label}">Gruppe</div>
+          <div>
+            <i class="ti ti-user text-secondary me-1" aria-hidden="true"></i>
+            <span th:text="${targetGroup.name()}">Person A</span>
+            <span class="text-secondary small ms-2" th:text="#{main.reporting.group.personal}">persönliche Gruppe</span>
+          </div>
+        </div>
+
         <salat:textarea th:field="*{sql}" th:label="'SQL'" required="true" rows="15" monospace="true" th:helpText="${'Use named parameters like :startDate, :endDate'}" />
     </div>
 

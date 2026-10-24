@@ -7,60 +7,169 @@
 
   <div class="card mb-3">
     <div class="card-body">
-      <form class="row g-2" method="get" th:action="@{/reporting/reports}">
-        <div class="col-md-6">
-          <input type="text" class="form-control" name="fReportFilter" placeholder="Filter" th:value="${fReportFilter}" />
+      <form class="row g-2 align-items-center" method="get" th:action="@{/reporting/reports}">
+        <div class="col-md-4">
+          <input type="text" class="form-control" name="fReportFilter" placeholder="Filter"
+                 th:attr="aria-label=#{main.reporting.filter.text}" th:value="${fReportFilter}" />
+        </div>
+        <!--/* #1523: only the groups the person sees; the reports without a group are "group" 0 */-->
+        <div class="col-md-3">
+          <select class="form-select tomselect" name="fReportGroupId" id="fReportGroupId" data-allow-empty-option="true"
+                  th:attr="aria-label=#{main.reporting.group.filter}" onchange="this.form.requestSubmit()">
+            <option value="" th:text="#{main.reporting.group.filter.all}">— Alle Gruppen —</option>
+            <option th:each="group : ${visibleGroups}"
+                    th:value="${group.isNone()} ? ${withoutGroup} : ${group.id()}"
+                    th:text="${group.isNone()} ? #{main.reporting.group.none} : ${group.name()}"
+                    th:selected="${fReportGroupId != null and (group.isNone() ? fReportGroupId == withoutGroup : fReportGroupId == group.id())}"></option>
+          </select>
         </div>
         <div class="col-auto">
-          <button class="btn btn-primary" type="submit"><i class="icon ti ti-filter m-0"></i></button>
+          <button class="btn btn-primary" type="submit" th:title="#{main.reporting.filter.apply}"><i class="icon ti ti-filter m-0"></i></button>
         </div>
-        <div class="col-auto ms-auto" th:if="${#authorization.expression('hasAnyRole(''MANAGER'',''PEOPLE_LEAD'')')}">
-          <a class="btn btn-success" th:href="@{/reporting/reports/create}"><i class="icon ti ti-file-plus"></i> New Report</a>
+        <div class="col-auto" th:unless="${#lists.isEmpty(reportGroups)}">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary" data-report-groups-expand="true">
+              <i class="icon ti ti-chevrons-down"></i>
+              <span th:text="#{main.reporting.group.expandall}">Alle aufklappen</span>
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-report-groups-expand="false">
+              <i class="icon ti ti-chevrons-up"></i>
+              <span th:text="#{main.reporting.group.collapseall}">Alle zuklappen</span>
+            </button>
+          </div>
+        </div>
+        <div class="col-auto ms-auto d-flex flex-wrap gap-2">
+          <a class="btn btn-outline-primary" th:if="${mayManageGroups}" th:href="@{/reporting/report-groups}">
+            <i class="icon ti ti-folders"></i> <span th:text="#{main.reporting.group.manage.button}">Gruppen verwalten</span>
+          </a>
+          <a class="btn btn-success" th:if="${#authorization.expression('hasAnyRole(''MANAGER'',''PEOPLE_LEAD'')')}"
+             th:href="@{/reporting/reports/create}"><i class="icon ti ti-file-plus"></i> New Report</a>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="table-responsive card">
-    <table class="table table-vcenter card-table">
-      <thead>
-        <tr>
-          <th class="w-1">ID</th>
-          <th>Name</th>
-          <th class="d-none d-sm-table-cell">Last Updated</th>
-          <th class="d-none d-sm-table-cell">Last Updated By</th>
-          <th class="w-1"></th>
-          <th class="w-1"></th>
-          <th class="w-1"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="report : ${reports}">
-          <td class="text-muted" th:text="${report.id}"></td>
-          <td th:text="${report.name}"></td>
-          <td class="d-none d-sm-table-cell" th:text="${#temporals.format(report.lastupdate, 'yyyy-MM-dd HH:mm')}"></td>
-          <td class="d-none d-sm-table-cell" th:text="${report.lastupdatedby}"></td>
-          <td>
-            <a class="btn btn-success" th:href="@{/reporting/reports/execute(id=${report.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
-          </td>
-          <td>
-            <a th:if="${mayEdit[report.id]}" class="btn btn-outline-primary" th:href="@{/reporting/reports/edit(id=${report.id})}"><i class="icon ti ti-pencil m-0"></i></a>
-          </td>
-          <td>
-            <form th:if="${mayDelete[report.id]}" th:action="@{/reporting/reports/delete}" method="post"
-                  data-confirm
-                  th:data-confirm-title="#{main.reporting.report.delete.confirm.title}"
-                  th:data-confirm-detail="${report.name}"
-                  th:data-confirm-label="#{main.general.button.delete.text}"
-                  data-confirm-variant="danger">
-              <input type="hidden" name="id" th:value="${report.id}"/>
-              <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
-            </form>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="card" th:if="${#lists.isEmpty(reportGroups)}">
+    <div class="card-body text-secondary" th:text="#{main.reporting.list.empty}">Keine Reports.</div>
   </div>
+
+  <!--/* One card per report group (#1523, "Grouped List View" in docs/guides/ui.md), the reports without a
+         group last. The heading opens and closes its group; what is closed is remembered in this browser
+         (localStorage), keyed by the id of the group. While a filter is set every group it leaves is open,
+         and the remembered state is left alone. */-->
+  <div class="card mb-3" th:each="reportGroup : ${reportGroups}"
+       th:with="group=${reportGroup.group()},groupKey=${group.isNone()} ? 'none' : ${group.id()}"
+       th:attr="data-report-group=${groupKey}">
+    <div class="card-header">
+      <h3 class="card-title">
+        <button type="button" class="report-group-toggle d-flex align-items-center gap-2 p-0 border-0 bg-transparent text-reset"
+                aria-expanded="true" th:attr="aria-controls=|report-group-${groupKey}|">
+          <i class="ti ti-chevron-down" data-report-group-chevron aria-hidden="true"></i>
+          <i th:if="${group.personal()}" class="ti ti-user text-secondary" aria-hidden="true"></i>
+          <span th:text="${group.isNone()} ? #{main.reporting.group.none} : ${group.name()}">Monatsabschluss</span>
+          <span class="badge bg-secondary-lt" th:text="${#lists.size(reportGroup.reports())}">3</span>
+        </button>
+      </h3>
+      <div class="card-actions text-secondary small" th:if="${group.personal()}"
+           th:text="#{main.reporting.group.personal}">persönliche Gruppe</div>
+    </div>
+    <div class="table-responsive" th:id="|report-group-${groupKey}|">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th class="w-1">ID</th>
+            <th>Name</th>
+            <th class="d-none d-sm-table-cell">Last Updated</th>
+            <th class="d-none d-sm-table-cell">Last Updated By</th>
+            <th class="w-1"></th>
+            <th class="w-1"></th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="report : ${reportGroup.reports()}">
+            <td class="text-muted" th:text="${report.id}"></td>
+            <td th:text="${report.name}"></td>
+            <td class="d-none d-sm-table-cell" th:text="${#temporals.format(report.lastupdate, 'yyyy-MM-dd HH:mm')}"></td>
+            <td class="d-none d-sm-table-cell" th:text="${report.lastupdatedby}"></td>
+            <td>
+              <a class="btn btn-success" th:href="@{/reporting/reports/execute(id=${report.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+            </td>
+            <td>
+              <a th:if="${mayEdit[report.id]}" class="btn btn-outline-primary" th:href="@{/reporting/reports/edit(id=${report.id})}"><i class="icon ti ti-pencil m-0"></i></a>
+            </td>
+            <td>
+              <form th:if="${mayDelete[report.id]}" th:action="@{/reporting/reports/delete}" method="post"
+                    data-confirm
+                    th:data-confirm-title="#{main.reporting.report.delete.confirm.title}"
+                    th:data-confirm-detail="${report.name}"
+                    th:data-confirm-detail-secondary="${group.isNone()} ? #{main.reporting.group.none} : ${group.name()}"
+                    th:data-confirm-label="#{main.general.button.delete.text}"
+                    data-confirm-variant="danger">
+                <input type="hidden" name="id" th:value="${report.id}"/>
+                <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    (function () {
+      var filtered = /*[[${filtered}]]*/ false;
+      var STORAGE_KEY = 'salat.reporting.collapsedGroups';
+      function collapsed() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        } catch (e) {
+          return [];
+        }
+      }
+      function setOpen(card, open) {
+        var toggle = card.querySelector('.report-group-toggle');
+        var body = document.getElementById(toggle.getAttribute('aria-controls'));
+        var chevron = toggle.querySelector('[data-report-group-chevron]');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        body.classList.toggle('d-none', !open);
+        chevron.classList.toggle('ti-chevron-down', open);
+        chevron.classList.toggle('ti-chevron-right', !open);
+      }
+      function remember() {
+        var keys = new Set(collapsed());
+        document.querySelectorAll('[data-report-group]').forEach(function (card) {
+          var key = card.dataset.reportGroup;
+          if (card.querySelector('.report-group-toggle').getAttribute('aria-expanded') === 'true') {
+            keys.delete(key);
+          } else {
+            keys.add(key);
+          }
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(keys)));
+      }
+      var cards = document.querySelectorAll('[data-report-group]');
+      if (!filtered) {
+        var closed = collapsed();
+        cards.forEach(function (card) {
+          if (closed.indexOf(card.dataset.reportGroup) >= 0) setOpen(card, false);
+        });
+      }
+      cards.forEach(function (card) {
+        card.querySelector('.report-group-toggle').addEventListener('click', function () {
+          setOpen(card, this.getAttribute('aria-expanded') !== 'true');
+          remember();
+        });
+      });
+      document.querySelectorAll('[data-report-groups-expand]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          var open = button.dataset.reportGroupsExpand === 'true';
+          cards.forEach(function (card) { setOpen(card, open); });
+          remember();
+        });
+      });
+    })();
+  </script>
 
 </main>
 </html>

@@ -13,6 +13,7 @@ import de.hbt.salat.common.service.MailService.EmailRequest;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.domain.ReportParameter;
+import de.hbt.salat.reporting.domain.ReportGroupInfo;
 import de.hbt.salat.reporting.domain.ReportResult;
 import de.hbt.salat.reporting.domain.ReportResultRow;
 import java.util.List;
@@ -48,6 +49,7 @@ class ReportEmailServiceTest {
     var definition = new ReportDefinition();
     definition.setName("Stunden je Auftrag");
     when(reportService.getReportDefinition(REPORT_ID)).thenReturn(definition);
+    when(reportService.getGroupOf(definition)).thenReturn(ReportGroupInfo.NONE);
     when(reportService.execute(any(), any())).thenReturn(ReportResult.builder()
         .rows(List.of(new ReportResultRow(), new ReportResultRow())).build());
     when(excelExportService.exportToExcel(any())).thenReturn(new byte[] {1});

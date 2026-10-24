@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,7 +12,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
-import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NOT_FOUND;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_BY_NAME_REMOVED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NOT_SPECIFIED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSING;
 
@@ -32,6 +31,7 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportGroupInfo;
 import de.hbt.salat.reporting.domain.ReportParameter;
 import de.hbt.salat.reporting.domain.ReportResult;
 import de.hbt.salat.reporting.domain.ReportResultColumnHeader;
@@ -59,21 +59,21 @@ class ReportRestEndpointTest {
   void shouldRejectUnauthenticated() {
     when(authorizedUser.isAuthenticated()).thenReturn(false);
 
-    assertThatThrownBy(() -> endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), null))
+    assertThatThrownBy(() -> endpoint.execute("42", null, Map.of("reportId", "42"), null))
         .isInstanceOf(AuthorizationException.class)
         .hasMessageContaining(AA_REQUIRED.getCode());
 
-    verify(reportService, never()).getReportDefinitionByName(anyString());
+    verify(reportService, never()).getReportDefinitionById(anyLong());
   }
 
   @Test
   void shouldAnswerWithColumnsAndRows() {
     authenticated();
     var reportDefinition = definition("Stunden", "select auftrag, stunden from t");
-    when(reportService.getReportDefinitionByName("Stunden")).thenReturn(reportDefinition);
+    when(reportService.getReportDefinitionById(42L)).thenReturn(reportDefinition);
     when(reportService.executeChecked(any(), any())).thenReturn(result("auftrag", "111", "stunden", 7));
 
-    var response = endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), "application/json");
+    var response = endpoint.execute("42", null, Map.of("reportId", "42"), "application/json");
 
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().report()).isEqualTo("Stunden");
@@ -85,23 +85,38 @@ class ReportRestEndpointTest {
   @Test
   void shouldNameTheFileWhenCsvIsRequested() {
     authenticated();
-    when(reportService.getReportDefinitionByName("Stunden")).thenReturn(definition("Stunden", "select 1"));
+    when(reportService.getReportDefinitionById(42L)).thenReturn(definition("Stunden", "select 1"));
+    when(reportService.getGroupOf(any())).thenReturn(ReportGroupInfo.NONE);
     when(reportService.executeChecked(any(), any())).thenReturn(result("auftrag", "111"));
 
-    var response = endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), "text/csv");
+    var response = endpoint.execute("42", null, Map.of("reportId", "42"), "text/csv");
 
     assertThat(response.getHeaders().getFirst(CONTENT_DISPOSITION))
         .startsWith("attachment; filename=report-Stunden-")
         .endsWith(".csv");
   }
 
+  /** Group and title, as the prefix stood in the name before (#1523). */
+  @Test
+  void theFileNameCarriesTheGroup() {
+    authenticated();
+    when(reportService.getReportDefinitionById(42L)).thenReturn(definition("Stunden", "select 1"));
+    when(reportService.getGroupOf(any())).thenReturn(new ReportGroupInfo(3L, "Monatsabschluss", false));
+    when(reportService.executeChecked(any(), any())).thenReturn(result("auftrag", "111"));
+
+    var response = endpoint.execute("42", null, Map.of("reportId", "42"), "text/csv");
+
+    assertThat(response.getHeaders().getFirst(CONTENT_DISPOSITION))
+        .startsWith("attachment; filename=report-Monatsabschluss_Stunden-");
+  }
+
   @Test
   void aWildcardAcceptHeaderIsAnsweredWithJsonAndCarriesNoFileName() {
     authenticated();
-    when(reportService.getReportDefinitionByName("Stunden")).thenReturn(definition("Stunden", "select 1"));
+    when(reportService.getReportDefinitionById(42L)).thenReturn(definition("Stunden", "select 1"));
     when(reportService.executeChecked(any(), any())).thenReturn(result("auftrag", "111"));
 
-    var response = endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), "*/*");
+    var response = endpoint.execute("42", null, Map.of("reportId", "42"), "*/*");
 
     assertThat(response.getHeaders().get(CONTENT_DISPOSITION)).isNull();
   }
@@ -109,11 +124,11 @@ class ReportRestEndpointTest {
   @Test
   void shouldPassOnTheParametersTheSqlNames() {
     authenticated();
-    when(reportService.getReportDefinitionByName("Stunden"))
+    when(reportService.getReportDefinitionById(42L))
         .thenReturn(definition("Stunden", "select 1 from t where jahr = :jahr"));
     when(reportService.executeChecked(any(), parametersCaptor.capture())).thenReturn(result("a", 1));
 
-    endpoint.execute(null, "Stunden", Map.of("report", "Stunden", "jahr", "number,2025", "egal", "x"), "application/json");
+    endpoint.execute("42", null, Map.of("reportId", "42", "jahr", "number,2025", "egal", "x"), "application/json");
 
     assertThat(parametersCaptor.getValue()).singleElement().satisfies(parameter -> {
       assertThat(parameter.getName()).isEqualTo("jahr");
@@ -125,34 +140,38 @@ class ReportRestEndpointTest {
   @Test
   void theReportNameIsNotPassedOnAsAReportParameter() {
     authenticated();
-    // a report whose SQL names ":report" must not silently receive the report name as its value
-    when(reportService.getReportDefinitionByName("Stunden"))
+    // "report" stays reserved (#1523): a report whose SQL names ":report" must not silently receive it
+    when(reportService.getReportDefinitionById(42L))
         .thenReturn(definition("Stunden", "select 1 from t where r = :report"));
     when(reportService.executeChecked(any(), parametersCaptor.capture())).thenReturn(result("a", 1));
 
-    endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), "application/json");
+    endpoint.execute("42", "Stunden", Map.of("reportId", "42", "report", "Stunden"), "application/json");
 
     assertThat(parametersCaptor.getValue()).isEmpty();
   }
 
+  /** Called by name alone, the answer says what to use instead (#1523). */
   @Test
-  void aFailedLookupIsPassedOnUnchangedForTheAdviceToMap() {
+  void aReportIsNoLongerCalledByItsName() {
     authenticated();
-    var failure = new InvalidDataException(RP_REPORT_NOT_FOUND, "Fehlt");
-    when(reportService.getReportDefinitionByName("Fehlt")).thenThrow(failure);
 
-    assertThatThrownBy(() -> endpoint.execute(null, "Fehlt", Map.of("report", "Fehlt"), null)).isSameAs(failure);
+    assertThatThrownBy(() -> endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), null))
+        .isInstanceOfSatisfying(InvalidDataException.class, e -> {
+          assertThat(e.getMessages().getFirst().getErrorCode()).isEqualTo(RP_REPORT_BY_NAME_REMOVED);
+          assertThat(e.getMessages().getFirst().getArguments()).containsExactly("reportId");
+        });
+    verify(reportService, never()).getReportDefinitionById(anyLong());
   }
 
   @Test
   void aFailedExecutionIsPassedOnUnchangedForTheAdviceToMap() {
     authenticated();
-    when(reportService.getReportDefinitionByName("Stunden"))
+    when(reportService.getReportDefinitionById(42L))
         .thenReturn(definition("Stunden", "select 1 from t where jahr = :jahr"));
     var failure = new InvalidDataException(RP_REPORT_PARAMETERS_MISSING, "jahr");
     when(reportService.executeChecked(any(), any())).thenThrow(failure);
 
-    assertThatThrownBy(() -> endpoint.execute(null, "Stunden", Map.of("report", "Stunden"), null)).isSameAs(failure);
+    assertThatThrownBy(() -> endpoint.execute("42", null, Map.of("reportId", "42"), null)).isSameAs(failure);
   }
 
   @Test
@@ -165,40 +184,37 @@ class ReportRestEndpointTest {
 
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().report()).isEqualTo("Stunden");
-    verify(reportService, never()).getReportDefinitionByName(anyString());
   }
 
   @Test
-  void theIdDecidesAndTheNameIsNotLookedUp() {
+  void withAnIdANameAlongsideIsIgnored() {
     authenticated();
-    // the name could be unknown or ambiguous by now — with an id given, that must not matter
     when(reportService.getReportDefinitionById(42L)).thenReturn(definition("Stunden", "select 1"));
     when(reportService.executeChecked(any(), any())).thenReturn(result("a", 1));
 
-    endpoint.execute("42", "Mehrdeutig", Map.of("reportId", "42", "report", "Mehrdeutig"), "application/json");
+    var response = endpoint.execute("42", "Alt", Map.of("reportId", "42", "report", "Alt"), "application/json");
 
-    verify(reportService, never()).getReportDefinitionByName(anyString());
+    assertThat(response.getBody()).isNotNull();
   }
 
   @Test
   void anEmptyIdCountsAsNotGiven() {
     authenticated();
-    when(reportService.getReportDefinitionByName("Stunden")).thenReturn(definition("Stunden", "select 1"));
-    when(reportService.executeChecked(any(), any())).thenReturn(result("a", 1));
 
-    endpoint.execute(" ", "Stunden", Map.of("reportId", " ", "report", "Stunden"), "application/json");
-
+    assertThatThrownBy(() -> endpoint.execute(" ", null, Map.of("reportId", " "), "application/json"))
+        .isInstanceOfSatisfying(InvalidDataException.class,
+            e -> assertThat(e.getMessages().getFirst().getErrorCode()).isEqualTo(RP_REPORT_NOT_SPECIFIED));
     verify(reportService, never()).getReportDefinitionById(anyLong());
   }
 
   @Test
-  void withNeitherIdNorNameBothParametersAreNamed() {
+  void withoutAnIdTheParameterIsNamed() {
     authenticated();
 
     assertThatThrownBy(() -> endpoint.execute(null, null, Map.of(), null))
         .isInstanceOfSatisfying(InvalidDataException.class, e -> {
           assertThat(e.getMessages().getFirst().getErrorCode()).isEqualTo(RP_REPORT_NOT_SPECIFIED);
-          assertThat(e.getMessages().getFirst().getArguments()).containsExactly("reportId", "report");
+          assertThat(e.getMessages().getFirst().getArguments()).containsExactly("reportId");
         });
   }
 
@@ -211,7 +227,6 @@ class ReportRestEndpointTest {
             e -> assertThat(e.getMessages().getFirst().getErrorCode()).isEqualTo(RP_REPORT_ID_INVALID));
 
     verify(reportService, never()).getReportDefinitionById(anyLong());
-    verify(reportService, never()).getReportDefinitionByName(anyString());
   }
 
   @Test

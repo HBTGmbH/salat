@@ -3,6 +3,7 @@ package de.hbt.salat.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import de.hbt.salat.auth.domain.AccessLevel;
+import de.hbt.salat.auth.domain.AuthorizationRuleValue;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.auth.service.AuthorizationRuleService;
@@ -120,7 +122,11 @@ public class AuthorizationRuleController {
     model.addAttribute("accessLevels", AccessLevel.values());
     // What the editor offers, plus whatever the rule already carries — named by the record it names today (#1204).
     model.addAttribute("granteeCandidates", authorizationRuleService.getGranteeCandidates(form.getGranteeIds()));
-    model.addAttribute("objectCandidates", authorizationRuleService.getObjects(form.getCategory(), form.getObjectIds()));
+    var objects = authorizationRuleService.getObjects(form.getCategory(), form.getObjectIds());
+    model.addAttribute("objectCandidates", objects);
+    // #1523: the groups a module lists its objects in, in the order it hands them over; none for most categories
+    model.addAttribute("objectGroups", objects.stream().map(AuthorizationRuleValue::group).filter(Objects::nonNull)
+        .distinct().toList());
     model.addAttribute("objectsTyped", authorizationRuleService.isTyped(form.getCategory()));
     model.addAttribute("objectHintKey", authorizationRuleService.getObjectHintKey(form.getCategory()));
   }

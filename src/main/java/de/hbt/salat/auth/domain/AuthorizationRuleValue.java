@@ -9,16 +9,31 @@ package de.hbt.salat.auth.domain;
  * @param chip       the short key to show once it is picked (#1266), {@code null} for the label
  * @param unresolved {@code true} where no record answers to the value — one the move to ids could not assign, or one
  *                   whose record was deleted since. Such a value never grants anything and is marked in the editor.
+ * @param group      the group of the record (#1523), {@code null} for none — see {@link AuthorizationObject#group()}
  */
-public record AuthorizationRuleValue(String id, String label, String chip, boolean unresolved) {
+public record AuthorizationRuleValue(String id, String label, String chip, boolean unresolved, String group) {
 
-  /** What the list shows: the short key where there is one, the stored value where there is no label (the wildcard). */
+  public AuthorizationRuleValue(String id, String label, String chip, boolean unresolved) {
+    this(id, label, chip, unresolved, null);
+  }
+
+  /**
+   * What the list shows: the short key where there is one, the stored value where there is no label (the wildcard).
+   * A label in a group comes with its group (#1523) — two reports of the same title in different groups are told apart
+   * there.
+   */
   public String shown() {
-    return chip != null ? chip : label != null ? label : id;
+    if (chip != null) {
+      return chip;
+    }
+    if (label == null) {
+      return id;
+    }
+    return group != null ? group + " · " + label : label;
   }
 
   public static AuthorizationRuleValue of(AuthorizationObject object) {
-    return new AuthorizationRuleValue(object.id(), object.label(), object.chip(), false);
+    return new AuthorizationRuleValue(object.id(), object.label(), object.chip(), false, object.group());
   }
 
 }
