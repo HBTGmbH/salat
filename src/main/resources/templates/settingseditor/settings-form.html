@@ -51,8 +51,16 @@
         <option value="beginEnd" th:text="#{main.settings.timereport.durationinputmode.beginend}">Immer Beginn / Ende</option>
       </salat:select>
 
-      <salat:checkboxSwitch th:field="*{twoStepSuborderSelect}"
-                            th:label="#{main.settings.timereport.twostepsuborderselect.label}" />
+      <!--/* #1522: von Hand statt salat:checkboxSwitch, weil die neue Einstellung die Marke "Neu" traegt */-->
+      <div class="mb-3">
+        <label class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" th:field="*{twoStepSuborderSelect}" />
+          <span class="form-check-label">
+            <span th:text="#{main.settings.timereport.twostepsuborderselect.label}">Unterauftrag in zwei Schritten wählen</span>
+            <span class="badge bg-green-lt ms-2" th:text="#{main.general.new.badge}">Neu</span>
+          </span>
+        </label>
+      </div>
 
       <salat:textInput th:field="*{notificationEmail}"
                        th:label="#{main.settings.notification.email.label}"
