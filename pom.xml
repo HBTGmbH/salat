@@ -311,6 +311,13 @@
         <configuration>
           <image>
             <name>${salat.image.name}:${salat.image.tag}</name>
+            <!--
+            Die Plattform fest (#1527). Ohne Vorgabe leitet das Plugin sie aus dem Builder ab; seit
+            builder-noble-java-tiny:latest auch für arm64 erscheint, zog der Release-Lauf auf dem
+            amd64-Runner das arm64-Run-Image und brach mit "exec format error" ab. Der Betrieb läuft
+            auf amd64.
+            -->
+            <imagePlatform>linux/amd64</imagePlatform>
             <env>
               <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
               <!--
