@@ -2,7 +2,6 @@ package de.hbt.salat.reporting.rest;
 
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -66,10 +65,9 @@ public class ReportRestExceptionHandler {
       return INTERNAL_SERVER_ERROR;
     }
     return switch (message.getErrorCode()) {
-      case RP_REPORT_NOT_FOUND, RP_REPORT_ID_NOT_FOUND -> NOT_FOUND;
-      case RP_REPORT_NAME_AMBIGUOUS -> CONFLICT;
+      case RP_REPORT_ID_NOT_FOUND -> NOT_FOUND;
       case RP_REPORT_PARAMETERS_MISSING, RP_REPORT_PARAMETER_INVALID,
-           RP_REPORT_ID_INVALID, RP_REPORT_NOT_SPECIFIED -> BAD_REQUEST;
+           RP_REPORT_ID_INVALID, RP_REPORT_NOT_SPECIFIED, RP_REPORT_BY_NAME_REMOVED -> BAD_REQUEST;
       case RP_REPORT_EXECUTION_FAILED -> INTERNAL_SERVER_ERROR;
       case AA_REQUIRED -> UNAUTHORIZED;
       case AA_NOT_ATHORIZED, AA_NEEDS_UNRESTRICTED, AA_NEEDS_BACKOFFICE,

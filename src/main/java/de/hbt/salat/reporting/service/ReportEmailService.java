@@ -70,7 +70,9 @@ public class ReportEmailService {
 
       byte[] excelBytes = excelExportService.exportToExcel(reportResult);
 
-      String fileName = createFileName(rd);
+      // group and title (#1523), as the name read with its prefix before
+      var reportName = reportService.getGroupOf(rd).qualify(rd.getName());
+      String fileName = createFileName(reportName);
       var facts = facts(reportResult, parameters);
 
       MailContact from = new MailContact("Salat", fromAddress);
@@ -82,10 +84,10 @@ public class ReportEmailService {
       }
 
       EmailRequest emailRequest = EmailRequest.builder()
-          .subject(text("main.mail.report.subject", rd.getName()))
-          .message(buildEmailBody(rd, facts))
+          .subject(text("main.mail.report.subject", reportName))
+          .message(buildEmailBody(reportName, facts))
           .htmlMessage(mailTemplates.render("mail/report", LOCALE, Map.of(
-              "reportName", rd.getName(), "facts", facts, "fileName", fileName, "jobsUrl", jobsUrl())))
+              "reportName", reportName, "facts", facts, "fileName", fileName, "jobsUrl", jobsUrl())))
           .from(from)
           .to(primaryRecipient)
           .additionalRecipients(additionalRecipients)
@@ -111,10 +113,10 @@ public class ReportEmailService {
    * The text part (#1505): what the HTML part says, in the du-form of the whole application. Reports go
    * to addresses rather than to persons, so they come in German.
    */
-  private String buildEmailBody(ReportDefinition reportDefinition, List<Map.Entry<String, String>> facts) {
+  private String buildEmailBody(String reportName, List<Map.Entry<String, String>> facts) {
     StringBuilder body = new StringBuilder();
     body.append(text("main.mail.greeting")).append("\n\n");
-    body.append(text("main.mail.report.intro", reportDefinition.getName())).append("\n\n");
+    body.append(text("main.mail.report.intro", reportName)).append("\n\n");
     facts.forEach(fact -> body.append("- ").append(fact.getKey()).append(": ").append(fact.getValue()).append("\n"));
     body.append("\n").append(text("main.mail.report.attachment")).append("\n\n");
     body.append("__________________________\n\n");
@@ -141,8 +143,8 @@ public class ReportEmailService {
     return messageSource.getMessage(key, arguments, LOCALE);
   }
 
-  private String createFileName(ReportDefinition reportDefinition) {
-    var fileName = "report-" + reportDefinition.getName() +
+  private String createFileName(String reportName) {
+    var fileName = "report-" + reportName +
                    "-erzeugt-" + DateUtils.formatDateTime(DateTimeUtils.now(), "dd-MM-yy-HHmm") +
                    ".xlsx";
     return fileName.replaceAll("[^a-zA-Z0-9-_.]", "_");

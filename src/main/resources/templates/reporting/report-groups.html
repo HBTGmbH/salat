@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='reports',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
+<main layout:fragment="content">
+
+  <!--/* Report groups (#1523), for managers. A personal group carries the name of its person and is not
+         renamed; it is deleted only once empty, which the service checks - the button stays away from a
+         personal group that holds reports, so nobody asks for what is refused. */-->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.reporting.group.manage.title}">Report-Gruppen</h3>
+      <div class="card-actions">
+        <a class="btn btn-success" th:href="@{/reporting/report-groups/create}">
+          <i class="icon ti ti-folder-plus"></i>
+          <span th:text="#{main.reporting.group.create.button}">Neue Gruppe</span>
+        </a>
+      </div>
+    </div>
+    <div th:if="${#lists.isEmpty(groups)}" class="card-body text-secondary"
+         th:text="#{main.reporting.group.manage.empty}">Noch keine Gruppen.</div>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(groups)}">
+      <table class="table table-vcenter card-table">
+        <thead>
+        <tr>
+          <th th:text="#{main.reporting.group.name}">Name</th>
+          <th class="text-end w-1" th:text="#{main.reporting.group.reports}">Reports</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="managed : ${groups}" th:with="group=${managed.group()}">
+          <td>
+            <i th:if="${group.personal()}" class="ti ti-user text-secondary me-1" aria-hidden="true"></i>
+            <span th:text="${group.name()}">Controlling</span>
+            <span th:if="${group.personal()}" class="text-secondary small ms-2"
+                  th:text="#{main.reporting.group.personal}">persönliche Gruppe</span>
+          </td>
+          <td class="text-end" th:text="${managed.reports()}">5</td>
+          <td>
+            <a th:unless="${group.personal()}" class="btn btn-outline-primary"
+               th:href="@{/reporting/report-groups/edit(id=${group.id()})}"
+               th:title="#{main.reporting.group.edit.title}"><i class="icon ti ti-pencil m-0"></i></a>
+          </td>
+          <td>
+            <form th:if="${!group.personal() or managed.reports() == 0}"
+                  th:action="@{/reporting/report-groups/delete}" method="post"
+                  data-confirm
+                  th:data-confirm-title="#{main.reporting.group.delete.confirm.title}"
+                  th:data-confirm-detail="${group.name()}"
+                  th:data-confirm-detail-secondary="#{main.reporting.group.delete.confirm.reports(${managed.reports()})}"
+                  th:data-confirm-label="#{main.general.button.delete.text}"
+                  data-confirm-variant="danger">
+              <input type="hidden" name="id" th:value="${group.id()}"/>
+              <button type="submit" class="btn btn-outline-danger" th:title="#{main.general.button.delete.text}">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <a class="btn btn-secondary" th:href="@{/reporting/reports}" th:text="#{main.reporting.group.back}">Zurück zu den Reports</a>
+    </div>
+  </div>
+
+</main>
+</html>

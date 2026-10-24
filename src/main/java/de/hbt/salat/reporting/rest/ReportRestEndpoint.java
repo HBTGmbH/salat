@@ -6,6 +6,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static de.hbt.salat.common.exception.ErrorCode.AA_REQUIRED;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_BY_NAME_REMOVED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_INVALID;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NOT_SPECIFIED;
 import static de.hbt.salat.reporting.rest.ReportDataCsvConverter.TEXT_CSV;
@@ -43,11 +44,11 @@ import de.hbt.salat.reporting.service.ReportService;
  * Abzug von Reportergebnissen für maschinelle Aufrufer (#1035). Das Format wählt der {@code Accept}-Header:
  * {@code application/json} oder {@code text/csv}.
  *
- * <p>Der Report wird über seine Id oder über seinen Namen angesprochen; beides steht in der
- * Reportübersicht. Die Id ist eindeutig und übersteht eine Umbenennung (#1166). Der Name ist nicht
- * eindeutig; passt er auf mehrere Reports, wird keiner ausgeführt. Sind beide angegeben, gilt die Id,
- * und der Name wird nicht ausgewertet — sonst scheiterte ein Aufruf mit Id an einem Namen, der
- * inzwischen mehrdeutig ist.
+ * <p>Der Report wird über seine Id angesprochen, sie steht in der Reportübersicht. Seit es Report-Gruppen gibt
+ * (#1523), ist der Titel nicht mehr systemweit eindeutig, und ein Name „Gruppe: Titel" bräche bei jeder
+ * Umbenennung von Gruppe oder Titel; die Id übersteht beides (#1166). Der frühere Parameter {@code report}
+ * (der Name) bleibt reserviert: ein Aufruf, der nur ihn schickt, bekommt 400 mit dem Hinweis auf
+ * {@code reportId}, statt dass der Name still als Parameter des Reports durchginge.
  */
 @Slf4j
 @RestController
@@ -57,10 +58,11 @@ import de.hbt.salat.reporting.service.ReportService;
 public class ReportRestEndpoint {
 
   /**
-   * Name und Id des Reports stehen in eigenen Anfrageparametern. Ein Report, dessen SQL einen
-   * Parameter {@code :report} oder {@code :reportId} nennt, kann darum über diese API nicht
-   * ausgeführt werden — sein Parameter bliebe unbesetzt und die Antwort sagt das (400). Für die Id
-   * ist deshalb nicht das naheliegende {@code id} reserviert, das in Report-SQL leicht vorkommt.
+   * Die Id des Reports steht in einem eigenen Anfrageparameter, {@code report} ist für den früheren Aufruf
+   * über den Namen reserviert (#1523). Ein Report, dessen SQL einen Parameter {@code :report} oder
+   * {@code :reportId} nennt, kann darum über diese API nicht ausgeführt werden — sein Parameter bliebe
+   * unbesetzt und die Antwort sagt das (400). Für die Id ist deshalb nicht das naheliegende {@code id}
+   * reserviert, das in Report-SQL leicht vorkommt.
    */
   static final String REPORT_PARAMETER = "report";
   static final String REPORT_ID_PARAMETER = "reportId";
@@ -75,16 +77,15 @@ public class ReportRestEndpoint {
           Führt den angegebenen Report aus. Das Format bestimmt der Accept-Header:
           `application/json` (Standard) oder `text/csv`.
 
-          Der Report wird über `reportId` oder über `report` (seinen Namen) angegeben; beides steht in
-          der Reportübersicht. Einer der beiden Parameter muss angegeben sein. Sind beide angegeben,
-          gilt `reportId`, und `report` wird nicht ausgewertet — auch dann nicht, wenn der Name auf
-          keinen oder auf mehrere Reports passt. Die Id ist eindeutig und bleibt bei einer
-          Umbenennung gleich; ein Name, der auf mehrere Reports passt, führt keinen aus.
+          Der Report wird über `reportId` angegeben; die Id steht in der Reportübersicht. Sie ist
+          eindeutig und bleibt bei einer Umbenennung des Reports oder seiner Gruppe gleich. Den Aufruf
+          über den Namen (`report`) gibt es nicht mehr: eine Anfrage, die nur `report` schickt, wird
+          mit 400 abgelehnt.
 
           Die Parameter des Reports werden als zusätzliche Anfrageparameter übergeben, benannt wie im
           SQL des Reports (`:jahr` wird `jahr=2025`). Ein Wert kann seinen Typ als Präfix tragen —
           `von=date,2025-09-01`; ohne Präfix gilt `string`. Die Parameternamen `reportId` und
-          `report` sind für die Angabe des Reports reserviert.
+          `report` sind reserviert.
 
           Für den heutigen Tag stehen Schlüsselwörter bereit, gerechnet in der Zeitzone der Anwendung:
           bei `date` etwa `HEUTE`, `GESTERN`, `BOM`, `VORMONAT`, `VORMONATSENDE`
@@ -102,22 +103,21 @@ public class ReportRestEndpoint {
                   @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = ReportData.class)),
                   @Content(mediaType = TEXT_CSV_VALUE, schema = @Schema(type = "string"))
               }),
-          @ApiResponse(responseCode = "400", description = "Weder `reportId` noch `report` angegeben, `reportId` ist keine Zahl, oder ein Parameter des Reports fehlt oder ist unbrauchbar"),
+          @ApiResponse(responseCode = "400", description = "`reportId` fehlt (auch, wenn nur `report` angegeben ist), `reportId` ist keine Zahl, oder ein Parameter des Reports fehlt oder ist unbrauchbar"),
           @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
           @ApiResponse(responseCode = "403", description = "Keine Berechtigung, diesen Report auszuführen"),
-          @ApiResponse(responseCode = "404", description = "Kein Report mit dieser Id bzw. mit diesem Namen"),
-          @ApiResponse(responseCode = "409", description = "Nur `report` angegeben, und der Name passt auf mehrere Reports — es wird keiner ausgeführt"),
+          @ApiResponse(responseCode = "404", description = "Kein Report mit dieser Id"),
           @ApiResponse(responseCode = "500", description = "Das SQL des Reports konnte nicht ausgeführt werden")
       })
   public ResponseEntity<ReportData> execute(
       @RequestParam(name = REPORT_ID_PARAMETER, required = false)
-      @Parameter(description = "Id des Reports, wie sie in der Reportübersicht steht; hat Vorrang vor `report`",
+      @Parameter(description = "Id des Reports, wie sie in der Reportübersicht steht",
           schema = @Schema(type = "integer", format = "int64"), example = "42")
       String reportId,
 
       @RequestParam(name = REPORT_PARAMETER, required = false)
-      @Parameter(description = "Name des Reports, wie er in der Reportübersicht steht; wird nur ausgewertet, wenn `reportId` fehlt",
-          example = "Stunden pro Auftrag")
+      @Parameter(description = "Nicht mehr unterstützt (#1523): der Report wird nur noch über `reportId` aufgerufen. "
+          + "Eine Anfrage, die nur `report` schickt, wird mit 400 abgelehnt.", deprecated = true)
       String report,
 
       @RequestParam
@@ -138,16 +138,17 @@ public class ReportRestEndpoint {
 
     var response = ResponseEntity.ok();
     if (wantsCsv(acceptHeader)) {
-      var fileName = ReportFileNames.create(reportDefinition, reportResult.getParameters(), "csv");
+      var fileName = ReportFileNames.create(reportDefinition, reportService.getGroupOf(reportDefinition),
+          reportResult.getParameters(), "csv");
       response = response.header(CONTENT_DISPOSITION, "attachment; filename=" + fileName);
     }
     return response.body(ReportData.valueOf(reportDefinition, reportResult));
   }
 
   /**
-   * Die Id entscheidet, wenn sie angegeben ist; der Name wird dann gar nicht erst nachgeschlagen.
-   * Ein leerer Wert ({@code reportId=}) zählt als nicht angegeben, wie es ein Skript mit leerer
-   * Variable schickt.
+   * Nur die Id zählt (#1523). Fehlt sie, nennt die Antwort {@code reportId} — auch einem Aufrufer, der
+   * noch den Namen schickt, damit er sieht, worauf er umstellen muss. Ein leerer Wert ({@code reportId=})
+   * zählt als nicht angegeben, wie es ein Skript mit leerer Variable schickt.
    *
    * <p>Die Id kommt als Text an und wird hier gelesen, nicht von Spring gebunden: ein Bindungsfehler
    * liefe am {@link ReportRestExceptionHandler} vorbei und käme als Fehlerseite statt als
@@ -158,9 +159,9 @@ public class ReportRestEndpoint {
       return reportService.getReportDefinitionById(parseReportId(reportId));
     }
     if (report != null && !report.isBlank()) {
-      return reportService.getReportDefinitionByName(report);
+      throw new InvalidDataException(RP_REPORT_BY_NAME_REMOVED, REPORT_ID_PARAMETER);
     }
-    throw new InvalidDataException(RP_REPORT_NOT_SPECIFIED, REPORT_ID_PARAMETER, REPORT_PARAMETER);
+    throw new InvalidDataException(RP_REPORT_NOT_SPECIFIED, REPORT_ID_PARAMETER);
   }
 
   private static long parseReportId(String reportId) {
@@ -172,9 +173,8 @@ public class ReportRestEndpoint {
   }
 
   /**
-   * Name und Id des Reports dürfen nicht als Parameter des Reports durchgehen: sonst bekäme ein
-   * Report mit einem Parameter {@code :report} den Reportnamen als Wert eingesetzt, ohne dass es
-   * jemand merkt.
+   * Id und der reservierte Name des Reports dürfen nicht als Parameter des Reports durchgehen: sonst
+   * bekäme ein Report mit einem Parameter {@code :report} den Wert eingesetzt, ohne dass es jemand merkt.
    *
    * <p>Der gemerkte Zustand der Oberfläche ist hier kein Thema — {@code UiStateFilter} lässt die
    * REST-Pfade aus, also enthält die Anfrage nur, was der Aufrufer geschickt hat.

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +28,9 @@ import de.hbt.salat.reporting.domain.ReportDefinition;
 import de.hbt.salat.reporting.domain.ReportResult;
 import de.hbt.salat.reporting.persistence.ReportDefinitionRepository;
 import de.hbt.salat.reporting.persistence.OwnerReferences;
+import de.hbt.salat.reporting.persistence.ReportGroupRepository;
+import de.hbt.salat.reporting.service.ReportGroupNames;
+import de.hbt.salat.reporting.service.ReportGroupService;
 import de.hbt.salat.reporting.service.ExcelExportService;
 import de.hbt.salat.reporting.service.ReportService;
 
@@ -55,9 +59,11 @@ class ReportControllerExecutionErrorTest {
     when(reportAuthorization.isAuthorized(any(), any())).thenReturn(true);
 
     var reportService = new ReportService(reportDefinitionRepository, database, reportAuthorization,
-        mock(AuthorizedUser.class), mock(OwnerReferences.class));
+        mock(AuthorizedUser.class), mock(OwnerReferences.class), mock(ReportGroupRepository.class),
+        mock(ReportGroupNames.class));
     var reportController = new ReportController(reportService, reportAuthorization,
-        mock(ExcelExportService.class), mock(FilterHintViewHelper.class));
+        mock(ExcelExportService.class), mock(FilterHintViewHelper.class), mock(ReportGroupService.class),
+        mock(AuthorizedUser.class), mock(MessageSourceAccessor.class));
 
     mockMvc = MockMvcBuilders.standaloneSetup(reportController).build();
   }

@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
-import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSING;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -27,6 +26,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportGroupInfo;
 import de.hbt.salat.reporting.domain.ReportResult;
 import de.hbt.salat.reporting.domain.ReportResultColumnHeader;
 import de.hbt.salat.reporting.domain.ReportResultColumnValue;
@@ -53,7 +53,8 @@ class ReportRestEndpointNegotiationTest {
   @BeforeEach
   void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
-    when(reportService.getReportDefinitionByName("Stunden")).thenReturn(definition());
+    when(reportService.getReportDefinitionById(42L)).thenReturn(definition());
+    when(reportService.getGroupOf(any())).thenReturn(ReportGroupInfo.NONE);
     when(reportService.executeChecked(any(), any())).thenReturn(result());
 
     mockMvc = MockMvcBuilders
@@ -65,7 +66,7 @@ class ReportRestEndpointNegotiationTest {
 
   @Test
   void jsonIsTheAnswerToAJsonRequest() throws Exception {
-    mockMvc.perform(get("/api/reports/execute").param("report", "Stunden").header(ACCEPT, "application/json"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "42").header(ACCEPT, "application/json"))
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith("application/json"))
         .andExpect(content().json("""
@@ -75,7 +76,7 @@ class ReportRestEndpointNegotiationTest {
 
   @Test
   void csvIsTheAnswerToACsvRequest() throws Exception {
-    mockMvc.perform(get("/api/reports/execute").param("report", "Stunden").header(ACCEPT, "text/csv"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "42").header(ACCEPT, "text/csv"))
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith("text/csv"))
         .andExpect(content().string("""
@@ -88,7 +89,7 @@ class ReportRestEndpointNegotiationTest {
 
   @Test
   void aCallerWithoutAPreferenceGetsJson() throws Exception {
-    mockMvc.perform(get("/api/reports/execute").param("report", "Stunden").header(ACCEPT, "*/*"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "42").header(ACCEPT, "*/*"))
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith("application/json"))
         .andExpect(header().doesNotExist(CONTENT_DISPOSITION));
@@ -96,36 +97,44 @@ class ReportRestEndpointNegotiationTest {
 
   @Test
   void theSecondPathServesTheSameEndpoint() throws Exception {
-    mockMvc.perform(get("/rest/reports/execute").param("report", "Stunden").header(ACCEPT, "text/csv"))
+    mockMvc.perform(get("/rest/reports/execute").param("reportId", "42").header(ACCEPT, "text/csv"))
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith("text/csv"));
   }
 
   @Test
   void anUnsupportedFormatIsNotAcceptable() throws Exception {
-    mockMvc.perform(get("/api/reports/execute").param("report", "Stunden").header(ACCEPT, "application/xml"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "42").header(ACCEPT, "application/xml"))
         .andExpect(status().isNotAcceptable());
   }
 
   @Test
   void anErrorIsAProblemDocumentAndNotTheHtmlErrorPage() throws Exception {
-    when(reportService.getReportDefinitionByName("Fehlt"))
-        .thenThrow(new InvalidDataException(RP_REPORT_NOT_FOUND, "Fehlt"));
+    when(reportService.getReportDefinitionById(7L)).thenThrow(new InvalidDataException(RP_REPORT_ID_NOT_FOUND, "7"));
 
-    mockMvc.perform(get("/api/reports/execute").param("report", "Fehlt").header(ACCEPT, "application/json"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "7").header(ACCEPT, "application/json"))
         .andExpect(status().isNotFound())
         .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-        .andExpect(jsonPath("$.title").value("RP-0001"))
-        .andExpect(jsonPath("$.arguments[0]").value("Fehlt"));
+        .andExpect(jsonPath("$.title").value("RP-0006"))
+        .andExpect(jsonPath("$.arguments[0]").value("7"));
+  }
+
+  /** The call by name is gone (#1523); the answer names the parameter to use instead. */
+  @Test
+  void aCallByNameIsRefusedAndNamesTheReportId() throws Exception {
+    mockMvc.perform(get("/api/reports/execute").param("report", "Stunden").header(ACCEPT, "application/json"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.title").value("RP-0011"))
+        .andExpect(jsonPath("$.arguments[0]").value("reportId"));
   }
 
   @Test
   void aMissingParameterIsNamedInTheAnswer() throws Exception {
-    when(reportService.getReportDefinitionByName("Stunden")).thenReturn(definition());
     when(reportService.executeChecked(any(), any()))
         .thenThrow(new InvalidDataException(RP_REPORT_PARAMETERS_MISSING, "jahr, monat"));
 
-    mockMvc.perform(get("/api/reports/execute").param("report", "Stunden").header(ACCEPT, "application/json"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "42").header(ACCEPT, "application/json"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.title").value("RP-0003"))
         .andExpect(jsonPath("$.arguments[0]").value("jahr, monat"));
@@ -134,10 +143,9 @@ class ReportRestEndpointNegotiationTest {
   @Test
   void aCsvCallerGetsTheErrorToo() throws Exception {
     // without an explicit content type on the problem document this would be a 406
-    when(reportService.getReportDefinitionByName("Fehlt"))
-        .thenThrow(new InvalidDataException(RP_REPORT_NOT_FOUND, "Fehlt"));
+    when(reportService.getReportDefinitionById(7L)).thenThrow(new InvalidDataException(RP_REPORT_ID_NOT_FOUND, "7"));
 
-    mockMvc.perform(get("/api/reports/execute").param("report", "Fehlt").header(ACCEPT, "text/csv"))
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "7").header(ACCEPT, "text/csv"))
         .andExpect(status().isNotFound())
         .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
   }
@@ -149,7 +157,7 @@ class ReportRestEndpointNegotiationTest {
         .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
         .andExpect(jsonPath("$.title").value("RP-0008"))
         .andExpect(jsonPath("$.arguments[0]").value("reportId"))
-        .andExpect(jsonPath("$.arguments[1]").value("report"));
+        .andExpect(jsonPath("$.arguments[1]").doesNotExist());
   }
 
   @Test

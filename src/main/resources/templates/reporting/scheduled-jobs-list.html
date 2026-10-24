@@ -35,7 +35,12 @@
       <tbody>
         <tr th:each="job : ${jobs}">
           <td th:text="${job.name}"></td>
-          <td class="d-none d-sm-table-cell" th:text="${job.reportDefinition != null ? job.reportDefinition.name : '-'}"></td>
+          <td class="d-none d-sm-table-cell">
+            <span th:text="${job.reportDefinition != null ? job.reportDefinition.name : '-'}"></span>
+            <!--/* the group under the title (#1523): titles repeat across groups */-->
+            <small class="d-block text-muted" th:if="${job.reportDefinition != null and reportGroupNames[job.reportDefinition.id] != null}"
+                   th:text="${reportGroupNames[job.reportDefinition.id]}"></small>
+          </td>
           <td class="d-none d-sm-table-cell" th:text="${job.recipientEmails}"></td>
           <td class="d-none d-sm-table-cell">
             <span th:if="${job.enabled}" class="text-success"><i class="icon ti ti-circle-check"></i> Yes</span>

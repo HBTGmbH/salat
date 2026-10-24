@@ -7,11 +7,13 @@ import static de.hbt.salat.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
 import static de.hbt.salat.common.exception.ErrorCode.EM_LOGINNAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.FA_GROUP_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.EM_SIGN_TAKEN;
+import static de.hbt.salat.common.exception.ErrorCode.RP_GROUP_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_NAME_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.SO_COMPLETE_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.SO_SIGN_TAKEN;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 import static de.hbt.salat.common.exception.ErrorCode.XX_DUPLICATE_KEY;
+import static java.util.Map.entry;
 import static org.hibernate.exception.ConstraintViolationException.ConstraintKind.UNIQUE;
 
 import java.util.Locale;
@@ -69,21 +71,23 @@ public class ConcurrentModificationAspect {
    * {@code contains}, weil jede Datenbank den Namen anders einpackt: MySQL meldet
    * {@code employee.uk_employee_sign}, H2 den Index samt Schema und Suffix.
    */
-  private static final Map<String, ErrorCode> FINDINGS_BY_UNIQUE_KEY = Map.of(
-      "uk_employee_sign", EM_SIGN_TAKEN,
-      "uk_customerorder_sign", CO_SIGN_TAKEN,
+  private static final Map<String, ErrorCode> FINDINGS_BY_UNIQUE_KEY = Map.ofEntries(
+      entry("uk_employee_sign", EM_SIGN_TAKEN),
+      entry("uk_customerorder_sign", CO_SIGN_TAKEN),
       // #1209: the slices of a category by its id, the category itself by its name
-      "uk_employee_cost_category_valid_from", BU_EMPLOYEE_COST_OVERLAP,
-      "uk_employee_cost_category_name", BU_EMPLOYEE_COST_NAME_EXISTS,
+      entry("uk_employee_cost_category_valid_from", BU_EMPLOYEE_COST_OVERLAP),
+      entry("uk_employee_cost_category_name", BU_EMPLOYEE_COST_NAME_EXISTS),
       // #1333
-      "uk_salat_user_loginname", EM_LOGINNAME_TAKEN,
-      "uk_customer_shortname", CU_DUPLICATE_SHORT_NAME,
-      "uk_suborder_customerorder_parent_sign", SO_SIGN_TAKEN,
+      entry("uk_salat_user_loginname", EM_LOGINNAME_TAKEN),
+      entry("uk_customer_shortname", CU_DUPLICATE_SHORT_NAME),
+      entry("uk_suborder_customerorder_parent_sign", SO_SIGN_TAKEN),
       // #1342: an order sign with a slash can spell the same path as a suborder of another order
-      "uk_suborder_complete_order_sign", SO_COMPLETE_SIGN_TAKEN,
-      "uk_report_definition_name", RP_REPORT_NAME_TAKEN,
+      entry("uk_suborder_complete_order_sign", SO_COMPLETE_SIGN_TAKEN),
+      // #1523: the title is unique within its group, and so is the name of a group
+      entry("uk_report_definition_report_group_id_name", RP_REPORT_NAME_TAKEN),
+      entry("uk_report_group_name", RP_GROUP_NAME_TAKEN),
       // #1414: the same name created twice at the same time
-      "uk_favorite_group_employee_id_name", FA_GROUP_NAME_TAKEN);
+      entry("uk_favorite_group_employee_id_name", FA_GROUP_NAME_TAKEN));
 
   @AfterThrowing(pointcut = "within(de.hbt.salat..*) && @within(org.springframework.stereotype.Service)",
       throwing = "conflict")

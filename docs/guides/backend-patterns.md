@@ -534,10 +534,12 @@ für maschinelle Aufrufer hätte ein Wert aus dem Cookie dieselbe Anfrage aus ei
 beantwortet als aus einem Skript. Die Ausnahme gilt für alle REST-Endpunkte, nicht nur für die, die
 freie Parameter annehmen — deshalb steht sie im Filter und nicht in einem Endpunkt.
 
-Zu reservieren bleiben nur die **eigenen Parameter der Methode**: trägt die Anfrage den Namen der
-Ressource (`?report=Stundenliste`), darf dieser Name nicht zusätzlich als fachlicher Parameter
-gelten. Er wird ausgefiltert, statt sich auf Nichtkollision zu verlassen — ein stiller falscher Wert
-ist schlimmer als ein fehlender, den die Antwort benennt.
+Zu reservieren bleiben nur die **eigenen Parameter der Methode**: trägt die Anfrage die Id der
+Ressource (`?reportId=42`), darf dieser Name nicht zusätzlich als fachlicher Parameter gelten. Er
+wird ausgefiltert, statt sich auf Nichtkollision zu verlassen — ein stiller falscher Wert ist
+schlimmer als ein fehlender, den die Antwort benennt. Das gilt auch für einen Parameter, den die
+Schnittstelle nicht mehr auswertet: `report`, der frühere Aufruf über den Namen (#1523), bleibt
+reserviert und wird mit 400 und dem Hinweis auf `reportId` beantwortet.
 
 ---
 

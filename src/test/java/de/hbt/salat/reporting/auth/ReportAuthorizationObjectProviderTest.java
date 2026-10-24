@@ -1,6 +1,7 @@
 package de.hbt.salat.reporting.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -24,7 +25,10 @@ import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportGroupInfo;
 import de.hbt.salat.reporting.service.ReportService;
+import de.hbt.salat.reporting.service.ReportService.GroupedReport;
+import org.springframework.context.support.MessageSourceAccessor;
 
 @ExtendWith({MockitoExtension.class})
 @MockitoSettings(strictness = LENIENT)
@@ -33,22 +37,43 @@ class ReportAuthorizationObjectProviderTest {
     @Mock
     private ReportService reportService;
 
+    @Mock
+    private MessageSourceAccessor messages;
+
     @InjectMocks
     private ReportAuthorizationObjectProvider provider;
 
     @Test
     void theOfferedIdIsTheDatabaseIdAndTheLabelIsTheName() {
         var umsatz = report(42L, "Umsatz je Auftrag");
-        when(reportService.getReportDefinitions()).thenReturn(List.of(umsatz));
+        when(reportService.getGroupedReportDefinitions()).thenReturn(List.of(grouped(umsatz, CONTROLLING)));
 
         assertThat(provider.objects())
-            .containsExactly(new AuthorizationObject("42", "Umsatz je Auftrag"));
+            .containsExactly(new AuthorizationObject("42", "Umsatz je Auftrag", null, "Controlling"));
+    }
+
+    /** Titles repeat across groups (#1523): the editor lists the reports under their group, those without one too. */
+    @Test
+    void eachReportComesWithItsGroup() {
+        when(messages.getMessage("main.reporting.group.none")).thenReturn("Ohne Gruppe");
+        var grouped = grouped(report(42L, "Umsatz"), CONTROLLING);
+        var loose = grouped(report(43L, "Umsatz"), ReportGroupInfo.NONE);
+        when(reportService.getGroupedReportDefinitions()).thenReturn(List.of(grouped, loose));
+
+        assertThat(provider.objects()).extracting(AuthorizationObject::label, AuthorizationObject::group)
+            .containsExactly(tuple("Umsatz", "Controlling"), tuple("Umsatz", "Ohne Gruppe"));
+    }
+
+    private static final ReportGroupInfo CONTROLLING = new ReportGroupInfo(1L, "Controlling", false);
+
+    private static GroupedReport grouped(ReportDefinition report, ReportGroupInfo group) {
+        return new GroupedReport(report, group);
     }
 
     @Test
     void somethingThatIsNotANumberCannotBeAReportId() {
         var umsatz = report(42L, "Umsatz je Auftrag");
-        when(reportService.getReportDefinitions()).thenReturn(List.of(umsatz));
+        when(reportService.getGroupedReportDefinitions()).thenReturn(List.of(grouped(umsatz, CONTROLLING)));
 
         assertThat(provider.judge("42")).isEqualTo(VALID);
         // the name reads better in a rule and would never match - hence refused rather than noted
@@ -60,7 +85,7 @@ class ReportAuthorizationObjectProviderTest {
     @Test
     void theCheckingSiteAsksWithTheSameId() {
         var umsatz = report(42L, "Umsatz je Auftrag");
-        when(reportService.getReportDefinitions()).thenReturn(List.of(umsatz));
+        when(reportService.getGroupedReportDefinitions()).thenReturn(List.of(grouped(umsatz, CONTROLLING)));
         var authorizedUser = mock(AuthorizedUser.class);
         var authService = mock(AuthService.class);
 

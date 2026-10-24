@@ -16,13 +16,16 @@ import de.hbt.salat.common.domain.AuditedEntity;
 @Entity
 @Getter
 @Setter
-@Table(name = "report_definition",
-    uniqueConstraints = @UniqueConstraint(name = "uk_report_definition_name", columnNames = "name"))
+@Table(name = "report_definition", uniqueConstraints = @UniqueConstraint(
+    name = "uk_report_definition_report_group_id_name", columnNames = {"report_group_id", "name"}))
 public class ReportDefinition extends AuditedEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  /** Unique (#1333): the REST interface calls a report by its name. */
+  /**
+   * The title, unique within its group (#1523) — also among the reports without a group, which the
+   * database cannot tell apart from each other ({@code NULL}) and the service checks instead.
+   */
   private String name;
   @Column(name = "`sql`")
   private String sql;
@@ -40,6 +43,16 @@ public class ReportDefinition extends AuditedEntity implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "owner_user_id")
   private SalatUser owner;
+
+  /** The group the report is listed in (#1523), {@code null} for none. */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "report_group_id")
+  private ReportGroup group;
+
+  /** The id of {@link #group}, read off the reference without loading the group. */
+  public Long getGroupId() {
+    return group != null ? group.getId() : null;
+  }
 
   /** The id of {@link #owner}, read off the reference without loading the login. */
   public Long getOwnerUserId() {

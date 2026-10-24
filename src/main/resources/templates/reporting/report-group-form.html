@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:salat="http://hbt.de/salat/thymeleaf"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='reports',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
+<main layout:fragment="content">
+  <salat:form th:action="@{/reporting/report-groups/store}" th:object="${groupForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <salat:textInput th:field="*{name}" th:label="#{main.reporting.group.name}" required="true" maxlength="255" />
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/reporting/report-groups}" />
+    </salat:buttons>
+  </salat:form>
+</main>
+</html>

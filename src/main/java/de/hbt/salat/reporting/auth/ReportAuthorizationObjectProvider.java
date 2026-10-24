@@ -4,6 +4,7 @@ import static java.lang.String.valueOf;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.auth.domain.AuthorizationObjectProvider;
@@ -19,12 +20,16 @@ import de.hbt.salat.reporting.service.ReportService;
  *
  * <p>The list the service returns is the one the asking person may execute. That takes nothing away here: the editor
  * is open to the management alone, and {@code ReportAuthorization} lets a manager through for every report.
+ *
+ * <p>Each report comes with its group (#1523), in the order of the report list: titles repeat across groups, and the
+ * editor lists them under it.
  */
 @Component
 @RequiredArgsConstructor
 public class ReportAuthorizationObjectProvider implements AuthorizationObjectProvider {
 
   private final ReportService reportService;
+  private final MessageSourceAccessor messages;
 
   @Override
   public String category() {
@@ -43,8 +48,10 @@ public class ReportAuthorizationObjectProvider implements AuthorizationObjectPro
 
   @Override
   public List<AuthorizationObject> objects() {
-    return reportService.getReportDefinitions().stream()
-        .map(report -> new AuthorizationObject(valueOf(report.getId()), report.getName()))
+    var withoutGroup = messages.getMessage("main.reporting.group.none");
+    return reportService.getGroupedReportDefinitions().stream()
+        .map(candidate -> new AuthorizationObject(valueOf(candidate.report().getId()), candidate.report().getName(), null,
+            candidate.group().isNone() ? withoutGroup : candidate.group().name()))
         .toList();
   }
 
