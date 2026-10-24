@@ -147,7 +147,7 @@ class TimereportSerialSeedingOrderTest {
   private void stubFormRerendering() {
     when(errorCodeViewHelper.toViewMessages(any(ErrorCodeException.class))).thenReturn(List.of());
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(EC_ID, DATE)).thenReturn(List.of());
     when(timereportService.getTimereportsByDateAndEmployeeContractId(EC_ID, DATE)).thenReturn(List.of());
     when(timereportService.getRecentBookings(EC_ID, SUBORDER_ID)).thenReturn(List.of());

@@ -104,7 +104,7 @@ class TimereportSurchargeFormTest {
     when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
     when(employeecontractService.getCurrentContract(LOGIN_EMPLOYEE_ID)).thenReturn(Optional.of(contract));
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(dailyService.getRemainingDayTarget(any(), eq(CONTRACT_ID))).thenReturn(Duration.ZERO);
 
     var order = customerorder();

@@ -103,7 +103,7 @@ class TimereportEditSeedingTest {
     when(dailyPreferenceService.getForEmployeeContractId(EC_ID))
         .thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(messages.getMessage(anyString())).thenReturn("ok");
   }
 

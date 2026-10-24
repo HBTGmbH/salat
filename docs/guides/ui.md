@@ -375,6 +375,21 @@ einer Stelle — einem View-Helper je Art. Ein Template verkettet keine Felder z
   - Ohne Filter auf der Seite, im neuen Tab oder mit Strg-Klick öffnet der Link die Liste mit dem
     Tag als Filter.
 
+### Auswahl, die einer anderen folgt (#1522)
+
+Eine Auswahl, die nur die Einträge zu dem anbietet, was in einer anderen gewählt ist (die
+Unteraufträge des gewählten Auftrags), trägt `data-depends-on="<Selektor der anderen>"`, und jede
+ihrer Optionen nennt mit `data-parent` den Wert, zu dem sie gehört. `salat.js` filtert dann in
+TomSelect, nicht im Markup:
+
+- Jede `<option>` bleibt im Select stehen, mit ihren `data-*`-Attributen — Code, der an der gewählten
+  Option liest (`sel.options[sel.selectedIndex].dataset`), merkt vom Filtern nichts.
+- Ein Wechsel oben leert das Feld, setzt den Fokus hinein und öffnet die Liste. Gibt es genau eine
+  passende Option, ist sie stattdessen gewählt. In beiden Fällen feuert das Feld `change`, alles, was
+  am Wert hängt, folgt also.
+- Kein Request: die Auswahl oben ist reine Bedienung und kann ohne `name` bleiben. Was der Server
+  von ihr wissen muss (das Buchungsformular beim Datumswechsel), gibt ihm `hx-vals` mit.
+
 ### Free text field with remote suggestions
 
 A field whose value is free text but where the known values should be offered while typing is an

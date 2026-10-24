@@ -362,7 +362,7 @@ class DailyReportPaletteSuggestionTest {
   }
 
   private void favourite(Long suborderId) {
-    when(timereportPreferenceService.getForCurrentUser()).thenReturn(new TimereportPreferences(suborderId, null, null));
+    when(timereportPreferenceService.getForCurrentUser()).thenReturn(new TimereportPreferences(suborderId, null, null, false));
   }
 
   /** Bookings of the last days, one per suborder, the latest first. */

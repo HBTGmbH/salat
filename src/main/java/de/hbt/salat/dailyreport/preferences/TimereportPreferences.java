@@ -13,18 +13,22 @@ import java.util.Optional;
  *                              {@code durationInputMode} is {@link DurationInputMode#REMEMBER}.
  *                              {@code null} until the user has created their first booking, never
  *                              {@code REMEMBER} itself.
+ * @param twoStepSuborderSelect whether the booking form has the suborder chosen in two steps, first
+ *                              the order and then one of its suborders (#1522)
  */
 public record TimereportPreferences(Long favoriteSuborderId,
                                     DurationInputMode durationInputMode,
-                                    DurationInputMode lastUsedDurationMode) {
+                                    DurationInputMode lastUsedDurationMode,
+                                    boolean twoStepSuborderSelect) {
 
   public static final String MODULE_KEY = "timereport";
   static final String KEY_FAVORITE_SUBORDER_ID = "favoriteSuborderId";
   static final String KEY_DURATION_INPUT_MODE = "durationInputMode";
   static final String KEY_LAST_USED_DURATION_MODE = "lastUsedDurationMode";
+  static final String KEY_TWO_STEP_SUBORDER_SELECT = "twoStepSuborderSelect";
 
   public static TimereportPreferences defaults() {
-    return new TimereportPreferences(null, REMEMBER, null);
+    return new TimereportPreferences(null, REMEMBER, null, false);
   }
 
   public static TimereportPreferences from(Map<String, Object> map) {
@@ -34,7 +38,8 @@ public record TimereportPreferences(Long favoriteSuborderId,
         modeOf(map, KEY_DURATION_INPUT_MODE).orElse(REMEMBER),
         modeOf(map, KEY_LAST_USED_DURATION_MODE)
             .filter(mode -> mode != REMEMBER)
-            .orElse(null));
+            .orElse(null),
+        Boolean.parseBoolean(String.valueOf(map.get(KEY_TWO_STEP_SUBORDER_SELECT))));
   }
 
   public Map<String, Object> toMap() {
@@ -48,6 +53,9 @@ public record TimereportPreferences(Long favoriteSuborderId,
     }
     if (lastUsedDurationMode != null) {
       values.put(KEY_LAST_USED_DURATION_MODE, lastUsedDurationMode.getKey());
+    }
+    if (twoStepSuborderSelect) {
+      values.put(KEY_TWO_STEP_SUBORDER_SELECT, "true");
     }
     return Map.copyOf(values);
   }

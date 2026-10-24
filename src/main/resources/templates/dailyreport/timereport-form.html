@@ -43,9 +43,12 @@
 
               <div class="col-auto">
                 <label class="form-label required" th:text="#{main.timereport.form.date.label}">Datum</label>
+                <!--/* hx-vals (#1522): the order select submits nothing, but a new day keeps the order
+                       chosen there while it has a suborder to book on, also before one of them is chosen */-->
                 <input type="date" class="form-control" th:field="*{referenceday}"
                        hx-post="/dailyreport/timereports/refresh-orders"
                        hx-include="closest form"
+                       th:attr="hx-vals=${twoStepSuborderSelect == true} ? 'js:{orderId: twoStepOrderId()}' : null"
                        hx-target="#orders-suborders-wrapper"
                        hx-swap="outerHTML"
                        hx-trigger="change"/>
@@ -141,7 +144,27 @@
                    gebucht ist; aus demselben Grund hier. Fehlt an einem Tag "nicht gearbeitet".
                    data-preselected-by-default: vorgewaehlt ist nur der erste der Liste, gewaehlt
                    hat ihn niemand */-->
-            <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment" class="mb-3">
+            <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment" class="mb-3"
+                 th:with="twoStep=${twoStepSuborderSelect == true},
+                          focusSuborder=${entryFocus != null and entryFocus.name() == 'SUBORDER'}">
+              <!--/* Two steps (#1522, a setting): the order first, then one of its suborders. The order
+                     select has no name, it only narrows the suborder select (data-depends-on, salat.js);
+                     the suborder select keeps every suborder of the day, so that a change of the order
+                     needs no request and its options keep their data attributes. The subtext of a
+                     suborder names its order and customer - the order select shows them already. */-->
+              <div class="mb-3" th:if="${twoStep}">
+                <label class="form-label required" for="orderSelect" th:text="#{main.timereport.form.order.label}">Auftrag</label>
+                <select class="form-select tomselect" id="orderSelect"
+                        th:attr="data-entry-focus=${focusSuborder} ? 'true' : null">
+                  <option value="" th:text="#{main.timereport.form.order.placeholder}">— Auftrag wählen —</option>
+                  <option th:each="o : ${bookableOrders}"
+                          th:value="${o.id}"
+                          th:text="${o.label}"
+                          th:attr="data-subtext=${o.subtext}"
+                          th:selected="${selectedOrderId != null and selectedOrderId == o.id}"></option>
+                </select>
+                <small id="orderSelect-subtext" class="form-text text-muted mt-1"></small>
+              </div>
               <label class="form-label required" th:text="#{main.timereport.form.suborder.label}">Unterauftrag</label>
               <select class="form-select tomselect"
                       name="suborderId" id="suborderId"
@@ -151,7 +174,8 @@
                                data-booked-until-minutes=${bookedUntilMinutes},
                                data-preselected-by-default=${suborderPreselectedByDefault == true} ? 'true' : null,
                                data-surcharge-day-kinds=${surchargeDayKinds},
-                               data-entry-focus=${entryFocus != null and entryFocus.name() == 'SUBORDER'} ? 'true' : null"
+                               data-depends-on=${twoStep} ? '#orderSelect' : null,
+                               data-entry-focus=${focusSuborder and !twoStep} ? 'true' : null"
                       hx-post="/dailyreport/timereports/refresh-sidebar"
                       hx-include="closest form"
                       hx-target="#form-sidebar"
@@ -167,7 +191,7 @@
                                  nightHint=${@surchargeViewHelper.nightHint(s.surchargeRates)}"
                         th:value="${s.id}"
                         th:text="${s.label}"
-                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby},
+                        th:attr="data-subtext=${twoStep} ? null : ${s.subtext},data-parent=${twoStep} ? ${s.orderId} : null,data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby},
                                  data-ticket-mode=${s.ticketReferencePolicy.mode().name()},data-ticket-limit=${s.ticketReferencePolicy.limit()},
                                  data-ticket-policy-text=${ticketPolicyText},
                                  data-surcharge-rates=${surchargeRates},data-surcharge-night-hint=${nightHint}"
@@ -618,6 +642,10 @@
     // also on the next change of the suborder. Another order type proposes nothing and leaves an
     // earlier proposal standing; a new day without a rest takes back a proposal still untouched.
     var chosenSuborderId = null;
+    // #1522: the order a change of the date keeps, see hx-vals on the date field
+    function twoStepOrderId() {
+      return document.getElementById('orderSelect')?.value || '';
+    }
     function rememberChosenSuborder(e) {
       chosenSuborderId = e.target.value;
     }

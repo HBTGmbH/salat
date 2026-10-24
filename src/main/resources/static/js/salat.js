@@ -404,6 +404,8 @@ const tomSelectConfig = (el) => {
               method: 'POST',
               headers: { 'X-XSRF-TOKEN': raw ? decodeURIComponent(raw) : '' },
             }).then(() => {
+              // a field narrowed by another one (#1522) puts options it left out back with this
+              el.dataset.favoriteId = newFavId || '';
               Object.keys(this.options).forEach(k => {
                 this.options[k].isFavorite = (newFavId !== null && k === newFavId);
               });
@@ -531,9 +533,53 @@ const tomSelectConfig = (el) => {
 // inputs take part as well: a free text field with remote suggestions is an input, not a select
 const TOMSELECT_SELECTOR = 'select.tomselect, input.tomselect';
 
+/* A select narrowed by another one (#1522: the suborders of the chosen order). data-depends-on names
+ * the other select, data-parent on each option the value it belongs to there; both are TomSelect
+ * fields. The options are taken out of TomSelect, not out of the markup: every <option> stays, with
+ * the data attributes the page reads from the selected one. A change up there empties the field and
+ * puts the focus into it, its list open - unless there is a single option to choose, which is then
+ * chosen. Either way the field fires change, so whatever follows its value follows. */
+function initDependentSelects() {
+  document.querySelectorAll('select[data-depends-on]').forEach((el) => {
+    const parent = document.querySelector(el.dataset.dependsOn);
+    if (el.salatDependent || !el.tomselect || !parent || !parent.tomselect) return;
+    el.salatDependent = true;
+    const select = el.tomselect;
+    const all = Object.values(select.options).filter(option => option.$option && 'parent' in option.$option.dataset);
+    const optionsOf = value => all.filter(option => option.$option.dataset.parent === value);
+    const show = (value) => {
+      const favoriteId = el.dataset.favoriteId || null;
+      all.forEach((option) => {
+        if (option.$option.dataset.parent !== value) {
+          select.removeOption(option.value, true);
+        } else if (!select.options[option.value]) {
+          // the star may have moved while the option was out of the list
+          option.isFavorite = favoriteId !== null && option.value === favoriteId;
+          select.addOption(option);
+        }
+      });
+      select.refreshOptions(false);
+    };
+    show(parent.value);
+    parent.addEventListener('change', () => {
+      const offered = optionsOf(parent.value);
+      if (offered.length === 1) {
+        show(parent.value);
+        select.setValue(offered[0].value);
+        return;
+      }
+      select.clear();
+      show(parent.value);
+      // after the field above has finished with the pick that changed it
+      setTimeout(() => select.focus());
+    });
+  });
+}
+
 document.querySelectorAll(TOMSELECT_SELECTOR).forEach((el) => {
   new TomSelect(el, tomSelectConfig(el));
 });
+initDependentSelects();
 
 document.addEventListener('htmx:after:swap', function () {
   document.querySelectorAll(TOMSELECT_SELECTOR).forEach((el) => {
@@ -541,6 +587,7 @@ document.addEventListener('htmx:after:swap', function () {
       new TomSelect(el, tomSelectConfig(el));
     }
   });
+  initDependentSelects();
 });
 
 document.addEventListener('htmx:after:swap', function () {

@@ -94,6 +94,7 @@ public class SettingsController {
     form.setFavoriteSuborderId(timereport.favoriteSuborderId() != null
         ? timereport.favoriteSuborderId().toString() : "");
     form.setDurationInputMode(timereport.durationInputMode().getKey());
+    form.setTwoStepSuborderSelect(timereport.twoStepSuborderSelect());
     form.setFavoriteListSize(favoriteService.getListSize());
     var sidebar = dailySidebarPreferenceService.getForCurrentUser();
     form.setWeekStripPlacement(sidebar.weekStrip().getKey());
@@ -164,7 +165,8 @@ public class SettingsController {
         ? timereportPreferenceService.getForCurrentUser().lastUsedDurationMode()
         : durationInputMode;
     timereportPreferenceService.saveForCurrentUser(
-        new TimereportPreferences(favSuborderId, durationInputMode, lastUsedDurationMode));
+        new TimereportPreferences(favSuborderId, durationInputMode, lastUsedDurationMode,
+            form.isTwoStepSuborderSelect()));
     employeePreferenceService.saveForCurrentUser(
         new EmployeePreferences(form.getNotificationEmail(), form.getGravatarEmail()));
     // null when every beta switch is off — Spring resets the list via the "_betaFeatures" marker
@@ -231,6 +233,9 @@ public class SettingsController {
 
     /** Key of a {@link DurationInputMode}, see the booking form's entry mode toggle (#844). */
     private String durationInputMode = DurationInputMode.REMEMBER.getKey();
+
+    /** Whether the booking form asks for the order first and then for one of its suborders (#1522). */
+    private boolean twoStepSuborderSelect;
 
     /**
      * How many favourites the short list of the daily view shows ordered by use (#1414); a setting

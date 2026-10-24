@@ -113,6 +113,13 @@ public class E2ETestData {
   /** A Saturday: no target at all (#857). */
   public static final LocalDate ABSENCE_WEEKEND_DAY = LocalDate.of(2026, 6, 27);
 
+  /**
+   * A person who chooses the suborder in two steps (#1522), first the order and then one of its
+   * suborders. A person of its own, because the setting is stored per login and every other test of the
+   * booking form picks from the one suborder select.
+   */
+  public static final String EMPLOYEE_TWO_STEP_SIGN = "ezs";
+
   public static final String CUSTOMERORDER_CONTOSO_SIGN = "CONTOSO-01";
   public static final String SUBORDER_ALPHA_DEV_SIGN = "ALPHA-DEV";
   public static final String CUSTOMERORDER_GLOBEX_SIGN = "GLOBEX-01";
@@ -309,8 +316,10 @@ public class E2ETestData {
     Customer initech = customer(customerRepository, "Initech KG", "INITECH");
     Customerorder initechOrder = customerorder(customerorderRepository, initech,
         CUSTOMERORDER_INITECH_SIGN, "Support & Migration", OrderType.STANDARD);
-    suborder(suborderRepository, initechOrder, SUBORDER_INITECH_SUPPORT_SIGN, "Support", PAST, false, false);
-    suborder(suborderRepository, initechOrder, SUBORDER_INITECH_MIGRATION_SIGN, "Migration", PAST, false, false);
+    Suborder initechSupport = suborder(suborderRepository, initechOrder, SUBORDER_INITECH_SUPPORT_SIGN, "Support",
+        PAST, false, false);
+    Suborder initechMigration = suborder(suborderRepository, initechOrder, SUBORDER_INITECH_MIGRATION_SIGN,
+        "Migration", PAST, false, false);
 
     Customerorder standbyOrder = customerorder(customerorderRepository, initech,
         CUSTOMERORDER_STANDBY_SIGN, "Rufbereitschaft", OrderType.BEREITSCHAFT);
@@ -369,6 +378,15 @@ public class E2ETestData {
     bookings.book(absentAlpha, ABSENCE_PARTLY_BOOKED_DAY, Duration.ofHours(3), ABSENCE_PARTLY_BOOKED_COMMENT);
     bookings.book(absentStandby, ABSENCE_PARTLY_BOOKED_DAY, Duration.ofHours(2), "Rufbereitschaft");
     bookings.book(absentAlpha, ABSENCE_FULLY_BOOKED_DAY, Duration.ofHours(8), "Ganzer Tag im Projekt");
+
+    // --- The suborder chosen in two steps (#1522): orders with one suborder and with two ---
+    Employee twoStep = employee(employeeRepository, salatUserRepository, EMPLOYEE_TWO_STEP_SIGN,
+        "Zeno", "Zweistufig", GlobalConstants.EMPLOYEE_STATUS_MA);
+    Employeecontract twoStepContract = employeecontract(employeecontractRepository, twoStep, null);
+    employeeorder(employeeorderRepository, twoStepContract, alphaDev);
+    employeeorder(employeeorderRepository, twoStepContract, globexConsult);
+    employeeorder(employeeorderRepository, twoStepContract, initechSupport);
+    employeeorder(employeeorderRepository, twoStepContract, initechMigration);
 
     Employee reviewed = employee(employeeRepository, salatUserRepository, EMPLOYEE_REVIEWED_SIGN,
         "Vera", "Vorschau", GlobalConstants.EMPLOYEE_STATUS_MA);

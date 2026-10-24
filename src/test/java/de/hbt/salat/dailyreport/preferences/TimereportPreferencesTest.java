@@ -7,6 +7,7 @@ import static de.hbt.salat.dailyreport.preferences.DurationInputMode.REMEMBER;
 import static de.hbt.salat.dailyreport.preferences.TimereportPreferences.KEY_DURATION_INPUT_MODE;
 import static de.hbt.salat.dailyreport.preferences.TimereportPreferences.KEY_FAVORITE_SUBORDER_ID;
 import static de.hbt.salat.dailyreport.preferences.TimereportPreferences.KEY_LAST_USED_DURATION_MODE;
+import static de.hbt.salat.dailyreport.preferences.TimereportPreferences.KEY_TWO_STEP_SUBORDER_SELECT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,39 +42,61 @@ class TimereportPreferencesTest {
     assertThat(TimereportPreferences.defaults().toMap()).isEmpty();
   }
 
+  /** #1522: one suborder select is the default, and the default is not stored. */
+  @Test
+  void the_two_step_suborder_select_is_off_by_default() {
+    assertThat(TimereportPreferences.defaults().twoStepSuborderSelect()).isFalse();
+    assertThat(new TimereportPreferences(null, REMEMBER, null, false).toMap())
+        .doesNotContainKey(KEY_TWO_STEP_SUBORDER_SELECT);
+  }
+
+  @Test
+  void the_two_step_suborder_select_survives_the_roundtrip() {
+    var original = new TimereportPreferences(7L, DURATION, DURATION, true);
+
+    assertThat(original.toMap()).containsEntry(KEY_TWO_STEP_SUBORDER_SELECT, "true");
+    assertThat(TimereportPreferences.from(original.toMap())).isEqualTo(original);
+  }
+
+  @Test
+  void an_unreadable_two_step_value_is_off() {
+    assertThat(TimereportPreferences.from(Map.of(KEY_TWO_STEP_SUBORDER_SELECT, "ja")).twoStepSuborderSelect())
+        .isFalse();
+  }
+
   @Test
   void an_explicit_mode_survives_the_roundtrip() {
-    var original = new TimereportPreferences(42L, BEGIN_END, BEGIN_END);
+    var original = new TimereportPreferences(42L, BEGIN_END, BEGIN_END, false);
 
     assertThat(TimereportPreferences.from(original.toMap())).isEqualTo(original);
   }
 
   @Test
   void the_remembered_mode_survives_the_roundtrip() {
-    var original = new TimereportPreferences(null, REMEMBER, BEGIN_END);
+    var original = new TimereportPreferences(null, REMEMBER, BEGIN_END, false);
 
     assertThat(TimereportPreferences.from(original.toMap())).isEqualTo(original);
   }
 
   @Test
   void while_remembering_the_last_used_mode_is_the_effective_one() {
-    assertThat(new TimereportPreferences(null, REMEMBER, BEGIN_END).effectiveDurationMode())
+    assertThat(new TimereportPreferences(null, REMEMBER, BEGIN_END, false).effectiveDurationMode())
         .isEqualTo("beginEnd");
-    assertThat(new TimereportPreferences(null, REMEMBER, DURATION).effectiveDurationMode())
+    assertThat(new TimereportPreferences(null, REMEMBER, DURATION, false).effectiveDurationMode())
         .isEqualTo("duration");
   }
 
   @Test
   void an_explicit_mode_wins_over_the_last_used_one() {
-    assertThat(new TimereportPreferences(null, DURATION, BEGIN_END).effectiveDurationMode())
+    assertThat(new TimereportPreferences(null, DURATION, BEGIN_END, false).effectiveDurationMode())
         .isEqualTo("duration");
-    assertThat(new TimereportPreferences(null, BEGIN_END, DURATION).effectiveDurationMode())
+    assertThat(new TimereportPreferences(null, BEGIN_END, DURATION, false).effectiveDurationMode())
         .isEqualTo("beginEnd");
   }
 
   @Test
   void an_explicit_mode_applies_even_without_a_remembered_one() {
-    assertThat(new TimereportPreferences(null, BEGIN_END, null).effectiveDurationMode())
+    assertThat(new TimereportPreferences(null, BEGIN_END, null, false).effectiveDurationMode())
         .isEqualTo("beginEnd");
   }
 
@@ -108,7 +131,7 @@ class TimereportPreferencesTest {
 
   @Test
   void the_favorite_suborder_still_round_trips() {
-    var original = new TimereportPreferences(7L, REMEMBER, null);
+    var original = new TimereportPreferences(7L, REMEMBER, null, false);
 
     assertThat(original.toMap()).containsExactly(Map.entry(KEY_FAVORITE_SUBORDER_ID, "7"));
     assertThat(TimereportPreferences.from(original.toMap())).isEqualTo(original);

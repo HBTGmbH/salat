@@ -19,9 +19,9 @@ import de.hbt.salat.order.domain.TicketReferencePolicy;
 class TimereportControllerTest {
 
   private static final SuborderOption TRAINING =
-      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false, false, TicketReferencePolicy.DEFAULT, Map.of());
+      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false, false, TicketReferencePolicy.DEFAULT, Map.of(), 10L, "ALPHA", "Contoso");
   private static final SuborderOption PROJECT =
-      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false, false, TicketReferencePolicy.DEFAULT, Map.of());
+      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false, false, TicketReferencePolicy.DEFAULT, Map.of(), 10L, "ALPHA", "Contoso");
   private static final LocalDate DATE = LocalDate.parse("2026-06-18");
 
   @Test

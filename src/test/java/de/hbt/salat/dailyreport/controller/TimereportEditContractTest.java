@@ -87,7 +87,7 @@ class TimereportEditContractTest {
   void setUp() {
     when(timereportService.getEmployeecontractIdForUpdate(TIMEREPORT_ID, DATE)).thenReturn(OWN_CONTRACT_ID);
     when(timereportPreferenceService.getForCurrentUser())
-        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
+        .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION, false));
     when(messages.getMessage(anyString())).thenReturn("ok");
   }
 
