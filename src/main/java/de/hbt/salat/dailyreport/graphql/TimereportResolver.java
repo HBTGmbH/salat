@@ -122,11 +122,16 @@ class TimereportResolver {
   TimereportPayload updateTimereport(@Argument long id, @Argument int version, @Argument UpdateTimereportInput input) {
     TimereportDTO current = readDto(id);
     LocalDate date = Objects.requireNonNullElse(input.date(), current.getReferenceday());
-    // across a contract boundary the booking takes the contract of its person on the new day (#1128)
-    long contractId = date.equals(current.getReferenceday())
-        ? current.getEmployeecontractId()
-        : timereportService.getEmployeecontractIdForUpdate(id, date);
-    timereportService.updateTimereport(id, version, contractId, current.getEmployeeorderId(), date,
+    // on another day the booking takes the contract of its person there (#1128) and the employee order valid then,
+    // as the page determines it on every save: an employee order may be split into periods
+    long contractId = current.getEmployeecontractId();
+    long employeeorderId = current.getEmployeeorderId();
+    if (!date.equals(current.getReferenceday())) {
+      contractId = timereportService.getEmployeecontractIdForUpdate(id, date);
+      employeeorderId = employeeorderService.getEmployeeorderId(contractId, current.getSuborderId(), date)
+          .orElseThrow(() -> new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND));
+    }
+    timereportService.updateTimereport(id, version, contractId, employeeorderId, date,
         Objects.requireNonNullElse(input.taskDescription(), current.getTaskdescription()),
         Objects.requireNonNullElse(input.ticketReferences(), current.getTicketReferences()),
         current.isTraining(), current.getSurchargeKind(),

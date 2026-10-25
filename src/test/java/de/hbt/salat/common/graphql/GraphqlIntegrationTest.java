@@ -73,6 +73,8 @@ class GraphqlIntegrationTest {
   /** A second employee without any role, to show what she does not see. */
   private static final String OTHER_EMPLOYEE = "gqm2";
   private static final String RESTRICTED = "gqrs";
+  /** A person whose employee order on the suborder is split into two periods. */
+  private static final String MOVER = "gqmv";
   /** A Wednesday in the past, inside the year a booking may lie in. */
   private static final LocalDate DAY = LocalDate.now().minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.WEDNESDAY));
 
@@ -396,6 +398,46 @@ class GraphqlIntegrationTest {
 
     assertThat(refused.at("/errors/0/extensions/code").asString()).startsWith("TR-");
     assertThat(refused.at("/errors/0/message").asString()).isNotBlank();
+  }
+
+  /**
+   * Moving a booking to another day takes the employee order valid there, as the page does on every save: here the
+   * person's employee order on the suborder is split into two periods, and the new day lies in the second.
+   */
+  @Test
+  void a_booking_moved_to_another_day_takes_the_employee_order_valid_there() throws Exception {
+    LocalDate firstDay = DAY.minusWeeks(3);
+    LocalDate nextDay = firstDay.plusDays(1);
+    var contract = contractOf(MOVER, EMPLOYEE_STATUS_MA);
+    var suborder = suborderRepository.findById(suborderId).orElseThrow();
+    var first = new Employeeorder();
+    first.setSuborder(suborder);
+    first.setEmployeecontract(contract);
+    first.setFromDate(LocalDate.of(2000, 1, 1));
+    first.setUntilDate(firstDay);
+    employeeorderRepository.save(first);
+    var second = new Employeeorder();
+    second.setSuborder(suborder);
+    second.setEmployeecontract(contract);
+    second.setFromDate(nextDay);
+    long secondId = employeeorderRepository.save(second).getId();
+    for (LocalDate day : List.of(firstDay, nextDay)) {
+      post(MOVER, "mutation($day: Date!) { upsertWorkingday(input: { date: $day, startTime: \"08:00\" }) { date } }",
+          Map.of("day", day.toString()));
+    }
+    Map<String, Object> variables = new HashMap<>(createVariables(UUID.randomUUID().toString(), "PT1H", "Verschieben"));
+    variables.put("day", firstDay.toString());
+    var created = json(post(MOVER, CREATE, variables)).at("/data/createTimereport/timereport");
+
+    var moved = json(post(MOVER, """
+        mutation($id: ID!, $version: Int!, $day: Date!) {
+          updateTimereport(id: $id, version: $version, input: { date: $day }) { timereport { date employeeorderId } }
+        }""", Map.of("id", created.at("/id").asString(), "version", created.at("/version").asInt(),
+        "day", nextDay.toString())));
+
+    assertThat(moved.at("/errors").isMissingNode()).as(moved.toString()).isTrue();
+    assertThat(moved.at("/data/updateTimereport/timereport/date").asString()).isEqualTo(nextDay.toString());
+    assertThat(moved.at("/data/updateTimereport/timereport/employeeorderId").asString()).isEqualTo(String.valueOf(secondId));
   }
 
   // --- working day ---
