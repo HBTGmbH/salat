@@ -127,6 +127,11 @@
           <td class="d-none d-md-table-cell">
             <div th:text="${so.customerorder.customer.shortname}" class="text-nowrap">Customer Short</div>
             <small class="text-muted" th:text="${so.customerorder.customer.name}">Customer Name</small>
+            <!--/* #1536: who placed the order on behalf of the customer */-->
+            <div th:if="${so.customerorder.intermediary != null}" class="small mt-1">
+              <span class="text-muted" th:text="#{main.customerorder.intermediary.text} + ':'">Intermediary:</span>
+              <span th:text="${so.customerorder.intermediary.shortname}" th:title="${so.customerorder.intermediary.name}">VB</span>
+            </div>
           </td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.customerorder.sign}">Customer Order</div>

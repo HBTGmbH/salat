@@ -10,6 +10,8 @@ public record EmployeeorderListItemDTO(
     boolean hidden,
     String customerShortName,
     String customerName,
+    /** the short name of the order's intermediary (#1536), {@code null} for an order placed directly */
+    String intermediaryShortName,
     String employeeName,
     String completeOrderSign,
     String completeOrderDescription,

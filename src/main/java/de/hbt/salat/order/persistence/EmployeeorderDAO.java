@@ -4,6 +4,7 @@ import static java.lang.Boolean.TRUE;
 import static de.hbt.salat.common.util.ContainsPattern.like;
 import static java.util.Comparator.comparing;
 
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -206,14 +207,15 @@ public class EmployeeorderDAO {
         );
     }
 
+    /** On an order of the customer, as customer or as intermediary (#1536). */
     private Specification<Employeeorder> matchingCustomerId(long customerId) {
-        return (root, query, builder) -> builder.equal(
-            root.join(Employeeorder_.suborder)
-                .join(Suborder_.customerorder)
-                .join(Customerorder_.customer)
-                .get(Customer_.id),
-            customerId
-        );
+        return (root, query, builder) -> {
+            var customerorder = root.join(Employeeorder_.suborder).join(Suborder_.customerorder);
+            return builder.or(
+                builder.equal(customerorder.join(Customerorder_.customer).get(Customer_.id), customerId),
+                builder.equal(customerorder.join(Customerorder_.intermediary, JoinType.LEFT).get(Customer_.id),
+                    customerId));
+        };
     }
 
     private Specification<Employeeorder> matchingSuborderIds(Set<Long> suborderIds) {
@@ -246,7 +248,9 @@ public class EmployeeorderDAO {
             customerSuborderId, showHidden);
         // what every row shows, in the query of the rows; the count reads the filters alone
         Specification<Employeeorder> withShownAssociations = filters.and((root, query, builder) -> {
-            root.fetch(Employeeorder_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
+            var customerorder = root.fetch(Employeeorder_.suborder).fetch(Suborder_.customerorder);
+            customerorder.fetch(Customerorder_.customer);
+            customerorder.fetch(Customerorder_.intermediary, JoinType.LEFT);
             root.fetch(Employeeorder_.employeecontract).fetch(Employeecontract_.employee);
             return null;
         });

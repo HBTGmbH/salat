@@ -430,6 +430,9 @@
           <td class="text-nowrap">
             <span class="fw-medium" th:text="${tr.customerorderSign}">Auftrag</span><br>
             <span class="text-secondary small" th:text="${tr.customerShortname}">Auftraggeber</span>
+            <!--/* #1536: who placed the order on behalf of the customer */-->
+            <span th:if="${tr.intermediaryShortname != null}" class="text-secondary small"
+                  th:text="'· ' + #{main.customerorder.intermediary.text} + ': ' + ${tr.intermediaryShortname}">· Vermittler: VB</span>
           </td>
           <td class="text-nowrap">
             <span th:text="${tr.completeOrderSign}">Unterauftrag</span><br>

@@ -126,8 +126,14 @@ public class CustomerorderDAO {
         return Hiding.notHidden(Customerorder_.hide);
     }
 
+    /**
+     * The orders of a customer: those it is the customer of, and those it placed as intermediary (#1536) — what a
+     * filter by customer means wherever it narrows orders.
+     */
     private Specification<Customerorder> matchingCustomerId(long customerId) {
-        return (root, query, builder) -> builder.equal(root.join(Customerorder_.customer).get(Customer_.id), customerId);
+        return (root, query, builder) -> builder.or(
+            builder.equal(root.join(Customerorder_.customer).get(Customer_.id), customerId),
+            builder.equal(root.join(Customerorder_.intermediary, JoinType.LEFT).get(Customer_.id), customerId));
     }
 
     /**
