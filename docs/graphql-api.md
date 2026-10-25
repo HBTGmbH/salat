@@ -26,13 +26,38 @@ eine deutsche Beschreibung.
 
 ## Anmelden
 
-- **In einer Umgebung:** Die Schnittstelle liegt in derselben zustandslosen Kette wie die
-  REST-API unter `/api`. Sie erwartet dasselbe Bearer-Token wie die REST-API, ausgestellt für die
-  Salat-API: `Authorization: Bearer <token>`. Wie man an ein Token kommt, zeigt die Swagger-UI der
-  REST-API unter `/api/doc` über „Authorize". Ein Token aus einer reinen Anwendungsanmeldung ohne
-  Person wird abgewiesen.
+- **Im Browser:** Wer in Salat angemeldet ist, öffnet GraphiQL unter `/graphiql`. Der Link steht im
+  Footer neben „API". GraphiQL nutzt die Sitzung des Browsers, Abfragen und Mutationen laufen also
+  im Namen der angemeldeten Person. Ebenso lässt sich `/api/graphql/schema` direkt im Browser
+  öffnen.
+  - Die Seite lädt React und GraphiQL von esm.sh, einem öffentlichen CDN. Das Restrisiko ist in
+    ADR-0044 festgehalten.
+- **Übernommene Anmeldung:** Unter `/api` und in GraphiQL gilt immer das eigene Login. Wer in der
+  Oberfläche gerade als jemand anderes unterwegs ist, liest und bucht in GraphiQL als er selbst.
+- **Skripte, Werkzeuge, Agenten:** Sie schicken ein Bearer-Token für die Salat-API mit,
+  `Authorization: Bearer <token>`. Es ist dasselbe Token wie für die REST-API. Ein Token aus einer
+  reinen Anwendungsanmeldung ohne Person wird abgewiesen. Ohne Browser bekommt man es über den
+  Device-Code-Flow von Entra ID. Mandant, Client-ID und Scope sind Platzhalter, die Werte nennt das
+  Salat-Team:
+
+  ```
+  # 1. Code anfordern; die Antwort nennt eine URL und einen Code für den Browser
+  curl -s https://login.microsoftonline.com/<tenant>/oauth2/v2.0/devicecode \
+    -d client_id=<client-id> -d scope="<api-scope> offline_access"
+
+  # 2. Nach der Anmeldung im Browser das Token abholen
+  curl -s https://login.microsoftonline.com/<tenant>/oauth2/v2.0/token \
+    -d grant_type=urn:ietf:params:oauth:grant-type:device_code \
+    -d client_id=<client-id> -d device_code=<device_code aus Schritt 1>
+
+  # 3. Aufrufen
+  curl -s <salat-url>/api/graphql -H "Authorization: Bearer <access_token>" \
+    -H "Content-Type: application/json" -d '{"query":"{ me { sign } }"}'
+  ```
+- **Nur `POST` mit `application/json`:** Andere Formate beantwortet der Endpunkt mit 415. Das ist der
+  Schutz gegen Anfragen fremder Seiten mit der Sitzung des Browsers.
 - **Lokal:** Das Kürzel steht als Parameter `login-name` in der URL, zum Beispiel
-  `POST http://localhost:8080/api/graphql?login-name=<kürzel>`. GraphiQL gibt es nur lokal, unter
+  `POST http://localhost:8080/api/graphql?login-name=<kürzel>`. GraphiQL öffnet man dort mit
   `http://localhost:8080/graphiql?login-name=<kürzel>&path=/api/graphql%3Flogin-name%3D<kürzel>`.
 
 ## Grenzwerte
@@ -46,6 +71,7 @@ eine deutsche Beschreibung.
 | Laufzeit einer Anfrage | 10 Sekunden | Fehler |
 | Zeitraum (`timereports`, `timereportList`) | 366 Tage | `GQ-0001` |
 | Zeilen je Seite (`timereportList`) | 200 | `GQ-0002` |
+| Idempotenzschlüssel | 1 bis 100 Zeichen | `XX-0007` |
 
 Für die Summen ist die Zeilengrenze egal: `totalCount` und `totalDuration` zählen alle Treffer.
 
@@ -68,29 +94,32 @@ den fachlichen Code und eine Einordnung. Die Meldung ist in der Sprache von `Acc
 
 | `classification` | Bedeutung |
 |---|---|
-| `UNAUTHORIZED` | nicht angemeldet (`AA-0001`) |
+| `UNAUTHORIZED` | praktisch nie: ohne Anmeldung antwortet schon die Sicherheitskette mit HTTP 401, bevor GraphQL läuft |
 | `FORBIDDEN` | angemeldet, aber nicht berechtigt (`AA-…`, Statusregeln) |
-| `NOT_FOUND` | nicht gefunden **oder nicht sichtbar**; beides sieht gleich aus |
+| `NOT_FOUND` | eine Buchung, nach id gefragt, gibt es nicht **oder** sie ist nicht sichtbar; beides sieht gleich aus (`TR-0001`) |
 | `CONFLICT` | die Version passt nicht (`XX-0003`) oder der Idempotenzschlüssel wurde mit anderer Eingabe verwendet (`XX-0006`) |
-| `BAD_REQUEST` | eine fachliche Regel ist verletzt, z. B. kein Arbeitsbeginn am Tag (`TR-0024`) |
+| `BAD_REQUEST` | eine fachliche Regel ist verletzt, z. B. kein Arbeitsbeginn am Tag (`TR-0024`), kein Vertrag (`TR-0002`) oder kein Mitarbeiterauftrag am Tag (`TR-0003`) |
 | `INTERNAL_ERROR` | ein unerwarteter Fehler, ohne Details |
 
 ## Ändern: die gelesene Version mitschicken
 
-Jede Buchung trägt eine `version`. `updateTimereport` verlangt die Version, in der der Aufrufer die
-Buchung gelesen hat. Hat sie seitdem jemand anderes geändert, in der Oberfläche oder über ein anderes
+Jede Buchung trägt eine `version`; `timereport(id: …)` liest sie für eine einzelne Buchung.
+`updateTimereport` verlangt die Version, in der der Aufrufer die Buchung gelesen hat. Hat sie seitdem jemand anderes geändert, in der Oberfläche oder über ein anderes
 Skript, kommt `XX-0003` / `CONFLICT` statt eines stillen Überschreibens. Dann neu lesen und die
 Änderung erneut anwenden.
 
 ## Anlegen: ein Idempotenzschlüssel je Vorhaben
 
-`createTimereport` verlangt einen `idempotencyKey`, zum Beispiel eine UUID. Der Aufrufer erzeugt ihn
+`createTimereport` verlangt einen `idempotencyKey` mit 1 bis 100 Zeichen, zum Beispiel eine UUID. Der Aufrufer erzeugt ihn
 einmal je fachlichem Vorhaben und schickt ihn bei jeder Wiederholung unverändert mit.
 
 - **Erster Aufruf:** legt an und antwortet mit `replayed: false`.
 - **Wiederholung mit demselben Schlüssel und derselben Eingabe**, etwa nach einem Zeitlimit: legt
   nichts an und antwortet mit der damals angelegten Buchung und `replayed: true`.
-- **Derselbe Schlüssel mit anderer Eingabe:** wird mit `XX-0006` / `CONFLICT` abgewiesen.
+- **Derselbe Schlüssel mit anderer Eingabe:** wird mit `XX-0006` / `CONFLICT` abgewiesen. Gleich ist,
+  was dieselbe Buchung ergibt: Ein weggelassenes `ticketReferences` und `[]` sind dasselbe.
+- **Wiederholung, nachdem die Buchung gelöscht wurde:** antwortet mit `TR-0001` / `NOT_FOUND` und
+  legt nichts neu an.
 
 Ein Schlüssel gilt je Person und wird nach sieben Tagen vergessen.
 
@@ -125,7 +154,11 @@ mutation($key: ID!) {
 }
 ```
 
-Eine Buchung ändern, mit der gelesenen Version:
+Eine Buchung lesen und mit der gelesenen Version ändern:
+
+```graphql
+{ timereport(id: 123) { version duration status } }
+```
 
 ```graphql
 mutation {
