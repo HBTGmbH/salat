@@ -786,8 +786,9 @@
           <div class="col-lg-auto ms-lg-auto">
             <ul class="list-inline list-inline-dots mb-0">
               <li class="list-inline-item"><a th:href="@{/api/doc/swagger-ui/index.html}" target="_blank" class="link-secondary" rel="noopener">API</a></li>
-              <!--/* Die GraphQL-Schnittstelle (#1532, ADR-0044): GraphiQL mit der Sitzung der angemeldeten Person. */-->
-              <li class="list-inline-item"><a th:href="@{/graphiql}" target="_blank" class="link-secondary" rel="noopener">GraphQL</a></li>
+              <!--/* Die GraphQL-Schnittstelle (#1532, ADR-0044): GraphiQL mit der Sitzung der angemeldeten Person.
+                     Die Marke "Neu" faellt mit einem Folge-Commit nach einigen Wochen wieder weg. */-->
+              <li class="list-inline-item"><a th:href="@{/graphiql}" target="_blank" class="link-secondary" rel="noopener">GraphQL<span class="badge bg-green-lt ms-1" th:text="#{main.general.new.badge}">Neu</span></a></li>
               <li class="list-inline-item" th:if="${not #strings.isEmpty(@salatProperties.docsUrl)}"><a th:with="url=${@salatProperties.docsUrl}" th:href="${url}" target="_blank" class="link-secondary" rel="noopener">Documentation</a></li>
               <li class="list-inline-item"><a href="https://raw.githubusercontent.com/HBTGmbH/salat/refs/heads/main/LICENSE" class="link-secondary">License</a></li>
               <li class="list-inline-item"><a href="https://github.com/HBTGmbH/salat" target="_blank" class="link-secondary" rel="noopener">Source code</a></li>
