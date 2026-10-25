@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -30,7 +31,7 @@ import de.hbt.salat.order.domain.Suborder;
  * once, ordered by sign, read as plain values together with its customer — no suborder and no
  * association of the order comes along. The same rule marks the customer orders of the read model (#1539).
  */
-@DataJpaTest
+@DataJpaTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @Import(AuthorizedUserAuditorAware.class)
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class InvoiceableCustomerordersTest {
@@ -113,9 +114,16 @@ class InvoiceableCustomerordersTest {
     var notAsked = order(customer, "ANDERS-01", null, false);
     suborder(notAsked, "01", YESNO_YES);
 
+    entityManager.flush();
+    var statistics = entityManager.getEntityManager().getEntityManagerFactory().unwrap(SessionFactory.class)
+        .getStatistics();
+    statistics.clear();
+
     assertThat(customerorderRepository.findInvoiceableIdsByIdIn(
         List.of(invoiceable.getId(), internal.getId(), empty.getId())))
         .containsExactly(invoiceable.getId());
+    // one statement for all of them, however many are asked for
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
   }
 
   private List<String> signs() {
