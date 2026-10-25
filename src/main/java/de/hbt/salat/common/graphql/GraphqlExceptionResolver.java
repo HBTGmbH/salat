@@ -1,7 +1,8 @@
-package de.hbt.salat.graphqlspike.config;
+package de.hbt.salat.common.graphql;
 
 import static de.hbt.salat.common.exception.ErrorCode.AA_REQUIRED;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
+import static de.hbt.salat.common.exception.ErrorCode.XX_IDEMPOTENCY_KEY_REUSED;
 
 import graphql.ErrorClassification;
 import graphql.GraphQLError;
@@ -10,8 +11,8 @@ import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.graphql.execution.ErrorType;
@@ -26,44 +27,40 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper.ViewMessage;
 /**
  * The one place where an exception becomes a GraphQL error (concept 6.3): the business code in
  * {@code extensions.code}, the text from the same {@code errorcode.*} keys the pages use, in the language of
- * {@code Accept-Language}. Anything that is not an {@link ErrorCodeException} or a {@link SpikeException} is left
- * to Spring, which answers {@code INTERNAL_ERROR} without details.
+ * {@code Accept-Language}. Anything that is not an {@link ErrorCodeException} is left to Spring, which answers
+ * {@code INTERNAL_ERROR} without details.
  */
 @Component
-@Profile(GraphqlSpikeConfiguration.PROFILE)
 @RequiredArgsConstructor
-class SpikeExceptionResolver extends DataFetcherExceptionResolverAdapter {
+class GraphqlExceptionResolver extends DataFetcherExceptionResolverAdapter {
+
+  /** Not among Spring's {@code ErrorType}s; a version conflict and a reused idempotency key answer with it (6.3, 6.5). */
+  static final ErrorClassification CONFLICT = ErrorClassification.errorClassification("CONFLICT");
+
+  private static final Set<ErrorCode> CONFLICTS = Set.of(XX_CONCURRENT_MODIFICATION, XX_IDEMPOTENCY_KEY_REUSED);
 
   private final ErrorCodeViewHelper errorCodeViewHelper;
 
   @Override
   protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
-    if (ex instanceof SpikeException spike) {
-      return GraphqlErrorBuilder.newError(env)
-          .message(spike.getMessage())
-          .errorType(spike.getClassification())
-          .extensions(Map.of("code", spike.getCode()))
-          .build();
+    if (!(ex instanceof ErrorCodeException errorCode)) {
+      return null;
     }
-    if (ex instanceof ErrorCodeException errorCode) {
-      List<ServiceFeedbackMessage> messages = errorCode.getMessages();
-      List<ViewMessage> resolved = resolveIn(env.getLocale(), errorCode);
-      ErrorCode first = messages.getFirst().getErrorCode();
-      return GraphqlErrorBuilder.newError(env)
-          .message(String.join(" ", resolved.stream().map(ViewMessage::resolved).toList()))
-          .errorType(classify(errorCode, first))
-          .extensions(Map.of(
-              "code", first.getCode(),
-              "codes", messages.stream().map(message -> message.getErrorCode().getCode()).toList()))
-          .build();
-    }
-    return null;
+    List<ServiceFeedbackMessage> messages = errorCode.getMessages();
+    List<ViewMessage> resolved = resolveIn(env.getLocale(), errorCode);
+    ErrorCode first = messages.getFirst().getErrorCode();
+    return GraphqlErrorBuilder.newError(env)
+        .message(String.join(" ", resolved.stream().map(ViewMessage::resolved).toList()))
+        .errorType(classify(errorCode, first))
+        .extensions(Map.of(
+            "code", first.getCode(),
+            "codes", messages.stream().map(message -> message.getErrorCode().getCode()).toList()))
+        .build();
   }
 
   /**
-   * {@link ErrorCodeViewHelper} reads the language from {@link LocaleContextHolder}, which the
-   * {@code DispatcherServlet} sets for the request thread only; a data fetcher may run elsewhere. The language
-   * of the GraphQL request is set for the call — a workaround of the spike, see the findings in the concept.
+   * {@link ErrorCodeViewHelper} reads the language from {@link LocaleContextHolder}; the language of the GraphQL
+   * request is set for the call, so that the answer does not depend on which thread the resolver ran on.
    */
   private List<ViewMessage> resolveIn(Locale locale, ErrorCodeException ex) {
     Locale before = LocaleContextHolder.getLocale();
@@ -75,12 +72,16 @@ class SpikeExceptionResolver extends DataFetcherExceptionResolverAdapter {
     }
   }
 
-  private static ErrorClassification classify(ErrorCodeException ex, ErrorCode first) {
+  static ErrorClassification classify(ErrorCodeException ex, ErrorCode first) {
     if (ex instanceof AuthorizationException) {
       return first == AA_REQUIRED ? ErrorType.UNAUTHORIZED : ErrorType.FORBIDDEN;
     }
-    if (first == XX_CONCURRENT_MODIFICATION) {
-      return SpikeException.CONFLICT;
+    if (CONFLICTS.contains(first)) {
+      return CONFLICT;
+    }
+    // not found and not readable look the same (concept 6.3): the services answer both with *_NOT_FOUND
+    if (first.name().endsWith("_NOT_FOUND")) {
+      return ErrorType.NOT_FOUND;
     }
     return ErrorType.BAD_REQUEST;
   }

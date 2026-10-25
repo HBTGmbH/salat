@@ -82,6 +82,7 @@ public class AuthorizedUser implements LoginSignProvider {
      * its status. Neither is a lookup by name, so a login name given out again never answers with
      * the id of the person before. {@code null} in job mode — the system has no login.
      */
+    @Override
     public Long getEffectiveUserId() {
         if (jobMode) return null;
         if (getImpersonateLoginSign() != null) {

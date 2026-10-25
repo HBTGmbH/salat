@@ -1,4 +1,4 @@
-package de.hbt.salat.graphqlspike.config;
+package de.hbt.salat.common.graphql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 
 /**
- * The limits of the spike (#1532) on a schema that nests as deep as one likes — the spike's own schema does not
+ * The limits of the GraphQL interface (#1532) on a schema that nests as deep as one likes — the own schema does not
  * reach depth 8 with business fields.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -25,8 +25,8 @@ class BusinessQueryLimitsTest {
           new SchemaParser().parse("type Query { node: Node } type Node { child: Node, name: String }"),
           RuntimeWiring.newRuntimeWiring().build()))
       .instrumentation(new ChainedInstrumentation(List.of(
-          new BusinessQueryLimits.Depth(GraphqlSpikeConfiguration.MAX_DEPTH),
-          new BusinessQueryLimits.Complexity(GraphqlSpikeConfiguration.MAX_COMPLEXITY))))
+          new BusinessQueryLimits.Depth(GraphqlConfiguration.MAX_DEPTH),
+          new BusinessQueryLimits.Complexity(GraphqlConfiguration.MAX_COMPLEXITY))))
       .build();
 
   @Test

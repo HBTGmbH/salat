@@ -43,7 +43,12 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.springframework.data.domain.Persistable;
+import org.springframework.graphql.data.method.annotation.BatchMapping;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
+import de.hbt.salat.auth.domain.Authorized;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.common.filter.UiStateFilter;
@@ -410,16 +415,6 @@ public class ArchitectureTest {
       .resideOutsideOfPackage("de.hbt.salat.palette..")
       .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.palette..");
 
-  /**
-   * The GraphQL spike (#1532) is an experiment that is deleted or moved into the modules after the
-   * decision. Either step stays a matter of one package only as long as nothing outside it depends
-   * on it.
-   */
-  @ArchTest
-  static final ArchRule nothingShouldAccessGraphqlSpike = priority(HIGH).noClasses().that()
-      .resideOutsideOfPackage("de.hbt.salat.graphqlspike..")
-      .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.graphqlspike..");
-
   // settingseditor is an aggregator: it may import from any module.
   // The beFreeOfCycles rule below ensures no other module can accidentally depend back on it.
 
@@ -716,6 +711,37 @@ public class ArchitectureTest {
   static final ArchRule noMethodIsGuardedWithPreAuthorize = priority(HIGH).noMethods()
       .should().beAnnotatedWith(PreAuthorize.class)
       .because("an authorization requirement is spelled @Authorized(requires…) (#926)");
+
+  /**
+   * Ein GraphQL-Resolver ist ein Controller (#1532, ADR-0044, Konzept 3.1, 3.4): jede Methode, die ein Feld des
+   * Schemas auflöst, sagt ausdrücklich, wen sie zulässt — auch eine, die nur die Anmeldung verlangt. Fehlte die
+   * Annotation an der Methode, entschiede allein die an der Klasse, und ein neues Feld erbte still deren Anforderung.
+   */
+  @ArchTest
+  static final ArchRule everyGraphqlMappingIsAuthorized = priority(HIGH).methods()
+      .that().areAnnotatedWith(QueryMapping.class)
+      .or().areAnnotatedWith(MutationMapping.class)
+      .or().areAnnotatedWith(SchemaMapping.class)
+      .or().areAnnotatedWith(BatchMapping.class)
+      .should().beAnnotatedWith(Authorized.class)
+      .because("every field of the GraphQL schema names its requirement (#1532)");
+
+  /**
+   * Resolver laufen im Thread der Anfrage (#1532, Konzept 10.2): nur dort tragen {@code AuthorizedUser},
+   * {@code AuthorizedEmployee} und Open-in-View. Auf einem fremden Thread fehlen sie, ohne dass es beim Start
+   * auffällt, und für {@code Callable} hat Spring for GraphQL in Salat keinen Executor.
+   */
+  @ArchTest
+  static final ArchRule graphqlResolversAreSynchronous = priority(HIGH).noMethods()
+      .that().areDeclaredInClassesThat().resideInAPackage("..graphql..")
+      .and().areDeclaredInClassesThat().areAnnotatedWith(org.springframework.stereotype.Controller.class)
+      .should().haveRawReturnType(java.util.concurrent.Callable.class)
+      .orShould().haveRawReturnType(java.util.concurrent.Future.class)
+      .orShould().haveRawReturnType(java.util.concurrent.CompletableFuture.class)
+      .orShould().haveRawReturnType(java.util.concurrent.CompletionStage.class)
+      .orShould().haveRawReturnType(reactor.core.publisher.Mono.class)
+      .orShould().haveRawReturnType(reactor.core.publisher.Flux.class)
+      .because("a resolver off the request thread loses the login and Open-in-View (#1532)");
 
   @ArchTest
   static final ArchRule beFreeOfCycles = slices().matching("de.hbt.salat.(*)..").should().beFreeOfCycles();

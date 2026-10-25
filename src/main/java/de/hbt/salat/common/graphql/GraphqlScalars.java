@@ -1,4 +1,4 @@
-package de.hbt.salat.graphqlspike.config;
+package de.hbt.salat.common.graphql;
 
 import graphql.GraphQLContext;
 import graphql.execution.CoercedVariables;
@@ -11,20 +11,22 @@ import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.function.Function;
 
 /**
- * {@code Date} and {@code Duration} as ISO-8601 strings (concept 4). Written by hand: the extended scalars of
+ * {@code Date}, {@code Time} and {@code Duration} as ISO-8601 strings (concept 4). Written by hand: the extended scalars of
  * graphql-java are a further dependency and bring no {@code java.time.Duration}.
  */
-final class SpikeScalars {
+final class GraphqlScalars {
 
   static final GraphQLScalarType DATE = scalar("Date", LocalDate.class, LocalDate::parse);
   static final GraphQLScalarType DURATION = scalar("Duration", Duration.class, Duration::parse);
+  static final GraphQLScalarType TIME = scalar("Time", LocalTime.class, LocalTime::parse);
 
-  private SpikeScalars() {
+  private GraphqlScalars() {
   }
 
   private static <T> GraphQLScalarType scalar(String name, Class<T> type, Function<String, T> parse) {
