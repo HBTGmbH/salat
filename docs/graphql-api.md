@@ -76,6 +76,7 @@ eine deutsche Beschreibung.
 | Laufzeit einer Anfrage | 10 Sekunden | Fehler |
 | Zeitraum (`timereports`, `timereportList`) | 366 Tage | `GQ-0001` |
 | Zeilen je Seite (`timereportList`) | 200 | `GQ-0002` |
+| Lücke zwischen zwei Zeiträumen (`orderHistory`) | 1 bis 3650 Tage | `GQ-0003` |
 | Idempotenzschlüssel | 1 bis 100 Zeichen | `XX-0007` |
 
 Für die Summen ist die Zeilengrenze egal: `totalCount` und `totalDuration` zählen alle Treffer.
@@ -183,19 +184,21 @@ das Kürzel:
 }
 ```
 
-In welchen Zeiträumen hat eine Person auf welchem Kundenauftrag gearbeitet? Ohne `employeeId` die
-eigene Historie. Kundenaufträge sind die mit mindestens einem fakturierbaren Unterauftrag; interne
-Aufträge, Urlaub und Krankheit stehen nicht darin. Ein Zeitraum reicht vom ersten bis zum letzten
-Buchungstag. Liegen 30 Tage oder mehr ohne Buchung dazwischen, beginnt ein neuer Zeitraum, und der
-Auftrag steht ein weiteres Mal in der Liste. Es zählen nur die Buchungen, die man auch in der
-Buchungsliste sieht. Wer nicht alle Buchungen der Person sieht, etwa das Backoffice nur die
+Auf welchen Kundenaufträgen hat eine Person in welchen Zeiträumen gearbeitet? Ohne `employeeId` die
+eigene Historie. Je Auftrag ein Eintrag: `from` und `until` sind der erste und der letzte Buchungstag
+über alle Zeiträume, darin stehen die Zeiträume selbst. Kundenaufträge sind die mit mindestens einem
+fakturierbaren Unterauftrag; interne Aufträge, Urlaub und Krankheit stehen nicht darin. Ein Zeitraum
+reicht vom ersten bis zum letzten Buchungstag. Liegen `gapDays` Tage oder mehr ohne Buchung
+dazwischen, ohne Angabe 30, beginnt ein neuer Zeitraum. Es zählen nur die Buchungen, die man auch in
+der Buchungsliste sieht. Wer nicht alle Buchungen der Person sieht, etwa das Backoffice nur die
 fakturierbaren, bekommt kürzere Summen und kann andere Grenzen der Zeiträume sehen:
 
 ```graphql
 {
-  orderHistory(employeeId: 42) {
+  orderHistory(employeeId: 42, gapDays: 14) {
     from until bookedDays duration
     customerorder { sign description customer { shortName segment { name } } }
+    periods { from until bookedDays duration }
   }
 }
 ```

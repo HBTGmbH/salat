@@ -11,15 +11,15 @@ import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import de.hbt.salat.auth.domain.Authorized;
-import de.hbt.salat.dailyreport.domain.OrderHistoryPeriod;
+import de.hbt.salat.dailyreport.domain.OrderHistory;
 import de.hbt.salat.dailyreport.service.OrderHistoryService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.order.domain.CustomerorderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
- * In which periods a person worked on which order (#1534): the periods from {@link OrderHistoryService}, the orders
- * from the order module as values, for all periods of a response at once.
+ * On which customer orders a person worked, and in which periods (#1534): the history from
+ * {@link OrderHistoryService}, the orders from the order module as values, for all orders of a response at once.
  */
 @Controller
 @Authorized(requireUnrestricted = true)
@@ -32,21 +32,22 @@ class OrderHistoryResolver {
 
   @QueryMapping
   @Authorized(requireUnrestricted = true)
-  List<OrderHistoryPeriod> orderHistory(@Argument Long employeeId) {
+  List<OrderHistory> orderHistory(@Argument Long employeeId, @Argument Integer gapDays) {
     return orderHistoryService.getOrderHistory(
-        Objects.requireNonNullElse(employeeId, authorizedEmployee.getEmployeeId()));
+        Objects.requireNonNullElse(employeeId, authorizedEmployee.getEmployeeId()),
+        Objects.requireNonNullElse(gapDays, OrderHistoryService.DEFAULT_GAP_DAYS));
   }
 
   /**
-   * The orders of the periods. They are read without a rule of their own: every id comes from a period, and a period
-   * exists only where the user may read bookings on that order, so these are orders the booking list names to the
+   * The orders of the history. They are read without a rule of their own: every id comes from the history, and an
+   * order is in it only where the user may read bookings on it, so these are orders the booking list names to the
    * user anyway. The fields are those the order list shows everybody who may open it.
    */
   @BatchMapping(typeName = "OrderHistoryEntry")
   @Authorized(requireUnrestricted = true)
-  List<CustomerorderReadModel> customerorder(List<OrderHistoryPeriod> periods) {
-    Set<Long> ids = periods.stream().map(OrderHistoryPeriod::customerorderId).collect(Collectors.toSet());
+  List<CustomerorderReadModel> customerorder(List<OrderHistory> histories) {
+    Set<Long> ids = histories.stream().map(OrderHistory::customerorderId).collect(Collectors.toSet());
     Map<Long, CustomerorderReadModel> orders = customerorderService.getCustomerorderReadModelsByIds(ids);
-    return periods.stream().map(period -> orders.get(period.customerorderId())).toList();
+    return histories.stream().map(history -> orders.get(history.customerorderId())).toList();
   }
 }

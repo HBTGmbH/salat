@@ -331,6 +331,7 @@ public enum ErrorCode {
 
   GQ_PERIOD_TOO_LONG("GQ-0001", "the period is too long or starts after its end"),
   GQ_PAGE_SIZE_OUT_OF_RANGE("GQ-0002", "the page size is out of range"),
+  GQ_GAP_OUT_OF_RANGE("GQ-0003", "the gap between two periods is out of range"),
   ;
 
   private final String code;

@@ -302,9 +302,10 @@ class GraphqlIntegrationTest {
   // --- the order history (#1534) ---
 
   private static final String HISTORY = """
-      query($employee: ID) {
-        orderHistory(employeeId: $employee) {
+      query($employee: ID, $gap: Int) {
+        orderHistory(employeeId: $employee, gapDays: $gap) {
           from until bookedDays duration
+          periods { from until bookedDays duration }
           customerorder {
             id sign description validFrom validUntil debitHours debitHoursUnit hidden tags
             executionResponsibles { sign } contractResponsible { sign }
@@ -323,6 +324,7 @@ class GraphqlIntegrationTest {
     var entry = history.at("/0");
     assertThat(LocalDate.parse(entry.at("/from").asString())).isBeforeOrEqualTo(DAY);
     assertThat(entry.at("/bookedDays").asInt()).isPositive();
+    assertThat(entry.at("/periods/0/until").asString()).isEqualTo(entry.at("/until").asString());
     var order = entry.at("/customerorder");
     assertThat(order.at("/sign").asString()).isEqualTo("ABC-12");
     assertThat(order.at("/description").asString()).isEqualTo("Wartung und Betrieb");
@@ -354,6 +356,13 @@ class GraphqlIntegrationTest {
 
     assertThat(body.at("/errors").isMissingNode()).isTrue();
     assertThat(body.at("/data/orderHistory").size()).isZero();
+  }
+
+  @Test
+  void a_gap_out_of_range_is_refused() throws Exception {
+    var body = json(post(EMPLOYEE, HISTORY, Map.of("gap", 0)));
+
+    assertThat(body.at("/errors/0/extensions/code").asString()).isEqualTo("GQ-0003");
   }
 
   @Test
