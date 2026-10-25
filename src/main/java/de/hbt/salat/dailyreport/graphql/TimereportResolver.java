@@ -9,6 +9,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -72,6 +73,14 @@ class TimereportResolver {
             .stream())
         .map(TimereportView::of)
         .toList();
+  }
+
+  /** A single booking, {@code null} where there is none or the user may not read it (concept 6.3). */
+  @QueryMapping
+  @Authorized
+  TimereportView timereport(@Argument long id) {
+    TimereportDTO timereport = timereportService.getTimereportById(id);
+    return timereport == null ? null : TimereportView.of(timereport);
   }
 
   /**
@@ -179,18 +188,24 @@ class TimereportResolver {
 
   /** The booking as the schema shows it. */
   public record TimereportView(long id, int version, LocalDate date, Duration duration, String taskDescription,
-      List<String> ticketReferences, String status, boolean training, long employeeorderId, long suborderId,
+      List<String> ticketReferences, TimereportStatus status, boolean training, long employeeorderId, long suborderId,
       PersonRef employee) {
 
     static TimereportView of(TimereportDTO dto) {
       return new TimereportView(dto.getId(), Objects.requireNonNullElse(dto.getVersion(), 0), dto.getReferenceday(),
-          dto.getDuration(), dto.getTaskdescription(), dto.getTicketReferences(), dto.getStatus(), dto.isTraining(),
+          dto.getDuration(), dto.getTaskdescription(), dto.getTicketReferences(),
+          TimereportStatus.valueOf(dto.getStatus().toUpperCase(Locale.ROOT)), dto.isTraining(),
           dto.getEmployeeorderId(), dto.getSuborderId(),
           new PersonRef(dto.getEmployeeId(), dto.getEmployeeSign(), dto.getEmployeeName()));
     }
   }
 
   public record PersonRef(long id, String sign, String name) {
+  }
+
+  /** The status as the schema names it; stored as {@code open}, {@code committed}, {@code closed}. */
+  public enum TimereportStatus {
+    OPEN, COMMITTED, CLOSED
   }
 
   public record SuborderRef(long id, String completeOrderSign) {

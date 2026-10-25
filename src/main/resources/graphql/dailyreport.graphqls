@@ -2,7 +2,7 @@
 # (Konzept 3.7).
 
 extend type Query {
-  "Die eigenen Buchungen eines Zeitraums, höchstens 366 Tage"
+  "Die eigenen Buchungen eines Zeitraums, höchstens 366 Tage (sonst GQ-0001)"
   timereports(
     "Erster Tag, eingeschlossen"
     from: Date!
@@ -10,9 +10,14 @@ extend type Query {
     until: Date!
   ): [Timereport!]!
 
+  "Eine Buchung, null, wenn es sie nicht gibt oder die angemeldete Person sie nicht sehen darf"
+  timereport("Die id der Buchung" id: ID!): Timereport
+
   """
-  Buchungen nach der Sichtbarkeit der Buchungsliste: wer was sieht, entscheidet derselbe Service wie in der
-  Oberfläche. Die Zeilen sind auf limit begrenzt, die Summen zählen alle Treffer.
+  Buchungen nach denselben Sichtbarkeitsregeln wie die Buchungsliste der Oberfläche: Mitarbeitende sehen ihre
+  eigenen, People Leads die ihres Teams, Verantwortliche die ihrer Aufträge, das Backoffice die auf fakturierbaren
+  Unteraufträgen, die Geschäftsführung alle; dazu kommen einzeln vergebene Regeln. Die Zeilen sind auf limit
+  begrenzt, die Summen zählen alle Treffer. Eingeschränkte Anmeldungen bekommen AA-0002.
   """
   timereportList("Was gesucht wird" filter: TimereportListFilter!): TimereportPage!
 
@@ -23,19 +28,24 @@ extend type Query {
 extend type Mutation {
   """
   Legt eine eigene Buchung an. Eine Wiederholung mit demselben Schlüssel und derselben Eingabe legt nichts an und
-  antwortet mit der damals angelegten Buchung; derselbe Schlüssel mit anderer Eingabe wird abgewiesen (XX-0006).
-  Am Tag muss ein Arbeitsbeginn eingetragen sein (upsertWorkingday).
+  antwortet mit der damals angelegten Buchung (replayed: true); wurde sie inzwischen gelöscht, mit TR-0001.
+  Typische Fehler: TR-0024 kein Arbeitsbeginn am Tag (erst upsertWorkingday), TR-0002 kein Vertrag am Tag, TR-0003
+  kein Mitarbeiterauftrag auf dem Unterauftrag am Tag, TR-0019 Beschreibung fehlt, obwohl der Unterauftrag sie
+  verlangt, TR-0012, TR-0013 oder TR-0026 der Zeitraum ist schon freigegeben oder abgenommen, XX-0006 Schlüssel mit anderer Eingabe
+  verwendet, XX-0007 Schlüssel zu lang.
   """
   createTimereport(
-    "Vom Aufrufer erzeugt, z. B. eine UUID, einmal je Vorhaben und bei jeder Wiederholung unverändert"
+    "Vom Aufrufer erzeugt, z. B. eine UUID, 1 bis 100 Zeichen, einmal je Vorhaben und bei jeder Wiederholung unverändert"
     idempotencyKey: ID!
     "Die Buchung"
     input: CreateTimereportInput!
   ): TimereportPayload!
 
   """
-  Ändert eine Buchung, die der Aufrufer in version gelesen hat. Wurde sie seitdem geändert, wird abgewiesen
-  (XX-0003) statt überschrieben. Nicht angegebene Felder bleiben, wie sie sind.
+  Ändert eine Buchung, die der Aufrufer in version gelesen hat. Nicht angegebene Felder bleiben, wie sie sind; ein
+  neuer Tag nimmt den an diesem Tag gültigen Vertrag und Mitarbeiterauftrag. Typische Fehler: XX-0003 die Buchung
+  wurde seit dem Lesen geändert (neu lesen und erneut anwenden), TR-0001 nicht gefunden oder nicht sichtbar, TR-0003
+  am neuen Tag kein Mitarbeiterauftrag, TR-0012, TR-0013 oder TR-0026 der Zeitraum ist schon freigegeben oder abgenommen.
   """
   updateTimereport(
     "Die Buchung"
@@ -46,13 +56,22 @@ extend type Mutation {
     input: UpdateTimereportInput!
   ): TimereportPayload!
 
-  "Löscht eine Buchung, wie die Oberfläche; die Regeln zum Status des Zeitraums gelten"
+  """
+  Löscht eine Buchung, wie die Oberfläche. Typische Fehler: TR-0001 nicht gefunden oder nicht sichtbar, TR-0012,
+  TR-0013 oder TR-0026 der Zeitraum ist schon freigegeben oder abgenommen.
+  """
   deleteTimereport("Die Buchung" id: ID!): DeletePayload!
 
-  "Trägt den eigenen Arbeitstag ein oder ändert ihn"
+  """
+  Trägt den eigenen Arbeitstag ein oder ändert ihn, mit den Regeln der Tagesansicht. Typische Fehler: TR-0002 kein
+  Vertrag am Tag, WD-0011 der Tag liegt außerhalb des Vertrags, der Zeitraum ist schon freigegeben oder abgenommen.
+  """
   upsertWorkingday("Der Arbeitstag" input: WorkingdayInput!): Workingday!
 
-  "Trägt für den Tag „Nicht gearbeitet“ ein: Beginn und Pause werden null; nur an einem Tag ohne Buchung"
+  """
+  Trägt für den Tag „Nicht gearbeitet" ein: Arbeitsbeginn 00:00, Pause PT0S. Nur an einem Tag ohne Buchung, sonst
+  WD-0001.
+  """
   markNotWorked("Der Tag" date: Date!): Workingday!
 }
 
@@ -70,19 +89,29 @@ type Timereport {
   taskDescription: String
   "Die Ticketreferenzen in ihrer Reihenfolge"
   ticketReferences: [String!]!
-  "open, committed oder closed: offen, freigegeben oder abgenommen"
-  status: String!
+  "Wie weit der Zeitraum der Buchung freigegeben ist"
+  status: TimereportStatus!
   "Ob die Buchung als Fortbildung zählt"
   training: Boolean!
   "Der Mitarbeiterauftrag, an dem die Buchung hängt"
   employeeorderId: ID!
-  "Verweis auf die Person, nicht die volle Person (Konzept 3.3)"
+  "Die Person der Buchung, mit id, Kürzel und Name"
   employee: PersonRef!
-  "Verweis auf den Unterauftrag, für alle Buchungen einer Antwort in einem Schritt geladen"
+  "Der Unterauftrag der Buchung, mit id und vollständigem Zeichen"
   suborder: SuborderRef!
 }
 
-"Verweis auf einen Unterauftrag"
+"Wie weit der Zeitraum einer Buchung freigegeben ist"
+enum TimereportStatus {
+  "Offen: ändern dürfen die Person selbst und die Geschäftsführung"
+  OPEN
+  "Freigegeben: ändern dürfen die Geschäftsführung und der zuständige People Lead, die Person selbst nicht"
+  COMMITTED
+  "Abgenommen: ändern darf nur die Administration, auch sie nicht an eigenen Buchungen"
+  CLOSED
+}
+
+"Ein Unterauftrag, mit id und Zeichen"
 type SuborderRef {
   "Die id"
   id: ID!
@@ -94,9 +123,9 @@ type SuborderRef {
 input TimereportListFilter {
   "Erster Tag, eingeschlossen"
   from: Date!
-  "Letzter Tag, eingeschlossen; höchstens 366 Tage nach from"
+  "Letzter Tag, eingeschlossen; höchstens 366 Tage nach from (sonst GQ-0001)"
   until: Date!
-  "Wessen Buchungen"
+  "Wessen Buchungen, als id der Person (Me.employeeId)"
   employeeIds: [ID!]
   "Auf welchen Kunden"
   customerIds: [ID!]
@@ -106,7 +135,7 @@ input TimereportListFilter {
   suborderIds: [ID!]
   "Alle, nur fakturierbare oder nur nicht fakturierbare"
   billable: Billable = ALL
-  "Wie viele Zeilen, höchstens 200"
+  "Wie viele Zeilen, 1 bis 200 (sonst GQ-0002)"
   limit: Int = 100
 }
 
@@ -140,11 +169,11 @@ input CreateTimereportInput {
   suborderId: ID!
   "Der Tag"
   date: Date!
-  "Die Dauer"
+  "Die Dauer, größer als null und höchstens PT24H (sonst TR-0008 bzw. TR-0030)"
   duration: Duration!
-  "Die Beschreibung"
+  "Die Beschreibung, höchstens 32000 Zeichen (TR-0005); Pflicht, wo der Unterauftrag commentNecessary hat (TR-0019)"
   taskDescription: String!
-  "Die Ticketreferenzen"
+  "Die Ticketreferenzen, je höchstens 64 Zeichen (TR-0032); ob und wie viele erlaubt sind, bestimmt der Unterauftrag (TR-0049, TR-0050)"
   ticketReferences: [String!]
 }
 
@@ -152,9 +181,9 @@ input CreateTimereportInput {
 input UpdateTimereportInput {
   "Der neue Tag"
   date: Date
-  "Die neue Dauer"
+  "Die neue Dauer, größer als null und höchstens PT24H"
   duration: Duration
-  "Die neue Beschreibung"
+  "Die neue Beschreibung, höchstens 32000 Zeichen"
   taskDescription: String
   "Die neuen Ticketreferenzen; eine leere Liste entfernt alle"
   ticketReferences: [String!]
@@ -178,7 +207,7 @@ type DeletePayload {
 type Workingday {
   "Der Tag"
   date: Date!
-  "Der Arbeitsbeginn"
+  "Der Arbeitsbeginn; 00:00 an einem Tag „Nicht gearbeitet“"
   startTime: Time!
   "Die Pause"
   breakLength: Duration!

@@ -1,7 +1,15 @@
 package de.hbt.salat.employee.graphql;
 
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BO;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_MA;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -37,19 +45,41 @@ public class MeResolver {
         .map(EmployeecontractPeriod::employeecontractId)
         .orElse(null);
     return new Me(authorizedEmployee.getEmployeeId(), authorizedEmployee.getSign(), authorizedEmployee.getName(),
-        authorizedUser.getLoginStatus(), roles(), currentContractId);
+        LoginStatus.of(authorizedUser.getLoginStatus()), roles(), currentContractId);
   }
 
-  private List<String> roles() {
-    var roles = new ArrayList<String>();
-    if (authorizedUser.isAdmin()) roles.add("ADMIN");
-    if (authorizedUser.isManager()) roles.add("MANAGER");
-    if (authorizedUser.isPeopleLead()) roles.add("PEOPLE_LEAD");
-    if (authorizedUser.isBackoffice()) roles.add("BACKOFFICE");
-    if (authorizedUser.isRestricted()) roles.add("RESTRICTED");
+  private List<Role> roles() {
+    var roles = new ArrayList<Role>();
+    if (authorizedUser.isAdmin()) roles.add(Role.ADMIN);
+    if (authorizedUser.isManager()) roles.add(Role.MANAGER);
+    if (authorizedUser.isPeopleLead()) roles.add(Role.PEOPLE_LEAD);
+    if (authorizedUser.isBackoffice()) roles.add(Role.BACKOFFICE);
+    if (authorizedUser.isRestricted()) roles.add(Role.RESTRICTED);
     return roles;
   }
 
-  public record Me(long employeeId, String sign, String name, String status, List<String> roles, Long currentContractId) {
+  public record Me(long employeeId, String sign, String name, LoginStatus status, List<Role> roles,
+      Long currentContractId) {
+  }
+
+  /** The level of a login as the schema names it; the codes in the database are abbreviations. */
+  public enum LoginStatus {
+    ADMIN(EMPLOYEE_STATUS_ADM), MANAGEMENT(EMPLOYEE_STATUS_BL), PEOPLE_LEAD(EMPLOYEE_STATUS_PV),
+    BACKOFFICE(EMPLOYEE_STATUS_BO), EMPLOYEE(EMPLOYEE_STATUS_MA), RESTRICTED(EMPLOYEE_STATUS_RESTRICTED);
+
+    private final String code;
+
+    LoginStatus(String code) {
+      this.code = code;
+    }
+
+    static LoginStatus of(String code) {
+      return Arrays.stream(values()).filter(status -> status.code.equalsIgnoreCase(code)).findFirst()
+          .orElseThrow(() -> new IllegalStateException("Unknown login status " + code));
+    }
+  }
+
+  public enum Role {
+    ADMIN, MANAGER, PEOPLE_LEAD, BACKOFFICE, RESTRICTED
   }
 }

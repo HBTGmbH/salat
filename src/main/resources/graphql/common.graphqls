@@ -10,7 +10,7 @@ scalar Time
 "Eine Dauer nach ISO-8601, z. B. PT1H30M"
 scalar Duration
 
-"Verweis auf eine Person: nur, was die Oberfläche an derselben Stelle zeigt (Konzept 3.3)"
+"Eine Person, mit id, Kürzel und Name"
 type PersonRef {
   "Die id der Person"
   id: ID!

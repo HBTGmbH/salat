@@ -13,10 +13,40 @@ type Me {
   sign: String!
   "Der Name"
   name: String!
-  "Die Berechtigungsstufe des Logins (adm, bl, pv, bo, ma, restricted)"
-  status: String!
-  "Die Rollen, die sich aus der Stufe ergeben (ADMIN, MANAGER, PEOPLE_LEAD, BACKOFFICE, RESTRICTED)"
-  roles: [String!]!
+  "Die Berechtigungsstufe des Logins"
+  status: LoginStatus!
+  "Die Rollen, die sich aus der Stufe ergeben; sie sind kumulativ, eine Geschäftsführung ist auch People Lead"
+  roles: [Role!]!
   "Der heute gültige Vertrag, null ohne einen"
   currentContractId: ID
+}
+
+"Die Berechtigungsstufe eines Logins"
+enum LoginStatus {
+  "Administration"
+  ADMIN
+  "Geschäftsführung"
+  MANAGEMENT
+  "People Lead"
+  PEOPLE_LEAD
+  "Backoffice"
+  BACKOFFICE
+  "Mitarbeitende"
+  EMPLOYEE
+  "Eingeschränkt, etwa für Externe: sieht nur die eigenen Einsätze"
+  RESTRICTED
+}
+
+"Eine Rolle, die sich aus der Berechtigungsstufe ergibt"
+enum Role {
+  "Darf alles, auch die Administration"
+  ADMIN
+  "Darf Stammdaten pflegen und sieht alle Buchungen"
+  MANAGER
+  "Sieht die Buchungen des eigenen Teams"
+  PEOPLE_LEAD
+  "Sieht die Buchungen auf fakturierbaren Unteraufträgen"
+  BACKOFFICE
+  "Eingeschränkte Anmeldung"
+  RESTRICTED
 }
