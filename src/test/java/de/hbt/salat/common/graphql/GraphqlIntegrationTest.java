@@ -9,11 +9,13 @@ import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 
 import graphql.introspection.IntrospectionQuery;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -183,7 +185,7 @@ class GraphqlIntegrationTest {
     var me = json(post(EMPLOYEE, "{ me { employeeId sign name status roles currentContractId } }")).at("/data/me");
 
     assertThat(me.at("/sign").asString()).isEqualTo(EMPLOYEE);
-    assertThat(me.at("/status").asString()).isEqualTo(EMPLOYEE_STATUS_MA);
+    assertThat(me.at("/status").asString()).isEqualTo("EMPLOYEE");
     assertThat(me.at("/roles").size()).isZero();
     assertThat(me.at("/currentContractId").asString()).isEqualTo(String.valueOf(employeeContract.getId()));
   }
@@ -322,6 +324,49 @@ class GraphqlIntegrationTest {
     assertThat(updated.at("/duration").asString()).isEqualTo("PT2H");
     assertThat(updated.at("/taskDescription").asString()).isEqualTo("Anlegen");
     assertThat(updated.at("/version").asInt()).isGreaterThan(version);
+  }
+
+  @Test
+  void a_single_booking_is_read_by_id_and_another_persons_looks_like_none() throws Exception {
+    String id = createBooking("Einzeln");
+    String query = "query($id: ID!) { timereport(id: $id) { id status employee { sign } } }";
+
+    var own = json(post(EMPLOYEE, query, Map.of("id", id))).at("/data/timereport");
+    var other = json(post(OTHER_EMPLOYEE, query, Map.of("id", id)));
+
+    assertThat(own.at("/id").asString()).isEqualTo(id);
+    assertThat(own.at("/status").asString()).isEqualTo("OPEN");
+    assertThat(other.at("/data/timereport").isNull()).isTrue();
+    assertThat(other.at("/errors").isMissingNode()).isTrue();
+  }
+
+  /**
+   * In an environment the chain under /api also takes the browser session (Easy Auth sets the token header for every
+   * request with the session cookie), and it has no CSRF token. What keeps another site from booking in the name of
+   * the person is that the endpoint takes nothing but POST with {@code application/json}, which a form or a simple
+   * cross-site request cannot send. This holds it, so that enabling GET or another content type fails here first.
+   */
+  @Test
+  void a_mutation_comes_only_as_json_post_not_as_form_text_or_get() throws Exception {
+    String text = "CSRF-" + UUID.randomUUID();
+    String mutation = "mutation { createTimereport(idempotencyKey: \"" + text + "\", input: { suborderId: " + suborderId
+        + ", date: \"" + DAY + "\", duration: \"PT1H\", taskDescription: \"" + text + "\" }) { replayed } }";
+    String json = JSON.writeValueAsString(Map.of("query", mutation));
+
+    var asText = send(HttpRequest.newBuilder(uri("/api/graphql", EMPLOYEE)).header("Content-Type", "text/plain")
+        .POST(BodyPublishers.ofString(json)).build());
+    var asForm = send(HttpRequest.newBuilder(uri("/api/graphql", EMPLOYEE))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .POST(BodyPublishers.ofString("query=" + URLEncoder.encode(mutation, StandardCharsets.UTF_8))).build());
+    var asGet = send(HttpRequest.newBuilder(URI.create(uri("/api/graphql", EMPLOYEE) + "&query="
+        + URLEncoder.encode(mutation, StandardCharsets.UTF_8))).GET().build());
+
+    assertThat(asText.statusCode()).isEqualTo(415);
+    assertThat(asForm.statusCode()).isEqualTo(415);
+    assertThat(asGet.statusCode()).isNotEqualTo(200);
+    var booked = json(post(EMPLOYEE, "query($day: Date!) { timereports(from: $day, until: $day) { taskDescription } }",
+        Map.of("day", DAY.toString()))).at("/data/timereports");
+    assertThat(booked.valueStream().map(timereport -> timereport.at("/taskDescription").asString())).doesNotContain(text);
   }
 
   /** The version read is the version written against (concept 3.5): a change made in between is not overwritten. */
@@ -516,6 +561,10 @@ class GraphqlIntegrationTest {
         .header("Accept-Language", language)
         .POST(BodyPublishers.ofString(body))
         .build();
+    return HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+  }
+
+  private static HttpResponse<String> send(HttpRequest request) throws Exception {
     return HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
   }
 
