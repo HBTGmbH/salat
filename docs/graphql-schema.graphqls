@@ -147,12 +147,26 @@ type Mutation {
   ): Workingday!
 }
 
-"Ein Zeitraum, in dem eine Person auf einem Auftrag gearbeitet hat"
+"Die Arbeit einer Person auf einem Kundenauftrag: die Klammer um alle Zeiträume und die Zeiträume selbst"
 type OrderHistoryEntry {
-  "An wie vielen Tagen im Zeitraum gebucht wurde"
+  "An wie vielen Tagen gebucht wurde, über alle Zeiträume"
   bookedDays: Int!
   "Der Auftrag, auf dessen Unteraufträge gebucht wurde"
   customerorder: Customerorder!
+  "Die Summe der Buchungen, über alle Zeiträume"
+  duration: Duration!
+  "Der erste Buchungstag, der des frühesten Zeitraums"
+  from: Date!
+  "Die Zeiträume, der jüngste zuerst"
+  periods: [OrderHistoryPeriod!]!
+  "Der letzte Buchungstag, der des jüngsten Zeitraums"
+  until: Date!
+}
+
+"Ein Zeitraum, in dem eine Person auf einem Auftrag gearbeitet hat, ohne Lücke von gapDays Tagen oder mehr"
+type OrderHistoryPeriod {
+  "An wie vielen Tagen im Zeitraum gebucht wurde"
+  bookedDays: Int!
   "Die Summe der Buchungen im Zeitraum"
   duration: Duration!
   "Der erste Buchungstag des Zeitraums"
@@ -176,19 +190,21 @@ type Query {
   "Die angemeldete Person mit ihrem laufenden Vertrag"
   me: Me!
   """
-  In welchen Zeiträumen eine Person auf welchem Kundenauftrag gearbeitet hat, aus ihren Buchungen über die ganze Zeit.
-  Ein Kundenauftrag hat mindestens einen fakturierbaren Unterauftrag; interne Aufträge, Urlaub und Krankheit stehen
-  nicht in der Historie. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag; liegen dazwischen 30 Tage oder
-  mehr ohne Buchung auf dem Auftrag, beginnt ein neuer Zeitraum, und der Auftrag kommt erneut vor. Es zählen nur die
-  Buchungen, die die angemeldete Person nach den Regeln der Buchungsliste sehen darf (siehe timereportList): Wer für
-  einen Auftrag verantwortlich ist, sieht von anderen Personen nur die Zeiträume auf diesem Auftrag, und wer nicht alle
-  Buchungen der Person sieht, etwa das Backoffice nur die fakturierbaren, bekommt kürzere Summen und kann andere
-  Grenzen der Zeiträume sehen. Eine Person ohne sichtbare Buchung ergibt eine leere Liste. Der jüngste Zeitraum steht
-  vorn. Eingeschränkte Anmeldungen bekommen AA-0002.
+  Auf welchen Kundenaufträgen eine Person in welchen Zeiträumen gearbeitet hat, aus ihren Buchungen über die ganze
+  Zeit; ein Eintrag je Auftrag, darin die Zeiträume. Ein Kundenauftrag hat mindestens einen fakturierbaren
+  Unterauftrag; interne Aufträge, Urlaub und Krankheit stehen nicht in der Historie. Ein Zeitraum reicht vom ersten
+  bis zum letzten Buchungstag; liegen dazwischen gapDays Tage oder mehr ohne Buchung auf dem Auftrag, beginnt ein
+  neuer Zeitraum. Es zählen nur die Buchungen, die die angemeldete Person nach den Regeln der Buchungsliste sehen darf
+  (siehe timereportList): Wer für einen Auftrag verantwortlich ist, sieht von anderen Personen nur diesen Auftrag, und
+  wer nicht alle Buchungen der Person sieht, etwa das Backoffice nur die fakturierbaren, bekommt kürzere Summen und
+  kann andere Grenzen der Zeiträume sehen. Eine Person ohne sichtbare Buchung ergibt eine leere Liste. Der Auftrag
+  mit dem jüngsten Buchungstag steht vorn. Eingeschränkte Anmeldungen bekommen AA-0002.
   """
   orderHistory(
     "Die Person (Me.employeeId); ohne Angabe die angemeldete"
-    employeeId: ID
+    employeeId: ID,
+    "Ab wie vielen Tagen ohne Buchung auf einem Auftrag ein neuer Zeitraum beginnt, 1 bis 3650 (sonst GQ-0003)"
+    gapDays: Int = 30
   ): [OrderHistoryEntry!]!
   "Eine Buchung, null, wenn es sie nicht gibt oder die angemeldete Person sie nicht sehen darf"
   timereport(

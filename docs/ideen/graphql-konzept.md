@@ -650,8 +650,8 @@ Was dafür nötig ist:
   und Rolle vergleicht die Antwort der Liste mit der des Resolvers. Laufen sie auseinander, ist das
   ein Fehler, keine Ausprägung.
   - **Ausnahme, bewusst einzuordnen: `OrderHistoryResolver.customerorder` (#1534).** Er ruft
-    `CustomerorderService.getCustomerorderReadModelsByIds` ohne eigene Regel. Die ids stammen aus den
-    Zeiträumen der Historie, und einen Zeitraum gibt es nur, wo die angemeldete Person nach
+    `CustomerorderService.getCustomerorderReadModelsByIds` ohne eigene Regel. Die ids stammen aus der
+    Historie, und einen Auftrag gibt es darin nur, wo die angemeldete Person nach
     `TimereportVisibility` Buchungen auf dem Auftrag sieht. Die Felder sind die der Auftragsliste.
     Zieht die Methode in Stufe 3a nach `CustomerorderLookup`, braucht diese Stelle entweder eine
     ausdrückliche Ausnahme im `ArchitectureTest` oder eine anzeigende Methode, deren Zuständigkeit die
@@ -1273,10 +1273,11 @@ Oberfläche.
 - Der CSRF-Schutz der Kette unter `/api` ist als Test festgehalten: nur `POST` mit JSON.
 - Neu ist ein Footer-Link auf GraphiQL, und die OpenAPI-Beschreibung nennt GraphQL.
 
-**Nachtrag #1534 (Historie der Kundenaufträge):** `orderHistory` liefert je Zeitraum auf einem
-Kundenauftrag einen Datensatz, aus den Buchungstagen unter `TimereportVisibility` über die ganze Zeit.
-Ein Kundenauftrag hat mindestens einen fakturierbaren Unterauftrag. 30 Tage ohne Buchung trennen
-zwei Zeiträume.
+**Nachtrag #1534 (Historie der Kundenaufträge):** `orderHistory` liefert je Kundenauftrag einen
+Eintrag mit dem ersten und letzten Buchungstag über alle Zeiträume, darin die Zeiträume. Grundlage
+sind die Buchungstage unter `TimereportVisibility` über die ganze Zeit. Ein Kundenauftrag hat
+mindestens einen fakturierbaren Unterauftrag. Wie viele Tage ohne Buchung zwei Zeiträume trennen,
+gibt der Aufrufer mit `gapDays` vor, ohne Angabe 30 (`GQ-0003` außerhalb von 1 bis 3650).
 - `Customerorder`, `Customer` und `CustomerSegment` kommen dabei als eingebettete Typen ins Schema,
   ohne eigenen Einstieg. Sie tragen nur die Felder der Auftrags- bzw. Kundenliste.
 - Die Aufträge liest der Resolver ohne eigene Regel. Diese Ausnahme ist in 5.3 vermerkt, damit
