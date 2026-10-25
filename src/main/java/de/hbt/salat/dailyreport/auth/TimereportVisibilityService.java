@@ -70,11 +70,18 @@ public class TimereportVisibilityService {
     }
 
     for (var rule : authService.getRulesForCurrentUser(AUTH_CATEGORY_TIMEREPORT, period, READ)) {
+      // A rule that overlaps the period only partly covers the bookings on its own days (#1534), as isAuthorized
+      // measures it against the day of the booking. One that covers the whole period needs no condition on the day.
+      var days = rule.getValidity().contains(period) ? null : rule.getValidity();
       if (ANY_MATCH.equals(rule.getObjectId())) {
-        // A rule without an object grants the category as a whole — nothing left to restrict.
-        return TimereportVisibility.all();
+        // A rule without an object grants the category as a whole — nothing left to restrict but the days.
+        if (days == null) {
+          return TimereportVisibility.all();
+        }
+        clauses.add(TimereportVisibility.Clause.onDays(days));
+        continue;
       }
-      toClause(rule.getObjectId()).ifPresent(clauses::add);
+      toClause(rule.getObjectId(), days).ifPresent(clauses::add);
     }
 
     return TimereportVisibility.of(clauses);
@@ -87,9 +94,9 @@ public class TimereportVisibilityService {
    * than an empty one: an empty clause would restrict nothing and grant everything. An id that no longer exists needs
    * no lookup: the clause it yields simply matches no booking.
    */
-  private Optional<TimereportVisibility.Clause> toClause(String objectId) {
+  private Optional<TimereportVisibility.Clause> toClause(String objectId, LocalDateRange days) {
     return TimereportRuleObject.parse(objectId).map(object -> new TimereportVisibility.Clause(
-        idsOf(object.employeeId()), idsOf(object.customerorderId()), idsOf(object.suborderId()), false));
+        idsOf(object.employeeId()), idsOf(object.customerorderId()), idsOf(object.suborderId()), false, days));
   }
 
   private static Set<Long> idsOf(Long id) {
@@ -97,9 +104,10 @@ public class TimereportVisibilityService {
   }
 
   /**
-   * The scope without a period: every rule that was ever valid counts. That is what the filter lists need — a booking
-   * from last month is covered by a grant that was valid last month, so a list of values that only knew today's rules
-   * would leave out what the bookings behind them show.
+   * The scope without a period: every rule that was ever valid counts, each for the bookings on its own days. That is
+   * what the filter lists need — a booking from last month is covered by a grant that was valid last month, so a list
+   * of values that only knew today's rules would leave out what the bookings behind them show. The order history
+   * (#1534) asks the same, over all of a person's bookings.
    */
   public TimereportVisibility anyTime() {
     return forPeriod(new LocalDateRange(LocalDateRange.FINIT_FROM_BOUNDARY, LocalDateRange.FINIT_UNTIL_BOUNDARY));
