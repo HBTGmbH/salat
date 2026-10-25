@@ -166,8 +166,10 @@ Controller gelten, dazu:
   beantwortet. Nie direkt ein Repository: das umginge den Service und seine Regel.
 - **Fehler** sind `ErrorCodeException`s wie überall. `GraphqlExceptionResolver` bildet sie auf
   `extensions.code` und `classification` ab: `AA-0001` wird `UNAUTHORIZED`, sonstige
-  Berechtigungsfehler `FORBIDDEN`, `XX-0003` und `XX-0006` `CONFLICT`, `*_NOT_FOUND` `NOT_FOUND`,
-  der Rest `BAD_REQUEST`. Nicht gefunden und nicht sichtbar sehen gleich aus.
+  Berechtigungsfehler `FORBIDDEN`, `XX-0003` und `XX-0006` `CONFLICT`, der Rest `BAD_REQUEST`.
+  `NOT_FOUND` bekommen nur die Codes, die er ausdrücklich nennt (`GraphqlExceptionResolver.NOT_FOUND`):
+  nach id gefragt und nicht gefunden oder nicht sichtbar. Die Einordnung ist Teil der Schnittstelle
+  und hängt nie am Namen einer Konstante; ein neuer Code für „nicht gefunden" kommt in die Menge.
 - **Ändern nennt die Version, Anlegen den Idempotenzschlüssel.** Eine ändernde Mutation nimmt die
   `version`, die der Aufrufer gelesen hat, und reicht sie an den Service weiter. Eine anlegende
   Mutation legt den Service-Aufruf in `IdempotencyService.createOnce`, und der Service liefert die id.
@@ -175,7 +177,12 @@ Controller gelten, dazu:
   loggt `GraphqlRequestLogInterceptor`.
 - **Schema:**
   - Feldnamen englisch, Beschreibungen deutsch, an jedem Typ, Feld, Argument und Enum-Wert
-    (`GraphqlSchemaContractTest`).
+    (`GraphqlSchemaContractTest`). Beschrieben wird, was der Aufrufer bekommt, ohne Projektinterna
+    wie Konzeptabschnitte oder Ladeverhalten.
+  - Eine feste Wertemenge ist ein Enum, kein `String` mit den Werten in der Beschreibung. Ein späterer
+    Wechsel wäre eine brechende Änderung.
+  - Grenzen einer Eingabe (Länge, Höchstwert, Pflicht unter einer Bedingung) und die typischen
+    Fehlercodes einer Mutation stehen in ihrer Beschreibung. Aufrufer, gerade Agenten, lesen sie dort.
   - Das Schema wächst nur durch Hinzufügen. Was wegfallen soll, bekommt `@deprecated(reason: "…")`
     mit dem Ersatz.
   - Nach einer Änderung den veröffentlichten Stand neu schreiben:

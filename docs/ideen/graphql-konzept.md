@@ -731,13 +731,16 @@ Annotation und Guard), wird nicht auf GraphQL gewartet: #1256.
   zeigt allen Angemeldeten dieselben Typen und Felder. Was jemand **sehen** darf, entscheiden die
   Daten, nicht das Schema. Ein Feldname ist kein Geheimnis, und ein je Rolle beschnittenes Schema
   wäre eine zweite Ausprägung der Regel.
-- Die Introspection unterliegt denselben Grenzwerten wie jede Abfrage (6.2). Tief verschachtelte
-  Introspection-Abfragen sind ein bekannter Weg zu teuren Anfragen.
-- Die GraphiQL-Oberfläche gibt es nur in `local` und `local-qa`. Sie bräuchte eine
-  Browser-Sitzung, und die gibt es unter `/api` nicht (nächster Punkt). Zusätzlich wird das Schema
-  als Datei veröffentlicht, wie die OpenAPI-Beschreibung unter `/api/doc`.
-- Kein Browser-Sitzungszugang. Für Endpunkte unter `/api` gilt `docs/guides/backend-patterns.md`:
-  Diese Pfade sind zustandslose Ketten für Maschinen.
+- Tief verschachtelte Introspection-Abfragen sind ein bekannter Weg zu teuren Anfragen. Die
+  Grenzwerte für Tiefe und Komplexität (6.2) gelten aber nur für fachliche Abfragen, sonst lädt kein
+  Werkzeug das Schema. Reine Introspection begrenzt `GoodFaithIntrospection` von graphql-java (10.3).
+- **GraphiQL gibt es in allen Umgebungen** unter `/graphiql`, verlinkt im Footer (entschieden
+  25.10.2026, ADR-0044). Zusätzlich wird das Schema als Datei veröffentlicht, wie die
+  OpenAPI-Beschreibung unter `/api/doc`.
+- **Die Browser-Sitzung trägt auch unter `/api`.** Easy Auth setzt für jede Anfrage mit
+  Sitzungs-Cookie den Token-Header, und die Kette liest ihn. Deshalb funktioniert GraphiQL mit der
+  Sitzung der angemeldeten Person. Weil die Kette kein CSRF-Token kennt, nimmt der Endpunkt nur
+  `POST` mit `application/json` an (ADR-0044, Regel 10).
 
 ### 6.2 Schutz vor teuren Abfragen
 
@@ -1125,8 +1128,7 @@ wird. Soll später doch etwas asynchron laufen, braucht es einen Executor, der R
   `TimeoutWebGraphQlInterceptor(10 s)`. Alle drei sind Bohnen, Boot nimmt sie ohne weitere
   Konfiguration auf.
 - **GraphiQL** lädt React und GraphiQL von `esm.sh`, einem externen CDN. Lokal ist das unkritisch.
-  Für eine Umgebung müssten die Dateien selbst ausgeliefert werden, oder GraphiQL bleibt lokal, wie
-  in 6.1 vorgesehen.
+  In den Umgebungen ist es seit Version 1 als Restrisiko in Kauf genommen (ADR-0044, 11).
 - **Batch-Laden:** `@BatchMapping` lädt den Unterauftrag aller Buchungen einer Antwort in einem
   Aufruf (`SuborderService.getSuborderLocationsByIds`). Diese Methode prüft nur die Anmeldung. Hier
   ist das unkritisch, weil die ids aus sichtbaren Buchungen stammen. Ein freier Einstieg
@@ -1215,7 +1217,7 @@ ADR-0044. Aus dem Spike ist im selben Issue Version 1 geworden, mit Stufe 1 und 
     Querschnitt in `common.graphql`, das Schema in `classpath:graphql/`.
   - `probe`, der Zugangsfilter und das Profil sind entfernt.
   - Die Schnittstelle ist in Produktion für alle angemeldeten Personen offen, mit ihren Rechten.
-    GraphiQL gibt es nur lokal.
+    GraphiQL gibt es in allen Umgebungen, mit dem Restrisiko des CDN in ADR-0044.
 - Die Befunde aus 10.5 sind in den Services geschlossen:
   - `TimereportDTO.version` und `TimereportService.updateTimereport` mit erwarteter Version.
   - `createTimereports` liefert die ids.
@@ -1241,6 +1243,28 @@ ADR-0044. Aus dem Spike ist im selben Issue Version 1 geworden, mit Stufe 1 und 
 H2-Testdatenbank kennt die Tabelle nur als `"Timereport"`, deshalb ist der Weg über den Service dort
 nicht ausführbar. Der Resolver ist mit einem Unit-Test geprüft, das Löschen selbst wie bisher in der
 Oberfläche.
+
+**Aus dem Review des PRs:**
+
+- Fehler behoben: Beim Verschieben auf einen anderen Tag nimmt die Buchung jetzt den dort gültigen
+  Mitarbeiterauftrag, wie die Seite. Vorher scheiterte das an einem in Zeiträume geteilten
+  Mitarbeiterauftrag (`TR-0020`) und an jeder Vertragsgrenze.
+- `me.bookableSuborders` lud Unterauftrag, Elternkette, Auftrag und Kunde je Zeile nach. Gemessen mit
+  `sqltrace` für 10 Zeilen: 55 Statements, 26 über dem Sockel einer Anfrage. Mit einer Abfrage per
+  `join fetch` sind es 33, also 4 über dem Sockel, unabhängig von der Zahl der Zeilen.
+  - Nebenbefund außerhalb von GraphQL: Der Sockel jeder Anfrage unter `/api` liegt bei 29 Statements,
+    12 davon auf `Employeeorder`.
+- Weitere Änderungen:
+  - Der Idempotenzschlüssel wird auf 1 bis 100 Zeichen geprüft (`XX-0007`), und der Hash bildet die
+    Bedeutung der Eingabe ab.
+  - Die Versionsprüfung kommt nach der Berechtigung.
+  - `NOT_FOUND` gilt nur für ausdrücklich genannte Codes.
+  - Der `operationName` wird vor dem Loggen geprüft.
+  - Status und Rollen sind Enums.
+  - Die Beschreibungen nennen Grenzen und typische Fehlercodes.
+  - Neu ist `timereport(id)`.
+- Der CSRF-Schutz der Kette unter `/api` ist als Test festgehalten: nur `POST` mit JSON.
+- Neu ist ein Footer-Link auf GraphiQL, und die OpenAPI-Beschreibung nennt GraphQL.
 
 **Offen:** Stufe 3a bis 3c (Zuständigkeit, Prüfungen in die Services, Stammdaten) und Stufe 4
 (Freigabe und Abnahme), je als eigenes Vorhaben.

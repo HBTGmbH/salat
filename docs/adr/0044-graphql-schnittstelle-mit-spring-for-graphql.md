@@ -1,7 +1,7 @@
 # ADR-0044 GraphQL-Schnittstelle mit Spring for GraphQL: Resolver als Controller, Regel im Service
 
 Date: 2026-10-25
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 
@@ -73,6 +73,18 @@ Dazu gelten diese Regeln:
      in derselben Transaktion wie das Angelegte.
 9. **Jeder Aufruf geschieht im Namen einer Person**, mit dem Token der bestehenden zustandslosen
    Kette unter `/api`. Die Schnittstelle ist für alle angemeldeten Personen offen, mit ihren Rechten.
+   In den Umgebungen trägt dort auch die Browser-Sitzung: Easy Auth setzt für jede Anfrage mit
+   Sitzungs-Cookie den Token-Header, und die Kette liest ihn. Eine übernommene Anmeldung der
+   Oberfläche gilt unter `/api` nicht.
+10. **Nur `POST` mit `application/json`.** Die Kette unter `/api` hat kein CSRF-Token. Gegen eine
+    Mutation von einer fremden Seite schützt, dass der Endpunkt nichts anderes annimmt: ein Formular
+    oder eine einfache Cross-Site-Anfrage (`text/plain`, `application/x-www-form-urlencoded`, `GET`)
+    kommt mit 415 bzw. ohne Ausführung zurück. `GraphqlIntegrationTest` hält das fest. GET oder ein
+    weiterer Content-Type darf nur mit einem anderen Schutz dazukommen.
+11. **GraphiQL in allen Umgebungen**, unter `/graphiql`, verlinkt im Footer. Es ist das eingebaute
+    GraphiQL von Spring for GraphQL und nutzt die Sitzung der angemeldeten Person. Der Not-Aus ist
+    `SPRING_GRAPHQL_GRAPHIQL_ENABLED=false`, ohne Release. Das Restrisiko steht unten und ist
+    ausdrücklich in Kauf genommen.
 
 ### Consequences
 
@@ -88,6 +100,23 @@ Dazu gelten diese Regeln:
 * **Bad:** GraphQL antwortet mit HTTP 200 und meldet Fehler in `errors`. Die Abbildung der
   `ErrorCode`s steht deshalb an einer zweiten Stelle neben `AuthorizationExceptionHandler`
   (`GraphqlExceptionResolver`).
+* **Bad, in Kauf genommen: GraphiQL lädt fremdes JavaScript** (Regel 11).
+  - Springs Seite lädt React, GraphiQL und die Editor-Worker zur Laufzeit von esm.sh.
+  - Die Integrity-Hashes im Import-Map decken nur die Einstiegsmodule ab. Das sind Zweizeiler, die auf
+    `…/es2022/*.bundle.mjs` weiterverweisen; der eigentliche Code und die Worker haben keinen Hash.
+  - Der Code läuft auf dem Origin von Salat mit der Sitzung der Person, die `/graphiql` öffnet. Er
+    erreicht `/api` über den Easy-Auth-Header und die Oberfläche über das lesbare CSRF-Cookie, und
+    Salat setzt keine Content-Security-Policy.
+  - Die Wahrscheinlichkeit ist gering, der Schaden groß (Vergleichsfall polyfill.io, 2024).
+    Eingedämmt wird es durch den Not-Aus per Umgebungsvariable. Die Versionen pinnt Spring for
+    GraphQL und hebt sie mit seinen Updates.
+  - Verworfen:
+    - **GraphiQL 4.1.0 als Webjar (UMD):** ältere Hauptversion und zusätzliche Pflege.
+    - **GraphiQL 5 über mvnpm und esbuild:** ein neues Build-Werkzeug.
+    - **Das Webjar von GraphiQL 5.2.1:** nicht auflösbar (`clsx` 1.x gegen 2.x) und ohne Bundler im
+      Browser nicht ladbar.
+    - **Vollständige Hashes, CSP oder Sandbox:** etwa so viel Aufwand wie Selbstausliefern, dazu
+      fragil.
 * **Neutral:** Die REST-Endpunkte bleiben. Ob sie abgelöst werden, entscheidet ihre Nutzung im
   Produktionsbericht.
 
