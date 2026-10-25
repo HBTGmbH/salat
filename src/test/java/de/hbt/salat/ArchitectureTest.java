@@ -410,6 +410,16 @@ public class ArchitectureTest {
       .resideOutsideOfPackage("de.hbt.salat.palette..")
       .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.palette..");
 
+  /**
+   * The GraphQL spike (#1532) is an experiment that is deleted or moved into the modules after the
+   * decision. Either step stays a matter of one package only as long as nothing outside it depends
+   * on it.
+   */
+  @ArchTest
+  static final ArchRule nothingShouldAccessGraphqlSpike = priority(HIGH).noClasses().that()
+      .resideOutsideOfPackage("de.hbt.salat.graphqlspike..")
+      .should().dependOnClassesThat().resideInAPackage("de.hbt.salat.graphqlspike..");
+
   // settingseditor is an aggregator: it may import from any module.
   // The beFreeOfCycles rule below ensures no other module can accidentally depend back on it.
 
