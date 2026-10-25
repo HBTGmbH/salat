@@ -28,6 +28,17 @@ public interface CustomerRepository extends PagingAndSortingRepository<Customer,
    * {@code keepId} auch dann, wenn er ausgeblendet ist. Ein {@code keepId} von {@code null} trifft
    * auf keine Zeile zu und ergibt damit genau die Liste der sichtbaren Auftraggeber.
    */
+  /**
+   * The customers a select "Vermittler" offers (#1536): marked as intermediary and not hidden, plus the one with
+   * {@code keepId} whatever it is now — an order that names it stays editable without losing it.
+   */
+  @Query("""
+      select c from Customer c
+      where (c.intermediary = true and (c.hide is null or c.hide = false)) or c.id = :keepId
+      order by upper(c.shortname) asc
+      """)
+  List<Customer> findSelectableIntermediaries(Long keepId);
+
   @Query("""
       select c from Customer c where (c.hide is null or c.hide = false) or c.id = :keepId
       order by upper(c.shortname) asc

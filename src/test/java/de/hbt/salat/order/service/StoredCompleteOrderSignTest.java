@@ -240,7 +240,7 @@ class StoredCompleteOrderSignTest {
   private CustomerorderDTO customerorderDto(Customerorder customerorder, String sign) {
     return new CustomerorderDTO(customerorder.getCustomer().getId(), FROM, UNTIL, sign,
         customerorder.getDescription(), null, null, null, null, List.of(responsible.getId()), responsible.getId(),
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE, null);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE, null, null);
   }
 
   private Customer customer() {

@@ -38,6 +38,9 @@ public enum ErrorCode {
   CO_TICKET_REFERENCE_LIMIT_INVALID("CO-0008", "an upper limit of ticket references per booking must be at least 1"),
   CO_SURCHARGE_PERCENT_INVALID("CO-0009", "a time surcharge rate must lie between 0 and SurchargeInput.MAX_PERCENT"),
   CO_SURCHARGE_NIGHT_TIMES_MISSING("CO-0010", "a night surcharge needs the beginning and the end of the night"),
+  CO_INTERMEDIARY_IS_CUSTOMER("CO-0011", "the intermediary of an order cannot be its customer"),
+  CO_INTERMEDIARY_NOT_MARKED("CO-0012", "the customer is not marked as intermediary"),
+  CO_INTERMEDIARY_IN_USE("CO-0013", "the customer is the intermediary of customer orders"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),

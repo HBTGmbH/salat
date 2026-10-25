@@ -173,7 +173,7 @@ public class CustomerorderController {
             form.getResponsibleHbtIds(), form.getRespContrEmployeeId(),
             form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType(),
             form.getTicketReferenceMode(), form.getTicketReferenceLimit(), form.getSurchargeRates().toInput(),
-            form.getTagNames());
+            form.getTagNames(), form.getIntermediaryId());
         if (form.getId() == null) {
           newId = customerorderService.create(dto).getId();
         } else {
@@ -250,6 +250,11 @@ public class CustomerorderController {
 
   private void validateForm(CustomerorderForm form, BindingResult bindingResult) {
     form.getSurchargeRates().validate(bindingResult, messages);
+    // the service refuses it as well; here it lands at the field (#1536)
+    if (form.getIntermediaryId() != null && form.getIntermediaryId().equals(form.getCustomerId())) {
+      bindingResult.rejectValue("intermediaryId", "error.intermediaryId",
+          messages.getMessage("errorcode.co.0011", "The intermediary cannot be the customer of the order"));
+    }
     if (form.getSign() == null || form.getSign().isEmpty()) {
       bindingResult.rejectValue("sign", "error.sign",
           messages.getMessage("form.customerorder.error.sign.required", "Sign is required"));
@@ -344,6 +349,8 @@ public class CustomerorderController {
     }
     customers.sort(Comparator.comparing(c -> c.getShortname().toLowerCase()));
     model.addAttribute("customers", customers);
+    // the one chosen stays offered even if hidden or no longer marked (#1536), as a stored customer does above
+    model.addAttribute("intermediaries", customerService.getSelectableIntermediaries(form.getIntermediaryId()));
 
     var employees = employeeService.getEmployeesWithValidContracts();
     // In edit mode, ensure assigned employees appear even if hidden or their contracts have expired.
@@ -384,6 +391,7 @@ public class CustomerorderController {
     var form = new CustomerorderForm();
     form.setId(co.getId());
     form.setCustomerId(co.getCustomer().getId());
+    form.setIntermediaryId(co.getIntermediary() != null ? co.getIntermediary().getId() : null);
     form.setSign(co.getSign());
     form.setDescription(co.getDescription());
     form.setShortdescription(co.getShortdescription());

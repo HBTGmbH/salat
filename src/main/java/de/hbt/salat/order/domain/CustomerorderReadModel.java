@@ -18,10 +18,13 @@ import de.hbt.salat.tag.domain.Tag;
  * @param executionResponsibles the responsible employees of HBT, for carrying the order out
  * @param contractResponsible   the employee of HBT responsible for the contract, {@code null} without one
  * @param tags                  the names of the tags, by name regardless of case
+ * @param intermediary          the customer who placed the order on behalf of the customer (#1536), {@code null} for
+ *                              none
  */
 public record CustomerorderReadModel(long id, String sign, String description, LocalDate validFrom,
     LocalDate validUntil, Duration debitHours, DebitHoursUnit debitHoursUnit, boolean hidden,
-    List<Person> executionResponsibles, Person contractResponsible, List<String> tags, CustomerReadModel customer) {
+    List<Person> executionResponsibles, Person contractResponsible, List<String> tags, CustomerReadModel customer,
+    CustomerReadModel intermediary) {
 
   public static CustomerorderReadModel of(Customerorder order) {
     return new CustomerorderReadModel(order.getId(), order.getSign(), order.getDescription(), order.getFromDate(),
@@ -29,7 +32,8 @@ public record CustomerorderReadModel(long id, String sign, String description, L
         order.getResponsibleHbt().stream().map(Person::of).toList(),
         order.getRespEmpHbtContract() == null ? null : Person.of(order.getRespEmpHbtContract()),
         order.getTags().stream().map(Tag::getName).toList(),
-        CustomerReadModel.of(order.getCustomer()));
+        CustomerReadModel.of(order.getCustomer()),
+        order.getIntermediary() == null ? null : CustomerReadModel.of(order.getIntermediary()));
   }
 
   /** A person by id, sign and name. */

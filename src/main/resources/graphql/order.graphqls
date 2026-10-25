@@ -45,6 +45,8 @@ type Customerorder {
   tags: [String!]!
   "Der Kunde"
   customer: Customer!
+  "Der Vermittler, der den Auftrag für den Kunden erteilt hat und die Rechnung bekommt; null ohne"
+  intermediary: Customer
 }
 
 "Worauf sich die Soll-Stunden eines Auftrags beziehen"

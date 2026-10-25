@@ -31,6 +31,7 @@ import de.hbt.salat.common.palette.PaletteQuery;
 import de.hbt.salat.common.util.ContainsPattern;
 import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.common.util.DurationUtils;
+import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.event.CustomerDeleteEvent;
 import de.hbt.salat.customer.persistence.CustomerDAO;
 import de.hbt.salat.employee.persistence.EmployeeDAO;
@@ -117,6 +118,7 @@ public class CustomerorderService {
 
     /* set attributes */
     co.setCustomer(customerDAO.getCustomerById(dto.customerId()));
+    co.setIntermediary(intermediaryOf(co, dto));
 
     co.setUntilDate(dto.untilDate());
     co.setFromDate(dto.fromDate());
@@ -479,8 +481,42 @@ public class CustomerorderService {
     return customerorderDAO.findCustomerorders(showInactive, filter, customerId, showHidden, tagIds, maxRows);
   }
 
+  /**
+   * The intermediary the order is to have (#1536): none, or a customer marked as intermediary. One the order already
+   * names stays, even if it lost its mark since — saving must not clear it behind the user's back. Never the order's
+   * own customer.
+   */
+  private Customer intermediaryOf(Customerorder co, CustomerorderDTO dto) {
+    if (dto.intermediaryId() == null) {
+      return null;
+    }
+    if (dto.intermediaryId() == dto.customerId()) {
+      throw new InvalidDataException(ErrorCode.CO_INTERMEDIARY_IS_CUSTOMER);
+    }
+    var stored = co.getIntermediary();
+    if (stored != null && stored.getId().equals(dto.intermediaryId())) {
+      return stored;
+    }
+    var intermediary = customerDAO.getCustomerById(dto.intermediaryId());
+    if (intermediary == null) {
+      throw new InvalidDataException(ErrorCode.CU_NOT_FOUND);
+    }
+    if (!intermediary.isIntermediary()) {
+      throw new InvalidDataException(ErrorCode.CO_INTERMEDIARY_NOT_MARKED);
+    }
+    return intermediary;
+  }
+
+  /**
+   * A customer who is the intermediary of an order cannot go (#1536): the order would lose who it invoices. The orders
+   * of the customer itself go with it, as before.
+   */
   @EventListener
   void onCustomerDelete(CustomerDeleteEvent event) {
+    var mediated = customerorderRepository.findSignsByIntermediaryId(event.getId());
+    if (!mediated.isEmpty()) {
+      event.veto(List.of(error(ErrorCode.CO_INTERMEDIARY_IN_USE, String.join(", ", mediated))));
+    }
     var customerorders = customerorderRepository.findAllByCustomerId(event.getId());
     for (Customerorder customerorder : customerorders) {
       deleteCustomerorderById(customerorder.getId());

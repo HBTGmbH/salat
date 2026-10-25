@@ -154,6 +154,7 @@ public class CustomerorderDAO {
         Specification<Customerorder> withShownAssociations = filters.and((root, query, builder) -> {
             root.fetch(Customerorder_.customer);
             root.fetch(Customerorder_.respEmpHbtContract, JoinType.LEFT);
+            root.fetch(Customerorder_.intermediary, JoinType.LEFT);
             return null;
         });
         var page = customerorderRepository.findAll(withShownAssociations, filters,

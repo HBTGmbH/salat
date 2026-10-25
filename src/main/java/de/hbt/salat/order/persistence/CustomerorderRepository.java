@@ -34,13 +34,13 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
 
   /**
    * The orders the order dialog of the booking list offers (#1331): not hidden; of one of the customers unless
-   * {@code everyCustomer}; among the given ids unless {@code everyOrder}; containing the pattern in the sign, the short
+   * {@code everyCustomer}, as customer or as intermediary (#1536); among the given ids unless {@code everyOrder}; containing the pattern in the sign, the short
    * description or the customer's short name unless it is {@code null}.
    */
   String DIALOG_ORDERS = """
-      from Customerorder c join c.customer cu
+      from Customerorder c join c.customer cu left join c.intermediary im
       where (c.hide is null or c.hide = false)
-      and (:everyCustomer = true or cu.id in :customerIds)
+      and (:everyCustomer = true or cu.id in :customerIds or im.id in :customerIds)
       and (:everyOrder = true or c.id in :customerorderIds)
       and (:pattern is null or lower(c.sign) like :pattern escape '!'
           or lower(cu.shortname) like :pattern escape '!'
@@ -59,13 +59,14 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       Collection<Long> customerorderIds);
 
   /**
-   * The orders with these ids together with customer, segment and the employee responsible for the contract, in one
-   * statement (#1534); responsibles and tags follow in one batch each. The login of that employee comes along: an
-   * employee reads it eagerly, and without the join it is one statement per person.
+   * The orders with these ids together with customer, intermediary (#1536), their segments and the employee
+   * responsible for the contract, in one statement (#1534); responsibles and tags follow in one batch each. The login
+   * of that employee comes along: an employee reads it eagerly, and without the join it is one statement per person.
    */
   @Query("""
       select c from Customerorder c join fetch c.customer cu left join fetch cu.segment
       left join fetch c.respEmpHbtContract r left join fetch r.salatUser
+      left join fetch c.intermediary im left join fetch im.segment
       where c.id in :ids
       """)
   List<Customerorder> findWithCustomerByIdIn(Collection<Long> ids);
@@ -141,6 +142,10 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   List<ResponsibleOption> findVisibleResponsibleHbtByCustomerSegmentId(long segmentId);
 
   List<Customerorder> findAllByCustomerId(long customerId);
+
+  /** The signs of the orders a customer is the intermediary of (#1536), ordered. */
+  @Query("select c.sign from Customerorder c where c.intermediary.id = :customerId order by c.sign")
+  List<String> findSignsByIntermediaryId(long customerId);
 
   Optional<Customerorder> findBySign(String sign);
 

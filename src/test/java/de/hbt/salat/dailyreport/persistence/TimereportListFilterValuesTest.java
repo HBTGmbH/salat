@@ -332,6 +332,39 @@ class TimereportListFilterValuesTest {
     assertThat(days).extracting(BookedDay::customerorderId).containsExactly(visibleOrder.getId());
   }
 
+  /**
+   * A customer stands for the orders it placed as intermediary as well (#1536): the filter finds their bookings, and the
+   * values offer the intermediary as a customer.
+   */
+  @Test
+  void the_customer_filter_finds_the_bookings_on_orders_the_customer_mediates() {
+    var reader = employeecontract("aaa");
+    var intermediary = customer("VM");
+    intermediary.setIntermediary(true);
+    var mediated = customerorder(customer, "ALPHA");
+    mediated.setIntermediary(intermediary);
+    var onMediated = book(reader, suborder(mediated, "ALPHA/01", true));
+    var direct = book(reader, suborder(customerorder(otherCustomer, "BETA"), "BETA/01", true));
+
+    assertThat(timereportListDAO.findRows(withCustomers(List.of(intermediary.getId())), ownBookingsOf(reader)))
+        .extracting(Timereport::getId)
+        .containsExactly(onMediated.getId());
+    assertThat(timereportListDAO.findRows(withCustomers(List.of(customer.getId())), ownBookingsOf(reader)))
+        .extracting(Timereport::getId)
+        .containsExactly(onMediated.getId());
+    assertThat(timereportListDAO.findRows(withCustomers(List.of(otherCustomer.getId())), ownBookingsOf(reader)))
+        .extracting(Timereport::getId)
+        .containsExactly(direct.getId());
+    assertThat(timereportListDAO.findFilterValues(ownBookingsOf(reader)).customerIds())
+        .containsExactlyInAnyOrder(customer.getId(), intermediary.getId(), otherCustomer.getId());
+  }
+
+  private static TimereportListFilter withCustomers(List<Long> customerIds) {
+    return new TimereportListFilter(List.of(), customerIds, List.of(), List.of(), List.of(), true, TagSelection.NONE,
+        DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false,
+        TimereportListFilter.UNLIMITED);
+  }
+
   private static TimereportListFilter withTags(TagSelection tags, List<Long> employeeIds) {
     return new TimereportListFilter(employeeIds, List.of(), List.of(), List.of(), List.of(), true, tags,
         DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false,

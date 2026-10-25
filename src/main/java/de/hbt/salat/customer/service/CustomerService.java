@@ -27,6 +27,7 @@ import de.hbt.salat.common.exception.VetoedException;
 import de.hbt.salat.common.palette.PaletteQuery;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.customer.domain.CustomerDTO;
+import de.hbt.salat.customer.domain.CustomerOption;
 import de.hbt.salat.customer.domain.CustomerSearchRow;
 import de.hbt.salat.customer.event.CustomerDeleteEvent;
 import de.hbt.salat.customer.persistence.CustomerDAO;
@@ -180,5 +181,13 @@ public class CustomerService {
    */
   public List<Customer> getSelectableCustomers(Long keepId) {
     return customerDAO.getSelectableCustomers(keepId);
+  }
+
+  /**
+   * The customers offered as intermediary of an order (#1536): marked and not hidden, plus the one with
+   * {@code keepId} even if it is hidden or no longer marked, as {@link #getSelectableCustomers} keeps a stored value.
+   */
+  public List<CustomerOption> getSelectableIntermediaries(Long keepId) {
+    return customerRepository.findSelectableIntermediaries(keepId).stream().map(CustomerOption::of).toList();
   }
 }

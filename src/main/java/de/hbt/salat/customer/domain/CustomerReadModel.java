@@ -5,15 +5,16 @@ package de.hbt.salat.customer.domain;
  * describes a customer without handling the entity (ADR-0021).
  *
  * @param shortName the short name, or the shortened name where there is none ({@link Customer#getShortname()})
+ * @param intermediary whether the customer may act as intermediary of an order (#1536)
  * @param segment   the customer segment, {@code null} without one
  */
 public record CustomerReadModel(long id, String shortName, String name, String address, boolean hidden,
-    Segment segment) {
+    boolean intermediary, Segment segment) {
 
   public static CustomerReadModel of(Customer customer) {
     var segment = customer.getSegment();
     return new CustomerReadModel(customer.getId(), customer.getShortname(), customer.getName(), customer.getAddress(),
-        customer.getHide(), segment == null ? null : new Segment(segment.getId(), segment.getName()));
+        customer.getHide(), customer.isIntermediary(), segment == null ? null : new Segment(segment.getId(), segment.getName()));
   }
 
   public record Segment(long id, String name) {

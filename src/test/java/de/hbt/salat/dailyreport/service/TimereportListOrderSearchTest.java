@@ -279,6 +279,25 @@ class TimereportListOrderSearchTest {
         "~ beta/01");
   }
 
+  /**
+   * Ein Vermittler steht fuer die Auftraege, die er fuer seine Kunden erteilt hat (#1536): Der Kundenfilter der Liste
+   * findet ihre Buchungen, also bietet der Dialog sie an.
+   */
+  @Test
+  void a_chosen_intermediary_narrows_to_the_orders_it_mediates() {
+    unrestricted();
+    var vermittler = customer("Vermittler");
+    vermittler.setIntermediary(true);
+    entityManager.find(Customerorder.class, delta.getId()).setIntermediary(vermittler);
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(rows(search("", List.of(vermittler.getId()), true, true, DIALOG_ROWS))).containsExactly(
+        "DELTA", "  DELTA/01", "  DELTA/02");
+    assertThat(rows(search("", List.of(sued.getId()), true, true, DIALOG_ROWS))).containsExactly(
+        "DELTA", "  DELTA/01", "  DELTA/02");
+  }
+
   // --- Ebenenfilter ----------------------------------------------------------------------------
 
   @Test

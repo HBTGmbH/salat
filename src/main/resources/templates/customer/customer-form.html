@@ -19,6 +19,7 @@
       </div>
       <salat:textInput th:field="*{name}" th:label="#{main.customer.name.text}" required="true" maxlength="255" />
       <salat:textarea th:field="*{address}" th:label="#{main.customer.address.text}" required="true" rows="3" />
+      <salat:checkboxSwitch th:field="*{intermediary}" th:label="#{main.customer.intermediary.text}" />
       <salat:checkboxSwitch th:field="*{hide}" th:label="#{main.general.hide}" />
     </salat:inputs>
     <salat:buttons>

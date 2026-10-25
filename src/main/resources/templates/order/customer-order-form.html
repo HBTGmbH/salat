@@ -15,7 +15,7 @@
       <input type="hidden" th:field="*{storedRespContrEmployeeId}" />
 
       <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-6">
           <div class="mb-3">
             <label class="form-label required" th:for="customerId" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" id="customerId" th:field="*{customerId}"
@@ -28,12 +28,30 @@
             <div class="invalid-feedback" th:if="${#fields.hasErrors('customerId')}" th:errors="*{customerId}"></div>
           </div>
         </div>
-        <div class="col-md-4">
+        <!--/* #1536: only customers marked as intermediary; a stored one stays offered */-->
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:for="intermediaryId" th:text="#{main.customerorder.intermediary.text}">Intermediary</label>
+            <select class="form-select tomselect" id="intermediaryId" th:field="*{intermediaryId}"
+                    th:errorclass="is-invalid">
+              <option value="" th:text="#{main.customerorder.intermediary.none}">-- no intermediary --</option>
+              <option th:each="c : ${intermediaries}"
+                      th:value="${c.id}"
+                      th:text="${@customerLabelViewHelper.label(c.shortname, c.name)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('intermediaryId')}" th:errors="*{intermediaryId}"></div>
+            <div class="form-text" th:text="#{main.customerorder.intermediary.hint}">Invoice attachments go to the intermediary.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
           <salat:textInput th:field="*{sign}" th:label="#{main.customerorder.sign.text}" required="true" maxlength="30"
                            th:readonly="${signLocked}"
                            th:helpText="${signLocked} ? #{main.order.sign.locked.help} : ''" />
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
           <div class="mb-3">
             <label class="form-label" th:text="#{main.customerorder.orderType.text}">Order Type</label>
             <select class="form-select" id="orderType" th:field="*{orderType}">

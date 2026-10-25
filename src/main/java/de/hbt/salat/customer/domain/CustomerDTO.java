@@ -22,6 +22,8 @@ public class CustomerDTO implements Serializable {
   private String shortName;
   private String address;
   private Boolean hide;
+  /** may act as intermediary of an order (#1536) */
+  private boolean intermediary;
   private Long segmentId;
   private String segmentName;
   private String createdBy;
@@ -37,6 +39,7 @@ public class CustomerDTO implements Serializable {
         .shortName(customer.getShortname())
         .address(customer.getAddress())
         .hide(customer.getHide())
+        .intermediary(customer.isIntermediary())
         .segmentId(customer.getSegment() != null ? customer.getSegment().getId() : null)
         .segmentName(customer.getSegment() != null ? customer.getSegment().getName() : null)
         .createdBy(customer.getCreatedby())
@@ -52,6 +55,7 @@ public class CustomerDTO implements Serializable {
     customer.setShortname(shortName);
     customer.setAddress(address);
     customer.setHide(Boolean.TRUE.equals(hide));
+    customer.setIntermediary(intermediary);
     // do not copy id and audit fields
   }
 

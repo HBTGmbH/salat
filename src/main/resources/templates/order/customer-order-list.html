@@ -116,6 +116,11 @@
           <td class="d-none d-md-table-cell">
             <div th:text="${co.customer.shortname}" class="text-nowrap">Customer Short</div>
             <small class="text-muted" th:text="${co.customer.name}">Customer Name</small>
+            <!--/* #1536: who placed the order on behalf of the customer */-->
+            <div th:if="${co.intermediary != null}" class="small mt-1">
+              <span class="text-muted" th:text="#{main.customerorder.intermediary.text} + ':'">Intermediary:</span>
+              <span th:text="${co.intermediary.shortname}" th:title="${co.intermediary.name}">VB</span>
+            </div>
           </td>
           <!--/* Das Badge steht hinter dem Kürzel des Auftrags, nicht in der Kundenspalte davor:
                  die ist auf schmalen Bildschirmen ausgeblendet, und mit ihr verschwände die

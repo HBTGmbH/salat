@@ -34,6 +34,11 @@
       <tr>
         <td class="invoice_address_line" th:utext="${invoiceForm.customeraddressFormatted}"></td>
       </tr>
+      <tr th:if="${!#strings.isEmpty(invoiceForm.endcustomername)}">
+        <td class="invoice_address_line">
+          <span th:text="#{main.invoice.endcustomer.text}">Endkunde</span>: <span th:text="${invoiceForm.endcustomername}"></span>
+        </td>
+      </tr>
       <tr>
         <td class="invoice_address_line"></td>
       </tr>
