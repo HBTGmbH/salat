@@ -1,0 +1,271 @@
+"Ein Unterauftrag, auf den gebucht werden darf"
+type BookableSuborder {
+  "Ob eine Buchung dort eine Beschreibung braucht"
+  commentNecessary: Boolean!
+  "Das vollständige Zeichen, z. B. ABC-12/01"
+  completeOrderSign: String!
+  "Die Bezeichnung, wie das Buchungsformular sie zeigt"
+  description: String!
+  "Der Mitarbeiterauftrag, an dem eine Buchung dort hängt"
+  employeeorderId: ID!
+  "Die id des Unterauftrags, anzugeben in createTimereport"
+  suborderId: ID!
+}
+
+"Die Antwort auf Löschen"
+type DeletePayload {
+  "Die id des gelöschten Objekts"
+  id: ID!
+}
+
+"Die angemeldete Person"
+type Me {
+  "Worauf die Person an diesem Tag buchen darf: jeder Unterauftrag mit einem dann gültigen Mitarbeiterauftrag"
+  bookableSuborders(
+    "Der Tag, für den gebucht werden soll"
+    on: Date!
+  ): [BookableSuborder!]!
+  "Der heute gültige Vertrag, null ohne einen"
+  currentContractId: ID
+  "Die id der Person, zum Beispiel für den Filter der Buchungsliste"
+  employeeId: ID!
+  "Der Name"
+  name: String!
+  "Die Rollen, die sich aus der Stufe ergeben (ADMIN, MANAGER, PEOPLE_LEAD, BACKOFFICE, RESTRICTED)"
+  roles: [String!]!
+  "Das Kürzel"
+  sign: String!
+  "Die Berechtigungsstufe des Logins (adm, bl, pv, bo, ma, restricted)"
+  status: String!
+}
+
+"Schreibende Einstiege; jede Mutation ist eine eigene Transaktion"
+type Mutation {
+  """
+  Legt eine eigene Buchung an. Eine Wiederholung mit demselben Schlüssel und derselben Eingabe legt nichts an und
+  antwortet mit der damals angelegten Buchung; derselbe Schlüssel mit anderer Eingabe wird abgewiesen (XX-0006).
+  Am Tag muss ein Arbeitsbeginn eingetragen sein (upsertWorkingday).
+  """
+  createTimereport(
+    "Vom Aufrufer erzeugt, z. B. eine UUID, einmal je Vorhaben und bei jeder Wiederholung unverändert"
+    idempotencyKey: ID!,
+    "Die Buchung"
+    input: CreateTimereportInput!
+  ): TimereportPayload!
+  "Löscht eine Buchung, wie die Oberfläche; die Regeln zum Status des Zeitraums gelten"
+  deleteTimereport(
+    "Die Buchung"
+    id: ID!
+  ): DeletePayload!
+  "Trägt für den Tag „Nicht gearbeitet“ ein: Beginn und Pause werden null; nur an einem Tag ohne Buchung"
+  markNotWorked(
+    "Der Tag"
+    date: Date!
+  ): Workingday!
+  """
+  Ändert eine Buchung, die der Aufrufer in version gelesen hat. Wurde sie seitdem geändert, wird abgewiesen
+  (XX-0003) statt überschrieben. Nicht angegebene Felder bleiben, wie sie sind.
+  """
+  updateTimereport(
+    "Die Buchung"
+    id: ID!,
+    "Die Felder, die sich ändern"
+    input: UpdateTimereportInput!,
+    "Die Version, in der die Buchung gelesen wurde"
+    version: Int!
+  ): TimereportPayload!
+  "Trägt den eigenen Arbeitstag ein oder ändert ihn"
+  upsertWorkingday(
+    "Der Arbeitstag"
+    input: WorkingdayInput!
+  ): Workingday!
+}
+
+"Verweis auf eine Person: nur, was die Oberfläche an derselben Stelle zeigt (Konzept 3.3)"
+type PersonRef {
+  "Die id der Person"
+  id: ID!
+  "Der Name"
+  name: String!
+  "Das Kürzel, nur zur Anzeige; Personen werden über ihre id angesprochen"
+  sign: String!
+}
+
+"Lesende Einstiege"
+type Query {
+  "Die angemeldete Person mit ihrem laufenden Vertrag"
+  me: Me!
+  """
+  Buchungen nach der Sichtbarkeit der Buchungsliste: wer was sieht, entscheidet derselbe Service wie in der
+  Oberfläche. Die Zeilen sind auf limit begrenzt, die Summen zählen alle Treffer.
+  """
+  timereportList(
+    "Was gesucht wird"
+    filter: TimereportListFilter!
+  ): TimereportPage!
+  "Die eigenen Buchungen eines Zeitraums, höchstens 366 Tage"
+  timereports(
+    "Erster Tag, eingeschlossen"
+    from: Date!,
+    "Letzter Tag, eingeschlossen"
+    until: Date!
+  ): [Timereport!]!
+  "Der eigene Arbeitstag, null, wenn für den Tag keiner eingetragen ist"
+  workingday(
+    "Der Tag"
+    date: Date!
+  ): Workingday
+}
+
+"Verweis auf einen Unterauftrag"
+type SuborderRef {
+  "Das vollständige Zeichen, z. B. ABC-12/01"
+  completeOrderSign: String!
+  "Die id"
+  id: ID!
+}
+
+"Eine Buchung"
+type Timereport {
+  "Der Tag"
+  date: Date!
+  "Die Dauer"
+  duration: Duration!
+  "Verweis auf die Person, nicht die volle Person (Konzept 3.3)"
+  employee: PersonRef!
+  "Der Mitarbeiterauftrag, an dem die Buchung hängt"
+  employeeorderId: ID!
+  "Die id"
+  id: ID!
+  "open, committed oder closed: offen, freigegeben oder abgenommen"
+  status: String!
+  "Verweis auf den Unterauftrag, für alle Buchungen einer Antwort in einem Schritt geladen"
+  suborder: SuborderRef!
+  "Die Beschreibung"
+  taskDescription: String
+  "Die Ticketreferenzen in ihrer Reihenfolge"
+  ticketReferences: [String!]!
+  "Ob die Buchung als Fortbildung zählt"
+  training: Boolean!
+  "Die Version, in der die Buchung gelesen wurde; anzugeben in updateTimereport"
+  version: Int!
+}
+
+"Eine Seite der Buchungsliste"
+type TimereportPage {
+  "Der Teil davon auf fakturierbaren Unteraufträgen"
+  billableDuration: Duration!
+  "Die Zeilen, auf limit begrenzt"
+  items: [Timereport!]!
+  "Wie viele Buchungen der Filter trifft"
+  totalCount: Int!
+  "Ihre Dauer"
+  totalDuration: Duration!
+  "true, wenn es mehr Treffer als Zeilen gibt"
+  truncated: Boolean!
+}
+
+"Die Antwort auf Anlegen und Ändern"
+type TimereportPayload {
+  "true, wenn die Antwort aus einem früheren Aufruf mit demselben Schlüssel stammt"
+  replayed: Boolean!
+  "Die Buchung in ihrem jetzigen Stand"
+  timereport: Timereport!
+}
+
+"Ein Arbeitstag"
+type Workingday {
+  "Die Pause"
+  breakLength: Duration!
+  "Der Tag"
+  date: Date!
+  "Der Arbeitsbeginn"
+  startTime: Time!
+  "Gearbeitet oder nicht gearbeitet"
+  type: WorkingDayType!
+}
+
+"Welche Buchungen nach Fakturierbarkeit"
+enum Billable {
+  "Alle Buchungen"
+  ALL
+  "Nur Buchungen auf fakturierbaren Unteraufträgen"
+  BILLABLE
+  "Nur die übrigen"
+  NOT_BILLABLE
+}
+
+"Die Art eines Arbeitstags"
+enum WorkingDayType {
+  "Nicht gearbeitet"
+  NOT_WORKED
+  "Gearbeitet"
+  WORKED
+}
+
+"Ein Tag nach ISO-8601, z. B. 2026-10-26"
+scalar Date
+
+"Eine Dauer nach ISO-8601, z. B. PT1H30M"
+scalar Duration
+
+"Eine Uhrzeit nach ISO-8601, z. B. 08:30"
+scalar Time
+
+"Eine neue Buchung"
+input CreateTimereportInput {
+  "Der Tag"
+  date: Date!
+  "Die Dauer"
+  duration: Duration!
+  "Der Unterauftrag, siehe Me.bookableSuborders"
+  suborderId: ID!
+  "Die Beschreibung"
+  taskDescription: String!
+  "Die Ticketreferenzen"
+  ticketReferences: [String!]
+}
+
+"Jede Liste ist eine Alternative; leer oder weggelassen heißt: keine Einschränkung in dieser Hinsicht"
+input TimereportListFilter {
+  "Alle, nur fakturierbare oder nur nicht fakturierbare"
+  billable: Billable = ALL
+  "Auf welchen Kunden"
+  customerIds: [ID!]
+  "Auf welchen Aufträgen, jeweils mit dem ganzen Baum"
+  customerorderIds: [ID!]
+  "Wessen Buchungen"
+  employeeIds: [ID!]
+  "Erster Tag, eingeschlossen"
+  from: Date!
+  "Wie viele Zeilen, höchstens 200"
+  limit: Int = 100
+  "Auf welchen Unteraufträgen, jeweils mit dem ganzen Zweig"
+  suborderIds: [ID!]
+  "Letzter Tag, eingeschlossen; höchstens 366 Tage nach from"
+  until: Date!
+}
+
+"Was sich an einer Buchung ändert; weggelassene Felder bleiben"
+input UpdateTimereportInput {
+  "Der neue Tag"
+  date: Date
+  "Die neue Dauer"
+  duration: Duration
+  "Die neue Beschreibung"
+  taskDescription: String
+  "Die neuen Ticketreferenzen; eine leere Liste entfernt alle"
+  ticketReferences: [String!]
+}
+
+"Ein eigener Arbeitstag"
+input WorkingdayInput {
+  "Die Pause, ohne Angabe keine"
+  breakLength: Duration
+  "Der Tag"
+  date: Date!
+  "Der Arbeitsbeginn"
+  startTime: Time!
+  "Ohne Angabe bleibt die Art, wie sie ist; ein neuer Tag ist gearbeitet"
+  type: WorkingDayType
+}

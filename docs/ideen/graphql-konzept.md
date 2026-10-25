@@ -1,6 +1,6 @@
 # Konzept: GraphQL-Schnittstelle für Salat
 
-Stand: 25.10.2026 · Status: **Entwurf, Spike durchgeführt** (#1532, → 10). Einzelentscheidungen sind getroffen (→ 9), das Konzept als Ganzes ist noch nicht bestätigt.
+Stand: 25.10.2026 · Status: **bestätigt** (ADR-0044). Spike durchgeführt (→ 10), Version 1 mit Stufe 1 und 2 umgesetzt (#1532, → 11).
 
 Dieses Dokument beschreibt eine GraphQL-Schnittstelle, über die Daten gelesen, geändert und gelöscht
 werden. Alle Aufrufe gehen an die bestehenden Services, und es gelten dieselben Sichtbarkeits- und
@@ -1200,3 +1200,47 @@ Für das Lesen der eigenen Daten (Stufe 1) reichen die Services bis auf den Vert
    Ändern.
 
 Stufe 1 kann danach direkt auf dem übernommenen Spike aufsetzen.
+
+---
+
+## 11. Version 1 (#1532)
+
+Stand: 25.10.2026. Das Konzept ist mit den Ergänzungen aus 10.7 bestätigt. Die Entscheidung steht in
+ADR-0044. Aus dem Spike ist im selben Issue Version 1 geworden, mit Stufe 1 und 2 aus Abschnitt 8.
+
+**Was sich gegenüber dem Spike geändert hat:**
+
+- Das Gerüst ist übernommen, wie in 10.1 beschrieben:
+  - Die Resolver liegen in `employee.graphql`, `order.graphql` und `dailyreport.graphql`, der
+    Querschnitt in `common.graphql`, das Schema in `classpath:graphql/`.
+  - `probe`, der Zugangsfilter und das Profil sind entfernt.
+  - Die Schnittstelle ist in Produktion für alle angemeldeten Personen offen, mit ihren Rechten.
+    GraphiQL gibt es nur lokal.
+- Die Befunde aus 10.5 sind in den Services geschlossen:
+  - `TimereportDTO.version` und `TimereportService.updateTimereport` mit erwarteter Version.
+  - `createTimereports` liefert die ids.
+  - `EmployeeorderService.getEmployeeorderId` und `getBookableSuborders` liefern Werte.
+  - `TimereportListFilter.of` baut einen Filter ohne die Teile der Seite.
+  - `WorkingdayService` nimmt die id des Vertrags.
+- Neu gegenüber dem Spike:
+  - `me.bookableSuborders` als Erweiterung des Typs `Me` durch `order` (3.7).
+  - `deleteTimereport`, `workingday`, `upsertWorkingday` und `markNotWorked`.
+  - Die Idempotenz liegt in der Tabelle `idempotency_key` (Changeset 201), in derselben
+    Transaktion wie das Anlegen, mit einem Aufräumjob nach 7 Tagen.
+  - Die Begrenzung der Anfragen je Login (6.2) und das Log je Operation und Mutation (6.6). Die
+    Metriken liefert die Observation von Spring for GraphQL.
+- Die Regeln setzt `ArchitectureTest` durch: `@Authorized` an jeder Methode, die ein Feld auflöst,
+  und Resolver ohne asynchrone Rückgabe.
+- Das Schema ist dokumentiert und vertraglich gesichert:
+  - Beschreibungspflicht und Vergleich mit dem veröffentlichten Stand in
+    `docs/graphql-schema.graphqls`, beides in `GraphqlSchemaContractTest`.
+  - Die Anleitung für Aufrufer steht in [`docs/graphql-api.md`](../graphql-api.md), die Regeln für
+    Entwickler in `docs/guides/backend-patterns.md`.
+
+**Bekannte Grenze der Tests:** Das weiche Löschen von Buchungen ist reines SQL auf `timereport`. Die
+H2-Testdatenbank kennt die Tabelle nur als `"Timereport"`, deshalb ist der Weg über den Service dort
+nicht ausführbar. Der Resolver ist mit einem Unit-Test geprüft, das Löschen selbst wie bisher in der
+Oberfläche.
+
+**Offen:** Stufe 3a bis 3c (Zuständigkeit, Prüfungen in die Services, Stammdaten) und Stufe 4
+(Freigabe und Abnahme), je als eigenes Vorhaben.

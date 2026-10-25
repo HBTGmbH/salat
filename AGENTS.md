@@ -12,7 +12,7 @@ Nachschlagewissen zu einzelnen Themen steht unter `docs/guides/` und gilt ebenso
 | Dokument | Inhalt | Lesen, wenn … |
 |---|---|---|
 | [`docs/guides/ui.md`](docs/guides/ui.md) | View-Regeln, Bestätigungen und modale Dialoge, Befehlspalette, Tastenkürzel, sortierbare Listen, Farben und Kontrast, Objekte in `layout/base.html`, TomSelect, `salat:`-Dialekt, UiState und Filter, Filter-Umschalter, Listen mit Obergrenze, gruppierte Listen, Mails | ein Template, `salat.js`, `salat.css`, ein Mail-Template oder ein Controller mit Liste oder Filter geändert wird |
-| [`docs/guides/backend-patterns.md`](docs/guides/backend-patterns.md) | Entity, Criteria, Repository, Service, Controller, DTO, Events, Benachrichtigungen, Exceptions, Fehlermeldungen, Security, Listener, gleichzeitige Änderungen, Secrets, Tags, Flags, JSON, i18n, Migrationen, CSV, Dauer und Uhrzeit, REST-Parameter, Legacy-Redirects | Java-Code in `domain`, `persistence`, `service`, `controller`, `rest` oder `listener`, ein Changeset oder ein Message-Bundle geändert wird |
+| [`docs/guides/backend-patterns.md`](docs/guides/backend-patterns.md) | Entity, Criteria, Repository, Service, Controller, GraphQL-Resolver und Schema, DTO, Events, Benachrichtigungen, Exceptions, Fehlermeldungen, Security, Listener, gleichzeitige Änderungen, Secrets, Tags, Flags, JSON, i18n, Migrationen, CSV, Dauer und Uhrzeit, REST-Parameter, Legacy-Redirects | Java-Code in `domain`, `persistence`, `service`, `controller`, `graphql`, `rest` oder `listener`, ein Changeset, ein GraphQL-Schema oder ein Message-Bundle geändert wird |
 | [`docs/guides/domain-rules.md`](docs/guides/domain-rules.md) | Stammdaten und Bewegungsdaten, das `hide`-Flag, Gültigkeitszeiträume, Budget, was ein Achievement belohnt | eine Änderung Stammdaten, das Ausblenden, Gültigkeitszeiträume, das Budget oder ein Achievement berührt |
 | [`docs/performance-tips.md`](docs/performance-tips.md) | Gemessene Performance-Regeln | JPA-Mappings, `AttributeConverter`, Repository-Queries oder View-Helper hinzukommen |
 | [`docs/beta-funktionen.md`](docs/beta-funktionen.md) | Beta-Funktionen: Einführung, Messung, Ende | eine Änderung als Beta eingeführt wird |
@@ -354,6 +354,9 @@ A feature or fix is considered done when **all** of the following are true:
   Most notably: **a class mapped via `AttributeConverter` must implement `equals`/`hashCode`**,
   otherwise Hibernate treats the entity as dirty on every flush and emits UPDATEs on read-only
   requests.
+- [`docs/graphql-api.md`](docs/graphql-api.md) is the guide for callers of the GraphQL interface
+  `/api/graphql` (#1532, ADR-0044); the schema itself, published in `docs/graphql-schema.graphqls`,
+  is its reference.
 - [`docs/beta-funktionen.md`](docs/beta-funktionen.md) describes when a change becomes an opt-in
   beta and how it is introduced, promoted in context, measured (#1447, ADR-0039) and ended.
 
@@ -444,6 +447,7 @@ Each module uses a consistent sub-package structure:
 | `event` | Domain event classes |
 | `listener` | `@EventListener` subscribers |
 | `rest` | REST endpoints |
+| `graphql` | GraphQL resolvers (`@Controller` with `@QueryMapping` …) for the module's part of the schema in `resources/graphql/<module>.graphqls`; the rules of controllers apply, see [backend-patterns](docs/guides/backend-patterns.md), GraphQL Resolver Pattern (→ ADR-0044) |
 | `viewhelper` | View decorators and model-prep helpers |
 
 **`viewhelper` package rule:** View helper classes (model-prep helpers, view decorators) **must stay in the `viewhelper` sub-package** of their module. They must not be placed in `domain`, `service`, or any other sub-package. Rules:

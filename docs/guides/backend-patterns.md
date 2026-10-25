@@ -2,7 +2,8 @@
 
 Teil der Entwicklungsregeln: Kern und Verweistabelle stehen in [AGENTS.md](../../AGENTS.md), was hier
 steht, gilt ebenso verbindlich. Lesen, bevor Java-Code in `domain`, `persistence`, `service`,
-`controller`, `rest` oder `listener`, ein Changeset oder ein Message-Bundle geändert wird.
+`controller`, `graphql`, `rest` oder `listener`, ein Changeset, ein GraphQL-Schema oder ein Message-Bundle
+geändert wird.
 
 ---
 
@@ -136,6 +137,51 @@ Repository und `Specification`.
 - CSRF tokens: **never** add an explicit `<input type=”hidden” th:name=”${_csrf.parameterName}” th:value=”${_csrf.token}” />`. Spring Security 6 uses deferred tokens — `_csrf` is null when accessed directly in templates. Using `th:action=”@{...}”` is sufficient; Thymeleaf's `CsrfRequestDataValueProcessor` injects the token automatically into every POST form.
 - **UiState parameters are named `f…`** (→ ADR-0022): see [ui](ui.md), „UiState: Filter Parameters Carry the Prefix `f`“, before registering a key.
 - **No direct `HttpSession` access** (→ ADR-0013): new Spring MVC controllers must not read or write `HttpSession` for UI state. Pass state via URL parameters, path variables, or form fields. User selection state (e.g. currently selected employee contract) must be expressed in the URL or stored in a cookie — not the session. The rule has no exceptions left (ADR-0013, Nachtrag 2026-09-18); a new one must be documented with a comment `// ADR-0013: Ausnahme — [Begründung]` at the point of use.
+
+---
+
+## GraphQL Resolver Pattern (→ ADR-0044)
+
+Die GraphQL-Schnittstelle `/api/graphql` (#1532) ist eine weitere HTTP-Grenze. Die Regeln der
+Controller gelten, dazu:
+
+- **Ort:** Resolver liegen im Unterpaket `graphql` ihres Moduls (`dailyreport.graphql.TimereportResolver`),
+  das Schema des Moduls in `src/main/resources/graphql/<modul>.graphqls`. Der Querschnitt
+  (Grenzwerte, Skalare, Fehlerabbildung, Begrenzung je Login, Log) liegt in `common.graphql`.
+- **Wer eine Kante definiert, bestimmt die Importrichtung.** `order` darf `employee` importieren,
+  also erweitert `order.graphqls` den Typ `Me` (`extend type Me { bookableSuborders … }`), nicht
+  umgekehrt. Ein Typ aus einem anderen Modul kommt als Quelle der `@SchemaMapping`-Methode an.
+- **`@Authorized` an jeder Methode** mit `@QueryMapping`, `@MutationMapping`, `@SchemaMapping` oder
+  `@BatchMapping`, mit derselben Anforderung wie der Controller der entsprechenden Seite
+  (`ArchitectureTest.everyGraphqlMappingIsAuthorized`). Die Regel, wer was sieht, bleibt im Service.
+  Eine Kopie im Resolver driftet.
+- **Synchron:** Ein Resolver liefert kein `Callable`, `Future`, `CompletableFuture`, `Mono` oder
+  `Flux` (`ArchitectureTest.graphqlResolversAreSynchronous`). Nur im Thread der Anfrage tragen
+  `AuthorizedUser`, `AuthorizedEmployee` und Open-in-View.
+- **Keine Entität im Schema.** Der Resolver bildet DTOs auf Records ab. Bezüge zu fremden Objekten
+  sind Verweistypen (`PersonRef`, `SuborderRef`). Für Aufrufe in fremde Module gilt ADR-0021:
+  Services liefern dort Werte. Wo eine fehlt, bekommt das besitzende Modul eine Methode, die einen
+  Record liefert (`EmployeeorderService.getBookableSuborders`).
+- **Batch-Laden** über `@BatchMapping` und eine Service-Methode, die eine Menge ids auf einmal
+  beantwortet. Nie direkt ein Repository: das umginge den Service und seine Regel.
+- **Fehler** sind `ErrorCodeException`s wie überall. `GraphqlExceptionResolver` bildet sie auf
+  `extensions.code` und `classification` ab: `AA-0001` wird `UNAUTHORIZED`, sonstige
+  Berechtigungsfehler `FORBIDDEN`, `XX-0003` und `XX-0006` `CONFLICT`, `*_NOT_FOUND` `NOT_FOUND`,
+  der Rest `BAD_REQUEST`. Nicht gefunden und nicht sichtbar sehen gleich aus.
+- **Ändern nennt die Version, Anlegen den Idempotenzschlüssel.** Eine ändernde Mutation nimmt die
+  `version`, die der Aufrufer gelesen hat, und reicht sie an den Service weiter. Eine anlegende
+  Mutation legt den Service-Aufruf in `IdempotencyService.createOnce`, und der Service liefert die id.
+- **Jede Mutation loggt** Kürzel, Operation und betroffene id. Den `operationName` jeder Anfrage
+  loggt `GraphqlRequestLogInterceptor`.
+- **Schema:**
+  - Feldnamen englisch, Beschreibungen deutsch, an jedem Typ, Feld, Argument und Enum-Wert
+    (`GraphqlSchemaContractTest`).
+  - Das Schema wächst nur durch Hinzufügen. Was wegfallen soll, bekommt `@deprecated(reason: "…")`
+    mit dem Ersatz.
+  - Nach einer Änderung den veröffentlichten Stand neu schreiben:
+    `jenv exec ./mvnw test -Dtest=GraphqlSchemaContractTest -Dgraphql.publishSchema=true`. Der
+    Unterschied in `docs/graphql-schema.graphqls` gehört in den Review.
+- Nutzer finden Token, Grenzwerte, Fehlercodes und Beispiele in [`docs/graphql-api.md`](../graphql-api.md).
 
 ---
 
