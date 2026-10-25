@@ -22,9 +22,6 @@ server:
     # (Matrix, Massenänderung) lokal mit HTTP 400 fehl und sind nicht messbar
     max-parameter-count: 2000
 spring:
-  graphql:
-    graphiql:
-      enabled: false               # GraphiQL only locally (#1532)
   devtools:
     # devtools setzt sonst spring.thymeleaf.cache=false und spring.web.resources.cache.period=0
     # und verfälscht damit jede Messung. Greift aus dieser Datei, weil

@@ -37,7 +37,7 @@ public class LocalDevOpenApiConfiguration {
     StringBuilder openApiDescription = new StringBuilder();
     openApiDescription.append("DEVELOPMENT Rest API of the SALAT microservice (").append(formattedBuildTime);
     gitProperties.ifPresent(entries -> openApiDescription.append(" / ").append(entries.getCommitId()));
-    openApiDescription.append(")\n");
+    openApiDescription.append(")\n").append(AzureEasyAuthOpenApiConfiguration.GRAPHQL_HINT);
 
     SecurityScheme loginName = new SecurityScheme();
     loginName.setType(Type.APIKEY);

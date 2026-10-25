@@ -4,9 +4,6 @@ server:
       allow-caching: true
       cache-ttl: 1m
 spring:
-  graphql:
-    graphiql:
-      enabled: false               # GraphiQL only locally (#1532)
   web:
     resources:
       cache:

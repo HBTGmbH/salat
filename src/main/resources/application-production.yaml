@@ -5,9 +5,6 @@ server:
       cache-ttl: 1d
     max-parameter-count: 2000
 spring:
-  graphql:
-    graphiql:
-      enabled: false               # GraphiQL only locally (#1532)
   web:
     resources:
       cache:
