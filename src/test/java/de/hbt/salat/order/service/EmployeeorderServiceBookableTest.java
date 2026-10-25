@@ -26,6 +26,7 @@ import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.persistence.EmployeeorderDAO;
+import de.hbt.salat.order.persistence.EmployeeorderRepository;
 
 /** What a contract may book on as values (#1532): the condition of the booking form, under the read rule. */
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +39,8 @@ class EmployeeorderServiceBookableTest {
 
   @Mock
   private EmployeeorderDAO employeeorderDAO;
+  @Mock
+  private EmployeeorderRepository employeeorderRepository;
   @Mock
   private EmployeeorderAuthorization employeeorderAuthorization;
   @InjectMocks
@@ -58,7 +61,7 @@ class EmployeeorderServiceBookableTest {
     var later = employeeorder(2L, suborder(20L, "02"), DAY.plusDays(1));
     var second = employeeorder(3L, suborder(30L, "03"), DAY.minusYears(1));
     var first = employeeorder(1L, suborder(10L, "01"), DAY);
-    when(employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(CONTRACT_ID, DAY))
+    when(employeeorderRepository.findBookableCandidates(CONTRACT_ID, DAY))
         .thenReturn(List.of(later, second, first));
 
     assertThat(employeeorderService.getBookableSuborders(CONTRACT_ID, DAY))
@@ -71,7 +74,7 @@ class EmployeeorderServiceBookableTest {
   @Test
   void an_employee_order_the_user_may_not_read_does_not_count() {
     var foreign = employeeorder(1L, suborder(10L, "01"), DAY);
-    when(employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(CONTRACT_ID, DAY)).thenReturn(List.of(foreign));
+    when(employeeorderRepository.findBookableCandidates(CONTRACT_ID, DAY)).thenReturn(List.of(foreign));
     when(employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(CONTRACT_ID, 10L, DAY)).thenReturn(foreign);
     when(employeeorderAuthorization.isAuthorized(foreign, AccessLevel.READ)).thenReturn(false);
 

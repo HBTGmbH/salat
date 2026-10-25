@@ -55,4 +55,22 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
       """)
   List<Long> findBookableSuborderIds(long employeecontractId, Collection<Long> suborderIds, LocalDate date);
 
+
+  /**
+   * The employee orders of the contract that have begun by the day and not ended before it, with contract,
+   * suborder, its parent, order and customer — what deciding and labelling what the contract may book on reads
+   * (#1532). One query instead of loading each of them per row.
+   */
+  @Query("""
+      select eo from Employeeorder eo
+      join fetch eo.employeecontract
+      join fetch eo.suborder s
+      left join fetch s.parentorder
+      join fetch s.customerorder co
+      join fetch co.customer
+      where eo.employeecontract.id = :employeecontractId
+        and eo.fromDate <= :date and (eo.untilDate is null or eo.untilDate >= :date)
+      """)
+  List<Employeeorder> findBookableCandidates(@Param("employeecontractId") long employeecontractId,
+      @Param("date") LocalDate date);
 }
