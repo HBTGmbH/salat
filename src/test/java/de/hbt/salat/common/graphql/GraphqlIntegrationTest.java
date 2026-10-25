@@ -296,6 +296,70 @@ class GraphqlIntegrationTest {
     assertThat(body.at("/errors/0/message").asString()).isNotBlank();
   }
 
+  // --- the order history (#1534) ---
+
+  private static final String HISTORY = """
+      query($employee: ID) {
+        orderHistory(employeeId: $employee) {
+          from until bookedDays duration
+          customerorder {
+            id sign description validFrom validUntil debitHours debitHoursUnit hidden tags
+            executionResponsibles { sign } contractResponsible { sign }
+            customer { shortName name address hidden segment { id name } }
+          }
+        }
+      }""";
+
+  @Test
+  void the_order_history_shows_the_own_periods_with_order_and_customer() throws Exception {
+    createBooking("Für die Historie");
+
+    var history = json(post(EMPLOYEE, HISTORY, Map.of())).at("/data/orderHistory");
+
+    assertThat(history.size()).isPositive();
+    var entry = history.at("/0");
+    assertThat(LocalDate.parse(entry.at("/from").asString())).isBeforeOrEqualTo(DAY);
+    assertThat(entry.at("/bookedDays").asInt()).isPositive();
+    var order = entry.at("/customerorder");
+    assertThat(order.at("/sign").asString()).isEqualTo("ABC-12");
+    assertThat(order.at("/description").asString()).isEqualTo("Wartung und Betrieb");
+    assertThat(order.at("/validFrom").asString()).isEqualTo("2000-01-01");
+    assertThat(order.at("/validUntil").isNull()).isTrue();
+    assertThat(order.at("/debitHours").asString()).isEqualTo("PT0S");
+    assertThat(order.at("/hidden").asBoolean()).isFalse();
+    assertThat(order.at("/executionResponsibles/0/sign").asString()).isEqualTo(MANAGER);
+    assertThat(order.at("/contractResponsible/sign").asString()).isEqualTo(MANAGER);
+    assertThat(order.at("/customer/shortName").asString()).startsWith("GQL");
+    assertThat(order.at("/customer/address").asString()).isEqualTo("Musterstraße 1");
+    assertThat(order.at("/customer/segment").isNull()).isTrue();
+  }
+
+  @Test
+  void the_manager_sees_the_order_history_of_an_employee() throws Exception {
+    createBooking("Für die Historie der Geschäftsführung");
+
+    var history = json(post(MANAGER, HISTORY, Map.of("employee", employeeIdOf(EMPLOYEE)))).at("/data/orderHistory");
+
+    assertThat(history.size()).isPositive();
+  }
+
+  @Test
+  void an_employee_does_not_see_the_order_history_of_another() throws Exception {
+    createBooking("Nicht für die Historie anderer");
+
+    var body = json(post(OTHER_EMPLOYEE, HISTORY, Map.of("employee", employeeIdOf(EMPLOYEE))));
+
+    assertThat(body.at("/errors").isMissingNode()).isTrue();
+    assertThat(body.at("/data/orderHistory").size()).isZero();
+  }
+
+  @Test
+  void a_restricted_login_gets_no_order_history() throws Exception {
+    var body = json(post(RESTRICTED, HISTORY, Map.of()));
+
+    assertThat(body.at("/errors/0/extensions/code").asString()).isEqualTo("AA-0002");
+  }
+
   @Test
   void a_page_larger_than_the_limit_is_refused() throws Exception {
     var filter = new HashMap<>(listFilter(null));

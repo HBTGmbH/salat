@@ -111,6 +111,36 @@ public class TimereportListDAO {
   }
 
   /**
+   * The days a person booked on, per customer order, with what was booked there that day — under the same visibility
+   * as the list, over all time (#1534). What the order history cuts into periods; one row per order and day, so a
+   * person with years of bookings yields a few thousand rows rather than every booking.
+   */
+  public List<BookedDay> findBookedDays(long employeeId, TimereportVisibility visibility) {
+    var builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<BookedDay> query = builder.createQuery(BookedDay.class);
+    var root = query.from(Timereport.class);
+    var joins = BookingJoins.of(root);
+    var refdate = root.join(Timereport_.referenceday).get(Referenceday_.refdate);
+    var customerorderId = joins.customerorder().get(Customerorder_.id);
+    var customerorderSign = joins.customerorder().get(Customerorder_.sign);
+    var suborder = joins.suborder();
+    var dimensions = new Dimensions(joins.employee().get(Employee_.id), customerorderId, suborder.get(Suborder_.id),
+        suborder.get(Suborder_.invoice), refdate);
+
+    var predicates = new ArrayList<Predicate>();
+    predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
+    predicates.add(builder.equal(dimensions.employeeId(), employeeId));
+    visibilityCondition(visibility, dimensions, builder).ifPresent(predicates::add);
+
+    query.select(builder.construct(BookedDay.class, customerorderId, customerorderSign, refdate,
+            builder.sum(root.get(Timereport_.duration).as(Long.class))))
+        .where(predicates.toArray(Predicate[]::new))
+        .groupBy(customerorderId, customerorderSign, refdate)
+        .orderBy(builder.asc(customerorderId), builder.asc(refdate));
+    return entityManager.createQuery(query).getResultList();
+  }
+
+  /**
    * Count, duration, billable duration and the spread over employees and orders — in one statement over all hits, not
    * only over the rows shown.
    */
@@ -359,6 +389,18 @@ public class TimereportListDAO {
   public record FilterValues(List<Long> employeeIds, List<Long> customerIds, List<Long> customerOrderIds,
                              List<Long> suborderIds) {
 
+  }
+
+  /**
+   * What a person booked on one customer order on one day.
+   *
+   * @param minutes the sum of the bookings, in minutes as the column stores them
+   */
+  public record BookedDay(Long customerorderId, String customerorderSign, LocalDate day, Long minutes) {
+
+    public Duration duration() {
+      return Duration.ofMinutes(minutes == null ? 0L : minutes);
+    }
   }
 
   /** One combination the query finds; the four lists are taken apart from these in Java. */

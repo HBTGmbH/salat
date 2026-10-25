@@ -20,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.common.GlobalConstants;
+import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility.Clause;
@@ -28,6 +29,7 @@ import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Sort;
+import de.hbt.salat.dailyreport.persistence.TimereportListDAO.BookedDay;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Customerorder;
@@ -40,8 +42,8 @@ import de.hbt.salat.order.domain.SurchargeKind;
  *
  * <p>The answer must stay the one the bookings give: an employee order is only a cheaper way to the same question,
  * so one that nobody booked on offers nothing, and the visibility restricts it exactly as it restricts a booking —
- * clause by clause, never as a cross product. The last two tests hold the rows and the sums to the same condition,
- * because the booking query and this one share it.
+ * clause by clause, never as a cross product. Further tests hold the rows, the sums and the booked days of the order
+ * history (#1534) to the same condition, because all of these queries share it.
  */
 @DataJpaTest
 @Import({AuthorizedUserAuditorAware.class, TimereportListDAO.class})
@@ -247,6 +249,72 @@ class TimereportListFilterValuesTest {
     assertThat(timereportListDAO.findTotals(withTags(tags, List.of()), ownBookingsOf(reader)).count()).isZero();
   }
 
+  /**
+   * A rule valid on part of the period covers the bookings on its own days only (#1534), in the rows as in the sums —
+   * what {@code isAuthorized} says of each of them.
+   */
+  @Test
+  void a_clause_with_days_covers_the_bookings_on_those_days_only() {
+    var colleague = employeecontract("bbb");
+    var order = customerorder(customer, "ALPHA");
+    var suborder = suborder(order, "ALPHA/01", true);
+    var onTheDay = book(colleague, suborder, DAY, 1);
+    book(colleague, suborder, DAY.plusDays(5), 1);
+
+    var visibility = TimereportVisibility.of(List.of(
+        new Clause(Set.of(), Set.of(order.getId()), Set.of(), false, new LocalDateRange(DAY, DAY))));
+
+    assertThat(timereportListDAO.findRows(wholeMonth(), visibility))
+        .extracting(Timereport::getId)
+        .containsExactly(onTheDay.getId());
+    assertThat(timereportListDAO.findTotals(wholeMonth(), visibility).count()).isEqualTo(1);
+    assertThat(timereportListDAO.findBookedDays(colleague.getEmployee().getId(), visibility))
+        .extracting(BookedDay::day)
+        .containsExactly(DAY);
+  }
+
+  /**
+   * The order history reads one row per order and day (#1534): the bookings of the person on any suborder of the
+   * order that day, summed; deleted bookings and those of other people stay out.
+   */
+  @Test
+  void the_booked_days_sum_the_bookings_of_the_person_per_order_and_day() {
+    var person = employeecontract("aaa");
+    var colleague = employeecontract("bbb");
+    var alpha = customerorder(customer, "ALPHA");
+    var beta = customerorder(otherCustomer, "BETA");
+    var alpha1 = suborder(alpha, "ALPHA/01", true);
+    var alpha2 = suborder(alpha, "ALPHA/02", false);
+    book(person, alpha1, DAY, 1);
+    book(person, alpha2, DAY, 2);
+    book(person, alpha1, DAY.plusDays(1), 3);
+    book(person, suborder(beta, "BETA/01", true), DAY, 4);
+    book(colleague, alpha1, DAY, 5);
+    timereportRepository.delete(book(person, alpha1, DAY.plusDays(2), 6));
+    entityManager.flush();
+    entityManager.clear();
+
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all());
+
+    assertThat(days).containsExactly(
+        new BookedDay(alpha.getId(), "ALPHA", DAY, 180L),
+        new BookedDay(alpha.getId(), "ALPHA", DAY.plusDays(1), 180L),
+        new BookedDay(beta.getId(), "BETA", DAY, 240L));
+  }
+
+  @Test
+  void the_booked_days_follow_the_visibility() {
+    var person = employeecontract("aaa");
+    var visibleOrder = customerorder(customer, "ALPHA");
+    book(person, suborder(visibleOrder, "ALPHA/01", true), DAY, 1);
+    book(person, suborder(customerorder(otherCustomer, "BETA"), "BETA/01", true), DAY, 1);
+
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(),
+        TimereportVisibility.of(List.of(Clause.forOrders(Set.of(visibleOrder.getId())))));
+
+    assertThat(days).extracting(BookedDay::customerorderId).containsExactly(visibleOrder.getId());
+  }
+
   private static TimereportListFilter withTags(TagSelection tags, List<Long> employeeIds) {
     return new TimereportListFilter(employeeIds, List.of(), List.of(), List.of(), List.of(), true, tags,
         DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false,
@@ -264,12 +332,16 @@ class TimereportListFilterValuesTest {
   }
 
   private Timereport book(Employeecontract contract, Suborder suborder) {
-    var referenceday = referenceday(entityManager, DAY);
+    return book(contract, suborder, DAY, 1);
+  }
+
+  private Timereport book(Employeecontract contract, Suborder suborder, LocalDate day, int hours) {
+    var referenceday = referenceday(entityManager, day);
 
     var timereport = new Timereport();
     timereport.setEmployeeorder(employeeorder(contract, suborder));
     timereport.setReferenceday(referenceday);
-    timereport.setDuration(Duration.ofHours(1));
+    timereport.setDuration(Duration.ofHours(hours));
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setTaskdescription("");
     timereport.setTraining(false);

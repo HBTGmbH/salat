@@ -38,6 +38,7 @@ import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.CustomerorderDTO;
 import de.hbt.salat.order.domain.CustomerorderOption;
+import de.hbt.salat.order.domain.CustomerorderReadModel;
 import de.hbt.salat.order.domain.CustomerorderResponsible;
 import de.hbt.salat.order.domain.CustomerorderSearchRow;
 import de.hbt.salat.order.domain.TicketReferencePolicy;
@@ -223,6 +224,19 @@ public class CustomerorderService {
   @Transactional(readOnly = true)
   public List<CustomerorderOption> getCustomerorderOptionsByIds(Collection<Long> ids) {
     return ids.isEmpty() ? List.of() : customerorderRepository.findOptionsByIdIn(ids);
+  }
+
+  /**
+   * The orders with these ids as values, by id — an id without an order is missing (#1534, ADR-0021). Every order asked
+   * for is answered: the caller names the orders, and says why the user may read them.
+   */
+  @Transactional(readOnly = true)
+  public Map<Long, CustomerorderReadModel> getCustomerorderReadModelsByIds(Collection<Long> ids) {
+    if (ids.isEmpty()) {
+      return Map.of();
+    }
+    return customerorderRepository.findWithCustomerByIdIn(ids).stream()
+        .collect(Collectors.toMap(Customerorder::getId, CustomerorderReadModel::of));
   }
 
   /** The signs of the orders with these ids, by id — an id without an order is missing (#1212). */

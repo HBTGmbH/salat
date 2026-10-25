@@ -58,6 +58,18 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   long countDialogOrders(String pattern, boolean everyCustomer, Collection<Long> customerIds, boolean everyOrder,
       Collection<Long> customerorderIds);
 
+  /**
+   * The orders with these ids together with customer, segment and the employee responsible for the contract, in one
+   * statement (#1534); responsibles and tags follow in one batch each. The login of that employee comes along: an
+   * employee reads it eagerly, and without the join it is one statement per person.
+   */
+  @Query("""
+      select c from Customerorder c join fetch c.customer cu left join fetch cu.segment
+      left join fetch c.respEmpHbtContract r left join fetch r.salatUser
+      where c.id in :ids
+      """)
+  List<Customerorder> findWithCustomerByIdIn(Collection<Long> ids);
+
   @Query("select c from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
   List<Customerorder> findAllByResponsibleHbt(long responsibleHbtId);
 
