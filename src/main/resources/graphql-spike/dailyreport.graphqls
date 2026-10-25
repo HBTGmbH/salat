@@ -1,0 +1,54 @@
+# GraphQL-Spike (#1532), Modul dailyreport. Es darf order importieren, also definiert es auch die Kante zum
+# Unterauftrag (Konzept 3.7).
+
+extend type Query {
+  "Die eigenen Buchungen eines Zeitraums, höchstens 366 Tage"
+  timereports(from: Date!, until: Date!): [Timereport!]!
+}
+
+extend type Mutation {
+  "Legt eine Buchung an. Eine Wiederholung mit demselben Schlüssel und derselben Eingabe legt nichts an."
+  createTimereport(idempotencyKey: ID!, input: CreateTimereportInput!): TimereportPayload!
+  "Ändert eine eigene Buchung; nicht angegebene Felder bleiben, wie sie sind."
+  updateTimereport(id: ID!, input: UpdateTimereportInput!): TimereportPayload!
+}
+
+type Timereport {
+  id: ID!
+  date: Date!
+  duration: Duration!
+  taskDescription: String
+  ticketReferences: [String!]!
+  "open, committed oder closed, wie in der Datenbank"
+  status: String!
+  training: Boolean!
+  employeeorderId: ID!
+  "Verweis auf den Unterauftrag, für alle Buchungen einer Antwort in einem Schritt geladen"
+  suborder: SuborderRef!
+}
+
+type SuborderRef {
+  id: ID!
+  completeOrderSign: String!
+}
+
+input CreateTimereportInput {
+  employeeorderId: ID!
+  date: Date!
+  duration: Duration!
+  taskDescription: String!
+  ticketReferences: [String!]
+}
+
+input UpdateTimereportInput {
+  date: Date
+  duration: Duration
+  taskDescription: String
+  ticketReferences: [String!]
+}
+
+type TimereportPayload {
+  timereport: Timereport!
+  "true, wenn die Antwort aus einem früheren Aufruf mit demselben Schlüssel stammt"
+  replayed: Boolean!
+}

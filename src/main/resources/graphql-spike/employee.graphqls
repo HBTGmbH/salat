@@ -1,0 +1,18 @@
+# GraphQL-Spike (#1532), Modul employee.
+
+extend type Query {
+  "Die angemeldete Person mit ihrem laufenden Vertrag"
+  me: Me!
+}
+
+type Me {
+  employeeId: ID!
+  sign: String!
+  name: String!
+  "Die Berechtigungsstufe des Logins (ADM, BL, PV, BO, MA, RESTRICTED)"
+  status: String!
+  "Die Rollen, die sich aus der Stufe ergeben"
+  roles: [String!]!
+  "Der heute gültige Vertrag, null ohne einen"
+  currentContractId: ID
+}

@@ -1,0 +1,11 @@
+# GraphQL-Spike (#1532): gemeinsame Skalare und die Wurzeltypen, die die Module erweitern.
+
+"Ein Tag nach ISO-8601, z. B. 2026-10-26"
+scalar Date
+
+"Eine Dauer nach ISO-8601, z. B. PT1H30M"
+scalar Duration
+
+type Query
+
+type Mutation
