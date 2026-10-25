@@ -348,12 +348,13 @@ public class TimereportService {
     }
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
-    if (given.expectedVersion() != null && !given.expectedVersion().equals(timereport.getUpdatecounter())) {
-      throw new BusinessRuleException(XX_CONCURRENT_MODIFICATION);
-    }
     if (!force) {
       // the booking as it stands must be writable, not only the one it becomes (#1125)
       timereportAuthorization.checkAuthorized(Collections.singletonList(timereport), AccessLevel.WRITE);
+    }
+    // after the right to write: who may not write gets that answer, not a conflict that invites a retry
+    if (given.expectedVersion() != null && !given.expectedVersion().equals(timereport.getUpdatecounter())) {
+      throw new BusinessRuleException(XX_CONCURRENT_MODIFICATION);
     }
     LocalDate previousDate = timereport.getReferenceday().getRefdate();
     Employeecontract previousContract = timereport.getEmployeecontract();

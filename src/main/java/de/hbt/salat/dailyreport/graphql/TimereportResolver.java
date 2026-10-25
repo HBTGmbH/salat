@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -97,17 +96,18 @@ class TimereportResolver {
   /** One call for all bookings of a response, instead of one per booking (concept 6.2). */
   @BatchMapping(typeName = "Timereport")
   @Authorized
-  Map<TimereportView, SuborderRef> suborder(List<TimereportView> timereports) {
+  List<SuborderRef> suborder(List<TimereportView> timereports) {
     Set<Long> ids = timereports.stream().map(TimereportView::suborderId).collect(Collectors.toSet());
     Map<Long, SuborderLocation> locations = suborderService.getSuborderLocationsByIds(ids);
-    return timereports.stream().collect(Collectors.toMap(Function.identity(),
-        timereport -> SuborderRef.of(locations.get(timereport.suborderId())), (a, b) -> a));
+    // in the order of the bookings, which is how the batch is answered
+    return timereports.stream().map(timereport -> SuborderRef.of(locations.get(timereport.suborderId()))).toList();
   }
 
   @MutationMapping
   @Authorized
   TimereportPayload createTimereport(@Argument String idempotencyKey, @Argument CreateTimereportInput input) {
-    var outcome = idempotencyService.createOnce("createTimereport", idempotencyKey, input, () -> create(input));
+    var outcome = idempotencyService.createOnce("createTimereport", idempotencyKey, input.canonical(),
+        () -> create(input));
     log.info("GraphQL createTimereport {} by {}{}", outcome.id(), authorizedEmployee.getSign(),
         outcome.replayed() ? " (repeated)" : "");
     return new TimereportPayload(read(outcome.id()), outcome.replayed());
@@ -177,7 +177,7 @@ class TimereportResolver {
     return timereport;
   }
 
-  /** The booking as the schema shows it; equal by id, so that the batch loader can key by it. */
+  /** The booking as the schema shows it. */
   public record TimereportView(long id, int version, LocalDate date, Duration duration, String taskDescription,
       List<String> ticketReferences, String status, boolean training, long employeeorderId, long suborderId,
       PersonRef employee) {
@@ -187,16 +187,6 @@ class TimereportResolver {
           dto.getDuration(), dto.getTaskdescription(), dto.getTicketReferences(), dto.getStatus(), dto.isTraining(),
           dto.getEmployeeorderId(), dto.getSuborderId(),
           new PersonRef(dto.getEmployeeId(), dto.getEmployeeSign(), dto.getEmployeeName()));
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      return other instanceof TimereportView view && view.id == id;
-    }
-
-    @Override
-    public int hashCode() {
-      return Long.hashCode(id);
     }
   }
 
@@ -220,6 +210,16 @@ class TimereportResolver {
 
   public record CreateTimereportInput(long suborderId, LocalDate date, Duration duration, String taskDescription,
       List<String> ticketReferences) {
+
+    /**
+     * What makes two calls the same booking, for the idempotency key: no references and an empty list are the same.
+     * A new optional field enters only where it changes the booking, with its default left out, so that a repetition
+     * across a deployment keeps its hash.
+     */
+    List<Object> canonical() {
+      return List.of(suborderId, date, duration, taskDescription,
+          ticketReferences == null ? List.of() : ticketReferences);
+    }
   }
 
   public record UpdateTimereportInput(LocalDate date, Duration duration, String taskDescription,

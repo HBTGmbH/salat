@@ -75,7 +75,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-liquibase</artifactId>
     </dependency>
-    <!-- GraphQL-Spike (#1532): nur mit dem Profil graphql-spike aktiv, siehe de.hbt.salat.graphqlspike -->
+    <!-- GraphQL-Schnittstelle /api/graphql (#1532, ADR-0044) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-graphql</artifactId>

@@ -13,6 +13,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import de.hbt.salat.common.domain.IdempotencyEntry;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.persistence.IdempotencyEntryRepository;
 import de.hbt.salat.common.util.ClockProvider;
 import de.hbt.salat.common.web.LoginSignProvider;
@@ -32,6 +33,9 @@ import de.hbt.salat.common.web.LoginSignProvider;
 @Service
 public class IdempotencyService {
 
+  /** The length of the column; a longer key would end in a constraint violation instead of an answer. */
+  public static final int MAX_KEY_LENGTH = 100;
+
   private final IdempotencyEntryRepository repository;
   private final LoginSignProvider loginSignProvider;
   private final TransactionTemplate transactionTemplate;
@@ -45,10 +49,16 @@ public class IdempotencyService {
 
   /**
    * @param operation what is created, e.g. {@code createTimereport}
-   * @param input     the arguments, compared through their {@code toString} — a record of plain values
+   * @param input     what makes two calls the same, in a canonical form compared through its {@code toString}: a
+   *                  list of plain values in a fixed order, with an absent optional value in the form it defaults to.
+   *                  A new optional argument enters it only where it changes what is created, and then so that an
+   *                  input without it keeps its hash — otherwise a repetition across a deployment is refused.
    * @param create    creates and returns the id; it runs in the transaction the key is written in
    */
   public Outcome createOnce(String operation, String idempotencyKey, Object input, LongSupplier create) {
+    if (idempotencyKey == null || idempotencyKey.isEmpty() || idempotencyKey.length() > MAX_KEY_LENGTH) {
+      throw new InvalidDataException(ErrorCode.XX_IDEMPOTENCY_KEY_INVALID, MAX_KEY_LENGTH);
+    }
     Long userId = loginSignProvider.getEffectiveUserId();
     if (userId == null) {
       throw new IllegalStateException("An idempotency key needs a login");
@@ -78,7 +88,7 @@ public class IdempotencyService {
     return new Outcome(entry.getResultId(), true);
   }
 
-  private static String hash(String operation, Object input) {
+  static String hash(String operation, Object input) {
     try {
       byte[] digest = MessageDigest.getInstance("SHA-256")
           .digest((operation + "\n" + input).getBytes(StandardCharsets.UTF_8));

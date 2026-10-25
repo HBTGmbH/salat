@@ -31,6 +31,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
+import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.Referenceday;
@@ -165,6 +166,19 @@ class TimereportServiceVersionAndIdsTest {
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(XX_CONCURRENT_MODIFICATION));
     verify(timereportRepository, never()).save(any());
     assertThat(timereport.getDuration()).isEqualTo(Duration.ofHours(1));
+  }
+
+  /** Who may not write gets that answer first, not a conflict that invites reading again and retrying. */
+  @Test
+  void without_the_right_to_write_a_stale_version_is_refused_for_the_right_not_as_a_conflict() {
+    var timereport = givenBooking();
+    ReflectionTestUtils.setField(timereport, "updatecounter", 4);
+    when(authorizedUser.getEffectiveLoginSign()).thenReturn("somebody-else");
+
+    assertThatThrownBy(() -> timereportService.updateTimereport(TIMEREPORT_ID, 3, EMPLOYEE_CONTRACT_ID,
+        EMPLOYEE_ORDER_ID, DAY, "neu", List.of(), false, null, Duration.ofHours(2)))
+        .isInstanceOf(AuthorizationException.class);
+    verify(timereportRepository, never()).save(any());
   }
 
   private Timereport saved() {
