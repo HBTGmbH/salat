@@ -27,6 +27,8 @@ mit Liste oder Filter geändert wird. Wie die Oberfläche heute aussieht, beschr
     `.page-body` — bei einer Liste das erste Feld des Filters. An der Navigation vorbei führt der
     Sprunglink in `layout/base.html`. Einzelheiten in [`docs/ui-style-guide.md`
     §3.1](../ui-style-guide.md).
+  - **Ein Flag in einer Liste ist ein Symbol mit Tooltip, nie ein Text** (#1536): ein Badge mit
+    Bootstrap-Icon und `title`, wie das Auge für „Verbergen“ oder `bi-percent` für den Zeitzuschlag.
   - **„Verbergen“ ist immer der letzte Schalter eines Formulars** (#1536). Ein neuer Schalter einer
     Stammdatenart kommt davor, nie dahinter.
   - **A rationale belongs in a parser comment `<!--/* … */-->`** (#1056). Thymeleaf removes that form
