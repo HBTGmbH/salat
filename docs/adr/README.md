@@ -57,3 +57,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0041](0041-benachrichtigungen-zentral-mit-kanaelen-je-art.md) | Benachrichtigungen: ein Weg für Glocke und Mail, die Art bestimmt die Kanäle | Proposed | 2026-10-21 |
 | [0042](0042-tags-eigenes-modul-join-tabelle-je-typ.md) | Tags: eigenes Modul, je getaggtem Typ eine Join-Tabelle mit Fremdschlüsseln | Proposed | 2026-10-21 |
 | [0043](0043-was-ein-achievement-belohnt.md) | Was ein Achievement belohnt: eigenes Verhalten, ehrlich gebucht, für alle erreichbar | Proposed | 2026-10-22 |
+| [0044](0044-graphql-schnittstelle-mit-spring-for-graphql.md) | GraphQL-Schnittstelle mit Spring for GraphQL: Resolver als Controller, Regel im Service | Proposed | 2026-10-25 |
