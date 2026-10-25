@@ -1064,7 +1064,7 @@ nicht reichen.
 
 | Teil | Ort |
 |---|---|
-| Resolver je Modul, ohne Entität | `de.hbt.salat.graphqlspike.employee` (`me`), `…dailyreport` (Buchungen lesen, anlegen, ändern) |
+| Resolver je Modul, ohne Entität | `de.hbt.salat.graphqlspike.employee` (`me`), `…dailyreport` (eigene Buchungen lesen, anlegen, ändern; Buchungsliste nach Sichtbarkeit) |
 | Querschnitt | `…graphqlspike.config`: Profilprüfung, Zugangsfilter, Skalare `Date`/`Duration`, Grenzwerte für fachliche Abfragen, Fehlerabbildung, Idempotenz im Speicher |
 | Messfelder | `…graphqlspike.probe`: Laufzeitkontext je Ausführungsweg, `@Authorized` an Resolver und Service |
 | Schema | `src/main/resources/graphql-spike/*.graphqls`, eine Datei je Modul, `extend type` wie in 3.7 |
@@ -1096,7 +1096,7 @@ entfallen.
 | … über `Callable` | **gar nicht ausführbar.** Spring for GraphQL braucht dafür Boots `applicationTaskExecutor`. Salat hat keinen: Der Async-Executor kommt aus `SalatApplication` als `AsyncConfigurer`, nicht als Bohne, und die Bohne `etlTaskExecutor` hält Boot davon ab, einen eigenen anzulegen. Das Feld endet in `INTERNAL_ERROR` | `a_callable_finds_no_executor` |
 | Open-in-View | trägt im Thread der Anfrage. Die Resolver arbeiten trotzdem nur auf DTOs und Records. Das hält `noEntityCrossesAModuleBoundaryThroughAService` ohne neuen Eintrag im Store, weil der Spike als eigenes Modul gar keine Entität bekommt | Build |
 | `AuthorizationAspect` | **greift auf beiden Ebenen:** `@Authorized(requiresManager = true)` an der Resolver-Methode (Ebene 1) und an der gerufenen Service-Methode (Ebene 2). Die Ablehnung kommt als `FORBIDDEN` mit `AA-0004` und deutschem Text an | `the_authorization_aspect_guards_…` |
-| `ConcurrentModificationAspect` | **nicht nachweisbar**, weil es nichts zu prüfen gibt: Keine Methode von `TimereportService` nimmt eine erwartete Version entgegen (10.4) | — |
+| `ConcurrentModificationAspect` | **nicht nachweisbar**, weil es nichts zu prüfen gibt: Keine Methode von `TimereportService` nimmt eine erwartete Version entgegen (10.5) | — |
 
 **Folgerung:** Resolver bleiben synchron. Kein `Callable`, kein `CompletableFuture`, kein eigener
 Thread in der GraphQL-Schicht. `ArchitectureTest` hält das fest, sobald die Schicht übernommen
@@ -1144,7 +1144,25 @@ wird. Soll später doch etwas asynchron laufen, braucht es einen Executor, der R
   Neustart, läuft nie ab und wird nicht in der Transaktion des Anlegens geschrieben. Für die
   Übernahme bleibt es bei der Tabelle aus 6.5.
 
-### 10.4 Befunde an den Services
+### 10.4 Fremde Buchungen: dieselbe Sichtbarkeit wie die Buchungsliste
+
+Nachträglich ergänzt: `timereportList(filter)` ruft `TimereportListService.search`, also dieselbe
+Methode wie `TimereportListController`, mit derselben Anforderung (`requireUnrestricted`). Der
+Filter verweist über ids auf Person, Kunde, Auftrag und Unterauftrag. Der Service-Record
+`TimereportListFilter` und das Ergebnis `TimereportListResult` kommen ohne Entität aus, sodass der
+Spike sie als fremdes Modul nutzen darf. `Timereport` trägt dazu `employee: PersonRef`.
+
+- Der Manager sieht die Buchungen einer Person, eine andere Mitarbeiterin sieht sie nicht, auch
+  nicht als Summe. Ohne Personenfilter sieht jede nur ihre eigenen. Die GraphQL-Schicht enthält dafür
+  keine Regel. Es ist `TimereportVisibility`, wie in der Oberfläche (3.4, 5.3: „dieselbe Regel, von
+  beiden Grenzen aus gerufen").
+- Die Seitengröße ist auf 200 begrenzt (6.2), die Summen zählen alle Treffer, wie in der Liste.
+- **Fallstrick:** `TimereportListFilter` ist der Filter der Seite und verlangt auch Teile, die die
+  Schnittstelle nicht kennt (`tags`, `sort`, `ticketDescendants`). Ein `null` für `tags` endete in
+  einer `NullPointerException` im Service. Eine Übernahme braucht eine Fabrikmethode für einen Filter
+  ohne diese Teile.
+
+### 10.5 Befunde an den Services
 
 Der Spike umgeht sie, statt die Fachmodule zu ändern. Jeder Punkt ist eine Voraussetzung für die
 Stufe in Klammern:
@@ -1160,14 +1178,14 @@ Stufe in Klammern:
 
 Für das Lesen der eigenen Daten (Stufe 1) reichen die Services bis auf den Vertrag schon heute.
 
-### 10.5 Aufwand und Abhängigkeiten
+### 10.6 Aufwand und Abhängigkeiten
 
 - Rund 1.500 Zeilen einschließlich Schema, Tests und Messfeldern. Die Resolver selbst sind dünn,
   der größte Teil ist Querschnitt (Fehler, Grenzwerte, Skalare), der einmal entsteht.
 - Neue Laufzeitabhängigkeiten aus dem Boot-BOM: `spring-graphql` 2.0.5, `graphql-java` 25.0,
   `java-dataloader` 6.0.0, `context-propagation` 1.2.1.
 
-### 10.6 Empfehlung
+### 10.7 Empfehlung
 
 **Das Konzept bestätigen, mit vier Ergänzungen,** und danach das ADR schreiben:
 
@@ -1177,7 +1195,7 @@ Für das Lesen der eigenen Daten (Stufe 1) reichen die Services bis auf den Vert
 3. **6.2 wird präzisiert:** Tiefe und Komplexität gelten für fachliche Abfragen. Reine
    Introspection begrenzt `GoodFaithIntrospection` (10.3), sonst schließt 6.2 die Werkzeuge aus 6.1
    aus.
-4. **Stufe 2 bekommt die Befunde aus 10.4 als Voraussetzung**, wie Stufe 3c die Stufen 3a und 3b:
+4. **Stufe 2 bekommt die Befunde aus 10.5 als Voraussetzung**, wie Stufe 3c die Stufen 3a und 3b:
    Version in DTO und Service, Rückgabe der ids beim Anlegen, Mitarbeiterauftrag als Wert, teilweises
    Ändern.
 

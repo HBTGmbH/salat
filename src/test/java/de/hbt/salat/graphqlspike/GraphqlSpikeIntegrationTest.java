@@ -17,6 +17,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import graphql.introspection.IntrospectionQuery;
@@ -62,7 +64,7 @@ import de.hbt.salat.order.persistence.SuborderRepository;
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
     "spring.datasource.url=jdbc:h2:mem:salat-1532;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
     "management.health.mail.enabled=false",
-    "salat.graphql-spike.allowed-signs=gqma, gqbl"
+    "salat.graphql-spike.allowed-signs=gqma, gqbl, gqm2"
 })
 @ActiveProfiles({"unittest", "local", "graphql-spike"})
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -71,6 +73,8 @@ class GraphqlSpikeIntegrationTest {
   private static final String EMPLOYEE = "gqma";
   private static final String MANAGER = "gqbl";
   private static final String NOT_ENABLED = "gqno";
+  /** A second employee without any role, to show what she does not see. */
+  private static final String OTHER_EMPLOYEE = "gqm2";
   /** A Wednesday in the past, inside the year a booking may lie in. */
   private static final LocalDate DAY = LocalDate.now().minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.WEDNESDAY));
 
@@ -111,6 +115,7 @@ class GraphqlSpikeIntegrationTest {
     employeeContract = contractOf(EMPLOYEE, EMPLOYEE_STATUS_MA);
     contractOf(MANAGER, EMPLOYEE_STATUS_BL);
     contractOf(NOT_ENABLED, EMPLOYEE_STATUS_MA);
+    contractOf(OTHER_EMPLOYEE, EMPLOYEE_STATUS_MA);
     var existing = employeeorderRepository.findAll().iterator();
     if (existing.hasNext()) {
       employeeorderId = existing.next().getId();
@@ -354,6 +359,82 @@ class GraphqlSpikeIntegrationTest {
     assertThat(refused.at("/errors/0/extensions/code").asString()).startsWith("TR-");
     assertThat(refused.at("/errors/0/message").asString()).isNotBlank();
     assertThat(refused.at("/data/updateTimereport").isMissingNode() || refused.at("/data").isNull()).isTrue();
+  }
+
+  // --- the booking list (TimereportVisibility, #1092) ---
+
+  @Test
+  void the_manager_sees_the_bookings_of_an_employee() throws Exception {
+    String id = createBooking("Für die Liste");
+
+    var page = json(post(MANAGER, LIST, Map.of("filter", listFilter(employeeIdOf(EMPLOYEE))))).at("/data/timereportList");
+
+    assertThat(ids(page)).contains(id);
+    assertThat(page.at("/items").valueStream().map(item -> item.at("/employee/sign").asString())).containsOnly(EMPLOYEE);
+    assertThat(page.at("/totalCount").asInt()).isEqualTo(page.at("/items").size());
+  }
+
+  @Test
+  void an_employee_does_not_see_the_bookings_of_another() throws Exception {
+    createBooking("Nicht für andere");
+
+    var page = json(post(OTHER_EMPLOYEE, LIST, Map.of("filter", listFilter(employeeIdOf(EMPLOYEE))))).at("/data/timereportList");
+
+    assertThat(page.at("/items").size()).isZero();
+    assertThat(page.at("/totalCount").asInt()).isZero();
+  }
+
+  @Test
+  void without_a_person_in_the_filter_an_employee_sees_only_her_own() throws Exception {
+    String id = createBooking("Eigene");
+
+    var own = json(post(EMPLOYEE, LIST, Map.of("filter", listFilter(null)))).at("/data/timereportList");
+    var other = json(post(OTHER_EMPLOYEE, LIST, Map.of("filter", listFilter(null)))).at("/data/timereportList");
+
+    assertThat(ids(own)).contains(id);
+    assertThat(own.at("/items").valueStream().map(item -> item.at("/employee/sign").asString())).containsOnly(EMPLOYEE);
+    assertThat(ids(other)).doesNotContain(id);
+  }
+
+  @Test
+  void a_page_larger_than_the_limit_is_refused() throws Exception {
+    var filter = new HashMap<>(listFilter(null));
+    filter.put("limit", 201);
+
+    var body = json(post(MANAGER, LIST, Map.of("filter", filter)));
+
+    assertThat(body.at("/errors/0/extensions/code").asString()).isEqualTo("SPIKE-0002");
+  }
+
+  private static final String LIST = """
+      query($filter: TimereportListFilter!) {
+        timereportList(filter: $filter) {
+          totalCount totalDuration truncated items { id employee { id sign name } suborder { completeOrderSign } }
+        }
+      }""";
+
+  private Map<String, Object> listFilter(Long employeeId) {
+    return employeeId == null
+        ? Map.of("from", DAY.toString(), "until", DAY.toString())
+        : Map.of("from", DAY.toString(), "until", DAY.toString(), "employeeIds", List.of(employeeId));
+  }
+
+  private long employeeIdOf(String sign) {
+    return employeeRepository.findBySign(sign).orElseThrow().getId();
+  }
+
+  private static List<String> ids(JsonNode page) {
+    return page.at("/items").valueStream().map(item -> item.at("/id").asString()).toList();
+  }
+
+  private String createBooking(String description) throws Exception {
+    var body = json(post(EMPLOYEE, """
+        mutation($key: ID!, $eo: ID!, $day: Date!, $text: String!) {
+          createTimereport(idempotencyKey: $key, input: {
+            employeeorderId: $eo, date: $day, duration: "PT30M", taskDescription: $text }) { timereport { id } }
+        }""", Map.of("key", UUID.randomUUID().toString(), "eo", employeeorderId, "day", DAY.toString(),
+        "text", description)));
+    return body.at("/data/createTimereport/timereport/id").asString();
   }
 
   // --- helpers ---
