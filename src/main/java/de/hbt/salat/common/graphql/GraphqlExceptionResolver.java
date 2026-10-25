@@ -1,6 +1,7 @@
 package de.hbt.salat.common.graphql;
 
 import static de.hbt.salat.common.exception.ErrorCode.AA_REQUIRED;
+import static de.hbt.salat.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 import static de.hbt.salat.common.exception.ErrorCode.XX_IDEMPOTENCY_KEY_REUSED;
 
@@ -38,6 +39,12 @@ class GraphqlExceptionResolver extends DataFetcherExceptionResolverAdapter {
   static final ErrorClassification CONFLICT = ErrorClassification.errorClassification("CONFLICT");
 
   private static final Set<ErrorCode> CONFLICTS = Set.of(XX_CONCURRENT_MODIFICATION, XX_IDEMPOTENCY_KEY_REUSED);
+  /**
+   * Asked for by id and not found, or not readable — the two look the same (concept 6.3). Named one by one: the
+   * classification is part of the interface, and a code that only says a rule is not met (no contract on the day,
+   * no employee order on the suborder) is a {@code BAD_REQUEST}, whatever its constant is called.
+   */
+  static final Set<ErrorCode> NOT_FOUND = Set.of(TR_TIME_REPORT_NOT_FOUND);
 
   private final ErrorCodeViewHelper errorCodeViewHelper;
 
@@ -79,8 +86,7 @@ class GraphqlExceptionResolver extends DataFetcherExceptionResolverAdapter {
     if (CONFLICTS.contains(first)) {
       return CONFLICT;
     }
-    // not found and not readable look the same (concept 6.3): the services answer both with *_NOT_FOUND
-    if (first.name().endsWith("_NOT_FOUND")) {
+    if (NOT_FOUND.contains(first)) {
       return ErrorType.NOT_FOUND;
     }
     return ErrorType.BAD_REQUEST;

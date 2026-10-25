@@ -180,12 +180,7 @@ public class WorkingdayService {
 
   /** {@link #markNotWorked(Employeecontract, LocalDate)} für einen Aufrufer, der den Vertrag nur über die id kennt (#1532). */
   public void markNotWorked(long employeecontractId, LocalDate date) {
-    var workingday = workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId)
-        .orElseGet(() -> newWorkingday(employeecontractId, date));
-    workingday.setType(NOT_WORKED);
-    workingday.setStartTime(LocalTime.MIDNIGHT);
-    workingday.setBreakLength(Duration.ZERO);
-    upsertWorkingday(workingday);
+    markNotWorked(contractReferences.employeecontract(employeecontractId), date);
   }
 
   private Workingday newWorkingday(long employeecontractId, LocalDate date) {
