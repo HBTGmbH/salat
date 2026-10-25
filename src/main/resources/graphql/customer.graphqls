@@ -1,0 +1,26 @@
+# Modul customer. Die Typen beschreiben Kunden als Werte; einen eigenen Einstieg gibt es noch nicht, sie kommen über
+# die Aufträge.
+
+"Ein Kunde, mit dem, was die Kundenliste zeigt"
+type Customer {
+  "Die id"
+  id: ID!
+  "Das Kürzel, an dem der Kunde in jeder Auswahl erkannt wird"
+  shortName: String!
+  "Der Name"
+  name: String
+  "Die Adresse"
+  address: String
+  "Ob der Kunde in Auswahllisten ausgeblendet ist"
+  hidden: Boolean!
+  "Das Kundensegment, null ohne eines"
+  segment: CustomerSegment
+}
+
+"Ein Kundensegment"
+type CustomerSegment {
+  "Die id"
+  id: ID!
+  "Der Name"
+  name: String!
+}

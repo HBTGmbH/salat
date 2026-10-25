@@ -8,7 +8,9 @@ Version 1 umfasst:
 - die eigene Person und worauf sie buchen darf,
 - die eigenen Buchungen und die Buchungsliste nach denselben Sichtbarkeitsregeln wie die Seite,
 - Buchungen anlegen, ändern und löschen,
-- den eigenen Arbeitstag lesen und pflegen.
+- den eigenen Arbeitstag lesen und pflegen,
+- die Historie, in welchen Zeiträumen eine Person auf welchem Auftrag gearbeitet hat, mit Auftrag,
+  Kunde und Kundensegment (#1534).
 
 Stammdaten, Freigabe und Abnahme kommen später (Konzept [`ideen/graphql-konzept.md`](ideen/graphql-konzept.md), Abschnitt 8).
 
@@ -175,6 +177,20 @@ das Kürzel:
   timereportList(filter: { from: "2026-10-01", until: "2026-10-31", employeeIds: [42], limit: 50 }) {
     totalCount totalDuration truncated
     items { date duration employee { sign } suborder { completeOrderSign } taskDescription }
+  }
+}
+```
+
+In welchen Zeiträumen hat eine Person auf welchem Auftrag gearbeitet? Ohne `employeeId` die eigene
+Historie. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag. Liegen 30 Tage oder mehr ohne
+Buchung dazwischen, beginnt ein neuer Zeitraum, und der Auftrag steht ein weiteres Mal in der Liste.
+Es zählen nur die Buchungen, die man auch in der Buchungsliste sieht:
+
+```graphql
+{
+  orderHistory(employeeId: 42) {
+    from until bookedDays duration
+    customerorder { sign description customer { shortName segment { name } } }
   }
 }
 ```

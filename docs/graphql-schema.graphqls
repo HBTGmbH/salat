@@ -12,6 +12,58 @@ type BookableSuborder {
   suborderId: ID!
 }
 
+"Ein Kunde, mit dem, was die Kundenliste zeigt"
+type Customer {
+  "Die Adresse"
+  address: String
+  "Ob der Kunde in Auswahllisten ausgeblendet ist"
+  hidden: Boolean!
+  "Die id"
+  id: ID!
+  "Der Name"
+  name: String
+  "Das Kundensegment, null ohne eines"
+  segment: CustomerSegment
+  "Das Kürzel, an dem der Kunde in jeder Auswahl erkannt wird"
+  shortName: String!
+}
+
+"Ein Kundensegment"
+type CustomerSegment {
+  "Die id"
+  id: ID!
+  "Der Name"
+  name: String!
+}
+
+"Ein Auftrag, mit dem, was die Auftragsliste allen zeigt, die sie öffnen dürfen"
+type Customerorder {
+  "Die oder der Verantwortliche bei HBT für den Vertrag, null ohne"
+  contractResponsible: PersonRef
+  "Der Kunde"
+  customer: Customer!
+  "Die Soll-Stunden, PT0S ohne Vorgabe"
+  debitHours: Duration!
+  "Worauf sich die Soll-Stunden beziehen, null ohne Angabe"
+  debitHoursUnit: DebitHoursUnit
+  "Die Beschreibung"
+  description: String
+  "Die Verantwortlichen bei HBT für die Durchführung"
+  executionResponsibles: [PersonRef!]!
+  "Ob der Auftrag in Auswahllisten ausgeblendet ist"
+  hidden: Boolean!
+  "Die id"
+  id: ID!
+  "Das Zeichen, z. B. ABC-12"
+  sign: String!
+  "Die Namen der Tags"
+  tags: [String!]!
+  "Der erste Tag der Gültigkeit"
+  validFrom: Date!
+  "Der letzte Tag der Gültigkeit, null für unbefristet"
+  validUntil: Date
+}
+
 "Die Antwort auf Löschen"
 type DeletePayload {
   "Die id des gelöschten Objekts"
@@ -95,6 +147,20 @@ type Mutation {
   ): Workingday!
 }
 
+"Ein Zeitraum, in dem eine Person auf einem Auftrag gearbeitet hat"
+type OrderHistoryEntry {
+  "An wie vielen Tagen im Zeitraum gebucht wurde"
+  bookedDays: Int!
+  "Der Auftrag, auf dessen Unteraufträge gebucht wurde"
+  customerorder: Customerorder!
+  "Die Summe der Buchungen im Zeitraum"
+  duration: Duration!
+  "Der erste Buchungstag des Zeitraums"
+  from: Date!
+  "Der letzte Buchungstag des Zeitraums"
+  until: Date!
+}
+
 "Eine Person, mit id, Kürzel und Name"
 type PersonRef {
   "Die id der Person"
@@ -109,6 +175,19 @@ type PersonRef {
 type Query {
   "Die angemeldete Person mit ihrem laufenden Vertrag"
   me: Me!
+  """
+  In welchen Zeiträumen eine Person auf welchem Auftrag gearbeitet hat, aus ihren Buchungen über die ganze Zeit. Ein
+  Zeitraum reicht vom ersten bis zum letzten Buchungstag; liegen dazwischen 30 Tage oder mehr ohne Buchung auf dem
+  Auftrag, beginnt ein neuer Zeitraum, und der Auftrag kommt erneut vor. Es zählen nur die Buchungen, die die
+  angemeldete Person nach den Regeln der Buchungsliste sehen darf (siehe timereportList); wer für einen Auftrag
+  verantwortlich ist, sieht von anderen Personen also nur die Zeiträume auf diesem Auftrag. Eine Person ohne
+  sichtbare Buchung ergibt eine leere Liste. Der jüngste Zeitraum steht vorn. Eingeschränkte Anmeldungen bekommen
+  AA-0002.
+  """
+  orderHistory(
+    "Die Person (Me.employeeId); ohne Angabe die angemeldete"
+    employeeId: ID
+  ): [OrderHistoryEntry!]!
   "Eine Buchung, null, wenn es sie nicht gibt oder die angemeldete Person sie nicht sehen darf"
   timereport(
     "Die id der Buchung"
@@ -214,6 +293,16 @@ enum Billable {
   BILLABLE
   "Nur die übrigen"
   NOT_BILLABLE
+}
+
+"Worauf sich die Soll-Stunden eines Auftrags beziehen"
+enum DebitHoursUnit {
+  "Auf einen Monat"
+  MONTH
+  "Auf die gesamte Laufzeit"
+  TOTAL
+  "Auf ein Jahr"
+  YEAR
 }
 
 "Die Berechtigungsstufe eines Logins"

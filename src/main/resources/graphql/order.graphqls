@@ -18,3 +18,41 @@ type BookableSuborder {
   "Ob eine Buchung dort eine Beschreibung braucht"
   commentNecessary: Boolean!
 }
+
+"Ein Auftrag, mit dem, was die Auftragsliste allen zeigt, die sie öffnen dürfen"
+type Customerorder {
+  "Die id"
+  id: ID!
+  "Das Zeichen, z. B. ABC-12"
+  sign: String!
+  "Die Beschreibung"
+  description: String
+  "Der erste Tag der Gültigkeit"
+  validFrom: Date!
+  "Der letzte Tag der Gültigkeit, null für unbefristet"
+  validUntil: Date
+  "Die Soll-Stunden, PT0S ohne Vorgabe"
+  debitHours: Duration!
+  "Worauf sich die Soll-Stunden beziehen, null ohne Angabe"
+  debitHoursUnit: DebitHoursUnit
+  "Ob der Auftrag in Auswahllisten ausgeblendet ist"
+  hidden: Boolean!
+  "Die Verantwortlichen bei HBT für die Durchführung"
+  executionResponsibles: [PersonRef!]!
+  "Die oder der Verantwortliche bei HBT für den Vertrag, null ohne"
+  contractResponsible: PersonRef
+  "Die Namen der Tags"
+  tags: [String!]!
+  "Der Kunde"
+  customer: Customer!
+}
+
+"Worauf sich die Soll-Stunden eines Auftrags beziehen"
+enum DebitHoursUnit {
+  "Auf die gesamte Laufzeit"
+  TOTAL
+  "Auf ein Jahr"
+  YEAR
+  "Auf einen Monat"
+  MONTH
+}
