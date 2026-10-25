@@ -143,10 +143,15 @@ public class LocalDevSecurityConfiguration {
         super.doFilter(req, res, chain);
       }
 
+      /**
+       * The login-name of the URL, else the dev login cookie — under /api too (#1532): in an environment Easy Auth
+       * carries the browser session to /api, and GraphiQL asks /api/graphql with it. Only the page chain sets the
+       * cookie; the chain under /api reads it.
+       */
       @Override
       protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         String loginName = request.getParameter("login-name");
-        if (loginName == null && useSession) {
+        if (loginName == null) {
           loginName = readLoginCookie(request);
         }
         return loginName;
