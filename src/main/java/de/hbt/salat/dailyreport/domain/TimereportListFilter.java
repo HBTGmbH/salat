@@ -55,6 +55,22 @@ public record TimereportListFilter(
     ticketKeys = ticketKeys.stream().map(key -> key.trim().toUpperCase(Locale.ROOT)).distinct().toList();
   }
 
+  /**
+   * A filter without the parts only the page has (#1532): no ticket keys, no tags, ordered by date. For a caller
+   * that is not the booking list — the GraphQL interface — and would otherwise have to know about them; a
+   * {@code null} list means no restriction, like an empty one.
+   */
+  public static TimereportListFilter of(LocalDate from, LocalDate until, List<Long> employeeIds, List<Long> customerIds,
+      List<Long> customerOrderIds, List<Long> suborderIds, Billable billable, int maxResults) {
+    return new TimereportListFilter(orEmpty(employeeIds), orEmpty(customerIds), orEmpty(customerOrderIds),
+        orEmpty(suborderIds), List.of(), true, TagSelection.NONE, from, until,
+        billable == null ? Billable.ALL : billable, Sort.DATE, false, maxResults);
+  }
+
+  private static List<Long> orEmpty(List<Long> ids) {
+    return ids == null ? List.of() : ids;
+  }
+
   public LocalDateRange period() {
     return new LocalDateRange(from, until);
   }

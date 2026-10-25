@@ -70,6 +70,11 @@ public class TimereportDTO implements Serializable {
   private final LocalDateTime lastupdate;
   private final String createdby;
   private final String lastupdatedby;
+  /**
+   * The version the booking was read in ({@code updatecounter}): a caller that changes it later hands it back, and a
+   * booking changed in between is refused instead of overwritten (#1532). {@code null} for a booking not yet stored.
+   */
+  private final Integer version;
   private final boolean fitsToContract;
 
   public boolean matches5MinuteSchema() {
