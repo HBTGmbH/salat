@@ -1155,6 +1155,7 @@ Stufe in Klammern:
 | `createTimereports` liefert `void` | die neue Buchung über den Vergleich des Tages vorher und nachher gefunden | Stufe 2 (Idempotenz) |
 | Den Mitarbeiterauftrag zu Unterauftrag und Tag gibt es nur als Entität (`EmployeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate`) | die Eingabe nennt `employeeorderId` statt des Unterauftrags | Stufe 2 |
 | Zum laufenden Vertrag gibt es ohne Entität nur id und Zeitraum (`getEmployeecontractPeriodsBetween`) | `me` liefert nur `currentContractId` | Stufe 1 |
+| `createTimereports` bucht nur an einem Tag mit Arbeitsbeginn (`TR-0024`, `TR_WORKING_DAY_START_NULL`). Die REST-API hat dafür eigene Endpunkte (`WorkingDayRestEndpoint`, `DailyWorkingReportRestEndpoint`) | keiner: Über den Spike allein lässt sich an einem neuen Tag nicht buchen, der Arbeitsbeginn muss vorher in der Oberfläche stehen (beim Ausprobieren gefunden) | Stufe 2: `upsertWorkingday` gehört zur selben Lieferung wie `createTimereport`, nicht danach |
 | `updateTimereport` verlangt alle Felder | der Resolver füllt fehlende Felder aus der gelesenen Buchung | Stufe 2 (eine Methode für teilweises Ändern oder ein Eingabe-Record) |
 
 Für das Lesen der eigenen Daten (Stufe 1) reichen die Services bis auf den Vertrag schon heute.
