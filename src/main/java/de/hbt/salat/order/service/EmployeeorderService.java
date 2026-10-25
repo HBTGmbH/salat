@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import de.hbt.salat.auth.domain.AccessLevel;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.LocalDateRange;
@@ -38,6 +40,8 @@ import de.hbt.salat.employee.event.EmployeecontractDeleteEvent;
 import de.hbt.salat.employee.event.EmployeecontractUpdateEvent;
 import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
+import de.hbt.salat.order.auth.EmployeeorderAuthorization;
+import de.hbt.salat.order.domain.BookableSuborder;
 import de.hbt.salat.order.domain.Employeeorder;
 import de.hbt.salat.order.domain.EmployeeorderListItemDTO;
 import de.hbt.salat.order.domain.NewEmployeeorder;
@@ -67,6 +71,36 @@ public class EmployeeorderService {
   private final EmployeecontractService employeecontractService;
   private final SpecialOrders specialOrders;
   private final EmployeecontractReferences employeecontractReferences;
+  private final EmployeeorderAuthorization employeeorderAuthorization;
+
+  /**
+   * The id of the employee order a booking of the contract on the suborder goes to on the day (#1532), empty where
+   * there is none or the user may not read it — the question of
+   * {@link #getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate} answered as a value, for a module that refers to
+   * the employee order by id (ADR-0021).
+   */
+  @Transactional(readOnly = true)
+  public Optional<Long> getEmployeeorderId(long employeecontractId, long suborderId, LocalDate date) {
+    return Optional.ofNullable(
+            employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontractId, suborderId, date))
+        .filter(employeeorder -> employeeorderAuthorization.isAuthorized(employeeorder, AccessLevel.READ))
+        .map(Employeeorder::getId);
+  }
+
+  /**
+   * What the contract may book on on the day (#1532): every suborder with an employee order valid then, the
+   * condition of the booking form, ordered by sign. Only the employee orders the user may read count — for the own
+   * contract that is all of them. One query for the contract, not one per suborder.
+   */
+  @Transactional(readOnly = true)
+  public List<BookableSuborder> getBookableSuborders(long employeecontractId, LocalDate date) {
+    return employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(employeecontractId, date).stream()
+        .filter(employeeorder -> employeeorder.isValidAt(date))
+        .filter(employeeorder -> employeeorderAuthorization.isAuthorized(employeeorder, AccessLevel.READ))
+        .map(BookableSuborder::of)
+        .sorted(Comparator.comparing(BookableSuborder::completeOrderSign))
+        .toList();
+  }
 
   /**
    * Which of the given suborders the contract may book on the day: those with an employee order valid

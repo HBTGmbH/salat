@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.Workingday;
+import de.hbt.salat.dailyreport.persistence.ContractReferences;
 import de.hbt.salat.dailyreport.persistence.PublicholidayRepository;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
@@ -92,7 +94,8 @@ class WorkingdayReportPeriodTest {
   void setUp() {
     workingdayService = new WorkingdayService(workingdayRepository, publicholidayRepository, timereportDAO,
         authorizedUser, workingdayDAO, authService, employeecontractService, dailyPreferenceService,
-        transactionManager, new TimereportAuthorization(authorizedUser, authService, employeecontractService));
+        transactionManager, new TimereportAuthorization(authorizedUser, authService, employeecontractService),
+        mock(ContractReferences.class));
 
     contract = new Employeecontract();
     setField(contract, "id", CONTRACT_ID);

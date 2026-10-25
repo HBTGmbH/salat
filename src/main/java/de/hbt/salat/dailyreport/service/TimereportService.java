@@ -50,6 +50,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_WORKING_DAY_NOT_WORKED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_WORKING_DAY_START_NULL;
+import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 import static de.hbt.salat.common.exception.ErrorCode.TR_YEAR_BUDGET_EXCEEDED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_YEAR_OUT_OF_RANGE;
 import static de.hbt.salat.common.exception.ErrorCode.WD_BEGIN_TIME_MISSING;
@@ -167,9 +168,9 @@ public class TimereportService {
         .orElse(false);
   }
 
-  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+  public List<Long> createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, Duration duration, int numberOfSerialDays) throws ErrorCodeException {
-    createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, null, trainingFlag, duration,
+    return createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, null, trainingFlag, duration,
         numberOfSerialDays);
   }
 
@@ -177,18 +178,20 @@ public class TimereportService {
    * @param ticketReferences stored under the rule of {@link TicketReferences}; how many the suborder
    *                         allows is checked on saving (#1326)
    */
-  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+  public List<Long> createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       List<String> ticketReferences, boolean trainingFlag, Duration duration, int numberOfSerialDays)
       throws ErrorCodeException {
-    createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, ticketReferences, trainingFlag,
+    return createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, ticketReferences, trainingFlag,
         SurchargeChoice.NONE, duration, numberOfSerialDays);
   }
 
   /**
    * @param surcharge the time surcharge the bookings are flagged with (#1469); see {@link SurchargeChoice}
    *                  for where the rate comes from
+   * @return the ids of the bookings created, one per serial day in their order — what a caller needs to answer
+   *         with the new booking or to remember it for a repetition (#1532)
    */
-  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+  public List<Long> createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       List<String> ticketReferences, boolean trainingFlag, SurchargeChoice surcharge, Duration duration,
       int numberOfSerialDays) throws ErrorCodeException {
 
@@ -217,6 +220,7 @@ public class TimereportService {
     }
 
     checkAndSaveTimereports(timereportsToSave);
+    return timereportsToSave.stream().map(Timereport::getId).toList();
   }
 
   /**
@@ -302,22 +306,38 @@ public class TimereportService {
   }
 
   /**
+   * The booking form's variant for a caller that read the booking earlier and must not overwrite a change made since
+   * (#1532): {@code expectedVersion} is the {@link TimereportDTO#getVersion() version} it read. A booking changed in
+   * between is refused with {@code XX-0003}, the answer a concurrent change within one transaction gets as well.
+   */
+  public void updateTimereport(long timereportId, int expectedVersion, long employeeContractId, long employeeOrderId,
+      LocalDate referenceDay, String taskDescription, List<String> ticketReferences, boolean trainingFlag,
+      SurchargeKind surchargeKind, Duration duration) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, duration,
+        false, GivenFields.form(ticketReferences, surchargeKind).expecting(expectedVersion));
+  }
+
+  /**
    * What a caller of {@link #updateTimereport} says beyond the fields every caller knows: the ticket references
    * (#982) and the time surcharge flag (#1469). A field not given keeps what the booking has — moving,
    * shifting and the inline edit know neither.
    */
   private record GivenFields(boolean ticketReferencesGiven, List<String> ticketReferences,
-                             boolean surchargeKindGiven, SurchargeKind surchargeKind) {
+                             boolean surchargeKindGiven, SurchargeKind surchargeKind, Integer expectedVersion) {
 
-    static final GivenFields NONE = new GivenFields(false, null, false, null);
+    static final GivenFields NONE = new GivenFields(false, null, false, null, null);
 
     /** An empty or missing list clears the references, which is what an emptied form field means. */
     static GivenFields ticketReferences(List<String> ticketReferences) {
-      return new GivenFields(true, ticketReferences == null ? List.of() : ticketReferences, false, null);
+      return new GivenFields(true, ticketReferences == null ? List.of() : ticketReferences, false, null, null);
     }
 
     static GivenFields form(List<String> ticketReferences, SurchargeKind surchargeKind) {
-      return new GivenFields(true, ticketReferences == null ? List.of() : ticketReferences, true, surchargeKind);
+      return new GivenFields(true, ticketReferences == null ? List.of() : ticketReferences, true, surchargeKind, null);
+    }
+
+    GivenFields expecting(int version) {
+      return new GivenFields(ticketReferencesGiven, ticketReferences, surchargeKindGiven, surchargeKind, version);
     }
   }
 
@@ -328,6 +348,9 @@ public class TimereportService {
     }
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    if (given.expectedVersion() != null && !given.expectedVersion().equals(timereport.getUpdatecounter())) {
+      throw new BusinessRuleException(XX_CONCURRENT_MODIFICATION);
+    }
     if (!force) {
       // the booking as it stands must be writable, not only the one it becomes (#1125)
       timereportAuthorization.checkAuthorized(Collections.singletonList(timereport), AccessLevel.WRITE);

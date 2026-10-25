@@ -46,6 +46,8 @@ import de.hbt.salat.dailyreport.domain.ReportPeriod;
 import de.hbt.salat.dailyreport.domain.TargetEnd;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
+import de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType;
+import de.hbt.salat.dailyreport.persistence.ContractReferences;
 import de.hbt.salat.dailyreport.persistence.PublicholidayRepository;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
@@ -76,6 +78,7 @@ public class WorkingdayService {
   private final DailyPreferenceService dailyPreferenceService;
   private final PlatformTransactionManager transactionManager;
   private final TimereportAuthorization timereportAuthorization;
+  private final ContractReferences contractReferences;
 
   /**
    * The time the working day started: the stored value when there is one, otherwise the configured
@@ -155,6 +158,41 @@ public class WorkingdayService {
     } catch (DataIntegrityViolationException conflict) {
       inOwnTransaction(() -> takeOverConcurrentlyCreatedWorkingday(workingday, conflict));
     }
+  }
+
+  /**
+   * {@link #upsertWorkingday(Workingday)} für einen Aufrufer, der den Vertrag nur über die id kennt (#1532): der
+   * vorhandene Arbeitstag wird fortgeschrieben, ein fehlender angelegt. Dieselben Prüfungen wie in der Tagesansicht.
+   *
+   * @param type {@code null} lässt die Art des Tages, wie sie ist
+   */
+  public void upsertWorkingday(long employeecontractId, LocalDate date, LocalTime startTime, Duration breakLength,
+      WorkingDayType type) {
+    var workingday = workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId)
+        .orElseGet(() -> newWorkingday(employeecontractId, date));
+    workingday.setStartTime(startTime);
+    workingday.setBreakLength(breakLength);
+    if (type != null) {
+      workingday.setType(type);
+    }
+    upsertWorkingday(workingday);
+  }
+
+  /** {@link #markNotWorked(Employeecontract, LocalDate)} für einen Aufrufer, der den Vertrag nur über die id kennt (#1532). */
+  public void markNotWorked(long employeecontractId, LocalDate date) {
+    var workingday = workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId)
+        .orElseGet(() -> newWorkingday(employeecontractId, date));
+    workingday.setType(NOT_WORKED);
+    workingday.setStartTime(LocalTime.MIDNIGHT);
+    workingday.setBreakLength(Duration.ZERO);
+    upsertWorkingday(workingday);
+  }
+
+  private Workingday newWorkingday(long employeecontractId, LocalDate date) {
+    var created = new Workingday();
+    created.setEmployeecontract(contractReferences.employeecontract(employeecontractId));
+    created.setRefday(date);
+    return created;
   }
 
   /**
