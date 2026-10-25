@@ -225,6 +225,55 @@ class TimereportVisibilityConsistencyTest {
     assertBothAgree(false);
   }
 
+  /**
+   * A rule counts for the bookings on the days it is valid (#1534). Its validity overlaps the period of the list, but
+   * ends the day before the booking — the list used to show the booking anyway, and opening it then failed.
+   */
+  @Test
+  void ruleEndedBeforeTheBookingDoesNotCoverIt() {
+    givenRuleValid("C" + CUSTOMER_ORDER_ID, of(2011, 1, 1), of(2011, 1, 1));
+
+    assertBothAgree(false);
+  }
+
+  @Test
+  void ruleStartingAfterTheBookingDoesNotCoverIt() {
+    givenRuleValid("E" + BOOKING_EMPLOYEE_ID + ":*", of(2011, 1, 3), null);
+
+    assertBothAgree(false);
+  }
+
+  @Test
+  void ruleValidOnTheBookingDayCoversIt() {
+    givenRuleValid("S" + SUBORDER_ID, of(2011, 1, 2), of(2011, 1, 2));
+
+    assertBothAgree(true);
+  }
+
+  /** The wildcard grants the category as a whole — but only on the days it is valid, like any other rule. */
+  @Test
+  void wildcardRuleEndedBeforeTheBookingDoesNotCoverIt() {
+    givenRuleValid("*", of(2011, 1, 1), of(2011, 1, 1));
+
+    assertBothAgree(false);
+  }
+
+  @Test
+  void wildcardRuleValidOnTheBookingDayCoversIt() {
+    givenRuleValid("*", of(2011, 1, 2), of(2011, 1, 2));
+
+    assertBothAgree(true);
+  }
+
+  /** Without a period — what the order history asks (#1534) — a rule still counts only on its own days. */
+  @Test
+  void withoutAPeriodARuleCoversOnlyItsOwnDays() {
+    givenRuleValid("C" + CUSTOMER_ORDER_ID, of(2011, 1, 1), of(2011, 1, 1));
+
+    assertThat(visibilityService.anyTime().covers(timereport)).isFalse();
+    assertThat(timereportAuthorization.isAuthorized(timereport, READ)).isFalse();
+  }
+
   private void assertBothAgree(boolean expected) {
     var visibility = visibilityService.forPeriod(PERIOD);
     var authorized = timereportAuthorization.isAuthorized(timereport, READ);
@@ -240,6 +289,17 @@ class TimereportVisibilityConsistencyTest {
 
   private void givenRule(String objectId) {
     givenRules(objectId);
+  }
+
+  private void givenRuleValid(String objectId, LocalDate from, LocalDate until) {
+    var rule = new AuthorizationRule();
+    rule.setCategory("TIMEREPORT");
+    rule.setGranteeId(Set.of(String.valueOf(READER_LOGIN_ID)));
+    rule.setObjectId(Set.of(objectId));
+    rule.setAccessLevels(Set.of(READ));
+    rule.setValidFrom(from);
+    rule.setValidUntil(until);
+    when(authorizationRuleRepository.findAll()).thenReturn(List.of(rule));
   }
 
   private void givenRules(String... objectIds) {

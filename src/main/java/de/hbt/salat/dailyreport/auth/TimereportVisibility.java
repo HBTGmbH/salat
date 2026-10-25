@@ -1,7 +1,9 @@
 package de.hbt.salat.dailyreport.auth;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
+import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.dailyreport.domain.Timereport;
 
 /**
@@ -48,15 +50,19 @@ public record TimereportVisibility(boolean unrestricted, List<Clause> clauses) {
 
   /**
    * One sufficient reason to see a booking. An empty set means "no restriction in this dimension", so a clause of
-   * three empty sets and {@code billableOnly = false} would cover everything — which is why only
+   * three empty sets, {@code billableOnly = false} and no days would cover everything — which is why only
    * {@link TimereportVisibilityService} creates clauses and never creates that one.
    *
    * @param employeeIds      whose bookings, empty for anybody's
    * @param customerOrderIds on which orders, empty for all
    * @param suborderIds      on which suborders, empty for all
    * @param billableOnly     restricted to bookings on a billable suborder — what backoffice gets
+   * @param days             restricted to bookings on these days, {@code null} for any day: the validity of a rule
+   *                         that does not cover the whole period asked for (#1534) — {@code isAuthorized} measures a
+   *                         rule against the day of the booking, not against the period of a list
    */
-  public record Clause(Set<Long> employeeIds, Set<Long> customerOrderIds, Set<Long> suborderIds, boolean billableOnly) {
+  public record Clause(Set<Long> employeeIds, Set<Long> customerOrderIds, Set<Long> suborderIds, boolean billableOnly,
+                       @Nullable LocalDateRange days) {
 
     public Clause {
       employeeIds = Set.copyOf(employeeIds);
@@ -65,18 +71,26 @@ public record TimereportVisibility(boolean unrestricted, List<Clause> clauses) {
     }
 
     public static Clause forEmployees(Set<Long> employeeIds) {
-      return new Clause(employeeIds, Set.of(), Set.of(), false);
+      return new Clause(employeeIds, Set.of(), Set.of(), false, null);
     }
 
     public static Clause forOrders(Set<Long> customerOrderIds) {
-      return new Clause(Set.of(), customerOrderIds, Set.of(), false);
+      return new Clause(Set.of(), customerOrderIds, Set.of(), false, null);
     }
 
     public static Clause billable() {
-      return new Clause(Set.of(), Set.of(), Set.of(), true);
+      return new Clause(Set.of(), Set.of(), Set.of(), true, null);
+    }
+
+    /** Every booking on these days — what a wildcard rule grants that is valid for part of the period only. */
+    public static Clause onDays(LocalDateRange days) {
+      return new Clause(Set.of(), Set.of(), Set.of(), false, days);
     }
 
     public boolean covers(Timereport timereport) {
+      if (days != null && !days.contains(timereport.getReferenceday().getRefdate())) {
+        return false;
+      }
       var suborder = timereport.getSuborder();
       if (!employeeIds.isEmpty()
           && !employeeIds.contains(timereport.getEmployeecontract().getEmployee().getId())) {

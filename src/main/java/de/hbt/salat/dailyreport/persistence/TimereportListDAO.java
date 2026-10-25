@@ -13,6 +13,7 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -170,7 +171,8 @@ public class TimereportListDAO {
         root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee).get(Employee_.id),
         customerorder.get(Customerorder_.id),
         suborder.get(Suborder_.id),
-        suborder.get(Suborder_.invoice));
+        suborder.get(Suborder_.invoice),
+        null);
 
     query.select(builder.construct(FilterValueRow.class,
         dimensions.employeeId(),
@@ -217,7 +219,8 @@ public class TimereportListDAO {
         joins.employee().get(Employee_.id),
         customerorder.get(Customerorder_.id),
         suborder.get(Suborder_.id),
-        suborder.get(Suborder_.invoice));
+        suborder.get(Suborder_.invoice),
+        refdate);
 
     if (!filter.employeeIds().isEmpty()) {
       predicates.add(dimensions.employeeId().in(filter.employeeIds()));
@@ -295,6 +298,14 @@ public class TimereportListDAO {
       if (clause.billableOnly()) {
         parts.add(builder.equal(dimensions.invoice(), YESNO_YES));
       }
+      if (clause.days() != null && dimensions.refdate() != null) {
+        if (!clause.days().isInfiniteFrom()) {
+          parts.add(builder.greaterThanOrEqualTo(dimensions.refdate(), clause.days().getFrom()));
+        }
+        if (!clause.days().isInfiniteUntil()) {
+          parts.add(builder.lessThanOrEqualTo(dimensions.refdate(), clause.days().getUntil()));
+        }
+      }
       clauses.add(parts.isEmpty() ? builder.conjunction() : builder.and(parts.toArray(Predicate[]::new)));
     }
     return Optional.of(builder.or(clauses.toArray(Predicate[]::new)));
@@ -316,9 +327,13 @@ public class TimereportListDAO {
     }
   }
 
-  /** Where the four dimensions of a visibility clause sit — on a booking, or on an employee order. */
+  /**
+   * Where the dimensions of a visibility clause sit — on a booking, or on an employee order. An employee order has no
+   * day, so there the days of a clause restrict nothing: the filter values may offer a value whose only bookings lie
+   * outside the days of a rule, and the list then finds nothing for it.
+   */
   private record Dimensions(Path<Long> employeeId, Path<Long> customerOrderId, Path<Long> suborderId,
-                            Path<Character> invoice) {}
+                            Path<Character> invoice, Path<LocalDate> refdate) {}
 
   private static long toLong(Object value) {
     return value == null ? 0L : ((Number) value).longValue();
