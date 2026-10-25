@@ -56,9 +56,10 @@ eine deutsche Beschreibung.
   ```
 - **Nur `POST` mit `application/json`:** Andere Formate beantwortet der Endpunkt mit 415. Das ist der
   Schutz gegen Anfragen fremder Seiten mit der Sitzung des Browsers.
-- **Lokal:** Das Kürzel steht als Parameter `login-name` in der URL, zum Beispiel
-  `POST http://localhost:8080/api/graphql?login-name=<kürzel>`. GraphiQL öffnet man dort mit
-  `http://localhost:8080/graphiql?login-name=<kürzel>&path=/api/graphql%3Flogin-name%3D<kürzel>`.
+- **Lokal:** Nach der Entwicklungsanmeldung (`?login-name=<kürzel>`) öffnet der Footer-Link GraphiQL
+  mit diesem Login. Wie in den Umgebungen trägt die Sitzung auch unter `/api`, hier über das Cookie
+  der Entwicklungsanmeldung. Skripte nennen das Kürzel als Parameter, zum Beispiel
+  `POST http://localhost:8080/api/graphql?login-name=<kürzel>`.
 
 ## Grenzwerte
 

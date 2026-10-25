@@ -180,6 +180,25 @@ class GraphqlIntegrationTest {
     }
   }
 
+  /**
+   * GraphiQL in the browser asks /api/graphql with the session of the page, not with a login-name in the URL. In an
+   * environment Easy Auth carries the session to /api; locally the dev login cookie has to do the same, or GraphiQL
+   * opened from the footer answers "Error fetching schema".
+   */
+  @Test
+  void locally_the_dev_login_cookie_of_the_browser_reaches_the_interface() throws Exception {
+    var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/graphql"))
+        .header("Content-Type", "application/json")
+        .header("Cookie", "salat_dev_login=" + EMPLOYEE)
+        .POST(BodyPublishers.ofString(JSON.writeValueAsString(Map.of("query", "{ me { sign } }"))))
+        .build();
+
+    var response = send(request);
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(json(response).at("/data/me/sign").asString()).isEqualTo(EMPLOYEE);
+  }
+
   @Test
   void me_answers_from_the_request_scoped_beans_and_the_contract_service() throws Exception {
     var me = json(post(EMPLOYEE, "{ me { employeeId sign name status roles currentContractId } }")).at("/data/me");
