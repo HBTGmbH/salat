@@ -1,10 +1,9 @@
-package de.hbt.salat.graphqlspike.employee;
+package de.hbt.salat.employee.graphql;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import de.hbt.salat.auth.domain.Authorized;
@@ -13,18 +12,16 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.EmployeecontractPeriod;
 import de.hbt.salat.employee.service.EmployeecontractService;
-import de.hbt.salat.graphqlspike.config.GraphqlSpikeConfiguration;
 
 /**
  * {@code me} (concept 4): the logged-in person from the request-scoped beans, the current contract through the
- * one entity-free method {@link EmployeecontractService} offers for it — there is no record with the contract's
- * details yet, only id and period.
+ * entity-free method {@link EmployeecontractService} offers for it — id and period, no details yet. Other modules
+ * extend the type ({@code order}: what the person may book on).
  */
 @Controller
-@Profile(GraphqlSpikeConfiguration.PROFILE)
 @Authorized
 @RequiredArgsConstructor
-class MeResolver {
+public class MeResolver {
 
   private final AuthorizedUser authorizedUser;
   private final AuthorizedEmployee authorizedEmployee;

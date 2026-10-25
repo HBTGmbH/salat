@@ -41,6 +41,8 @@ salat:
       # env: SALAT_ETL_SCHEDULER_CRON — Zeitplan des nächtlichen ETL-Laufs; "-" schaltet nur den
       # geplanten Lauf ab, von Hand lässt sich weiter einer anstoßen.
       cron: "0 0 2 * * *"
+  graphql:
+    requests-per-minute: 120         # env: SALAT_GRAPHQL_REQUESTSPERMINUTE — GraphQL requests per login and minute, above that 429
   jira:
     # env: SALAT_JIRA_ENABLED — false schaltet die JIRA-Anbindung dieser Umgebung ab (#1458): keine
     # Replikation, weder stündlich noch von Hand (Oberfläche, REST: JI-0054), kein Worklog-Abgleich,
@@ -203,6 +205,14 @@ spring:
   cache:
     jcache:
       config: classpath:ehcache.xml
+  graphql:
+    http:
+      path: /api/graphql             # the GraphQL interface (#1532, ADR-0044), in the stateless chain under /api
+    schema:
+      printer:
+        enabled: true                # the schema as a file under /api/graphql/schema
+    graphiql:
+      enabled: true                  # local only: production, staging and local-qa switch it off
   web:
     resources:
       chain:

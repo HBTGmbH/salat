@@ -326,6 +326,10 @@ public enum ErrorCode {
   XX_CONCURRENT_MODIFICATION("XX-0003", "the data was changed concurrently"),
   XX_DUPLICATE_KEY("XX-0004", "a record with the same key already exists"),
   XX_MAIL_NOT_SENT("XX-0005", "a mail that must be sent could not be sent"),
+  XX_IDEMPOTENCY_KEY_REUSED("XX-0006", "the idempotency key was already used with another input"),
+
+  GQ_PERIOD_TOO_LONG("GQ-0001", "the period is too long or starts after its end"),
+  GQ_PAGE_SIZE_OUT_OF_RANGE("GQ-0002", "the page size is out of range"),
   ;
 
   private final String code;

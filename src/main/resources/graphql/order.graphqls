@@ -1,0 +1,20 @@
+# Modul order. Es darf employee importieren, also erweitert es den Typ Me (Konzept 3.7).
+
+extend type Me {
+  "Worauf die Person an diesem Tag buchen darf: jeder Unterauftrag mit einem dann gültigen Mitarbeiterauftrag"
+  bookableSuborders("Der Tag, für den gebucht werden soll" on: Date!): [BookableSuborder!]!
+}
+
+"Ein Unterauftrag, auf den gebucht werden darf"
+type BookableSuborder {
+  "Die id des Unterauftrags, anzugeben in createTimereport"
+  suborderId: ID!
+  "Der Mitarbeiterauftrag, an dem eine Buchung dort hängt"
+  employeeorderId: ID!
+  "Das vollständige Zeichen, z. B. ABC-12/01"
+  completeOrderSign: String!
+  "Die Bezeichnung, wie das Buchungsformular sie zeigt"
+  description: String!
+  "Ob eine Buchung dort eine Beschreibung braucht"
+  commentNecessary: Boolean!
+}

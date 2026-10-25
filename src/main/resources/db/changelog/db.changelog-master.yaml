@@ -7599,3 +7599,74 @@ databaseChangeLog:
             tableName: report_definition
             columnNames: report_group_id, name
             constraintName: uk_report_definition_report_group_id_name
+
+  - changeSet:
+      id: 201
+      author: kr
+      comment: Idempotenzschluessel der GraphQL-Schnittstelle (#1532)
+      # Ein anlegender Aufruf merkt sich Schluessel und Ergebnis je Login; eine Wiederholung legt nichts
+      # zweites an (Konzept 6.5). Bewegungsdaten: der Aufraeumjob loescht nach 7 Tagen, und mit dem Login
+      # gehen seine Schluessel.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: idempotency_key
+      changes:
+        - createTable:
+            tableName: idempotency_key
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_idempotency_key
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: idempotency_key
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: operation
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: input_hash
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: result_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: idempotency_key
+            columnNames: user_id, idempotency_key
+            constraintName: uk_idempotency_key_user_key
+        - addForeignKeyConstraint:
+            baseTableName: idempotency_key
+            baseColumnNames: user_id
+            constraintName: fk_idempotency_key_user
+            referencedTableName: salat_user
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            tableName: idempotency_key
+            indexName: ix_idempotency_key_created
+            columns:
+              - column:
+                  name: created

@@ -1,0 +1,27 @@
+# Gemeinsame Skalare, Verweistypen und die Wurzeltypen, die die Module erweitern (#1532, ADR-0044).
+# Jedes Modul bringt seine eigene Datei mit; Beschreibungen sind deutsch, Feldnamen englisch.
+
+"Ein Tag nach ISO-8601, z. B. 2026-10-26"
+scalar Date
+
+"Eine Uhrzeit nach ISO-8601, z. B. 08:30"
+scalar Time
+
+"Eine Dauer nach ISO-8601, z. B. PT1H30M"
+scalar Duration
+
+"Verweis auf eine Person: nur, was die Oberfläche an derselben Stelle zeigt (Konzept 3.3)"
+type PersonRef {
+  "Die id der Person"
+  id: ID!
+  "Das Kürzel, nur zur Anzeige; Personen werden über ihre id angesprochen"
+  sign: String!
+  "Der Name"
+  name: String!
+}
+
+"Lesende Einstiege"
+type Query
+
+"Schreibende Einstiege; jede Mutation ist eine eigene Transaktion"
+type Mutation

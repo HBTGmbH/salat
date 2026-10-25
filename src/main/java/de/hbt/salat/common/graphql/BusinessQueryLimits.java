@@ -1,4 +1,4 @@
-package de.hbt.salat.graphqlspike.config;
+package de.hbt.salat.common.graphql;
 
 import graphql.ExecutionResult;
 import graphql.analysis.MaxQueryComplexityInstrumentation;
