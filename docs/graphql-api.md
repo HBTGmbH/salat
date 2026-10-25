@@ -9,7 +9,7 @@ Version 1 umfasst:
 - die eigenen Buchungen und die Buchungsliste nach denselben Sichtbarkeitsregeln wie die Seite,
 - Buchungen anlegen, ändern und löschen,
 - den eigenen Arbeitstag lesen und pflegen,
-- die Historie, in welchen Zeiträumen eine Person auf welchem Auftrag gearbeitet hat, mit Auftrag,
+- die Historie, in welchen Zeiträumen eine Person auf welchem Kundenauftrag gearbeitet hat, mit Auftrag,
   Kunde und Kundensegment (#1534).
 
 Stammdaten, Freigabe und Abnahme kommen später (Konzept [`ideen/graphql-konzept.md`](ideen/graphql-konzept.md), Abschnitt 8).
@@ -181,8 +181,9 @@ das Kürzel:
 }
 ```
 
-In welchen Zeiträumen hat eine Person auf welchem Auftrag gearbeitet? Ohne `employeeId` die eigene
-Historie. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag. Liegen 30 Tage oder mehr ohne
+In welchen Zeiträumen hat eine Person auf welchem Kundenauftrag gearbeitet? Ohne `employeeId` die
+eigene Historie. Kundenaufträge sind die mit mindestens einem fakturierbaren Unterauftrag; interne
+Aufträge, Urlaub und Krankheit stehen nicht darin. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag. Liegen 30 Tage oder mehr ohne
 Buchung dazwischen, beginnt ein neuer Zeitraum, und der Auftrag steht ein weiteres Mal in der Liste.
 Es zählen nur die Buchungen, die man auch in der Buchungsliste sieht:
 

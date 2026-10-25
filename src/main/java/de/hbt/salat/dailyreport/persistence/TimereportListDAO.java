@@ -114,6 +114,10 @@ public class TimereportListDAO {
    * The days a person booked on, per customer order, with what was booked there that day — under the same visibility
    * as the list, over all time (#1534). What the order history cuts into periods; one row per order and day, so a
    * person with years of bookings yields a few thousand rows rather than every booking.
+   *
+   * <p>Only orders for a customer count: those with at least one billable suborder. Such an order counts with all its
+   * bookings, those on its non-billable suborders included — the history tells where somebody worked, not what was
+   * invoiced.
    */
   public List<BookedDay> findBookedDays(long employeeId, TimereportVisibility visibility) {
     var builder = entityManager.getCriteriaBuilder();
@@ -127,9 +131,18 @@ public class TimereportListDAO {
     var dimensions = new Dimensions(joins.employee().get(Employee_.id), customerorderId, suborder.get(Suborder_.id),
         suborder.get(Suborder_.invoice), refdate);
 
+    // customer orders only: an order with at least one billable suborder, then with all of its bookings — internal
+    // orders, vacation and sickness have none
+    var billable = query.subquery(Long.class);
+    var billableSuborder = billable.from(Suborder.class);
+    billable.select(billableSuborder.get(Suborder_.id)).where(
+        builder.equal(billableSuborder.get(Suborder_.customerorder), joins.customerorder()),
+        builder.equal(billableSuborder.get(Suborder_.invoice), YESNO_YES));
+
     var predicates = new ArrayList<Predicate>();
     predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
     predicates.add(builder.equal(dimensions.employeeId(), employeeId));
+    predicates.add(builder.exists(billable));
     visibilityCondition(visibility, dimensions, builder).ifPresent(predicates::add);
 
     query.select(builder.construct(BookedDay.class, customerorderId, customerorderSign, refdate,
