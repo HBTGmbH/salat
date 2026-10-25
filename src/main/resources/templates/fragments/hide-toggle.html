@@ -15,7 +15,7 @@
 <!--/* Customer hide-toggle flags cell */-->
 <td class="d-none d-lg-table-cell" th:fragment="customerHideFlag">
   <!--/* #1536: the customer may act as intermediary of an order */-->
-  <span th:if="${cu.intermediary}" class="badge bg-azure-lt" th:text="#{main.customer.intermediary.text}">Vermittler</span>
+  <span th:if="${cu.intermediary}" class="badge bg-azure-lt" th:title="#{main.customer.intermediary.text}"><i class="bi bi-arrow-left-right"></i></span>
   <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
     <form th:action="@{/customers/{id}/toggle-hide(id=${cu.id})}" method="post">
       <button type="submit"
