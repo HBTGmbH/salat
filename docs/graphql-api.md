@@ -12,7 +12,9 @@ Version 1 umfasst:
 - die Historie, in welchen Zeiträumen eine Person auf welchem Kundenauftrag gearbeitet hat, mit Auftrag,
   Kunde und Kundensegment (#1534).
 
-Stammdaten, Freigabe und Abnahme kommen später (Konzept [`ideen/graphql-konzept.md`](ideen/graphql-konzept.md), Abschnitt 8).
+Auftrag, Kunde und Kundensegment gibt es bisher nur als Teil der Historie, also nur für Aufträge mit
+sichtbaren Buchungen. Eigene Einstiege in die Stammdaten, Freigabe und Abnahme kommen später (Konzept
+[`ideen/graphql-konzept.md`](ideen/graphql-konzept.md), Abschnitt 8).
 
 ## Das Schema ist die Referenz
 
@@ -183,9 +185,11 @@ das Kürzel:
 
 In welchen Zeiträumen hat eine Person auf welchem Kundenauftrag gearbeitet? Ohne `employeeId` die
 eigene Historie. Kundenaufträge sind die mit mindestens einem fakturierbaren Unterauftrag; interne
-Aufträge, Urlaub und Krankheit stehen nicht darin. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag. Liegen 30 Tage oder mehr ohne
-Buchung dazwischen, beginnt ein neuer Zeitraum, und der Auftrag steht ein weiteres Mal in der Liste.
-Es zählen nur die Buchungen, die man auch in der Buchungsliste sieht:
+Aufträge, Urlaub und Krankheit stehen nicht darin. Ein Zeitraum reicht vom ersten bis zum letzten
+Buchungstag. Liegen 30 Tage oder mehr ohne Buchung dazwischen, beginnt ein neuer Zeitraum, und der
+Auftrag steht ein weiteres Mal in der Liste. Es zählen nur die Buchungen, die man auch in der
+Buchungsliste sieht. Wer nicht alle Buchungen der Person sieht, etwa das Backoffice nur die
+fakturierbaren, bekommt kürzere Summen und kann andere Grenzen der Zeiträume sehen:
 
 ```graphql
 {
