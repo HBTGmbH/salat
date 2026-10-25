@@ -6,6 +6,7 @@ import static de.hbt.salat.common.util.DateUtils.today;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.LocalDate;
@@ -106,9 +107,15 @@ public class SuborderDAO {
         return (root, query, builder) -> builder.equal(root.join(Suborder_.customerorder).get(Customerorder_.id), customerorderId);
     }
 
+    /** Below an order of the customer, as customer or as intermediary (#1536). */
     private Specification<Suborder> matchingCustomerId(long customerId) {
-        return (root, query, builder) -> builder.equal(
-            root.join(Suborder_.customerorder).join(Customerorder_.customer).get(Customer_.id), customerId);
+        return (root, query, builder) -> {
+            var customerorder = root.join(Suborder_.customerorder);
+            return builder.or(
+                builder.equal(customerorder.join(Customerorder_.customer).get(Customer_.id), customerId),
+                builder.equal(customerorder.join(Customerorder_.intermediary, JoinType.LEFT).get(Customer_.id),
+                    customerId));
+        };
     }
 
     /**
@@ -146,7 +153,9 @@ public class SuborderDAO {
         };
         // what every row shows, in the query of the rows; the count reads the filters alone
         Specification<Suborder> withShownAssociations = byFilters.and((root, query, builder) -> {
-            root.fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
+            var customerorder = root.fetch(Suborder_.customerorder);
+            customerorder.fetch(Customerorder_.customer);
+            customerorder.fetch(Customerorder_.intermediary, JoinType.LEFT);
             return null;
         });
         var page = suborderRepository.findAll(withShownAssociations, byFilters, PageRequest.of(0, maxRows,

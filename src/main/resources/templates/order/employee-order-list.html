@@ -160,6 +160,11 @@
           <td class="d-none d-md-table-cell">
             <div th:text="${eo.customerShortName}" class="text-nowrap">Customer Short</div>
             <small class="text-muted" th:text="${eo.customerName}">Customer Name</small>
+            <!--/* #1536: who placed the order on behalf of the customer */-->
+            <div th:if="${eo.intermediaryShortName != null}" class="small mt-1">
+              <span class="text-muted" th:text="#{main.customerorder.intermediary.text} + ':'">Intermediary:</span>
+              <span th:text="${eo.intermediaryShortName}">VB</span>
+            </div>
           </td>
           <td>
             <div th:text="${eo.completeOrderSign}" class="text-nowrap">Suborder</div>

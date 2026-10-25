@@ -42,6 +42,8 @@ public class TimereportDTO implements Serializable {
   private final String suborderDescription;
   private final OrderType orderType;
   private final String customerShortname;
+  /** the short name of the order's intermediary (#1536), {@code null} for an order placed directly */
+  private final String intermediaryShortname;
   private final long customerorderId;
   private final long employeeorderId;
   private final Duration duration;

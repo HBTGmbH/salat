@@ -467,6 +467,8 @@ public class EmployeeorderService {
               eo.getSuborder().isHide() || eo.getSuborder().getCustomerorder().getHide(),
               eo.getSuborder().getCustomerorder().getCustomer().getShortname(),
               eo.getSuborder().getCustomerorder().getCustomer().getName(),
+              eo.getSuborder().getCustomerorder().getIntermediary() == null ? null
+                  : eo.getSuborder().getCustomerorder().getIntermediary().getShortname(),
               eo.getEmployeecontract().getEmployee().getName(),
               eo.getSuborder().getCompleteOrderSign(),
               eo.getSuborder().getCompleteOrderDescription(true, false),

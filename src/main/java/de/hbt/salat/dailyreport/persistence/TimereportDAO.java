@@ -570,6 +570,7 @@ public class TimereportDAO {
             .employeeName(timereport.getEmployeecontract().getEmployee().getName())
             .employeeSign(timereport.getEmployeecontract().getEmployee().getSign())
             .customerShortname(timereport.getSuborder().getCustomerorder().getCustomer().getShortname())
+            .intermediaryShortname(intermediaryShortnameOf(timereport.getSuborder().getCustomerorder()))
             .customerorderId(timereport.getSuborder().getCustomerorder().getId())
             .customerorderSign(timereport.getSuborder().getCustomerorder().getSign())
             .customerorderDescription(timereport.getSuborder().getCustomerorder().getShortdescription())
@@ -618,4 +619,8 @@ public class TimereportDAO {
         return timereportAuthorization.isAuthorized(timereport, AccessLevel.READ);
     }
 
+    /** {@code null} for an order placed directly by its customer (#1536). */
+    private static String intermediaryShortnameOf(Customerorder customerorder) {
+        return customerorder.getIntermediary() == null ? null : customerorder.getIntermediary().getShortname();
+    }
 }

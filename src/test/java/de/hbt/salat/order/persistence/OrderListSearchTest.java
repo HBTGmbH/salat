@@ -106,6 +106,44 @@ class OrderListSearchTest {
     assertThat(hits.total()).isEqualTo(1);
   }
 
+  /** A customer stands for the orders it placed as intermediary as well (#1536), in every filter by customer. */
+  @Test
+  void the_filter_by_customer_finds_the_orders_it_mediates() {
+    var intermediary = customer("VM", "Vermittlung");
+    intermediary.setIntermediary(true);
+    var mediated = order("ORD-1");
+    mediated.setIntermediary(intermediary);
+    order("ORD-2");
+    entityManager.flush();
+
+    assertThat(signs(customerorderDAO.findCustomerorders(null, null, intermediary.getId(), null, List.of(), 500)))
+        .containsExactly("ORD-1");
+    assertThat(customerorderDAO.getCustomerordersByFilters(null, null, intermediary.getId(), null))
+        .extracting(Customerorder::getSign).containsExactly("ORD-1");
+    assertThat(signs(customerorderDAO.findCustomerorders(null, null, customer.getId(), null, List.of(), 500)))
+        .containsExactly("ORD-1", "ORD-2");
+  }
+
+  /** The suborder and employee order lists filter by customer the same way (#1536). */
+  @Test
+  void the_suborder_and_employee_order_lists_find_what_the_customer_mediates() {
+    var intermediary = customer("VM", "Vermittlung");
+    intermediary.setIntermediary(true);
+    var mediated = order("ORD-1");
+    mediated.setIntermediary(intermediary);
+    var mediatedSuborder = suborder(mediated, null, "01", "Betrieb", null);
+    var direct = suborder(order("ORD-2"), null, "01", "Betrieb", null);
+    var contract = contract("abc", "Erika", "Muster");
+    employeeorder(contract, mediatedSuborder, FROM);
+    employeeorder(contract, direct, FROM);
+    entityManager.flush();
+
+    assertThat(completeSigns(suborderDAO.findSuborders(null, null, null, intermediary.getId(), null, List.of(), 500)))
+        .containsExactly("ORD-1/01");
+    assertThat(employeeorderDAO.findEmployeeorders(true, null, null, intermediary.getId(), null, null, null, 500)
+        .rows()).extracting(OrderListSearchTest::label).containsExactly("ORD-1/01 2020-01-01 abc");
+  }
+
   @Test
   void the_order_list_finds_an_order_by_its_customer() {
     order("ORD-1");

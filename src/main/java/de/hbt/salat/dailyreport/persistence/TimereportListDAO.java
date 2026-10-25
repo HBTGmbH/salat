@@ -71,7 +71,9 @@ public class TimereportListDAO {
     root.fetch(Timereport_.referenceday);
     var employeeorder = root.fetch(Timereport_.employeeorder);
     employeeorder.fetch(Employeeorder_.employeecontract).fetch(Employeecontract_.employee);
-    employeeorder.fetch(Employeeorder_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
+    var fetchedOrder = employeeorder.fetch(Employeeorder_.suborder).fetch(Suborder_.customerorder);
+    fetchedOrder.fetch(Customerorder_.customer);
+    fetchedOrder.fetch(Customerorder_.intermediary, JoinType.LEFT);
     var joins = BookingJoins.of(root);
     query.where(conditions(filter, visibility, query, root, joins, builder));
     query.orderBy(orderBy(filter, root, joins, builder));
