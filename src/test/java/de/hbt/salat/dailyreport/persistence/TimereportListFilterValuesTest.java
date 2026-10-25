@@ -302,6 +302,23 @@ class TimereportListFilterValuesTest {
         new BookedDay(beta.getId(), "BETA", DAY, 240L));
   }
 
+  /**
+   * Only customer orders count (#1534): an order with a billable suborder, with all of its bookings; an internal order
+   * without any billable suborder stays out.
+   */
+  @Test
+  void the_booked_days_leave_out_orders_without_a_billable_suborder() {
+    var person = employeecontract("aaa");
+    var customerOrder = customerorder(customer, "ALPHA");
+    suborder(customerOrder, "ALPHA/01", true);
+    book(person, suborder(customerOrder, "ALPHA/02", false), DAY, 1);
+    book(person, suborder(customerorder(otherCustomer, "INTERN"), "INTERN/01", false), DAY, 1);
+
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all());
+
+    assertThat(days).extracting(BookedDay::customerorderId).containsExactly(customerOrder.getId());
+  }
+
   @Test
   void the_booked_days_follow_the_visibility() {
     var person = employeecontract("aaa");

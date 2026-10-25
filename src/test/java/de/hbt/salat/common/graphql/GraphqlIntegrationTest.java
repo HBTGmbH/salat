@@ -6,6 +6,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_MA;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
+import static de.hbt.salat.common.GlobalConstants.INVOICE_YES;
 
 import graphql.introspection.IntrospectionQuery;
 import java.net.URI;
@@ -155,6 +156,8 @@ class GraphqlIntegrationTest {
     suborder.setDescription("Betrieb");
     suborder.setFromDate(LocalDate.of(2000, 1, 1));
     suborder.setDebithours(Duration.ZERO);
+    // billable, so the order is a customer order and appears in the order history (#1534)
+    suborder.setInvoice(INVOICE_YES);
     suborder = suborderRepository.save(suborder);
     suborderId = suborder.getId();
     var employeeorder = new Employeeorder();

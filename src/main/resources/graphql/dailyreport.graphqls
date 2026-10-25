@@ -25,8 +25,9 @@ extend type Query {
   workingday("Der Tag" date: Date!): Workingday
 
   """
-  In welchen Zeiträumen eine Person auf welchem Auftrag gearbeitet hat, aus ihren Buchungen über die ganze Zeit. Ein
-  Zeitraum reicht vom ersten bis zum letzten Buchungstag; liegen dazwischen 30 Tage oder mehr ohne Buchung auf dem
+  In welchen Zeiträumen eine Person auf welchem Kundenauftrag gearbeitet hat, aus ihren Buchungen über die ganze Zeit.
+  Ein Kundenauftrag hat mindestens einen fakturierbaren Unterauftrag und zählt dann mit allen seinen Buchungen; interne
+  Aufträge, Urlaub und Krankheit stehen nicht in der Historie. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag; liegen dazwischen 30 Tage oder mehr ohne Buchung auf dem
   Auftrag, beginnt ein neuer Zeitraum, und der Auftrag kommt erneut vor. Es zählen nur die Buchungen, die die
   angemeldete Person nach den Regeln der Buchungsliste sehen darf (siehe timereportList); wer für einen Auftrag
   verantwortlich ist, sieht von anderen Personen also nur die Zeiträume auf diesem Auftrag. Eine Person ohne
