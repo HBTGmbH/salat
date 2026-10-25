@@ -32,5 +32,7 @@ public record CustomerorderDTO(
      * the names of the tags (#847), new ones created on saving; {@code null} leaves the tags as they are — what
      * rebuilds the record from the stored entity (a changed validity) does not touch them
      */
-    List<String> tagNames
+    List<String> tagNames,
+    /** the customer acting as intermediary (#1536), {@code null} for an order placed directly by its customer */
+    Long intermediaryId
 ) {}

@@ -309,7 +309,8 @@ class GraphqlIntegrationTest {
           customerorder {
             id sign description validFrom validUntil debitHours debitHoursUnit hidden tags
             executionResponsibles { sign } contractResponsible { sign }
-            customer { shortName name address hidden segment { id name } }
+            customer { shortName name address hidden intermediary segment { id name } }
+            intermediary { shortName }
           }
         }
       }""";
@@ -337,6 +338,8 @@ class GraphqlIntegrationTest {
     assertThat(order.at("/customer/shortName").asString()).startsWith("GQL");
     assertThat(order.at("/customer/address").asString()).isEqualTo("Musterstraße 1");
     assertThat(order.at("/customer/segment").isNull()).isTrue();
+    assertThat(order.at("/customer/intermediary").asBoolean()).isFalse();
+    assertThat(order.at("/intermediary").isNull()).isTrue();
   }
 
   @Test

@@ -529,17 +529,23 @@
             <strong th:text="${#temporals.format(invoiceData.billingPeriod.until, 'dd.MM.yyyy')}"></strong>
           </p>
           <div class="row g-3 mb-3">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label class="form-label" th:text="#{main.invoice.addresshead.text}">Rechnungsanhang</label>
               <input type="text" class="form-control" th:field="*{titleinvoiceattachment}">
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label class="form-label" th:text="#{main.customerorder.customer.text}">Auftraggeber</label>
               <input type="text" class="form-control" th:field="*{customername}">
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label class="form-label" th:text="#{main.invoice.customeraddress.text}">Adresse</label>
               <textarea class="form-control" th:field="*{customeraddress}" rows="4"></textarea>
+            </div>
+            <!--/* #1536: a mediated order goes to its intermediary; this names the end customer on the attachment */-->
+            <div class="col-12 col-md-3">
+              <label class="form-label" th:text="#{main.invoice.endcustomer.text}">Endkunde</label>
+              <input type="text" class="form-control" th:field="*{endcustomername}">
+              <div class="form-text" th:text="#{main.invoice.endcustomer.hint}">Leer: keine Zeile auf der Anlage</div>
             </div>
           </div>
           <div class="d-flex align-items-center gap-2 flex-wrap">

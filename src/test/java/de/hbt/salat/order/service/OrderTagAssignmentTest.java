@@ -135,7 +135,7 @@ class OrderTagAssignmentTest {
 
   private static CustomerorderDTO orderDto(List<String> tagNames) {
     return new CustomerorderDTO(1L, FROM, null, "4711", "Auftrag", "Auftrag", null, null, null, List.of(1L), 1L,
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE, tagNames);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, SurchargeInput.NONE, tagNames, null);
   }
 
   private static SuborderDTO suborderDto(List<String> tagNames) {

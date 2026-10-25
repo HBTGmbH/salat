@@ -473,7 +473,7 @@ public class TimereportListService {
 
   /**
    * The replication scopes the ticket search runs over: those of the orders the filter names, of the suborders it
-   * names, and of every order belonging to a customer it names. A ticket the rest of the filter could never hit does
+   * names, and of every order belonging to a customer it names, as customer or as intermediary (#1536). A ticket the rest of the filter could never hit does
    * not belong in the dialog. Without any of the three, those of every order the user may see bookings on.
    *
    * <p>By id (#1323): an order stands for its order-wide tickets, a suborder for the tickets replicated on exactly that
@@ -500,7 +500,7 @@ public class TimereportListService {
       if (!customerIds.isEmpty()) {
         var customers = new HashSet<>(customerIds);
         customerorderService.getNotHiddenCustomerorders().stream()
-            .filter(order -> customers.contains(order.getCustomer().getId()))
+            .filter(order -> order.involvesAnyOf(customers))
             .forEach(order -> orders.add(order.getId()));
       }
     }

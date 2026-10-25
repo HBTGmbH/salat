@@ -22,6 +22,8 @@ public class InvoiceData {
   private final LocalDateRange billingPeriod;
   private final String customerOrderSign;
   private final Customer customer;
+  /** The customer who placed the order on behalf of {@link #customer} (#1536), {@code null} for none. */
+  private final Customer intermediary;
   private final Duration totalDuration;
   /** Every suborder with its bookings — what is selected and deselected, whatever the grouping. */
   private final List<InvoiceSuborder> suborders;
@@ -130,4 +132,15 @@ public class InvoiceData {
         .divide(BigDecimal.valueOf(MINUTES_PER_HOUR), 2, RoundingMode.HALF_UP);
   }
 
+  /**
+   * Whom the invoice attachment is addressed to (#1536): the intermediary of a mediated order, the customer otherwise.
+   */
+  public Customer getRecipient() {
+    return intermediary != null ? intermediary : customer;
+  }
+
+  /** The end customer the attachment names below the address — only where it goes to an intermediary (#1536). */
+  public String getEndCustomerName() {
+    return intermediary != null ? customer.getName() : "";
+  }
 }

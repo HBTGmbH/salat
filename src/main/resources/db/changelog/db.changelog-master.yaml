@@ -7670,3 +7670,49 @@ databaseChangeLog:
             columns:
               - column:
                   name: created
+
+  - changeSet:
+      id: 202
+      author: kr
+      comment: Kunden als Vermittler kennzeichnen (#1536)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: customer
+                columnName: intermediary
+      changes:
+        - addColumn:
+            tableName: customer
+            columns:
+              - column:
+                  name: intermediary
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 203
+      author: kr
+      comment: Vermittler am Auftrag (#1536)
+      # Stammdaten des Moduls customer, als Referenz wie der Kunde (ADR-0036); ohne Vermittler null.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: customerorder
+                columnName: intermediary_customer_id
+      changes:
+        - addColumn:
+            tableName: customerorder
+            columns:
+              - column:
+                  name: intermediary_customer_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: customerorder
+            baseColumnNames: intermediary_customer_id
+            constraintName: fk_customerorder_intermediary_customer
+            referencedTableName: customer
+            referencedColumnNames: id

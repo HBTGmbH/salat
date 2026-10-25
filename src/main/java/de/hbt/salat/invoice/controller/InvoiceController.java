@@ -103,8 +103,10 @@ public class InvoiceController {
                 .map(InvoiceTimereport::getId)
                 .toList());
 
-            form.setCustomername(invoiceData.getCustomer().getName());
-            form.setCustomeraddress(invoiceData.getCustomer().getAddress());
+            // a mediated order is invoiced to its intermediary, naming the end customer (#1536)
+            form.setCustomername(invoiceData.getRecipient().getName());
+            form.setCustomeraddress(invoiceData.getRecipient().getAddress());
+            form.setEndcustomername(invoiceData.getEndCustomerName());
 
             model.addAttribute("invoiceData", invoiceData);
         }

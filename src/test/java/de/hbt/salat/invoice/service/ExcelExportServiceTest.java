@@ -163,7 +163,7 @@ class ExcelExportServiceTest {
     childGroup.getLines().add(InvoiceLine.whole(booking, invoiceChild));
     branchGroup.getChildren().add(childGroup);
 
-    return new InvoiceData(options, new LocalDateRange(JAN, JAN), "co", customerorder.getCustomer(),
+    return new InvoiceData(options, new LocalDateRange(JAN, JAN), "co", customerorder.getCustomer(), null,
         Duration.ofHours(2), List.of(invoiceBranch, invoiceChild), InvoiceGrouping.SUBORDER, List.of(branchGroup),
         List.of(), List.of());
   }
@@ -216,7 +216,7 @@ class ExcelExportServiceTest {
     var group = InvoiceGroup.ofSuborder(invoiceSuborder);
     group.getLines().add(InvoiceLine.whole(booking, invoiceSuborder));
 
-    return new InvoiceData(options, new LocalDateRange(JAN, JAN), "co", customerorder.getCustomer(),
+    return new InvoiceData(options, new LocalDateRange(JAN, JAN), "co", customerorder.getCustomer(), null,
         Duration.ofHours(2), List.of(invoiceSuborder), InvoiceGrouping.SUBORDER, List.of(group), List.of(), List.of());
   }
 

@@ -39,14 +39,15 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
 
   /**
    * The suborders the order dialog of the booking list offers (#1331): not hidden; with customers chosen, below an
-   * order of theirs that is not hidden either — the dialog offers no suborder of an order it leaves out; among the
+   * order of theirs — as customer or as intermediary (#1536) — that is not hidden either — the dialog offers no suborder of an order it leaves out; among the
    * given ids unless {@code everySuborder}; containing the pattern in the complete sign or the short description
    * unless it is {@code null}.
    */
   String DIALOG_SUBORDERS = """
-      from Suborder s join s.customerorder c
+      from Suborder s join s.customerorder c left join c.intermediary im
       where (s.hide is null or s.hide = false)
-      and (:everyCustomer = true or (c.customer.id in :customerIds and (c.hide is null or c.hide = false)))
+      and (:everyCustomer = true
+          or ((c.customer.id in :customerIds or im.id in :customerIds) and (c.hide is null or c.hide = false)))
       and (:everySuborder = true or s.id in :suborderIds)
       and (:pattern is null or lower(s.completeOrderSign) like :pattern escape '!'
           or lower(""" + SHORTDESCRIPTION_AS_SHOWN + ") like :pattern escape '!')";

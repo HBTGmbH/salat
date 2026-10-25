@@ -13,6 +13,8 @@ public class CustomerorderForm {
 
   private Long id;
   private Long customerId;
+  /** the customer acting as intermediary (#1536), {@code null} for none */
+  private Long intermediaryId;
   private String sign;
   private String description;
   private String shortdescription;

@@ -166,7 +166,7 @@ class SignsRenamedPublicationTest {
 
   private static CustomerorderDTO customerorderDto(String sign) {
     return new CustomerorderDTO(1L, FROM, null, sign, "Auftrag", "Auftrag", null, null, null, List.of(1L), 1L,
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.LIMITED, 1, SurchargeInput.NONE, null);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.LIMITED, 1, SurchargeInput.NONE, null, null);
   }
 
   private static Customerorder customerorder(long id, String sign) {

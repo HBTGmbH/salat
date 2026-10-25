@@ -135,7 +135,8 @@ public class InvoiceService {
 
     var bookings = invoiceSuborders.stream().flatMap(s -> s.getTimereports().stream()).toList();
     if (bookings.stream().allMatch(booking -> booking.getTicketReferences().isEmpty())) {
-      return new InvoiceData(options, invoiceDateRange, customerOrderSign, customerorder.getCustomer(), totalDuration,
+      return new InvoiceData(options, invoiceDateRange, customerOrderSign, customerorder.getCustomer(),
+        customerorder.getIntermediary(), totalDuration,
           invoiceSuborders, InvoiceGrouping.SUBORDER, numbered(nested(bySuborder(invoiceSuborders), ancestorsBySuborder)),
           List.of(), List.of());
     }
@@ -159,7 +160,8 @@ public class InvoiceService {
     };
 
     var ticketOptions = ticketOptions(tree, bookings, selected);
-    return new InvoiceData(options, invoiceDateRange, customerOrderSign, customerorder.getCustomer(), totalDuration,
+    return new InvoiceData(options, invoiceDateRange, customerOrderSign, customerorder.getCustomer(),
+        customerorder.getIntermediary(), totalDuration,
         invoiceSuborders, options.getGrouping(), numbered(groups), ticketOptions, projectKeys(ticketOptions));
   }
 

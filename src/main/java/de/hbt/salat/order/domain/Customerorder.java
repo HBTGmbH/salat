@@ -64,6 +64,15 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private Customer customer;
 
     /**
+     * The customer who placed the order on behalf of {@link #customer} (#1536), {@code null} for an order placed
+     * directly. Master data of the module {@code customer}, referenced read only (ADR-0036); the invoice attachment goes
+     * to it. A list reads it with the order rather than one statement per row.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "intermediary_customer_id")
+    private Customer intermediary;
+
+    /**
      * list of suborders, associated to this customerorder
      */
     @OneToMany(mappedBy = "customerorder")
@@ -279,6 +288,15 @@ public class Customerorder extends AuditedEntity implements Serializable {
 
     public void setDebithours(Duration value) {
         debitMinutes = value; // its a Duration - hours or minutes make no difference
+    }
+
+    /**
+     * Whether one of these customers is the order's customer or its intermediary (#1536) — what a filter by customer
+     * means. Reads the intermediary's id only, which does not load it.
+     */
+    public boolean involvesAnyOf(Collection<Long> customerIds) {
+        return customerIds.contains(customer.getId())
+            || (intermediary != null && customerIds.contains(intermediary.getId()));
     }
 
     public LocalDateRange getValidity() {

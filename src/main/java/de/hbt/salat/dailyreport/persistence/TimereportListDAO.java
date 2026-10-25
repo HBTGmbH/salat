@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
@@ -16,8 +17,10 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.dailyreport.auth.TimereportVisibility;
@@ -220,6 +223,7 @@ public class TimereportListDAO {
     query.select(builder.construct(FilterValueRow.class,
         dimensions.employeeId(),
         customerorder.join(Customerorder_.customer).get(Customer_.id),
+        customerorder.join(Customerorder_.intermediary, JoinType.LEFT).get(Customer_.id),
         dimensions.customerOrderId(),
         dimensions.suborderId())).distinct(true);
 
@@ -237,7 +241,12 @@ public class TimereportListDAO {
     var rows = entityManager.createQuery(query).getResultList();
     return new FilterValues(
         distinct(rows, FilterValueRow::employeeId),
-        distinct(rows, FilterValueRow::customerId),
+        // the intermediaries are offered as customers, since the filter by customer finds their orders (#1536)
+        rows.stream()
+            .flatMap(row -> Stream.of(row.customerId(), row.intermediaryId()))
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList(),
         distinct(rows, FilterValueRow::customerOrderId),
         distinct(rows, FilterValueRow::suborderId));
   }
@@ -268,8 +277,11 @@ public class TimereportListDAO {
     if (!filter.employeeIds().isEmpty()) {
       predicates.add(dimensions.employeeId().in(filter.employeeIds()));
     }
+    // a customer stands for the orders it is the customer of and those it placed as intermediary (#1536)
     if (!filter.customerIds().isEmpty()) {
-      predicates.add(customerorder.join(Customerorder_.customer).get(Customer_.id).in(filter.customerIds()));
+      predicates.add(builder.or(
+          customerorder.join(Customerorder_.customer).get(Customer_.id).in(filter.customerIds()),
+          customerorder.join(Customerorder_.intermediary, JoinType.LEFT).get(Customer_.id).in(filter.customerIds())));
     }
     // An order and a suborder are alternatives to each other: whoever picks both means either of them, not both at
     // once. Bookings hang on the suborder, so a chosen order stands for its whole tree all by itself.
@@ -417,5 +429,6 @@ public class TimereportListDAO {
   }
 
   /** One combination the query finds; the four lists are taken apart from these in Java. */
-  public record FilterValueRow(Long employeeId, Long customerId, Long customerOrderId, Long suborderId) {}
+  public record FilterValueRow(Long employeeId, Long customerId, Long intermediaryId, Long customerOrderId,
+                               Long suborderId) {}
 }

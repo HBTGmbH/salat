@@ -31,6 +31,11 @@ public class Customer extends AuditedEntity implements Serializable {
     private String shortname;
     private String address;
     private Boolean hide;
+    /**
+     * Whether the customer may act as intermediary of an order (#1536): only then is it offered in the order's select
+     * "Vermittler". Removing the mark leaves the orders that already name it as they are.
+     */
+    private boolean intermediary;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(

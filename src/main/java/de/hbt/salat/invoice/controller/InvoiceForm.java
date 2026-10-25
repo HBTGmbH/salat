@@ -93,6 +93,8 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     private String titleinvoiceattachment;
     private String customername;
     private String customeraddress = "";
+    /** printed below the address as "Endkunde: …" where not empty (#1536) */
+    private String endcustomername = "";
 
     /** Both narrowings at once has no defined meaning, so it is refused rather than resolved. */
     public boolean isScopeAmbiguous() {

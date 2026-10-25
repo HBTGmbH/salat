@@ -13,6 +13,8 @@ type Customer {
   address: String
   "Ob der Kunde in Auswahllisten ausgeblendet ist"
   hidden: Boolean!
+  "Ob der Kunde als Vermittler eines Auftrags gewählt werden kann"
+  intermediary: Boolean!
   "Das Kundensegment, null ohne eines"
   segment: CustomerSegment
 }

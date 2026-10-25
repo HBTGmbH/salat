@@ -102,6 +102,6 @@ class CustomerorderServiceSurchargeTest {
 
   private static CustomerorderDTO dto(SurchargeInput surcharges) {
     return new CustomerorderDTO(1L, FROM, null, "4711", "Auftrag", "Auftrag", null, null, null, List.of(1L), 1L,
-        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, surcharges, null);
+        null, null, false, OrderType.STANDARD, TicketReferenceMode.UNLIMITED, null, surcharges, null, null);
   }
 }
