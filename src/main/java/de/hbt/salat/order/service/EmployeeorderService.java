@@ -90,11 +90,12 @@ public class EmployeeorderService {
   /**
    * What the contract may book on on the day (#1532): every suborder with an employee order valid then, the
    * condition of the booking form, ordered by sign. Only the employee orders the user may read count — for the own
-   * contract that is all of them. One query for the contract, not one per suborder.
+   * contract that is all of them. One query loads the employee orders with what deciding and labelling them reads;
+   * only a suborder more than one level below its order loads the rest of its path.
    */
   @Transactional(readOnly = true)
   public List<BookableSuborder> getBookableSuborders(long employeecontractId, LocalDate date) {
-    return employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(employeecontractId, date).stream()
+    return employeeorderRepository.findBookableCandidates(employeecontractId, date).stream()
         .filter(employeeorder -> employeeorder.isValidAt(date))
         .filter(employeeorder -> employeeorderAuthorization.isAuthorized(employeeorder, AccessLevel.READ))
         .map(BookableSuborder::of)
