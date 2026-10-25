@@ -26,6 +26,9 @@ import de.hbt.salat.common.SalatProperties;
 @Profile({ "production", "staging" })
 public class AzureEasyAuthOpenApiConfiguration {
 
+  /** Where the GraphQL interface is (#1532): the Swagger UI is the place callers of the API look first. */
+  static final String GRAPHQL_HINT = "\nGraphQL: besides this REST API, POST /api/graphql serves a GraphQL interface with the same login and rights - schema at /api/graphql/schema, interactive at /graphiql, guide at https://github.com/HBTGmbH/salat/blob/main/docs/graphql-api.md\n";
+
   @Bean
   public OpenAPI customOpenAPI(Optional<BuildProperties> buildProperties, Optional<GitProperties> gitProperties, SalatProperties salatProperties) {
     String formattedBuildTime = DateTimeFormatter
@@ -41,7 +44,8 @@ public class AzureEasyAuthOpenApiConfiguration {
         .append(")\n")
         .append("Security has different modes:\n")
         .append("(1) Transparent using Azure EasyAuth when running in SALAT browser session (cookie based)\n")
-        .append("(2) oauth2 device code flow\n");
+        .append("(2) oauth2 device code flow\n")
+        .append(GRAPHQL_HINT);
 
     SecurityScheme easyAuth = new SecurityScheme();
     easyAuth.setType(Type.APIKEY);
