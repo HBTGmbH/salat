@@ -12,5 +12,5 @@ ADRs werden wie überall mit Nummer zitiert.
 
 | Idee | Stand | Status |
 |---|---|---|
-| [GraphQL-Schnittstelle](graphql-konzept.md) | 01.10.2026 | Entwurf, Einzelentscheidungen getroffen |
+| [GraphQL-Schnittstelle](graphql-konzept.md) | 25.10.2026 | Entwurf, Spike durchgeführt (#1532) |
 | [Issue-Tracker-Integration](issue-tracker-integration.md) | 06.10.2026 | Idee, bewertet |

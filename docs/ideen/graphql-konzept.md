@@ -1,6 +1,6 @@
 # Konzept: GraphQL-Schnittstelle für Salat
 
-Stand: 01.10.2026 · Status: **Entwurf**. Einzelentscheidungen sind getroffen (→ 9), das Konzept als Ganzes ist noch nicht bestätigt. Keine Umsetzung.
+Stand: 25.10.2026 · Status: **Entwurf, Spike durchgeführt** (#1532, → 10). Einzelentscheidungen sind getroffen (→ 9), das Konzept als Ganzes ist noch nicht bestätigt.
 
 Dieses Dokument beschreibt eine GraphQL-Schnittstelle, über die Daten gelesen, geändert und gelöscht
 werden. Alle Aufrufe gehen an die bestehenden Services, und es gelten dieselben Sichtbarkeits- und
@@ -1050,3 +1050,134 @@ Entschieden am 01.10.2026:
 - Fachliche Regeln gehören in den Service; am Formular bleiben nur Formatprüfungen (3.5).
 - Der Aufrufzweck (Anzeige oder Auflösung) wird über getrennte Bohnen ausdrücklich: anzeigend im
   Service, auflösend in `*Lookup` (5.3, Variante C).
+
+---
+
+## 10. Ergebnisse des Spikes (#1532)
+
+Stand: 25.10.2026. Der Spike setzt Stufe 0 um (8), nur lokal und nur für die in
+`salat.graphql-spike.allowed-signs` eingetragenen Logins. Er ist nicht produktionsreif und soll es
+nicht werden: Er beantwortet die Fragen aus 6.4 und zeigt, wo die Services für Stufe 1 und 2 noch
+nicht reichen.
+
+### 10.1 Aufbau
+
+| Teil | Ort |
+|---|---|
+| Resolver je Modul, ohne Entität | `de.hbt.salat.graphqlspike.employee` (`me`), `…dailyreport` (Buchungen lesen, anlegen, ändern) |
+| Querschnitt | `…graphqlspike.config`: Profilprüfung, Zugangsfilter, Skalare `Date`/`Duration`, Grenzwerte für fachliche Abfragen, Fehlerabbildung, Idempotenz im Speicher |
+| Messfelder | `…graphqlspike.probe`: Laufzeitkontext je Ausführungsweg, `@Authorized` an Resolver und Service |
+| Schema | `src/main/resources/graphql-spike/*.graphqls`, eine Datei je Modul, `extend type` wie in 3.7 |
+| Schalter | Profil `graphql-spike` (`application-graphql-spike.yaml`), nur zusammen mit `local` |
+| Tests | `GraphqlSpikeIntegrationTest` (echter Port), `GraphqlSpikeSwitchedOffIntegrationTest`, `BusinessQueryLimitsTest` |
+
+Lokal starten: Profile `local,graphql-spike`, Umgebungsvariable `SALAT_GRAPHQLSPIKE_ALLOWEDSIGNS`
+mit dem eigenen Kürzel. Dann `POST /api/graphql?login-name=<kürzel>` und GraphiQL unter
+`/graphiql?path=/api/graphql%3Flogin-name%3D<kürzel>`, außerdem das Schema unter
+`/api/graphql/schema`.
+
+**Entfernen:** das Paket `graphqlspike`, `src/main/resources/graphql-spike/`,
+`application-graphql-spike.yaml`, die Abhängigkeit `spring-boot-starter-graphql`, die Tests unter
+`src/test/java/de/hbt/salat/graphqlspike/` und die Regel `nothingShouldAccessGraphqlSpike` in
+`ArchitectureTest` löschen. Es gibt keine Tabelle, kein Changeset und keine Änderung an einem
+Fachmodul.
+
+**Übernehmen:** Jedes Unterpaket zieht als `<modul>.graphql` in sein Modul, die Schema-Datei nach
+`classpath:graphql/`. `config` wird `common.graphql`. `probe`, der Zugangsfilter und das Profil
+entfallen.
+
+### 10.2 Antworten auf 6.4
+
+| Frage | Ergebnis | Beleg |
+|---|---|---|
+| `AuthorizedUser` und `SecurityContext` im Resolver | **ja.** Spring for GraphQL führt unter Spring MVC die Datenabrufer im Thread der Anfrage aus | `a_resolver_and_a_batch_loader_run_in_the_request_context` |
+| … im Batch-Loader (`@BatchMapping`) | **ja**, derselbe Thread wie der Resolver | ebenda |
+| … nach einem asynchronen Schritt | **nein.** Auf einem fremden Thread (`CompletableFuture.supplyAsync`) wirft die Request-Scope-Bohne `ScopeNotActiveException`, und es ist kein EntityManager gebunden. Es scheitert erst beim Zugriff, nicht beim Start | `on_a_foreign_thread_the_request_scope_and_open_in_view_are_gone` |
+| … über `Callable` | **gar nicht ausführbar.** Spring for GraphQL braucht dafür Boots `applicationTaskExecutor`. Salat hat keinen: Der Async-Executor kommt aus `SalatApplication` als `AsyncConfigurer`, nicht als Bohne, und die Bohne `etlTaskExecutor` hält Boot davon ab, einen eigenen anzulegen. Das Feld endet in `INTERNAL_ERROR` | `a_callable_finds_no_executor` |
+| Open-in-View | trägt im Thread der Anfrage. Die Resolver arbeiten trotzdem nur auf DTOs und Records. Das hält `noEntityCrossesAModuleBoundaryThroughAService` ohne neuen Eintrag im Store, weil der Spike als eigenes Modul gar keine Entität bekommt | Build |
+| `AuthorizationAspect` | **greift auf beiden Ebenen:** `@Authorized(requiresManager = true)` an der Resolver-Methode (Ebene 1) und an der gerufenen Service-Methode (Ebene 2). Die Ablehnung kommt als `FORBIDDEN` mit `AA-0004` und deutschem Text an | `the_authorization_aspect_guards_…` |
+| `ConcurrentModificationAspect` | **nicht nachweisbar**, weil es nichts zu prüfen gibt: Keine Methode von `TimereportService` nimmt eine erwartete Version entgegen (10.4) | — |
+
+**Folgerung:** Resolver bleiben synchron. Kein `Callable`, kein `CompletableFuture`, kein eigener
+Thread in der GraphQL-Schicht. `ArchitectureTest` hält das fest, sobald die Schicht übernommen
+wird. Soll später doch etwas asynchron laufen, braucht es einen Executor, der Request-Attribute und
+`SecurityContext` weitergibt, wie `SalatApplication.getAsyncExecutor`, und einen
+`ThreadLocalAccessor` für die Request-Attribute. Spring for GraphQL bringt nur einen für den
+`SecurityContext` mit.
+
+### 10.3 Querschnitt
+
+- **Fehlerabbildung (6.3):** Ein einziger `DataFetcherExceptionResolverAdapter` übersetzt
+  `ErrorCodeException` mit `ErrorCodeViewHelper` in `message`, `extensions.code`, `extensions.codes`
+  und `classification`. Andere Ausnahmen bleiben bei Springs `INTERNAL_ERROR` ohne Details. Die
+  Sprache kommt aus `Accept-Language` der GraphQL-Anfrage. Der Spike setzt sie für den Aufruf in
+  `LocaleContextHolder`, weil `ErrorCodeViewHelper` nur dort liest. Da die Resolver im Thread der
+  Anfrage laufen, wäre sie dort meist schon richtig gesetzt. Eine Übernahme sollte die Sprache
+  trotzdem ausdrücklich übergeben.
+- **Grenzwerte (6.2) und Introspection (6.1) widersprechen sich.** Die Introspection-Abfrage, die
+  GraphiQL und die meisten Werkzeuge schicken, hat die Tiefe 15. Mit einer Tiefengrenze von 8 lädt
+  GraphiQL kein Schema („maximum query depth exceeded 15 > 8"), und genau die Aufrufer, die sich das
+  Schema selbst erschließen sollen, bleiben draußen. Der Spike wendet Tiefe (8) und Komplexität (200)
+  deshalb nur auf fachliche Abfragen an (`BusinessQueryLimits`). Eine Abfrage, die nur `__schema`,
+  `__type` oder `__typename` fragt, sichert graphql-java mit `GoodFaithIntrospection` eigens ab: Das
+  ist standardmäßig an, begrenzt Felder und Tiefe der Introspection und weist zum Beispiel ein doppelt
+  abgefragtes `fields` ab. Ein fachliches Feld neben `__typename` hebt die Ausnahme auf. Dazu kommt
+  `TimeoutWebGraphQlInterceptor(10 s)`. Alle drei sind Bohnen, Boot nimmt sie ohne weitere
+  Konfiguration auf.
+- **GraphiQL** lädt React und GraphiQL von `esm.sh`, einem externen CDN. Lokal ist das unkritisch.
+  Für eine Umgebung müssten die Dateien selbst ausgeliefert werden, oder GraphiQL bleibt lokal, wie
+  in 6.1 vorgesehen.
+- **Batch-Laden:** `@BatchMapping` lädt den Unterauftrag aller Buchungen einer Antwort in einem
+  Aufruf (`SuborderService.getSuborderLocationsByIds`). Diese Methode prüft nur die Anmeldung. Hier
+  ist das unkritisch, weil die ids aus sichtbaren Buchungen stammen. Ein freier Einstieg
+  `suborder(id)` hätte aber genau die Lücke aus 2.4.
+- **Zugang:** Der Zugangsfilter sitzt hinter Spring Security und vor GraphQL. Nicht freigeschaltete
+  Logins bekommen 403 für Endpunkt, Introspection und GraphiQL. Ohne Anmeldung antwortet lokal schon
+  die Kette, mit einer Weiterleitung zum Entwicklungs-Login. In einer Umgebung wäre es die
+  JWT-Kette mit 401. Das ist ein Verhalten der lokalen Kette, kein Befund zu GraphQL.
+- **Ausgeschaltet:** Ohne Profil gibt es keine `GraphQlSource` und keine Spike-Bohne, und
+  `/api/graphql` antwortet 404. Die Abhängigkeit allein schaltet nichts ein, weil das Schema nicht
+  im Standardort liegt.
+- **Idempotenz (6.5):** Das Verhalten ist wie spezifiziert: Eine Wiederholung liefert dieselbe
+  Buchung mit `replayed: true`, derselbe Schlüssel mit anderer Eingabe wird mit `CONFLICT`
+  abgewiesen. Der Speicher in der Map zeigt nur das Verhalten, nicht die Zusagen: Er vergisst beim
+  Neustart, läuft nie ab und wird nicht in der Transaktion des Anlegens geschrieben. Für die
+  Übernahme bleibt es bei der Tabelle aus 6.5.
+
+### 10.4 Befunde an den Services
+
+Der Spike umgeht sie, statt die Fachmodule zu ändern. Jeder Punkt ist eine Voraussetzung für die
+Stufe in Klammern:
+
+| Befund | Behelf im Spike | nötig für |
+|---|---|---|
+| `TimereportDTO` trägt keine `version`, und `updateTimereport` nimmt keine erwartete Version entgegen (Vorbild: `SecretService`, `expectedVersion`) | keine Versionsprüfung: Das Ändern liest die Buchung und schreibt sie mit den geänderten Feldern zurück, ein Wettlauf bleibt unbemerkt | Stufe 2 |
+| `createTimereports` liefert `void` | die neue Buchung über den Vergleich des Tages vorher und nachher gefunden | Stufe 2 (Idempotenz) |
+| Den Mitarbeiterauftrag zu Unterauftrag und Tag gibt es nur als Entität (`EmployeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate`) | die Eingabe nennt `employeeorderId` statt des Unterauftrags | Stufe 2 |
+| Zum laufenden Vertrag gibt es ohne Entität nur id und Zeitraum (`getEmployeecontractPeriodsBetween`) | `me` liefert nur `currentContractId` | Stufe 1 |
+| `updateTimereport` verlangt alle Felder | der Resolver füllt fehlende Felder aus der gelesenen Buchung | Stufe 2 (eine Methode für teilweises Ändern oder ein Eingabe-Record) |
+
+Für das Lesen der eigenen Daten (Stufe 1) reichen die Services bis auf den Vertrag schon heute.
+
+### 10.5 Aufwand und Abhängigkeiten
+
+- Rund 1.500 Zeilen einschließlich Schema, Tests und Messfeldern. Die Resolver selbst sind dünn,
+  der größte Teil ist Querschnitt (Fehler, Grenzwerte, Skalare), der einmal entsteht.
+- Neue Laufzeitabhängigkeiten aus dem Boot-BOM: `spring-graphql` 2.0.5, `graphql-java` 25.0,
+  `java-dataloader` 6.0.0, `context-propagation` 1.2.1.
+
+### 10.6 Empfehlung
+
+**Das Konzept bestätigen, mit vier Ergänzungen,** und danach das ADR schreiben:
+
+1. **Spring for GraphQL ist bestätigt (7.5).** `@Authorized` und beide Aspekte wirken ohne Umbau,
+   Schema je Modul und `extend type` funktionieren, und die Grenzwerte sind Bohnen.
+2. **Neue Regel: Resolver laufen synchron** (10.2), durchgesetzt in `ArchitectureTest`.
+3. **6.2 wird präzisiert:** Tiefe und Komplexität gelten für fachliche Abfragen. Reine
+   Introspection begrenzt `GoodFaithIntrospection` (10.3), sonst schließt 6.2 die Werkzeuge aus 6.1
+   aus.
+4. **Stufe 2 bekommt die Befunde aus 10.4 als Voraussetzung**, wie Stufe 3c die Stufen 3a und 3b:
+   Version in DTO und Service, Rückgabe der ids beim Anlegen, Mitarbeiterauftrag als Wert, teilweises
+   Ändern.
+
+Stufe 1 kann danach direkt auf dem übernommenen Spike aufsetzen.
