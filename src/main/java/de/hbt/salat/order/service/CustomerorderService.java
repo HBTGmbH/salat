@@ -237,8 +237,10 @@ public class CustomerorderService {
     if (ids.isEmpty()) {
       return Map.of();
     }
+    var invoiceable = customerorderRepository.findInvoiceableIdsByIdIn(ids);
     return customerorderRepository.findWithCustomerByIdIn(ids).stream()
-        .collect(Collectors.toMap(Customerorder::getId, CustomerorderReadModel::of));
+        .collect(Collectors.toMap(Customerorder::getId,
+            order -> CustomerorderReadModel.of(order, invoiceable.contains(order.getId()))));
   }
 
   /** The signs of the orders with these ids, by id — an id without an order is missing (#1212). */

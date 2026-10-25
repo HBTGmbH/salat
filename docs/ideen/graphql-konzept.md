@@ -1285,5 +1285,20 @@ gibt der Aufrufer mit `gapDays` vor, ohne Angabe 30 (`GQ-0003` außerhalb von 1 
 - Nebenbei behoben: Eine Einzelfreigabe mit begrenzter Gültigkeit gilt in `TimereportVisibility` nur
   noch für Buchungen an ihren Tagen (`Clause.days`), wie bei `isAuthorized`.
 
+**Nachtrag #1539 (Filter und Seiten):**
+- `orderHistory` nimmt mit `billableOnly: false` alle Aufträge auf, auch interne, Urlaub und
+  Krankheit. Ohne Angabe bleibt es bei den Kundenaufträgen. `Customerorder.billable` sagt, ob ein
+  Auftrag einen fakturierbaren Unterauftrag hat. Das Modul `order` rechnet es in seinem Read Model mit
+  einer Abfrage für alle Aufträge einer Antwort.
+- `timereports` filtert auf ein Auftragszeichen (`customerorderSign`) und liest seitenweise (`offset`,
+  `limit`). Filter, Reihenfolge (Tag, Auftrags-, Unterauftragszeichen, id) und Seite entstehen in
+  `OwnTimereportService` über die Buchungen, die die Abfrage je Vertrag ohnehin liest.
+- `timereportList` nimmt Aufträge auch als Zeichen (`customerorderSigns`) und liest ab einem Versatz
+  (`offset`). Die Reihenfolge der Buchungsliste endet seitdem auf der id. `truncated` heißt: Hinter
+  dieser Seite gibt es weitere Treffer.
+- Ein negativer Versatz ergibt `GQ-0004`.
+- Die Seiten sind Offset-Seiten, kein Cursor. Gleichzeitige Änderungen verschieben sie um eine Zeile;
+  bei höchstens 366 Tagen ist das hinnehmbar.
+
 **Offen:** Stufe 3a bis 3c (Zuständigkeit, Prüfungen in die Services, Stammdaten) und Stufe 4
 (Freigabe und Abnahme), je als eigenes Vorhaben.

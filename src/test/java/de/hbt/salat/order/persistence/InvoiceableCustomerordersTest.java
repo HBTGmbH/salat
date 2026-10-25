@@ -28,7 +28,7 @@ import de.hbt.salat.order.domain.Suborder;
 /**
  * The orders the invoice page offers (#1283): every order with at least one invoiceable suborder,
  * once, ordered by sign, read as plain values together with its customer — no suborder and no
- * association of the order comes along.
+ * association of the order comes along. The same rule marks the customer orders of the read model (#1539).
  */
 @DataJpaTest
 @Import(AuthorizedUserAuditorAware.class)
@@ -99,6 +99,23 @@ class InvoiceableCustomerordersTest {
     suborder(order(customer, "MITTE", null, false), "01", YESNO_YES);
 
     assertThat(signs()).containsExactly("ALPHA", "MITTE", "ZETA");
+  }
+
+  /** The same rule for a set of orders the caller names (#1539): which of them are customer orders. */
+  @Test
+  void names_the_invoiceable_among_the_given_orders() {
+    var invoiceable = order(customer, "MUSTER-01", null, false);
+    suborder(invoiceable, "01", YESNO_NO);
+    suborder(invoiceable, "02", YESNO_YES);
+    var internal = order(customer, "INTERN-01", null, false);
+    suborder(internal, "01", YESNO_NO);
+    var empty = order(customer, "LEER-01", null, false);
+    var notAsked = order(customer, "ANDERS-01", null, false);
+    suborder(notAsked, "01", YESNO_YES);
+
+    assertThat(customerorderRepository.findInvoiceableIdsByIdIn(
+        List.of(invoiceable.getId(), internal.getId(), empty.getId())))
+        .containsExactly(invoiceable.getId());
   }
 
   private List<String> signs() {

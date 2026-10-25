@@ -20,20 +20,23 @@ import de.hbt.salat.tag.domain.Tag;
  * @param tags                  the names of the tags, by name regardless of case
  * @param intermediary          the customer who placed the order on behalf of the customer (#1536), {@code null} for
  *                              none
+ * @param billable              whether the order has at least one invoiceable suborder, a customer order rather than an
+ *                              internal one, vacation or sickness (#1539)
  */
 public record CustomerorderReadModel(long id, String sign, String description, LocalDate validFrom,
     LocalDate validUntil, Duration debitHours, DebitHoursUnit debitHoursUnit, boolean hidden,
     List<Person> executionResponsibles, Person contractResponsible, List<String> tags, CustomerReadModel customer,
-    CustomerReadModel intermediary) {
+    CustomerReadModel intermediary, boolean billable) {
 
-  public static CustomerorderReadModel of(Customerorder order) {
+  /** @param billable whether the order has an invoiceable suborder; the order does not know it without loading them */
+  public static CustomerorderReadModel of(Customerorder order, boolean billable) {
     return new CustomerorderReadModel(order.getId(), order.getSign(), order.getDescription(), order.getFromDate(),
         order.getUntilDate(), order.getDebithours(), DebitHoursUnit.of(order.getDebithoursunit()), order.getHide(),
         order.getResponsibleHbt().stream().map(Person::of).toList(),
         order.getRespEmpHbtContract() == null ? null : Person.of(order.getRespEmpHbtContract()),
         order.getTags().stream().map(Tag::getName).toList(),
         CustomerReadModel.of(order.getCustomer()),
-        order.getIntermediary() == null ? null : CustomerReadModel.of(order.getIntermediary()));
+        order.getIntermediary() == null ? null : CustomerReadModel.of(order.getIntermediary()), billable);
   }
 
   /** A person by id, sign and name. */

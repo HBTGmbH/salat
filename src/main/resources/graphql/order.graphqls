@@ -47,6 +47,8 @@ type Customerorder {
   customer: Customer!
   "Der Vermittler, der den Auftrag für den Kunden erteilt hat und die Rechnung bekommt; null ohne"
   intermediary: Customer
+  "Ob der Auftrag mindestens einen fakturierbaren Unterauftrag hat, also ein Kundenauftrag ist; false für interne Aufträge, Urlaub und Krankheit"
+  billable: Boolean!
 }
 
 "Worauf sich die Soll-Stunden eines Auftrags beziehen"

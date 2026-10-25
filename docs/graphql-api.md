@@ -6,11 +6,12 @@ das, was diese Person auch in der Oberfläche darf.
 
 Version 1 umfasst:
 - die eigene Person und worauf sie buchen darf,
-- die eigenen Buchungen und die Buchungsliste nach denselben Sichtbarkeitsregeln wie die Seite,
+- die eigenen Buchungen und die Buchungsliste nach denselben Sichtbarkeitsregeln wie die Seite, auch
+  nach Auftragszeichen gefiltert und seitenweise (#1539),
 - Buchungen anlegen, ändern und löschen,
 - den eigenen Arbeitstag lesen und pflegen,
 - die Historie, in welchen Zeiträumen eine Person auf welchem Kundenauftrag gearbeitet hat, mit Auftrag,
-  Kunde und Kundensegment (#1534).
+  Kunde und Kundensegment (#1534), auf Wunsch auch mit internen Aufträgen (#1539).
 
 Auftrag, Kunde und Kundensegment gibt es bisher nur als Teil der Historie, also nur für Aufträge mit
 sichtbaren Buchungen. Eigene Einstiege in die Stammdaten, Freigabe und Abnahme kommen später (Konzept
@@ -75,7 +76,8 @@ eine deutsche Beschreibung.
 | Introspection | begrenzt durch graphql-java („good faith"): jedes Feld höchstens einmal, keine endlose Tiefe | Fehler |
 | Laufzeit einer Anfrage | 10 Sekunden | Fehler |
 | Zeitraum (`timereports`, `timereportList`) | 366 Tage | `GQ-0001` |
-| Zeilen je Seite (`timereportList`) | 200 | `GQ-0002` |
+| Zeilen je Seite (`limit` bei `timereports`, `timereportList`) | 1 bis 200; bei `timereports` ohne Angabe alle | `GQ-0002` |
+| Versatz einer Seite (`offset` bei `timereports`, `timereportList`) | ab 0 | `GQ-0004` |
 | Lücke zwischen zwei Zeiträumen (`orderHistory`) | 1 bis 3650 Tage | `GQ-0003` |
 | Idempotenzschlüssel | 1 bis 100 Zeichen | `XX-0007` |
 
@@ -184,10 +186,45 @@ das Kürzel:
 }
 ```
 
+Aufträge lassen sich auch über ihr Zeichen auswählen, `customerorderSigns`, jeweils mit allen
+Unteraufträgen. Das Zeichen muss genau stimmen, auch in der Groß- und Kleinschreibung. Ein unbekanntes
+Zeichen trifft nichts. Mit `customerorderIds` zusammen zählt jeder Auftrag aus einer der beiden
+Listen.
+
+Seitenweise lesen: `offset` überspringt so viele Treffer, `limit` begrenzt die Seite. Die Reihenfolge
+ist fest, jede Buchung steht auf genau einer Seite. Die Summen zählen immer alle Treffer, `truncated`
+sagt, ob hinter dieser Seite weitere kommen. Die dritte Seite zu je 200 Buchungen:
+
+```graphql
+{
+  timereportList(filter: { from: "2026-01-01", until: "2026-12-31", customerorderSigns: ["ABC-12"],
+                           offset: 400, limit: 200 }) {
+    totalCount truncated
+    items { id date duration employee { sign } }
+  }
+}
+```
+
+Die eigenen Buchungen gehen genauso. Sie stehen nach Tag, Auftragszeichen, Unterauftragszeichen und
+id. Ohne `limit` kommen alle Buchungen des Zeitraums. Die letzte Seite ist erreicht, wenn weniger als
+`limit` Buchungen kommen:
+
+```graphql
+{
+  timereports(from: "2026-01-01", until: "2026-06-30", customerorderSign: "ABC-12", offset: 50, limit: 50) {
+    id date duration suborder { completeOrderSign }
+  }
+}
+```
+
+Gleichzeitige Änderungen verschieben die Seiten: Legt jemand zwischen zwei Abrufen eine Buchung an,
+rückt der Rest um eine Zeile.
+
 Auf welchen Kundenaufträgen hat eine Person in welchen Zeiträumen gearbeitet? Ohne `employeeId` die
 eigene Historie. Je Auftrag ein Eintrag: `from` und `until` sind der erste und der letzte Buchungstag
 über alle Zeiträume, darin stehen die Zeiträume selbst. Kundenaufträge sind die mit mindestens einem
-fakturierbaren Unterauftrag; interne Aufträge, Urlaub und Krankheit stehen nicht darin. Ein Zeitraum
+fakturierbaren Unterauftrag. Interne Aufträge, Urlaub und Krankheit stehen nur mit
+`billableOnly: false` darin, und `customerorder { billable }` unterscheidet sie. Ein Zeitraum
 reicht vom ersten bis zum letzten Buchungstag. Liegen `gapDays` Tage oder mehr ohne Buchung
 dazwischen, ohne Angabe 30, beginnt ein neuer Zeitraum. Es zählen nur die Buchungen, die man auch in
 der Buchungsliste sieht. Wer nicht alle Buchungen der Person sieht, etwa das Backoffice nur die
