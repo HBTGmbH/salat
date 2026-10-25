@@ -268,7 +268,7 @@ class TimereportListFilterValuesTest {
         .extracting(Timereport::getId)
         .containsExactly(onTheDay.getId());
     assertThat(timereportListDAO.findTotals(wholeMonth(), visibility).count()).isEqualTo(1);
-    assertThat(timereportListDAO.findBookedDays(colleague.getEmployee().getId(), visibility))
+    assertThat(timereportListDAO.findBookedDays(colleague.getEmployee().getId(), visibility, true))
         .extracting(BookedDay::day)
         .containsExactly(DAY);
   }
@@ -294,7 +294,7 @@ class TimereportListFilterValuesTest {
     entityManager.flush();
     entityManager.clear();
 
-    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all());
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all(), true);
 
     assertThat(days).containsExactly(
         new BookedDay(alpha.getId(), "ALPHA", DAY, 180L),
@@ -314,9 +314,60 @@ class TimereportListFilterValuesTest {
     book(person, suborder(customerOrder, "ALPHA/02", false), DAY, 1);
     book(person, suborder(customerorder(otherCustomer, "INTERN"), "INTERN/01", false), DAY, 1);
 
-    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all());
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all(), true);
 
     assertThat(days).extracting(BookedDay::customerorderId).containsExactly(customerOrder.getId());
+  }
+
+  /** Asked for every order (#1539), the internal one counts as well, an order like any other. */
+  @Test
+  void the_booked_days_of_every_order_include_those_without_a_billable_suborder() {
+    var person = employeecontract("aaa");
+    var customerOrder = customerorder(customer, "ALPHA");
+    book(person, suborder(customerOrder, "ALPHA/01", true), DAY, 1);
+    var internal = customerorder(otherCustomer, "INTERN");
+    book(person, suborder(internal, "INTERN/01", false), DAY, 2);
+
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(), TimereportVisibility.all(), false);
+
+    assertThat(days).containsExactly(
+        new BookedDay(customerOrder.getId(), "ALPHA", DAY, 60L),
+        new BookedDay(internal.getId(), "INTERN", DAY, 120L));
+  }
+
+  /** Without the billable ones, a clause for them leaves the internal order out all the same (#1539). */
+  @Test
+  void the_booked_days_of_every_order_still_follow_the_billable_clause() {
+    var person = employeecontract("aaa");
+    var customerOrder = customerorder(customer, "ALPHA");
+    book(person, suborder(customerOrder, "ALPHA/01", true), DAY, 1);
+    book(person, suborder(customerorder(otherCustomer, "INTERN"), "INTERN/01", false), DAY, 1);
+
+    var days = timereportListDAO.findBookedDays(person.getEmployee().getId(),
+        TimereportVisibility.of(List.of(Clause.billable())), false);
+
+    assertThat(days).extracting(BookedDay::customerorderId).containsExactly(customerOrder.getId());
+  }
+
+  /**
+   * Pages cut by an offset (#1539) neither repeat nor skip a row, even where day, person and sequence number are alike:
+   * the id decides last.
+   */
+  @Test
+  void consecutive_pages_hold_every_row_once() {
+    var reader = employeecontract("aaa");
+    var suborder = suborder(customerorder(customer, "ALPHA"), "ALPHA/01", true);
+    var first = book(reader, suborder);
+    var second = book(reader, suborder);
+    var third = book(reader, suborder);
+    var visibility = ownBookingsOf(reader);
+
+    var pageOne = timereportListDAO.findRows(page(0, 2), visibility);
+    var pageTwo = timereportListDAO.findRows(page(2, 2), visibility);
+
+    assertThat(pageOne).extracting(Timereport::getId).containsExactly(first.getId(), second.getId());
+    assertThat(pageTwo).extracting(Timereport::getId).containsExactly(third.getId());
+    assertThat(timereportListDAO.findTotals(page(2, 2), visibility).count()).isEqualTo(3);
   }
 
   @Test
@@ -327,7 +378,7 @@ class TimereportListFilterValuesTest {
     book(person, suborder(customerorder(otherCustomer, "BETA"), "BETA/01", true), DAY, 1);
 
     var days = timereportListDAO.findBookedDays(person.getEmployee().getId(),
-        TimereportVisibility.of(List.of(Clause.forOrders(Set.of(visibleOrder.getId())))));
+        TimereportVisibility.of(List.of(Clause.forOrders(Set.of(visibleOrder.getId())))), true);
 
     assertThat(days).extracting(BookedDay::customerorderId).containsExactly(visibleOrder.getId());
   }
@@ -369,6 +420,11 @@ class TimereportListFilterValuesTest {
     return new TimereportListFilter(employeeIds, List.of(), List.of(), List.of(), List.of(), true, tags,
         DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false,
         TimereportListFilter.UNLIMITED);
+  }
+
+  private static TimereportListFilter page(int offset, int maxResults) {
+    return new TimereportListFilter(List.of(), List.of(), List.of(), List.of(), List.of(), true, TagSelection.NONE,
+        DAY.withDayOfMonth(1), DAY.withDayOfMonth(30), Billable.ALL, Sort.DATE, false, maxResults, offset);
   }
 
   private static TimereportVisibility ownBookingsOf(Employeecontract contract) {

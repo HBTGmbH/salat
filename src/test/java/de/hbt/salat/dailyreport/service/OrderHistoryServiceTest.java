@@ -4,6 +4,7 @@ import static java.time.LocalDate.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -69,7 +70,7 @@ class OrderHistoryServiceTest {
         day(ALPHA, "ALPHA", of(2026, 1, 2), 120),
         day(ALPHA, "ALPHA", of(2026, 1, 20), 30));
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30)).containsExactly(
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30, true)).containsExactly(
         new OrderHistory(ALPHA, of(2026, 1, 1), of(2026, 1, 20), 3, Duration.ofMinutes(210), List.of(
             new OrderHistoryPeriod(of(2026, 1, 1), of(2026, 1, 20), 3, Duration.ofMinutes(210)))));
   }
@@ -84,7 +85,7 @@ class OrderHistoryServiceTest {
         day(ALPHA, "ALPHA", of(2026, 1, 1), 60),
         day(ALPHA, "ALPHA", of(2026, 2, 1), 90));
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30)).containsExactly(
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30, true)).containsExactly(
         new OrderHistory(ALPHA, of(2026, 1, 1), of(2026, 2, 1), 2, Duration.ofMinutes(150), List.of(
             new OrderHistoryPeriod(of(2026, 2, 1), of(2026, 2, 1), 1, Duration.ofMinutes(90)),
             new OrderHistoryPeriod(of(2026, 1, 1), of(2026, 1, 1), 1, Duration.ofMinutes(60)))));
@@ -97,7 +98,7 @@ class OrderHistoryServiceTest {
         day(ALPHA, "ALPHA", of(2026, 1, 1), 60),
         day(ALPHA, "ALPHA", of(2026, 1, 31), 60));
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30).getFirst().periods()).hasSize(1);
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30, true).getFirst().periods()).hasSize(1);
   }
 
   /** The caller chooses the gap: a week with the next booking ten days later makes two periods. */
@@ -107,14 +108,14 @@ class OrderHistoryServiceTest {
         day(ALPHA, "ALPHA", of(2026, 1, 1), 60),
         day(ALPHA, "ALPHA", of(2026, 1, 11), 60));
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 7).getFirst().periods()).hasSize(2);
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 10).getFirst().periods()).hasSize(1);
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 7, true).getFirst().periods()).hasSize(2);
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 10, true).getFirst().periods()).hasSize(1);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1, OrderHistoryService.MAX_GAP_DAYS + 1})
   void a_gap_out_of_range_is_refused(int gapDays) {
-    assertThatThrownBy(() -> orderHistoryService.getOrderHistory(EMPLOYEE_ID, gapDays))
+    assertThatThrownBy(() -> orderHistoryService.getOrderHistory(EMPLOYEE_ID, gapDays, true))
         .isInstanceOfSatisfying(InvalidDataException.class,
             exception -> assertThat(exception.getMessages().getFirst().getErrorCode()).isEqualTo(ErrorCode.GQ_GAP_OUT_OF_RANGE));
   }
@@ -129,7 +130,7 @@ class OrderHistoryServiceTest {
         day(BETA, "BETA", of(2025, 6, 1), 60),
         day(GAMMA, "GAMMA", of(2025, 7, 1), 60));
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30))
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30, true))
         .extracting(OrderHistory::customerorderId)
         .containsExactly(GAMMA, ALPHA, BETA);
   }
@@ -138,19 +139,19 @@ class OrderHistoryServiceTest {
   void without_a_booking_the_history_is_empty() {
     givenDays();
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30)).isEmpty();
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30, true)).isEmpty();
   }
 
   @Test
   void whoever_sees_no_booking_at_all_is_not_even_asked_for_one() {
     when(visibilityService.anyTime()).thenReturn(TimereportVisibility.of(List.of()));
 
-    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30)).isEmpty();
-    verify(timereportListDAO, never()).findBookedDays(anyLong(), any());
+    assertThat(orderHistoryService.getOrderHistory(EMPLOYEE_ID, 30, true)).isEmpty();
+    verify(timereportListDAO, never()).findBookedDays(anyLong(), any(), anyBoolean());
   }
 
   private void givenDays(BookedDay... days) {
-    when(timereportListDAO.findBookedDays(EMPLOYEE_ID, visibility)).thenReturn(List.of(days));
+    when(timereportListDAO.findBookedDays(EMPLOYEE_ID, visibility, true)).thenReturn(List.of(days));
   }
 
   private static BookedDay day(long orderId, String sign, LocalDate day, long minutes) {

@@ -7,6 +7,7 @@ import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_MA;
 import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 import static de.hbt.salat.common.GlobalConstants.INVOICE_YES;
+import static de.hbt.salat.common.GlobalConstants.YESNO_NO;
 
 import graphql.introspection.IntrospectionQuery;
 import java.net.URI;
@@ -21,6 +22,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +80,8 @@ class GraphqlIntegrationTest {
   private static final String RESTRICTED = "gqrs";
   /** A person whose employee order on the suborder is split into two periods. */
   private static final String MOVER = "gqmv";
+  /** An order without a billable suborder (#1539), made by the tests that need it. */
+  private static final String INTERNAL = "INT-01";
   /** A Wednesday in the past, inside the year a booking may lie in. */
   private static final LocalDate DAY = LocalDate.now().minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.WEDNESDAY));
 
@@ -220,9 +224,11 @@ class GraphqlIntegrationTest {
     var other = json(post(OTHER_EMPLOYEE, "query($day: Date!) { me { bookableSuborders(on: $day) { suborderId } } }",
         Map.of("day", DAY.toString()))).at("/data/me/bookableSuborders");
 
-    assertThat(own.size()).isEqualTo(1);
-    assertThat(own.at("/0/suborderId").asString()).isEqualTo(String.valueOf(suborderId));
-    assertThat(own.at("/0/completeOrderSign").asString()).isEqualTo("ABC-12/01");
+    // the tests share the database, and some give the person an internal order as well (#1539)
+    assertThat(own.valueStream()
+        .filter(suborder -> suborder.at("/suborderId").asString().equals(String.valueOf(suborderId)))
+        .map(suborder -> suborder.at("/completeOrderSign").asString()))
+        .containsExactly("ABC-12/01");
     assertThat(other.size()).isZero();
   }
 
@@ -302,12 +308,12 @@ class GraphqlIntegrationTest {
   // --- the order history (#1534) ---
 
   private static final String HISTORY = """
-      query($employee: ID, $gap: Int) {
-        orderHistory(employeeId: $employee, gapDays: $gap) {
+      query($employee: ID, $gap: Int, $billableOnly: Boolean) {
+        orderHistory(employeeId: $employee, gapDays: $gap, billableOnly: $billableOnly) {
           from until bookedDays duration
           periods { from until bookedDays duration }
           customerorder {
-            id sign description validFrom validUntil debitHours debitHoursUnit hidden tags
+            id sign description validFrom validUntil debitHours debitHoursUnit hidden tags billable
             executionResponsibles { sign } contractResponsible { sign }
             customer { shortName name address hidden intermediary segment { id name } }
             intermediary { shortName }
@@ -340,6 +346,35 @@ class GraphqlIntegrationTest {
     assertThat(order.at("/customer/segment").isNull()).isTrue();
     assertThat(order.at("/customer/intermediary").asBoolean()).isFalse();
     assertThat(order.at("/intermediary").isNull()).isTrue();
+    assertThat(order.at("/billable").asBoolean()).isTrue();
+  }
+
+  /** Internal orders are left out unless asked for (#1539), and then marked as not billable. */
+  @Test
+  void the_order_history_takes_internal_orders_only_when_asked_for() throws Exception {
+    createBooking(internalSuborderId(), "Intern");
+
+    var customerOrders = json(post(EMPLOYEE, HISTORY, Map.of())).at("/data/orderHistory");
+    var explicitly = json(post(EMPLOYEE, HISTORY, Map.of("billableOnly", true))).at("/data/orderHistory");
+    var everyOrder = json(post(EMPLOYEE, HISTORY, Map.of("billableOnly", false))).at("/data/orderHistory");
+
+    assertThat(historySigns(customerOrders)).doesNotContain(INTERNAL);
+    assertThat(historySigns(explicitly)).isEqualTo(historySigns(customerOrders));
+    assertThat(historySigns(everyOrder)).contains(INTERNAL, "ABC-12");
+    assertThat(everyOrder.valueStream()
+        .filter(entry -> entry.at("/customerorder/sign").asString().equals(INTERNAL))
+        .map(entry -> entry.at("/customerorder/billable").asBoolean())).containsExactly(false);
+  }
+
+  /** Every order does not mean every booking: another employee still sees nothing of her history. */
+  @Test
+  void the_order_history_of_every_order_keeps_the_visibility() throws Exception {
+    createBooking(internalSuborderId(), "Intern, nicht für andere");
+
+    var body = json(post(OTHER_EMPLOYEE, HISTORY, Map.of("employee", employeeIdOf(EMPLOYEE), "billableOnly", false)));
+
+    assertThat(body.at("/errors").isMissingNode()).isTrue();
+    assertThat(body.at("/data/orderHistory").size()).isZero();
   }
 
   @Test
@@ -373,6 +408,108 @@ class GraphqlIntegrationTest {
     var body = json(post(RESTRICTED, HISTORY, Map.of()));
 
     assertThat(body.at("/errors/0/extensions/code").asString()).isEqualTo("AA-0002");
+  }
+
+  // --- filter by sign and paging (#1539) ---
+
+  private static final String OWN = """
+      query($from: Date!, $until: Date!, $sign: String, $offset: Int, $limit: Int) {
+        timereports(from: $from, until: $until, customerorderSign: $sign, offset: $offset, limit: $limit) {
+          id suborder { completeOrderSign }
+        }
+      }""";
+
+  @Test
+  void the_own_bookings_on_one_order_by_its_sign() throws Exception {
+    String internal = createBooking(internalSuborderId(), "Intern, eigene");
+    String customer = createBooking("Kunde, eigene");
+
+    var onInternal = json(post(EMPLOYEE, OWN, ownVariables(INTERNAL, null, null))).at("/data/timereports");
+    var onCustomer = json(post(EMPLOYEE, OWN, ownVariables("ABC-12", null, null))).at("/data/timereports");
+    var otherSpelling = json(post(EMPLOYEE, OWN, ownVariables("abc-12", null, null))).at("/data/timereports");
+
+    assertThat(ownIds(onInternal)).contains(internal).doesNotContain(customer);
+    assertThat(signsOf(onInternal)).allMatch(sign -> sign.startsWith(INTERNAL + "/"));
+    assertThat(ownIds(onCustomer)).contains(customer).doesNotContain(internal);
+    assertThat(otherSpelling.size()).isZero();
+  }
+
+  @Test
+  void the_own_bookings_page_by_page_are_the_bookings_without_pages() throws Exception {
+    createBooking("Seite 1");
+    createBooking("Seite 2");
+    createBooking("Seite 3");
+    var all = ownIds(json(post(EMPLOYEE, OWN, ownVariables(null, null, null))).at("/data/timereports"));
+
+    var paged = new ArrayList<String>();
+    for (int offset = 0; ; offset += 2) {
+      var page = ownIds(json(post(EMPLOYEE, OWN, ownVariables(null, offset, 2))).at("/data/timereports"));
+      paged.addAll(page);
+      if (page.size() < 2) {
+        break;
+      }
+    }
+
+    assertThat(all.size()).isGreaterThanOrEqualTo(3);
+    assertThat(paged).isEqualTo(all);
+  }
+
+  @Test
+  void the_booking_list_finds_orders_by_sign_also_together_with_ids() throws Exception {
+    String internal = createBooking(internalSuborderId(), "Intern, Liste");
+    String customer = createBooking("Kunde, Liste");
+    long customerorderId = customerorderRepository.findIdBySign("ABC-12").orElseThrow();
+
+    var bySign = listOf(Map.of("customerorderSigns", List.of(INTERNAL)));
+    var byBoth = listOf(Map.of("customerorderSigns", List.of(INTERNAL), "customerorderIds", List.of(customerorderId)));
+    var unknownOnly = listOf(Map.of("customerorderSigns", List.of("NIX-99")));
+    var unknownWithEmptyIds = listOf(Map.of("customerorderSigns", List.of("NIX-99"), "customerorderIds", List.of()));
+
+    assertThat(ids(bySign)).contains(internal).doesNotContain(customer);
+    assertThat(ids(byBoth)).contains(internal, customer);
+    assertThat(unknownOnly.at("/totalCount").asInt()).isZero();
+    assertThat(unknownOnly.at("/items").size()).isZero();
+    assertThat(unknownWithEmptyIds.at("/totalCount").asInt()).isZero();
+  }
+
+  @Test
+  void the_booking_list_page_by_page_holds_every_hit_once_with_the_sums_of_all() throws Exception {
+    createBooking("Liste 1");
+    createBooking("Liste 2");
+    createBooking("Liste 3");
+    var all = listOf(Map.of("employeeIds", List.of(employeeIdOf(EMPLOYEE)), "limit", 200));
+    int total = all.at("/totalCount").asInt();
+
+    var paged = new ArrayList<String>();
+    for (int offset = 0; offset < total; offset += 2) {
+      var page = listOf(Map.of("employeeIds", List.of(employeeIdOf(EMPLOYEE)), "limit", 2, "offset", offset));
+      assertThat(page.at("/totalCount").asInt()).isEqualTo(total);
+      assertThat(page.at("/totalDuration").asString()).isEqualTo(all.at("/totalDuration").asString());
+      assertThat(page.at("/truncated").asBoolean()).isEqualTo(offset + 2 < total);
+      paged.addAll(ids(page));
+    }
+
+    assertThat(total).isGreaterThanOrEqualTo(3);
+    assertThat(paged).isEqualTo(ids(all));
+  }
+
+  @Test
+  void a_negative_offset_is_refused() throws Exception {
+    var own = json(post(EMPLOYEE, OWN, ownVariables(null, -1, null)));
+    var filter = new HashMap<>(listFilter(null));
+    filter.put("offset", -1);
+    var list = json(post(MANAGER, LIST, Map.of("filter", filter)));
+
+    assertThat(own.at("/errors/0/extensions/code").asString()).isEqualTo("GQ-0004");
+    assertThat(own.at("/errors/0/message").asString()).isEqualTo("Der Versatz einer Seite darf nicht negativ sein.");
+    assertThat(list.at("/errors/0/extensions/code").asString()).isEqualTo("GQ-0004");
+  }
+
+  @Test
+  void a_page_of_own_bookings_larger_than_the_limit_is_refused() throws Exception {
+    var body = json(post(EMPLOYEE, OWN, ownVariables(null, null, 201)));
+
+    assertThat(body.at("/errors/0/extensions/code").asString()).isEqualTo("GQ-0002");
   }
 
   @Test
@@ -625,8 +762,82 @@ class GraphqlIntegrationTest {
   }
 
   private String createBooking(String description) throws Exception {
-    var body = json(post(EMPLOYEE, CREATE, createVariables(UUID.randomUUID().toString(), "PT30M", description)));
+    return createBooking(suborderId, description);
+  }
+
+  private String createBooking(long suborder, String description) throws Exception {
+    var variables = new HashMap<>(createVariables(UUID.randomUUID().toString(), "PT30M", description));
+    variables.put("suborder", suborder);
+    var body = json(post(EMPLOYEE, CREATE, variables));
     return body.at("/data/createTimereport/timereport/id").asString();
+  }
+
+  /** The suborder of the internal order, with an employee order of the employee on it; made by the first who asks. */
+  private long internalSuborderId() {
+    var existing = suborderRepository.findByCompleteOrderSign(INTERNAL + "/01");
+    if (existing.isPresent()) {
+      return existing.get().getId();
+    }
+    var abc = customerorderRepository.findById(customerorderRepository.findIdBySign("ABC-12").orElseThrow())
+        .orElseThrow();
+    var manager = employeeRepository.findBySign(MANAGER).orElseThrow();
+    var order = new Customerorder();
+    order.setCustomer(abc.getCustomer());
+    order.setSign(INTERNAL);
+    order.setShortdescription("Intern");
+    order.setDescription("Interne Arbeit");
+    order.setFromDate(LocalDate.of(2000, 1, 1));
+    order.setOrderType(OrderType.STANDARD);
+    order.setDebithours(Duration.ZERO);
+    order.setResponsibleHbt(List.of(manager));
+    order.setRespEmpHbtContract(manager);
+    order = customerorderRepository.save(order);
+    var suborder = new Suborder();
+    suborder.setCustomerorder(order);
+    suborder.setSign("01");
+    suborder.setShortdescription("Intern");
+    suborder.setDescription("Intern");
+    suborder.setFromDate(LocalDate.of(2000, 1, 1));
+    suborder.setDebithours(Duration.ZERO);
+    suborder.setInvoice(YESNO_NO);
+    suborder = suborderRepository.save(suborder);
+    var employeeorder = new Employeeorder();
+    employeeorder.setSuborder(suborder);
+    employeeorder.setEmployeecontract(employeeContract);
+    employeeorder.setFromDate(LocalDate.of(2000, 1, 1));
+    employeeorderRepository.save(employeeorder);
+    return suborder.getId();
+  }
+
+  private Map<String, Object> ownVariables(String sign, Integer offset, Integer limit) {
+    var variables = new HashMap<String, Object>();
+    variables.put("from", DAY.toString());
+    variables.put("until", DAY.toString());
+    variables.put("sign", sign);
+    variables.put("offset", offset);
+    variables.put("limit", limit);
+    return variables;
+  }
+
+  /** The booking list of the manager on the day, with these fields in the filter. */
+  private JsonNode listOf(Map<String, Object> fields) throws Exception {
+    var filter = new HashMap<String, Object>(listFilter(null));
+    filter.putAll(fields);
+    var body = json(post(MANAGER, LIST, Map.of("filter", filter)));
+    assertThat(body.at("/errors").isMissingNode()).as(body.toString()).isTrue();
+    return body.at("/data/timereportList");
+  }
+
+  private static List<String> ownIds(JsonNode timereports) {
+    return timereports.valueStream().map(timereport -> timereport.at("/id").asString()).toList();
+  }
+
+  private static List<String> signsOf(JsonNode timereports) {
+    return timereports.valueStream().map(timereport -> timereport.at("/suborder/completeOrderSign").asString()).toList();
+  }
+
+  private static List<String> historySigns(JsonNode history) {
+    return history.valueStream().map(entry -> entry.at("/customerorder/sign").asString()).toList();
   }
 
   private Map<String, Object> listFilter(Long employeeId) {

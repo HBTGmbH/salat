@@ -60,7 +60,7 @@ public class TimereportListDAO {
 
   private final EntityManager entityManager;
 
-  /** The rows, in chronological order and cut to the maximum the filter asks for. */
+  /** The rows, in chronological order and cut to the maximum the filter asks for, from its offset on. */
   public List<Timereport> findRows(TimereportListFilter filter, TimereportVisibility visibility) {
     var builder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Timereport> query = builder.createQuery(Timereport.class);
@@ -81,6 +81,9 @@ public class TimereportListDAO {
     var typed = entityManager.createQuery(query);
     if (filter.limited()) {
       typed.setMaxResults(filter.maxResults());
+    }
+    if (filter.offset() > 0) {
+      typed.setFirstResult(filter.offset());
     }
     return typed.getResultList();
   }
@@ -112,19 +115,23 @@ public class TimereportListDAO {
       orders.add(builder.asc(sign));
     }
     orders.add(builder.asc(root.get(Timereport_.sequencenumber)));
+    // the id last, so that two bookings alike in everything else keep their places and a page cut by an offset
+    // neither repeats nor skips one (#1539)
+    orders.add(builder.asc(root.get(Timereport_.id)));
     return orders;
   }
 
   /**
-   * The days a person booked on, per customer order, with what was booked there that day — under the same visibility
-   * as the list, over all time (#1534). What the order history cuts into periods; one row per order and day, so a
-   * person with years of bookings yields a few thousand rows rather than every booking.
+   * The days a person booked on, per order, with what was booked there that day — under the same visibility as the
+   * list, over all time (#1534). What the order history cuts into periods; one row per order and day, so a person with
+   * years of bookings yields a few thousand rows rather than every booking.
    *
-   * <p>Only orders for a customer count: those with at least one billable suborder. Such an order counts with all its
-   * bookings, those on its non-billable suborders included — the history tells where somebody worked, not what was
-   * invoiced.
+   * <p>With {@code billableOnly}, only orders for a customer count: those with at least one billable suborder. Such an
+   * order counts with all its bookings, those on its non-billable suborders included — the history tells where
+   * somebody worked, not what was invoiced. Without it every order counts (#1539). The order module answers the same
+   * question about an order in {@code CustomerorderRepository.findInvoiceableIdsByIdIn}.
    */
-  public List<BookedDay> findBookedDays(long employeeId, TimereportVisibility visibility) {
+  public List<BookedDay> findBookedDays(long employeeId, TimereportVisibility visibility, boolean billableOnly) {
     var builder = entityManager.getCriteriaBuilder();
     CriteriaQuery<BookedDay> query = builder.createQuery(BookedDay.class);
     var root = query.from(Timereport.class);
@@ -136,18 +143,19 @@ public class TimereportListDAO {
     var dimensions = new Dimensions(joins.employee().get(Employee_.id), customerorderId, suborder.get(Suborder_.id),
         suborder.get(Suborder_.invoice), refdate);
 
-    // customer orders only: an order with at least one billable suborder, then with all of its bookings — internal
-    // orders, vacation and sickness have none
-    var billable = query.subquery(Long.class);
-    var billableSuborder = billable.from(Suborder.class);
-    billable.select(billableSuborder.get(Suborder_.id)).where(
-        builder.equal(billableSuborder.get(Suborder_.customerorder), joins.customerorder()),
-        builder.equal(billableSuborder.get(Suborder_.invoice), YESNO_YES));
-
     var predicates = new ArrayList<Predicate>();
     predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
     predicates.add(builder.equal(dimensions.employeeId(), employeeId));
-    predicates.add(builder.exists(billable));
+    if (billableOnly) {
+      // customer orders only: an order with at least one billable suborder, then with all of its bookings — internal
+      // orders, vacation and sickness have none
+      var billable = query.subquery(Long.class);
+      var billableSuborder = billable.from(Suborder.class);
+      billable.select(billableSuborder.get(Suborder_.id)).where(
+          builder.equal(billableSuborder.get(Suborder_.customerorder), joins.customerorder()),
+          builder.equal(billableSuborder.get(Suborder_.invoice), YESNO_YES));
+      predicates.add(builder.exists(billable));
+    }
     visibilityCondition(visibility, dimensions, builder).ifPresent(predicates::add);
 
     query.select(builder.construct(BookedDay.class, customerorderId, customerorderSign, refdate,

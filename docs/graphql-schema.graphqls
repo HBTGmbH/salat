@@ -40,6 +40,8 @@ type CustomerSegment {
 
 "Ein Auftrag, mit dem, was die Auftragsliste allen zeigt, die sie öffnen dürfen"
 type Customerorder {
+  "Ob der Auftrag mindestens einen fakturierbaren Unterauftrag hat, also ein Kundenauftrag ist; false für interne Aufträge, Urlaub und Krankheit"
+  billable: Boolean!
   "Die oder der Verantwortliche bei HBT für den Vertrag, null ohne"
   contractResponsible: PersonRef
   "Der Kunde"
@@ -195,8 +197,9 @@ type Query {
   me: Me!
   """
   Auf welchen Kundenaufträgen eine Person in welchen Zeiträumen gearbeitet hat, aus ihren Buchungen über die ganze
-  Zeit; ein Eintrag je Auftrag, darin die Zeiträume. Ein Kundenauftrag hat mindestens einen fakturierbaren
-  Unterauftrag; interne Aufträge, Urlaub und Krankheit stehen nicht in der Historie. Ein Zeitraum reicht vom ersten
+  Zeit; ein Eintrag je Auftrag, darin die Zeiträume. Ohne Angabe enthält sie nur Kundenaufträge, also Aufträge mit
+  mindestens einem fakturierbaren Unterauftrag; mit billableOnly: false auch interne Aufträge, Urlaub und Krankheit
+  (siehe Customerorder.billable). Ein Zeitraum reicht vom ersten
   bis zum letzten Buchungstag; liegen dazwischen gapDays Tage oder mehr ohne Buchung auf dem Auftrag, beginnt ein
   neuer Zeitraum. Es zählen nur die Buchungen, die die angemeldete Person nach den Regeln der Buchungsliste sehen darf
   (siehe timereportList): Wer für einen Auftrag verantwortlich ist, sieht von anderen Personen nur diesen Auftrag, und
@@ -205,6 +208,11 @@ type Query {
   mit dem jüngsten Buchungstag steht vorn. Eingeschränkte Anmeldungen bekommen AA-0002.
   """
   orderHistory(
+    """
+    true: nur Kundenaufträge, also Aufträge mit mindestens einem fakturierbaren Unterauftrag, jeweils mit allen
+    Buchungen darauf; false: alle Aufträge, auch interne, Urlaub und Krankheit
+    """
+    billableOnly: Boolean = true,
     "Die Person (Me.employeeId); ohne Angabe die angemeldete"
     employeeId: ID,
     "Ab wie vielen Tagen ohne Buchung auf einem Auftrag ein neuer Zeitraum beginnt, 1 bis 3650 (sonst GQ-0003)"
@@ -218,17 +226,31 @@ type Query {
   """
   Buchungen nach denselben Sichtbarkeitsregeln wie die Buchungsliste der Oberfläche: Mitarbeitende sehen ihre
   eigenen, People Leads die ihres Teams, Verantwortliche die ihrer Aufträge, das Backoffice die auf fakturierbaren
-  Unteraufträgen, die Geschäftsführung alle; dazu kommen einzeln vergebene Regeln. Die Zeilen sind auf limit
-  begrenzt, die Summen zählen alle Treffer. Eingeschränkte Anmeldungen bekommen AA-0002.
+  Unteraufträgen, die Geschäftsführung alle; dazu kommen einzeln vergebene Regeln. Die Zeilen stehen nach Tag, Kürzel,
+  Reihenfolge der Buchung am Tag und id; offset und limit schneiden daraus eine Seite. Die Summen zählen alle Treffer.
+  Eingeschränkte Anmeldungen bekommen AA-0002.
   """
   timereportList(
     "Was gesucht wird"
     filter: TimereportListFilter!
   ): TimereportPage!
-  "Die eigenen Buchungen eines Zeitraums, höchstens 366 Tage (sonst GQ-0001)"
+  """
+  Die eigenen Buchungen eines Zeitraums, höchstens 366 Tage (sonst GQ-0001). Sie stehen nach Tag, Auftragszeichen,
+  Unterauftragszeichen und id; offset und limit schneiden daraus eine Seite. Die letzte Seite ist erreicht, wenn
+  weniger als limit Buchungen kommen.
+  """
   timereports(
+    """
+    Nur Buchungen auf diesem Auftrag samt allen seinen Unteraufträgen, z. B. ABC-12; das Zeichen muss genau stimmen,
+    auch in der Groß- und Kleinschreibung. Ein unbekanntes Zeichen ergibt eine leere Liste
+    """
+    customerorderSign: String,
     "Erster Tag, eingeschlossen"
     from: Date!,
+    "Wie viele Buchungen höchstens kommen, 1 bis 200 (sonst GQ-0002); ohne Angabe alle"
+    limit: Int,
+    "Wie viele Buchungen übersprungen werden, ab 0 (sonst GQ-0004)"
+    offset: Int = 0,
     "Letzter Tag, eingeschlossen"
     until: Date!
   ): [Timereport!]!
@@ -283,7 +305,7 @@ type TimereportPage {
   totalCount: Int!
   "Ihre Dauer"
   totalDuration: Duration!
-  "true, wenn es mehr Treffer als Zeilen gibt"
+  "true, wenn es hinter dieser Seite weitere Treffer gibt"
   truncated: Boolean!
 }
 
@@ -406,12 +428,20 @@ input TimereportListFilter {
   customerIds: [ID!]
   "Auf welchen Aufträgen, jeweils mit dem ganzen Baum"
   customerorderIds: [ID!]
+  """
+  Auf welchen Aufträgen, als Zeichen wie ABC-12, jeweils mit dem ganzen Baum; das Zeichen muss genau stimmen, auch in
+  der Groß- und Kleinschreibung. Zusammen mit customerorderIds zählt jeder Auftrag aus einer der beiden Listen. Ein
+  unbekanntes Zeichen trifft nichts, auch nicht, wenn es das einzige ist
+  """
+  customerorderSigns: [String!]
   "Wessen Buchungen, als id der Person (Me.employeeId)"
   employeeIds: [ID!]
   "Erster Tag, eingeschlossen"
   from: Date!
   "Wie viele Zeilen, 1 bis 200 (sonst GQ-0002)"
   limit: Int = 100
+  "Wie viele Treffer übersprungen werden, ab 0 (sonst GQ-0004)"
+  offset: Int = 0
   "Auf welchen Unteraufträgen, jeweils mit dem ganzen Zweig"
   suborderIds: [ID!]
   "Letzter Tag, eingeschlossen; höchstens 366 Tage nach from (sonst GQ-0001)"

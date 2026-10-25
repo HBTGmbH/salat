@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -183,6 +184,17 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       order by c.sign
       """)
   List<CustomerorderOption> findAllInvoiceable();
+
+  /**
+   * Which of these orders have at least one invoiceable suborder — the rule of {@link #findAllInvoiceable}, for the
+   * read model of a set of orders at once (#1539). The order history asks the same in its own query
+   * ({@code TimereportListDAO.findBookedDays}); a change to the rule belongs in both.
+   */
+  @Query("""
+      select c.id from Customerorder c
+      where c.id in :ids and exists (select 1 from Suborder s where s.customerorder = c and s.invoice = 'Y')
+      """)
+  Set<Long> findInvoiceableIdsByIdIn(Collection<Long> ids);
 
   /**
    * The orders with these ids as a select offers them, hidden and expired ones included — for the

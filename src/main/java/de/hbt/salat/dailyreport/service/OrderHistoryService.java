@@ -21,7 +21,8 @@ import de.hbt.salat.dailyreport.persistence.TimereportListDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportListDAO.BookedDay;
 
 /**
- * On which customer orders a person worked, and in which periods (#1534), worked out from the days booked.
+ * On which orders a person worked, and in which periods (#1534), worked out from the days booked: the customer orders,
+ * or all orders (#1539).
  *
  * <p>Only what the user may read counts: the bookings come under the {@link TimereportVisibility} of the booking list,
  * over all time, so somebody responsible for an order sees the history of another person on that order and nowhere
@@ -45,10 +46,12 @@ public class OrderHistoryService {
    * The orders, the one with the latest day booked first, then by sign; within each order its periods, the latest
    * first.
    *
-   * @param gapDays how many days without a booking on an order start a new period, 1 to {@value #MAX_GAP_DAYS}
+   * @param gapDays      how many days without a booking on an order start a new period, 1 to {@value #MAX_GAP_DAYS}
+   * @param billableOnly whether only customer orders count — those with at least one billable suborder — or every order,
+   *                     internal ones, vacation and sickness included
    * @throws InvalidDataException {@code GQ-0003} for a gap out of that range
    */
-  public List<OrderHistory> getOrderHistory(long employeeId, int gapDays) {
+  public List<OrderHistory> getOrderHistory(long employeeId, int gapDays, boolean billableOnly) {
     if (gapDays < 1 || gapDays > MAX_GAP_DAYS) {
       throw new InvalidDataException(GQ_GAP_OUT_OF_RANGE, MAX_GAP_DAYS);
     }
@@ -57,7 +60,7 @@ public class OrderHistoryService {
       return List.of();
     }
     var daysByOrder = new LinkedHashMap<Long, List<BookedDay>>();
-    timereportListDAO.findBookedDays(employeeId, visibility)
+    timereportListDAO.findBookedDays(employeeId, visibility, billableOnly)
         .forEach(day -> daysByOrder.computeIfAbsent(day.customerorderId(), id -> new ArrayList<>()).add(day));
     return daysByOrder.values().stream()
         .map(days -> new SignedHistory(days.getFirst().customerorderSign(), historyOf(days, gapDays)))

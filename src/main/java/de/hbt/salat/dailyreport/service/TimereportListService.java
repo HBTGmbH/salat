@@ -454,7 +454,7 @@ public class TimereportListService {
         : filter.tags();
     return new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
         suborderIds, ticketKeys, filter.ticketDescendants(), tags, filter.from(), filter.until(), filter.billable(),
-        filter.sort(), filter.descending(), filter.maxResults());
+        filter.sort(), filter.descending(), filter.maxResults(), filter.offset());
   }
 
   private List<String> expandTickets(TimereportListFilter filter) {

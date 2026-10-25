@@ -25,6 +25,8 @@ import de.hbt.salat.common.LocalDateRange;
  * @param sort             which column the rows are ordered by
  * @param descending       whether that order is reversed
  * @param maxResults       how many rows to show; the sums always count every hit
+ * @param offset           how many rows to skip before them (#1539), 0 for the first page; the page itself always
+ *                         starts there
  */
 public record TimereportListFilter(
     List<Long> employeeIds,
@@ -39,11 +41,20 @@ public record TimereportListFilter(
     Billable billable,
     Sort sort,
     boolean descending,
-    int maxResults
+    int maxResults,
+    int offset
 ) {
 
   /** No limit at all — what the export asks for. The entry "Alle" of the page is capped (#1153). */
   public static final int UNLIMITED = Integer.MAX_VALUE;
+
+  /** A filter from the first row on — what the page and the export ask for. */
+  public TimereportListFilter(List<Long> employeeIds, List<Long> customerIds, List<Long> customerOrderIds,
+      List<Long> suborderIds, List<String> ticketKeys, boolean ticketDescendants, TagSelection tags, LocalDate from,
+      LocalDate until, Billable billable, Sort sort, boolean descending, int maxResults) {
+    this(employeeIds, customerIds, customerOrderIds, suborderIds, ticketKeys, ticketDescendants, tags, from, until,
+        billable, sort, descending, maxResults, 0);
+  }
 
   public TimereportListFilter {
     employeeIds = List.copyOf(employeeIds);
@@ -61,10 +72,10 @@ public record TimereportListFilter(
    * {@code null} list means no restriction, like an empty one.
    */
   public static TimereportListFilter of(LocalDate from, LocalDate until, List<Long> employeeIds, List<Long> customerIds,
-      List<Long> customerOrderIds, List<Long> suborderIds, Billable billable, int maxResults) {
+      List<Long> customerOrderIds, List<Long> suborderIds, Billable billable, int maxResults, int offset) {
     return new TimereportListFilter(orEmpty(employeeIds), orEmpty(customerIds), orEmpty(customerOrderIds),
         orEmpty(suborderIds), List.of(), true, TagSelection.NONE, from, until,
-        billable == null ? Billable.ALL : billable, Sort.DATE, false, maxResults);
+        billable == null ? Billable.ALL : billable, Sort.DATE, false, maxResults, offset);
   }
 
   private static List<Long> orEmpty(List<Long> ids) {

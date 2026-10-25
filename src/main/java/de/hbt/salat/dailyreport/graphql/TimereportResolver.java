@@ -1,6 +1,7 @@
 package de.hbt.salat.dailyreport.graphql;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static de.hbt.salat.common.exception.ErrorCode.GQ_OFFSET_NEGATIVE;
 import static de.hbt.salat.common.exception.ErrorCode.GQ_PAGE_SIZE_OUT_OF_RANGE;
 import static de.hbt.salat.common.exception.ErrorCode.GQ_PERIOD_TOO_LONG;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
@@ -10,6 +11,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -27,12 +29,13 @@ import de.hbt.salat.common.service.IdempotencyService;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter;
 import de.hbt.salat.dailyreport.domain.TimereportListFilter.Billable;
+import de.hbt.salat.dailyreport.service.OwnTimereportService;
 import de.hbt.salat.dailyreport.service.SurchargeChoice;
 import de.hbt.salat.dailyreport.service.TimereportListService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
-import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.SuborderLocation;
+import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -54,8 +57,9 @@ class TimereportResolver {
 
   private final TimereportService timereportService;
   private final TimereportListService timereportListService;
-  private final EmployeecontractService employeecontractService;
+  private final OwnTimereportService ownTimereportService;
   private final EmployeeorderService employeeorderService;
+  private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final AuthorizedEmployee authorizedEmployee;
   private final OwnContract ownContract;
@@ -63,14 +67,13 @@ class TimereportResolver {
 
   @QueryMapping
   @Authorized
-  List<TimereportView> timereports(@Argument LocalDate from, @Argument LocalDate until) {
+  List<TimereportView> timereports(@Argument LocalDate from, @Argument LocalDate until,
+      @Argument String customerorderSign, @Argument Integer offset, @Argument Integer limit) {
     checkPeriod(from, until);
-    // the same two steps as DailyReportRestEndpoint: the contracts covering the period, then their bookings
-    return employeecontractService.getEmployeecontractPeriodsBetween(authorizedEmployee.getEmployeeId(), from, until)
+    // without a limit every booking, as before there was one (#1539)
+    int maxResults = limit == null ? Integer.MAX_VALUE : checkLimit(limit);
+    return ownTimereportService.getOwnTimereports(from, until, customerorderSign, checkOffset(offset), maxResults)
         .stream()
-        .flatMap(period -> timereportService
-            .getTimereportsByDatesAndEmployeeContractId(period.employeecontractId(), period.from(), period.until())
-            .stream())
         .map(TimereportView::of)
         .toList();
   }
@@ -91,15 +94,36 @@ class TimereportResolver {
   @Authorized(requireUnrestricted = true)
   TimereportPage timereportList(@Argument TimereportListFilterInput filter) {
     checkPeriod(filter.from(), filter.until());
-    int limit = Objects.requireNonNullElse(filter.limit(), DEFAULT_LIMIT);
-    if (limit < 1 || limit > MAX_LIMIT) {
-      throw new InvalidDataException(GQ_PAGE_SIZE_OUT_OF_RANGE, MAX_LIMIT);
+    int limit = checkLimit(Objects.requireNonNullElse(filter.limit(), DEFAULT_LIMIT));
+    int offset = checkOffset(filter.offset());
+    var customerorderIds = customerorderIdsOf(filter);
+    if (hasSigns(filter) && customerorderIds.isEmpty()) {
+      // only unknown signs: an empty list would mean no restriction, and a typo must not return every booking
+      return TimereportPage.EMPTY;
     }
     var result = timereportListService.search(TimereportListFilter.of(filter.from(), filter.until(),
-        filter.employeeIds(), filter.customerIds(), filter.customerorderIds(), filter.suborderIds(), filter.billable(),
-        limit));
-    return new TimereportPage(result.timereports().stream().map(TimereportView::of).toList(), result.totalCount(),
-        result.totalDuration(), result.billableDuration(), result.truncated());
+        filter.employeeIds(), filter.customerIds(), customerorderIds, filter.suborderIds(), filter.billable(),
+        limit, offset));
+    var items = result.timereports().stream().map(TimereportView::of).toList();
+    return new TimereportPage(items, result.totalCount(), result.totalDuration(), result.billableDuration(),
+        offset + items.size() < result.totalCount());
+  }
+
+  /**
+   * The orders of the filter, by id and by sign together — both name the same dimension, so either list counts. A sign
+   * no order carries is left out.
+   */
+  private List<Long> customerorderIdsOf(TimereportListFilterInput filter) {
+    if (!hasSigns(filter)) {
+      return filter.customerorderIds();
+    }
+    var bySign = customerorderService.getCustomerorderIdsBySigns(filter.customerorderSigns()).values();
+    return Stream.concat(Objects.requireNonNullElse(filter.customerorderIds(), List.<Long>of()).stream(),
+        bySign.stream()).distinct().toList();
+  }
+
+  private static boolean hasSigns(TimereportListFilterInput filter) {
+    return filter.customerorderSigns() != null && !filter.customerorderSigns().isEmpty();
   }
 
   /** One call for all bookings of a response, instead of one per booking (concept 6.2). */
@@ -173,6 +197,21 @@ class TimereportResolver {
     }
   }
 
+  private static int checkLimit(int limit) {
+    if (limit < 1 || limit > MAX_LIMIT) {
+      throw new InvalidDataException(GQ_PAGE_SIZE_OUT_OF_RANGE, MAX_LIMIT);
+    }
+    return limit;
+  }
+
+  /** {@code null} is the first page; the schema's default does not reach a variable sent as {@code null}. */
+  private static int checkOffset(Integer offset) {
+    if (offset != null && offset < 0) {
+      throw new InvalidDataException(GQ_OFFSET_NEGATIVE);
+    }
+    return Objects.requireNonNullElse(offset, 0);
+  }
+
   private TimereportView read(long id) {
     return TimereportView.of(readDto(id));
   }
@@ -216,11 +255,15 @@ class TimereportResolver {
   }
 
   public record TimereportListFilterInput(LocalDate from, LocalDate until, List<Long> employeeIds, List<Long> customerIds,
-      List<Long> customerorderIds, List<Long> suborderIds, Billable billable, Integer limit) {
+      List<Long> customerorderIds, List<String> customerorderSigns, List<Long> suborderIds, Billable billable,
+      Integer limit, Integer offset) {
   }
 
+  /** @param truncated whether there are hits behind this page */
   public record TimereportPage(List<TimereportView> items, long totalCount, Duration totalDuration,
       Duration billableDuration, boolean truncated) {
+
+    static final TimereportPage EMPTY = new TimereportPage(List.of(), 0, Duration.ZERO, Duration.ZERO, false);
   }
 
   public record CreateTimereportInput(long suborderId, LocalDate date, Duration duration, String taskDescription,

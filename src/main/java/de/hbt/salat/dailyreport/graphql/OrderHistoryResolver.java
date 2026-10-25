@@ -18,7 +18,7 @@ import de.hbt.salat.order.domain.CustomerorderReadModel;
 import de.hbt.salat.order.service.CustomerorderService;
 
 /**
- * On which customer orders a person worked, and in which periods (#1534): the history from
+ * On which orders a person worked, and in which periods (#1534): the history from
  * {@link OrderHistoryService}, the orders from the order module as values, for all orders of a response at once.
  */
 @Controller
@@ -32,10 +32,12 @@ class OrderHistoryResolver {
 
   @QueryMapping
   @Authorized(requireUnrestricted = true)
-  List<OrderHistory> orderHistory(@Argument Long employeeId, @Argument Integer gapDays) {
+  List<OrderHistory> orderHistory(@Argument Long employeeId, @Argument Integer gapDays,
+      @Argument Boolean billableOnly) {
     return orderHistoryService.getOrderHistory(
         Objects.requireNonNullElse(employeeId, authorizedEmployee.getEmployeeId()),
-        Objects.requireNonNullElse(gapDays, OrderHistoryService.DEFAULT_GAP_DAYS));
+        Objects.requireNonNullElse(gapDays, OrderHistoryService.DEFAULT_GAP_DAYS),
+        !Boolean.FALSE.equals(billableOnly));
   }
 
   /**
