@@ -649,6 +649,13 @@ Was dafür nötig ist:
   dieselben. Der `ArchitectureTest` verbietet ihnen die Abhängigkeit von `*Lookup`. Ein Test je Typ
   und Rolle vergleicht die Antwort der Liste mit der des Resolvers. Laufen sie auseinander, ist das
   ein Fehler, keine Ausprägung.
+  - **Ausnahme, bewusst einzuordnen: `OrderHistoryResolver.customerorder` (#1534).** Er ruft
+    `CustomerorderService.getCustomerorderReadModelsByIds` ohne eigene Regel. Die ids stammen aus den
+    Zeiträumen der Historie, und einen Zeitraum gibt es nur, wo die angemeldete Person nach
+    `TimereportVisibility` Buchungen auf dem Auftrag sieht. Die Felder sind die der Auftragsliste.
+    Zieht die Methode in Stufe 3a nach `CustomerorderLookup`, braucht diese Stelle entweder eine
+    ausdrückliche Ausnahme im `ArchitectureTest` oder eine anzeigende Methode, deren Zuständigkeit die
+    Aufträge mit sichtbaren Buchungen einschließt.
 - **Ein gespeicherter Wert bleibt bearbeitbar.** Wie bei `hide` (#1005) darf eine Auswahlliste einen
   bereits gespeicherten Bezug nicht verlieren, nur weil er nicht in der Zuständigkeit liegt. Sonst
   schreibt das Speichern stillschweigend einen anderen Wert zurück. Die bestehenden Rückfälle in
@@ -1265,6 +1272,17 @@ Oberfläche.
   - Neu ist `timereport(id)`.
 - Der CSRF-Schutz der Kette unter `/api` ist als Test festgehalten: nur `POST` mit JSON.
 - Neu ist ein Footer-Link auf GraphiQL, und die OpenAPI-Beschreibung nennt GraphQL.
+
+**Nachtrag #1534 (Historie der Kundenaufträge):** `orderHistory` liefert je Zeitraum auf einem
+Kundenauftrag einen Datensatz, aus den Buchungstagen unter `TimereportVisibility` über die ganze Zeit.
+Ein Kundenauftrag hat mindestens einen fakturierbaren Unterauftrag. 30 Tage ohne Buchung trennen
+zwei Zeiträume.
+- `Customerorder`, `Customer` und `CustomerSegment` kommen dabei als eingebettete Typen ins Schema,
+  ohne eigenen Einstieg. Sie tragen nur die Felder der Auftrags- bzw. Kundenliste.
+- Die Aufträge liest der Resolver ohne eigene Regel. Diese Ausnahme ist in 5.3 vermerkt, damit
+  Stufe 3a sie einordnet.
+- Nebenbei behoben: Eine Einzelfreigabe mit begrenzter Gültigkeit gilt in `TimereportVisibility` nur
+  noch für Buchungen an ihren Tagen (`Clause.days`), wie bei `isAuthorized`.
 
 **Offen:** Stufe 3a bis 3c (Zuständigkeit, Prüfungen in die Services, Stammdaten) und Stufe 4
 (Freigabe und Abnahme), je als eigenes Vorhaben.

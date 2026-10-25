@@ -26,13 +26,14 @@ extend type Query {
 
   """
   In welchen Zeiträumen eine Person auf welchem Kundenauftrag gearbeitet hat, aus ihren Buchungen über die ganze Zeit.
-  Ein Kundenauftrag hat mindestens einen fakturierbaren Unterauftrag und zählt dann mit allen seinen Buchungen; interne
-  Aufträge, Urlaub und Krankheit stehen nicht in der Historie. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag; liegen dazwischen 30 Tage oder mehr ohne Buchung auf dem
-  Auftrag, beginnt ein neuer Zeitraum, und der Auftrag kommt erneut vor. Es zählen nur die Buchungen, die die
-  angemeldete Person nach den Regeln der Buchungsliste sehen darf (siehe timereportList); wer für einen Auftrag
-  verantwortlich ist, sieht von anderen Personen also nur die Zeiträume auf diesem Auftrag. Eine Person ohne
-  sichtbare Buchung ergibt eine leere Liste. Der jüngste Zeitraum steht vorn. Eingeschränkte Anmeldungen bekommen
-  AA-0002.
+  Ein Kundenauftrag hat mindestens einen fakturierbaren Unterauftrag; interne Aufträge, Urlaub und Krankheit stehen
+  nicht in der Historie. Ein Zeitraum reicht vom ersten bis zum letzten Buchungstag; liegen dazwischen 30 Tage oder
+  mehr ohne Buchung auf dem Auftrag, beginnt ein neuer Zeitraum, und der Auftrag kommt erneut vor. Es zählen nur die
+  Buchungen, die die angemeldete Person nach den Regeln der Buchungsliste sehen darf (siehe timereportList): Wer für
+  einen Auftrag verantwortlich ist, sieht von anderen Personen nur die Zeiträume auf diesem Auftrag, und wer nicht alle
+  Buchungen der Person sieht, etwa das Backoffice nur die fakturierbaren, bekommt kürzere Summen und kann andere
+  Grenzen der Zeiträume sehen. Eine Person ohne sichtbare Buchung ergibt eine leere Liste. Der jüngste Zeitraum steht
+  vorn. Eingeschränkte Anmeldungen bekommen AA-0002.
   """
   orderHistory("Die Person (Me.employeeId); ohne Angabe die angemeldete" employeeId: ID): [OrderHistoryEntry!]!
 }
