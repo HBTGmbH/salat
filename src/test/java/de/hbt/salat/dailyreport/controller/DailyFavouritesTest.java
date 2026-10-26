@@ -31,6 +31,7 @@ import de.hbt.salat.dailyreport.preferences.DailyPreferences;
 import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.MatrixService;
+import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -58,6 +59,7 @@ class DailyFavouritesTest {
   @Mock private MatrixService matrixService;
   @Mock private TimereportService timereportService;
   @Mock private WorkingdayService workingdayService;
+  @Mock private PublicholidayService publicholidayService;
   @Mock private EmployeecontractService employeecontractService;
   @Mock private EmployeeService employeeService;
   @Mock private AuthorizedEmployee authorizedEmployee;

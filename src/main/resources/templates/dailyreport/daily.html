@@ -189,23 +189,38 @@
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <!--/* nur das Icon: der Text drueckte auf schmalen Bildschirmen den Tag aus der Mitte; der Name
-                   bleibt fuer Tooltip und Screenreader */-->
-            <a class="btn btn-sm btn-outline-secondary btn-icon"
-               th:href="@{/dailyreport/daily(mode='daily',date=${prevDate})}"
-               th:title="#{main.daily.nav.prevday.text}" th:aria-label="#{main.daily.nav.prevday.text}">
-              <i class="ti ti-chevron-left m-0" aria-hidden="true"></i>
-            </a>
+                   bleibt fuer Tooltip und Screenreader. Aussen der Sprung zum Arbeitstag, der Wochenende und
+                   Feiertage auslaesst, innen der Kalendertag (#1541). */-->
+            <div class="btn-group btn-group-sm">
+              <a class="btn btn-outline-secondary btn-icon"
+                 th:href="@{/dailyreport/daily(mode='daily',date=${prevWorkday})}"
+                 th:title="#{main.daily.nav.prevworkday.text}" th:aria-label="#{main.daily.nav.prevworkday.text}">
+                <i class="ti ti-chevrons-left m-0" aria-hidden="true"></i>
+              </a>
+              <a class="btn btn-outline-secondary btn-icon"
+                 th:href="@{/dailyreport/daily(mode='daily',date=${prevDate})}"
+                 th:title="#{main.daily.nav.prevday.text}" th:aria-label="#{main.daily.nav.prevday.text}">
+                <i class="ti ti-chevron-left m-0" aria-hidden="true"></i>
+              </a>
+            </div>
             <!--/* Freigegeben oder abgenommen steht an der Ueberschrift, damit klar ist, warum hier (je
                    nach Rolle) nichts mehr geaendert werden kann (#1164) */-->
             <h3 class="mb-0">
               <span th:text="${#temporals.format(date, 'EEEE, d. MMMM yyyy')}">Montag, 18. Mai 2026</span>
               <span th:replace="~{fragments/report-period :: dayStatus(${dailyData?.reportStatus})}"></span>
             </h3>
-            <a class="btn btn-sm btn-outline-secondary btn-icon"
-               th:href="@{/dailyreport/daily(mode='daily',date=${nextDate})}"
-               th:title="#{main.daily.nav.nextday.text}" th:aria-label="#{main.daily.nav.nextday.text}">
-              <i class="ti ti-chevron-right m-0" aria-hidden="true"></i>
-            </a>
+            <div class="btn-group btn-group-sm">
+              <a class="btn btn-outline-secondary btn-icon"
+                 th:href="@{/dailyreport/daily(mode='daily',date=${nextDate})}"
+                 th:title="#{main.daily.nav.nextday.text}" th:aria-label="#{main.daily.nav.nextday.text}">
+                <i class="ti ti-chevron-right m-0" aria-hidden="true"></i>
+              </a>
+              <a class="btn btn-outline-secondary btn-icon"
+                 th:href="@{/dailyreport/daily(mode='daily',date=${nextWorkday})}"
+                 th:title="#{main.daily.nav.nextworkday.text}" th:aria-label="#{main.daily.nav.nextworkday.text}">
+                <i class="ti ti-chevrons-right m-0" aria-hidden="true"></i>
+              </a>
+            </div>
           </div>
           <div class="d-flex justify-content-center gap-2">
             <a class="btn btn-sm btn-outline-primary"

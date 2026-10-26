@@ -44,6 +44,7 @@ import de.hbt.salat.dailyreport.service.DailyReportBetaFeatureContributor;
 import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.FavoriteShortListService;
 import de.hbt.salat.dailyreport.service.MatrixService;
+import de.hbt.salat.dailyreport.service.PublicholidayService;
 import de.hbt.salat.dailyreport.service.SurchargeChoice;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
@@ -69,6 +70,7 @@ public class DailyController {
     private final MatrixService matrixService;
     private final TimereportService timereportService;
     private final WorkingdayService workingdayService;
+    private final PublicholidayService publicholidayService;
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
     private final AuthorizedEmployee authorizedEmployee;
@@ -173,6 +175,9 @@ public class DailyController {
             model.addAttribute("date", targetDate);
             model.addAttribute("prevDate", prev);
             model.addAttribute("nextDate", next);
+            // the larger steps leave out weekends and public holidays, the days nobody works (#1541)
+            model.addAttribute("prevWorkday", publicholidayService.getLastWorkdayBefore(targetDate));
+            model.addAttribute("nextWorkday", publicholidayService.getFirstWorkdayAfter(targetDate));
             model.addAttribute("title", targetDate.toString());
             // the header button books on the day shown and comes back to it (#1156); the contract is
             // the remembered selection the form falls back to, as for the button in the page itself
