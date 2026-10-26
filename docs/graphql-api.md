@@ -71,6 +71,7 @@ eine deutsche Beschreibung.
 | Was | Grenze | Antwort darüber |
 |---|---|---|
 | Anfragen je Login | 120 je Minute | HTTP 429 mit `Retry-After: 60` |
+| Größe des Anfragerumpfs | 1 MiB | HTTP 413 |
 | Tiefe einer fachlichen Abfrage | 8 | Fehler, keine Daten |
 | Komplexität einer fachlichen Abfrage | 200 Felder | Fehler, keine Daten |
 | Introspection | begrenzt durch graphql-java („good faith"): jedes Feld höchstens einmal, keine endlose Tiefe | Fehler |

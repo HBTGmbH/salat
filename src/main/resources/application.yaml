@@ -43,6 +43,7 @@ salat:
       cron: "0 0 2 * * *"
   graphql:
     requests-per-minute: 120         # env: SALAT_GRAPHQL_REQUESTSPERMINUTE — GraphQL requests per login and minute, above that 429
+    max-request-bytes: 1048576       # env: SALAT_GRAPHQL_MAXREQUESTBYTES — largest accepted GraphQL request body, above that 413 (1 MiB; below Tomcat maxSwallowSize so the 413 is delivered cleanly)
   jira:
     # env: SALAT_JIRA_ENABLED — false schaltet die JIRA-Anbindung dieser Umgebung ab (#1458): keine
     # Replikation, weder stündlich noch von Hand (Oberfläche, REST: JI-0054), kein Worklog-Abgleich,
