@@ -305,6 +305,37 @@ class GraphqlIntegrationTest {
     assertThat(body.at("/errors/0/message").asString()).isNotBlank();
   }
 
+  /**
+   * A list-valued filter argument is bounded (TimereportResolver.MAX_FILTER_LIST_SIZE, 1000): a huge list — passed
+   * through a variable, where the query-text token limit never reaches it — is refused with GQ-0005 before it becomes
+   * an IN, and quickly. A list at the limit still works.
+   */
+  @Test
+  void an_oversized_list_argument_is_refused_before_it_becomes_a_query() throws Exception {
+    var tooMany = new ArrayList<Long>();
+    for (long i = 1; i <= 1001; i++) {
+      tooMany.add(i);
+    }
+    var filter = new HashMap<String, Object>(Map.of("from", DAY.toString(), "until", DAY.toString(), "employeeIds", tooMany));
+
+    long start = System.nanoTime();
+    var body = json(post(MANAGER, LIST, Map.of("filter", filter)));
+
+    assertThat((System.nanoTime() - start) / 1_000_000).isLessThan(2_000);
+    assertThat(body.at("/errors/0/extensions/code").asString()).isEqualTo("GQ-0005");
+    assertThat(body.at("/errors/0/extensions/classification").asString()).isEqualTo("BAD_REQUEST");
+    assertThat(body.at("/data").isMissingNode() || body.at("/data").isNull()).isTrue();
+
+    var okList = new ArrayList<Long>();
+    for (long i = 1; i <= 1000; i++) {
+      okList.add(i);
+    }
+    var atLimit = new HashMap<String, Object>(Map.of("from", DAY.toString(), "until", DAY.toString(), "employeeIds", okList));
+    var ok = json(post(MANAGER, LIST, Map.of("filter", atLimit)));
+
+    assertThat(ok.at("/errors").isMissingNode()).isTrue();
+  }
+
   // --- the order history (#1534) ---
 
   private static final String HISTORY = """

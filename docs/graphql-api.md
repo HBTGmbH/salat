@@ -79,6 +79,7 @@ eine deutsche Beschreibung.
 | Zeilen je Seite (`limit` bei `timereports`, `timereportList`) | 1 bis 200; bei `timereports` ohne Angabe alle | `GQ-0002` |
 | Versatz einer Seite (`offset` bei `timereports`, `timereportList`) | ab 0 | `GQ-0004` |
 | Lücke zwischen zwei Zeiträumen (`orderHistory`) | 1 bis 3650 Tage | `GQ-0003` |
+| Einträge je Listenargument des Buchungslisten-Filters (`employeeIds`, `customerIds`, `customerorderIds`, `customerorderSigns`, `suborderIds`) | höchstens 1000 | `GQ-0005` |
 | Idempotenzschlüssel | 1 bis 100 Zeichen | `XX-0007` |
 
 Für die Summen ist die Zeilengrenze egal: `totalCount` und `totalDuration` zählen alle Treffer.
