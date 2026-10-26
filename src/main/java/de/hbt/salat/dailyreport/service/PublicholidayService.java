@@ -25,7 +25,7 @@ import de.hbt.salat.dailyreport.persistence.ReferencedayRepository;
 @Authorized
 public class PublicholidayService {
 
-  static final int LAST_WORKDAY_LOOKBACK_DAYS = 14;
+  static final int WORKDAY_SEARCH_DAYS = 14;
 
   private final PublicholidayRepository publicholidayRepository;
   private final PublicholidayDAO publicholidayDAO;
@@ -85,11 +85,27 @@ public class PublicholidayService {
    */
   @Transactional(readOnly = true)
   public LocalDate getLastWorkdayBefore(LocalDate day) {
-    var holidays = publicholidayDAO.getPublicHolidaysBetween(day.minusDays(LAST_WORKDAY_LOOKBACK_DAYS), day.minusDays(1))
+    var holidays = publicholidayDAO.getPublicHolidaysBetween(day.minusDays(WORKDAY_SEARCH_DAYS), day.minusDays(1))
         .stream().map(Publicholiday::getRefdate).collect(Collectors.toSet());
     var candidate = day.minusDays(1);
     while (!DateUtils.isWeekday(candidate) || holidays.contains(candidate)) {
       candidate = candidate.minusDays(1);
+    }
+    return candidate;
+  }
+
+  /**
+   * The first working day after {@code day}, weekends and public holidays skipped — the step forward
+   * of the daily view that leaves out the days nobody works (#1541), the counterpart of
+   * {@link #getLastWorkdayBefore}.
+   */
+  @Transactional(readOnly = true)
+  public LocalDate getFirstWorkdayAfter(LocalDate day) {
+    var holidays = publicholidayDAO.getPublicHolidaysBetween(day.plusDays(1), day.plusDays(WORKDAY_SEARCH_DAYS))
+        .stream().map(Publicholiday::getRefdate).collect(Collectors.toSet());
+    var candidate = day.plusDays(1);
+    while (!DateUtils.isWeekday(candidate) || holidays.contains(candidate)) {
+      candidate = candidate.plusDays(1);
     }
     return candidate;
   }
