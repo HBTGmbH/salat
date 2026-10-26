@@ -35,6 +35,12 @@ public class GraphqlConfiguration {
     return new BusinessQueryLimits.Complexity(MAX_COMPLEXITY);
   }
 
+  /** Refuses a fragment-spread ladder before normalization, where depth and complexity do not reach it (concept 6.2). */
+  @Bean
+  FragmentExpansionInstrumentation graphqlFragmentExpansionLimit() {
+    return new FragmentExpansionInstrumentation();
+  }
+
   @Bean
   TimeoutWebGraphQlInterceptor graphqlTimeout() {
     return new TimeoutWebGraphQlInterceptor(TIMEOUT);
