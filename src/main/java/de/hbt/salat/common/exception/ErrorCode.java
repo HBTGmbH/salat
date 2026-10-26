@@ -336,6 +336,7 @@ public enum ErrorCode {
   GQ_PAGE_SIZE_OUT_OF_RANGE("GQ-0002", "the page size is out of range"),
   GQ_GAP_OUT_OF_RANGE("GQ-0003", "the gap between two periods is out of range"),
   GQ_OFFSET_NEGATIVE("GQ-0004", "the offset of a page is negative"),
+  GQ_ARGUMENT_LIST_TOO_LONG("GQ-0005", "a list-valued argument has too many elements"),
   ;
 
   private final String code;

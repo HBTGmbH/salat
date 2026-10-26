@@ -1,6 +1,7 @@
 package de.hbt.salat.dailyreport.graphql;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static de.hbt.salat.common.exception.ErrorCode.GQ_ARGUMENT_LIST_TOO_LONG;
 import static de.hbt.salat.common.exception.ErrorCode.GQ_OFFSET_NEGATIVE;
 import static de.hbt.salat.common.exception.ErrorCode.GQ_PAGE_SIZE_OUT_OF_RANGE;
 import static de.hbt.salat.common.exception.ErrorCode.GQ_PERIOD_TOO_LONG;
@@ -54,6 +55,13 @@ class TimereportResolver {
   /** The page size of the concept (6.2). */
   static final int MAX_LIMIT = 200;
   static final int DEFAULT_LIMIT = 100;
+  /**
+   * The most elements a list-valued filter argument may carry (#noissue). Each list becomes an {@code IN} over the
+   * bookings; an unbounded one — passed through a variable, where the query-text token limit never reaches it — turns
+   * one small request into an arbitrarily expensive query (and, past a point, an uncaught database error). The booking
+   * list offers a handful of values per dimension, so this is generous for every real caller.
+   */
+  static final int MAX_FILTER_LIST_SIZE = 1000;
 
   private final TimereportService timereportService;
   private final TimereportListService timereportListService;
@@ -94,6 +102,7 @@ class TimereportResolver {
   @Authorized(requireUnrestricted = true)
   TimereportPage timereportList(@Argument TimereportListFilterInput filter) {
     checkPeriod(filter.from(), filter.until());
+    checkListSizes(filter);
     int limit = checkLimit(Objects.requireNonNullElse(filter.limit(), DEFAULT_LIMIT));
     int offset = checkOffset(filter.offset());
     var customerorderIds = customerorderIdsOf(filter);
@@ -194,6 +203,21 @@ class TimereportResolver {
   private static void checkPeriod(LocalDate from, LocalDate until) {
     if (until.isBefore(from) || DAYS.between(from, until) >= MAX_DAYS) {
       throw new InvalidDataException(GQ_PERIOD_TOO_LONG, MAX_DAYS);
+    }
+  }
+
+  /** Every list-valued argument of the filter is bounded alike, before any of them reaches a query (#noissue). */
+  private static void checkListSizes(TimereportListFilterInput filter) {
+    checkListSize(filter.employeeIds());
+    checkListSize(filter.customerIds());
+    checkListSize(filter.customerorderIds());
+    checkListSize(filter.customerorderSigns());
+    checkListSize(filter.suborderIds());
+  }
+
+  private static void checkListSize(List<?> list) {
+    if (list != null && list.size() > MAX_FILTER_LIST_SIZE) {
+      throw new InvalidDataException(GQ_ARGUMENT_LIST_TOO_LONG, MAX_FILTER_LIST_SIZE);
     }
   }
 
