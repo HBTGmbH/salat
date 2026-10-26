@@ -50,10 +50,13 @@ public record TimereportVisibility(boolean unrestricted, List<Clause> clauses) {
 
   /**
    * One sufficient reason to see a booking. An empty set means "no restriction in this dimension", so a clause of
-   * three empty sets, {@code billableOnly = false} and no days would cover everything — which is why only
+   * four empty sets, {@code billableOnly = false} and no days would cover everything — which is why only
    * {@link TimereportVisibilityService} creates clauses and never creates that one.
    *
    * @param employeeIds      whose bookings, empty for anybody's
+   * @param contractIds      on which contracts, empty for all — what a people lead gets: a person has one id but over
+   *                         time several contracts, and the lead reads the bookings on the contracts they lead, not
+   *                         those on a contract under somebody else (#1548)
    * @param customerOrderIds on which orders, empty for all
    * @param suborderIds      on which suborders, empty for all
    * @param billableOnly     restricted to bookings on a billable suborder — what backoffice gets
@@ -61,30 +64,35 @@ public record TimereportVisibility(boolean unrestricted, List<Clause> clauses) {
    *                         that does not cover the whole period asked for (#1534) — {@code isAuthorized} measures a
    *                         rule against the day of the booking, not against the period of a list
    */
-  public record Clause(Set<Long> employeeIds, Set<Long> customerOrderIds, Set<Long> suborderIds, boolean billableOnly,
-                       @Nullable LocalDateRange days) {
+  public record Clause(Set<Long> employeeIds, Set<Long> contractIds, Set<Long> customerOrderIds,
+                       Set<Long> suborderIds, boolean billableOnly, @Nullable LocalDateRange days) {
 
     public Clause {
       employeeIds = Set.copyOf(employeeIds);
+      contractIds = Set.copyOf(contractIds);
       customerOrderIds = Set.copyOf(customerOrderIds);
       suborderIds = Set.copyOf(suborderIds);
     }
 
     public static Clause forEmployees(Set<Long> employeeIds) {
-      return new Clause(employeeIds, Set.of(), Set.of(), false, null);
+      return new Clause(employeeIds, Set.of(), Set.of(), Set.of(), false, null);
+    }
+
+    public static Clause forContracts(Set<Long> contractIds) {
+      return new Clause(Set.of(), contractIds, Set.of(), Set.of(), false, null);
     }
 
     public static Clause forOrders(Set<Long> customerOrderIds) {
-      return new Clause(Set.of(), customerOrderIds, Set.of(), false, null);
+      return new Clause(Set.of(), Set.of(), customerOrderIds, Set.of(), false, null);
     }
 
     public static Clause billable() {
-      return new Clause(Set.of(), Set.of(), Set.of(), true, null);
+      return new Clause(Set.of(), Set.of(), Set.of(), Set.of(), true, null);
     }
 
     /** Every booking on these days — what a wildcard rule grants that is valid for part of the period only. */
     public static Clause onDays(LocalDateRange days) {
-      return new Clause(Set.of(), Set.of(), Set.of(), false, days);
+      return new Clause(Set.of(), Set.of(), Set.of(), Set.of(), false, days);
     }
 
     public boolean covers(Timereport timereport) {
@@ -94,6 +102,9 @@ public record TimereportVisibility(boolean unrestricted, List<Clause> clauses) {
       var suborder = timereport.getSuborder();
       if (!employeeIds.isEmpty()
           && !employeeIds.contains(timereport.getEmployeecontract().getEmployee().getId())) {
+        return false;
+      }
+      if (!contractIds.isEmpty() && !contractIds.contains(timereport.getEmployeecontract().getId())) {
         return false;
       }
       if (!customerOrderIds.isEmpty()

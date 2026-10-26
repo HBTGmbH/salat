@@ -467,13 +467,13 @@ als zweite, „analoge" Regel, sondern als **dieselbe Zuständigkeit, auf andere
 |---|---|---|
 | Management | alles, keine Bedingung | `TimereportVisibility.all()` |
 | jede Person | eigene Person | `Clause.forEmployees(eigene id)` |
-| People Lead | die geführten Personen, auch mit abgelaufenem Vertrag | `getTeamEmployeeIdsIncludingExpired` |
+| People Lead | die geleiteten Verträge, auch abgelaufene — nicht die übrigen Verträge derselben Person (#1548) | `Clause.forContracts(getTeamContractIdsIncludingExpired)` |
 | Durchführungs- und Vertragsverantwortliche | die verantworteten Aufträge (`responsibleHbt` **oder** `respEmpHbtContract`) | `getIdsByResponsibleEmployeeId` |
 | Backoffice | fakturierbare Unteraufträge (`invoice = 'Y'`) | `Clause.billable()` |
 | Regeln der Kategorie `TIMEREPORT` | Person, Auftrag, Unterauftrag oder Kombination (`xx:1453`) | `toClause` |
 
-Jede Klausel spricht über vier Dimensionen: Person, Auftrag, Unterauftrag, fakturierbar. **Alle vier
-sitzen auf dem Mitarbeiterauftrag** (`employeecontract.employee`, `suborder.customerorder`,
+Jede Klausel spricht über fünf Dimensionen: Person, Vertrag, Auftrag, Unterauftrag, fakturierbar. **Alle fünf
+sitzen auf dem Mitarbeiterauftrag** (`employeecontract.employee`, `employeecontract`, `suborder.customerorder`,
 `suborder`, `suborder.invoice`). `TimereportListDAO.findFilterValues` nutzt das schon heute (#1127):
 Die Werte der Filter sind genau die Mitarbeiteraufträge unter der Sichtbarkeit, eingeschränkt auf
 die bebuchten. Ohne diese Einschränkung ist das die Sichtbarkeit der Stammdaten:
@@ -482,7 +482,7 @@ die bebuchten. Ohne diese Einschränkung ist das die Sichtbarkeit der Stammdaten
 |---|---|
 | `Timereport` | die Buchung selbst (unverändert) |
 | `Employeeorder` | den Mitarbeiterauftrag selbst |
-| `Suborder` | den Unterauftrag selbst, wenn die Klausel keine Person nennt; sonst einen Mitarbeiterauftrag dieser Person darauf |
+| `Suborder` | den Unterauftrag selbst, wenn die Klausel weder Person noch Vertrag nennt; sonst einen Mitarbeiterauftrag dieser Person bzw. dieses Vertrags darauf |
 | `Customerorder` | den Auftrag selbst (verantwortet, Regel auf den Auftrag) oder einen sichtbaren Unterauftrag |
 | `Customer` | einen sichtbaren Auftrag |
 
