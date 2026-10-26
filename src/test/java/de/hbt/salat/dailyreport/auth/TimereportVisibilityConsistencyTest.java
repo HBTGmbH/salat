@@ -52,6 +52,9 @@ class TimereportVisibilityConsistencyTest {
   private static final long READER_EMPLOYEE_ID = 1L;
   private static final String BOOKING_EMPLOYEE_SIGN = "xx";
   private static final long BOOKING_EMPLOYEE_ID = 2L;
+  /** The contract the booking hangs on; the same person has an earlier one, {@link #EARLIER_CONTRACT_ID} (#1548). */
+  private static final long BOOKING_CONTRACT_ID = 20L;
+  private static final long EARLIER_CONTRACT_ID = 21L;
   private static final String CUSTOMER_ORDER_SIGN = "1453";
   private static final long CUSTOMER_ORDER_ID = 10L;
   private static final String SUBORDER_SIGN = "1453/01";
@@ -87,7 +90,7 @@ class TimereportVisibilityConsistencyTest {
     when(authorizedUser.getLoginSign()).thenReturn(READER);
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(READER);
     when(authorizedEmployee.getEmployeeId()).thenReturn(READER_EMPLOYEE_ID);
-    when(employeecontractService.getTeamEmployeeIdsIncludingExpired(anyLong())).thenReturn(Set.of());
+    when(employeecontractService.getTeamContractIdsIncludingExpired(anyLong())).thenReturn(Set.of());
     when(customerorderService.getIdsByResponsibleEmployeeId(anyLong())).thenReturn(List.of());
     when(authorizationRuleRepository.findAll()).thenReturn(List.of());
     var readerLogin = new SalatUser();
@@ -102,6 +105,7 @@ class TimereportVisibilityConsistencyTest {
         employeecontractService, customerorderService);
 
     // a booking of somebody else, so nothing but the rules can cover it
+    when(timereport.getEmployeecontract().getId()).thenReturn(BOOKING_CONTRACT_ID);
     when(timereport.getEmployeecontract().getEmployee().getId()).thenReturn(BOOKING_EMPLOYEE_ID);
     when(timereport.getEmployeecontract().getEmployee().getSign()).thenReturn(BOOKING_EMPLOYEE_SIGN);
     when(timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname()).thenReturn("somebody-else");
@@ -132,6 +136,31 @@ class TimereportVisibilityConsistencyTest {
     when(timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname()).thenReturn(READER);
 
     assertBothAgree(true);
+  }
+
+  @Test
+  void peopleLeadSeesTheBookingsOnTheContractTheyLead() {
+    when(authorizedUser.isPeopleLead()).thenReturn(true);
+    when(timereport.getEmployeecontract().getSupervisors()).thenReturn(List.of(reader()));
+    when(employeecontractService.getTeamContractIdsIncludingExpired(READER_EMPLOYEE_ID))
+        .thenReturn(Set.of(BOOKING_CONTRACT_ID, EARLIER_CONTRACT_ID));
+
+    assertBothAgree(true);
+  }
+
+  /**
+   * A person has one id but, over time, several contracts (#1548). Whoever led one of them — here an earlier one, under
+   * the lead of the reader — does not read the bookings on the others: the contract of this booking is led by somebody
+   * else.
+   */
+  @Test
+  void peopleLeadOfAnotherContractOfThePersonDoesNotSeeTheBooking() {
+    when(authorizedUser.isPeopleLead()).thenReturn(true);
+    when(timereport.getEmployeecontract().getSupervisors()).thenReturn(List.of(otherLead()));
+    when(employeecontractService.getTeamContractIdsIncludingExpired(READER_EMPLOYEE_ID))
+        .thenReturn(Set.of(EARLIER_CONTRACT_ID));
+
+    assertBothAgree(false);
   }
 
   @Test
@@ -285,6 +314,23 @@ class TimereportVisibilityConsistencyTest {
     assertThat(covered)
         .describedAs("TimereportVisibility.covers must say the same as isAuthorized")
         .isEqualTo(authorized);
+  }
+
+  private static Employee reader() {
+    return employeeWithLogin(READER_EMPLOYEE_ID, READER);
+  }
+
+  private static Employee otherLead() {
+    return employeeWithLogin(3L, "other-lead");
+  }
+
+  private static Employee employeeWithLogin(long id, String loginname) {
+    var employee = new Employee();
+    setField(employee, "id", id);
+    var salatUser = new SalatUser();
+    salatUser.setLoginname(loginname);
+    employee.setSalatUser(salatUser);
+    return employee;
   }
 
   private void givenRule(String objectId) {

@@ -183,7 +183,7 @@ public class EmployeeDAO {
      * → ADR-0029).
      *
      * <p>Das ist die engere der beiden Antworten auf „wen leite ich". Die weitere —
-     * {@code EmployeecontractService#getTeamEmployeeIdsIncludingExpired} über
+     * {@code EmployeecontractService#getTeamContractIdsIncludingExpired} über
      * {@link EmployeecontractDAO#getTeamContractsIncludingExpired(long)} — trägt die Sichtbarkeit
      * von Buchungen und reicht über beendete Verträge zurück (#1092, #324): ein Vertrag endet, die
      * Verantwortung für seine Buchungen endet damit nicht — der Anspruch auf die Stammdaten der

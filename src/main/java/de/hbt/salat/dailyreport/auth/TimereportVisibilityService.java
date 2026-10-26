@@ -19,7 +19,7 @@ import de.hbt.salat.order.service.CustomerorderService;
  * Builds the {@link TimereportVisibility} of the current user for a period (#1092).
  *
  * <p>Same ladder as {@link TimereportAuthorization#isAuthorized} for {@code READ}, one rung per clause: the manager
- * reads everything, everybody reads their own bookings, a people lead those of the people they supervise, whoever is
+ * reads everything, everybody reads their own bookings, a people lead those on the contracts they lead, whoever is
  * responsible for an order reads what is booked on it, backoffice reads what has to be invoiced — and on top of that
  * the individual grants, {@code AuthorizationRule} of category {@code TIMEREPORT}.
  *
@@ -53,9 +53,11 @@ public class TimereportVisibilityService {
       clauses.add(TimereportVisibility.Clause.forEmployees(Set.of(employeeId)));
 
       if (authorizedUser.isPeopleLead()) {
-        var supervised = employeecontractService.getTeamEmployeeIdsIncludingExpired(employeeId);
+        // by contract, as isAuthorized asks it, not by person: the person may have another contract under another
+        // lead (#1548)
+        var supervised = employeecontractService.getTeamContractIdsIncludingExpired(employeeId);
         if (!supervised.isEmpty()) {
-          clauses.add(TimereportVisibility.Clause.forEmployees(supervised));
+          clauses.add(TimereportVisibility.Clause.forContracts(supervised));
         }
       }
 
@@ -96,7 +98,8 @@ public class TimereportVisibilityService {
    */
   private Optional<TimereportVisibility.Clause> toClause(String objectId, LocalDateRange days) {
     return TimereportRuleObject.parse(objectId).map(object -> new TimereportVisibility.Clause(
-        idsOf(object.employeeId()), idsOf(object.customerorderId()), idsOf(object.suborderId()), false, days));
+        idsOf(object.employeeId()), Set.of(), idsOf(object.customerorderId()), idsOf(object.suborderId()), false,
+        days));
   }
 
   private static Set<Long> idsOf(Long id) {

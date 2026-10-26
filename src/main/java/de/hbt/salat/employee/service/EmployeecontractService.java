@@ -503,9 +503,13 @@ public class EmployeecontractService {
   }
 
   /**
-   * „Wen leite ich, auch rückblickend?" — die Personen dieses Teams über <em>alle</em> ihre Verträge, nicht nur über
-   * die nicht abgelaufenen (#1092). Ein Vertrag endet, die Verantwortung für seine Buchungen endet damit nicht (#324);
-   * genau dafür gibt es {@link EmployeecontractDAO#getTeamContractsIncludingExpired(long)}.
+   * „Wen leite ich, auch rückblickend?" — die geleiteten Verträge, nicht nur die nicht abgelaufenen (#1092). Ein
+   * Vertrag endet, die Verantwortung für seine Buchungen endet damit nicht (#324); genau dafür gibt es
+   * {@link EmployeecontractDAO#getTeamContractsIncludingExpired(long)}.
+   *
+   * <p>Die Antwort sind Verträge, keine Personen (#1548): eine Person hat über die Zeit mehrere Verträge, und auf einem
+   * anderen als dem geleiteten kann eine andere Leitung stehen. Deren Buchungen liest die Teamleitung nicht — so wie
+   * {@code TimereportAuthorization} es für die einzelne Buchung am Vertrag entscheidet.
    *
    * <p>Die andere Frage — „wen leite ich, mit laufendem oder künftigem Vertrag?" — beantwortet
    * {@code EmployeeDAO#getActiveTeamEmployeeIds()} über {@link EmployeecontractDAO#getActiveTeamContracts(long)}.
@@ -514,9 +518,9 @@ public class EmployeecontractService {
    * Umsetzung, und welche der beiden gestellt wird, steht im Namen und nicht in einem Argument (#1096).
    */
   @Authorized
-  public Set<Long> getTeamEmployeeIdsIncludingExpired(long supervisorEmployeeId) {
+  public Set<Long> getTeamContractIdsIncludingExpired(long supervisorEmployeeId) {
     return employeecontractDAO.getTeamContractsIncludingExpired(supervisorEmployeeId).stream()
-        .map(ec -> ec.getEmployee().getId())
+        .map(Employeecontract::getId)
         .collect(toSet());
   }
 

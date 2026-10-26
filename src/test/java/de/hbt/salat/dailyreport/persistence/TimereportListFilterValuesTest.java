@@ -262,7 +262,7 @@ class TimereportListFilterValuesTest {
     book(colleague, suborder, DAY.plusDays(5), 1);
 
     var visibility = TimereportVisibility.of(List.of(
-        new Clause(Set.of(), Set.of(order.getId()), Set.of(), false, new LocalDateRange(DAY, DAY))));
+        new Clause(Set.of(), Set.of(), Set.of(order.getId()), Set.of(), false, new LocalDateRange(DAY, DAY))));
 
     assertThat(timereportListDAO.findRows(wholeMonth(), visibility))
         .extracting(Timereport::getId)
@@ -271,6 +271,32 @@ class TimereportListFilterValuesTest {
     assertThat(timereportListDAO.findBookedDays(colleague.getEmployee().getId(), visibility, true))
         .extracting(BookedDay::day)
         .containsExactly(DAY);
+  }
+
+  /**
+   * A people lead reads the bookings on the contracts they lead, not those of the person on another contract (#1548).
+   * The person here has an earlier contract, led by the reader, and a current one under another lead — in the rows, the
+   * sums, the filter values and the order history alike, only the bookings on the earlier one count.
+   */
+  @Test
+  void a_contract_clause_covers_the_bookings_on_that_contract_only() {
+    var earlier = employeecontract("aaa");
+    var current = contractOf(earlier.getEmployee());
+    var led = suborder(customerorder(customer, "ALPHA"), "ALPHA/01", true);
+    var notLed = suborder(customerorder(otherCustomer, "BETA"), "BETA/01", true);
+    var onTheLedContract = book(earlier, led);
+    book(current, notLed);
+
+    var visibility = TimereportVisibility.of(List.of(Clause.forContracts(Set.of(earlier.getId()))));
+
+    assertThat(timereportListDAO.findRows(wholeMonth(), visibility))
+        .extracting(Timereport::getId)
+        .containsExactly(onTheLedContract.getId());
+    assertThat(timereportListDAO.findTotals(wholeMonth(), visibility).count()).isEqualTo(1);
+    assertThat(timereportListDAO.findFilterValues(visibility).suborderIds()).containsExactly(led.getId());
+    assertThat(timereportListDAO.findBookedDays(earlier.getEmployee().getId(), visibility, false))
+        .extracting(BookedDay::customerorderSign)
+        .containsExactly("ALPHA");
   }
 
   /**
@@ -504,7 +530,10 @@ class TimereportListFilterValuesTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employee.setHide(false);
     entityManager.persist(employee);
+    return contractOf(employee);
+  }
 
+  private Employeecontract contractOf(Employee employee) {
     var employeecontract = new Employeecontract();
     employeecontract.setEmployee(employee);
     employeecontract.setValidFrom(DAY.minusYears(1));

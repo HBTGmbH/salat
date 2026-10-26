@@ -140,8 +140,8 @@ public class TimereportListDAO {
     var customerorderId = joins.customerorder().get(Customerorder_.id);
     var customerorderSign = joins.customerorder().get(Customerorder_.sign);
     var suborder = joins.suborder();
-    var dimensions = new Dimensions(joins.employee().get(Employee_.id), customerorderId, suborder.get(Suborder_.id),
-        suborder.get(Suborder_.invoice), refdate);
+    var dimensions = new Dimensions(joins.employee().get(Employee_.id), joins.contract().get(Employeecontract_.id),
+        customerorderId, suborder.get(Suborder_.id), suborder.get(Suborder_.invoice), refdate);
 
     var predicates = new ArrayList<Predicate>();
     predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
@@ -223,8 +223,10 @@ public class TimereportListDAO {
     var root = query.from(Employeeorder.class);
     var suborder = root.join(Employeeorder_.suborder);
     var customerorder = suborder.join(Suborder_.customerorder);
+    var contract = root.join(Employeeorder_.employeecontract);
     var dimensions = new Dimensions(
-        root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee).get(Employee_.id),
+        contract.join(Employeecontract_.employee).get(Employee_.id),
+        contract.get(Employeecontract_.id),
         customerorder.get(Customerorder_.id),
         suborder.get(Suborder_.id),
         suborder.get(Suborder_.invoice),
@@ -279,6 +281,7 @@ public class TimereportListDAO {
     var customerorder = joins.customerorder();
     var dimensions = new Dimensions(
         joins.employee().get(Employee_.id),
+        joins.contract().get(Employeecontract_.id),
         customerorder.get(Customerorder_.id),
         suborder.get(Suborder_.id),
         suborder.get(Suborder_.invoice),
@@ -354,6 +357,9 @@ public class TimereportListDAO {
       if (!clause.employeeIds().isEmpty()) {
         parts.add(dimensions.employeeId().in(clause.employeeIds()));
       }
+      if (!clause.contractIds().isEmpty()) {
+        parts.add(dimensions.contractId().in(clause.contractIds()));
+      }
       if (!clause.customerOrderIds().isEmpty()) {
         parts.add(dimensions.customerOrderId().in(clause.customerOrderIds()));
       }
@@ -377,18 +383,20 @@ public class TimereportListDAO {
   }
 
   /**
-   * The joins a booking query reads suborder, order and employee from, made once per query and shared by condition,
-   * ordering and sums. Suborder and contract of a booking are those of its employee order (#1210), so all of them hang
-   * on the one join to it.
+   * The joins a booking query reads suborder, order, contract and employee from, made once per query and shared by
+   * condition, ordering and sums. Suborder and contract of a booking are those of its employee order (#1210), so all of
+   * them hang on the one join to it.
    */
   private record BookingJoins(Join<Employeeorder, Suborder> suborder, Join<Suborder, Customerorder> customerorder,
+                              Join<Employeeorder, Employeecontract> contract,
                               Join<Employeecontract, Employee> employee) {
 
     static BookingJoins of(Root<Timereport> root) {
       var employeeorder = root.join(Timereport_.employeeorder);
       var suborder = employeeorder.join(Employeeorder_.suborder);
-      return new BookingJoins(suborder, suborder.join(Suborder_.customerorder),
-          employeeorder.join(Employeeorder_.employeecontract).join(Employeecontract_.employee));
+      var contract = employeeorder.join(Employeeorder_.employeecontract);
+      return new BookingJoins(suborder, suborder.join(Suborder_.customerorder), contract,
+          contract.join(Employeecontract_.employee));
     }
   }
 
@@ -397,8 +405,8 @@ public class TimereportListDAO {
    * day, so there the days of a clause restrict nothing: the filter values may offer a value whose only bookings lie
    * outside the days of a rule, and the list then finds nothing for it.
    */
-  private record Dimensions(Path<Long> employeeId, Path<Long> customerOrderId, Path<Long> suborderId,
-                            Path<Character> invoice, Path<LocalDate> refdate) {}
+  private record Dimensions(Path<Long> employeeId, Path<Long> contractId, Path<Long> customerOrderId,
+                            Path<Long> suborderId, Path<Character> invoice, Path<LocalDate> refdate) {}
 
   private static long toLong(Object value) {
     return value == null ? 0L : ((Number) value).longValue();
