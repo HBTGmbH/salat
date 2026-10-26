@@ -74,6 +74,7 @@ eine deutsche Beschreibung.
 | Tiefe einer fachlichen Abfrage | 8 | Fehler, keine Daten |
 | Komplexität einer fachlichen Abfrage | 200 Felder | Fehler, keine Daten |
 | Introspection | begrenzt durch graphql-java („good faith"): jedes Feld höchstens einmal, keine endlose Tiefe | Fehler |
+| Aufgefaltete Selektionen einer Abfrage | 100.000 | Fehler, keine Daten (vor der Prüfung) |
 | Laufzeit einer Anfrage | 10 Sekunden | Fehler |
 | Zeitraum (`timereports`, `timereportList`) | 366 Tage | `GQ-0001` |
 | Zeilen je Seite (`limit` bei `timereports`, `timereportList`) | 1 bis 200; bei `timereports` ohne Angabe alle | `GQ-0002` |

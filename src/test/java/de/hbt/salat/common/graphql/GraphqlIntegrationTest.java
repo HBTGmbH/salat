@@ -261,6 +261,30 @@ class GraphqlIntegrationTest {
     assertThat(body.at("/data/__schema").isMissingNode() || body.at("/data/__schema").isNull()).isTrue();
   }
 
+  /**
+   * A fragment-spread ladder expands to 2^n collected fields from a tiny document, which good-faith introspection and
+   * the depth/complexity limits do not catch ({@link FragmentExpansionInstrumentation}). It must be refused before
+   * normalization, over the real HTTP chain, and quickly — the guard counts the expansion without expanding it.
+   */
+  @Test
+  void a_fragment_spread_ladder_is_refused_before_it_can_be_expanded() throws Exception {
+    var sb = new StringBuilder("{ __type(name: \"Query\") { ...F0a ...F0b } } ");
+    for (int i = 0; i < 25; i++) {
+      for (String s : new String[] {"a", "b"}) {
+        sb.append("fragment F").append(i).append(s).append(" on __Type { ...F")
+            .append(i + 1).append("a ...F").append(i + 1).append("b } ");
+      }
+    }
+    sb.append("fragment F25a on __Type { name } fragment F25b on __Type { name }");
+
+    long start = System.nanoTime();
+    var body = json(post(EMPLOYEE, sb.toString()));
+
+    assertThat((System.nanoTime() - start) / 1_000_000).isLessThan(2_000);
+    assertThat(body.at("/errors/0/message").asString()).contains("too many selections");
+    assertThat(body.at("/data").isMissingNode() || body.at("/data").isNull()).isTrue();
+  }
+
   // --- the booking list (TimereportVisibility, #1092) ---
 
   @Test
