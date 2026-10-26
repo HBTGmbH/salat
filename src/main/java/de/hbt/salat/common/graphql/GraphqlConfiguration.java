@@ -56,6 +56,17 @@ public class GraphqlConfiguration {
     return new GraphqlRequestLogInterceptor(loginSignProvider);
   }
 
+  /** Before the rate-limit filter: an oversized body is refused before it is counted or read (concept 6.2). */
+  @Bean
+  FilterRegistrationBean<GraphqlRequestSizeLimitFilter> graphqlRequestSizeLimitFilter(
+      @Value("${salat.graphql.max-request-bytes:1048576}") long maxBytes,
+      @Value("${spring.graphql.http.path:/graphql}") String path) {
+    var registration = new FilterRegistrationBean<>(new GraphqlRequestSizeLimitFilter(maxBytes));
+    registration.addUrlPatterns(path);
+    registration.setOrder(-1);
+    return registration;
+  }
+
   /** After Spring Security ({@code -100}), so that the login is known. */
   @Bean
   FilterRegistrationBean<GraphqlRateLimitFilter> graphqlRateLimitFilter(LoginSignProvider loginSignProvider,

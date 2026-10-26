@@ -285,6 +285,22 @@ class GraphqlIntegrationTest {
     assertThat(body.at("/data").isMissingNode() || body.at("/data").isNull()).isTrue();
   }
 
+  /**
+   * A request body larger than the limit is refused with HTTP 413 before it is read and parsed
+   * ({@link GraphqlRequestSizeLimitFilter}): the variables are JSON, and nothing else bounds their size. A normal
+   * request passes.
+   */
+  @Test
+  void a_request_body_over_the_limit_is_refused() throws Exception {
+    String oversized = "x".repeat(3 * 1024 * 1024 / 2); // 1.5 MiB, over the 1 MiB cap and under Tomcat's swallow size
+    var refused = post(EMPLOYEE, "{ me { sign } }", Map.of("junk", oversized));
+    assertThat(refused.statusCode()).isEqualTo(413);
+
+    var ok = post(EMPLOYEE, "{ me { sign } }", Map.of());
+    assertThat(ok.statusCode()).isEqualTo(200);
+    assertThat(json(ok).at("/data/me/sign").asString()).isEqualTo(EMPLOYEE);
+  }
+
   // --- the booking list (TimereportVisibility, #1092) ---
 
   @Test
