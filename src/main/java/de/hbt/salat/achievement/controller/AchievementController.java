@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /** The profile page with the own achievements, and closing the popup that announces new ones (#1501). */
@@ -22,9 +23,10 @@ public class AchievementController {
 
   /** Whoever opens the page sees every achievement there, so none is left to announce. */
   @GetMapping("/profile")
-  public String profile(Model model) {
+  public String profile(@RequestParam(required = false) String fAchievementSort, Model model) {
     achievementService.markSeenForCurrentPerson();
     model.addAttribute("profile", achievementService.getProfileOfCurrentPerson(today()));
+    model.addAttribute("achievementSort", "type".equals(fAchievementSort) ? "type" : "date");
     model.addAttribute("today", today());
     return "achievement/profile";
   }

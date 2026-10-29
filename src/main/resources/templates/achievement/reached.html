@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* Beide Sortierungen des Profils teilen dieselben Medaillen und Dialogziele (#1553). */-->
+<ul th:fragment="medals(items)" class="list-unstyled d-flex flex-wrap gap-4 mb-0">
+  <li th:each="item : ${items}" class="achievement-tile text-center"
+      th:with="definition=${item.definition()},plate=${@achievementViewHelper.plate(item.definition(), item.level(), item.achievedOn())},
+               rank=#{${item.definition().rankKey(item.level())}},modalId=${@achievementViewHelper.reachedModalId(item)}">
+    <button type="button" class="achievement-tile-button" data-bs-toggle="modal"
+            th:data-bs-target="${'#' + modalId}">
+      <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${item.tier().fileName()}, ${plate}, true)}"></span>
+      <span class="d-block fw-bold mt-2" th:text="${rank}">Urgestein</span>
+      <span class="d-block text-secondary small"
+            th:text="${#temporals.format(item.achievedOn(), 'dd.MM.yyyy')}">01.01.2017</span>
+    </button>
+  </li>
+</ul>
+</body>
+</html>

@@ -1,5 +1,8 @@
 package de.hbt.salat.achievement.viewhelper;
 
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
+
 import de.hbt.salat.achievement.domain.AchievementProfile;
 import de.hbt.salat.achievement.domain.AchievementQuote;
 import de.hbt.salat.achievement.domain.UnseenAchievement;
@@ -9,6 +12,7 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ScopedProxyMode;
@@ -37,6 +41,25 @@ public class AchievementViewHelper {
   private final AchievementQuotes quotes;
 
   private List<UnseenAchievement> popup;
+
+  /** A nonempty group of reached medals, headed by the achievement's translated name (#1553). */
+  public record ReachedGroup(AchievementDefinition definition, List<AchievementProfile.Reached> items) {
+  }
+
+  /** Groups the service's chronologically ordered medals, retaining that order inside each type. */
+  public List<ReachedGroup> reachedGroups(List<AchievementProfile.Reached> reached) {
+    return reached.stream().collect(groupingBy(AchievementProfile.Reached::definition))
+        .entrySet().stream()
+        .sorted(Map.Entry.comparingByKey(comparing(AchievementDefinition::getPosition)
+            .thenComparing(AchievementDefinition::getKey)))
+        .map(entry -> new ReachedGroup(entry.getKey(), List.copyOf(entry.getValue())))
+        .toList();
+  }
+
+  /** Independent of the display order and distinct for a yearly achievement's recurring levels. */
+  public String reachedModalId(AchievementProfile.Reached reached) {
+    return "achievementReached-" + reached.definition().getKey() + "-" + reached.level() + "-" + reached.achievedOn();
+  }
 
   /**
    * The achievements the popup announces on this page - usually none, found out with a single small
