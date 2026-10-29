@@ -232,11 +232,12 @@
 
           <!--/* Zeitraum des Reiters (#1175): jede Wahl laedt die Seite fuer denselben Vertrag neu und
                  oeffnet wieder diesen Reiter. Links statt Radio-Knoepfen, weil die Wahl eine andere
-                 Seite ist; aria-current nennt die gewaehlte. */-->
+                 Seite ist; aria-current nennt die gewaehlte. Die gewaehlte ist gefuellt wie die Sortierwahl
+                 im Profil: .btn.active allein erreicht im dunklen Modus nur 2,75:1. */-->
           <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
             <div class="btn-group" role="group" th:aria-label="#{main.my.accounts.training.period.label}">
               <a th:each="p : ${trainingPeriods}" class="btn"
-                 th:classappend="${p.name() == trainingPeriod} ? 'active'"
+                 th:classappend="${p.name() == trainingPeriod} ? 'active btn-primary'"
                  th:attr="aria-current=${p.name() == trainingPeriod} ? 'true' : null"
                  th:href="@{/my-accounts(fEmployeeContractId=${selectedContractId},trainingPeriod=${p.name()})} + '#tab-training'"
                  th:text="#{${p.messageKey}}">Aktuelles Jahr</a>
