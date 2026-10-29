@@ -15,7 +15,6 @@ import de.hbt.salat.employee.service.TenureAchievementContributor;
 import de.hbt.salat.e2e.E2EBrowser;
 import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,12 +54,10 @@ class AchievementProfileE2ETest extends PlaywrightE2ETestBase {
 
       page.navigate(urlWithLogin("/profile", SIGN));
       assertThat(page.locator("[aria-labelledby=achievementSortLabel] [aria-current=true]")).hasText("Typ, dann Zeitpunkt");
-      page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/achievement-profile-type-" + browser + ".png")).setFullPage(true));
       checkDialogs(page);
 
       page.locator("a[href='/profile?fAchievementSort=date']").click();
       assertThat(page.locator("h4[id^=achievementGroup-]")).hasCount(0);
-      page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/achievement-profile-date-" + browser + ".png")).setFullPage(true));
       checkDialogs(page);
     });
   }
@@ -84,8 +81,6 @@ class AchievementProfileE2ETest extends PlaywrightE2ETestBase {
           if (sort.equals("type")) {
             assertThat(page.locator("h4[id^=achievementGroup-]")).hasText(new String[] {"Loyalist", "Training year"});
           }
-          page.screenshot(new Page.ScreenshotOptions().setPath(Path.of(
-              "target/achievement-profile-mobile-" + sort + "-" + theme + "-" + browser + ".png")).setFullPage(true));
         }
       }
     });

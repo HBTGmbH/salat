@@ -94,13 +94,3 @@ die eine Benachrichtigung je Person (2000 Zeichen) und brachen den ganzen Lauf a
 Jahre trägt der Job deshalb als gesehen ein: Sie stehen auf der Profilseite, kommen aber weder als
 Popup noch als Benachrichtigung. Das gilt auch für eine Stufe des Vorjahres, die im Januar durch eine
 nachgetragene Buchung erreicht wird.
-
-## Nachtrag 2026-10-29: wählbare Sortierung im Profil (#1553)
-
-Die Profilseite bietet „Zeitpunkt“ und „Typ, dann Zeitpunkt“. Zeitpunkt bleibt die Vorgabe; UiState
-merkt die Auswahl. Die Typansicht gruppiert die bereits chronologisch sortierten Medaillen nach
-`AchievementDefinition`, ordnet die Gruppen nach Position und bei Gleichstand nach Schlüssel und
-verwendet deren übersetzbare Gruppenüberschriften. Innerhalb jeder Gruppe steht die neueste Medaille
-zuerst. „Als Nächstes“ bleibt darunter ein eigener Abschnitt. Die Begrenzung jährlicher Achievements
-auf die höchste Stufe je Vorjahr bleibt bestehen. Die Darstellung liegt im `AchievementViewHelper`;
-die Vergabe und das fachliche Profilmodell ändern sich dadurch nicht.
