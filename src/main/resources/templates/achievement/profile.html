@@ -8,7 +8,8 @@
 </head>
 <main layout:fragment="content">
   <!--/* Nur die eigenen Achievements (#837, #1501): keine Rangliste, kein fremdes Profil. Die erreichten
-         Stufen stehen nach Datum absteigend, die neueste zuerst, dahinter die naechste Stufe jedes
+         Stufen stehen nach Datum absteigend, die neueste zuerst, wahlweise nach Typ gruppiert (#1553).
+         Die Sortierwahl merkt UiState; dahinter steht die naechste Stufe jedes
          Achievements als gesperrte Medaille. Jede Medaille ist ein Knopf: eine erreichte oeffnet den
          Dialog, mit dem sie angekuendigt wurde, samt Feier (achievement/popup, ohne Zitat); eine
          gesperrte ein Popover (Muster aus #1065, data-info-popover) mit dem, was fehlt, und wie man sie
@@ -16,23 +17,34 @@
          erlaubt. Ein jaehrliches Achievement traegt auf dem Schild das Jahr, die Tage stehen im Text
          (#1512). */-->
   <div class="card">
-    <div class="card-header">
+    <div class="card-header flex-wrap gap-3">
       <h3 class="card-title" th:text="#{main.achievement.title}">Achievements</h3>
+      <div class="d-flex flex-wrap align-items-center gap-2 ms-auto">
+        <span id="achievementSortLabel" th:text="#{main.achievement.sort.label}">Sortieren:</span>
+        <div class="btn-group" role="group" aria-labelledby="achievementSortLabel">
+          <a th:href="@{/profile(fAchievementSort='date')}" class="btn btn-sm"
+             th:classappend="${achievementSort == 'date'} ? 'active btn-primary'"
+             th:aria-current="${achievementSort == 'date'} ? 'true' : null"
+             th:text="#{main.achievement.sort.date}">Zeitpunkt</a>
+          <a th:href="@{/profile(fAchievementSort='type')}" class="btn btn-sm"
+             th:classappend="${achievementSort == 'type'} ? 'active btn-primary'"
+             th:aria-current="${achievementSort == 'type'} ? 'true' : null"
+             th:text="#{main.achievement.sort.type}">Typ, dann Zeitpunkt</a>
+        </div>
+      </div>
     </div>
     <div class="card-body">
-      <ul class="list-unstyled d-flex flex-wrap gap-4 mb-0">
-        <li th:each="item, stat : ${profile.reached()}" class="achievement-tile text-center"
-            th:with="definition=${item.definition()},plate=${@achievementViewHelper.plate(item.definition(), item.level(), item.achievedOn())},
-                     rank=#{${item.definition().rankKey(item.level())}}">
-          <button type="button" class="achievement-tile-button" data-bs-toggle="modal"
-                  th:data-bs-target="${'#achievementReached' + stat.index}">
-            <span th:replace="~{achievement/medal :: medal(${definition.pictogram}, ${item.tier().fileName()}, ${plate}, true)}"></span>
-            <span class="d-block fw-bold mt-2" th:text="${rank}">Urgestein</span>
-            <span class="d-block text-secondary small"
-                  th:text="${#temporals.format(item.achievedOn(), 'dd.MM.yyyy')}">01.01.2017</span>
-          </button>
-        </li>
-      </ul>
+      <th:block th:if="${achievementSort == 'date'}">
+        <ul th:replace="~{achievement/reached :: medals(${profile.reached()})}"></ul>
+      </th:block>
+      <th:block th:if="${achievementSort == 'type'}">
+        <section th:each="group : ${@achievementViewHelper.reachedGroups(profile.reached())}" class="mb-4"
+                 th:aria-labelledby="${'achievementGroup-' + group.definition().key}">
+          <h4 class="subheader mb-3" th:id="${'achievementGroup-' + group.definition().key}"
+              th:text="#{${group.definition().groupKey()}}">Loyalist</h4>
+          <ul th:replace="~{achievement/reached :: medals(${group.items()})}"></ul>
+        </section>
+      </th:block>
       <!--/* Die gesperrten Medaillen stehen in einem eigenen Abschnitt, damit sie nicht wie Erreichtes
              gelesen werden; das Schloss an der Medaille sagt es zusaetzlich. */-->
       <th:block th:unless="${#lists.isEmpty(profile.next())}">
@@ -66,8 +78,8 @@
     </div>
   </div>
   <!--/* Je erreichter Medaille ihr Dialog, ausserhalb der Karte wie jeder Modal-Dialog. */-->
-  <th:block th:each="item, stat : ${profile.reached()}">
-    <div th:replace="~{achievement/popup :: popup(${ {item} }, ${'achievementReached' + stat.index}, false)}"></div>
+  <th:block th:each="item : ${profile.reached()}" th:with="modalId=${@achievementViewHelper.reachedModalId(item)}">
+    <div th:replace="~{achievement/popup :: popup(${ {item} }, ${modalId}, false)}"></div>
   </th:block>
 </main>
 </html>
