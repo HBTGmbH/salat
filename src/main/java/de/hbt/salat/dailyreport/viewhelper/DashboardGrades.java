@@ -49,13 +49,13 @@ public final class DashboardGrades {
   }
 
   /**
-   * Freigegeben bis: rot, wenn die Freigabe bis zum Ende des Vormonats fehlt, sonst grün. Nie
-   * freigegeben heißt neuer Vertrag — {@code Employeecontract.getReleaseWarning()} warnt dann nicht,
-   * und die Karte tut es auch nicht.
+   * Freigegeben bis: rot, wenn die Freigabe bis zum Ende des Vormonats fehlt, sonst grün. Ein nie
+   * freigegebener Vertrag ist neutral, solange noch nichts fällig ist, und rot, sobald es das ist
+   * (#1560).
    */
   public static String release(LocalDate releasedUntil, boolean overdue) {
-    if (releasedUntil == null) return NEUTRAL;
-    return overdue ? DANGER : SUCCESS;
+    if (overdue) return DANGER;
+    return releasedUntil == null ? NEUTRAL : SUCCESS;
   }
 
   /**

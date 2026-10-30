@@ -110,12 +110,25 @@ public class ReleaseReminderService {
     notificationService.emitNotification(RELEASE_REMINDER_AUTO, List.of(contract.salatUserId()), cc,
         NotificationMessage.builder()
             .titleKey(titleKey)
-            .descriptionKey("main.release.notification.releasereminderauto.description")
-            .descriptionParams(List.of(DateUtils.format(contract.releasedUntil(), DATE_PATTERN),
-                DateUtils.format(contract.dueUntil(), DATE_PATTERN)))
+            .descriptionKey(description(contract))
+            .descriptionParams(descriptionParams(contract))
             .actionUrl(RELEASE_URL)
             .actionLabel(messages.getMessage("main.release.notification.releasereminder.action"))
             .build());
+  }
+
+  /** A contract never released is told so, not given a date that does not exist (#1560). */
+  private static String description(OverdueRelease contract) {
+    return contract.releasedUntil() == null
+        ? "main.release.notification.releasereminderauto.never.description"
+        : "main.release.notification.releasereminderauto.description";
+  }
+
+  private static List<String> descriptionParams(OverdueRelease contract) {
+    var dueUntil = DateUtils.format(contract.dueUntil(), DATE_PATTERN);
+    return contract.releasedUntil() == null
+        ? List.of(dueUntil)
+        : List.of(DateUtils.format(contract.releasedUntil(), DATE_PATTERN), dueUntil);
   }
 
   /** The day each of the contracts was last reminded automatically; a contract never reminded is missing. */

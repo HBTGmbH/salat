@@ -495,17 +495,17 @@ public class DashboardControllerTest {
       verify(overtimeService, never()).createDetailedReportForEmployee(42L, false);
     }
 
-    /* Nie freigegeben heisst neuer Vertrag: Employeecontract.getReleaseWarning() warnt nicht, die
-       Karte auch nicht. */
+    /* Nie freigegeben heisst freigegeben bis zum Tag vor Vertragsbeginn (#1560): der Vertrag seit
+       2020 ist ueberfaellig, die Karte rot; sie nennt weiter kein Datum. */
     @Test
-    void a_contract_never_released_is_neutral() {
+    void a_contract_never_released_is_red_once_its_release_is_due() {
       bookedLastOn(THURSDAY);
       var model = new ExtendedModelMap();
 
       dashboardController.dashboard(42L, model);
 
       assertThat(model.getAttribute("releasedUntil")).isNull();
-      assertThat(model.getAttribute("releaseColorClass")).isEqualTo("secondary");
+      assertThat(model.getAttribute("releaseColorClass")).isEqualTo("danger");
     }
 
     private void bookedLastOn(LocalDate day) {

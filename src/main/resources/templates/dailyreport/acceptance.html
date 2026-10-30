@@ -175,7 +175,9 @@
               <span th:if="${ec.openEnd}" th:text="#{main.general.open.text}"></span>
             </td>
             <td>
-              <span th:if="${ec.releaseWarning}" class="text-danger fw-semibold" th:text="${ec.reportReleaseDateString}"></span>
+              <!--/* Ein nie freigegebener Vertrag ist ab seinem Beginn ueberfaellig (#1560): rot mit „nie“ statt einer leeren Zelle. */-->
+              <span th:if="${ec.releaseWarning}" class="text-danger fw-semibold"
+                    th:text="${ec.reportReleaseDate != null} ? ${ec.reportReleaseDateString} : #{main.release.released.never.text}"></span>
               <span th:unless="${ec.releaseWarning}" th:text="${ec.reportReleaseDateString}"></span>
               <form th:if="${ec.releaseWarning}" method="post" th:action="@{/acceptance/release-mail}" class="d-inline ms-1"
                     data-confirm

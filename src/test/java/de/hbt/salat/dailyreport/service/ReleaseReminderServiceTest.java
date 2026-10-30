@@ -226,6 +226,19 @@ class ReleaseReminderServiceTest {
       assertNoted(THURSDAY_FIRST);
     }
 
+    /** Nie freigegeben: kein Datum, das es nicht gibt, sondern dass nichts freigegeben ist (#1560). */
+    @Test
+    void a_contract_never_released_is_told_so_and_given_its_due_date() {
+      today(FRIDAY_30TH);
+
+      service.remindFirst(new OverdueRelease(CONTRACT_ID, PERSON, null, END_OF_OCTOBER, PEOPLE_LEADS));
+
+      var message = ArgumentCaptor.forClass(NotificationMessage.class);
+      verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(List.of()), message.capture());
+      assertThat(message.getValue().descriptionKey()).isEqualTo("main.release.notification.releasereminderauto.never.description");
+      assertThat(message.getValue().descriptionParams()).containsExactly("31.10.2026");
+    }
+
     @Test
     void a_contract_without_people_leads_is_mailed_without_cc() {
       today(FRIDAY_SECOND);

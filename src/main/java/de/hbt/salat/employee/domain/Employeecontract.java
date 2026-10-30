@@ -229,19 +229,12 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     }
 
     /**
-     * Checks, if the employeecontract is released until the last day of the preceding month.
-     *
-     * @return Returns true, if the contract is not released until the last day of the preceding month, false otherwise.
+     * Ob die Freigabe hinter dem Ende des Vormonats zurückliegt, bei einem beendeten Vertrag hinter
+     * seinem letzten Tag ({@link #dueUntil()}). Ein nie freigegebener Vertrag zählt ab seinem Beginn
+     * ({@link #releasedUntil()}, #1560).
      */
     public boolean getReleaseWarning() {
-        LocalDate release = getReportReleaseDate();
-
-        if (release == null) {
-            // new contract
-            return false;
-        }
-
-        return release.isBefore(dueUntil());
+        return releasedUntil().isBefore(dueUntil());
     }
 
     /**
@@ -249,6 +242,15 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * beendeten Vertrag aber nur bis zu seinem letzten Tag (#324). Sonst stünde ein vollständig
      * abgenommener Vertrag für immer als überfällig da.
      */
+    /**
+     * Bis wann die Buchungen freigegeben sind. Ein Vertrag, der noch nie freigegeben wurde, ist es bis
+     * zum Tag vor seinem Beginn (#1560): sonst stünde er nie als überfällig da, und niemand würde an
+     * ihn erinnert.
+     */
+    public LocalDate releasedUntil() {
+        return reportReleaseDate != null ? reportReleaseDate : validFrom.minusDays(1);
+    }
+
     public LocalDate dueUntil() {
         return dueUntil(DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1)));
     }

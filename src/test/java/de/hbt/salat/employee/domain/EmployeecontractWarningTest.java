@@ -56,6 +56,31 @@ class EmployeecontractWarningTest {
         assertThat(contract.getAcceptanceWarning()).isTrue();
     }
 
+    /** Nie freigegeben heißt freigegeben bis zum Tag vor Vertragsbeginn (#1560). */
+    @Test
+    void whenTheContractWasNeverReleased_thenItIsReleasedUntilTheDayBeforeItBegan() {
+        var contract = contractEndingAt(null);
+
+        assertThat(contract.releasedUntil()).isEqualTo(LocalDate.of(2023, 12, 31));
+        assertThat(contract.getReleaseWarning()).isTrue();
+    }
+
+    @Test
+    void whenTheNeverReleasedContractBeganAfterThePreviousMonth_thenNothingIsDueYet() {
+        var contract = contractEndingAt(null);
+        contract.setValidFrom(END_OF_PREVIOUS_MONTH.plusDays(1));
+
+        assertThat(contract.getReleaseWarning()).isFalse();
+    }
+
+    @Test
+    void whenTheNeverReleasedContractBeganWithThePreviousMonth_thenItIsOverdue() {
+        var contract = contractEndingAt(null);
+        contract.setValidFrom(END_OF_PREVIOUS_MONTH.withDayOfMonth(1));
+
+        assertThat(contract.getReleaseWarning()).isTrue();
+    }
+
     private Employeecontract contractEndingAt(LocalDate validUntil) {
         var contract = new Employeecontract();
         contract.setValidFrom(LocalDate.of(2024, 1, 1));
