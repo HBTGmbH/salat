@@ -135,6 +135,34 @@ class DashboardContractSelectionTest {
     assertThat(model.getAttribute("releasedUntil")).isEqualTo(OWN_RELEASE);
   }
 
+  /**
+   * Eine Anmeldung mit Status adm kommt ohne gültigen Vertrag herein (AuthorizedUserChangedListener);
+   * die Startseite zeigt ihr einen Hinweis statt eines Fehlers 500 (#1559).
+   */
+  @Test
+  void a_login_without_a_current_contract_sees_a_hint_instead_of_an_error() {
+    when(employeecontractService.getCurrentContract(LOGIN_EMPLOYEE_ID)).thenReturn(Optional.empty());
+    var model = new ExtendedModelMap();
+
+    var view = dashboardController.dashboard(null, model);
+
+    assertThat(view).isEqualTo("dailyreport/no-current-contract");
+    verify(overtimeService, never()).calculateOvertime(any(Long.class), eq(false));
+  }
+
+  /** Einen lesbaren Vertrag zeigt das Dashboard auch einer Anmeldung ohne eigenen Vertrag (#1559). */
+  @Test
+  void a_login_without_a_current_contract_sees_a_contract_it_selected() {
+    when(employeecontractService.getCurrentContract(LOGIN_EMPLOYEE_ID)).thenReturn(Optional.empty());
+    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID)).thenReturn(otherContract);
+    var model = new ExtendedModelMap();
+
+    var view = dashboardController.dashboard(OTHER_CONTRACT_ID, model);
+
+    assertThat(view).isEqualTo("dailyreport/dashboard");
+    assertThat(model.getAttribute("releasedUntil")).isEqualTo(OTHER_RELEASE);
+  }
+
   /** Wie die übrigen Controller, aber ohne requireUnrestricted: restricted erreicht sein Dashboard. */
   @Test
   void the_controller_requires_a_login_but_admits_restricted() {
