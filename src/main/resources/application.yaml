@@ -75,6 +75,14 @@ salat:
     retention-days: 30               # env: SALAT_NOTIFICATIONS_RETENTION_DAYS — days to keep notifications before auto-delete
     bell-limit: 10                   # env: SALAT_NOTIFICATIONS_BELL_LIMIT — max notifications shown in bell dropdown
     email-from: noreply@salat.local  # env: SALAT_NOTIFICATIONS_EMAIL_FROM — sender of notification mails no person caused
+  release:
+    reminder:
+      # env: SALAT_RELEASE_REMINDER_FIRST_CRON — erste Erinnerung an die Freigabe eines Monats; sie
+      # geht nur am letzten Arbeitstag des Monats hinaus (#1557). "-" schaltet sie ab.
+      first-cron: "0 0 15 * * MON-FRI"
+      # env: SALAT_RELEASE_REMINDER_CRON — jede weitere Erinnerung an die Freigabe des Vormonats, an
+      # jedem Arbeitstag, mit den People Leads in CC. "-" schaltet sie ab.
+      cron: "0 0 9 * * MON-FRI"
   reporting:
     scheduler:
       cron: "0 0 5 * * ?"           # env: SALAT_REPORTING_SCHEDULER_CRON — Daily at 5:00 AM

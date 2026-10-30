@@ -250,7 +250,15 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * abgenommener Vertrag für immer als überfällig da.
      */
     public LocalDate dueUntil() {
-        return DateUtils.min(DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1)), validUntil);
+        return dueUntil(DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1)));
+    }
+
+    /**
+     * Bis wann die Freigabe reichen muss, wenn sie bis {@code until} fällig ist: bei einem Vertrag,
+     * der vorher endet, nur bis zu seinem letzten Tag (#1557).
+     */
+    public LocalDate dueUntil(LocalDate until) {
+        return DateUtils.min(until, validUntil);
     }
 
     /**

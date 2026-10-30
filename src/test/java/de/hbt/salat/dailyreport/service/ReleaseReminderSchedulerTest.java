@@ -1,7 +1,9 @@
 package de.hbt.salat.dailyreport.service;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,7 +16,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
-/** One reminder that fails leaves the others alone (#215). */
+/** One reminder that fails leaves the others alone (#215), in either run (#1557). */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class ReleaseReminderSchedulerTest {
 
@@ -25,17 +27,33 @@ class ReleaseReminderSchedulerTest {
   private final ReleaseReminderScheduler scheduler = new ReleaseReminderScheduler(service, authorizedUserProvider);
 
   @Test
-  void runs_as_job_and_reminds_the_next_contract_after_one_that_failed() {
+  void the_first_run_reminds_as_job_and_goes_on_after_one_that_failed() {
     var failing = overdue(1L);
     var next = overdue(2L);
     when(authorizedUserProvider.getObject()).thenReturn(authorizedUser);
-    when(service.getContractsToRemindToday()).thenReturn(List.of(failing, next));
-    doThrow(new RuntimeException("mail server down")).when(service).remind(failing);
+    when(service.getContractsToRemindFirst()).thenReturn(List.of(failing, next));
+    doThrow(new RuntimeException("mail server down")).when(service).remindFirst(failing);
 
-    scheduler.run();
+    scheduler.remindFirst();
 
     verify(authorizedUser).initForJob();
-    verify(service).remind(next);
+    verify(service).remindFirst(next);
+    verify(service, never()).remindAgain(any());
+  }
+
+  @Test
+  void the_further_run_reminds_as_job_and_goes_on_after_one_that_failed() {
+    var failing = overdue(1L);
+    var next = overdue(2L);
+    when(authorizedUserProvider.getObject()).thenReturn(authorizedUser);
+    when(service.getContractsToRemindAgain()).thenReturn(List.of(failing, next));
+    doThrow(new RuntimeException("mail server down")).when(service).remindAgain(failing);
+
+    scheduler.remindAgain();
+
+    verify(authorizedUser).initForJob();
+    verify(service).remindAgain(next);
+    verify(service, never()).remindFirst(any());
   }
 
   private static OverdueRelease overdue(long contractId) {
