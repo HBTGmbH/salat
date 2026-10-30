@@ -12,15 +12,15 @@ import java.util.Objects;
  * @param employeecontractId      the contract
  * @param salatUserId             the login of the person; {@code null} where the person has none
  * @param releasedUntil           how far the bookings are released
- * @param dueUntil                how far they should be ({@link Employeecontract#dueUntil()})
+ * @param dueUntil                how far they should be ({@link Employeecontract#dueUntil(LocalDate)})
  * @param peopleLeadSalatUserIds  the logins of the contract's people leads, those without a login left out
  */
 public record OverdueRelease(long employeecontractId, Long salatUserId, LocalDate releasedUntil, LocalDate dueUntil,
                              List<Long> peopleLeadSalatUserIds) {
 
-  public static OverdueRelease of(Employeecontract contract) {
+  public static OverdueRelease of(Employeecontract contract, LocalDate dueUntil) {
     return new OverdueRelease(contract.getId(), loginId(contract.getEmployee()), contract.getReportReleaseDate(),
-        contract.dueUntil(), contract.getSupervisors().stream().map(OverdueRelease::loginId).filter(Objects::nonNull).toList());
+        dueUntil, contract.getSupervisors().stream().map(OverdueRelease::loginId).filter(Objects::nonNull).toList());
   }
 
   private static Long loginId(Employee employee) {

@@ -30,9 +30,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Reminds whoever has not released the previous month (#215), on every working day from the first
- * of the month on, until the release reaches what is due. From the second working day on, the people
- * leads of the contract read along in CC. A working day is Monday to Friday and no public holiday.
+ * Reminds whoever has not released a month (#215, #1557): first on its last working day, to the
+ * person alone, then on every working day of the following month until the release reaches what is
+ * due, with the people leads of the contract in CC. A working day is Monday to Friday and no public
+ * holiday. A contract is reminded once a day at most: who was reminded of an older month in the
+ * morning hears of the running one the next day.
  *
  * <p>The mail cannot be switched off, only the bell ({@link DailyReportNotificationKinds#RELEASE_REMINDER_AUTO}).
  * Contracts that ended before today are not reminded ({@link EmployeecontractService#getRunningContractsWithOverdueRelease}).
@@ -57,41 +59,57 @@ public class ReleaseReminderService {
   private final MessageSourceAccessor messages;
 
   /**
-   * The contracts to remind today: none on a day that is no working day, and none that was reminded
-   * today already — a second run after a restart mails nobody twice.
+   * The contracts to remind of the running month for the first time: on its last working day those
+   * whose release does not reach its end, on any other day none.
    */
   @Transactional(readOnly = true)
-  public List<OverdueRelease> getContractsToRemindToday() {
+  public List<OverdueRelease> getContractsToRemindFirst() {
+    var today = today();
+    if (!isWorkingDay(today) || !isLastWorkingDayOfMonth(today)) {
+      return List.of();
+    }
+    return notRemindedToday(employeecontractService.getRunningContractsReleasedBefore(DateUtils.getEndOfMonth(today)));
+  }
+
+  /** The contracts to remind again of the previous month: on a working day those whose release does not reach its end. */
+  @Transactional(readOnly = true)
+  public List<OverdueRelease> getContractsToRemindAgain() {
     var today = today();
     if (!isWorkingDay(today)) {
       return List.of();
     }
-    Set<Long> remindedToday = releaseReminderRepository.findEmployeecontractIdsByRemindedOn(today);
-    return employeecontractService.getRunningContractsWithOverdueRelease().stream()
-        .filter(contract -> !remindedToday.contains(contract.employeecontractId()))
-        .toList();
+    var endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(today, -1));
+    return notRemindedToday(employeecontractService.getRunningContractsReleasedBefore(endOfPreviousMonth));
+  }
+
+  /** Reminds the person of the contract of the running month, without CC; see {@link #remindAgain}. */
+  public void remindFirst(OverdueRelease contract) {
+    remind(contract, List.of(), "main.release.notification.releasereminderfirst.title");
   }
 
   /**
-   * Reminds the person of the contract and notes the day. The note is flushed before the mail goes
-   * out, so that a second run on the same day fails on the unique key instead of mailing again. A
-   * mail that fails rolls the note back: the next run tries again.
+   * Reminds the person of the contract of the previous month, with the people leads in CC, and notes
+   * the day. The note is flushed before the mail goes out, so that a second run on the same day fails
+   * on the unique key instead of mailing again. A mail that fails rolls the note back: the next run
+   * tries again.
    *
    * <p>A person without a login has no one to mail; the contract is skipped and logged.
    *
    * @throws de.hbt.salat.common.exception.BusinessRuleException {@code XX-0005} when the mail cannot be sent
    */
-  public void remind(OverdueRelease contract) {
+  public void remindAgain(OverdueRelease contract) {
+    remind(contract, contract.peopleLeadSalatUserIds(), "main.release.notification.releasereminderauto.title");
+  }
+
+  private void remind(OverdueRelease contract, List<Long> cc, String titleKey) {
     if (contract.salatUserId() == null) {
       log.warn("Contract {} is overdue with its release, but its person has no login to remind", contract.employeecontractId());
       return;
     }
-    var today = today();
-    releaseReminderRepository.saveAndFlush(new ReleaseReminder(contract.employeecontractId(), today));
-    var cc = isFirstWorkingDayOfMonth(today) ? List.<Long>of() : contract.peopleLeadSalatUserIds();
+    releaseReminderRepository.saveAndFlush(new ReleaseReminder(contract.employeecontractId(), today()));
     notificationService.emitNotification(RELEASE_REMINDER_AUTO, List.of(contract.salatUserId()), cc,
         NotificationMessage.builder()
-            .titleKey("main.release.notification.releasereminderauto.title")
+            .titleKey(titleKey)
             .descriptionKey("main.release.notification.releasereminderauto.description")
             .descriptionParams(List.of(DateUtils.format(contract.releasedUntil(), DATE_PATTERN),
                 DateUtils.format(contract.dueUntil(), DATE_PATTERN)))
@@ -120,12 +138,21 @@ public class ReleaseReminderService {
     return isWeekday(day) && publicholidayDAO.getPublicHoliday(day).isEmpty();
   }
 
-  /** Whether no working day of the month lies before {@code day}. */
-  private boolean isFirstWorkingDayOfMonth(LocalDate day) {
-    var holidays = publicholidayDAO.getPublicHolidaysBetween(day.withDayOfMonth(1), day).stream()
+  /** Whether no working day of the month lies after {@code day}. */
+  private boolean isLastWorkingDayOfMonth(LocalDate day) {
+    var endOfMonth = DateUtils.getEndOfMonth(day);
+    var holidays = publicholidayDAO.getPublicHolidaysBetween(day.plusDays(1), endOfMonth).stream()
         .map(Publicholiday::getRefdate)
         .collect(Collectors.toSet());
-    return day.withDayOfMonth(1).datesUntil(day)
-        .noneMatch(earlier -> isWeekday(earlier) && !holidays.contains(earlier));
+    return day.plusDays(1).datesUntil(endOfMonth.plusDays(1))
+        .noneMatch(later -> isWeekday(later) && !holidays.contains(later));
+  }
+
+  /** Leaves out the contracts reminded today already: a second run after a restart mails nobody twice. */
+  private List<OverdueRelease> notRemindedToday(List<OverdueRelease> contracts) {
+    Set<Long> remindedToday = releaseReminderRepository.findEmployeecontractIdsByRemindedOn(today());
+    return contracts.stream()
+        .filter(contract -> !remindedToday.contains(contract.employeecontractId()))
+        .toList();
   }
 }

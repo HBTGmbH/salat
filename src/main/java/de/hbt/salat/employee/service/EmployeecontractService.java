@@ -464,16 +464,18 @@ public class EmployeecontractService {
   }
 
   /**
-   * The running contracts whose release is overdue ({@link Employeecontract#getReleaseWarning()}),
-   * for the automatic reminder (#215). A contract that ended before today is not among them: its
-   * person may have left, and whoever still has to release it is reminded by hand.
+   * The running contracts whose release does not reach {@code until}, or the last day of a contract
+   * that ends before ({@link Employeecontract#dueUntil(LocalDate)}), for the automatic reminder (#215,
+   * #1557). A contract that ended before today is not among them: its person may have left, and
+   * whoever still has to release it is reminded by hand. Nor is a contract never released, as on
+   * the dashboard ({@link Employeecontract#getReleaseWarning()}).
    */
   @Transactional(readOnly = true)
-  public List<OverdueRelease> getRunningContractsWithOverdueRelease() {
+  public List<OverdueRelease> getRunningContractsReleasedBefore(LocalDate until) {
     return employeecontractRepository.findAllReleasedWithPeople().stream()
         .filter(Employeecontract::getCurrentlyValid)
-        .filter(Employeecontract::getReleaseWarning)
-        .map(OverdueRelease::of)
+        .filter(contract -> contract.getReportReleaseDate().isBefore(contract.dueUntil(until)))
+        .map(contract -> OverdueRelease.of(contract, contract.dueUntil(until)))
         .toList();
   }
 

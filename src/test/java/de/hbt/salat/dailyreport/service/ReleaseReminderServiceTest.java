@@ -46,10 +46,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.MessageSourceAccessor;
 
 /**
- * The automatic reminder to release the previous month (#215): on every working day from the first
- * of the month on, from the second working day on with the people leads in CC, never twice a day.
+ * The automatic reminder to release (#215, #1557): first on the last working day of the month, to the
+ * person alone; then on every working day of the next month, with the people leads in CC; never twice
+ * a day.
  *
- * <p>October 2026 begins on a Thursday; the 3rd, a Saturday, is a public holiday in the test.
+ * <p>October 2026 begins on a Thursday and ends on a Saturday; the 3rd, a Saturday, is a public
+ * holiday in the test.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -58,6 +60,10 @@ class ReleaseReminderServiceTest {
   private static final LocalDate THURSDAY_FIRST = LocalDate.of(2026, 10, 1);
   private static final LocalDate FRIDAY_SECOND = LocalDate.of(2026, 10, 2);
   private static final LocalDate SATURDAY = LocalDate.of(2026, 10, 3);
+  private static final LocalDate THURSDAY_29TH = LocalDate.of(2026, 10, 29);
+  private static final LocalDate FRIDAY_30TH = LocalDate.of(2026, 10, 30);
+  private static final LocalDate END_OF_SEPTEMBER = LocalDate.of(2026, 9, 30);
+  private static final LocalDate END_OF_OCTOBER = LocalDate.of(2026, 10, 31);
   private static final long CONTRACT_ID = 7L;
   private static final long PERSON = 42L;
   private static final List<Long> PEOPLE_LEADS = List.of(43L, 44L);
@@ -89,16 +95,82 @@ class ReleaseReminderServiceTest {
   }
 
   @Nested
-  class WhomToRemind {
+  class WhomToRemindFirst {
+
+    /** The 31st is a Saturday: the release is due until the end of the month all the same. */
+    @Test
+    void on_the_last_working_day_every_contract_released_short_of_the_end_of_the_month_not_yet_reminded_today() {
+      today(FRIDAY_30TH);
+      when(releaseReminderRepository.findEmployeecontractIdsByRemindedOn(FRIDAY_30TH)).thenReturn(Set.of(8L));
+      when(employeecontractService.getRunningContractsReleasedBefore(END_OF_OCTOBER))
+          .thenReturn(List.of(overdue(CONTRACT_ID), overdue(8L)));
+
+      assertThat(service.getContractsToRemindFirst()).extracting(OverdueRelease::employeecontractId)
+          .containsExactly(CONTRACT_ID);
+    }
 
     @Test
-    void on_a_working_day_every_overdue_contract_not_yet_reminded_today() {
-      today(THURSDAY_FIRST);
-      var reminded = overdue(8L);
-      when(releaseReminderRepository.findEmployeecontractIdsByRemindedOn(THURSDAY_FIRST)).thenReturn(Set.of(8L));
-      when(employeecontractService.getRunningContractsWithOverdueRelease()).thenReturn(List.of(overdue(CONTRACT_ID), reminded));
+    void nobody_on_a_working_day_before_the_last() {
+      today(THURSDAY_29TH);
 
-      assertThat(service.getContractsToRemindToday()).extracting(OverdueRelease::employeecontractId)
+      assertThat(service.getContractsToRemindFirst()).isEmpty();
+      verifyNoInteractions(employeecontractService);
+    }
+
+    /** The 31st of December 2026, a Thursday, is a holiday: Wednesday the 30th is the last working day. */
+    @Test
+    void the_last_working_day_comes_before_a_holiday_at_the_end_of_the_month() {
+      var wednesday = LocalDate.of(2026, 12, 30);
+      var newYearsEve = LocalDate.of(2026, 12, 31);
+      today(wednesday);
+      when(publicholidayDAO.getPublicHolidaysBetween(newYearsEve, newYearsEve))
+          .thenReturn(List.of(new Publicholiday(newYearsEve, "Silvester")));
+      when(employeecontractService.getRunningContractsReleasedBefore(newYearsEve)).thenReturn(List.of(overdue(CONTRACT_ID)));
+
+      assertThat(service.getContractsToRemindFirst()).extracting(OverdueRelease::employeecontractId)
+          .containsExactly(CONTRACT_ID);
+    }
+
+    @Test
+    void nobody_on_a_public_holiday_at_the_end_of_the_month() {
+      var newYearsEve = LocalDate.of(2026, 12, 31);
+      today(newYearsEve);
+      when(publicholidayDAO.getPublicHoliday(newYearsEve)).thenReturn(Optional.of(new Publicholiday(newYearsEve, "Silvester")));
+
+      assertThat(service.getContractsToRemindFirst()).isEmpty();
+      verifyNoInteractions(employeecontractService);
+    }
+
+    @Test
+    void nobody_at_the_weekend() {
+      today(SATURDAY);
+
+      assertThat(service.getContractsToRemindFirst()).isEmpty();
+      verifyNoInteractions(employeecontractService);
+    }
+  }
+
+  @Nested
+  class WhomToRemindAgain {
+
+    @Test
+    void on_a_working_day_every_contract_released_short_of_the_end_of_the_previous_month_not_yet_reminded_today() {
+      today(THURSDAY_FIRST);
+      when(releaseReminderRepository.findEmployeecontractIdsByRemindedOn(THURSDAY_FIRST)).thenReturn(Set.of(8L));
+      when(employeecontractService.getRunningContractsReleasedBefore(END_OF_SEPTEMBER))
+          .thenReturn(List.of(overdue(CONTRACT_ID), overdue(8L)));
+
+      assertThat(service.getContractsToRemindAgain()).extracting(OverdueRelease::employeecontractId)
+          .containsExactly(CONTRACT_ID);
+    }
+
+    /** Who lags behind with an older month hears of it in the morning of the last working day as well. */
+    @Test
+    void on_the_last_working_day_too() {
+      today(FRIDAY_30TH);
+      when(employeecontractService.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).thenReturn(List.of(overdue(CONTRACT_ID)));
+
+      assertThat(service.getContractsToRemindAgain()).extracting(OverdueRelease::employeecontractId)
           .containsExactly(CONTRACT_ID);
     }
 
@@ -106,7 +178,7 @@ class ReleaseReminderServiceTest {
     void nobody_at_the_weekend() {
       today(SATURDAY);
 
-      assertThat(service.getContractsToRemindToday()).isEmpty();
+      assertThat(service.getContractsToRemindAgain()).isEmpty();
       verifyNoInteractions(employeecontractService);
     }
 
@@ -115,7 +187,7 @@ class ReleaseReminderServiceTest {
       today(FRIDAY_SECOND);
       when(publicholidayDAO.getPublicHoliday(FRIDAY_SECOND)).thenReturn(Optional.of(new Publicholiday(FRIDAY_SECOND, "Feiertag")));
 
-      assertThat(service.getContractsToRemindToday()).isEmpty();
+      assertThat(service.getContractsToRemindAgain()).isEmpty();
       verifyNoInteractions(employeecontractService);
     }
   }
@@ -124,50 +196,41 @@ class ReleaseReminderServiceTest {
   class Reminding {
 
     @Test
-    void on_the_first_working_day_the_mail_goes_to_the_person_alone_and_the_day_is_noted() {
-      today(THURSDAY_FIRST);
+    void the_first_reminder_goes_to_the_person_alone_and_the_day_is_noted() {
+      today(FRIDAY_30TH);
 
-      service.remind(overdue(CONTRACT_ID));
+      service.remindFirst(new OverdueRelease(CONTRACT_ID, PERSON, END_OF_SEPTEMBER, END_OF_OCTOBER, PEOPLE_LEADS));
 
       var message = ArgumentCaptor.forClass(NotificationMessage.class);
       verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(List.of()), message.capture());
-      assertThat(message.getValue().descriptionParams()).containsExactly("31.08.2026", "30.09.2026");
+      assertThat(message.getValue().titleKey()).isEqualTo("main.release.notification.releasereminderfirst.title");
+      assertThat(message.getValue().descriptionParams()).containsExactly("30.09.2026", "31.10.2026");
       assertThat(message.getValue().actionUrl()).isEqualTo("/release");
+      assertThat(message.getValue().actionLabel()).isEqualTo("Zur Freigabe");
       // no person reminds, so the mail comes from the address for notifications
       assertThat(message.getValue().sender()).isNull();
-      var noted = ArgumentCaptor.forClass(ReleaseReminder.class);
-      verify(releaseReminderRepository).saveAndFlush(noted.capture());
-      assertThat(noted.getValue().getEmployeecontractId()).isEqualTo(CONTRACT_ID);
-      assertThat(noted.getValue().getRemindedOn()).isEqualTo(THURSDAY_FIRST);
+      assertNoted(FRIDAY_30TH);
+    }
+
+    /** Already on the first working day of the next month: the reminder at 3 pm was the first. */
+    @Test
+    void every_further_reminder_has_the_people_leads_read_along_and_the_day_is_noted() {
+      today(THURSDAY_FIRST);
+
+      service.remindAgain(overdue(CONTRACT_ID));
+
+      var message = ArgumentCaptor.forClass(NotificationMessage.class);
+      verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(PEOPLE_LEADS), message.capture());
+      assertThat(message.getValue().titleKey()).isEqualTo("main.release.notification.releasereminderauto.title");
+      assertThat(message.getValue().descriptionParams()).containsExactly("31.08.2026", "30.09.2026");
+      assertNoted(THURSDAY_FIRST);
     }
 
     @Test
-    void from_the_second_working_day_on_the_people_leads_read_along() {
+    void a_contract_without_people_leads_is_mailed_without_cc() {
       today(FRIDAY_SECOND);
 
-      service.remind(overdue(CONTRACT_ID));
-
-      verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(PEOPLE_LEADS), any());
-    }
-
-    @Test
-    void a_contract_without_people_leads_is_mailed_without_cc_from_the_second_working_day_on_as_well() {
-      today(FRIDAY_SECOND);
-
-      service.remind(new OverdueRelease(CONTRACT_ID, PERSON, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 9, 30), List.of()));
-
-      verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(List.of()), any());
-    }
-
-    /** The 1st is a holiday and the 2nd lies at the weekend: Monday the 4th is the first working day. */
-    @Test
-    void the_first_working_day_comes_after_a_holiday_and_the_weekend() {
-      var monday = LocalDate.of(2027, 1, 4);
-      today(monday);
-      when(publicholidayDAO.getPublicHolidaysBetween(LocalDate.of(2027, 1, 1), monday))
-          .thenReturn(List.of(new Publicholiday(LocalDate.of(2027, 1, 1), "Neujahr")));
-
-      service.remind(overdue(CONTRACT_ID));
+      service.remindAgain(new OverdueRelease(CONTRACT_ID, PERSON, LocalDate.of(2026, 8, 31), END_OF_SEPTEMBER, List.of()));
 
       verify(notificationService).emitNotification(eq(RELEASE_REMINDER_AUTO), eq(List.of(PERSON)), eq(List.of()), any());
     }
@@ -176,7 +239,8 @@ class ReleaseReminderServiceTest {
     void a_person_without_a_login_is_skipped_without_a_note() {
       today(THURSDAY_FIRST);
 
-      service.remind(new OverdueRelease(CONTRACT_ID, null, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 9, 30), PEOPLE_LEADS));
+      service.remindFirst(new OverdueRelease(CONTRACT_ID, null, LocalDate.of(2026, 8, 31), END_OF_SEPTEMBER, PEOPLE_LEADS));
+      service.remindAgain(new OverdueRelease(CONTRACT_ID, null, LocalDate.of(2026, 8, 31), END_OF_SEPTEMBER, PEOPLE_LEADS));
 
       verifyNoInteractions(notificationService, releaseReminderRepository);
     }
@@ -188,7 +252,14 @@ class ReleaseReminderServiceTest {
       doThrow(new BusinessRuleException(ErrorCode.XX_MAIL_NOT_SENT, "Anna"))
           .when(notificationService).emitNotification(any(), any(), any(), any());
 
-      assertThatThrownBy(() -> service.remind(overdue(CONTRACT_ID))).isInstanceOf(BusinessRuleException.class);
+      assertThatThrownBy(() -> service.remindAgain(overdue(CONTRACT_ID))).isInstanceOf(BusinessRuleException.class);
+    }
+
+    private void assertNoted(LocalDate day) {
+      var noted = ArgumentCaptor.forClass(ReleaseReminder.class);
+      verify(releaseReminderRepository).saveAndFlush(noted.capture());
+      assertThat(noted.getValue().getEmployeecontractId()).isEqualTo(CONTRACT_ID);
+      assertThat(noted.getValue().getRemindedOn()).isEqualTo(day);
     }
   }
 
@@ -214,7 +285,7 @@ class ReleaseReminderServiceTest {
   }
 
   private static OverdueRelease overdue(long contractId) {
-    return new OverdueRelease(contractId, PERSON, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 9, 30), PEOPLE_LEADS);
+    return new OverdueRelease(contractId, PERSON, LocalDate.of(2026, 8, 31), END_OF_SEPTEMBER, PEOPLE_LEADS);
   }
 
   private static void today(LocalDate day) {
