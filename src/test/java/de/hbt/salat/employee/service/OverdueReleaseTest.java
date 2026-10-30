@@ -56,7 +56,7 @@ class OverdueReleaseTest {
   @Test
   void a_running_contract_released_until_august_is_overdue_with_its_person_and_people_leads() {
     var contract = contract(1L, LocalDate.of(2026, 8, 31), null, person(42L), person(43L), person(null));
-    when(employeecontractRepository.findAllReleasedWithPeople()).thenReturn(List.of(contract));
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(contract));
 
     assertThat(service.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).containsExactly(
         new OverdueRelease(1L, 42L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 9, 30), List.of(43L)));
@@ -65,7 +65,7 @@ class OverdueReleaseTest {
   @Test
   void a_contract_released_until_the_end_of_the_previous_month_is_not_overdue() {
     var contract = contract(1L, LocalDate.of(2026, 9, 30), null, person(42L));
-    when(employeecontractRepository.findAllReleasedWithPeople()).thenReturn(List.of(contract));
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(contract));
 
     assertThat(service.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).isEmpty();
   }
@@ -74,7 +74,7 @@ class OverdueReleaseTest {
   @Test
   void a_contract_that_ended_before_today_is_left_out_although_its_release_lags_behind() {
     var contract = contract(1L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 9, 30), person(42L));
-    when(employeecontractRepository.findAllReleasedWithPeople()).thenReturn(List.of(contract));
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(contract));
 
     assertThat(service.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).isEmpty();
   }
@@ -82,7 +82,7 @@ class OverdueReleaseTest {
   @Test
   void a_contract_ending_today_still_runs() {
     var contract = contract(1L, LocalDate.of(2026, 8, 31), TODAY, person(42L));
-    when(employeecontractRepository.findAllReleasedWithPeople()).thenReturn(List.of(contract));
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(contract));
 
     assertThat(service.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).extracting(OverdueRelease::employeecontractId)
         .containsExactly(1L);
@@ -91,10 +91,23 @@ class OverdueReleaseTest {
   @Test
   void a_person_without_a_login_is_kept_with_none() {
     var contract = contract(1L, LocalDate.of(2026, 8, 31), null, person(null));
-    when(employeecontractRepository.findAllReleasedWithPeople()).thenReturn(List.of(contract));
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(contract));
 
     assertThat(service.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).extracting(OverdueRelease::salatUserId)
         .containsExactly((Long) null);
+  }
+
+  /** Never released counts as released until the day before it began (#1560); the value says nothing was. */
+  @Test
+  void a_running_contract_never_released_is_overdue_once_it_began_by_the_due_date() {
+    var neverReleased = contract(1L, null, null, person(42L));
+    neverReleased.setValidFrom(LocalDate.of(2026, 9, 1));
+    var beginsLater = contract(2L, null, null, person(42L));
+    beginsLater.setValidFrom(TODAY);
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(neverReleased, beginsLater));
+
+    assertThat(service.getRunningContractsReleasedBefore(END_OF_SEPTEMBER)).containsExactly(
+        new OverdueRelease(1L, 42L, null, END_OF_SEPTEMBER, List.of()));
   }
 
   /** On its last day a contract ending before the end of the month is due until that day, not further. */
@@ -104,7 +117,7 @@ class OverdueReleaseTest {
     ClockProvider.setClock(Clock.fixed(lastDay.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
     var overdue = contract(1L, LocalDate.of(2026, 9, 30), lastDay, person(42L));
     var releasedToItsEnd = contract(2L, lastDay, lastDay, person(42L));
-    when(employeecontractRepository.findAllReleasedWithPeople()).thenReturn(List.of(overdue, releasedToItsEnd));
+    when(employeecontractRepository.findAllWithPeople()).thenReturn(List.of(overdue, releasedToItsEnd));
 
     assertThat(service.getRunningContractsReleasedBefore(LocalDate.of(2026, 10, 31))).containsExactly(
         new OverdueRelease(1L, 42L, LocalDate.of(2026, 9, 30), lastDay, List.of()));

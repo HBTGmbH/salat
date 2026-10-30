@@ -138,9 +138,8 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
       select distinct ec from Employeecontract ec
       join fetch ec.employee e left join fetch e.salatUser
       left join fetch ec.supervisors s left join fetch s.salatUser
-      where ec.reportReleaseDate is not null
       """)
-  List<Employeecontract> findAllReleasedWithPeople();
+  List<Employeecontract> findAllWithPeople();
 
   /**
    * The given contracts with everything {@link de.hbt.salat.employee.auth.EmployeecontractAuthorization}

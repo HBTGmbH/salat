@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @param employeecontractId      the contract
  * @param salatUserId             the login of the person; {@code null} where the person has none
- * @param releasedUntil           how far the bookings are released
+ * @param releasedUntil           how far the bookings are released; {@code null} where they never were (#1560)
  * @param dueUntil                how far they should be ({@link Employeecontract#dueUntil(LocalDate)})
  * @param peopleLeadSalatUserIds  the logins of the contract's people leads, those without a login left out
  */

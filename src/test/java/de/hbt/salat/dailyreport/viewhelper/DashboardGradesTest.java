@@ -46,10 +46,11 @@ class DashboardGradesTest {
     assertThat(DashboardGrades.release(releasedUntil, false)).isEqualTo("success");
   }
 
-  /* Nie freigegeben heisst neuer Vertrag - Employeecontract.getReleaseWarning() warnt dann nicht. */
+  /* Nie freigegeben: neutral, solange noch nichts faellig ist, rot, sobald es das ist (#1560). */
   @Test
-  void grades_a_contract_never_released_neutral() {
+  void grades_a_contract_never_released_neutral_until_its_release_is_due() {
     assertThat(DashboardGrades.release(null, false)).isEqualTo("secondary");
+    assertThat(DashboardGrades.release(null, true)).isEqualTo("danger");
   }
 
   @Test
