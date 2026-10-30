@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=#{main.general.mainmenu.timereports.text}">
+<section layout:fragment="content">
+
+  <!--/* Eine Anmeldung ohne heute gueltigen Vertrag (Status adm, #1559): kein Fehler, nur nichts zu
+         zeigen. Farben: .alert-info traegt die Tabler-Tokens beider Modi, wie auf den anderen Seiten. */-->
+  <div id="no-current-contract" class="alert alert-info">
+    <div class="d-flex align-items-start gap-2">
+      <i class="bi bi-info-circle mt-1" aria-hidden="true"></i>
+      <div>
+        <h4 class="alert-heading mb-1" th:text="#{main.nocurrentcontract.title}">Für dich ist heute kein Vertrag gültig.</h4>
+        <div th:text="#{main.nocurrentcontract.text}">Buchungen, Konten und Freigabe gibt es nur zu einem Vertrag.</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+</html>

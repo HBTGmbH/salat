@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
@@ -75,7 +76,11 @@ public class MyAccountsController {
     @GetMapping
     public String show(@RequestParam(required = false) Long fEmployeeContractId,
                        @RequestParam(required = false) String trainingPeriod, Model model) {
-        var contract = currentContract(fEmployeeContractId);
+        var shownContract = currentContract(fEmployeeContractId);
+        if (shownContract.isEmpty()) {
+            return NoCurrentContract.view(model, messageSourceAccessor.getMessage("main.my.accounts.title"), "my-accounts");
+        }
+        var contract = shownContract.get();
         var today = today();
         var currentYear = today.getYear();
         var yearStart = LocalDate.of(currentYear, 1, 1);
@@ -105,7 +110,11 @@ public class MyAccountsController {
     @Authorized(requiresManager = true)
     public String correctOvertime(@RequestParam(required = false) Long fEmployeeContractId, RedirectAttributes redirectAttributes) {
         var contract = currentContract(fEmployeeContractId);
-        overtimeService.updateOvertimeStatic(contract.getId());
+        if (contract.isEmpty()) {
+            redirectAttributes.addFlashAttribute("toastError", messageSourceAccessor.getMessage("main.nocurrentcontract.title"));
+            return "redirect:/my-accounts";
+        }
+        overtimeService.updateOvertimeStatic(contract.get().getId());
         redirectAttributes.addFlashAttribute("toastSuccess",
             messageSourceAccessor.getMessage("main.overtime.employeecontract.correct.label"));
         return "redirect:/my-accounts";
@@ -527,16 +536,16 @@ public class MyAccountsController {
 
     /**
      * Der gewaehlte Vertrag, nur mit Leserecht (#1514): ein Vertrag, den die angemeldete Person nicht
-     * lesen darf, endet in einer {@code AuthorizationException}. Ohne Wahl der eigene laufende Vertrag.
+     * lesen darf, endet in einer {@code AuthorizationException}. Ohne Wahl der eigene laufende Vertrag;
+     * leer fuer eine Anmeldung ohne heute gueltigen Vertrag (Status adm, #1559).
      */
-    private Employeecontract currentContract(Long fEmployeeContractId) {
+    private Optional<Employeecontract> currentContract(Long fEmployeeContractId) {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {
             employeecontractService.checkReadable(fEmployeeContractId);
             var contract = employeecontractService.getEmployeecontractById(fEmployeeContractId);
-            if (contract != null) return contract;
+            if (contract != null) return Optional.of(contract);
         }
         var loginEmployee = employeeService.getLoginEmployee();
-        return employeecontractService.getCurrentContract(loginEmployee.getId())
-            .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
+        return employeecontractService.getCurrentContract(loginEmployee.getId());
     }
 }

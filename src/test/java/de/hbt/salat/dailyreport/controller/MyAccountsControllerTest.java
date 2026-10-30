@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.test.FixedClock;
@@ -40,6 +41,7 @@ import de.hbt.salat.dailyreport.domain.TrainingBenchmark;
 import de.hbt.salat.dailyreport.domain.WorkingDays;
 import java.math.BigDecimal;
 import de.hbt.salat.dailyreport.service.VacationService;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
@@ -103,6 +105,35 @@ class MyAccountsControllerTest {
 
     assertThatThrownBy(() -> myAccountsController.show(FOREIGN_CONTRACT_ID, null, new ExtendedModelMap()))
         .isInstanceOf(AuthorizationException.class);
+  }
+
+  /* Eine Anmeldung mit Status adm kommt ohne gueltigen Vertrag herein; die Seite zeigt ihr einen
+     Hinweis statt eines Fehlers 500 (#1559). */
+  @Test
+  void a_login_without_a_current_contract_sees_a_hint_instead_of_an_error() {
+    loginWithoutContract();
+
+    assertThat(myAccountsController.show(null, null, new ExtendedModelMap())).isEqualTo("dailyreport/no-current-contract");
+  }
+
+  @Test
+  void correcting_the_overtime_without_a_current_contract_answers_with_a_toast() {
+    loginWithoutContract();
+    when(messageSourceAccessor.getMessage("main.nocurrentcontract.title")).thenReturn("Kein Vertrag");
+    var redirectAttributes = new RedirectAttributesModelMap();
+
+    var view = myAccountsController.correctOvertime(null, redirectAttributes);
+
+    assertThat(view).isEqualTo("redirect:/my-accounts");
+    assertThat(redirectAttributes.getFlashAttributes().get("toastError")).isEqualTo("Kein Vertrag");
+    verify(overtimeService, never()).updateOvertimeStatic(any(Long.class));
+  }
+
+  private void loginWithoutContract() {
+    var loginEmployee = new Employee();
+    setField(loginEmployee, "id", 5L);
+    when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
+    when(employeecontractService.getCurrentContract(5L)).thenReturn(Optional.empty());
   }
 
   /* Vor #1097 las die Berechnung das Ende des Urlaubsauftrags ungeschuetzt. Bei offenem Ende ist es

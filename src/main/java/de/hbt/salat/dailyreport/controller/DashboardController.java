@@ -70,7 +70,11 @@ public class DashboardController {
     private final MessageSourceAccessor messageSourceAccessor;
     @GetMapping
     public String dashboard(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
-        var employeecontract = currentContract(fEmployeeContractId);
+        var shownContract = currentContract(fEmployeeContractId);
+        if (shownContract.isEmpty()) {
+            return NoCurrentContract.view(model, messageSourceAccessor.getMessage("main.general.mainmenu.dashboard.text"), "dashboard");
+        }
+        var employeecontract = shownContract.get();
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), false);
         var vacations = vacationService.getVacations(employeecontract).stream()
@@ -215,19 +219,20 @@ public class DashboardController {
 
     /* Ein Vertrag aus fEmployeeContractId, den die angemeldete Person nicht lesen darf, faellt auf
        ihren eigenen aktuellen Vertrag zurueck statt mit 403 zu antworten: UiState merkt sich den
-       Wert, und ein gemerkter fremder Vertrag sperrte sonst die Startseite (#1134). */
-    private Employeecontract currentContract(Long fEmployeeContractId) {
+       Wert, und ein gemerkter fremder Vertrag sperrte sonst die Startseite (#1134). Leer ist das
+       Ergebnis nur fuer eine Anmeldung ohne heute gueltigen Vertrag, die AuthorizedUserChangedListener
+       durchlaesst (Status adm, #1559). */
+    private Optional<Employeecontract> currentContract(Long fEmployeeContractId) {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {
             try {
                 var contract = employeecontractService.getEmployeecontractForView(fEmployeeContractId);
-                if (contract != null) return contract;
+                if (contract != null) return Optional.of(contract);
             } catch (AuthorizationException e) {
                 // not readable - fall through to the own contract
             }
         }
         var loginEmployee = employeeService.getLoginEmployee();
-        return employeecontractService.getCurrentContract(loginEmployee.getId())
-                .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
+        return employeecontractService.getCurrentContract(loginEmployee.getId());
     }
 
     /* Ein Saldo, den es nicht gibt, bleibt ein leeres Feld - an ihm haengt die Sichtbarkeit der
