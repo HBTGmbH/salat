@@ -10,7 +10,7 @@
   </parent>
   <groupId>de.hbt.salat</groupId>
   <artifactId>tb</artifactId>
-  <version>7.2.4-SNAPSHOT</version>
+  <version>7.3.0</version>
   <packaging>jar</packaging>
 
   <properties>
