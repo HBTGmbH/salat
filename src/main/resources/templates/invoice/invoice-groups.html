@@ -116,7 +116,7 @@
   <tbody th:if="${group.visible}"
          th:with="heading=${group.noTicketGroup} ? #{main.invoice.ticket.none} : ${group.heading},
                   visibleLines=${group.lines.?[visible]}">
-    <tr class="invoice_suborder_row" th:classappend="${group.depth == 0} ? 'invoice_group_top' : ''">
+    <tr class="invoice_suborder_row">
       <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount}"
           th:style="${'padding-left: ' + (0.5 + group.depth * 1.5) + 'em'}">
         <span th:text="${heading}"></span>
