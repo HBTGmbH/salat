@@ -58,11 +58,6 @@
 	vertical-align: top;
 }
 
-/* a group of the top level stands apart from the one before it (#217) */
-.invoice_group_top > td {
-	padding-top: 2em;
-}
-
 /* the total closes the groups above it */
 .invoice_total_rule {
 	border-top: 1px solid black;

@@ -25,6 +25,9 @@ public class InvoiceSettingsService {
           }
           .invoice_suborder_row {
               font-weight: normal;
+          }
+          /* on the row, not on its cells: the heading row has a cell for each subtotal (#217, #1566) */
+          tr.invoice_suborder_row {
               background-image: linear-gradient(to right, #D5DC6D, #EDF1CC);
           }
           """)
