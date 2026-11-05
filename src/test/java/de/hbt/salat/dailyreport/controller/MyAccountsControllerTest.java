@@ -187,6 +187,41 @@ class MyAccountsControllerTest {
     assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("30,0");
   }
 
+  /* Ein Urlaubsauftrag, der mit dem Vertrag endet, verfaellt nicht: sein Rest gehoert zum Folgevertrag.
+     Das Konto eines beendeten Vertrags steht deshalb auf dem Stand seines letzten Tages und behaelt das
+     volle Soll, wie die Liste der Mitarbeiterauftraege (#1569). Bis dahin fiel es auf das Gebuchte. */
+  @Test
+  void a_vacation_order_ending_with_the_contract_keeps_its_full_entitlement() {
+    var contractEnd = LocalDate.parse("2026-05-31");
+    contractEndingOn(contractEnd);
+    vacationOrderEndingOn(contractEnd);
+    lenient().when(timereportService.getTotalDurationMinutesForEmployeeOrder(ORDER_ID, LocalDate.of(2026, 1, 1), contractEnd))
+        .thenReturn(Duration.ofHours(8 * 10).toMinutes());
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("30,0");
+    assertThat(model.getAttribute("takenDays")).isEqualTo("10,0");
+    assertThat(model.getAttribute("remainingDays")).isEqualTo("20,0");
+  }
+
+  /* Was vor dem Ende des Vertrags mit seinem Unterauftrag endete, ist weiter verfallen. */
+  @Test
+  void a_vacation_order_ending_before_the_contract_keeps_only_what_was_booked() {
+    var contractEnd = LocalDate.parse("2026-05-31");
+    contractEndingOn(contractEnd);
+    vacationOrderEndingOn(LocalDate.parse("2026-04-30"));
+    lenient().when(timereportService.getTotalDurationMinutesForEmployeeOrder(ORDER_ID, LocalDate.of(2026, 1, 1), contractEnd))
+        .thenReturn(Duration.ofHours(8 * 10).toMinutes());
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("10,0");
+    assertThat(model.getAttribute("remainingDays")).isEqualTo("0,0");
+  }
+
   /* Die Dauer des Saldos traegt ihr Vorzeichen schon (OvertimeService.toStatusInfo). Die
      Kontenuebersicht wandte isNegative ein zweites Mal an und bewertete Minusstunden damit auf der
      positiven Seite der Skala: -25 h standen gruen da, waehrend das Dashboard sie gelb zeigt
@@ -485,6 +520,12 @@ class MyAccountsControllerTest {
   private void vacationOrderEndingOn(LocalDate untilDate) {
     when(employeeorderService.getVacationEmployeeOrders(eq(CONTRACT_ID), any()))
         .thenReturn(List.of(vacationOrder(untilDate)));
+  }
+
+  private void contractEndingOn(LocalDate validUntil) {
+    var contract = contract();
+    contract.setValidUntil(validUntil);
+    when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
   }
 
   private void bookedUntilToday(Duration booked) {
