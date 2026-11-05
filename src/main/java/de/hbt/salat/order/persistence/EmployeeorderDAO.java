@@ -62,15 +62,7 @@ public class EmployeeorderDAO {
         return employeeorderRepository.findById(id).orElse(null);
     }
 
-    /** The employee orders of the contract on the vacation order, by its id (#1341), valid on the day. */
-    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId,
-        long vacationCustomerorderId, final LocalDate date) {
-        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderId(
-            employeecontractId, vacationCustomerorderId);
-        return employeeorders.stream().filter(eo -> eo.isValidAt(date)).collect(Collectors.toList());
-    }
-
-    /** Like {@link #getVacationEmployeeOrdersByEmployeeContractIdAndDate}, overlapping the range. */
+    /** The employee orders of the contract on the vacation order, by its id (#1341), overlapping the range. */
     public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, long vacationCustomerorderId,
         final LocalDateRange range) {
         var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderId(

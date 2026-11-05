@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.domain.VacationInfo;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.order.domain.Employeeorder;
@@ -33,24 +34,33 @@ public class VacationService {
     private final SpecialOrders specialOrders;
 
     /**
-     * Die Urlaubsauftraege des Vertrags, die heute gelten, und dazu die, die erst in der Zukunft
-     * beginnen, auf die aber schon gebucht ist (#1175): wer den Urlaub des naechsten Jahres schon
-     * eingetragen hat, soll ihn sehen, bevor der Auftrag gilt. Ein kuenftiger Auftrag ohne Buchung
-     * sagt noch nichts und bleibt weg.
+     * Der Tag, auf den das Urlaubskonto eines Vertrags steht: heute, bei einem beendeten Vertrag sein
+     * letzter Tag (#1569). Ein Urlaubsauftrag, der mit dem Vertrag endet, verfaellt nicht - sein Rest
+     * gehoert zum Folgevertrag. Am Stichtag gilt er noch und behaelt sein volles Soll.
+     */
+    public static LocalDate referenceDay(Employeecontract employeecontract) {
+        return DateUtils.min(today(), employeecontract.getValidUntil());
+    }
+
+    /**
+     * Die Urlaubsauftraege des Vertrags, die am {@link #referenceDay Stichtag} gelten, und dazu die,
+     * die erst danach beginnen, auf die aber schon gebucht ist (#1175): wer den Urlaub des naechsten
+     * Jahres schon eingetragen hat, soll ihn sehen, bevor der Auftrag gilt. Ein kuenftiger Auftrag
+     * ohne Buchung sagt noch nichts und bleibt weg.
      *
      * <p>Sonderurlaub hat kein Budget und steht deshalb nicht je Auftrag da, sondern als eine Zeile
-     * am Ende: alles, was im laufenden Jahr genommen und was darueber hinaus schon geplant ist. Ohne
-     * Buchung fehlt die Zeile.
+     * am Ende: alles, was im Jahr des Stichtags genommen und was darueber hinaus schon geplant ist.
+     * Ohne Buchung fehlt die Zeile.
      */
     public List<VacationInfo> getVacations(Employeecontract employeecontract) {
-        var today = today();
+        var today = referenceDay(employeecontract);
         var yearStart = today.withDayOfYear(1);
         var fromThisYear = employeeorderService.getVacationEmployeeOrders(employeecontract.getId(),
             new LocalDateRange(yearStart, null));
 
         var orders = new LinkedHashMap<Long, Employeeorder>();
-        employeeorderService.getVacationEmployeeOrders(employeecontract.getId()).stream()
-            .filter(order -> !isSpecial(order))
+        fromThisYear.stream()
+            .filter(order -> !isSpecial(order) && order.isValidAt(today))
             .forEach(order -> orders.put(order.getId(), order));
         fromThisYear.stream()
             .filter(order -> !isSpecial(order) && order.getFromDate().isAfter(today))

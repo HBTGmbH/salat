@@ -27,8 +27,9 @@ import de.hbt.salat.order.service.EmployeeorderService;
 import de.hbt.salat.order.service.SpecialOrders;
 
 /**
- * Welche Urlaubsauftraege Dashboard und Kontenuebersicht zeigen (#1175): die heute gueltigen, und
- * dazu die kuenftigen, auf die schon gebucht ist.
+ * Welche Urlaubsauftraege Dashboard und Kontenuebersicht zeigen (#1175): die am Stichtag gueltigen -
+ * heute, bei einem beendeten Vertrag sein letzter Tag (#1569) -, und dazu die kuenftigen, auf die
+ * schon gebucht ist.
  */
 @FixedClock("2026-09-28T10:00:00")
 @ExtendWith(MockitoExtension.class)
@@ -53,7 +54,6 @@ class VacationServiceTest {
   void shows_a_future_vacation_order_that_is_already_booked() {
     var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
     var next = order(2L, 102L, "2027", LocalDate.parse("2027-01-01"));
-    currentOrders(current);
     futureOrders(current, next);
     booked(101L, 80, 16);
     booked(102L, 40, 40);
@@ -69,7 +69,6 @@ class VacationServiceTest {
   void leaves_out_a_future_vacation_order_without_bookings() {
     var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
     var next = order(2L, 102L, "2027", LocalDate.parse("2027-01-01"));
-    currentOrders(current);
     futureOrders(current, next);
     booked(101L, 80, 16);
 
@@ -80,7 +79,6 @@ class VacationServiceTest {
   @Test
   void names_an_order_valid_today_and_later_only_once() {
     var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
-    currentOrders(current);
     futureOrders(current);
 
     assertThat(vacationService.getVacations(contract)).hasSize(1);
@@ -93,7 +91,6 @@ class VacationServiceTest {
     var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
     var pastSpecial = order(3L, 103L, "Sonderurlaub", LocalDate.parse("2026-03-02"));
     var futureSpecial = order(4L, 103L, "Sonderurlaub", LocalDate.parse("2026-10-15"));
-    currentOrders(current);
     futureOrders(current, pastSpecial, futureSpecial);
     booked(101L, 80, 16);
     when(timereportService.getTotalDurationMinutesForEmployeeOrder(eq(3L), any(), any()))
@@ -115,15 +112,39 @@ class VacationServiceTest {
   void leaves_out_special_leave_without_bookings() {
     var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
     var special = order(3L, 103L, "Sonderurlaub", LocalDate.parse("2026-10-15"));
-    currentOrders(current);
     futureOrders(current, special);
     booked(101L, 80, 16);
 
     assertThat(vacationService.getVacations(contract)).extracting(VacationInfo::suborderSign).containsExactly("2026");
   }
 
-  private void currentOrders(Employeeorder... orders) {
-    when(employeeorderService.getVacationEmployeeOrders(CONTRACT_ID)).thenReturn(List.of(orders));
+  /* Bei einem beendeten Vertrag gilt heute keiner seiner Urlaubsauftraege; die Tabelle zeigte deshalb
+     nichts. Sie zeigt den Stand am letzten Tag des Vertrags, also den Auftrag, der mit ihm endete (#1569). */
+  @Test
+  void shows_the_orders_of_an_ended_contract_valid_on_its_last_day() {
+    var ended = contract();
+    ended.setValidUntil(LocalDate.parse("2026-08-31"));
+    var vacation = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
+    vacation.setEmployeecontract(ended);
+    vacation.setUntilDate(LocalDate.parse("2026-08-31"));
+    futureOrders(vacation);
+    booked(101L, 136, 0);
+
+    var vacations = vacationService.getVacations(ended);
+
+    assertThat(vacations).extracting(VacationInfo::suborderSign).containsExactly("2026");
+    assertThat(vacations.get(0).usedVacationMinutes()).isEqualTo(136 * 60);
+  }
+
+  /* Ein laufender Vertrag rechnet weiter mit heute: ein Auftrag, der gestern endete, steht nicht mehr da. */
+  @Test
+  void leaves_out_an_order_of_a_running_contract_that_ended_yesterday() {
+    var past = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
+    past.setUntilDate(LocalDate.parse("2026-09-27"));
+    futureOrders(past);
+    booked(101L, 80, 0);
+
+    assertThat(vacationService.getVacations(contract)).isEmpty();
   }
 
   private void futureOrders(Employeeorder... orders) {

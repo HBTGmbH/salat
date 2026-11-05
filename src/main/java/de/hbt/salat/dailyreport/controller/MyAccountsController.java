@@ -83,8 +83,6 @@ public class MyAccountsController {
         var contract = shownContract.get();
         var today = today();
         var currentYear = today.getYear();
-        var yearStart = LocalDate.of(currentYear, 1, 1);
-        var yearEnd = LocalDate.of(currentYear, 12, 31);
 
         model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.my.accounts.title"));
         model.addAttribute("section", "dailyreport");
@@ -95,7 +93,10 @@ public class MyAccountsController {
         populateWorkingTimeTab(model, contract, currentYear);
 
         // --- Tab 2: Vacation account ---
-        populateVacationTab(model, contract, today, currentYear, yearStart, yearEnd);
+        // ein beendeter Vertrag steht auf dem Stand seines letzten Tages (#1569)
+        var vacationDay = VacationService.referenceDay(contract);
+        populateVacationTab(model, contract, vacationDay, vacationDay.getYear(),
+                vacationDay.withDayOfYear(1), LocalDate.of(vacationDay.getYear(), 12, 31));
 
         // --- Tab 3: Training ---
         populateTrainingTab(model, contract, today, TrainingPeriod.of(trainingPeriod));

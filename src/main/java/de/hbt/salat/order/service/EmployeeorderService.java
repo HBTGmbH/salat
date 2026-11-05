@@ -3,7 +3,6 @@ package de.hbt.salat.order.service;
 import static java.lang.Boolean.TRUE;
 import static de.hbt.salat.common.exception.ErrorCode.EO_CONFLICT_RESOLUTION_GOT_VETO;
 import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
-import static de.hbt.salat.common.util.DateUtils.today;
 import static de.hbt.salat.order.command.GetTimereportMinutesCommandEvent.OrderType.EMPLOYEE;
 
 import java.time.Duration;
@@ -541,16 +540,9 @@ public class EmployeeorderService {
   }
 
   /**
-   * The contract's employee orders on the configured vacation order valid today, empty while the role
-   * is off (#1341).
+   * The contract's employee orders on the configured vacation order overlapping the range, empty while
+   * the role is off (#1341).
    */
-  public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId) {
-    var vacationId = specialOrders.getVacationCustomerorderId();
-    return vacationId == null ? List.of()
-        : employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, vacationId, today());
-  }
-
-  /** Like {@link #getVacationEmployeeOrders(long)}, overlapping the range. */
   public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, final LocalDateRange range) {
     var vacationId = specialOrders.getVacationCustomerorderId();
     return vacationId == null ? List.of()
