@@ -40,7 +40,7 @@
     <webjars-locator-lite.version>1.1.5</webjars-locator-lite.version>
     <webjars-tabler-io-core.version>1.7.3</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.49.0</webjars-tabler-io-icons.version>
-    <webjars-htmx.version>4.0.0</webjars-htmx.version>
+    <webjars-htmx.version>4.0.1</webjars-htmx.version>
     <webjars-tomselect.version>2.6.2</webjars-tomselect.version>
     <webjars-sortablejs.version>1.15.7</webjars-sortablejs.version>
   </properties>
