@@ -520,7 +520,7 @@ CREATE TABLE `suborder` (
   KEY `FK88C7152E42103BC2` (`CUSTOMERORDER_ID`),
   CONSTRAINT `FK88C7152E42103BC2` FOREIGN KEY (`CUSTOMERORDER_ID`) REFERENCES `customerorder` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK88C7152EA76A525C` FOREIGN KEY (`PARENTORDER_ID`) REFERENCES `suborder` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=180693 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=180695 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -531,7 +531,9 @@ LOCK TABLES `suborder` WRITE;
 /*!40000 ALTER TABLE `suborder` DISABLE KEYS */;
 INSERT INTO `suborder` VALUES (5861,'\0','2006-12-22 14:14:18','adm','EUR',NULL,NULL,'Krankheit 2019','\0','2019-01-01','\0',0,'N','2009-02-02 10:42:35','adm','\0','Krankheit 2019','2019','','','\0',NULL,3,5191,NULL),
                               (60208,'\0','2010-01-04 13:27:24','adm','EUR',NULL,NULL,'Urlaub 2019','\0','2019-01-01','\0',0,'N','2011-05-17 14:23:53','adm','\0','Urlaub 2019','2019','','','\0',NULL,3,5190,NULL),
-                              (180692,'\0','2019-09-11 04:53:23','bm','EUR',NULL,NULL,'Testen der Stuhlpolsterung','\0','2019-09-11','\0',100,'Y',NULL,NULL,'\0','Stuhlpolsterung','111.01','\0','SP1','\0',NULL,NULL,180969,NULL);
+                              (180692,'\0','2019-09-11 04:53:23','bm','EUR',NULL,NULL,'Testen der Stuhlpolsterung','\0','2019-09-11','\0',100,'Y',NULL,NULL,'\0','Stuhlpolsterung','111.01','\0','SP1','\0',NULL,NULL,180969,NULL),
+                              (180693,'\0','2019-09-11 04:53:23','bm','EUR',NULL,NULL,'Sonderurlaub','\0','2019-01-01','\0',0,'N',NULL,NULL,'\0','Sonderurlaub','Sonderurlaub','\0','','\0',NULL,NULL,5190,NULL),
+                              (180694,'\0','2019-09-11 04:53:23','bm','EUR',NULL,NULL,'Fortbildung','\0','2019-09-11','\0',0,'N',NULL,NULL,'\0','Fortbildung','FORTBILDUNG','\0','',b'1',NULL,NULL,180970,NULL);
 /*!40000 ALTER TABLE `suborder` ENABLE KEYS */;
 UNLOCK TABLES;
 
