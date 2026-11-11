@@ -10,10 +10,20 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
       JPDA_ADDRESS: "*:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     build: ./testdb
     ports:
       - "3306:3306" # not necessary, only so we can access the db from host computer.
     command: --lower_case_table_names=1 --innodb-buffer-pool-size=512M
+    healthcheck:
+      # Over TCP on purpose: while testdb.sql is loaded on the first start, the image's entrypoint
+      # runs a temporary server without networking. Only the real server answers on 3306, and
+      # salattest exists only once the init script has run.
+      test: ["CMD", "mysqladmin", "ping", "--protocol=tcp", "-h", "127.0.0.1", "-u", "salattest", "-psalattest"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5m
