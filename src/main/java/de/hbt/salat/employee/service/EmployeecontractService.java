@@ -499,6 +499,12 @@ public class EmployeecontractService {
     return employeecontractDAO.getVisibleEmployeeContracts();
   }
 
+  /** Die Personen für den Mitarbeiterfilter der Vertragsliste (#1580). */
+  @Authorized
+  public List<Employee> getNotHiddenEmployeesWithReadableContract(Long keepId) {
+    return employeecontractDAO.getNotHiddenEmployeesWithReadableContract(keepId);
+  }
+
   @Authorized
   public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
     return employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();

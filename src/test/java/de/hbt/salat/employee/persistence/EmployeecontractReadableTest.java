@@ -134,6 +134,56 @@ class EmployeecontractReadableTest {
     assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
   }
 
+  /**
+   * The employee filter of the contract list is a filter over what exists (#1580): a person stays in it when all of
+   * their contracts are hidden, because the list shows those contracts on request.
+   */
+  @Test
+  void the_filter_offers_a_person_whose_contracts_are_all_hidden() {
+    contracts();
+    as("mgr", true, false);
+
+    assertThat(filter(null)).containsExactly("foreign", "hidden", "ldx", "led", "own", "pl");
+  }
+
+  /** What hides a person from the filter is the flag of the person, not the one of the contract. */
+  @Test
+  void the_filter_leaves_out_a_hidden_person_with_a_contract_that_is_not_hidden() {
+    contract(employee("gone")).getEmployee().setHide(true);
+    contracts();
+    as("mgr", true, false);
+
+    assertThat(filter(null)).doesNotContain("gone");
+  }
+
+  /** Unless the filter already selects them (#1005): the select box must not lose its stored value. */
+  @Test
+  void the_filter_keeps_a_hidden_person_it_already_selects() {
+    var gone = employee("gone");
+    gone.setHide(true);
+    contract(gone);
+    contracts();
+    as("mgr", true, false);
+
+    assertThat(filter(gone.getId())).contains("gone");
+  }
+
+  @Test
+  void the_filter_of_a_people_lead_offers_their_own_and_those_they_supervise() {
+    contracts();
+    as("pl", false, true);
+
+    assertThat(filter(null)).containsExactly("hidden", "ldx", "led", "pl");
+  }
+
+  @Test
+  void the_filter_of_an_employee_offers_only_themselves() {
+    contracts();
+    as("own", false, false);
+
+    assertThat(filter(null)).containsExactly("own");
+  }
+
   private void contracts() {
     var lead = employee("pl");
     var other = employee("other");
@@ -170,6 +220,10 @@ class EmployeecontractReadableTest {
 
   private List<String> visible() {
     return signs(dao.getVisibleEmployeeContracts());
+  }
+
+  private List<String> filter(Long keepId) {
+    return dao.getNotHiddenEmployeesWithReadableContract(keepId).stream().map(Employee::getSign).toList();
   }
 
   /** The way before #1514: every contract that is not hidden, each checked against the rule in Java. */
