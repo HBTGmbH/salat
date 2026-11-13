@@ -23,6 +23,7 @@ import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.Hiding;
 import de.hbt.salat.common.Validity;
 import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employee_;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Employeecontract_;
@@ -186,6 +187,26 @@ public class EmployeecontractDAO {
     return readableNotHidden()
         .filter(ec -> !Objects.equals(ec.getEmployee().getStatus(), EMPLOYEE_STATUS_ADM))
         .sorted(byName())
+        .toList();
+  }
+
+  /**
+   * Die Personen für den Mitarbeiterfilter der Vertragsliste (#1580), nach Name: jede nicht verborgene Person mit einem
+   * Vertrag, den die angemeldete Person lesen darf — ohne die von Logins mit dem Status des Administrators.
+   *
+   * <p>Ein Filter über Vorhandenes (#1106): ob der Vertrag verborgen oder abgelaufen ist, zählt nicht, denn die Liste
+   * zeigt solche Verträge auf Wunsch. Verborgen ist hier allein die Person; die mit {@code keepId} bleibt trotzdem
+   * stehen, weil der Filter sie schon auswählt (#1005).
+   */
+  public List<Employee> getNotHiddenEmployeesWithReadableContract(Long keepId) {
+    return employeecontractRepository.findAllReadable(authorizedUser.isManager(),
+            authorizedUser.getEffectiveLoginSign(), authorizedUser.isPeopleLead()).stream()
+        .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ))
+        .map(Employeecontract::getEmployee)
+        .filter(e -> !Objects.equals(e.getStatus(), EMPLOYEE_STATUS_ADM))
+        .filter(e -> !e.getHide() || e.getId().equals(keepId))
+        .distinct()
+        .sorted(comparing(Employee::getName))
         .toList();
   }
 

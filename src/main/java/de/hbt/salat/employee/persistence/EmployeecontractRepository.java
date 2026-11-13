@@ -95,6 +95,22 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   List<Employeecontract> findAllNotHiddenReadable(boolean all, String login, boolean peopleLead);
 
   /**
+   * The contracts the user may read, hidden and ended ones included, fetched like
+   * {@link #findAllNotHiddenReadable}: for the employee filter of the contract list (#1580), which
+   * offers every person whose contracts the list can show.
+   */
+  @Query("""
+      select distinct ec from Employeecontract ec
+      join fetch ec.employee e left join fetch e.salatUser u
+      left join fetch ec.supervisors s left join fetch s.salatUser
+      where :all = true or u.loginname = :login
+          or (:peopleLead = true and exists (
+              select x.id from Employeecontract x join x.supervisors xs join xs.salatUser xsu
+              where x = ec and xsu.loginname = :login))
+      """)
+  List<Employeecontract> findAllReadable(boolean all, String login, boolean peopleLead);
+
+  /**
    * Candidates for the object search of the command palette (#1157): the contracts of every person
    * whose sign, first or last name contains each of the words, hidden and ended ones included and
    * ordered last. A missing word is {@code null} and no condition.

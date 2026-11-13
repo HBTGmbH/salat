@@ -61,11 +61,7 @@ public class EmployeecontractController {
             @RequestParam(required = false) Boolean fEmployeeContractShowInactive,
             @RequestParam(required = false) Boolean fEmployeeContractShowHidden,
             Model model) {
-        var employees = employeecontractService.getVisibleEmployeeContracts().stream()
-                .map(Employeecontract::getEmployee)
-                .distinct()
-                .sorted(Comparator.comparing(Employee::getName))
-                .toList();
+        var employees = employeecontractService.getNotHiddenEmployeesWithReadableContract(fEmployeeId);
         if (fEmployeeId == null && employees.size() == 1) {
             fEmployeeId = employees.getFirst().getId();
         }
