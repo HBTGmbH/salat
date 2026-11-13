@@ -871,7 +871,9 @@
         params.append('date', date);
         var url = '/dailyreport/timereports/share-recipients?' + params.toString();
 
-        htmx.ajax('GET', url, {target: '#shareRecipientsContainer', swap: 'innerHTML'});
+        // source as well as target: htmx fires the swap events on the source, which since 4.0.1
+        // is the body unless named - and the guard against a late answer listens at the container
+        htmx.ajax('GET', url, {source: '#shareRecipientsContainer', target: '#shareRecipientsContainer', swap: 'innerHTML'});
       } else {
         // #1196: out of the form, not just out of sight - the choice is a required field, and a
         // hidden one blocks the submit without the browser being able to say why
