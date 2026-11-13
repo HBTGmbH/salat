@@ -75,12 +75,15 @@ class ShareSwitchedOffE2ETest extends PlaywrightE2ETestBase {
       page.waitForCondition(() -> held.get() != null);
       page.uncheck("#shareToggle");
 
-      // braces, so evaluate does not wait for the promise before the answer is even released
-      page.evaluate("() => { window.shareSwapDone = new Promise(done => document"
-          + ".getElementById('shareRecipientsContainer')"
-          + ".addEventListener('htmx:finally:swap', done, {once: true})); }");
+      // at the document and by target, not at the container: htmx fires the swap events on the
+      // source of the request, and a test that missed them waited without end (4.0.1). A flag
+      // instead of a promise, because waitForFunction gives up after the default timeout and
+      // evaluate never does
+      page.evaluate("() => document.addEventListener('htmx:finally:swap', e => {"
+          + " if (e.detail.ctx.target?.id === 'shareRecipientsContainer') window.shareSwapDone = true;"
+          + " })");
       held.get().resume();
-      page.evaluate("() => window.shareSwapDone.then(() => true)");
+      page.waitForFunction("() => window.shareSwapDone === true");
 
       assertThat(page.locator("#shareRecipientsContainer select")).hasCount(0);
       assertSavedWithoutSharing(page, "Teilen aus, Antwort verspaetet");
