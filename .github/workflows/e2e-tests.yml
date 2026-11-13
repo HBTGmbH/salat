@@ -18,6 +18,8 @@ jobs:
   e2e:
     name: E2E (${{ matrix.browser }})
     runs-on: ubuntu-latest
+    # a run takes a few minutes; without a limit a hanging test holds the runner for GitHub's six hours
+    timeout-minutes: 30
     permissions:
       contents: read
     strategy:
