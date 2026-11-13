@@ -1036,7 +1036,9 @@
     if (suborderId) params.append('suborderId', suborderId);
     if (date) params.append('date', date);
 
+    // source as well as target, so the swap events start inside the dialog (see timereport-form)
     htmx.ajax('GET', '/dailyreport/timereports/share-recipients?' + params.toString(), {
+      source: '#shareRecipientsList',
       target: '#shareRecipientsList',
       swap: 'innerHTML'
     });
