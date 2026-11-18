@@ -21,8 +21,8 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.employee.domain.EmployeeAccessDenial;
 
 /**
- * Beantwortet eine Anfrage mit {@code 403}, wenn zum Anmeldenamen kein Mitarbeiter oder kein heute
- * gültiger Vertrag gehört. Die Bedingung stellt {@code AuthorizedUserChangedListener} fest, sobald
+ * Beantwortet eine Anfrage mit {@code 403}, wenn zum Anmeldenamen kein Mitarbeiter gehört. Ein
+ * fehlender Vertrag ist kein Grund dafür (#1588). Die Bedingung stellt {@code AuthorizedUserChangedListener} fest, sobald
  * die Authentifizierung gelingt — also in der Filterkette und vor jedem Controller.
  *
  * <p>Der Filter steht hinter der Sicherheitskette und damit an der einzigen Stelle, an der beides
@@ -37,8 +37,8 @@ import de.hbt.salat.employee.domain.EmployeeAccessDenial;
 public class EmployeeAccessFilter extends OncePerRequestFilter {
 
     /**
-     * Der Weg zurück aus einer übernommenen Anmeldung. Ohne einen gültigen Vertrag der übernommenen
-     * Person wäre sonst auch der Knopf gesperrt, der die Übernahme beendet — und die eigene Anmeldung
+     * Der Weg zurück aus einer übernommenen Anmeldung. Ohne einen Mitarbeiter zur übernommenen
+     * Anmeldung wäre sonst auch der Knopf gesperrt, der die Übernahme beendet — und die eigene Anmeldung
      * bliebe nur über das Löschen des Cookies erreichbar.
      */
     private static final String EXIT_IMPERSONATION_PATH = "/auth/exit-impersonation";

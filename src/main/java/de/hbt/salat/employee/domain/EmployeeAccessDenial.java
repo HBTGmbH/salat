@@ -10,7 +10,7 @@ import de.hbt.salat.common.exception.ServiceFeedbackMessage;
 
 /**
  * Warum der angemeldete Benutzer in dieser Anfrage nichts von der Anwendung zu sehen bekommt: kein
- * Mitarbeiterdatensatz zum Anmeldenamen, oder kein heute gültiger Vertrag.
+ * Mitarbeiterdatensatz zum Anmeldenamen. Ein fehlender Vertrag sperrt nicht (#1588).
  *
  * <p>Festgehalten wird das dort, wo die Bedingung auffällt — beim Wechsel des angemeldeten Benutzers
  * —, beantwortet wird es im {@code EmployeeAccessFilter}. Getrennt sind beide, weil ein

@@ -7,7 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
-import static de.hbt.salat.common.exception.ErrorCode.EC_NO_CURRENT_CONTRACT;
 import static de.hbt.salat.common.exception.ErrorCode.EM_NO_LOGIN_EMPLOYEE;
 
 import java.util.Optional;
@@ -80,25 +79,18 @@ class AuthorizedUserChangedListenerTest {
     verify(employeeAccessDenial, never()).deny(any());
   }
 
-  /**
-   * #1054: der Hörer läuft bei jeder Authentifizierung und damit auch in der Weiterleitung auf
-   * {@code /error}. Er hält die Bedingung deshalb nur fest, statt sie zu werfen.
-   */
+  /** Ohne Vertrag geht die Anmeldung durch, gleich mit welchem Status (#1588). */
   @Test
-  void records_denial_without_throwing_when_no_current_contract() {
+  void lets_an_employee_without_current_contract_in() {
     Employee loginEmployee = EmployeeTestUtils.createEmployee("testy");
     setField(loginEmployee, "id", 42L);
 
     when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
     when(employeecontractService.getCurrentContract(42L)).thenReturn(Optional.empty());
 
-    assertThatCode(() -> classUnderTest.onAuthorizedUserChanged(new AuthorizedUserChangedEvent(this)))
-        .doesNotThrowAnyException();
+    classUnderTest.onAuthorizedUserChanged(new AuthorizedUserChangedEvent(this));
 
-    ArgumentCaptor<ServiceFeedbackMessage> captor = ArgumentCaptor.forClass(ServiceFeedbackMessage.class);
-    verify(employeeAccessDenial).deny(captor.capture());
-    assertThat(captor.getValue().getErrorCode()).isEqualTo(EC_NO_CURRENT_CONTRACT);
-    assertThat(captor.getValue().getArguments()).containsExactly("testy");
+    verify(employeeAccessDenial, never()).deny(any());
     verify(eventPublisher, never()).publishEvent(any());
   }
 

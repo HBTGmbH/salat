@@ -3,7 +3,7 @@ package de.hbt.salat.employee.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static de.hbt.salat.common.exception.ErrorCode.EC_NO_CURRENT_CONTRACT;
+import static de.hbt.salat.common.exception.ErrorCode.EM_NO_LOGIN_EMPLOYEE;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,7 +23,7 @@ import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.persistence.EmployeeRepository;
 
 /**
- * #1054: Die Antwort auf einen fehlenden Vertrag entsteht erst im Zusammenspiel mit dem
+ * #1054: Die Antwort auf einen fehlenden Mitarbeiter entsteht erst im Zusammenspiel mit dem
  * Servlet-Container - {@code sendError} führt auf {@code /error}, und in dieser Weiterleitung gelingt
  * die Authentifizierung erneut. Genau daran ging die Anwendung vorher zugrunde, und genau das sieht
  * ein Test ohne laufenden Container nicht. Der Test läuft deshalb über einen echten Port.
@@ -38,6 +38,7 @@ import de.hbt.salat.employee.persistence.EmployeeRepository;
 @ActiveProfiles({"unittest", "local"})
 class EmployeeAccessIntegrationTest {
 
+  private static final String WITHOUT_EMPLOYEE = "noe";
   private static final String WITHOUT_CONTRACT = "nov";
   private static final String ADMIN_WITHOUT_CONTRACT = "adv";
 
@@ -49,31 +50,40 @@ class EmployeeAccessIntegrationTest {
   private SalatUserRepository salatUserRepository;
 
   @BeforeEach
-  void seedEmployeesWithoutContract() {
+  void seedLogins() {
+    loginWithoutEmployee(WITHOUT_EMPLOYEE);
     employeeWithoutContract(WITHOUT_CONTRACT, GlobalConstants.EMPLOYEE_STATUS_MA);
     employeeWithoutContract(ADMIN_WITHOUT_CONTRACT, GlobalConstants.EMPLOYEE_STATUS_ADM);
   }
 
   @Test
   void a_page_request_ends_in_the_error_page_of_the_application() throws Exception {
-    var response = get("/dailyreport/dashboard?login-name=" + WITHOUT_CONTRACT);
+    var response = get("/dailyreport/dashboard?login-name=" + WITHOUT_EMPLOYEE);
 
     assertThat(response.statusCode()).isEqualTo(FORBIDDEN.value());
     // error-details-text steht nur in error/error.html - das unterscheidet die Fehlerseite der
     // Anwendung von der des Servlet-Containers, und zwar unabhaengig von der Sprache.
     assertThat(response.body()).contains("error-details-text");
     // Der Grund steht auf der Seite: die Meldung beider Sprachbuendel nennt das Kuerzel.
-    assertThat(response.body()).contains(WITHOUT_CONTRACT);
+    assertThat(response.body()).contains(WITHOUT_EMPLOYEE);
   }
 
   @Test
   void an_api_request_ends_in_a_problem_document() throws Exception {
-    var response = get("/api/employee-orders/list?login-name=" + WITHOUT_CONTRACT);
+    var response = get("/api/employee-orders/list?login-name=" + WITHOUT_EMPLOYEE);
 
     assertThat(response.statusCode()).isEqualTo(FORBIDDEN.value());
     assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
         contentType -> assertThat(contentType).startsWith("application/problem+json"));
-    assertThat(response.body()).contains(EC_NO_CURRENT_CONTRACT.getCode());
+    assertThat(response.body()).contains(EM_NO_LOGIN_EMPLOYEE.getCode());
+  }
+
+  /** Ohne heute gültigen Vertrag geht die Anmeldung durch, gleich mit welchem Status (#1588). */
+  @Test
+  void an_employee_gets_through_without_a_contract() throws Exception {
+    var response = get("/dailyreport/dashboard?login-name=" + WITHOUT_CONTRACT);
+
+    assertThat(response.statusCode()).isEqualTo(200);
   }
 
   /**
@@ -90,6 +100,16 @@ class EmployeeAccessIntegrationTest {
   private HttpResponse<String> get(String path) throws Exception {
     var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET().build();
     return HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+  }
+
+  private void loginWithoutEmployee(String sign) {
+    if (salatUserRepository.findByLoginname(sign).isPresent()) {
+      return;
+    }
+    SalatUser salatUser = new SalatUser();
+    salatUser.setLoginname(sign);
+    salatUser.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+    salatUserRepository.save(salatUser);
   }
 
   private void employeeWithoutContract(String sign, String status) {

@@ -538,7 +538,7 @@ public class MyAccountsController {
     /**
      * Der gewaehlte Vertrag, nur mit Leserecht (#1514): ein Vertrag, den die angemeldete Person nicht
      * lesen darf, endet in einer {@code AuthorizationException}. Ohne Wahl der eigene laufende Vertrag;
-     * leer fuer eine Anmeldung ohne heute gueltigen Vertrag (Status adm, #1559).
+     * leer fuer eine Anmeldung ohne heute gueltigen Vertrag (#1559, #1588).
      */
     private Optional<Employeecontract> currentContract(Long fEmployeeContractId) {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {

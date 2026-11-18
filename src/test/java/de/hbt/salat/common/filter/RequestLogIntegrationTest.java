@@ -60,10 +60,10 @@ import de.hbt.salat.employee.persistence.EmployeeRepository;
 @ActiveProfiles({"unittest", "local"})
 class RequestLogIntegrationTest {
 
-  /** Ein Administrator braucht keinen Vertrag, sonst antwortete schon {@code EmployeeAccessFilter}. */
   private static final String ADMIN = "rla";
   private static final String OTHER_ADMIN = "rlb";
-  private static final String WITHOUT_CONTRACT = "rlc";
+  /** Ein Login ohne Mitarbeiter: den weist {@code EmployeeAccessFilter} mit 403 ab. */
+  private static final String WITHOUT_EMPLOYEE = "rlc";
 
   @LocalServerPort
   private int port;
@@ -81,7 +81,7 @@ class RequestLogIntegrationTest {
   void seedAndCaptureLog() {
     employee(ADMIN, GlobalConstants.EMPLOYEE_STATUS_ADM);
     employee(OTHER_ADMIN, GlobalConstants.EMPLOYEE_STATUS_ADM);
-    employee(WITHOUT_CONTRACT, GlobalConstants.EMPLOYEE_STATUS_MA);
+    loginWithoutEmployee(WITHOUT_EMPLOYEE);
     if (authorizationRuleRepository.count() == 0) {
       var rule = new AuthorizationRule();
       rule.setCategory("EMPLOYEE");
@@ -134,12 +134,12 @@ class RequestLogIntegrationTest {
   /** {@code sendError} setzt den Status, bevor der Container die Fehlerseite rendert. */
   @Test
   void the_line_carries_the_status_of_a_denied_request() throws Exception {
-    var response = send(get("/dailyreport/dashboard?login-name=" + WITHOUT_CONTRACT));
+    var response = send(get("/dailyreport/dashboard?login-name=" + WITHOUT_EMPLOYEE));
 
     assertThat(response.statusCode()).isEqualTo(403);
     assertThat(lineFor("/dailyreport/dashboard"))
         .containsEntry("response-status", "403")
-        .containsEntry("login-sign", WITHOUT_CONTRACT);
+        .containsEntry("login-sign", WITHOUT_EMPLOYEE);
   }
 
   @Test
@@ -207,6 +207,16 @@ class RequestLogIntegrationTest {
 
   private String loginIdOf(String loginname) {
     return String.valueOf(salatUserRepository.findByLoginname(loginname).orElseThrow().getId());
+  }
+
+  private void loginWithoutEmployee(String loginname) {
+    if (salatUserRepository.findByLoginname(loginname).isPresent()) {
+      return;
+    }
+    SalatUser salatUser = new SalatUser();
+    salatUser.setLoginname(loginname);
+    salatUser.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+    salatUserRepository.save(salatUser);
   }
 
   private void employee(String sign, String status) {

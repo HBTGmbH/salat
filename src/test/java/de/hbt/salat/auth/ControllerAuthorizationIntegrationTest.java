@@ -56,8 +56,8 @@ import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
  * <p>Geprüft wird der direkte Aufruf der URL, nicht das Menü. Ein ausgeblendeter Menüeintrag ist
  * keine Autorisierung — das war die Lücke aus #919.
  *
- * <p>Jede Anmeldung trägt einen heute gültigen Vertrag. Ohne ihn antwortete schon
- * {@code EmployeeAccessFilter} mit 403 (#1054) und jede Zeile wäre aus dem falschen Grund grün.
+ * <p>Jede Anmeldung trägt einen heute gültigen Vertrag. Ohne ihn zeigten die Seiten zum eigenen
+ * Vertrag nur den Hinweis aus #1559, und eine Zeile wäre aus dem falschen Grund grün.
  *
  * <p>Eigene H2-Datenbank: die übrigen {@code @SpringBootTest}-Klassen teilen sich eine, und ein
  * zweiter Anwendungskontext mit {@code ddl-auto: create} legte sie beim Hochfahren neu an.
