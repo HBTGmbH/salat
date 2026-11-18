@@ -220,8 +220,7 @@ public class DashboardController {
     /* Ein Vertrag aus fEmployeeContractId, den die angemeldete Person nicht lesen darf, faellt auf
        ihren eigenen aktuellen Vertrag zurueck statt mit 403 zu antworten: UiState merkt sich den
        Wert, und ein gemerkter fremder Vertrag sperrte sonst die Startseite (#1134). Leer ist das
-       Ergebnis nur fuer eine Anmeldung ohne heute gueltigen Vertrag, die AuthorizedUserChangedListener
-       durchlaesst (Status adm, #1559). */
+       Ergebnis nur fuer eine Anmeldung ohne heute gueltigen Vertrag (#1559, #1588). */
     private Optional<Employeecontract> currentContract(Long fEmployeeContractId) {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {
             try {

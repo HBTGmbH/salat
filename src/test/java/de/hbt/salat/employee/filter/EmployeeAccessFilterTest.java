@@ -2,7 +2,7 @@ package de.hbt.salat.employee.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static de.hbt.salat.common.exception.ErrorCode.EC_NO_CURRENT_CONTRACT;
+import static de.hbt.salat.common.exception.ErrorCode.EM_NO_LOGIN_EMPLOYEE;
 import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.Locale;
@@ -78,7 +78,7 @@ class EmployeeAccessFilterTest {
     // Die Fehlerseite zeigt diese Meldung; der Text kommt aus dem Nachrichtenbuendel, nicht aus
     // dem Code.
     assertThat(response.getErrorMessage())
-        .isEqualTo("Für testy ist heute kein Mitarbeitervertrag gültig. Bitte an das Backoffice wenden.");
+        .isEqualTo("Zum Anmeldenamen testy gibt es keinen Mitarbeiter. Bitte an das Backoffice wenden.");
   }
 
   @Test
@@ -92,8 +92,8 @@ class EmployeeAccessFilterTest {
     assertThat(response.getContentType()).startsWith("application/problem+json");
     assertThat(response.getContentAsString())
         .contains("\"status\":403")
-        .contains(EC_NO_CURRENT_CONTRACT.getCode())
-        .contains(EC_NO_CURRENT_CONTRACT.getMessage());
+        .contains(EM_NO_LOGIN_EMPLOYEE.getCode())
+        .contains(EM_NO_LOGIN_EMPLOYEE.getMessage());
   }
 
   /**
@@ -133,7 +133,7 @@ class EmployeeAccessFilterTest {
   }
 
   private void deny() {
-    employeeAccessDenial.deny(error(EC_NO_CURRENT_CONTRACT, "testy"));
+    employeeAccessDenial.deny(error(EM_NO_LOGIN_EMPLOYEE, "testy"));
   }
 
   private static MockHttpServletRequest request(String path) {

@@ -3,10 +3,9 @@ package de.hbt.salat.dailyreport.controller;
 import org.springframework.ui.Model;
 
 /**
- * Die Seite für eine Anmeldung, die heute keinen gültigen Vertrag hat (#1559). Herein kommt so nur
- * eine Person mit Status adm ({@code AuthorizedUserChangedListener}); alle anderen weist
- * {@code EmployeeAccessFilter} vorher ab. Seiten, die ohne gewählten Vertrag den eigenen zeigen,
- * zeigen ihr diesen Hinweis statt eines Fehlers.
+ * Die Seite für eine Anmeldung, die heute keinen gültigen Vertrag hat (#1559). Herein kommt so jede
+ * Person, gleich mit welchem Status (#1588): die Rolle hängt am Login, nicht am Vertrag. Seiten, die
+ * ohne gewählten Vertrag den eigenen zeigen, zeigen ihr diesen Hinweis statt eines Fehlers.
  */
 final class NoCurrentContract {
 
