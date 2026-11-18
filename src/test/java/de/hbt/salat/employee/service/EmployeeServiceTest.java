@@ -282,4 +282,14 @@ public class EmployeeServiceTest {
 				.toList();
 	}
 
+	/**
+	 * Ohne Mitarbeiter zum Anmeldenamen gibt es niemanden, dessen Übernahme zu prüfen wäre: die Antwort ist
+	 * leer, und {@code AuthorizedUserChangedListener} weist mit EM-0004 ab statt mit einer Ausnahme (#1588).
+	 */
+	@Test
+	void a_login_without_employee_has_no_login_employee() {
+		when(authorizedUser.getEffectiveLoginSign()).thenReturn("noemployee");
+
+		assertThat(employeeDAO.getLoginEmployee()).isNull();
+	}
 }
