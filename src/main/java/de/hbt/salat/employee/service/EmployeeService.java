@@ -63,6 +63,10 @@ public class EmployeeService {
 
   public Employee getLoginEmployee() {
     var loginEmployee = employeeDAO.getLoginEmployee(authorizedUser.getEffectiveLoginSign());
+    if (loginEmployee == null) {
+      // nobody to check an impersonation for; AuthorizedUserChangedListener denies with EM-0004 (#1588)
+      return null;
+    }
     var allowedLoginEmployees = getLoginEmployees();
     if(!allowedLoginEmployees.contains(loginEmployee)) {
       log.warn("User {} tried to impersonate {}. This was not authorized!", authorizedUser.getLoginSign(), authorizedUser.getImpersonateLoginSign());
