@@ -11,6 +11,7 @@ import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSI
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ import de.hbt.salat.reporting.domain.ReportGroup;
 import de.hbt.salat.reporting.domain.ReportGroupInfo;
 import de.hbt.salat.reporting.domain.ReportParameter;
 import de.hbt.salat.reporting.domain.ReportResult;
+import de.hbt.salat.reporting.domain.ReportResult.ErrorInfo;
 import de.hbt.salat.reporting.domain.ReportResultColumnHeader;
 import de.hbt.salat.reporting.domain.ReportResultColumnValue;
 import de.hbt.salat.reporting.domain.ReportResultRow;
@@ -62,6 +65,7 @@ public class ReportService {
   private final OwnerReferences ownerReferences;
   private final ReportGroupRepository reportGroupRepository;
   private final ReportGroupNames reportGroupNames;
+  private final MessageSourceAccessor messages;
 
   /** A report with the group it is listed in (#1523). */
   public record GroupedReport(ReportDefinition report, ReportGroupInfo group) {
@@ -384,6 +388,18 @@ public class ReportService {
               .collect(Collectors.toList());
       resultBuilder.columnHeaders(headers);
 
+      var duplicates = duplicateColumnNames(headers);
+      if (!duplicates.isEmpty()) {
+        // a row is a map over the column names: a second column of the same name has no place in it
+        var errorInfo = ErrorInfo.builder()
+            .errorClass("DuplicateColumnName")
+            .errorMessage(messages.getMessage("main.reporting.error.duplicatecolumns",
+                new Object[] {String.join(", ", duplicates)}))
+            .build();
+        log.warn("Duplicate column names in report {}: {}", reportDefinitionId, duplicates);
+        return failedResult(parameters, errorInfo, resolvedSql);
+      }
+
       // get and create rows
       var rowAvailable = rowset.first();
       while(rowAvailable) {
@@ -408,14 +424,37 @@ public class ReportService {
       // verbreitern: ein Fehler in der Auswertung der Ergebnismenge bleibt ein Anwendungsfehler.
       var errorInfo = ReportSqlErrors.describe(e);
       log.warn("SQL error while executing report {}: {}", reportDefinitionId, errorInfo.getErrorMessage());
-      return ReportResult.builder()
-          .parameters(parameters)
-          .columnHeaders(List.of())
-          .error(true)
-          .errorInfo(errorInfo)
-          .sql(resolvedSql) // the view offers "Show failing SQL", so the statement has to come along
-          .build();
+      return failedResult(parameters, errorInfo, resolvedSql);
     }
+  }
+
+  private static ReportResult failedResult(List<ReportParameter> parameters, ErrorInfo errorInfo, String sql) {
+    return ReportResult.builder()
+        .parameters(parameters)
+        .columnHeaders(List.of())
+        .error(true)
+        .errorInfo(errorInfo)
+        .sql(sql) // the view offers "Show failing SQL", so the statement has to come along
+        .build();
+  }
+
+  /**
+   * The names that more than one column carries, each once, as first spelled (#1570). Case does not
+   * tell them apart: MySQL reads {@code Id} and {@code id} as the same column.
+   */
+  private static List<String> duplicateColumnNames(List<ReportResultColumnHeader> headers) {
+    var firstSpelling = new LinkedHashMap<String, String>();
+    var repeated = new HashSet<String>();
+    for (var header : headers) {
+      var key = header.getName().toLowerCase(Locale.ROOT);
+      if (firstSpelling.putIfAbsent(key, header.getName()) != null) {
+        repeated.add(key);
+      }
+    }
+    return firstSpelling.entrySet().stream()
+        .filter(entry -> repeated.contains(entry.getKey()))
+        .map(Map.Entry::getValue)
+        .toList();
   }
 
 }

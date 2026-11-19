@@ -5,16 +5,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_EXECUTION_FAILED;
 import static de.hbt.salat.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
 
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -28,6 +35,7 @@ import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.common.exception.AuthorizationException;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.palette.PaletteQuery;
 import de.hbt.salat.common.web.UiState;
@@ -44,7 +52,7 @@ import de.hbt.salat.testutils.WebContextTestExecutionListener;
 @DataJpaTest
 @Import({ReportService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class,
     ReportAuthorization.class, UiState.class,
-    AuthUiStateKeyContributor.class, OwnerReferences.class, ReportGroupNames.class})
+    AuthUiStateKeyContributor.class, OwnerReferences.class, ReportGroupNames.class, ReportServiceTest.Messages.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration
@@ -64,9 +72,24 @@ public class ReportServiceTest {
   @MockitoBean
   private EmployeeService employeeService;
 
+  /** Die Meldungen beider Sprachen, in der Sprache der Anfrage (#1570). */
+  @TestConfiguration
+  static class Messages {
+
+    @Bean
+    MessageSourceAccessor messageSourceAccessor() {
+      var messageSource = new ResourceBundleMessageSource();
+      messageSource.setBasename("de/hbt/salat/web/MessageResources");
+      messageSource.setDefaultEncoding("UTF-8");
+      messageSource.setFallbackToSystemLocale(false);
+      return new MessageSourceAccessor(messageSource);
+    }
+  }
+
   @AfterEach
   void clearSecurityContext() {
     SecurityContextHolder.clearContext();
+    LocaleContextHolder.resetLocaleContext();
   }
 
   private void loginAsManager(String loginname) {
@@ -322,6 +345,71 @@ public class ReportServiceTest {
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias_1"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias_2"));
+  }
+
+  /**
+   * Zwei Spalten mit demselben Namen sind ein Fehler des Reports wie ein SQL-Fehler: das Ergebnis
+   * trägt ihn samt SQL, statt an der Map der Zeile mit einer Ausnahme zu scheitern (#1570).
+   */
+  @Test
+  public void a_duplicate_column_name_is_an_error_of_the_report() {
+    loginAsManager("test");
+    LocaleContextHolder.setLocale(Locale.GERMAN);
+    // in Anführungszeichen, sonst schriebe H2 die Namen groß
+    var sql = "select 1 as \"id\", 2 as \"id\"";
+    var reportDefinition = reportService.create("test", sql, null);
+
+    var result = reportService.execute(reportDefinition.getId(), List.of());
+
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getErrorInfo().getErrorClass()).isEqualTo("DuplicateColumnName");
+    assertThat(result.getErrorInfo().getErrorMessage())
+        .isEqualTo("Mehrfach vorkommende Spaltennamen: id. Jede Spalte braucht einen eindeutigen Namen, "
+            + "z. B. per Alias: e.id AS mitarbeiter_id");
+    assertThat(result.getSql()).isEqualTo(sql);
+    assertThat(result.getRows()).isEmpty();
+  }
+
+  @Test
+  public void the_message_names_every_duplicate_column_in_english_too() {
+    loginAsManager("test");
+    LocaleContextHolder.setLocale(Locale.ENGLISH);
+    var reportDefinition = reportService.create("test", "select 1 as \"a\", 2 as \"b\", 3 as \"a\", 4 as \"c\", 5 as \"b\"", null);
+
+    var result = reportService.execute(reportDefinition.getId(), List.of());
+
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getErrorInfo().getErrorMessage())
+        .isEqualTo("Column names occurring more than once: a, b. Every column needs a unique name, "
+            + "e.g. with an alias: e.id AS employee_id");
+  }
+
+  /**
+   * MySQL unterscheidet Spaltennamen nicht nach Groß- und Kleinschreibung und liest {@code Id} und
+   * {@code id} als dieselbe Spalte; die Map der Zeile hielte beide und zeigte zweimal einen Wert.
+   * Sie gelten deshalb als doppelt, genannt in der Schreibweise ihres ersten Auftretens.
+   */
+  @Test
+  public void names_differing_only_in_case_count_as_duplicates() {
+    loginAsManager("test");
+    LocaleContextHolder.setLocale(Locale.GERMAN);
+    var reportDefinition = reportService.create("test", "select 1 as \"Id\", 2 as \"id\"", null);
+
+    var result = reportService.execute(reportDefinition.getId(), List.of());
+
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getErrorInfo().getErrorMessage()).startsWith("Mehrfach vorkommende Spaltennamen: Id.");
+  }
+
+  /** Die REST-API antwortet wie bei jedem fehlgeschlagenen Report (#1570). */
+  @Test
+  public void a_duplicate_column_name_fails_the_checked_execution() {
+    loginAsManager("test");
+    var reportDefinition = reportService.create("test", "select 1 as id, 2 as id", null);
+
+    assertThatThrownBy(() -> reportService.executeChecked(reportDefinition, List.of()))
+        .isInstanceOfSatisfying(BusinessRuleException.class, e ->
+            assertThat(e.getMessages()).anySatisfy(m -> assertThat(m.getErrorCode()).isEqualTo(RP_REPORT_EXECUTION_FAILED)));
   }
 
   /** The command palette finds a report by every word of its name, never by its SQL (#1232). */

@@ -27,7 +27,7 @@ class ReportSignReferenceListenerTest {
   private final ReportDefinitionRepository repository = mock(ReportDefinitionRepository.class);
   private final ReportSignReferenceListener listener = new ReportSignReferenceListener(
       new ReportService(repository, null, mock(ReportAuthorization.class), mock(AuthorizedUser.class),
-          mock(OwnerReferences.class), mock(ReportGroupRepository.class), new ReportGroupNames(mock(EmployeeService.class))));
+          mock(OwnerReferences.class), mock(ReportGroupRepository.class), new ReportGroupNames(mock(EmployeeService.class)), null));
 
   @Test
   void the_definitions_naming_the_old_sign_are_named_once() {

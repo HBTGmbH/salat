@@ -80,7 +80,7 @@ class ReportingPaletteProviderTest {
   void setUp() {
     var reportAuthorization = new ReportAuthorization(authorizedUser, authService);
     var reportService = new ReportService(reportDefinitionRepository, null, reportAuthorization, authorizedUser, null,
-        null, new ReportGroupNames(mock(EmployeeService.class)));
+        null, new ReportGroupNames(mock(EmployeeService.class)), null);
     provider = new ReportingPaletteProvider(reportService, reportAuthorization, authorizedUser);
     when(authorizedUser.getEffectiveUserId()).thenReturn(OWN_USER_ID);
     when(reportDefinitionRepository.findAllWithGroup()).thenReturn(List.of(WITH_PARAMETERS, WITHOUT_PARAMETERS));

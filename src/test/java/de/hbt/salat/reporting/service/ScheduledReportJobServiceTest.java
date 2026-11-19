@@ -4,6 +4,8 @@ import static de.hbt.salat.testutils.ReferenceTestUtils.salatUserWithId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,6 +27,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.reporting.auth.ReportAuthorization;
+import de.hbt.salat.reporting.domain.ReportDefinition;
+import de.hbt.salat.reporting.domain.ReportResult.ErrorInfo;
+import de.hbt.salat.reporting.domain.ScheduledReportExecutionHistory;
 import de.hbt.salat.reporting.domain.ScheduledReportJob;
 import de.hbt.salat.reporting.persistence.ScheduledReportExecutionHistoryRepository;
 import de.hbt.salat.reporting.persistence.ScheduledReportJobRepository;
@@ -116,6 +122,37 @@ class ScheduledReportJobServiceTest {
     scheduledReportJobService.deleteJob(1L);
 
     verify(scheduledReportJobRepository).deleteById(1L);
+  }
+
+  /**
+   * Ein Report, der als Fehler endet — etwa mit doppeltem Spaltennamen (#1570) —, ist ein
+   * fehlgeschlagener Lauf in der Historie und keine Ausnahme im Scheduler.
+   */
+  @Test
+  void a_failing_report_is_recorded_as_a_failed_run_without_an_exception() {
+    var definition = new ReportDefinition();
+    ReflectionTestUtils.setField(definition, "id", 7L);
+    var job = job(1L, OWNER);
+    job.setReportDefinition(definition);
+    job.setRecipientEmails("person-a@example.org");
+    var errorInfo = ErrorInfo.builder()
+        .errorClass("DuplicateColumnName")
+        .errorMessage("Mehrfach vorkommende Spaltennamen: id.")
+        .build();
+    when(scheduledReportJobRepository.findById(1L)).thenReturn(Optional.of(job));
+    when(reportEmailService.sendReportEmail(eq(7L), any(), any(), anyBoolean()))
+        .thenReturn(new ReportEmailService.SendResult(0, false, true, errorInfo));
+
+    var result = scheduledReportJobService.executeScheduledReportJobById(1L);
+
+    assertThat(result).hasValueSatisfying(run -> {
+      assertThat(run.error()).isTrue();
+      assertThat(run.errorInfo()).isEqualTo(errorInfo);
+    });
+    var history = ArgumentCaptor.forClass(ScheduledReportExecutionHistory.class);
+    verify(historyRepository).save(history.capture());
+    assertThat(history.getValue().isSuccess()).isFalse();
+    assertThat(history.getValue().getMessage()).isEqualTo("DuplicateColumnName:Mehrfach vorkommende Spaltennamen: id.");
   }
 
   private static ScheduledReportJob job(long id, Long ownerUserId) {
