@@ -79,7 +79,7 @@ import de.hbt.salat.order.service.SpecialOrders;
  * matrix passes one browser per runner, so such a failure never shows up there; see AGENTS.md,
  * "Testing and Quality".
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "management.health.mail.enabled=false")
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"unittest", "local"})
 @FixedClock(PlaywrightE2ETestBase.FIXED_NOW)
 @TestInstance(Lifecycle.PER_CLASS)

@@ -37,8 +37,7 @@ import de.hbt.salat.employee.persistence.EmployeeRepository;
  * <p>Eigene H2-Datenbank, aus demselben Grund wie in {@code ControllerAuthorizationIntegrationTest}.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
-    "spring.datasource.url=jdbc:h2:mem:salat-1559;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false"
+    "spring.datasource.url=jdbc:h2:mem:salat-1559;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR"
 })
 @ActiveProfiles({"unittest", "local"})
 @DisplayNameGeneration(ReplaceUnderscores.class)

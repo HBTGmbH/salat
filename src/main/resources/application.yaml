@@ -241,11 +241,20 @@ spring:
           auth: false              # env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
           starttls:
             enable: false          # env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
+          # Without a limit a silent or refusing mail server holds the sending thread for good (#1582).
+          connectiontimeout: 5000  # ms, env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT
+          timeout: 5000            # ms, env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT
+          writetimeout: 5000       # ms, env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT
 management:
   endpoints:
     web:
       exposure:
         include: health
+  health:
+    # The platform probes /actuator/health and asks whether the application serves requests; the
+    # mail server does not decide that. A failed mail shows in the log of the sender (#1582).
+    mail:
+      enabled: false               # env: MANAGEMENT_HEALTH_MAIL_ENABLED
 springdoc:
   swagger-ui:
     path: /api/doc/
