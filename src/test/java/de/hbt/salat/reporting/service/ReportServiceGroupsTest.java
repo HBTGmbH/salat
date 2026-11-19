@@ -74,7 +74,7 @@ class ReportServiceGroupsTest {
   @BeforeEach
   void setUp() {
     reportService = new ReportService(reportDefinitionRepository, null, reportAuthorization, authorizedUser,
-        ownerReferences, reportGroupRepository, new ReportGroupNames(employeeService));
+        ownerReferences, reportGroupRepository, new ReportGroupNames(employeeService), null);
     when(reportDefinitionRepository.findAllWithGroup())
         .thenReturn(List.of(loose, auslastung, freigaben, team, umsatz, otherTeam));
     when(employeeService.getNamesBySalatUserIds(any())).thenReturn(Map.of(

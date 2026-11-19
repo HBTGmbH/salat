@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -60,7 +62,7 @@ class ReportControllerExecutionErrorTest {
 
     var reportService = new ReportService(reportDefinitionRepository, database, reportAuthorization,
         mock(AuthorizedUser.class), mock(OwnerReferences.class), mock(ReportGroupRepository.class),
-        mock(ReportGroupNames.class));
+        mock(ReportGroupNames.class), germanMessages());
     var reportController = new ReportController(reportService, reportAuthorization,
         mock(ExcelExportService.class), mock(FilterHintViewHelper.class), mock(ReportGroupService.class),
         mock(AuthorizedUser.class), mock(MessageSourceAccessor.class));
@@ -103,6 +105,20 @@ class ReportControllerExecutionErrorTest {
     assertThat(reportResult.getSql()).isEqualTo(sql);
   }
 
+  /** Zwei Spalten mit demselben Namen endeten als HTTP 500 (#1570). */
+  @Test
+  void a_report_with_a_duplicate_column_name_answers_with_the_result_view() throws Exception {
+    var sql = "select 1 as id, 2 as id";
+    givenReport(sql);
+
+    var reportResult = executeReport();
+
+    assertThat(reportResult.isError()).isTrue();
+    assertThat(reportResult.getErrorInfo().getErrorClass()).isEqualTo("DuplicateColumnName");
+    assertThat(reportResult.getErrorInfo().getErrorMessage()).containsIgnoringCase("id");
+    assertThat(reportResult.getSql()).isEqualTo(sql);
+  }
+
   private void givenReport(String sql) {
     var reportDefinition = new ReportDefinition();
     reportDefinition.setName("kaputt");
@@ -119,6 +135,14 @@ class ReportControllerExecutionErrorTest {
 
     assertThat(modelAndView).isNotNull();
     return (ReportResult) modelAndView.getModel().get("reportResult");
+  }
+
+  private static MessageSourceAccessor germanMessages() {
+    var messageSource = new ResourceBundleMessageSource();
+    messageSource.setBasename("de/hbt/salat/web/MessageResources");
+    messageSource.setDefaultEncoding("UTF-8");
+    messageSource.setFallbackToSystemLocale(false);
+    return new MessageSourceAccessor(messageSource, Locale.GERMANY);
   }
 
 }
