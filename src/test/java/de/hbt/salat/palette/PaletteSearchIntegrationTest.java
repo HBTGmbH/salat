@@ -59,8 +59,7 @@ import de.hbt.salat.order.persistence.SuborderRepository;
  * {@code ddl-auto: create} must not start on the database the other tests share.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
-    "spring.datasource.url=jdbc:h2:mem:salat-1157;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false"
+    "spring.datasource.url=jdbc:h2:mem:salat-1157;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR"
 })
 @ActiveProfiles({"unittest", "local"})
 @DisplayNameGeneration(ReplaceUnderscores.class)

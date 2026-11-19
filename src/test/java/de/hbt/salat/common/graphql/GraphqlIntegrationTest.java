@@ -66,8 +66,7 @@ import de.hbt.salat.order.persistence.SuborderRepository;
  * about data the test created itself.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
-    "spring.datasource.url=jdbc:h2:mem:salat-1532;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false"
+    "spring.datasource.url=jdbc:h2:mem:salat-1532;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR"
 })
 @ActiveProfiles({"unittest", "local"})
 @DisplayNameGeneration(ReplaceUnderscores.class)

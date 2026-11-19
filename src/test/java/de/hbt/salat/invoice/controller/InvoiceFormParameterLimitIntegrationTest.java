@@ -60,8 +60,7 @@ import de.hbt.salat.order.service.SuborderService;
  * H2-Datenbank wie in {@code RequestLogIntegrationTest}, weil ein zweiter Kontext die geteilte neu anlegte.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
-    "spring.datasource.url=jdbc:h2:mem:salat-1499;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false"
+    "spring.datasource.url=jdbc:h2:mem:salat-1499;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR"
 })
 @ActiveProfiles({"unittest", "local"})
 class InvoiceFormParameterLimitIntegrationTest {

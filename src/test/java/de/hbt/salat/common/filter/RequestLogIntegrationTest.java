@@ -54,7 +54,6 @@ import de.hbt.salat.employee.persistence.EmployeeRepository;
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
     "spring.datasource.url=jdbc:h2:mem:salat-1145;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false",
     "salat.auth-service.cache-expiry=0s"
 })
 @ActiveProfiles({"unittest", "local"})

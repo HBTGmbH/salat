@@ -32,8 +32,7 @@ import de.hbt.salat.employee.persistence.EmployeeRepository;
  * zweiter Anwendungskontext mit {@code ddl-auto: create} legte sie beim Hochfahren neu an.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
-    "spring.datasource.url=jdbc:h2:mem:salat-1054;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false"
+    "spring.datasource.url=jdbc:h2:mem:salat-1054;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR"
 })
 @ActiveProfiles({"unittest", "local"})
 class EmployeeAccessIntegrationTest {

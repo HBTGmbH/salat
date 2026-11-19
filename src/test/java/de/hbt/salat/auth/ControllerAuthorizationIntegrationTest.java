@@ -63,8 +63,7 @@ import de.hbt.salat.etl.persistence.ETLRunHistoryRepository;
  * zweiter Anwendungskontext mit {@code ddl-auto: create} legte sie beim Hochfahren neu an.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
-    "spring.datasource.url=jdbc:h2:mem:salat-926;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "management.health.mail.enabled=false"
+    "spring.datasource.url=jdbc:h2:mem:salat-926;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR"
 })
 @ActiveProfiles({"unittest", "local"})
 @DisplayNameGeneration(ReplaceUnderscores.class)

@@ -46,8 +46,7 @@ import de.hbt.salat.employee.persistence.EmployeeRepository;
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
     "spring.datasource.url=jdbc:h2:mem:salat-1117;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
-    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration",
-    "management.health.mail.enabled=false"
+    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration"
 })
 @ActiveProfiles({"unittest", "local"})
 @DisplayNameGeneration(ReplaceUnderscores.class)
