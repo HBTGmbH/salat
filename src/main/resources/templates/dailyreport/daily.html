@@ -1382,8 +1382,10 @@
     toastEl.className = 'toast toast-error align-items-center show position-fixed bottom-0 end-0 m-3';
     toastEl.setAttribute('role', 'alert');
     toastEl.style.zIndex = '9999';
-    toastEl.innerHTML = '<div class="d-flex"><div class="toast-body">' + msg + '</div>'
+    toastEl.innerHTML = '<div class="d-flex"><div class="toast-body"></div>'
       + '<button type="button" class="btn-close me-2 m-auto" onclick="this.closest(\'.toast\').remove()"></button></div>';
+    // Als Text: eine Meldung mit Parametern kann Eingaben der Person enthalten (#1583).
+    toastEl.querySelector('.toast-body').textContent = msg;
     document.body.appendChild(toastEl);
     setTimeout(function() { toastEl.remove(); }, 5000);
   });

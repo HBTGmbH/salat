@@ -36,6 +36,7 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.TicketReferences;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.web.HxTrigger;
 import de.hbt.salat.dailyreport.domain.FavoriteShortList;
 import de.hbt.salat.dailyreport.domain.PreviousBooking;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
@@ -260,7 +261,7 @@ public class DailyController {
             String errMsg = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
             if ("true".equals(request.getHeader("HX-Request"))) {
-                response.setHeader("HX-Trigger", "{\"showError\":\"" + errMsg.replace("\"", "'") + "\"}");
+                HxTrigger.showError(response, errMsg);
                 var dailyData = dailyService.buildDailyView(date, effEmployeeContractId);
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
@@ -366,7 +367,7 @@ public class DailyController {
         }
         if ("true".equals(request.getHeader("HX-Request")) && ecId != null) {
             if (htmxError != null) {
-                response.setHeader("HX-Trigger", "{\"showError\":\"" + htmxError.replace("\"", "'") + "\"}");
+                HxTrigger.showError(response, htmxError);
             }
             String currentUrl = request.getHeader("HX-Current-URL");
             boolean isListMode = currentUrl != null && currentUrl.contains("mode=list");
@@ -443,7 +444,7 @@ public class DailyController {
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
-            response.setHeader("HX-Trigger", "{\"showError\":\"" + err.replace("\"", "'") + "\"}");
+            HxTrigger.showError(response, err);
         }
         var dailyData = dailyService.buildDailyView(date, ecId);
         var wdForm = new WorkingdayForm();
@@ -494,7 +495,7 @@ public class DailyController {
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
-            response.setHeader("HX-Trigger", "{\"showError\":\"" + err.replace("\"", "'") + "\"}");
+            HxTrigger.showError(response, err);
         }
         var dailyData = dailyService.buildDailyView(date, ecId);
         var wdForm = new WorkingdayForm();
