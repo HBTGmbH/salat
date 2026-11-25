@@ -36,7 +36,7 @@
     <thymeleaf-layout-dialect.version>4.0.1</thymeleaf-layout-dialect.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <webjars-bootstrap-icons.version>1.13.2</webjars-bootstrap-icons.version>
-    <webjars-jquery.version>4.0.0</webjars-jquery.version>
+    <webjars-jquery.version>4.1.0</webjars-jquery.version>
     <webjars-locator-lite.version>1.1.5</webjars-locator-lite.version>
     <webjars-tabler-io-core.version>1.7.4</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.50.0</webjars-tabler-io-icons.version>
